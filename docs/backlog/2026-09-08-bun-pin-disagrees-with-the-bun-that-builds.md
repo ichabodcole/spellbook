@@ -1,5 +1,11 @@
 # The declared Bun pin is not the Bun that builds the shipped artifacts
 
+> **CLOSED 2026-09-09** — Cole ruled bun **1.4.0**, and it is now a **declared
+> devDependency**, so `.bun-version`, PATH and `node_modules/.bin/bun` agree by
+> construction. All eight spells' artifacts were rebuilt under it. See **D41**
+> in the backend-convergence decision log. Kept for the reasoning, not as an
+> open item.
+
 **Filed:** 2026-09-08 · **From:** the Phase 2 verify pass (glamour backend port)
 · **Type:** toolchain hazard · **Pre-dates the branch that found it**
 

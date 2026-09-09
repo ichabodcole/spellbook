@@ -823,7 +823,7 @@
   }
 
   .bg-cyan-500\/20 {
-    background-color: #00b7d733;
+    background-color: #00b8db33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -843,7 +843,7 @@
   }
 
   .bg-emerald-500\/20 {
-    background-color: #00bb7f33;
+    background-color: #00bc7d33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -887,7 +887,7 @@
   }
 
   .bg-indigo-500\/20 {
-    background-color: #625fff33;
+    background-color: #615fff33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -911,7 +911,7 @@
   }
 
   .bg-rose-500\/20 {
-    background-color: #ff235733;
+    background-color: #ff205633;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -921,7 +921,7 @@
   }
 
   .bg-sky-500\/20 {
-    background-color: #00a5ef33;
+    background-color: #00a6f433;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -985,7 +985,7 @@
   }
 
   .bg-violet-500\/20 {
-    background-color: #8d54ff33;
+    background-color: #8e51ff33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1311,7 +1311,7 @@
   }
 
   .ring-cyan-500\/40 {
-    --tw-ring-color: #00b7d766;
+    --tw-ring-color: #00b8db66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1325,7 +1325,7 @@
   }
 
   .ring-emerald-500\/40 {
-    --tw-ring-color: #00bb7f66;
+    --tw-ring-color: #00bc7d66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1365,7 +1365,7 @@
   }
 
   .ring-indigo-500\/40 {
-    --tw-ring-color: #625fff66;
+    --tw-ring-color: #615fff66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1385,7 +1385,7 @@
   }
 
   .ring-rose-500\/40 {
-    --tw-ring-color: #ff235766;
+    --tw-ring-color: #ff205666;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1395,7 +1395,7 @@
   }
 
   .ring-sky-500\/40 {
-    --tw-ring-color: #00a5ef66;
+    --tw-ring-color: #00a6f466;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1405,7 +1405,7 @@
   }
 
   .ring-violet-500\/40 {
-    --tw-ring-color: #8d54ff66;
+    --tw-ring-color: #8e51ff66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1683,7 +1683,38 @@
 
 @layer properties {
   @supports ((-webkit-hyphens: none) and ( not (margin-trim: inline))) or ((-moz-orient: inline) and ( not (color:rgb(from red r g b)))) {
-    *, :before, :after, ::backdrop {
+    *, :before, :after {
+      --tw-space-y-reverse: 0;
+      --tw-border-style: solid;
+      --tw-leading: initial;
+      --tw-font-weight: initial;
+      --tw-tracking: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
+    }
+
+    ::backdrop {
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;

@@ -848,7 +848,7 @@
   }
 
   .border-amber-700\/40 {
-    border-color: #b7500066;
+    border-color: #bb4d0066;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -858,7 +858,7 @@
   }
 
   .border-emerald-700\/40 {
-    border-color: #00795666;
+    border-color: #007a5566;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -906,7 +906,7 @@
   }
 
   .border-violet-500\/40 {
-    border-color: #8d54ff66;
+    border-color: #8e51ff66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1018,7 +1018,7 @@
   }
 
   .bg-emerald-500\/15 {
-    background-color: #00bb7f26;
+    background-color: #00bc7d26;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1056,7 +1056,7 @@
   }
 
   .bg-fuchsia-600\/20 {
-    background-color: #c600db33;
+    background-color: #c800de33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1066,7 +1066,7 @@
   }
 
   .bg-fuchsia-600\/80 {
-    background-color: #c600dbcc;
+    background-color: #c800decc;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1086,7 +1086,7 @@
   }
 
   .bg-rose-500\/30 {
-    background-color: #ff23574d;
+    background-color: #ff20564d;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1464,7 +1464,7 @@
   }
 
   .text-fuchsia-300\/90 {
-    color: #f2a9ffe6;
+    color: #f4a8ffe6;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1565,7 +1565,7 @@
   }
 
   .ring-fuchsia-400\/50 {
-    --tw-ring-color: #ec6cff80;
+    --tw-ring-color: #ed6aff80;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1575,7 +1575,7 @@
   }
 
   .ring-fuchsia-400\/60 {
-    --tw-ring-color: #ec6cff99;
+    --tw-ring-color: #ed6aff99;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1696,7 +1696,7 @@
 
   @media (hover: hover) {
     .hover\:bg-fuchsia-600\/20:hover {
-      background-color: #c600db33;
+      background-color: #c800de33;
     }
 
     @supports (color: color-mix(in lab, red, red)) {
@@ -2028,7 +2028,44 @@
 
 @layer properties {
   @supports ((-webkit-hyphens: none) and ( not (margin-trim: inline))) or ((-moz-orient: inline) and ( not (color:rgb(from red r g b)))) {
-    *, :before, :after, ::backdrop {
+    *, :before, :after {
+      --tw-space-y-reverse: 0;
+      --tw-border-style: solid;
+      --tw-leading: initial;
+      --tw-font-weight: initial;
+      --tw-tracking: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
+      --tw-duration: initial;
+      --tw-ease: initial;
+    }
+
+    ::backdrop {
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;

@@ -1281,3 +1281,39 @@ rather than a discrepancy.
 
 **Not taken:** _match glamour_ — it would silently pick a winner between two
 undiscussed orders, on the authority of whichever spell ported first.
+
+## D41 · Bun 1.4.0, declared — the pin and the build agree by construction
+
+**Ruled:** Cole, 2026-09-09 — _"move to bun 1.4.0 to match the installed
+version."_ Option 3 of
+[the backlog item](../../backlog/2026-09-08-bun-pin-disagrees-with-the-bun-that-builds.md),
+at Cole's version.
+
+Before: `.bun-version` **1.4.0**, PATH bun **1.4.0**, and the bun that actually
+built every shipped artifact **1.3.14** — arriving as `bun-plugin-tailwind`'s
+peer, because bun was not a declared dependency at all. `bun run build` is a
+package script, so it resolved `node_modules/.bin/bun`; a bare
+`bun run src/build.ts` resolved PATH. Two bundlers, and the committed bytes
+belonged to the one nobody had chosen.
+
+**bun is now a direct devDependency at `1.4.0`.** All three agree. Cole ruled
+the version; declaring it is what stops the class recurring, since the failure
+was not "the wrong version" but "the version is a consequence of someone else's
+peer range."
+
+**The blast radius, measured rather than estimated:** all 8 spells, 48 artifact
+changes — every surface chunk rehashed (both the `.js` and the `.css`) and all
+six backend bundles rewritten. Gate **1964 pass / 0 fail** unpiped, and notably
+**174 s against 267 s** on 1.3.14.
+
+**Sequencing mattered and is worth recording.** The bump was queued behind the
+imago merge on purpose: `bun install` swaps the bundler under any agent
+mid-port, so a port's later chapters would emit 1.4.0 bytes over 1.3.14 bytes
+from its earlier ones and its gate would describe neither tree. **A toolchain
+change is not safe to land beside in-flight work that builds.**
+
+**Not taken:** _move `.bun-version` down to 1.3.14_ — matches reality, rewrites
+nothing, and enshrines a version chosen by a plugin's peer range. _Bump
+`node_modules` without declaring bun_ — satisfies the ruling and leaves the
+drift mechanism in place, so the next `bun install` on a fresh clone could
+resolve differently again.

@@ -36,6 +36,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "agent-cli-conformance": "git+https://github.com/ichabodcole/agent-cli-conformance.git#v0.1.11",
+    "bun": "1.4.0",
     "bun-plugin-tailwind": "^0.1.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",

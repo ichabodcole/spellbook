@@ -18,33 +18,22 @@ var __toESM = (mod, isNodeMode, target) => {
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
   const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
-  for (let key of __getOwnPropNames(mod))
-    if (!__hasOwnProp.call(to, key))
-      __defProp(to, key, {
-        get: __accessProp.bind(mod, key),
-        enumerable: true
-      });
+  if (mod && typeof mod === "object" || typeof mod === "function") {
+    for (let key of __getOwnPropNames(mod))
+      if (!__hasOwnProp.call(to, key))
+        __defProp(to, key, {
+          get: __accessProp.bind(mod, key),
+          enumerable: true
+        });
+  }
   if (canCache)
     cache.set(mod, to);
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
-var __returnValue = (v) => v;
-function __exportSetter(name, newValue) {
-  this[name] = __returnValue.bind(null, newValue);
-}
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, {
-      get: all[name],
-      enumerable: true,
-      configurable: true,
-      set: __exportSetter.bind(all, name)
-    });
-};
 
 // node_modules/scheduler/cjs/scheduler.development.js
-var require_scheduler_development = __commonJS((exports) => {
+var require_scheduler_development = __commonJS(function(exports) {
   (function() {
     function performWorkUntilDeadline() {
       needsPaint = false;
@@ -299,7 +288,7 @@ var require_scheduler_development = __commonJS((exports) => {
 });
 
 // node_modules/scheduler/index.js
-var require_scheduler = __commonJS((exports, module) => {
+var require_scheduler = __commonJS(function(exports, module) {
   var scheduler_development = __toESM(require_scheduler_development());
   if (false) {} else {
     module.exports = scheduler_development;
@@ -307,7 +296,7 @@ var require_scheduler = __commonJS((exports, module) => {
 });
 
 // node_modules/react/cjs/react.development.js
-var require_react_development = __commonJS((exports, module) => {
+var require_react_development = __commonJS(function(exports, module) {
   (function() {
     function defineDeprecationWarning(methodName, info) {
       Object.defineProperty(Component.prototype, methodName, {
@@ -1130,7 +1119,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
 });
 
 // node_modules/react/index.js
-var require_react = __commonJS((exports, module) => {
+var require_react = __commonJS(function(exports, module) {
   var react_development = __toESM(require_react_development());
   if (false) {} else {
     module.exports = react_development;
@@ -1138,7 +1127,7 @@ var require_react = __commonJS((exports, module) => {
 });
 
 // node_modules/react-dom/cjs/react-dom.development.js
-var require_react_dom_development = __commonJS((exports) => {
+var require_react_dom_development = __commonJS(function(exports) {
   var React = __toESM(require_react());
   (function() {
     function noop() {}
@@ -1321,7 +1310,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
 });
 
 // node_modules/react-dom/index.js
-var require_react_dom = __commonJS((exports, module) => {
+var require_react_dom = __commonJS(function(exports, module) {
   var react_dom_development = __toESM(require_react_dom_development());
   if (false) {} else {
     module.exports = react_dom_development;
@@ -1329,7 +1318,7 @@ var require_react_dom = __commonJS((exports, module) => {
 });
 
 // node_modules/react-dom/cjs/react-dom-client.development.js
-var require_react_dom_client_development = __commonJS((exports) => {
+var require_react_dom_client_development = __commonJS(function(exports) {
   var Scheduler = __toESM(require_scheduler());
   var React = __toESM(require_react());
   var ReactDOM = __toESM(require_react_dom());
@@ -1932,9 +1921,9 @@ var require_react_dom_client_development = __commonJS((exports) => {
               if (typeof entry.name === "string") {
                 var JSCompiler_temp_const = info;
                 a: {
-                  var { name, env, debugLocation: location2 } = entry;
-                  if (location2 != null) {
-                    var childStack = formatOwnerStack(location2), idx = childStack.lastIndexOf(`
+                  var { name, env, debugLocation: location } = entry;
+                  if (location != null) {
+                    var childStack = formatOwnerStack(location), idx = childStack.lastIndexOf(`
 `), lastLine = idx === -1 ? childStack : childStack.slice(idx + 1);
                     if (lastLine.indexOf(name) !== -1) {
                       var JSCompiler_inline_result = `
@@ -16897,16 +16886,16 @@ You might need to use a local HTTP server (instead of file://): https://react.de
 });
 
 // node_modules/react-dom/client.js
-var require_client = __commonJS((exports, module) => {
+var require_client = __commonJS(function(exports, module) {
   var react_dom_client_development = __toESM(require_react_dom_client_development());
   if (false) {} else {
     module.exports = react_dom_client_development;
   }
 });
 
-// node_modules/react/cjs/react-jsx-runtime.development.js
-var require_react_jsx_runtime_development = __commonJS((exports) => {
-  var React6 = __toESM(require_react());
+// node_modules/react/cjs/react-jsx-dev-runtime.development.js
+var require_react_jsx_dev_runtime_development = __commonJS(function(exports) {
+  var React = __toESM(require_react());
   (function() {
     function getComponentNameFromType(type) {
       if (type == null)
@@ -17098,370 +17087,17 @@ React keys must be passed directly to JSX without using spread:
     function isValidElement(object) {
       return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
     }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React6.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
       return null;
     };
-    React6 = {
+    React = {
       react_stack_bottom_frame: function(callStackForError) {
         return callStackForError();
       }
     };
     var specialPropKeyWarningShown;
     var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React6.react_stack_bottom_frame.bind(React6, UnknownOwner)();
-    var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
-    var didWarnAboutKeySpread = {};
-    exports.Fragment = REACT_FRAGMENT_TYPE;
-    exports.jsx = function(type, config, maybeKey) {
-      var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-      return jsxDEVImpl(type, config, maybeKey, false, trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack, trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask);
-    };
-    exports.jsxs = function(type, config, maybeKey) {
-      var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-      return jsxDEVImpl(type, config, maybeKey, true, trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack, trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask);
-    };
-  })();
-});
-
-// node_modules/react/jsx-runtime.js
-var require_jsx_runtime = __commonJS((exports, module) => {
-  var react_jsx_runtime_development = __toESM(require_react_jsx_runtime_development());
-  if (false) {} else {
-    module.exports = react_jsx_runtime_development;
-  }
-});
-
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
-var require_use_sync_external_store_shim_development = __commonJS((exports) => {
-  var React16 = __toESM(require_react());
-  (function() {
-    function is(x, y) {
-      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
-    }
-    function useSyncExternalStore$2(subscribe, getSnapshot) {
-      didWarnOld18Alpha || React16.startTransition === undefined || (didWarnOld18Alpha = true, console.error("You are using an outdated, pre-release alpha of React 18 that does not support useSyncExternalStore. The use-sync-external-store shim will not work correctly. Upgrade to a newer pre-release."));
-      var value = getSnapshot();
-      if (!didWarnUncachedGetSnapshot) {
-        var cachedValue = getSnapshot();
-        objectIs(value, cachedValue) || (console.error("The result of getSnapshot should be cached to avoid an infinite loop"), didWarnUncachedGetSnapshot = true);
-      }
-      cachedValue = useState5({
-        inst: { value, getSnapshot }
-      });
-      var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
-      useLayoutEffect3(function() {
-        inst.value = value;
-        inst.getSnapshot = getSnapshot;
-        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-      }, [subscribe, value, getSnapshot]);
-      useEffect7(function() {
-        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-        return subscribe(function() {
-          checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-        });
-      }, [subscribe]);
-      useDebugValue2(value);
-      return value;
-    }
-    function checkIfSnapshotChanged(inst) {
-      var latestGetSnapshot = inst.getSnapshot;
-      inst = inst.value;
-      try {
-        var nextValue = latestGetSnapshot();
-        return !objectIs(inst, nextValue);
-      } catch (error) {
-        return true;
-      }
-    }
-    function useSyncExternalStore$1(subscribe, getSnapshot) {
-      return getSnapshot();
-    }
-    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-    var objectIs = typeof Object.is === "function" ? Object.is : is, useState5 = React16.useState, useEffect7 = React16.useEffect, useLayoutEffect3 = React16.useLayoutEffect, useDebugValue2 = React16.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = typeof window === "undefined" || typeof window.document === "undefined" || typeof window.document.createElement === "undefined" ? useSyncExternalStore$1 : useSyncExternalStore$2;
-    exports.useSyncExternalStore = React16.useSyncExternalStore !== undefined ? React16.useSyncExternalStore : shim;
-    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-  })();
-});
-
-// node_modules/use-sync-external-store/shim/index.js
-var require_shim = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_use_sync_external_store_shim_development();
-  }
-});
-
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
-var require_with_selector_development = __commonJS((exports) => {
-  var React16 = __toESM(require_react());
-  (function() {
-    function is(x, y) {
-      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
-    }
-    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-    var shim = require_shim(), objectIs = typeof Object.is === "function" ? Object.is : is, useSyncExternalStore = shim.useSyncExternalStore, useRef8 = React16.useRef, useEffect7 = React16.useEffect, useMemo6 = React16.useMemo, useDebugValue2 = React16.useDebugValue;
-    exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-      var instRef = useRef8(null);
-      if (instRef.current === null) {
-        var inst = { hasValue: false, value: null };
-        instRef.current = inst;
-      } else
-        inst = instRef.current;
-      instRef = useMemo6(function() {
-        function memoizedSelector(nextSnapshot) {
-          if (!hasMemo) {
-            hasMemo = true;
-            memoizedSnapshot = nextSnapshot;
-            nextSnapshot = selector(nextSnapshot);
-            if (isEqual !== undefined && inst.hasValue) {
-              var currentSelection = inst.value;
-              if (isEqual(currentSelection, nextSnapshot))
-                return memoizedSelection = currentSelection;
-            }
-            return memoizedSelection = nextSnapshot;
-          }
-          currentSelection = memoizedSelection;
-          if (objectIs(memoizedSnapshot, nextSnapshot))
-            return currentSelection;
-          var nextSelection = selector(nextSnapshot);
-          if (isEqual !== undefined && isEqual(currentSelection, nextSelection))
-            return memoizedSnapshot = nextSnapshot, currentSelection;
-          memoizedSnapshot = nextSnapshot;
-          return memoizedSelection = nextSelection;
-        }
-        var hasMemo = false, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = getServerSnapshot === undefined ? null : getServerSnapshot;
-        return [
-          function() {
-            return memoizedSelector(getSnapshot());
-          },
-          maybeGetServerSnapshot === null ? undefined : function() {
-            return memoizedSelector(maybeGetServerSnapshot());
-          }
-        ];
-      }, [getSnapshot, getServerSnapshot, selector, isEqual]);
-      var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
-      useEffect7(function() {
-        inst.hasValue = true;
-        inst.value = value;
-      }, [value]);
-      useDebugValue2(value);
-      return value;
-    };
-    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-  })();
-});
-
-// node_modules/use-sync-external-store/shim/with-selector.js
-var require_with_selector = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_with_selector_development();
-  }
-});
-
-// node_modules/react/cjs/react-jsx-dev-runtime.development.js
-var require_react_jsx_dev_runtime_development = __commonJS((exports) => {
-  var React43 = __toESM(require_react());
-  (function() {
-    function getComponentNameFromType(type) {
-      if (type == null)
-        return null;
-      if (typeof type === "function")
-        return type.$$typeof === REACT_CLIENT_REFERENCE ? null : type.displayName || type.name || null;
-      if (typeof type === "string")
-        return type;
-      switch (type) {
-        case REACT_FRAGMENT_TYPE:
-          return "Fragment";
-        case REACT_PROFILER_TYPE:
-          return "Profiler";
-        case REACT_STRICT_MODE_TYPE:
-          return "StrictMode";
-        case REACT_SUSPENSE_TYPE:
-          return "Suspense";
-        case REACT_SUSPENSE_LIST_TYPE:
-          return "SuspenseList";
-        case REACT_ACTIVITY_TYPE:
-          return "Activity";
-      }
-      if (typeof type === "object")
-        switch (typeof type.tag === "number" && console.error("Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."), type.$$typeof) {
-          case REACT_PORTAL_TYPE:
-            return "Portal";
-          case REACT_CONTEXT_TYPE:
-            return type.displayName || "Context";
-          case REACT_CONSUMER_TYPE:
-            return (type._context.displayName || "Context") + ".Consumer";
-          case REACT_FORWARD_REF_TYPE:
-            var innerType = type.render;
-            type = type.displayName;
-            type || (type = innerType.displayName || innerType.name || "", type = type !== "" ? "ForwardRef(" + type + ")" : "ForwardRef");
-            return type;
-          case REACT_MEMO_TYPE:
-            return innerType = type.displayName || null, innerType !== null ? innerType : getComponentNameFromType(type.type) || "Memo";
-          case REACT_LAZY_TYPE2:
-            innerType = type._payload;
-            type = type._init;
-            try {
-              return getComponentNameFromType(type(innerType));
-            } catch (x) {}
-        }
-      return null;
-    }
-    function testStringCoercion(value) {
-      return "" + value;
-    }
-    function checkKeyStringCoercion(value) {
-      try {
-        testStringCoercion(value);
-        var JSCompiler_inline_result = false;
-      } catch (e) {
-        JSCompiler_inline_result = true;
-      }
-      if (JSCompiler_inline_result) {
-        JSCompiler_inline_result = console;
-        var JSCompiler_temp_const = JSCompiler_inline_result.error;
-        var JSCompiler_inline_result$jscomp$0 = typeof Symbol === "function" && Symbol.toStringTag && value[Symbol.toStringTag] || value.constructor.name || "Object";
-        JSCompiler_temp_const.call(JSCompiler_inline_result, "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.", JSCompiler_inline_result$jscomp$0);
-        return testStringCoercion(value);
-      }
-    }
-    function getTaskName(type) {
-      if (type === REACT_FRAGMENT_TYPE)
-        return "<>";
-      if (typeof type === "object" && type !== null && type.$$typeof === REACT_LAZY_TYPE2)
-        return "<...>";
-      try {
-        var name = getComponentNameFromType(type);
-        return name ? "<" + name + ">" : "<...>";
-      } catch (x) {
-        return "<...>";
-      }
-    }
-    function getOwner() {
-      var dispatcher = ReactSharedInternals.A;
-      return dispatcher === null ? null : dispatcher.getOwner();
-    }
-    function UnknownOwner() {
-      return Error("react-stack-top-frame");
-    }
-    function hasValidKey(config) {
-      if (hasOwnProperty.call(config, "key")) {
-        var getter = Object.getOwnPropertyDescriptor(config, "key").get;
-        if (getter && getter.isReactWarning)
-          return false;
-      }
-      return config.key !== undefined;
-    }
-    function defineKeyPropWarningGetter(props, displayName) {
-      function warnAboutAccessingKey() {
-        specialPropKeyWarningShown || (specialPropKeyWarningShown = true, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", displayName));
-      }
-      warnAboutAccessingKey.isReactWarning = true;
-      Object.defineProperty(props, "key", {
-        get: warnAboutAccessingKey,
-        configurable: true
-      });
-    }
-    function elementRefGetterWithDeprecationWarning() {
-      var componentName = getComponentNameFromType(this.type);
-      didWarnAboutElementRef[componentName] || (didWarnAboutElementRef[componentName] = true, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."));
-      componentName = this.props.ref;
-      return componentName !== undefined ? componentName : null;
-    }
-    function ReactElement(type, key, props, owner, debugStack, debugTask) {
-      var refProp = props.ref;
-      type = {
-        $$typeof: REACT_ELEMENT_TYPE,
-        type,
-        key,
-        props,
-        _owner: owner
-      };
-      (refProp !== undefined ? refProp : null) !== null ? Object.defineProperty(type, "ref", {
-        enumerable: false,
-        get: elementRefGetterWithDeprecationWarning
-      }) : Object.defineProperty(type, "ref", { enumerable: false, value: null });
-      type._store = {};
-      Object.defineProperty(type._store, "validated", {
-        configurable: false,
-        enumerable: false,
-        writable: true,
-        value: 0
-      });
-      Object.defineProperty(type, "_debugInfo", {
-        configurable: false,
-        enumerable: false,
-        writable: true,
-        value: null
-      });
-      Object.defineProperty(type, "_debugStack", {
-        configurable: false,
-        enumerable: false,
-        writable: true,
-        value: debugStack
-      });
-      Object.defineProperty(type, "_debugTask", {
-        configurable: false,
-        enumerable: false,
-        writable: true,
-        value: debugTask
-      });
-      Object.freeze && (Object.freeze(type.props), Object.freeze(type));
-      return type;
-    }
-    function jsxDEVImpl(type, config, maybeKey, isStaticChildren, debugStack, debugTask) {
-      var children = config.children;
-      if (children !== undefined)
-        if (isStaticChildren)
-          if (isArrayImpl(children)) {
-            for (isStaticChildren = 0;isStaticChildren < children.length; isStaticChildren++)
-              validateChildKeys(children[isStaticChildren]);
-            Object.freeze && Object.freeze(children);
-          } else
-            console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
-        else
-          validateChildKeys(children);
-      if (hasOwnProperty.call(config, "key")) {
-        children = getComponentNameFromType(type);
-        var keys = Object.keys(config).filter(function(k) {
-          return k !== "key";
-        });
-        isStaticChildren = 0 < keys.length ? "{key: someKey, " + keys.join(": ..., ") + ": ...}" : "{key: someKey}";
-        didWarnAboutKeySpread[children + isStaticChildren] || (keys = 0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}", console.error(`A props object containing a "key" prop is being spread into JSX:
-  let props = %s;
-  <%s {...props} />
-React keys must be passed directly to JSX without using spread:
-  let props = %s;
-  <%s key={someKey} {...props} />`, isStaticChildren, children, keys, children), didWarnAboutKeySpread[children + isStaticChildren] = true);
-      }
-      children = null;
-      maybeKey !== undefined && (checkKeyStringCoercion(maybeKey), children = "" + maybeKey);
-      hasValidKey(config) && (checkKeyStringCoercion(config.key), children = "" + config.key);
-      if ("key" in config) {
-        maybeKey = {};
-        for (var propName in config)
-          propName !== "key" && (maybeKey[propName] = config[propName]);
-      } else
-        maybeKey = config;
-      children && defineKeyPropWarningGetter(maybeKey, typeof type === "function" ? type.displayName || type.name || "Unknown" : type);
-      return ReactElement(type, children, maybeKey, getOwner(), debugStack, debugTask);
-    }
-    function validateChildKeys(node) {
-      isValidElement3(node) ? node._store && (node._store.validated = 1) : typeof node === "object" && node !== null && node.$$typeof === REACT_LAZY_TYPE2 && (node._payload.status === "fulfilled" ? isValidElement3(node._payload.value) && node._payload.value._store && (node._payload.value._store.validated = 1) : node._store && (node._store.validated = 1));
-    }
-    function isValidElement3(object) {
-      return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
-    }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React43.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
-      return null;
-    };
-    React43 = {
-      react_stack_bottom_frame: function(callStackForError) {
-        return callStackForError();
-      }
-    };
-    var specialPropKeyWarningShown;
-    var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React43.react_stack_bottom_frame.bind(React43, UnknownOwner)();
+    var unknownOwnerDebugStack = React.react_stack_bottom_frame.bind(React, UnknownOwner)();
     var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
     var didWarnAboutKeySpread = {};
     exports.Fragment = REACT_FRAGMENT_TYPE;
@@ -17473,81 +17109,16820 @@ React keys must be passed directly to JSX without using spread:
 });
 
 // node_modules/react/jsx-dev-runtime.js
-var require_jsx_dev_runtime = __commonJS((exports, module) => {
+var require_jsx_dev_runtime = __commonJS(function(exports, module) {
   var react_jsx_dev_runtime_development = __toESM(require_react_jsx_dev_runtime_development());
   if (false) {} else {
     module.exports = react_jsx_dev_runtime_development;
   }
 });
 
-// src/bounty/surface/main.tsx
-var import_client = __toESM(require_client(), 1);
+// node_modules/highlight.js/lib/core.js
+var require_core = __commonJS(function(exports, module) {
+  function deepFreeze(obj) {
+    if (obj instanceof Map) {
+      obj.clear = obj.delete = obj.set = function() {
+        throw new Error("map is read-only");
+      };
+    } else if (obj instanceof Set) {
+      obj.add = obj.clear = obj.delete = function() {
+        throw new Error("set is read-only");
+      };
+    }
+    Object.freeze(obj);
+    Object.getOwnPropertyNames(obj).forEach((name) => {
+      const prop = obj[name];
+      const type = typeof prop;
+      if ((type === "object" || type === "function") && !Object.isFrozen(prop)) {
+        deepFreeze(prop);
+      }
+    });
+    return obj;
+  }
 
-// src/bounty/surface/App.tsx
-var import_react9 = __toESM(require_react(), 1);
+  class Response {
+    constructor(mode) {
+      if (mode.data === undefined)
+        mode.data = {};
+      this.data = mode.data;
+      this.isMatchIgnored = false;
+    }
+    ignoreMatch() {
+      this.isMatchIgnored = true;
+    }
+  }
+  function escapeHTML(value) {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+  }
+  function inherit$1(original, ...objects) {
+    const result = Object.create(null);
+    for (const key in original) {
+      result[key] = original[key];
+    }
+    objects.forEach(function(obj) {
+      for (const key in obj) {
+        result[key] = obj[key];
+      }
+    });
+    return result;
+  }
+  var SPAN_CLOSE = "</span>";
+  var emitsWrappingTags = (node) => {
+    return !!node.scope;
+  };
+  var scopeToCSSClass = (name, { prefix }) => {
+    if (name.startsWith("language:")) {
+      return name.replace("language:", "language-");
+    }
+    if (name.includes(".")) {
+      const pieces = name.split(".");
+      return [
+        `${prefix}${pieces.shift()}`,
+        ...pieces.map((x, i) => `${x}${"_".repeat(i + 1)}`)
+      ].join(" ");
+    }
+    return `${prefix}${name}`;
+  };
 
-// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
-var exports_index_parts = {};
-__export(exports_index_parts, {
-  createHandle: () => createAlertDialogHandle,
-  Viewport: () => DialogViewport,
-  Trigger: () => AlertDialogTrigger,
-  Title: () => DialogTitle,
-  Root: () => AlertDialogRoot,
-  Portal: () => DialogPortal,
-  Popup: () => DialogPopup,
-  Handle: () => AlertDialogHandle,
-  Description: () => DialogDescription,
-  Close: () => DialogClose,
-  Backdrop: () => DialogBackdrop
+  class HTMLRenderer {
+    constructor(parseTree, options) {
+      this.buffer = "";
+      this.classPrefix = options.classPrefix;
+      parseTree.walk(this);
+    }
+    addText(text) {
+      this.buffer += escapeHTML(text);
+    }
+    openNode(node) {
+      if (!emitsWrappingTags(node))
+        return;
+      const className = scopeToCSSClass(node.scope, { prefix: this.classPrefix });
+      this.span(className);
+    }
+    closeNode(node) {
+      if (!emitsWrappingTags(node))
+        return;
+      this.buffer += SPAN_CLOSE;
+    }
+    value() {
+      return this.buffer;
+    }
+    span(className) {
+      this.buffer += `<span class="${className}">`;
+    }
+  }
+  var newNode = (opts = {}) => {
+    const result = { children: [] };
+    Object.assign(result, opts);
+    return result;
+  };
+
+  class TokenTree {
+    constructor() {
+      this.rootNode = newNode();
+      this.stack = [this.rootNode];
+    }
+    get top() {
+      return this.stack[this.stack.length - 1];
+    }
+    get root() {
+      return this.rootNode;
+    }
+    add(node) {
+      this.top.children.push(node);
+    }
+    openNode(scope) {
+      const node = newNode({ scope });
+      this.add(node);
+      this.stack.push(node);
+    }
+    closeNode() {
+      if (this.stack.length > 1) {
+        return this.stack.pop();
+      }
+      return;
+    }
+    closeAllNodes() {
+      while (this.closeNode())
+        ;
+    }
+    toJSON() {
+      return JSON.stringify(this.rootNode, null, 4);
+    }
+    walk(builder) {
+      return this.constructor._walk(builder, this.rootNode);
+    }
+    static _walk(builder, node) {
+      if (typeof node === "string") {
+        builder.addText(node);
+      } else if (node.children) {
+        builder.openNode(node);
+        node.children.forEach((child) => this._walk(builder, child));
+        builder.closeNode(node);
+      }
+      return builder;
+    }
+    static _collapse(node) {
+      if (typeof node === "string")
+        return;
+      if (!node.children)
+        return;
+      if (node.children.every((el) => typeof el === "string")) {
+        node.children = [node.children.join("")];
+      } else {
+        node.children.forEach((child) => {
+          TokenTree._collapse(child);
+        });
+      }
+    }
+  }
+
+  class TokenTreeEmitter extends TokenTree {
+    constructor(options) {
+      super();
+      this.options = options;
+    }
+    addText(text) {
+      if (text === "") {
+        return;
+      }
+      this.add(text);
+    }
+    startScope(scope) {
+      this.openNode(scope);
+    }
+    endScope() {
+      this.closeNode();
+    }
+    __addSublanguage(emitter, name) {
+      const node = emitter.root;
+      if (name)
+        node.scope = `language:${name}`;
+      this.add(node);
+    }
+    toHTML() {
+      const renderer = new HTMLRenderer(this, this.options);
+      return renderer.value();
+    }
+    finalize() {
+      this.closeAllNodes();
+      return true;
+    }
+  }
+  function source(re) {
+    if (!re)
+      return null;
+    if (typeof re === "string")
+      return re;
+    return re.source;
+  }
+  function lookahead(re) {
+    return concat("(?=", re, ")");
+  }
+  function anyNumberOfTimes(re) {
+    return concat("(?:", re, ")*");
+  }
+  function optional(re) {
+    return concat("(?:", re, ")?");
+  }
+  function concat(...args) {
+    const joined = args.map((x) => source(x)).join("");
+    return joined;
+  }
+  function stripOptionsFromArgs(args) {
+    const opts = args[args.length - 1];
+    if (typeof opts === "object" && opts.constructor === Object) {
+      args.splice(args.length - 1, 1);
+      return opts;
+    } else {
+      return {};
+    }
+  }
+  function either(...args) {
+    const opts = stripOptionsFromArgs(args);
+    const joined = "(" + (opts.capture ? "" : "?:") + args.map((x) => source(x)).join("|") + ")";
+    return joined;
+  }
+  function countMatchGroups(re) {
+    return new RegExp(re.toString() + "|").exec("").length - 1;
+  }
+  function startsWith(re, lexeme) {
+    const match = re && re.exec(lexeme);
+    return match && match.index === 0;
+  }
+  var BACKREF_RE = new RegExp(either(/\[(?:[^\\\]]|\\.)*\]/, /\(\?<(?![=!])[^>]+>/, /\(\?'[^']+'/, /\(\??/, /\\([1-9][0-9]*)/, /\\./));
+  function _rewriteBackreferences(regexps, { joinWith }) {
+    let numCaptures = 0;
+    return regexps.map((regex) => {
+      numCaptures += 1;
+      const offset = numCaptures;
+      let re = source(regex);
+      let out = "";
+      while (re.length > 0) {
+        const match = BACKREF_RE.exec(re);
+        if (!match) {
+          out += re;
+          break;
+        }
+        out += re.substring(0, match.index);
+        re = re.substring(match.index + match[0].length);
+        if (match[0][0] === "\\" && match[1]) {
+          out += "\\" + String(Number(match[1]) + offset);
+        } else {
+          out += match[0];
+          if (match[0] === "(" || /^\(\?[<']/.test(match[0])) {
+            numCaptures++;
+          }
+        }
+      }
+      return out;
+    }).map((re) => `(${re})`).join(joinWith);
+  }
+  var MATCH_NOTHING_RE = /\b\B/;
+  var IDENT_RE = "[a-zA-Z]\\w*";
+  var UNDERSCORE_IDENT_RE = "[a-zA-Z_]\\w*";
+  var NUMBER_RE = "\\b\\d+(\\.\\d+)?";
+  var C_NUMBER_RE = "(-?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";
+  var BINARY_NUMBER_RE = "\\b(0b[01]+)";
+  var RE_STARTERS_RE = "!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|-|-=|/=|/|:|;|<<|<<=|<=|<|===|==|=|>>>=|>>=|>=|>>>|>>|>|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";
+  var SHEBANG = (opts = {}) => {
+    const beginShebang = /^#![ ]*\//;
+    if (opts.binary) {
+      opts.begin = concat(beginShebang, /.*\b/, opts.binary, /\b.*/);
+    }
+    return inherit$1({
+      scope: "meta",
+      begin: beginShebang,
+      end: /$/,
+      relevance: 0,
+      "on:begin": (m, resp) => {
+        if (m.index !== 0)
+          resp.ignoreMatch();
+      }
+    }, opts);
+  };
+  var BACKSLASH_ESCAPE = {
+    begin: "\\\\[\\s\\S]",
+    relevance: 0
+  };
+  var APOS_STRING_MODE = {
+    scope: "string",
+    begin: "'",
+    end: "'",
+    illegal: "\\n",
+    contains: [BACKSLASH_ESCAPE]
+  };
+  var QUOTE_STRING_MODE = {
+    scope: "string",
+    begin: '"',
+    end: '"',
+    illegal: "\\n",
+    contains: [BACKSLASH_ESCAPE]
+  };
+  var PHRASAL_WORDS_MODE = {
+    begin: /\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/
+  };
+  var COMMENT = function(begin, end, modeOptions = {}) {
+    const mode = inherit$1({
+      scope: "comment",
+      begin,
+      end,
+      contains: []
+    }, modeOptions);
+    mode.contains.push({
+      scope: "doctag",
+      begin: "[ ]*(?=(TODO|FIXME|NOTE|BUG|OPTIMIZE|HACK|XXX):)",
+      end: /(TODO|FIXME|NOTE|BUG|OPTIMIZE|HACK|XXX):/,
+      excludeBegin: true,
+      relevance: 0
+    });
+    const ENGLISH_WORD = either("I", "a", "is", "so", "us", "to", "at", "if", "in", "it", "on", /[A-Za-z]+['](d|ve|re|ll|t|s|n)/, /[A-Za-z]+[-][a-z]+/, /[A-Za-z][a-z]{2,}/);
+    mode.contains.push({
+      begin: concat(/[ ]+/, "(", ENGLISH_WORD, /[.]?[:]?([.][ ]|[ ])/, "){3}")
+    });
+    return mode;
+  };
+  var C_LINE_COMMENT_MODE = COMMENT("//", "$");
+  var C_BLOCK_COMMENT_MODE = COMMENT("/\\*", "\\*/");
+  var HASH_COMMENT_MODE = COMMENT("#", "$");
+  var NUMBER_MODE = {
+    scope: "number",
+    begin: NUMBER_RE,
+    relevance: 0
+  };
+  var C_NUMBER_MODE = {
+    scope: "number",
+    begin: C_NUMBER_RE,
+    relevance: 0
+  };
+  var BINARY_NUMBER_MODE = {
+    scope: "number",
+    begin: BINARY_NUMBER_RE,
+    relevance: 0
+  };
+  var REGEXP_MODE = {
+    scope: "regexp",
+    begin: /\/(?=[^/\n]*\/)/,
+    end: /\/[gimuy]*/,
+    contains: [
+      BACKSLASH_ESCAPE,
+      {
+        begin: /\[/,
+        end: /\]/,
+        relevance: 0,
+        contains: [BACKSLASH_ESCAPE]
+      }
+    ]
+  };
+  var TITLE_MODE = {
+    scope: "title",
+    begin: IDENT_RE,
+    relevance: 0
+  };
+  var UNDERSCORE_TITLE_MODE = {
+    scope: "title",
+    begin: UNDERSCORE_IDENT_RE,
+    relevance: 0
+  };
+  var METHOD_GUARD = {
+    begin: "\\.\\s*" + UNDERSCORE_IDENT_RE,
+    relevance: 0
+  };
+  var END_SAME_AS_BEGIN = function(mode) {
+    return Object.assign(mode, {
+      "on:begin": (m, resp) => {
+        resp.data._beginMatch = m[1];
+      },
+      "on:end": (m, resp) => {
+        if (resp.data._beginMatch !== m[1])
+          resp.ignoreMatch();
+      }
+    });
+  };
+  var MODES = /* @__PURE__ */ Object.freeze({
+    __proto__: null,
+    APOS_STRING_MODE,
+    BACKSLASH_ESCAPE,
+    BINARY_NUMBER_MODE,
+    BINARY_NUMBER_RE,
+    COMMENT,
+    C_BLOCK_COMMENT_MODE,
+    C_LINE_COMMENT_MODE,
+    C_NUMBER_MODE,
+    C_NUMBER_RE,
+    END_SAME_AS_BEGIN,
+    HASH_COMMENT_MODE,
+    IDENT_RE,
+    MATCH_NOTHING_RE,
+    METHOD_GUARD,
+    NUMBER_MODE,
+    NUMBER_RE,
+    PHRASAL_WORDS_MODE,
+    QUOTE_STRING_MODE,
+    REGEXP_MODE,
+    RE_STARTERS_RE,
+    SHEBANG,
+    TITLE_MODE,
+    UNDERSCORE_IDENT_RE,
+    UNDERSCORE_TITLE_MODE
+  });
+  function skipIfHasPrecedingDot(match, response) {
+    const before = match.input[match.index - 1];
+    if (before === ".") {
+      response.ignoreMatch();
+    }
+  }
+  function scopeClassName(mode, _parent) {
+    if (mode.className !== undefined) {
+      mode.scope = mode.className;
+      delete mode.className;
+    }
+  }
+  function beginKeywords(mode, parent) {
+    if (!parent)
+      return;
+    if (!mode.beginKeywords)
+      return;
+    mode.begin = "\\b(" + mode.beginKeywords.split(" ").join("|") + ")(?!\\.)(?=\\b|\\s)";
+    mode.__beforeBegin = skipIfHasPrecedingDot;
+    mode.keywords = mode.keywords || mode.beginKeywords;
+    delete mode.beginKeywords;
+    if (mode.relevance === undefined)
+      mode.relevance = 0;
+  }
+  function compileIllegal(mode, _parent) {
+    if (!Array.isArray(mode.illegal))
+      return;
+    mode.illegal = either(...mode.illegal);
+  }
+  function compileMatch(mode, _parent) {
+    if (!mode.match)
+      return;
+    if (mode.begin || mode.end)
+      throw new Error("begin & end are not supported with match");
+    mode.begin = mode.match;
+    delete mode.match;
+  }
+  function compileRelevance(mode, _parent) {
+    if (mode.relevance === undefined)
+      mode.relevance = 1;
+  }
+  var beforeMatchExt = (mode, parent) => {
+    if (!mode.beforeMatch)
+      return;
+    if (mode.starts)
+      throw new Error("beforeMatch cannot be used with starts");
+    const originalMode = Object.assign({}, mode);
+    Object.keys(mode).forEach((key) => {
+      delete mode[key];
+    });
+    mode.keywords = originalMode.keywords;
+    mode.begin = concat(originalMode.beforeMatch, lookahead(originalMode.begin));
+    mode.starts = {
+      relevance: 0,
+      contains: [
+        Object.assign(originalMode, { endsParent: true })
+      ]
+    };
+    mode.relevance = 0;
+    delete originalMode.beforeMatch;
+  };
+  var COMMON_KEYWORDS = [
+    "of",
+    "and",
+    "for",
+    "in",
+    "not",
+    "or",
+    "if",
+    "then",
+    "parent",
+    "list",
+    "value"
+  ];
+  var DEFAULT_KEYWORD_SCOPE = "keyword";
+  function compileKeywords(rawKeywords, caseInsensitive, scopeName = DEFAULT_KEYWORD_SCOPE) {
+    const compiledKeywords = Object.create(null);
+    if (typeof rawKeywords === "string") {
+      compileList(scopeName, rawKeywords.split(" "));
+    } else if (Array.isArray(rawKeywords)) {
+      compileList(scopeName, rawKeywords);
+    } else {
+      Object.keys(rawKeywords).forEach(function(scopeName2) {
+        Object.assign(compiledKeywords, compileKeywords(rawKeywords[scopeName2], caseInsensitive, scopeName2));
+      });
+    }
+    return compiledKeywords;
+    function compileList(scopeName2, keywordList) {
+      if (caseInsensitive) {
+        keywordList = keywordList.map((x) => x.toLowerCase());
+      }
+      keywordList.forEach(function(keyword) {
+        const pair = keyword.split("|");
+        compiledKeywords[pair[0]] = [scopeName2, scoreForKeyword(pair[0], pair[1])];
+      });
+    }
+  }
+  function scoreForKeyword(keyword, providedScore) {
+    if (providedScore) {
+      return Number(providedScore);
+    }
+    return commonKeyword(keyword) ? 0 : 1;
+  }
+  function commonKeyword(keyword) {
+    return COMMON_KEYWORDS.includes(keyword.toLowerCase());
+  }
+  var seenDeprecations = {};
+  var error = (message) => {
+    console.error(message);
+  };
+  var warn = (message, ...args) => {
+    console.log(`WARN: ${message}`, ...args);
+  };
+  var deprecated = (version2, message) => {
+    if (seenDeprecations[`${version2}/${message}`])
+      return;
+    console.log(`Deprecated as of ${version2}. ${message}`);
+    seenDeprecations[`${version2}/${message}`] = true;
+  };
+  var MultiClassError = new Error;
+  function remapScopeNames(mode, regexes, { key }) {
+    let offset = 0;
+    const scopeNames = mode[key];
+    const emit = {};
+    const positions = {};
+    for (let i = 1;i <= regexes.length; i++) {
+      positions[i + offset] = scopeNames[i];
+      emit[i + offset] = true;
+      offset += countMatchGroups(regexes[i - 1]);
+    }
+    mode[key] = positions;
+    mode[key]._emit = emit;
+    mode[key]._multi = true;
+  }
+  function beginMultiClass(mode) {
+    if (!Array.isArray(mode.begin))
+      return;
+    if (mode.skip || mode.excludeBegin || mode.returnBegin) {
+      error("skip, excludeBegin, returnBegin not compatible with beginScope: {}");
+      throw MultiClassError;
+    }
+    if (typeof mode.beginScope !== "object" || mode.beginScope === null) {
+      error("beginScope must be object");
+      throw MultiClassError;
+    }
+    remapScopeNames(mode, mode.begin, { key: "beginScope" });
+    mode.begin = _rewriteBackreferences(mode.begin, { joinWith: "" });
+  }
+  function endMultiClass(mode) {
+    if (!Array.isArray(mode.end))
+      return;
+    if (mode.skip || mode.excludeEnd || mode.returnEnd) {
+      error("skip, excludeEnd, returnEnd not compatible with endScope: {}");
+      throw MultiClassError;
+    }
+    if (typeof mode.endScope !== "object" || mode.endScope === null) {
+      error("endScope must be object");
+      throw MultiClassError;
+    }
+    remapScopeNames(mode, mode.end, { key: "endScope" });
+    mode.end = _rewriteBackreferences(mode.end, { joinWith: "" });
+  }
+  function scopeSugar(mode) {
+    if (mode.scope && typeof mode.scope === "object" && mode.scope !== null) {
+      mode.beginScope = mode.scope;
+      delete mode.scope;
+    }
+  }
+  function MultiClass(mode) {
+    scopeSugar(mode);
+    if (typeof mode.beginScope === "string") {
+      mode.beginScope = { _wrap: mode.beginScope };
+    }
+    if (typeof mode.endScope === "string") {
+      mode.endScope = { _wrap: mode.endScope };
+    }
+    beginMultiClass(mode);
+    endMultiClass(mode);
+  }
+  function compileLanguage(language) {
+    function langRe(value, global) {
+      return new RegExp(source(value), "m" + (language.case_insensitive ? "i" : "") + (language.unicodeRegex ? "u" : "") + (global ? "g" : ""));
+    }
+
+    class MultiRegex {
+      constructor() {
+        this.matchIndexes = {};
+        this.regexes = [];
+        this.matchAt = 1;
+        this.position = 0;
+      }
+      addRule(re, opts) {
+        opts.position = this.position++;
+        this.matchIndexes[this.matchAt] = opts;
+        this.regexes.push([opts, re]);
+        this.matchAt += countMatchGroups(re) + 1;
+      }
+      compile() {
+        if (this.regexes.length === 0) {
+          this.exec = () => null;
+        }
+        const terminators = this.regexes.map((el) => el[1]);
+        this.matcherRe = langRe(_rewriteBackreferences(terminators, { joinWith: "|" }), true);
+        this.lastIndex = 0;
+      }
+      exec(s) {
+        this.matcherRe.lastIndex = this.lastIndex;
+        const match = this.matcherRe.exec(s);
+        if (!match) {
+          return null;
+        }
+        const i = match.findIndex((el, i2) => i2 > 0 && el !== undefined);
+        const matchData = this.matchIndexes[i];
+        match.splice(0, i);
+        return Object.assign(match, matchData);
+      }
+    }
+
+    class ResumableMultiRegex {
+      constructor() {
+        this.rules = [];
+        this.multiRegexes = [];
+        this.count = 0;
+        this.lastIndex = 0;
+        this.regexIndex = 0;
+      }
+      getMatcher(index) {
+        if (this.multiRegexes[index])
+          return this.multiRegexes[index];
+        const matcher = new MultiRegex;
+        this.rules.slice(index).forEach(([re, opts]) => matcher.addRule(re, opts));
+        matcher.compile();
+        this.multiRegexes[index] = matcher;
+        return matcher;
+      }
+      resumingScanAtSamePosition() {
+        return this.regexIndex !== 0;
+      }
+      considerAll() {
+        this.regexIndex = 0;
+      }
+      addRule(re, opts) {
+        this.rules.push([re, opts]);
+        if (opts.type === "begin")
+          this.count++;
+      }
+      exec(s) {
+        const m = this.getMatcher(this.regexIndex);
+        m.lastIndex = this.lastIndex;
+        let result = m.exec(s);
+        if (this.resumingScanAtSamePosition()) {
+          if (result && result.index === this.lastIndex)
+            ;
+          else {
+            const m2 = this.getMatcher(0);
+            m2.lastIndex = this.lastIndex + 1;
+            result = m2.exec(s);
+          }
+        }
+        if (result) {
+          this.regexIndex += result.position + 1;
+          if (this.regexIndex === this.count) {
+            this.considerAll();
+          }
+        }
+        return result;
+      }
+    }
+    function buildModeRegex(mode) {
+      const mm = new ResumableMultiRegex;
+      mode.contains.forEach((term) => mm.addRule(term.begin, { rule: term, type: "begin" }));
+      if (mode.terminatorEnd) {
+        mm.addRule(mode.terminatorEnd, { type: "end" });
+      }
+      if (mode.illegal) {
+        mm.addRule(mode.illegal, { type: "illegal" });
+      }
+      return mm;
+    }
+    function compileMode(mode, parent) {
+      const cmode = mode;
+      if (mode.isCompiled)
+        return cmode;
+      [
+        scopeClassName,
+        compileMatch,
+        MultiClass,
+        beforeMatchExt
+      ].forEach((ext) => ext(mode, parent));
+      language.compilerExtensions.forEach((ext) => ext(mode, parent));
+      mode.__beforeBegin = null;
+      [
+        beginKeywords,
+        compileIllegal,
+        compileRelevance
+      ].forEach((ext) => ext(mode, parent));
+      mode.isCompiled = true;
+      let keywordPattern = null;
+      if (typeof mode.keywords === "object" && mode.keywords.$pattern) {
+        mode.keywords = Object.assign({}, mode.keywords);
+        keywordPattern = mode.keywords.$pattern;
+        delete mode.keywords.$pattern;
+      }
+      keywordPattern = keywordPattern || /\w+/;
+      if (mode.keywords) {
+        mode.keywords = compileKeywords(mode.keywords, language.case_insensitive);
+      }
+      cmode.keywordPatternRe = langRe(keywordPattern, true);
+      if (parent) {
+        if (!mode.begin)
+          mode.begin = /\B|\b/;
+        cmode.beginRe = langRe(cmode.begin);
+        if (!mode.end && !mode.endsWithParent)
+          mode.end = /\B|\b/;
+        if (mode.end)
+          cmode.endRe = langRe(cmode.end);
+        cmode.terminatorEnd = source(cmode.end) || "";
+        if (mode.endsWithParent && parent.terminatorEnd) {
+          cmode.terminatorEnd += (mode.end ? "|" : "") + parent.terminatorEnd;
+        }
+      }
+      if (mode.illegal)
+        cmode.illegalRe = langRe(mode.illegal);
+      if (!mode.contains)
+        mode.contains = [];
+      mode.contains = [].concat(...mode.contains.map(function(c) {
+        return expandOrCloneMode(c === "self" ? mode : c);
+      }));
+      mode.contains.forEach(function(c) {
+        compileMode(c, cmode);
+      });
+      if (mode.starts) {
+        compileMode(mode.starts, parent);
+      }
+      cmode.matcher = buildModeRegex(cmode);
+      return cmode;
+    }
+    if (!language.compilerExtensions)
+      language.compilerExtensions = [];
+    if (language.contains && language.contains.includes("self")) {
+      throw new Error("ERR: contains `self` is not supported at the top-level of a language.  See documentation.");
+    }
+    language.classNameAliases = inherit$1(language.classNameAliases || {});
+    return compileMode(language);
+  }
+  function dependencyOnParent(mode) {
+    if (!mode)
+      return false;
+    return mode.endsWithParent || dependencyOnParent(mode.starts);
+  }
+  function expandOrCloneMode(mode) {
+    if (mode.variants && !mode.cachedVariants) {
+      mode.cachedVariants = mode.variants.map(function(variant) {
+        return inherit$1(mode, { variants: null }, variant);
+      });
+    }
+    if (mode.cachedVariants) {
+      return mode.cachedVariants;
+    }
+    if (dependencyOnParent(mode)) {
+      return inherit$1(mode, { starts: mode.starts ? inherit$1(mode.starts) : null });
+    }
+    if (Object.isFrozen(mode)) {
+      return inherit$1(mode);
+    }
+    return mode;
+  }
+  var version = "11.12.0";
+
+  class HTMLInjectionError extends Error {
+    constructor(reason, html) {
+      super(reason);
+      this.name = "HTMLInjectionError";
+      this.html = html;
+    }
+  }
+  var escape = escapeHTML;
+  var inherit = inherit$1;
+  var NO_MATCH = Symbol("nomatch");
+  var MAX_KEYWORD_HITS = 7;
+  var HLJS = function(hljs) {
+    const languages = Object.create(null);
+    const aliases = Object.create(null);
+    const plugins = [];
+    let SAFE_MODE = true;
+    const LANGUAGE_NOT_FOUND = "Could not find the language '{}', did you forget to load/include a language module?";
+    const PLAINTEXT_LANGUAGE = { disableAutodetect: true, name: "Plain text", contains: [] };
+    let options = {
+      ignoreUnescapedHTML: false,
+      throwUnescapedHTML: false,
+      noHighlightRe: /^(no-?highlight)$/i,
+      languageDetectRe: /\blang(?:uage)?-([\w-]+)\b/i,
+      classPrefix: "hljs-",
+      cssSelector: "pre code",
+      languages: null,
+      __emitter: TokenTreeEmitter
+    };
+    function shouldNotHighlight(languageName) {
+      return options.noHighlightRe.test(languageName);
+    }
+    function blockLanguage(block) {
+      let classes = block.className + " ";
+      classes += block.parentNode ? block.parentNode.className : "";
+      const match = options.languageDetectRe.exec(classes);
+      if (match) {
+        const language = getLanguage(match[1]);
+        if (!language) {
+          warn(LANGUAGE_NOT_FOUND.replace("{}", match[1]));
+          warn("Falling back to no-highlight mode for this block.", block);
+        }
+        return language ? match[1] : "no-highlight";
+      }
+      return classes.split(/\s+/).find((_class) => shouldNotHighlight(_class) || getLanguage(_class));
+    }
+    function highlight2(codeOrLanguageName, optionsOrCode, ignoreIllegals) {
+      let code = "";
+      let languageName = "";
+      if (typeof optionsOrCode === "object") {
+        code = codeOrLanguageName;
+        ignoreIllegals = optionsOrCode.ignoreIllegals;
+        languageName = optionsOrCode.language;
+      } else {
+        deprecated("10.7.0", "highlight(lang, code, ...args) has been deprecated.");
+        deprecated("10.7.0", `Please use highlight(code, options) instead.
+https://github.com/highlightjs/highlight.js/issues/2277`);
+        languageName = codeOrLanguageName;
+        code = optionsOrCode;
+      }
+      if (ignoreIllegals === undefined) {
+        ignoreIllegals = true;
+      }
+      const context = {
+        code,
+        language: languageName
+      };
+      fire("before:highlight", context);
+      const result = context.result ? context.result : _highlight(context.language, context.code, ignoreIllegals);
+      result.code = context.code;
+      fire("after:highlight", result);
+      return result;
+    }
+    function _highlight(languageName, codeToHighlight, ignoreIllegals, continuation) {
+      const keywordHits = Object.create(null);
+      function keywordData(mode, matchText) {
+        return mode.keywords[matchText];
+      }
+      function processKeywords() {
+        if (!top.keywords) {
+          emitter.addText(modeBuffer);
+          return;
+        }
+        let lastIndex = 0;
+        top.keywordPatternRe.lastIndex = 0;
+        let match = top.keywordPatternRe.exec(modeBuffer);
+        let buf = "";
+        while (match) {
+          buf += modeBuffer.substring(lastIndex, match.index);
+          const word = language.case_insensitive ? match[0].toLowerCase() : match[0];
+          const data = keywordData(top, word);
+          if (data) {
+            const [kind, keywordRelevance] = data;
+            emitter.addText(buf);
+            buf = "";
+            keywordHits[word] = (keywordHits[word] || 0) + 1;
+            if (keywordHits[word] <= MAX_KEYWORD_HITS)
+              relevance += keywordRelevance;
+            if (kind.startsWith("_")) {
+              buf += match[0];
+            } else {
+              const cssClass = language.classNameAliases[kind] || kind;
+              emitKeyword(match[0], cssClass);
+            }
+          } else {
+            buf += match[0];
+          }
+          lastIndex = top.keywordPatternRe.lastIndex;
+          match = top.keywordPatternRe.exec(modeBuffer);
+        }
+        buf += modeBuffer.substring(lastIndex);
+        emitter.addText(buf);
+      }
+      function processSubLanguage() {
+        if (modeBuffer === "")
+          return;
+        let result2 = null;
+        if (typeof top.subLanguage === "string") {
+          if (!languages[top.subLanguage]) {
+            emitter.addText(modeBuffer);
+            return;
+          }
+          result2 = _highlight(top.subLanguage, modeBuffer, true, continuations[top.subLanguage]);
+          continuations[top.subLanguage] = result2._top;
+        } else {
+          result2 = highlightAuto(modeBuffer, top.subLanguage.length ? top.subLanguage : null);
+        }
+        if (top.relevance > 0) {
+          relevance += result2.relevance;
+        }
+        emitter.__addSublanguage(result2._emitter, result2.language);
+      }
+      function processBuffer() {
+        if (top.subLanguage != null) {
+          processSubLanguage();
+        } else {
+          processKeywords();
+        }
+        modeBuffer = "";
+      }
+      function emitKeyword(keyword, scope) {
+        if (keyword === "")
+          return;
+        emitter.startScope(scope);
+        emitter.addText(keyword);
+        emitter.endScope();
+      }
+      function emitMultiClass(scope, match) {
+        let i = 1;
+        const max = match.length - 1;
+        while (i <= max) {
+          if (!scope._emit[i]) {
+            i++;
+            continue;
+          }
+          const klass = language.classNameAliases[scope[i]] || scope[i];
+          const text = match[i];
+          if (klass) {
+            emitKeyword(text, klass);
+          } else {
+            modeBuffer = text;
+            processKeywords();
+            modeBuffer = "";
+          }
+          i++;
+        }
+      }
+      function startNewMode(mode, match) {
+        if (mode.scope && typeof mode.scope === "string") {
+          emitter.openNode(language.classNameAliases[mode.scope] || mode.scope);
+        }
+        if (mode.beginScope) {
+          if (mode.beginScope._wrap) {
+            emitKeyword(modeBuffer, language.classNameAliases[mode.beginScope._wrap] || mode.beginScope._wrap);
+            modeBuffer = "";
+          } else if (mode.beginScope._multi) {
+            emitMultiClass(mode.beginScope, match);
+            modeBuffer = "";
+          }
+        }
+        top = Object.create(mode, { parent: { value: top } });
+        return top;
+      }
+      function endOfMode(mode, match, matchPlusRemainder) {
+        let matched = startsWith(mode.endRe, matchPlusRemainder);
+        if (matched) {
+          if (mode["on:end"]) {
+            const resp = new Response(mode);
+            mode["on:end"](match, resp);
+            if (resp.isMatchIgnored)
+              matched = false;
+          }
+          if (matched) {
+            while (mode.endsParent && mode.parent) {
+              mode = mode.parent;
+            }
+            return mode;
+          }
+        }
+        if (mode.endsWithParent) {
+          return endOfMode(mode.parent, match, matchPlusRemainder);
+        }
+      }
+      function doIgnore(lexeme) {
+        if (top.matcher.regexIndex === 0) {
+          modeBuffer += lexeme[0];
+          return 1;
+        } else {
+          resumeScanAtSamePosition = true;
+          return 0;
+        }
+      }
+      function doBeginMatch(match) {
+        const lexeme = match[0];
+        const newMode = match.rule;
+        const resp = new Response(newMode);
+        const beforeCallbacks = [newMode.__beforeBegin, newMode["on:begin"]];
+        for (const cb of beforeCallbacks) {
+          if (!cb)
+            continue;
+          cb(match, resp);
+          if (resp.isMatchIgnored)
+            return doIgnore(lexeme);
+        }
+        if (newMode.skip) {
+          modeBuffer += lexeme;
+        } else {
+          if (newMode.excludeBegin) {
+            modeBuffer += lexeme;
+          }
+          processBuffer();
+          if (!newMode.returnBegin && !newMode.excludeBegin) {
+            modeBuffer = lexeme;
+          }
+        }
+        startNewMode(newMode, match);
+        return newMode.returnBegin ? 0 : lexeme.length;
+      }
+      function doEndMatch(match) {
+        const lexeme = match[0];
+        const matchPlusRemainder = codeToHighlight.substring(match.index);
+        const endMode = endOfMode(top, match, matchPlusRemainder);
+        if (!endMode) {
+          return NO_MATCH;
+        }
+        const origin = top;
+        if (top.endScope && top.endScope._wrap) {
+          processBuffer();
+          emitKeyword(lexeme, top.endScope._wrap);
+        } else if (top.endScope && top.endScope._multi) {
+          processBuffer();
+          emitMultiClass(top.endScope, match);
+        } else if (origin.skip) {
+          modeBuffer += lexeme;
+        } else {
+          if (!(origin.returnEnd || origin.excludeEnd)) {
+            modeBuffer += lexeme;
+          }
+          processBuffer();
+          if (origin.excludeEnd) {
+            modeBuffer = lexeme;
+          }
+        }
+        do {
+          if (top.scope) {
+            emitter.closeNode();
+          }
+          if (!top.skip && !top.subLanguage) {
+            relevance += top.relevance;
+          }
+          top = top.parent;
+        } while (top !== endMode.parent);
+        if (endMode.starts) {
+          startNewMode(endMode.starts, match);
+        }
+        return origin.returnEnd ? 0 : lexeme.length;
+      }
+      function processContinuations() {
+        const list = [];
+        for (let current = top;current !== language; current = current.parent) {
+          if (current.scope) {
+            list.unshift(current.scope);
+          }
+        }
+        list.forEach((item) => emitter.openNode(item));
+      }
+      let lastMatch = {};
+      function processLexeme(textBeforeMatch, match) {
+        const lexeme = match && match[0];
+        modeBuffer += textBeforeMatch;
+        if (lexeme == null) {
+          processBuffer();
+          return 0;
+        }
+        if (lastMatch.type === "begin" && match.type === "end" && lastMatch.index === match.index && lexeme === "") {
+          modeBuffer += codeToHighlight.slice(match.index, match.index + 1);
+          if (!SAFE_MODE) {
+            const err = new Error(`0 width match regex (${languageName})`);
+            err.languageName = languageName;
+            err.badRule = lastMatch.rule;
+            throw err;
+          }
+          return 1;
+        }
+        lastMatch = match;
+        if (match.type === "begin") {
+          return doBeginMatch(match);
+        } else if (match.type === "illegal" && !ignoreIllegals) {
+          const err = new Error('Illegal lexeme "' + lexeme + '" for mode "' + (top.scope || "<unnamed>") + '"');
+          err.mode = top;
+          throw err;
+        } else if (match.type === "end") {
+          const processed = doEndMatch(match);
+          if (processed !== NO_MATCH) {
+            return processed;
+          }
+        }
+        if (match.type === "illegal" && lexeme === "") {
+          if (match.index === codeToHighlight.length)
+            ;
+          else {
+            modeBuffer += `
+`;
+          }
+          return 1;
+        }
+        if (iterations > 1e5 && iterations > match.index * 3) {
+          const err = new Error("potential infinite loop, way more iterations than matches");
+          throw err;
+        }
+        modeBuffer += lexeme;
+        return lexeme.length;
+      }
+      const language = getLanguage(languageName);
+      if (!language) {
+        error(LANGUAGE_NOT_FOUND.replace("{}", languageName));
+        throw new Error('Unknown language: "' + languageName + '"');
+      }
+      const md = compileLanguage(language);
+      let result = "";
+      let top = continuation || md;
+      const continuations = {};
+      const emitter = new options.__emitter(options);
+      processContinuations();
+      let modeBuffer = "";
+      let relevance = 0;
+      let index = 0;
+      let iterations = 0;
+      let resumeScanAtSamePosition = false;
+      try {
+        if (!language.__emitTokens) {
+          top.matcher.considerAll();
+          for (;; ) {
+            iterations++;
+            if (resumeScanAtSamePosition) {
+              resumeScanAtSamePosition = false;
+            } else {
+              top.matcher.considerAll();
+            }
+            top.matcher.lastIndex = index;
+            const match = top.matcher.exec(codeToHighlight);
+            if (!match)
+              break;
+            const beforeMatch = codeToHighlight.substring(index, match.index);
+            const processedCount = processLexeme(beforeMatch, match);
+            index = match.index + processedCount;
+          }
+          processLexeme(codeToHighlight.substring(index));
+        } else {
+          language.__emitTokens(codeToHighlight, emitter);
+        }
+        emitter.finalize();
+        result = emitter.toHTML();
+        return {
+          language: languageName,
+          value: result,
+          relevance,
+          illegal: false,
+          _emitter: emitter,
+          _top: top
+        };
+      } catch (err) {
+        if (err.message && err.message.includes("Illegal")) {
+          return {
+            language: languageName,
+            value: escape(codeToHighlight),
+            illegal: true,
+            relevance: 0,
+            _illegalBy: {
+              message: err.message,
+              index,
+              context: codeToHighlight.slice(index - 100, index + 100),
+              mode: err.mode,
+              resultSoFar: result
+            },
+            _emitter: emitter
+          };
+        } else if (SAFE_MODE) {
+          return {
+            language: languageName,
+            value: escape(codeToHighlight),
+            illegal: false,
+            relevance: 0,
+            errorRaised: err,
+            _emitter: emitter,
+            _top: top
+          };
+        } else {
+          throw err;
+        }
+      }
+    }
+    function justTextHighlightResult(code) {
+      const result = {
+        value: escape(code),
+        illegal: false,
+        relevance: 0,
+        _top: PLAINTEXT_LANGUAGE,
+        _emitter: new options.__emitter(options)
+      };
+      result._emitter.addText(code);
+      return result;
+    }
+    function highlightAuto(code, languageSubset) {
+      languageSubset = languageSubset || options.languages || Object.keys(languages);
+      const plaintext = justTextHighlightResult(code);
+      const results = languageSubset.filter(getLanguage).filter(autoDetection).map((name) => _highlight(name, code, false));
+      results.unshift(plaintext);
+      const sorted = results.sort((a, b) => {
+        if (a.relevance !== b.relevance)
+          return b.relevance - a.relevance;
+        if (a.language && b.language) {
+          if (getLanguage(a.language).supersetOf === b.language) {
+            return 1;
+          } else if (getLanguage(b.language).supersetOf === a.language) {
+            return -1;
+          }
+        }
+        return 0;
+      });
+      const [best, secondBest] = sorted;
+      const result = best;
+      result.secondBest = secondBest;
+      return result;
+    }
+    function updateClassName(element, currentLang, resultLang) {
+      const language = currentLang && aliases[currentLang] || resultLang;
+      element.classList.add("hljs");
+      element.classList.add(`language-${language}`);
+    }
+    function highlightElement(element) {
+      let node = null;
+      const language = blockLanguage(element);
+      if (shouldNotHighlight(language))
+        return;
+      fire("before:highlightElement", { el: element, language });
+      if (element.dataset.highlighted) {
+        console.log("Element previously highlighted. To highlight again, first unset `dataset.highlighted`.", element);
+        return;
+      }
+      if (element.children.length > 0) {
+        if (!options.ignoreUnescapedHTML) {
+          console.warn("One of your code blocks includes unescaped HTML. This is a potentially serious security risk.");
+          console.warn("https://github.com/highlightjs/highlight.js/wiki/security");
+          console.warn("The element with unescaped HTML:");
+          console.warn(element);
+        }
+        if (options.throwUnescapedHTML) {
+          const err = new HTMLInjectionError("One of your code blocks includes unescaped HTML.", element.innerHTML);
+          throw err;
+        }
+      }
+      node = element;
+      const text = node.textContent;
+      const result = language ? highlight2(text, { language, ignoreIllegals: true }) : highlightAuto(text);
+      element.innerHTML = result.value;
+      element.dataset.highlighted = "yes";
+      updateClassName(element, language, result.language);
+      element.result = {
+        language: result.language,
+        re: result.relevance,
+        relevance: result.relevance
+      };
+      if (result.secondBest) {
+        element.secondBest = {
+          language: result.secondBest.language,
+          relevance: result.secondBest.relevance
+        };
+      }
+      fire("after:highlightElement", { el: element, result, text });
+    }
+    function configure(userOptions) {
+      options = inherit(options, userOptions);
+    }
+    const initHighlighting = () => {
+      highlightAll();
+      deprecated("10.6.0", "initHighlighting() deprecated.  Use highlightAll() now.");
+    };
+    function initHighlightingOnLoad() {
+      highlightAll();
+      deprecated("10.6.0", "initHighlightingOnLoad() deprecated.  Use highlightAll() now.");
+    }
+    let wantsHighlight = false;
+    function highlightAll() {
+      function boot() {
+        highlightAll();
+      }
+      if (document.readyState === "loading") {
+        if (!wantsHighlight) {
+          window.addEventListener("DOMContentLoaded", boot, false);
+        }
+        wantsHighlight = true;
+        return;
+      }
+      const blocks = document.querySelectorAll(options.cssSelector);
+      blocks.forEach(highlightElement);
+    }
+    function registerLanguage(languageName, languageDefinition) {
+      let lang = null;
+      try {
+        lang = languageDefinition(hljs);
+      } catch (error$1) {
+        error("Language definition for '{}' could not be registered.".replace("{}", languageName));
+        if (!SAFE_MODE) {
+          throw error$1;
+        } else {
+          error(error$1);
+        }
+        lang = PLAINTEXT_LANGUAGE;
+      }
+      if (!lang.name)
+        lang.name = languageName;
+      languages[languageName] = lang;
+      lang.rawDefinition = languageDefinition.bind(null, hljs);
+      if (lang.aliases) {
+        registerAliases(lang.aliases, { languageName });
+      }
+    }
+    function unregisterLanguage(languageName) {
+      delete languages[languageName];
+      for (const alias of Object.keys(aliases)) {
+        if (aliases[alias] === languageName) {
+          delete aliases[alias];
+        }
+      }
+    }
+    function listLanguages() {
+      return Object.keys(languages);
+    }
+    function getLanguage(name) {
+      name = (name || "").toLowerCase();
+      return languages[name] || languages[aliases[name]];
+    }
+    function registerAliases(aliasList, { languageName }) {
+      if (typeof aliasList === "string") {
+        aliasList = [aliasList];
+      }
+      aliasList.forEach((alias) => {
+        aliases[alias.toLowerCase()] = languageName;
+      });
+    }
+    function autoDetection(name) {
+      const lang = getLanguage(name);
+      return lang && !lang.disableAutodetect;
+    }
+    function upgradePluginAPI(plugin) {
+      if (plugin["before:highlightBlock"] && !plugin["before:highlightElement"]) {
+        plugin["before:highlightElement"] = (data) => {
+          plugin["before:highlightBlock"](Object.assign({ block: data.el }, data));
+        };
+      }
+      if (plugin["after:highlightBlock"] && !plugin["after:highlightElement"]) {
+        plugin["after:highlightElement"] = (data) => {
+          plugin["after:highlightBlock"](Object.assign({ block: data.el }, data));
+        };
+      }
+    }
+    function addPlugin(plugin) {
+      upgradePluginAPI(plugin);
+      plugins.push(plugin);
+    }
+    function removePlugin(plugin) {
+      const index = plugins.indexOf(plugin);
+      if (index !== -1) {
+        plugins.splice(index, 1);
+      }
+    }
+    function fire(event, args) {
+      const cb = event;
+      plugins.forEach(function(plugin) {
+        if (plugin[cb]) {
+          plugin[cb](args);
+        }
+      });
+    }
+    function deprecateHighlightBlock(el) {
+      deprecated("10.7.0", "highlightBlock will be removed entirely in v12.0");
+      deprecated("10.7.0", "Please use highlightElement now.");
+      return highlightElement(el);
+    }
+    Object.assign(hljs, {
+      highlight: highlight2,
+      highlightAuto,
+      highlightAll,
+      highlightElement,
+      highlightBlock: deprecateHighlightBlock,
+      configure,
+      initHighlighting,
+      initHighlightingOnLoad,
+      registerLanguage,
+      unregisterLanguage,
+      listLanguages,
+      getLanguage,
+      registerAliases,
+      autoDetection,
+      inherit,
+      addPlugin,
+      removePlugin
+    });
+    hljs.debugMode = function() {
+      SAFE_MODE = false;
+    };
+    hljs.safeMode = function() {
+      SAFE_MODE = true;
+    };
+    hljs.versionString = version;
+    hljs.regex = {
+      concat,
+      lookahead,
+      either,
+      optional,
+      anyNumberOfTimes
+    };
+    for (const key in MODES) {
+      if (typeof MODES[key] === "object") {
+        deepFreeze(MODES[key]);
+      }
+    }
+    Object.assign(hljs, MODES);
+    return hljs;
+  };
+  var highlight = HLJS({});
+  highlight.newInstance = () => HLJS({});
+  module.exports = highlight;
+  highlight.HighlightJS = highlight;
+  highlight.default = highlight;
 });
 
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var React26 = __toESM(require_react(), 1);
+// node_modules/highlight.js/lib/languages/xml.js
+var require_xml = __commonJS(function(exports, module) {
+  function xml(hljs) {
+    const regex = hljs.regex;
+    const TAG_NAME_RE = regex.concat(/[\p{L}_]/u, regex.optional(/[\p{L}0-9_.-]*:/u), /[\p{L}0-9_.-]*/u);
+    const XML_IDENT_RE = /[\p{L}0-9._:-]+/u;
+    const XML_ENTITIES = {
+      className: "symbol",
+      begin: /&[a-z]+;|&#[0-9]+;|&#x[a-f0-9]+;/
+    };
+    const XML_META_KEYWORDS = {
+      begin: /\s/,
+      contains: [
+        {
+          className: "keyword",
+          begin: /#?[a-z_][a-z1-9_-]+/,
+          illegal: /\n/
+        }
+      ]
+    };
+    const XML_META_PAR_KEYWORDS = hljs.inherit(XML_META_KEYWORDS, {
+      begin: /\(/,
+      end: /\)/
+    });
+    const APOS_META_STRING_MODE = hljs.inherit(hljs.APOS_STRING_MODE, { className: "string" });
+    const QUOTE_META_STRING_MODE = hljs.inherit(hljs.QUOTE_STRING_MODE, { className: "string" });
+    const TAG_INTERNALS = {
+      endsWithParent: true,
+      illegal: /</,
+      relevance: 0,
+      contains: [
+        {
+          className: "attr",
+          begin: XML_IDENT_RE,
+          relevance: 0
+        },
+        {
+          begin: /=\s*/,
+          relevance: 0,
+          contains: [
+            {
+              className: "string",
+              endsParent: true,
+              variants: [
+                {
+                  begin: /"/,
+                  end: /"/,
+                  contains: [XML_ENTITIES]
+                },
+                {
+                  begin: /'/,
+                  end: /'/,
+                  contains: [XML_ENTITIES]
+                },
+                { begin: /[^\s"'=<>`]+/ }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+    return {
+      name: "HTML, XML",
+      aliases: [
+        "html",
+        "xhtml",
+        "rss",
+        "atom",
+        "xjb",
+        "xsd",
+        "xsl",
+        "plist",
+        "wsf",
+        "svg"
+      ],
+      case_insensitive: true,
+      unicodeRegex: true,
+      contains: [
+        {
+          className: "meta",
+          begin: /<![a-z]/,
+          end: />/,
+          relevance: 10,
+          contains: [
+            XML_META_KEYWORDS,
+            QUOTE_META_STRING_MODE,
+            APOS_META_STRING_MODE,
+            XML_META_PAR_KEYWORDS,
+            {
+              begin: /\[/,
+              end: /\]/,
+              contains: [
+                {
+                  className: "meta",
+                  begin: /<![a-z]/,
+                  end: />/,
+                  contains: [
+                    XML_META_KEYWORDS,
+                    XML_META_PAR_KEYWORDS,
+                    QUOTE_META_STRING_MODE,
+                    APOS_META_STRING_MODE
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        hljs.COMMENT(/<!--/, /-->/, { relevance: 10 }),
+        {
+          begin: /<!\[CDATA\[/,
+          end: /\]\]>/,
+          relevance: 10
+        },
+        XML_ENTITIES,
+        {
+          className: "meta",
+          end: /\?>/,
+          variants: [
+            {
+              begin: /<\?xml/,
+              relevance: 10,
+              contains: [
+                QUOTE_META_STRING_MODE
+              ]
+            },
+            {
+              begin: /<\?[a-z][a-z0-9]+/
+            }
+          ]
+        },
+        {
+          className: "tag",
+          begin: /<style(?=\s|>)/,
+          end: />/,
+          keywords: { name: "style" },
+          contains: [TAG_INTERNALS],
+          starts: {
+            end: /<\/style>/,
+            returnEnd: true,
+            subLanguage: "css"
+          }
+        },
+        {
+          className: "tag",
+          begin: /<script(?=\s|>)/,
+          end: />/,
+          keywords: { name: "script" },
+          contains: [TAG_INTERNALS],
+          starts: {
+            end: /<\/script>/,
+            returnEnd: true,
+            subLanguage: "javascript"
+          }
+        },
+        {
+          className: "tag",
+          begin: /<>|<\/>/
+        },
+        {
+          className: "tag",
+          begin: regex.concat(/</, regex.lookahead(regex.concat(TAG_NAME_RE, regex.either(/\/>/, />/, /\s/)))),
+          end: /\/?>/,
+          contains: [
+            {
+              className: "name",
+              begin: TAG_NAME_RE,
+              relevance: 0,
+              starts: TAG_INTERNALS
+            }
+          ]
+        },
+        {
+          className: "tag",
+          begin: regex.concat(/<\//, regex.lookahead(regex.concat(TAG_NAME_RE, />/))),
+          contains: [
+            {
+              className: "name",
+              begin: TAG_NAME_RE,
+              relevance: 0
+            },
+            {
+              begin: />/,
+              relevance: 0,
+              endsParent: true
+            }
+          ]
+        }
+      ]
+    };
+  }
+  module.exports = xml;
+});
 
-// node_modules/@base-ui/utils/useOnFirstRender.mjs
-var React = __toESM(require_react(), 1);
-"use client";
-function useOnFirstRender(fn) {
-  const ref = React.useRef(true);
-  if (ref.current) {
-    ref.current = false;
-    fn();
+// node_modules/highlight.js/lib/languages/bash.js
+var require_bash = __commonJS(function(exports, module) {
+  function bash(hljs) {
+    const regex = hljs.regex;
+    const VAR = {};
+    const BRACED_VAR = {
+      begin: /\$\{/,
+      end: /\}/,
+      contains: [
+        "self",
+        {
+          begin: /:-/,
+          contains: [VAR]
+        }
+      ]
+    };
+    Object.assign(VAR, {
+      className: "variable",
+      variants: [
+        { begin: regex.concat(/\$[\w\d#@][\w\d_]*/, `(?![\\w\\d])(?![$])`) },
+        BRACED_VAR
+      ]
+    });
+    const SUBST = {
+      className: "subst",
+      begin: /\$\(/,
+      end: /\)/,
+      contains: [hljs.BACKSLASH_ESCAPE]
+    };
+    const COMMENT = hljs.inherit(hljs.COMMENT(), {
+      match: [
+        /(^|\s)/,
+        /#.*$/
+      ],
+      scope: {
+        2: "comment"
+      }
+    });
+    const HERE_DOC = {
+      begin: /<<-?\s*(?=\w+)/,
+      starts: { contains: [
+        hljs.END_SAME_AS_BEGIN({
+          begin: /(\w+)/,
+          end: /(\w+)/,
+          className: "string"
+        })
+      ] }
+    };
+    const QUOTE_STRING = {
+      className: "string",
+      begin: /"/,
+      end: /"/,
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        VAR,
+        SUBST
+      ]
+    };
+    SUBST.contains.push(QUOTE_STRING);
+    const ESCAPED_QUOTE = {
+      match: /\\"/
+    };
+    const APOS_STRING = {
+      className: "string",
+      begin: /'/,
+      end: /'/
+    };
+    const ESCAPED_APOS = {
+      match: /\\'/
+    };
+    const ARITHMETIC = {
+      begin: /\$?\(\(/,
+      end: /\)\)/,
+      contains: [
+        {
+          begin: /\d+#[0-9a-f]+/,
+          className: "number"
+        },
+        hljs.NUMBER_MODE,
+        VAR
+      ]
+    };
+    const SH_LIKE_SHELLS = [
+      "fish",
+      "bash",
+      "zsh",
+      "sh",
+      "csh",
+      "ksh",
+      "tcsh",
+      "dash",
+      "scsh"
+    ];
+    const KNOWN_SHEBANG = hljs.SHEBANG({
+      binary: `(${SH_LIKE_SHELLS.join("|")})`,
+      relevance: 10
+    });
+    const FUNCTION = {
+      className: "function",
+      begin: /\w[\w\d_]*\s*\(\s*\)\s*\{/,
+      returnBegin: true,
+      contains: [hljs.inherit(hljs.TITLE_MODE, { begin: /\w[\w\d_]*/ })],
+      relevance: 0
+    };
+    const KEYWORDS = [
+      "if",
+      "then",
+      "else",
+      "elif",
+      "fi",
+      "time",
+      "for",
+      "while",
+      "until",
+      "in",
+      "do",
+      "done",
+      "case",
+      "esac",
+      "coproc",
+      "function",
+      "select"
+    ];
+    const LITERALS = [
+      "true",
+      "false"
+    ];
+    const PATH_MODE = { match: /(\/[a-z._-]+)+/ };
+    const SHELL_BUILT_INS = [
+      "break",
+      "cd",
+      "continue",
+      "eval",
+      "exec",
+      "exit",
+      "export",
+      "getopts",
+      "hash",
+      "pwd",
+      "readonly",
+      "return",
+      "shift",
+      "test",
+      "times",
+      "trap",
+      "umask",
+      "unset"
+    ];
+    const BASH_BUILT_INS = [
+      "alias",
+      "bind",
+      "builtin",
+      "caller",
+      "command",
+      "declare",
+      "echo",
+      "enable",
+      "help",
+      "let",
+      "local",
+      "logout",
+      "mapfile",
+      "printf",
+      "read",
+      "readarray",
+      "source",
+      "sudo",
+      "type",
+      "typeset",
+      "ulimit",
+      "unalias"
+    ];
+    const ZSH_BUILT_INS = [
+      "autoload",
+      "bg",
+      "bindkey",
+      "bye",
+      "cap",
+      "chdir",
+      "clone",
+      "comparguments",
+      "compcall",
+      "compctl",
+      "compdescribe",
+      "compfiles",
+      "compgroups",
+      "compquote",
+      "comptags",
+      "comptry",
+      "compvalues",
+      "dirs",
+      "disable",
+      "disown",
+      "echotc",
+      "echoti",
+      "emulate",
+      "fc",
+      "fg",
+      "float",
+      "functions",
+      "getcap",
+      "getln",
+      "history",
+      "integer",
+      "jobs",
+      "kill",
+      "limit",
+      "log",
+      "noglob",
+      "popd",
+      "print",
+      "pushd",
+      "pushln",
+      "rehash",
+      "sched",
+      "setcap",
+      "setopt",
+      "stat",
+      "suspend",
+      "ttyctl",
+      "unfunction",
+      "unhash",
+      "unlimit",
+      "unsetopt",
+      "vared",
+      "wait",
+      "whence",
+      "where",
+      "which",
+      "zcompile",
+      "zformat",
+      "zftp",
+      "zle",
+      "zmodload",
+      "zparseopts",
+      "zprof",
+      "zpty",
+      "zregexparse",
+      "zsocket",
+      "zstyle",
+      "ztcp"
+    ];
+    const GNU_CORE_UTILS = [
+      "chcon",
+      "chgrp",
+      "chown",
+      "chmod",
+      "cp",
+      "dd",
+      "df",
+      "dir",
+      "dircolors",
+      "ln",
+      "ls",
+      "mkdir",
+      "mkfifo",
+      "mknod",
+      "mktemp",
+      "mv",
+      "realpath",
+      "rm",
+      "rmdir",
+      "shred",
+      "sync",
+      "touch",
+      "truncate",
+      "vdir",
+      "b2sum",
+      "base32",
+      "base64",
+      "cat",
+      "cksum",
+      "comm",
+      "csplit",
+      "cut",
+      "expand",
+      "fmt",
+      "fold",
+      "head",
+      "join",
+      "md5sum",
+      "nl",
+      "numfmt",
+      "od",
+      "paste",
+      "ptx",
+      "pr",
+      "sha1sum",
+      "sha224sum",
+      "sha256sum",
+      "sha384sum",
+      "sha512sum",
+      "shuf",
+      "sort",
+      "split",
+      "sum",
+      "tac",
+      "tail",
+      "tr",
+      "tsort",
+      "unexpand",
+      "uniq",
+      "wc",
+      "arch",
+      "basename",
+      "chroot",
+      "date",
+      "dirname",
+      "du",
+      "echo",
+      "env",
+      "expr",
+      "factor",
+      "groups",
+      "hostid",
+      "id",
+      "link",
+      "logname",
+      "nice",
+      "nohup",
+      "nproc",
+      "pathchk",
+      "pinky",
+      "printenv",
+      "printf",
+      "pwd",
+      "readlink",
+      "runcon",
+      "seq",
+      "sleep",
+      "stat",
+      "stdbuf",
+      "stty",
+      "tee",
+      "test",
+      "timeout",
+      "tty",
+      "uname",
+      "unlink",
+      "uptime",
+      "users",
+      "who",
+      "whoami",
+      "yes"
+    ];
+    return {
+      name: "Bash",
+      aliases: [
+        "sh",
+        "zsh"
+      ],
+      keywords: {
+        $pattern: /\b[a-z][a-z0-9._-]+\b/,
+        keyword: KEYWORDS,
+        literal: LITERALS,
+        built_in: [
+          ...SHELL_BUILT_INS,
+          ...BASH_BUILT_INS,
+          "set",
+          "shopt",
+          ...ZSH_BUILT_INS,
+          ...GNU_CORE_UTILS
+        ]
+      },
+      contains: [
+        KNOWN_SHEBANG,
+        hljs.SHEBANG(),
+        FUNCTION,
+        ARITHMETIC,
+        COMMENT,
+        HERE_DOC,
+        PATH_MODE,
+        QUOTE_STRING,
+        ESCAPED_QUOTE,
+        APOS_STRING,
+        ESCAPED_APOS,
+        VAR
+      ]
+    };
+  }
+  module.exports = bash;
+});
+
+// node_modules/highlight.js/lib/languages/c.js
+var require_c = __commonJS(function(exports, module) {
+  function c(hljs) {
+    const regex = hljs.regex;
+    const C_LINE_COMMENT_MODE = hljs.COMMENT("//", "$", { contains: [{ begin: /\\\n/ }] });
+    const DECLTYPE_AUTO_RE = "decltype\\(auto\\)";
+    const NAMESPACE_RE = "[a-zA-Z_]\\w*::";
+    const TEMPLATE_ARGUMENT_RE = "<[^<>]+>";
+    const FUNCTION_TYPE_RE = "(" + DECLTYPE_AUTO_RE + "|" + regex.optional(NAMESPACE_RE) + "[a-zA-Z_]\\w*" + regex.optional(TEMPLATE_ARGUMENT_RE) + ")";
+    const ATOMIC_TYPES = regex.concat(/\batomic_/, regex.either("bool", "char", "schar", "uchar", "short", "ushort", "int", "uint", "long", "ulong", "llong", "ullong", "char16_t", "char32_t", "wchar_t", "int_least8_t", "uint_least8_t", "int_least16_t", "uint_least16_t", "int_least32_t", "uint_least32_t", "int_least64_t", "uint_least64_t", "int_fast8_t", "uint_fast8_t", "int_fast16_t", "uint_fast16_t", "int_fast32_t", "uint_fast32_t", "int_fast64_t", "uint_fast64_t", "intptr_t", "uintptr_t", "size_t", "ptrdiff_t", "intmax_t", "uintmax_t"), /\b/);
+    const TYPES = {
+      className: "type",
+      variants: [
+        { begin: "\\b[a-z\\d_]*_t\\b" },
+        { match: ATOMIC_TYPES }
+      ]
+    };
+    const CHARACTER_ESCAPES = "\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4,8}|[0-7]{3}|\\S)";
+    const STRINGS = {
+      className: "string",
+      variants: [
+        {
+          begin: '(u8?|U|L)?"',
+          end: '"',
+          illegal: "\\n",
+          contains: [hljs.BACKSLASH_ESCAPE]
+        },
+        {
+          begin: "(u8?|U|L)?'(" + CHARACTER_ESCAPES + "|.)",
+          end: "'",
+          illegal: "."
+        },
+        hljs.END_SAME_AS_BEGIN({
+          begin: /(?:u8?|U|L)?R"([^()\\\s"]{0,16})\(/,
+          end: /\)([^()\\\s"]{0,16})"/
+        })
+      ]
+    };
+    const NUMBERS = {
+      className: "number",
+      variants: [
+        { match: /\b(0b[01']+)/ },
+        { match: /(-?)\b([\d']+(\.[\d']*)?|\.[\d']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)/ },
+        { match: /(-?)\b(0[xX][a-fA-F0-9]+(?:'[a-fA-F0-9]+)*(?:\.[a-fA-F0-9]*(?:'[a-fA-F0-9]*)*)?(?:[pP][-+]?[0-9]+)?(l|L)?(u|U)?)/ },
+        { match: /(-?)\b\d+(?:'\d+)*(?:\.\d*(?:'\d*)*)?(?:[eE][-+]?\d+)?/ }
+      ],
+      relevance: 0
+    };
+    const PREPROCESSOR_INCLUDE = {
+      scope: "meta",
+      begin: /#\s*include\b/,
+      end: /$/,
+      keywords: { keyword: "include" },
+      contains: [
+        {
+          begin: /\\\n/
+        },
+        STRINGS,
+        {
+          scope: "string",
+          begin: /<.*?>/
+        },
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+    const PREPROCESSOR = {
+      className: "meta",
+      begin: /#\s*[a-z]+\b/,
+      end: /$/,
+      keywords: { keyword: "if else elif endif define undef warning error line " + "pragma _Pragma ifdef ifndef elifdef elifndef include" },
+      contains: [
+        {
+          begin: /\\\n/,
+          relevance: 0
+        },
+        hljs.inherit(STRINGS, { className: "string" }),
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+    const PREPROCESSORS = [
+      PREPROCESSOR_INCLUDE,
+      PREPROCESSOR
+    ];
+    const TITLE_MODE = {
+      className: "title",
+      begin: regex.optional(NAMESPACE_RE) + hljs.IDENT_RE,
+      relevance: 0
+    };
+    const FUNCTION_TITLE = regex.optional(NAMESPACE_RE) + hljs.IDENT_RE + "\\s*\\(";
+    const MAX_FUNCTION_TYPE_TOKENS = 12;
+    const C_KEYWORDS = [
+      "asm",
+      "auto",
+      "break",
+      "case",
+      "continue",
+      "default",
+      "do",
+      "else",
+      "enum",
+      "extern",
+      "for",
+      "fortran",
+      "goto",
+      "if",
+      "inline",
+      "register",
+      "restrict",
+      "return",
+      "sizeof",
+      "typeof",
+      "typeof_unqual",
+      "struct",
+      "switch",
+      "typedef",
+      "union",
+      "volatile",
+      "while",
+      "_Alignas",
+      "_Alignof",
+      "_Atomic",
+      "_Generic",
+      "_Noreturn",
+      "_Static_assert",
+      "_Thread_local",
+      "alignas",
+      "alignof",
+      "noreturn",
+      "static_assert",
+      "thread_local",
+      "_Pragma"
+    ];
+    const C_TYPES = [
+      "float",
+      "double",
+      "signed",
+      "unsigned",
+      "int",
+      "short",
+      "long",
+      "char",
+      "void",
+      "_Bool",
+      "_BitInt",
+      "_Complex",
+      "_Imaginary",
+      "_Decimal32",
+      "_Decimal64",
+      "_Decimal96",
+      "_Decimal128",
+      "_Decimal64x",
+      "_Decimal128x",
+      "_Float16",
+      "_Float32",
+      "_Float64",
+      "_Float128",
+      "_Float32x",
+      "_Float64x",
+      "_Float128x",
+      "const",
+      "static",
+      "constexpr",
+      "complex",
+      "bool",
+      "imaginary"
+    ];
+    const KEYWORDS = {
+      keyword: C_KEYWORDS,
+      type: C_TYPES,
+      literal: "true false NULL",
+      built_in: "std string wstring cin cout cerr clog stdin stdout stderr stringstream istringstream ostringstream " + "auto_ptr deque list queue stack vector map set pair bitset multiset multimap unordered_set " + "unordered_map unordered_multiset unordered_multimap priority_queue make_pair array shared_ptr abort terminate abs acos " + "asin atan2 atan calloc ceil cosh cos exit exp fabs floor fmod fprintf fputs free frexp " + "fscanf future isalnum isalpha iscntrl isdigit isgraph islower isprint ispunct isspace isupper " + "isxdigit tolower toupper labs ldexp log10 log malloc realloc memchr memcmp memcpy memset modf pow " + "printf putchar puts scanf sinh sin snprintf sprintf sqrt sscanf strcat strchr strcmp " + "strcpy strcspn strlen strncat strncmp strncpy strpbrk strrchr strspn strstr tanh tan " + "vfprintf vprintf vsprintf endl initializer_list unique_ptr"
+    };
+    const EXPRESSION_CONTAINS = [
+      ...PREPROCESSORS,
+      TYPES,
+      C_LINE_COMMENT_MODE,
+      hljs.C_BLOCK_COMMENT_MODE,
+      NUMBERS,
+      STRINGS
+    ];
+    const EXPRESSION_CONTEXT = {
+      variants: [
+        {
+          begin: /=/,
+          end: /;/
+        },
+        {
+          begin: /\(/,
+          end: /\)/
+        },
+        {
+          beginKeywords: "new throw return else",
+          end: /;/
+        }
+      ],
+      keywords: KEYWORDS,
+      contains: EXPRESSION_CONTAINS.concat([
+        {
+          begin: /\(/,
+          end: /\)/,
+          keywords: KEYWORDS,
+          contains: EXPRESSION_CONTAINS.concat(["self"]),
+          relevance: 0
+        }
+      ]),
+      relevance: 0
+    };
+    const FUNCTION_DECLARATION = {
+      begin: "(" + FUNCTION_TYPE_RE + "[\\*&\\s]+){1," + MAX_FUNCTION_TYPE_TOKENS + "}" + FUNCTION_TITLE,
+      returnBegin: true,
+      end: /[{;=]/,
+      excludeEnd: true,
+      keywords: KEYWORDS,
+      illegal: /[^\w\s\*&:<>.]/,
+      contains: [
+        {
+          begin: DECLTYPE_AUTO_RE,
+          keywords: KEYWORDS,
+          relevance: 0
+        },
+        {
+          begin: FUNCTION_TITLE,
+          returnBegin: true,
+          contains: [hljs.inherit(TITLE_MODE, { className: "title.function" })],
+          relevance: 0
+        },
+        {
+          relevance: 0,
+          match: /,/
+        },
+        {
+          className: "params",
+          begin: /\(/,
+          end: /\)/,
+          keywords: KEYWORDS,
+          relevance: 0,
+          contains: [
+            C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE,
+            STRINGS,
+            NUMBERS,
+            TYPES,
+            {
+              begin: /\(/,
+              end: /\)/,
+              keywords: KEYWORDS,
+              relevance: 0,
+              contains: [
+                "self",
+                C_LINE_COMMENT_MODE,
+                hljs.C_BLOCK_COMMENT_MODE,
+                STRINGS,
+                NUMBERS,
+                TYPES
+              ]
+            }
+          ]
+        },
+        TYPES,
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        ...PREPROCESSORS
+      ]
+    };
+    return {
+      name: "C",
+      aliases: ["h"],
+      keywords: KEYWORDS,
+      disableAutodetect: true,
+      illegal: "</",
+      contains: [].concat(EXPRESSION_CONTEXT, FUNCTION_DECLARATION, EXPRESSION_CONTAINS, [
+        ...PREPROCESSORS,
+        {
+          begin: hljs.IDENT_RE + "::",
+          keywords: KEYWORDS
+        },
+        {
+          className: "class",
+          beginKeywords: "enum class struct union",
+          end: /[{;:<>=]/,
+          contains: [
+            { beginKeywords: "final class struct" },
+            hljs.TITLE_MODE
+          ]
+        }
+      ]),
+      exports: {
+        preprocessor: PREPROCESSOR,
+        strings: STRINGS,
+        keywords: KEYWORDS
+      }
+    };
+  }
+  module.exports = c;
+});
+
+// node_modules/highlight.js/lib/languages/cpp.js
+var require_cpp = __commonJS(function(exports, module) {
+  function cpp(hljs) {
+    const regex = hljs.regex;
+    const C_LINE_COMMENT_MODE = hljs.COMMENT("//", "$", { contains: [{ begin: /\\\n/ }] });
+    const DECLTYPE_AUTO_RE = "decltype\\(auto\\)";
+    const NAMESPACE_RE = "[a-zA-Z_]\\w*::";
+    const TEMPLATE_ARGUMENT_RE = "<[^<>]+>";
+    const FUNCTION_TYPE_RE = "(?!struct)(" + DECLTYPE_AUTO_RE + "|" + regex.optional(NAMESPACE_RE) + "[a-zA-Z_]\\w*" + regex.optional(TEMPLATE_ARGUMENT_RE) + ")";
+    const CPP_PRIMITIVE_TYPES = {
+      className: "type",
+      begin: "\\b[a-z\\d_]*_t\\b"
+    };
+    const CHARACTER_ESCAPES = "\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4,8}|[0-7]{3}|\\S)";
+    const STRINGS = {
+      className: "string",
+      variants: [
+        {
+          begin: '(u8?|U|L)?"',
+          end: '"',
+          illegal: "\\n",
+          contains: [hljs.BACKSLASH_ESCAPE]
+        },
+        {
+          begin: "(u8?|U|L)?'(" + CHARACTER_ESCAPES + "|.)",
+          end: "'",
+          illegal: "."
+        },
+        hljs.END_SAME_AS_BEGIN({
+          begin: /(?:u8?|U|L)?R"([^()\\\s"]{0,16})\(/,
+          end: /\)([^()\\\s"]{0,16})"/
+        })
+      ]
+    };
+    const NUMBERS = {
+      className: "number",
+      variants: [
+        {
+          begin: "[+-]?(?:" + "(?:" + "\\b[0-9](?:'?[0-9])*\\.(?:[0-9](?:'?[0-9])*)?" + "|\\.[0-9](?:'?[0-9])*" + ")(?:[Ee][+-]?[0-9](?:'?[0-9])*)?" + "|\\b[0-9](?:'?[0-9])*[Ee][+-]?[0-9](?:'?[0-9])*" + "|\\b0[Xx](?:" + "[0-9A-Fa-f](?:'?[0-9A-Fa-f])*(?:\\.(?:[0-9A-Fa-f](?:'?[0-9A-Fa-f])*)?)?" + "|\\.[0-9A-Fa-f](?:'?[0-9A-Fa-f])*" + ")[Pp][+-]?[0-9](?:'?[0-9])*" + ")(?:" + "[Ff](?:16|32|64|128)?" + "|(BF|bf)16" + "|[Ll]" + "|" + ")"
+        },
+        {
+          begin: "[+-]?\\b(?:" + "0[Bb][01](?:'?[01])*" + "|0[Xx][0-9A-Fa-f](?:'?[0-9A-Fa-f])*" + "|0(?:'?[0-7])*" + "|[1-9](?:'?[0-9])*" + ")(?:" + "[Uu](?:LL?|ll?)" + "|[Uu][Zz]?" + "|(?:LL?|ll?)[Uu]?" + "|[Zz][Uu]" + "|" + ")"
+        }
+      ],
+      relevance: 0
+    };
+    const PREPROCESSOR_INCLUDE = {
+      scope: "meta",
+      begin: /#\s*include\b/,
+      end: /$/,
+      keywords: { keyword: "include" },
+      contains: [
+        {
+          begin: /\\\n/
+        },
+        STRINGS,
+        {
+          scope: "string",
+          begin: /<.*?>/
+        },
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+    const PREPROCESSOR = {
+      className: "meta",
+      begin: /#\s*[a-z]+\b/,
+      end: /$/,
+      keywords: { keyword: "if else elif endif define undef warning error line " + "pragma _Pragma ifdef ifndef include" },
+      contains: [
+        {
+          begin: /\\\n/,
+          relevance: 0
+        },
+        hljs.inherit(STRINGS, { className: "string" }),
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ]
+    };
+    const PREPROCESSORS = [
+      PREPROCESSOR_INCLUDE,
+      PREPROCESSOR
+    ];
+    const TITLE_MODE = {
+      className: "title",
+      begin: regex.optional(NAMESPACE_RE) + hljs.IDENT_RE,
+      relevance: 0
+    };
+    const FUNCTION_TITLE = regex.optional(NAMESPACE_RE) + hljs.IDENT_RE + "\\s*\\(";
+    const MAX_FUNCTION_TYPE_TOKENS = 12;
+    const RESERVED_KEYWORDS = [
+      "alignas",
+      "alignof",
+      "and",
+      "and_eq",
+      "asm",
+      "atomic_cancel",
+      "atomic_commit",
+      "atomic_noexcept",
+      "auto",
+      "bitand",
+      "bitor",
+      "break",
+      "case",
+      "catch",
+      "class",
+      "co_await",
+      "co_return",
+      "co_yield",
+      "compl",
+      "concept",
+      "const_cast|10",
+      "consteval",
+      "constexpr",
+      "constinit",
+      "continue",
+      "decltype",
+      "default",
+      "delete",
+      "do",
+      "dynamic_cast|10",
+      "else",
+      "enum",
+      "explicit",
+      "export",
+      "extern",
+      "false",
+      "final",
+      "for",
+      "friend",
+      "goto",
+      "if",
+      "import",
+      "inline",
+      "module",
+      "mutable",
+      "namespace",
+      "new",
+      "noexcept",
+      "not",
+      "not_eq",
+      "nullptr",
+      "operator",
+      "or",
+      "or_eq",
+      "override",
+      "private",
+      "protected",
+      "public",
+      "reflexpr",
+      "register",
+      "reinterpret_cast|10",
+      "requires",
+      "return",
+      "sizeof",
+      "static_assert",
+      "static_cast|10",
+      "struct",
+      "switch",
+      "synchronized",
+      "template",
+      "this",
+      "thread_local",
+      "throw",
+      "transaction_safe",
+      "transaction_safe_dynamic",
+      "true",
+      "try",
+      "typedef",
+      "typeid",
+      "typename",
+      "union",
+      "using",
+      "virtual",
+      "volatile",
+      "while",
+      "xor",
+      "xor_eq"
+    ];
+    const RESERVED_TYPES = [
+      "bool",
+      "char",
+      "char16_t",
+      "char32_t",
+      "char8_t",
+      "double",
+      "float",
+      "int",
+      "long",
+      "short",
+      "void",
+      "wchar_t",
+      "unsigned",
+      "signed",
+      "const",
+      "static"
+    ];
+    const TYPE_HINTS = [
+      "any",
+      "auto_ptr",
+      "barrier",
+      "binary_semaphore",
+      "bitset",
+      "complex",
+      "condition_variable",
+      "condition_variable_any",
+      "counting_semaphore",
+      "deque",
+      "false_type",
+      "flat_map",
+      "flat_set",
+      "future",
+      "imaginary",
+      "initializer_list",
+      "istringstream",
+      "jthread",
+      "latch",
+      "lock_guard",
+      "multimap",
+      "multiset",
+      "mutex",
+      "optional",
+      "ostringstream",
+      "packaged_task",
+      "pair",
+      "promise",
+      "priority_queue",
+      "queue",
+      "recursive_mutex",
+      "recursive_timed_mutex",
+      "scoped_lock",
+      "set",
+      "shared_future",
+      "shared_lock",
+      "shared_mutex",
+      "shared_timed_mutex",
+      "shared_ptr",
+      "stack",
+      "string_view",
+      "stringstream",
+      "timed_mutex",
+      "thread",
+      "true_type",
+      "tuple",
+      "unique_lock",
+      "unique_ptr",
+      "unordered_map",
+      "unordered_multimap",
+      "unordered_multiset",
+      "unordered_set",
+      "variant",
+      "vector",
+      "weak_ptr",
+      "wstring",
+      "wstring_view"
+    ];
+    const FUNCTION_HINTS = [
+      "abort",
+      "abs",
+      "acos",
+      "apply",
+      "as_const",
+      "asin",
+      "atan",
+      "atan2",
+      "calloc",
+      "ceil",
+      "cerr",
+      "cin",
+      "clog",
+      "cos",
+      "cosh",
+      "cout",
+      "declval",
+      "endl",
+      "exchange",
+      "exit",
+      "exp",
+      "fabs",
+      "floor",
+      "fmod",
+      "forward",
+      "fprintf",
+      "fputs",
+      "free",
+      "frexp",
+      "fscanf",
+      "future",
+      "invoke",
+      "isalnum",
+      "isalpha",
+      "iscntrl",
+      "isdigit",
+      "isgraph",
+      "islower",
+      "isprint",
+      "ispunct",
+      "isspace",
+      "isupper",
+      "isxdigit",
+      "labs",
+      "launder",
+      "ldexp",
+      "log",
+      "log10",
+      "make_pair",
+      "make_shared",
+      "make_shared_for_overwrite",
+      "make_tuple",
+      "make_unique",
+      "malloc",
+      "memchr",
+      "memcmp",
+      "memcpy",
+      "memset",
+      "modf",
+      "move",
+      "pow",
+      "printf",
+      "putchar",
+      "puts",
+      "realloc",
+      "scanf",
+      "sin",
+      "sinh",
+      "snprintf",
+      "sprintf",
+      "sqrt",
+      "sscanf",
+      "std",
+      "stderr",
+      "stdin",
+      "stdout",
+      "strcat",
+      "strchr",
+      "strcmp",
+      "strcpy",
+      "strcspn",
+      "strlen",
+      "strncat",
+      "strncmp",
+      "strncpy",
+      "strpbrk",
+      "strrchr",
+      "strspn",
+      "strstr",
+      "swap",
+      "tan",
+      "tanh",
+      "terminate",
+      "to_underlying",
+      "tolower",
+      "toupper",
+      "vfprintf",
+      "visit",
+      "vprintf",
+      "vsprintf"
+    ];
+    const LITERALS = [
+      "NULL",
+      "false",
+      "nullopt",
+      "nullptr",
+      "true"
+    ];
+    const BUILT_IN = ["_Pragma"];
+    const CPP_KEYWORDS = {
+      type: RESERVED_TYPES,
+      keyword: RESERVED_KEYWORDS,
+      literal: LITERALS,
+      built_in: BUILT_IN,
+      _type_hints: TYPE_HINTS
+    };
+    const FUNCTION_DISPATCH = {
+      className: "function.dispatch",
+      relevance: 0,
+      keywords: {
+        _hint: FUNCTION_HINTS
+      },
+      begin: regex.concat(/\b/, `(?!${RESERVED_KEYWORDS.join("|")})`, hljs.IDENT_RE, regex.lookahead(/(<[^<>]+>|)\s*\(/))
+    };
+    const EXPRESSION_CONTAINS = [
+      FUNCTION_DISPATCH,
+      ...PREPROCESSORS,
+      CPP_PRIMITIVE_TYPES,
+      C_LINE_COMMENT_MODE,
+      hljs.C_BLOCK_COMMENT_MODE,
+      NUMBERS,
+      STRINGS
+    ];
+    const EXPRESSION_CONTEXT = {
+      variants: [
+        {
+          begin: /=/,
+          end: /;/
+        },
+        {
+          begin: /\(/,
+          end: /\)/
+        },
+        {
+          beginKeywords: "new throw return else",
+          end: /;/
+        }
+      ],
+      keywords: CPP_KEYWORDS,
+      contains: EXPRESSION_CONTAINS.concat([
+        {
+          begin: /\(/,
+          end: /\)/,
+          keywords: CPP_KEYWORDS,
+          contains: EXPRESSION_CONTAINS.concat(["self"]),
+          relevance: 0
+        }
+      ]),
+      relevance: 0
+    };
+    const FUNCTION_DECLARATION = {
+      className: "function",
+      begin: "(" + FUNCTION_TYPE_RE + "[\\*&\\s]+){1," + MAX_FUNCTION_TYPE_TOKENS + "}" + FUNCTION_TITLE,
+      returnBegin: true,
+      end: /[{;=]/,
+      excludeEnd: true,
+      keywords: CPP_KEYWORDS,
+      illegal: /[^\w\s\*&:<>.]/,
+      contains: [
+        {
+          begin: DECLTYPE_AUTO_RE,
+          keywords: CPP_KEYWORDS,
+          relevance: 0
+        },
+        {
+          begin: FUNCTION_TITLE,
+          returnBegin: true,
+          contains: [TITLE_MODE],
+          relevance: 0
+        },
+        {
+          begin: /::/,
+          relevance: 0
+        },
+        {
+          begin: /:/,
+          endsWithParent: true,
+          contains: [
+            STRINGS,
+            NUMBERS
+          ]
+        },
+        {
+          relevance: 0,
+          match: /,/
+        },
+        {
+          className: "params",
+          begin: /\(/,
+          end: /\)/,
+          keywords: CPP_KEYWORDS,
+          relevance: 0,
+          contains: [
+            C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE,
+            STRINGS,
+            NUMBERS,
+            CPP_PRIMITIVE_TYPES,
+            {
+              begin: /\(/,
+              end: /\)/,
+              keywords: CPP_KEYWORDS,
+              relevance: 0,
+              contains: [
+                "self",
+                C_LINE_COMMENT_MODE,
+                hljs.C_BLOCK_COMMENT_MODE,
+                STRINGS,
+                NUMBERS,
+                CPP_PRIMITIVE_TYPES
+              ]
+            }
+          ]
+        },
+        CPP_PRIMITIVE_TYPES,
+        C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        ...PREPROCESSORS
+      ]
+    };
+    return {
+      name: "C++",
+      aliases: [
+        "cc",
+        "c++",
+        "h++",
+        "hpp",
+        "hh",
+        "hxx",
+        "cxx"
+      ],
+      keywords: CPP_KEYWORDS,
+      illegal: "</",
+      classNameAliases: { "function.dispatch": "built_in" },
+      contains: [].concat(EXPRESSION_CONTEXT, FUNCTION_DECLARATION, FUNCTION_DISPATCH, EXPRESSION_CONTAINS, [
+        ...PREPROCESSORS,
+        {
+          begin: "\\b(deque|list|queue|priority_queue|pair|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array|tuple|optional|variant|function|flat_map|flat_set)\\s*<(?!<)",
+          end: ">",
+          keywords: CPP_KEYWORDS,
+          contains: [
+            "self",
+            CPP_PRIMITIVE_TYPES
+          ]
+        },
+        {
+          begin: hljs.IDENT_RE + "::",
+          keywords: CPP_KEYWORDS
+        },
+        {
+          match: [
+            /\b(?:enum(?:\s+(?:class|struct))?|class|struct|union)/,
+            /\s+/,
+            /\w+/
+          ],
+          className: {
+            1: "keyword",
+            3: "title.class"
+          }
+        }
+      ])
+    };
+  }
+  module.exports = cpp;
+});
+
+// node_modules/highlight.js/lib/languages/csharp.js
+var require_csharp = __commonJS(function(exports, module) {
+  function csharp(hljs) {
+    const BUILT_IN_KEYWORDS = [
+      "bool",
+      "byte",
+      "char",
+      "decimal",
+      "delegate",
+      "double",
+      "dynamic",
+      "enum",
+      "float",
+      "int",
+      "long",
+      "nint",
+      "nuint",
+      "object",
+      "sbyte",
+      "short",
+      "string",
+      "ulong",
+      "uint",
+      "ushort"
+    ];
+    const FUNCTION_MODIFIERS = [
+      "public",
+      "private",
+      "protected",
+      "static",
+      "internal",
+      "protected",
+      "abstract",
+      "async",
+      "extern",
+      "override",
+      "unsafe",
+      "virtual",
+      "new",
+      "sealed",
+      "partial"
+    ];
+    const LITERAL_KEYWORDS = [
+      "default",
+      "false",
+      "null",
+      "true"
+    ];
+    const NORMAL_KEYWORDS = [
+      "abstract",
+      "as",
+      "base",
+      "break",
+      "case",
+      "catch",
+      "class",
+      "const",
+      "continue",
+      "do",
+      "else",
+      "event",
+      "explicit",
+      "extern",
+      "finally",
+      "fixed",
+      "for",
+      "foreach",
+      "goto",
+      "if",
+      "implicit",
+      "in",
+      "interface",
+      "internal",
+      "is",
+      "lock",
+      "namespace",
+      "new",
+      "operator",
+      "out",
+      "override",
+      "params",
+      "private",
+      "protected",
+      "public",
+      "readonly",
+      "record",
+      "ref",
+      "return",
+      "scoped",
+      "sealed",
+      "sizeof",
+      "stackalloc",
+      "static",
+      "struct",
+      "switch",
+      "this",
+      "throw",
+      "try",
+      "typeof",
+      "unchecked",
+      "unsafe",
+      "using",
+      "virtual",
+      "void",
+      "volatile",
+      "while"
+    ];
+    const CONTEXTUAL_KEYWORDS = [
+      "add",
+      "alias",
+      "and",
+      "ascending",
+      "args",
+      "async",
+      "await",
+      "by",
+      "descending",
+      "dynamic",
+      "equals",
+      "file",
+      "from",
+      "get",
+      "global",
+      "group",
+      "init",
+      "into",
+      "join",
+      "let",
+      "nameof",
+      "not",
+      "notnull",
+      "on",
+      "or",
+      "orderby",
+      "partial",
+      "record",
+      "remove",
+      "required",
+      "scoped",
+      "select",
+      "set",
+      "unmanaged",
+      "value|0",
+      "var",
+      "when",
+      "where",
+      "with",
+      "yield"
+    ];
+    const KEYWORDS = {
+      keyword: NORMAL_KEYWORDS.concat(CONTEXTUAL_KEYWORDS),
+      built_in: BUILT_IN_KEYWORDS,
+      literal: LITERAL_KEYWORDS
+    };
+    const TITLE_MODE = hljs.inherit(hljs.TITLE_MODE, { begin: "[a-zA-Z](\\.?\\w)*" });
+    const DIGITS = "\\d(_*\\d)*";
+    const INTEGER_SUFFIX = "([uU][lL]?|[lL][uU]?)?";
+    const REAL_SUFFIX = "([fFdDmM]|[uU][lL]?|[lL][uU]?)?";
+    const NUMBERS = {
+      className: "number",
+      variants: [
+        { begin: "\\b0[bB]_*[01](_*[01])*" + INTEGER_SUFFIX },
+        { begin: "(-?)\\b0[xX]_*[a-fA-F0-9](_*[a-fA-F0-9])*" + INTEGER_SUFFIX },
+        { begin: "(-?)(\\b" + DIGITS + "(\\.(" + DIGITS + ")?)?|\\." + DIGITS + ")([eE][-+]?" + DIGITS + ")?" + REAL_SUFFIX }
+      ],
+      relevance: 0
+    };
+    const RAW_STRING = {
+      className: "string",
+      begin: /"""("*)(?!")(.|\n)*?"""\1/,
+      relevance: 1
+    };
+    const VERBATIM_STRING = {
+      className: "string",
+      begin: '@"',
+      end: '"',
+      contains: [{ begin: '""' }]
+    };
+    const VERBATIM_STRING_NO_LF = hljs.inherit(VERBATIM_STRING, { illegal: /\n/ });
+    const SUBST = {
+      className: "subst",
+      begin: /\{/,
+      end: /\}/,
+      keywords: KEYWORDS
+    };
+    const SUBST_NO_LF = hljs.inherit(SUBST, { illegal: /\n/ });
+    const INTERPOLATED_STRING = {
+      className: "string",
+      begin: /\$"/,
+      end: '"',
+      illegal: /\n/,
+      contains: [
+        { begin: /\{\{/ },
+        { begin: /\}\}/ },
+        hljs.BACKSLASH_ESCAPE,
+        SUBST_NO_LF
+      ]
+    };
+    const INTERPOLATED_VERBATIM_STRING = {
+      className: "string",
+      begin: /\$@"/,
+      end: '"',
+      contains: [
+        { begin: /\{\{/ },
+        { begin: /\}\}/ },
+        { begin: '""' },
+        SUBST
+      ]
+    };
+    const INTERPOLATED_VERBATIM_STRING_NO_LF = hljs.inherit(INTERPOLATED_VERBATIM_STRING, {
+      illegal: /\n/,
+      contains: [
+        { begin: /\{\{/ },
+        { begin: /\}\}/ },
+        { begin: '""' },
+        SUBST_NO_LF
+      ]
+    });
+    SUBST.contains = [
+      INTERPOLATED_VERBATIM_STRING,
+      INTERPOLATED_STRING,
+      VERBATIM_STRING,
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      NUMBERS,
+      hljs.C_BLOCK_COMMENT_MODE
+    ];
+    SUBST_NO_LF.contains = [
+      INTERPOLATED_VERBATIM_STRING_NO_LF,
+      INTERPOLATED_STRING,
+      VERBATIM_STRING_NO_LF,
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      NUMBERS,
+      hljs.inherit(hljs.C_BLOCK_COMMENT_MODE, { illegal: /\n/ })
+    ];
+    const STRING = { variants: [
+      RAW_STRING,
+      INTERPOLATED_VERBATIM_STRING,
+      INTERPOLATED_STRING,
+      VERBATIM_STRING,
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE
+    ] };
+    const GENERIC_MODIFIER = {
+      begin: "<",
+      end: ">",
+      contains: [
+        { beginKeywords: "in out" },
+        TITLE_MODE
+      ]
+    };
+    const TYPE_IDENT_RE = hljs.IDENT_RE + "(<" + hljs.IDENT_RE + "(\\s*,\\s*" + hljs.IDENT_RE + ")*>)?(\\[\\])?";
+    const AT_IDENTIFIER = {
+      begin: "@" + hljs.IDENT_RE,
+      relevance: 0
+    };
+    return {
+      name: "C#",
+      aliases: [
+        "cs",
+        "c#"
+      ],
+      keywords: KEYWORDS,
+      illegal: /::/,
+      contains: [
+        hljs.COMMENT("///", "$", {
+          returnBegin: true,
+          contains: [
+            {
+              className: "doctag",
+              variants: [
+                {
+                  begin: "///",
+                  relevance: 0
+                },
+                { begin: "<!--|-->" },
+                {
+                  begin: "</?",
+                  end: ">"
+                }
+              ]
+            }
+          ]
+        }),
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        {
+          className: "meta",
+          begin: "#",
+          end: "$",
+          keywords: { keyword: "if else elif endif define undef warning error line region endregion pragma checksum" }
+        },
+        STRING,
+        NUMBERS,
+        {
+          beginKeywords: "class interface",
+          relevance: 0,
+          end: /[{;=]/,
+          illegal: /[^\s:,]/,
+          contains: [
+            { beginKeywords: "where class" },
+            TITLE_MODE,
+            GENERIC_MODIFIER,
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        {
+          beginKeywords: "namespace",
+          relevance: 0,
+          end: /[{;=]/,
+          illegal: /[^\s:]/,
+          contains: [
+            TITLE_MODE,
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        {
+          beginKeywords: "record",
+          relevance: 0,
+          end: /[{;=]/,
+          illegal: /[^\s:]/,
+          contains: [
+            TITLE_MODE,
+            GENERIC_MODIFIER,
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        {
+          className: "meta",
+          begin: "^\\s*\\[(?=[\\w])",
+          excludeBegin: true,
+          end: "\\]",
+          excludeEnd: true,
+          contains: [
+            {
+              className: "string",
+              begin: /"/,
+              end: /"/
+            }
+          ]
+        },
+        {
+          beginKeywords: "new return throw await else",
+          relevance: 0
+        },
+        {
+          className: "function",
+          begin: "(" + TYPE_IDENT_RE + "\\s+)+" + hljs.IDENT_RE + "\\s*(<[^=]+>\\s*)?\\(",
+          returnBegin: true,
+          end: /\s*[{;=]/,
+          excludeEnd: true,
+          keywords: KEYWORDS,
+          contains: [
+            {
+              beginKeywords: FUNCTION_MODIFIERS.join(" "),
+              relevance: 0
+            },
+            {
+              begin: hljs.IDENT_RE + "\\s*(<[^=]+>\\s*)?\\(",
+              returnBegin: true,
+              contains: [
+                hljs.TITLE_MODE,
+                GENERIC_MODIFIER
+              ],
+              relevance: 0
+            },
+            { match: /\(\)/ },
+            {
+              className: "params",
+              begin: /\(/,
+              end: /\)/,
+              excludeBegin: true,
+              excludeEnd: true,
+              keywords: KEYWORDS,
+              relevance: 0,
+              contains: [
+                STRING,
+                NUMBERS,
+                hljs.C_BLOCK_COMMENT_MODE
+              ]
+            },
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        AT_IDENTIFIER
+      ]
+    };
+  }
+  module.exports = csharp;
+});
+
+// node_modules/highlight.js/lib/languages/css.js
+var require_css = __commonJS(function(exports, module) {
+  var MODES = (hljs) => {
+    return {
+      IMPORTANT: {
+        scope: "meta",
+        begin: "!important"
+      },
+      BLOCK_COMMENT: hljs.C_BLOCK_COMMENT_MODE,
+      HEXCOLOR: {
+        scope: "number",
+        begin: /#(([0-9a-fA-F]{3,4})|(([0-9a-fA-F]{2}){3,4}))\b/
+      },
+      UNICODE_RANGE: {
+        scope: "number",
+        begin: /\b[Uu]\+[0-9A-Fa-f][0-9A-Fa-f?]{0,5}(-[0-9A-Fa-f][0-9A-Fa-f]{0,5})?/
+      },
+      FUNCTION_DISPATCH: {
+        className: "built_in",
+        begin: /[\w-]+(?=\()/
+      },
+      ATTRIBUTE_SELECTOR_MODE: {
+        scope: "selector-attr",
+        begin: /\[/,
+        end: /\]/,
+        illegal: "$",
+        contains: [
+          hljs.APOS_STRING_MODE,
+          hljs.QUOTE_STRING_MODE
+        ]
+      },
+      CSS_NUMBER_MODE: {
+        scope: "number",
+        begin: hljs.NUMBER_RE + "(" + "%|em|ex|ch|rem" + "|vw|vh|vmin|vmax" + "|cm|mm|in|pt|pc|px" + "|deg|grad|rad|turn" + "|s|ms" + "|Hz|kHz" + "|dpi|dpcm|dppx" + ")?",
+        relevance: 0
+      },
+      CSS_VARIABLE: {
+        className: "attr",
+        begin: /--[A-Za-z_][A-Za-z0-9_-]*/
+      }
+    };
+  };
+  var HTML_TAGS = [
+    "a",
+    "abbr",
+    "address",
+    "article",
+    "aside",
+    "audio",
+    "b",
+    "blockquote",
+    "body",
+    "button",
+    "canvas",
+    "caption",
+    "cite",
+    "code",
+    "dd",
+    "del",
+    "details",
+    "dfn",
+    "div",
+    "dl",
+    "dt",
+    "em",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "html",
+    "i",
+    "iframe",
+    "img",
+    "input",
+    "ins",
+    "kbd",
+    "label",
+    "legend",
+    "li",
+    "main",
+    "mark",
+    "menu",
+    "nav",
+    "object",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "picture",
+    "q",
+    "quote",
+    "samp",
+    "section",
+    "select",
+    "source",
+    "span",
+    "strong",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "time",
+    "tr",
+    "ul",
+    "var",
+    "video"
+  ];
+  var SVG_TAGS = [
+    "defs",
+    "g",
+    "marker",
+    "mask",
+    "pattern",
+    "svg",
+    "switch",
+    "symbol",
+    "feBlend",
+    "feColorMatrix",
+    "feComponentTransfer",
+    "feComposite",
+    "feConvolveMatrix",
+    "feDiffuseLighting",
+    "feDisplacementMap",
+    "feFlood",
+    "feGaussianBlur",
+    "feImage",
+    "feMerge",
+    "feMorphology",
+    "feOffset",
+    "feSpecularLighting",
+    "feTile",
+    "feTurbulence",
+    "linearGradient",
+    "radialGradient",
+    "stop",
+    "circle",
+    "ellipse",
+    "image",
+    "line",
+    "path",
+    "polygon",
+    "polyline",
+    "rect",
+    "text",
+    "use",
+    "textPath",
+    "tspan",
+    "foreignObject",
+    "clipPath"
+  ];
+  var TAGS = [
+    ...HTML_TAGS,
+    ...SVG_TAGS
+  ];
+  var MEDIA_FEATURES = [
+    "any-hover",
+    "any-pointer",
+    "aspect-ratio",
+    "color",
+    "color-gamut",
+    "color-index",
+    "device-aspect-ratio",
+    "device-height",
+    "device-width",
+    "display-mode",
+    "forced-colors",
+    "grid",
+    "height",
+    "hover",
+    "inverted-colors",
+    "monochrome",
+    "orientation",
+    "overflow-block",
+    "overflow-inline",
+    "pointer",
+    "prefers-color-scheme",
+    "prefers-contrast",
+    "prefers-reduced-motion",
+    "prefers-reduced-transparency",
+    "resolution",
+    "scan",
+    "scripting",
+    "update",
+    "width",
+    "min-width",
+    "max-width",
+    "min-height",
+    "max-height"
+  ].sort().reverse();
+  var PSEUDO_CLASSES = [
+    "active",
+    "any-link",
+    "blank",
+    "checked",
+    "current",
+    "default",
+    "defined",
+    "dir",
+    "disabled",
+    "drop",
+    "empty",
+    "enabled",
+    "first",
+    "first-child",
+    "first-of-type",
+    "fullscreen",
+    "future",
+    "focus",
+    "focus-visible",
+    "focus-within",
+    "has",
+    "host",
+    "host-context",
+    "hover",
+    "indeterminate",
+    "in-range",
+    "invalid",
+    "is",
+    "lang",
+    "last-child",
+    "last-of-type",
+    "left",
+    "link",
+    "local-link",
+    "not",
+    "nth-child",
+    "nth-col",
+    "nth-last-child",
+    "nth-last-col",
+    "nth-last-of-type",
+    "nth-of-type",
+    "only-child",
+    "only-of-type",
+    "optional",
+    "out-of-range",
+    "past",
+    "placeholder-shown",
+    "read-only",
+    "read-write",
+    "required",
+    "right",
+    "root",
+    "scope",
+    "target",
+    "target-within",
+    "user-invalid",
+    "valid",
+    "visited",
+    "where"
+  ].sort().reverse();
+  var PSEUDO_ELEMENTS = [
+    "after",
+    "backdrop",
+    "before",
+    "cue",
+    "cue-region",
+    "first-letter",
+    "first-line",
+    "grammar-error",
+    "marker",
+    "part",
+    "placeholder",
+    "selection",
+    "slotted",
+    "spelling-error"
+  ].sort().reverse();
+  var ATTRIBUTES = [
+    "accent-color",
+    "align-content",
+    "align-items",
+    "align-self",
+    "alignment-baseline",
+    "all",
+    "anchor-name",
+    "animation",
+    "animation-composition",
+    "animation-delay",
+    "animation-direction",
+    "animation-duration",
+    "animation-fill-mode",
+    "animation-iteration-count",
+    "animation-name",
+    "animation-play-state",
+    "animation-range",
+    "animation-range-end",
+    "animation-range-start",
+    "animation-timeline",
+    "animation-timing-function",
+    "appearance",
+    "aspect-ratio",
+    "backdrop-filter",
+    "backface-visibility",
+    "background",
+    "background-attachment",
+    "background-blend-mode",
+    "background-clip",
+    "background-color",
+    "background-image",
+    "background-origin",
+    "background-position",
+    "background-position-x",
+    "background-position-y",
+    "background-repeat",
+    "background-size",
+    "baseline-shift",
+    "block-size",
+    "border",
+    "border-block",
+    "border-block-color",
+    "border-block-end",
+    "border-block-end-color",
+    "border-block-end-style",
+    "border-block-end-width",
+    "border-block-start",
+    "border-block-start-color",
+    "border-block-start-style",
+    "border-block-start-width",
+    "border-block-style",
+    "border-block-width",
+    "border-bottom",
+    "border-bottom-color",
+    "border-bottom-left-radius",
+    "border-bottom-right-radius",
+    "border-bottom-style",
+    "border-bottom-width",
+    "border-collapse",
+    "border-color",
+    "border-end-end-radius",
+    "border-end-start-radius",
+    "border-image",
+    "border-image-outset",
+    "border-image-repeat",
+    "border-image-slice",
+    "border-image-source",
+    "border-image-width",
+    "border-inline",
+    "border-inline-color",
+    "border-inline-end",
+    "border-inline-end-color",
+    "border-inline-end-style",
+    "border-inline-end-width",
+    "border-inline-start",
+    "border-inline-start-color",
+    "border-inline-start-style",
+    "border-inline-start-width",
+    "border-inline-style",
+    "border-inline-width",
+    "border-left",
+    "border-left-color",
+    "border-left-style",
+    "border-left-width",
+    "border-radius",
+    "border-right",
+    "border-right-color",
+    "border-right-style",
+    "border-right-width",
+    "border-spacing",
+    "border-start-end-radius",
+    "border-start-start-radius",
+    "border-style",
+    "border-top",
+    "border-top-color",
+    "border-top-left-radius",
+    "border-top-right-radius",
+    "border-top-style",
+    "border-top-width",
+    "border-width",
+    "bottom",
+    "box-align",
+    "box-decoration-break",
+    "box-direction",
+    "box-flex",
+    "box-flex-group",
+    "box-lines",
+    "box-ordinal-group",
+    "box-orient",
+    "box-pack",
+    "box-shadow",
+    "box-sizing",
+    "break-after",
+    "break-before",
+    "break-inside",
+    "caption-side",
+    "caret-color",
+    "clear",
+    "clip",
+    "clip-path",
+    "clip-rule",
+    "color",
+    "color-interpolation",
+    "color-interpolation-filters",
+    "color-profile",
+    "color-rendering",
+    "color-scheme",
+    "column-count",
+    "column-fill",
+    "column-gap",
+    "column-rule",
+    "column-rule-color",
+    "column-rule-style",
+    "column-rule-width",
+    "column-span",
+    "column-width",
+    "columns",
+    "contain",
+    "contain-intrinsic-block-size",
+    "contain-intrinsic-height",
+    "contain-intrinsic-inline-size",
+    "contain-intrinsic-size",
+    "contain-intrinsic-width",
+    "container",
+    "container-name",
+    "container-type",
+    "content",
+    "content-visibility",
+    "corner-bottom-left-shape",
+    "corner-bottom-right-shape",
+    "corner-shape",
+    "corner-top-left-shape",
+    "corner-top-right-shape",
+    "counter-increment",
+    "counter-reset",
+    "counter-set",
+    "cue",
+    "cue-after",
+    "cue-before",
+    "cursor",
+    "cx",
+    "cy",
+    "direction",
+    "display",
+    "dominant-baseline",
+    "empty-cells",
+    "enable-background",
+    "field-sizing",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "filter",
+    "flex",
+    "flex-basis",
+    "flex-direction",
+    "flex-flow",
+    "flex-grow",
+    "flex-shrink",
+    "flex-wrap",
+    "float",
+    "flood-color",
+    "flood-opacity",
+    "flow",
+    "font",
+    "font-display",
+    "font-family",
+    "font-feature-settings",
+    "font-kerning",
+    "font-language-override",
+    "font-optical-sizing",
+    "font-palette",
+    "font-size",
+    "font-size-adjust",
+    "font-smooth",
+    "font-smoothing",
+    "font-stretch",
+    "font-style",
+    "font-synthesis",
+    "font-synthesis-position",
+    "font-synthesis-small-caps",
+    "font-synthesis-style",
+    "font-synthesis-weight",
+    "font-variant",
+    "font-variant-alternates",
+    "font-variant-caps",
+    "font-variant-east-asian",
+    "font-variant-emoji",
+    "font-variant-ligatures",
+    "font-variant-numeric",
+    "font-variant-position",
+    "font-variation-settings",
+    "font-weight",
+    "forced-color-adjust",
+    "gap",
+    "glyph-orientation-horizontal",
+    "glyph-orientation-vertical",
+    "grid",
+    "grid-area",
+    "grid-auto-columns",
+    "grid-auto-flow",
+    "grid-auto-rows",
+    "grid-column",
+    "grid-column-end",
+    "grid-column-start",
+    "grid-gap",
+    "grid-row",
+    "grid-row-end",
+    "grid-row-start",
+    "grid-template",
+    "grid-template-areas",
+    "grid-template-columns",
+    "grid-template-rows",
+    "hanging-punctuation",
+    "height",
+    "hyphenate-character",
+    "hyphenate-limit-chars",
+    "hyphens",
+    "icon",
+    "image-orientation",
+    "image-rendering",
+    "image-resolution",
+    "ime-mode",
+    "initial-letter",
+    "initial-letter-align",
+    "inline-size",
+    "inset",
+    "inset-area",
+    "inset-block",
+    "inset-block-end",
+    "inset-block-start",
+    "inset-inline",
+    "inset-inline-end",
+    "inset-inline-start",
+    "isolation",
+    "justify-content",
+    "justify-items",
+    "justify-self",
+    "kerning",
+    "left",
+    "letter-spacing",
+    "lighting-color",
+    "line-break",
+    "line-height",
+    "line-height-step",
+    "list-style",
+    "list-style-image",
+    "list-style-position",
+    "list-style-type",
+    "margin",
+    "margin-block",
+    "margin-block-end",
+    "margin-block-start",
+    "margin-bottom",
+    "margin-inline",
+    "margin-inline-end",
+    "margin-inline-start",
+    "margin-left",
+    "margin-right",
+    "margin-top",
+    "margin-trim",
+    "marker",
+    "marker-end",
+    "marker-mid",
+    "marker-start",
+    "marks",
+    "mask",
+    "mask-border",
+    "mask-border-mode",
+    "mask-border-outset",
+    "mask-border-repeat",
+    "mask-border-slice",
+    "mask-border-source",
+    "mask-border-width",
+    "mask-clip",
+    "mask-composite",
+    "mask-image",
+    "mask-mode",
+    "mask-origin",
+    "mask-position",
+    "mask-repeat",
+    "mask-size",
+    "mask-type",
+    "masonry-auto-flow",
+    "math-depth",
+    "math-shift",
+    "math-style",
+    "max-block-size",
+    "max-height",
+    "max-inline-size",
+    "max-width",
+    "min-block-size",
+    "min-height",
+    "min-inline-size",
+    "min-width",
+    "mix-blend-mode",
+    "nav-down",
+    "nav-index",
+    "nav-left",
+    "nav-right",
+    "nav-up",
+    "none",
+    "normal",
+    "object-fit",
+    "object-position",
+    "offset",
+    "offset-anchor",
+    "offset-distance",
+    "offset-path",
+    "offset-position",
+    "offset-rotate",
+    "opacity",
+    "order",
+    "orphans",
+    "outline",
+    "outline-color",
+    "outline-offset",
+    "outline-style",
+    "outline-width",
+    "overflow",
+    "overflow-anchor",
+    "overflow-block",
+    "overflow-clip-margin",
+    "overflow-inline",
+    "overflow-wrap",
+    "overflow-x",
+    "overflow-y",
+    "overlay",
+    "overscroll-behavior",
+    "overscroll-behavior-block",
+    "overscroll-behavior-inline",
+    "overscroll-behavior-x",
+    "overscroll-behavior-y",
+    "padding",
+    "padding-block",
+    "padding-block-end",
+    "padding-block-start",
+    "padding-bottom",
+    "padding-inline",
+    "padding-inline-end",
+    "padding-inline-start",
+    "padding-left",
+    "padding-right",
+    "padding-top",
+    "page",
+    "page-break-after",
+    "page-break-before",
+    "page-break-inside",
+    "paint-order",
+    "pause",
+    "pause-after",
+    "pause-before",
+    "perspective",
+    "perspective-origin",
+    "place-content",
+    "place-items",
+    "place-self",
+    "pointer-events",
+    "position",
+    "position-anchor",
+    "position-visibility",
+    "print-color-adjust",
+    "quotes",
+    "r",
+    "resize",
+    "rest",
+    "rest-after",
+    "rest-before",
+    "right",
+    "rotate",
+    "row-gap",
+    "ruby-align",
+    "ruby-position",
+    "scale",
+    "scroll-behavior",
+    "scroll-margin",
+    "scroll-margin-block",
+    "scroll-margin-block-end",
+    "scroll-margin-block-start",
+    "scroll-margin-bottom",
+    "scroll-margin-inline",
+    "scroll-margin-inline-end",
+    "scroll-margin-inline-start",
+    "scroll-margin-left",
+    "scroll-margin-right",
+    "scroll-margin-top",
+    "scroll-padding",
+    "scroll-padding-block",
+    "scroll-padding-block-end",
+    "scroll-padding-block-start",
+    "scroll-padding-bottom",
+    "scroll-padding-inline",
+    "scroll-padding-inline-end",
+    "scroll-padding-inline-start",
+    "scroll-padding-left",
+    "scroll-padding-right",
+    "scroll-padding-top",
+    "scroll-snap-align",
+    "scroll-snap-stop",
+    "scroll-snap-type",
+    "scroll-timeline",
+    "scroll-timeline-axis",
+    "scroll-timeline-name",
+    "scrollbar-color",
+    "scrollbar-gutter",
+    "scrollbar-width",
+    "shape-image-threshold",
+    "shape-margin",
+    "shape-outside",
+    "shape-rendering",
+    "speak",
+    "speak-as",
+    "src",
+    "stop-color",
+    "stop-opacity",
+    "stroke",
+    "stroke-dasharray",
+    "stroke-dashoffset",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-miterlimit",
+    "stroke-opacity",
+    "stroke-width",
+    "tab-size",
+    "table-layout",
+    "text-align",
+    "text-align-all",
+    "text-align-last",
+    "text-anchor",
+    "text-combine-upright",
+    "text-decoration",
+    "text-decoration-color",
+    "text-decoration-line",
+    "text-decoration-skip",
+    "text-decoration-skip-ink",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-emphasis",
+    "text-emphasis-color",
+    "text-emphasis-position",
+    "text-emphasis-style",
+    "text-indent",
+    "text-justify",
+    "text-orientation",
+    "text-overflow",
+    "text-rendering",
+    "text-shadow",
+    "text-size-adjust",
+    "text-transform",
+    "text-underline-offset",
+    "text-underline-position",
+    "text-wrap",
+    "text-wrap-mode",
+    "text-wrap-style",
+    "timeline-scope",
+    "top",
+    "touch-action",
+    "transform",
+    "transform-box",
+    "transform-origin",
+    "transform-style",
+    "transition",
+    "transition-behavior",
+    "transition-delay",
+    "transition-duration",
+    "transition-property",
+    "transition-timing-function",
+    "translate",
+    "unicode-bidi",
+    "unicode-range",
+    "user-modify",
+    "user-select",
+    "vector-effect",
+    "vertical-align",
+    "view-timeline",
+    "view-timeline-axis",
+    "view-timeline-inset",
+    "view-timeline-name",
+    "view-transition-name",
+    "visibility",
+    "voice-balance",
+    "voice-duration",
+    "voice-family",
+    "voice-pitch",
+    "voice-range",
+    "voice-rate",
+    "voice-stress",
+    "voice-volume",
+    "white-space",
+    "white-space-collapse",
+    "widows",
+    "width",
+    "will-change",
+    "word-break",
+    "word-spacing",
+    "word-wrap",
+    "writing-mode",
+    "x",
+    "y",
+    "z-index",
+    "zoom"
+  ].sort().reverse();
+  function css(hljs) {
+    const regex = hljs.regex;
+    const modes = MODES(hljs);
+    const VENDOR_PREFIX = { begin: /-(webkit|moz|ms|o)-(?=[a-z])/ };
+    const AT_MODIFIERS = "and or not only";
+    const AT_PROPERTY_RE = /@-?\w[\w]*(-\w+)*/;
+    const IDENT_RE = "[a-zA-Z-][a-zA-Z0-9_-]*";
+    const STRINGS = [
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE
+    ];
+    return {
+      name: "CSS",
+      case_insensitive: true,
+      illegal: /[=|'\$]/,
+      keywords: { keyframePosition: "from to" },
+      classNameAliases: {
+        keyframePosition: "selector-tag"
+      },
+      contains: [
+        modes.BLOCK_COMMENT,
+        VENDOR_PREFIX,
+        modes.CSS_NUMBER_MODE,
+        {
+          className: "selector-id",
+          begin: /#[A-Za-z0-9_-]+/,
+          relevance: 0
+        },
+        {
+          className: "selector-class",
+          begin: "\\." + IDENT_RE,
+          relevance: 0
+        },
+        modes.ATTRIBUTE_SELECTOR_MODE,
+        {
+          className: "selector-pseudo",
+          variants: [
+            { begin: ":(" + PSEUDO_CLASSES.join("|") + ")" },
+            { begin: ":(:)?(" + PSEUDO_ELEMENTS.join("|") + ")" }
+          ]
+        },
+        modes.CSS_VARIABLE,
+        {
+          className: "attribute",
+          begin: "\\b(" + ATTRIBUTES.join("|") + ")\\b"
+        },
+        {
+          begin: /:/,
+          end: /[;}{]/,
+          contains: [
+            modes.BLOCK_COMMENT,
+            modes.HEXCOLOR,
+            modes.IMPORTANT,
+            modes.CSS_NUMBER_MODE,
+            modes.UNICODE_RANGE,
+            ...STRINGS,
+            {
+              begin: /(url|data-uri)\(/,
+              end: /\)/,
+              relevance: 0,
+              keywords: { built_in: "url data-uri" },
+              contains: [
+                ...STRINGS,
+                {
+                  className: "string",
+                  begin: /[^)]/,
+                  endsWithParent: true,
+                  excludeEnd: true
+                }
+              ]
+            },
+            modes.FUNCTION_DISPATCH
+          ]
+        },
+        {
+          begin: regex.lookahead(/@/),
+          end: "[{;]",
+          relevance: 0,
+          illegal: /:/,
+          contains: [
+            {
+              className: "keyword",
+              begin: AT_PROPERTY_RE
+            },
+            {
+              begin: /\s/,
+              endsWithParent: true,
+              excludeEnd: true,
+              relevance: 0,
+              keywords: {
+                $pattern: /[a-z-]+/,
+                keyword: AT_MODIFIERS,
+                attribute: MEDIA_FEATURES.join(" ")
+              },
+              contains: [
+                {
+                  begin: /[a-z-]+(?=:)/,
+                  className: "attribute"
+                },
+                ...STRINGS,
+                modes.CSS_NUMBER_MODE
+              ]
+            }
+          ]
+        },
+        {
+          className: "selector-tag",
+          begin: "\\b(" + TAGS.join("|") + ")\\b"
+        }
+      ]
+    };
+  }
+  module.exports = css;
+});
+
+// node_modules/highlight.js/lib/languages/markdown.js
+var require_markdown = __commonJS(function(exports, module) {
+  function markdown(hljs) {
+    const regex = hljs.regex;
+    const INLINE_HTML = {
+      begin: /<\/?[A-Za-z_]/,
+      end: ">",
+      subLanguage: "xml",
+      relevance: 0
+    };
+    const HORIZONTAL_RULE = { match: /^ {0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/ };
+    const CODE = {
+      className: "code",
+      variants: [
+        { begin: "(`{3,})[^`](.|\\n)*?\\1`*[ ]*" },
+        { begin: "(~{3,})[^~](.|\\n)*?\\1~*[ ]*" },
+        {
+          begin: "```",
+          end: "```+[ ]*$"
+        },
+        {
+          begin: "~~~",
+          end: "~~~+[ ]*$"
+        },
+        { begin: "`.+?`" },
+        {
+          begin: "(?=^( {4}|\\t))",
+          contains: [
+            {
+              begin: "^( {4}|\\t)",
+              end: "(\\n)$"
+            }
+          ],
+          relevance: 0
+        }
+      ]
+    };
+    const LIST = {
+      className: "bullet",
+      begin: "^[ \t]*([*+-]|(\\d+\\.))(?=\\s+)",
+      end: "\\s+",
+      excludeEnd: true
+    };
+    const LINK_REFERENCE = {
+      begin: /^\[[^\n]+\]:/,
+      returnBegin: true,
+      contains: [
+        {
+          className: "symbol",
+          begin: /\[/,
+          end: /\]/,
+          excludeBegin: true,
+          excludeEnd: true
+        },
+        {
+          className: "link",
+          begin: /:\s*/,
+          end: /$/,
+          excludeBegin: true
+        }
+      ]
+    };
+    const URL_SCHEME = /[A-Za-z][A-Za-z0-9+.-]*/;
+    const LINK = {
+      variants: [
+        {
+          begin: /\[.+?\]\[.*?\]/,
+          relevance: 0
+        },
+        {
+          begin: /\[.+?\]\(((data|javascript|mailto):|(?:http|ftp)s?:\/\/).*?\)/,
+          relevance: 2
+        },
+        {
+          begin: regex.concat(/\[.+?\]\(/, URL_SCHEME, /:\/\/.*?\)/),
+          relevance: 2
+        },
+        {
+          begin: /\[.+?\]\([./?&#].*?\)/,
+          relevance: 1
+        },
+        {
+          begin: /\[.*?\]\(.*?\)/,
+          relevance: 0
+        }
+      ],
+      returnBegin: true,
+      contains: [
+        {
+          match: /\[(?=\])/
+        },
+        {
+          className: "string",
+          relevance: 0,
+          begin: "\\[",
+          end: "\\]",
+          excludeBegin: true,
+          returnEnd: true
+        },
+        {
+          className: "link",
+          relevance: 0,
+          begin: "\\]\\(",
+          end: "\\)",
+          excludeBegin: true,
+          excludeEnd: true
+        },
+        {
+          className: "symbol",
+          relevance: 0,
+          begin: "\\]\\[",
+          end: "\\]",
+          excludeBegin: true,
+          excludeEnd: true
+        }
+      ]
+    };
+    const BOLD = {
+      className: "strong",
+      contains: [],
+      variants: [
+        {
+          begin: /_{2}(?!\s)/,
+          end: /_{2}/
+        },
+        {
+          begin: /\*{2}(?!\s)/,
+          end: /\*{2}/
+        }
+      ]
+    };
+    const ITALIC = {
+      className: "emphasis",
+      contains: [],
+      variants: [
+        {
+          begin: /\*(?![*\s])/,
+          end: /\*/
+        },
+        {
+          begin: /_(?![_\s])/,
+          end: /_/,
+          relevance: 0
+        }
+      ]
+    };
+    const BOLD_WITHOUT_ITALIC = hljs.inherit(BOLD, { contains: [] });
+    const ITALIC_WITHOUT_BOLD = hljs.inherit(ITALIC, { contains: [] });
+    BOLD.contains.push(ITALIC_WITHOUT_BOLD);
+    ITALIC.contains.push(BOLD_WITHOUT_ITALIC);
+    let CONTAINABLE = [
+      INLINE_HTML,
+      LINK
+    ];
+    [
+      BOLD,
+      ITALIC,
+      BOLD_WITHOUT_ITALIC,
+      ITALIC_WITHOUT_BOLD
+    ].forEach((m) => {
+      m.contains = m.contains.concat(CONTAINABLE);
+    });
+    CONTAINABLE = CONTAINABLE.concat(BOLD, ITALIC);
+    const HEADER = {
+      className: "section",
+      variants: [
+        {
+          begin: "^#{1,6}",
+          end: "$",
+          contains: CONTAINABLE
+        },
+        {
+          begin: "(?=^.+?\\n[=-]{2,}$)",
+          contains: [
+            { begin: "^[=-]*$" },
+            {
+              begin: "^",
+              end: "\\n",
+              contains: CONTAINABLE
+            }
+          ]
+        }
+      ]
+    };
+    const BLOCKQUOTE = {
+      className: "quote",
+      begin: "^>\\s+",
+      contains: CONTAINABLE,
+      end: "$"
+    };
+    const ENTITY = {
+      scope: "literal",
+      match: /&([a-zA-Z0-9]+|#[0-9]{1,7}|#[Xx][0-9a-fA-F]{1,6});/
+    };
+    return {
+      name: "Markdown",
+      aliases: [
+        "md",
+        "mkdown",
+        "mkd"
+      ],
+      contains: [
+        HEADER,
+        INLINE_HTML,
+        LIST,
+        HORIZONTAL_RULE,
+        BOLD,
+        ITALIC,
+        BLOCKQUOTE,
+        CODE,
+        LINK,
+        LINK_REFERENCE,
+        ENTITY
+      ]
+    };
+  }
+  module.exports = markdown;
+});
+
+// node_modules/highlight.js/lib/languages/diff.js
+var require_diff = __commonJS(function(exports, module) {
+  function diff(hljs) {
+    const regex = hljs.regex;
+    return {
+      name: "Diff",
+      aliases: ["patch"],
+      contains: [
+        {
+          className: "meta",
+          relevance: 10,
+          match: regex.either(/^@@ +-\d+,\d+ +\+\d+,\d+ +@@/, /^@@ +-\d+ +\+\d+,\d+ +@@/, /^@@ +-\d+,\d+ +\+\d+ +@@/, /^@@ +-\d+ +\+\d+ +@@/, /^\*\*\* +\d+,\d+ +\*\*\*\*$/, /^--- +\d+,\d+ +----$/)
+        },
+        {
+          className: "comment",
+          variants: [
+            {
+              begin: regex.either(/Index: /, /^index/, /={3,}/, /^-{3}/, /^\*{3} /, /^\+{3}/, /^diff --git/),
+              end: /$/
+            },
+            { match: /^\*{15}$/ }
+          ]
+        },
+        {
+          className: "addition",
+          begin: /^\+/,
+          end: /$/
+        },
+        {
+          className: "deletion",
+          begin: /^-/,
+          end: /$/
+        },
+        {
+          className: "addition",
+          begin: /^!/,
+          end: /$/
+        }
+      ]
+    };
+  }
+  module.exports = diff;
+});
+
+// node_modules/highlight.js/lib/languages/ruby.js
+var require_ruby = __commonJS(function(exports, module) {
+  function ruby(hljs) {
+    const regex = hljs.regex;
+    const RUBY_METHOD_RE = "([a-zA-Z_]\\w*[!?=]?|[-+~]@|<<|>>|=~|===?|<=>|[<>]=?|\\*\\*|[-/+%^&*~`|]|\\[\\]=?)";
+    const CLASS_NAME_RE = regex.either(/\b([A-Z]+[a-z0-9]+)+/, /\b([A-Z]+[a-z0-9]+)+[A-Z]+/);
+    const CLASS_NAME_WITH_NAMESPACE_RE = regex.concat(CLASS_NAME_RE, /(::\w+)*/);
+    const PSEUDO_KWS = [
+      "include",
+      "extend",
+      "prepend",
+      "public",
+      "private",
+      "protected",
+      "raise",
+      "throw"
+    ];
+    const RUBY_KEYWORDS = {
+      "variable.constant": [
+        "__FILE__",
+        "__LINE__",
+        "__ENCODING__"
+      ],
+      "variable.language": [
+        "self",
+        "super"
+      ],
+      keyword: [
+        "alias",
+        "and",
+        "begin",
+        "BEGIN",
+        "break",
+        "case",
+        "class",
+        "defined",
+        "do",
+        "else",
+        "elsif",
+        "end",
+        "END",
+        "ensure",
+        "for",
+        "if",
+        "in",
+        "module",
+        "next",
+        "not",
+        "or",
+        "redo",
+        "require",
+        "rescue",
+        "retry",
+        "return",
+        "then",
+        "undef",
+        "unless",
+        "until",
+        "when",
+        "while",
+        "yield",
+        ...PSEUDO_KWS
+      ],
+      built_in: [
+        "proc",
+        "lambda",
+        "attr_accessor",
+        "attr_reader",
+        "attr_writer",
+        "define_method",
+        "private_constant",
+        "module_function"
+      ],
+      literal: [
+        "true",
+        "false",
+        "nil"
+      ]
+    };
+    const YARDOCTAG = {
+      className: "doctag",
+      begin: "@[A-Za-z]+"
+    };
+    const IRB_OBJECT = {
+      begin: "#<",
+      end: ">"
+    };
+    const COMMENT_MODES = [
+      hljs.COMMENT("#", "$", { contains: [YARDOCTAG] }),
+      hljs.COMMENT("^=begin", "^=end", {
+        contains: [YARDOCTAG],
+        relevance: 10
+      }),
+      hljs.COMMENT("^__END__", hljs.MATCH_NOTHING_RE)
+    ];
+    const SUBST = {
+      className: "subst",
+      begin: /#\{/,
+      end: /\}/,
+      keywords: RUBY_KEYWORDS
+    };
+    const STRING = {
+      className: "string",
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        SUBST
+      ],
+      variants: [
+        {
+          begin: /'/,
+          end: /'/
+        },
+        {
+          begin: /"/,
+          end: /"/
+        },
+        {
+          begin: /`/,
+          end: /`/
+        },
+        {
+          begin: /%[qQwWx]?\(/,
+          end: /\)/
+        },
+        {
+          begin: /%[qQwWx]?\[/,
+          end: /\]/
+        },
+        {
+          begin: /%[qQwWx]?\{/,
+          end: /\}/
+        },
+        {
+          begin: /%[qQwWx]?</,
+          end: />/
+        },
+        {
+          begin: /%[qQwWx]?\//,
+          end: /\//
+        },
+        {
+          begin: /%[qQwWx]?%/,
+          end: /%/
+        },
+        {
+          begin: /%[qQwWx]?-/,
+          end: /-/
+        },
+        {
+          begin: /%[qQwWx]?\|/,
+          end: /\|/
+        },
+        { begin: /\B\?(\\\d{1,3})/ },
+        { begin: /\B\?(\\x[A-Fa-f0-9]{1,2})/ },
+        { begin: /\B\?(\\u\{?[A-Fa-f0-9]{1,6}\}?)/ },
+        { begin: /\B\?(\\M-\\C-|\\M-\\c|\\c\\M-|\\M-|\\C-\\M-)[\x20-\x7e]/ },
+        { begin: /\B\?\\(c|C-)[\x20-\x7e]/ },
+        { begin: /\B\?\\?\S/ },
+        {
+          begin: regex.concat(/<<[-~]?'?/, regex.lookahead(/(\w+)(?=\W)[^\n]*\n(?:[^\n]*\n)*?\s*\1\b/)),
+          contains: [
+            hljs.END_SAME_AS_BEGIN({
+              begin: /(\w+)/,
+              end: /(\w+)/,
+              contains: [
+                hljs.BACKSLASH_ESCAPE,
+                SUBST
+              ]
+            })
+          ]
+        }
+      ]
+    };
+    const decimal = "[1-9](_?[0-9])*|0";
+    const digits = "[0-9](_?[0-9])*";
+    const NUMBER = {
+      className: "number",
+      relevance: 0,
+      variants: [
+        { begin: `\\b(${decimal})(\\.(${digits}))?([eE][+-]?(${digits})|r)?i?\\b` },
+        { begin: "\\b0[dD][0-9](_?[0-9])*r?i?\\b" },
+        { begin: "\\b0[bB][0-1](_?[0-1])*r?i?\\b" },
+        { begin: "\\b0[oO][0-7](_?[0-7])*r?i?\\b" },
+        { begin: "\\b0[xX][0-9a-fA-F](_?[0-9a-fA-F])*r?i?\\b" },
+        { begin: "\\b0(_?[0-7])+r?i?\\b" }
+      ]
+    };
+    const PARAMS = {
+      variants: [
+        {
+          match: /\(\)/
+        },
+        {
+          className: "params",
+          begin: /\(/,
+          end: /(?=\))/,
+          excludeBegin: true,
+          endsParent: true,
+          keywords: RUBY_KEYWORDS
+        }
+      ]
+    };
+    const INCLUDE_EXTEND = {
+      match: [
+        /(include|extend)\s+/,
+        CLASS_NAME_WITH_NAMESPACE_RE
+      ],
+      scope: {
+        2: "title.class"
+      },
+      keywords: RUBY_KEYWORDS
+    };
+    const CLASS_DEFINITION = {
+      variants: [
+        {
+          match: [
+            /class\s+/,
+            CLASS_NAME_WITH_NAMESPACE_RE,
+            /\s+<\s+/,
+            CLASS_NAME_WITH_NAMESPACE_RE
+          ]
+        },
+        {
+          match: [
+            /\b(class|module)\s+/,
+            CLASS_NAME_WITH_NAMESPACE_RE
+          ]
+        }
+      ],
+      scope: {
+        2: "title.class",
+        4: "title.class.inherited"
+      },
+      keywords: RUBY_KEYWORDS
+    };
+    const UPPER_CASE_CONSTANT = {
+      relevance: 0,
+      match: /\b[A-Z][A-Z_0-9]+\b/,
+      className: "variable.constant"
+    };
+    const METHOD_DEFINITION = {
+      match: [
+        /def/,
+        /\s+/,
+        RUBY_METHOD_RE
+      ],
+      scope: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        PARAMS
+      ]
+    };
+    const OBJECT_CREATION = {
+      relevance: 0,
+      match: [
+        CLASS_NAME_WITH_NAMESPACE_RE,
+        /\.new[. (]/
+      ],
+      scope: {
+        1: "title.class"
+      }
+    };
+    const CLASS_REFERENCE = {
+      relevance: 0,
+      match: CLASS_NAME_RE,
+      scope: "title.class"
+    };
+    const RUBY_DEFAULT_CONTAINS = [
+      STRING,
+      CLASS_DEFINITION,
+      INCLUDE_EXTEND,
+      OBJECT_CREATION,
+      UPPER_CASE_CONSTANT,
+      CLASS_REFERENCE,
+      METHOD_DEFINITION,
+      {
+        begin: "::"
+      },
+      {
+        className: "symbol",
+        begin: hljs.UNDERSCORE_IDENT_RE + "(!|\\?)?:",
+        relevance: 0
+      },
+      {
+        className: "symbol",
+        begin: ":(?!\\s)",
+        contains: [
+          STRING,
+          { begin: RUBY_METHOD_RE }
+        ],
+        relevance: 0
+      },
+      NUMBER,
+      {
+        className: "variable",
+        begin: "(\\$\\W)|((\\$|@@?)(\\w+))(?=[^@$?])" + `(?![A-Za-z])(?![@$?'])`
+      },
+      {
+        className: "params",
+        begin: /\|(?!=)/,
+        end: /\|/,
+        excludeBegin: true,
+        excludeEnd: true,
+        relevance: 0,
+        keywords: RUBY_KEYWORDS
+      },
+      {
+        begin: "(" + hljs.RE_STARTERS_RE + "|unless)\\s*",
+        keywords: "unless",
+        contains: [
+          {
+            className: "regexp",
+            contains: [
+              hljs.BACKSLASH_ESCAPE,
+              SUBST
+            ],
+            illegal: /\n/,
+            variants: [
+              {
+                begin: "/",
+                end: "/[a-z]*"
+              },
+              {
+                begin: /%r\{/,
+                end: /\}[a-z]*/
+              },
+              {
+                begin: "%r\\(",
+                end: "\\)[a-z]*"
+              },
+              {
+                begin: "%r!",
+                end: "![a-z]*"
+              },
+              {
+                begin: "%r\\[",
+                end: "\\][a-z]*"
+              }
+            ]
+          }
+        ].concat(IRB_OBJECT, COMMENT_MODES),
+        relevance: 0
+      }
+    ].concat(IRB_OBJECT, COMMENT_MODES);
+    SUBST.contains = RUBY_DEFAULT_CONTAINS;
+    PARAMS.contains = RUBY_DEFAULT_CONTAINS;
+    const SIMPLE_PROMPT = "[>?]>";
+    const DEFAULT_PROMPT = "[\\w#]+\\(\\w+\\):\\d+:\\d+[>*]";
+    const RVM_PROMPT = "(\\w+-)?\\d+\\.\\d+\\.\\d+(p\\d+)?[^\\d][^>]+>";
+    const IRB_DEFAULT = [
+      {
+        begin: /^\s*=>/,
+        starts: {
+          end: "$",
+          contains: RUBY_DEFAULT_CONTAINS
+        }
+      },
+      {
+        className: "meta.prompt",
+        begin: "^(" + SIMPLE_PROMPT + "|" + DEFAULT_PROMPT + "|" + RVM_PROMPT + ")(?=[ ])",
+        starts: {
+          end: "$",
+          keywords: RUBY_KEYWORDS,
+          contains: RUBY_DEFAULT_CONTAINS
+        }
+      }
+    ];
+    COMMENT_MODES.unshift(IRB_OBJECT);
+    return {
+      name: "Ruby",
+      aliases: [
+        "rb",
+        "gemspec",
+        "podspec",
+        "thor",
+        "irb"
+      ],
+      keywords: RUBY_KEYWORDS,
+      illegal: /\/\*/,
+      contains: [hljs.SHEBANG({ binary: "ruby" })].concat(IRB_DEFAULT).concat(COMMENT_MODES).concat(RUBY_DEFAULT_CONTAINS)
+    };
+  }
+  module.exports = ruby;
+});
+
+// node_modules/highlight.js/lib/languages/go.js
+var require_go = __commonJS(function(exports, module) {
+  function go(hljs) {
+    const LITERALS = [
+      "true",
+      "false",
+      "iota",
+      "nil"
+    ];
+    const BUILT_INS = [
+      "append",
+      "cap",
+      "close",
+      "complex",
+      "copy",
+      "imag",
+      "len",
+      "make",
+      "new",
+      "panic",
+      "print",
+      "println",
+      "real",
+      "recover",
+      "delete"
+    ];
+    const TYPES = [
+      "bool",
+      "byte",
+      "complex64",
+      "complex128",
+      "error",
+      "float32",
+      "float64",
+      "int8",
+      "int16",
+      "int32",
+      "int64",
+      "string",
+      "uint8",
+      "uint16",
+      "uint32",
+      "uint64",
+      "int",
+      "uint",
+      "uintptr",
+      "rune"
+    ];
+    const KWS = [
+      "break",
+      "case",
+      "chan",
+      "const",
+      "continue",
+      "default",
+      "defer",
+      "else",
+      "fallthrough",
+      "for",
+      "func",
+      "go",
+      "goto",
+      "if",
+      "import",
+      "interface",
+      "map",
+      "package",
+      "range",
+      "return",
+      "select",
+      "struct",
+      "switch",
+      "type",
+      "var"
+    ];
+    const KEYWORDS = {
+      keyword: KWS,
+      type: TYPES,
+      literal: LITERALS,
+      built_in: BUILT_INS
+    };
+    return {
+      name: "Go",
+      aliases: ["golang"],
+      keywords: KEYWORDS,
+      illegal: "</",
+      contains: [
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        {
+          className: "string",
+          variants: [
+            hljs.QUOTE_STRING_MODE,
+            hljs.APOS_STRING_MODE,
+            {
+              begin: "`",
+              end: "`"
+            }
+          ]
+        },
+        {
+          className: "number",
+          variants: [
+            {
+              match: /-?\b0[xX]\.[a-fA-F0-9](_?[a-fA-F0-9])*[pP][+-]?\d(_?\d)*i?/,
+              relevance: 0
+            },
+            {
+              match: /-?\b0[xX](_?[a-fA-F0-9])+((\.([a-fA-F0-9](_?[a-fA-F0-9])*)?)?[pP][+-]?\d(_?\d)*)?i?/,
+              relevance: 0
+            },
+            {
+              match: /-?\b0[oO](_?[0-7])*i?/,
+              relevance: 0
+            },
+            {
+              match: /-?\b0[bB](_?[01])*i?/,
+              relevance: 0
+            },
+            {
+              match: /-?\.\d(_?\d)*([eE][+-]?\d(_?\d)*)?i?/,
+              relevance: 0
+            },
+            {
+              match: /-?\b\d(_?\d)*(\.(\d(_?\d)*)?)?([eE][+-]?\d(_?\d)*)?i?/,
+              relevance: 0
+            }
+          ]
+        },
+        {
+          begin: /:=/
+        },
+        {
+          className: "function",
+          beginKeywords: "func",
+          end: "\\s*(\\{|$)",
+          excludeEnd: true,
+          contains: [
+            hljs.TITLE_MODE,
+            {
+              className: "params",
+              begin: /\(/,
+              end: /\)/,
+              endsParent: true,
+              keywords: KEYWORDS,
+              illegal: /["']/
+            }
+          ]
+        }
+      ]
+    };
+  }
+  module.exports = go;
+});
+
+// node_modules/highlight.js/lib/languages/graphql.js
+var require_graphql = __commonJS(function(exports, module) {
+  function graphql(hljs) {
+    const regex = hljs.regex;
+    const GQL_NAME = /[_A-Za-z][_0-9A-Za-z]*/;
+    return {
+      name: "GraphQL",
+      aliases: ["gql"],
+      case_insensitive: true,
+      disableAutodetect: false,
+      keywords: {
+        keyword: [
+          "query",
+          "mutation",
+          "subscription",
+          "type",
+          "input",
+          "schema",
+          "directive",
+          "interface",
+          "union",
+          "scalar",
+          "fragment",
+          "enum",
+          "on"
+        ],
+        literal: [
+          "true",
+          "false",
+          "null"
+        ]
+      },
+      contains: [
+        hljs.HASH_COMMENT_MODE,
+        hljs.QUOTE_STRING_MODE,
+        hljs.NUMBER_MODE,
+        {
+          scope: "punctuation",
+          match: /[.]{3}/,
+          relevance: 0
+        },
+        {
+          scope: "punctuation",
+          begin: /[\!\(\)\:\=\[\]\{\|\}]{1}/,
+          relevance: 0
+        },
+        {
+          scope: "variable",
+          begin: /\$/,
+          end: /\W/,
+          excludeEnd: true,
+          relevance: 0
+        },
+        {
+          scope: "meta",
+          match: /@\w+/,
+          excludeEnd: true
+        },
+        {
+          scope: "symbol",
+          begin: regex.concat(GQL_NAME, regex.lookahead(/\s*:/)),
+          relevance: 0
+        }
+      ],
+      illegal: [
+        /[;<']/,
+        /BEGIN/
+      ]
+    };
+  }
+  module.exports = graphql;
+});
+
+// node_modules/highlight.js/lib/languages/ini.js
+var require_ini = __commonJS(function(exports, module) {
+  function ini(hljs) {
+    const regex = hljs.regex;
+    const NUMBERS = {
+      className: "number",
+      relevance: 0,
+      variants: [
+        { begin: /([+-]+)?[\d]+_[\d_]+/ },
+        { begin: hljs.NUMBER_RE }
+      ]
+    };
+    const COMMENTS = hljs.COMMENT();
+    COMMENTS.variants = [
+      {
+        begin: /;/,
+        end: /$/
+      },
+      {
+        begin: /#/,
+        end: /$/
+      }
+    ];
+    const VARIABLES = {
+      className: "variable",
+      variants: [
+        { begin: /\$[\w\d"][\w\d_]*/ },
+        { begin: /\$\{(.*?)\}/ }
+      ]
+    };
+    const LITERALS = {
+      className: "literal",
+      begin: /\bon|off|true|false|yes|no\b/
+    };
+    const STRINGS = {
+      className: "string",
+      contains: [hljs.BACKSLASH_ESCAPE],
+      variants: [
+        {
+          begin: "'''",
+          end: "'''",
+          relevance: 10
+        },
+        {
+          begin: '"""',
+          end: '"""',
+          relevance: 10
+        },
+        {
+          begin: '"',
+          end: '"'
+        },
+        {
+          begin: "'",
+          end: "'"
+        }
+      ]
+    };
+    const ARRAY = {
+      begin: /\[/,
+      end: /\]/,
+      contains: [
+        COMMENTS,
+        LITERALS,
+        VARIABLES,
+        STRINGS,
+        NUMBERS,
+        "self"
+      ],
+      relevance: 0
+    };
+    const BARE_KEY = /[A-Za-z0-9_-]+/;
+    const QUOTED_KEY_DOUBLE_QUOTE = /"(\\"|[^"])*"/;
+    const QUOTED_KEY_SINGLE_QUOTE = /'[^']*'/;
+    const ANY_KEY = regex.either(BARE_KEY, QUOTED_KEY_DOUBLE_QUOTE, QUOTED_KEY_SINGLE_QUOTE);
+    const DOTTED_KEY = regex.concat(ANY_KEY, "(\\s*\\.\\s*", ANY_KEY, ")*", regex.lookahead(/\s*=\s*[^#\s]/));
+    return {
+      name: "TOML, also INI",
+      aliases: ["toml"],
+      case_insensitive: true,
+      illegal: /\S/,
+      contains: [
+        COMMENTS,
+        {
+          className: "section",
+          begin: /\[+/,
+          end: /\]+/
+        },
+        {
+          begin: DOTTED_KEY,
+          className: "attr",
+          starts: {
+            end: /$/,
+            contains: [
+              COMMENTS,
+              ARRAY,
+              LITERALS,
+              VARIABLES,
+              STRINGS,
+              NUMBERS
+            ]
+          }
+        }
+      ]
+    };
+  }
+  module.exports = ini;
+});
+
+// node_modules/highlight.js/lib/languages/java.js
+var require_java = __commonJS(function(exports, module) {
+  var decimalDigits = "[0-9](_*[0-9])*";
+  var frac = `\\.(${decimalDigits})`;
+  var hexDigits = "[0-9a-fA-F](_*[0-9a-fA-F])*";
+  var NUMERIC = {
+    className: "number",
+    variants: [
+      { begin: `(\\b(${decimalDigits})((${frac})|\\.)?|(${frac}))` + `[eE][+-]?(${decimalDigits})[fFdD]?\\b` },
+      { begin: `\\b(${decimalDigits})((${frac})[fFdD]?\\b|\\.([fFdD]\\b)?)` },
+      { begin: `(${frac})[fFdD]?\\b` },
+      { begin: `\\b(${decimalDigits})[fFdD]\\b` },
+      { begin: `\\b0[xX]((${hexDigits})\\.?|(${hexDigits})?\\.(${hexDigits}))` + `[pP][+-]?(${decimalDigits})[fFdD]?\\b` },
+      { begin: "\\b(0|[1-9](_*[0-9])*)[lL]?\\b" },
+      { begin: `\\b0[xX](${hexDigits})[lL]?\\b` },
+      { begin: "\\b0(_*[0-7])*[lL]?\\b" },
+      { begin: "\\b0[bB][01](_*[01])*[lL]?\\b" }
+    ],
+    relevance: 0
+  };
+  function recurRegex(re, substitution, depth) {
+    if (depth === -1)
+      return "";
+    return re.replace(substitution, (_) => {
+      return recurRegex(re, substitution, depth - 1);
+    });
+  }
+  function java(hljs) {
+    const regex = hljs.regex;
+    const JAVA_IDENT_RE = "[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*";
+    const ARRAY_BRACKETS_OPTIONAL_RE = "(?:(?:\\s*\\[\\s*])+)?";
+    const SIMPLE_TYPE_RE = JAVA_IDENT_RE + "<@@@>" + ARRAY_BRACKETS_OPTIONAL_RE;
+    const WILDCARD_TYPE_RE = "\\?(?:\\s+(?:extends|super)\\s+" + SIMPLE_TYPE_RE + ")?";
+    const TYPE_ARG_RE = "(?:" + WILDCARD_TYPE_RE + "|" + SIMPLE_TYPE_RE + ")";
+    const TYPE_ARGS_OPTIONAL_RE = recurRegex("(?:\\s*<\\s*" + TYPE_ARG_RE + "(?:\\s*,\\s*" + TYPE_ARG_RE + ")*\\s*>)?", /<@@@>/g, 2);
+    const MAIN_KEYWORDS = [
+      "synchronized",
+      "abstract",
+      "private",
+      "var",
+      "static",
+      "if",
+      "const ",
+      "for",
+      "while",
+      "strictfp",
+      "finally",
+      "protected",
+      "import",
+      "native",
+      "final",
+      "void",
+      "enum",
+      "else",
+      "break",
+      "transient",
+      "catch",
+      "instanceof",
+      "volatile",
+      "case",
+      "assert",
+      "package",
+      "default",
+      "public",
+      "try",
+      "switch",
+      "continue",
+      "throws",
+      "protected",
+      "public",
+      "private",
+      "module",
+      "requires",
+      "exports",
+      "do",
+      "sealed",
+      "yield",
+      "permits",
+      "goto",
+      "when"
+    ];
+    const BUILT_INS = [
+      "super",
+      "this"
+    ];
+    const LITERALS = [
+      "false",
+      "true",
+      "null"
+    ];
+    const TYPES = [
+      "char",
+      "boolean",
+      "long",
+      "float",
+      "int",
+      "byte",
+      "short",
+      "double"
+    ];
+    const KEYWORDS = {
+      keyword: MAIN_KEYWORDS,
+      literal: LITERALS,
+      type: TYPES,
+      built_in: BUILT_INS
+    };
+    const ANNOTATION = {
+      className: "meta",
+      begin: "@" + JAVA_IDENT_RE,
+      contains: [
+        {
+          begin: /\(/,
+          end: /\)/,
+          contains: ["self"]
+        }
+      ]
+    };
+    const PARAMS = {
+      className: "params",
+      begin: /\(/,
+      end: /\)/,
+      keywords: KEYWORDS,
+      relevance: 0,
+      contains: [hljs.C_BLOCK_COMMENT_MODE],
+      endsParent: true
+    };
+    return {
+      name: "Java",
+      aliases: ["jsp"],
+      keywords: KEYWORDS,
+      illegal: /<\/|#/,
+      contains: [
+        hljs.COMMENT("/\\*\\*", "\\*/", {
+          relevance: 0,
+          contains: [
+            {
+              begin: /\w+@/,
+              relevance: 0
+            },
+            {
+              className: "doctag",
+              begin: "@[A-Za-z]+"
+            }
+          ]
+        }),
+        {
+          begin: /import java\.[a-z]+\./,
+          keywords: "import",
+          relevance: 2
+        },
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        {
+          begin: /"""/,
+          end: /"""/,
+          className: "string",
+          contains: [hljs.BACKSLASH_ESCAPE]
+        },
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE,
+        {
+          match: [
+            /\b(?:class|interface|enum|extends|implements|new)/,
+            /\s+/,
+            JAVA_IDENT_RE
+          ],
+          className: {
+            1: "keyword",
+            3: "title.class"
+          }
+        },
+        {
+          match: /non-sealed/,
+          scope: "keyword"
+        },
+        {
+          beginKeywords: "new throw return else yield assert",
+          relevance: 0
+        },
+        {
+          begin: [
+            JAVA_IDENT_RE,
+            regex.concat(TYPE_ARGS_OPTIONAL_RE, ARRAY_BRACKETS_OPTIONAL_RE, /\s+/),
+            JAVA_IDENT_RE,
+            ARRAY_BRACKETS_OPTIONAL_RE,
+            /\s*/,
+            /=(?!=)/
+          ],
+          className: {
+            1: "type",
+            3: "variable",
+            6: "operator"
+          }
+        },
+        {
+          begin: [
+            /record/,
+            /\s+/,
+            JAVA_IDENT_RE
+          ],
+          className: {
+            1: "keyword",
+            3: "title.class"
+          },
+          contains: [
+            PARAMS,
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        {
+          begin: [
+            JAVA_IDENT_RE,
+            regex.concat(TYPE_ARGS_OPTIONAL_RE, ARRAY_BRACKETS_OPTIONAL_RE, /\s+/),
+            JAVA_IDENT_RE,
+            /\s*(?=\()/
+          ],
+          className: {
+            1: "type",
+            3: "title.function"
+          },
+          keywords: KEYWORDS,
+          contains: [
+            {
+              className: "params",
+              begin: /\(/,
+              end: /\)/,
+              keywords: KEYWORDS,
+              relevance: 0,
+              contains: [
+                ANNOTATION,
+                hljs.APOS_STRING_MODE,
+                hljs.QUOTE_STRING_MODE,
+                NUMERIC,
+                hljs.C_BLOCK_COMMENT_MODE
+              ]
+            },
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        NUMERIC,
+        ANNOTATION
+      ]
+    };
+  }
+  module.exports = java;
+});
+
+// node_modules/highlight.js/lib/languages/javascript.js
+var require_javascript = __commonJS(function(exports, module) {
+  var IDENT_RE = "[A-Za-z$_][0-9A-Za-z$_]*";
+  var KEYWORDS = [
+    "as",
+    "in",
+    "of",
+    "if",
+    "for",
+    "while",
+    "finally",
+    "var",
+    "new",
+    "function",
+    "do",
+    "return",
+    "void",
+    "else",
+    "break",
+    "catch",
+    "instanceof",
+    "with",
+    "throw",
+    "case",
+    "default",
+    "try",
+    "switch",
+    "continue",
+    "typeof",
+    "delete",
+    "let",
+    "yield",
+    "const",
+    "class",
+    "debugger",
+    "async",
+    "await",
+    "static",
+    "import",
+    "from",
+    "export",
+    "extends",
+    "using"
+  ];
+  var LITERALS = [
+    "true",
+    "false",
+    "null",
+    "undefined",
+    "NaN",
+    "Infinity"
+  ];
+  var TYPES = [
+    "Object",
+    "Function",
+    "Boolean",
+    "Symbol",
+    "Math",
+    "Date",
+    "Number",
+    "BigInt",
+    "String",
+    "RegExp",
+    "Array",
+    "Float32Array",
+    "Float64Array",
+    "Int8Array",
+    "Uint8Array",
+    "Uint8ClampedArray",
+    "Int16Array",
+    "Int32Array",
+    "Uint16Array",
+    "Uint32Array",
+    "BigInt64Array",
+    "BigUint64Array",
+    "Set",
+    "Map",
+    "WeakSet",
+    "WeakMap",
+    "ArrayBuffer",
+    "SharedArrayBuffer",
+    "Atomics",
+    "DataView",
+    "JSON",
+    "Promise",
+    "Generator",
+    "GeneratorFunction",
+    "AsyncFunction",
+    "Reflect",
+    "Proxy",
+    "Intl",
+    "WebAssembly"
+  ];
+  var ERROR_TYPES = [
+    "Error",
+    "EvalError",
+    "InternalError",
+    "RangeError",
+    "ReferenceError",
+    "SyntaxError",
+    "TypeError",
+    "URIError"
+  ];
+  var BUILT_IN_GLOBALS = [
+    "setInterval",
+    "setTimeout",
+    "clearInterval",
+    "clearTimeout",
+    "require",
+    "exports",
+    "eval",
+    "isFinite",
+    "isNaN",
+    "parseFloat",
+    "parseInt",
+    "decodeURI",
+    "decodeURIComponent",
+    "encodeURI",
+    "encodeURIComponent",
+    "escape",
+    "unescape"
+  ];
+  var BUILT_IN_VARIABLES = [
+    "arguments",
+    "this",
+    "super",
+    "console",
+    "window",
+    "document",
+    "localStorage",
+    "sessionStorage",
+    "module",
+    "self",
+    "global"
+  ];
+  var BUILT_INS = [].concat(BUILT_IN_GLOBALS, TYPES, ERROR_TYPES);
+  function javascript(hljs) {
+    const regex = hljs.regex;
+    const hasClosingTag = (match, { after }) => {
+      const tag = "</" + match[0].slice(1);
+      const pos = match.input.indexOf(tag, after);
+      return pos !== -1;
+    };
+    const IDENT_RE$1 = IDENT_RE;
+    const FRAGMENT = {
+      begin: "<>",
+      end: "</>"
+    };
+    const XML_SELF_CLOSING = /<[A-Za-z0-9\\._:-]+\s*\/>/;
+    const XML_TAG = {
+      begin: /<[A-Za-z0-9\\._:-]+/,
+      end: /\/[A-Za-z0-9\\._:-]+>|\/>/,
+      isTrulyOpeningTag: (match, response) => {
+        const afterMatchIndex = match[0].length + match.index;
+        const nextChar = match.input[afterMatchIndex];
+        if (nextChar === "<" || nextChar === ",") {
+          response.ignoreMatch();
+          return;
+        }
+        if (nextChar === ">") {
+          if (!hasClosingTag(match, { after: afterMatchIndex })) {
+            response.ignoreMatch();
+          }
+        }
+        let m;
+        const afterMatch = match.input.substring(afterMatchIndex);
+        if (m = afterMatch.match(/^\s*=/)) {
+          response.ignoreMatch();
+          return;
+        }
+        if (m = afterMatch.match(/^\s+extends\s+/)) {
+          if (m.index === 0) {
+            response.ignoreMatch();
+            return;
+          }
+        }
+      }
+    };
+    const KEYWORDS$1 = {
+      $pattern: IDENT_RE,
+      keyword: KEYWORDS,
+      literal: LITERALS,
+      built_in: BUILT_INS,
+      "variable.language": BUILT_IN_VARIABLES
+    };
+    const decimalDigits = "[0-9](_?[0-9])*";
+    const frac = `\\.(${decimalDigits})`;
+    const decimalInteger = `0|[1-9](_?[0-9])*|0[0-7]*[89][0-9]*`;
+    const NUMBER = {
+      className: "number",
+      variants: [
+        { begin: `(\\b(${decimalInteger})((${frac})|\\.)?|(${frac}))` + `[eE][+-]?(${decimalDigits})\\b` },
+        { begin: `\\b(${decimalInteger})\\b((${frac})\\b|\\.)?|(${frac})\\b` },
+        { begin: `\\b(0|[1-9](_?[0-9])*)n\\b` },
+        { begin: "\\b0[xX][0-9a-fA-F](_?[0-9a-fA-F])*n?\\b" },
+        { begin: "\\b0[bB][0-1](_?[0-1])*n?\\b" },
+        { begin: "\\b0[oO][0-7](_?[0-7])*n?\\b" },
+        { begin: "\\b0[0-7]+n?\\b" }
+      ],
+      relevance: 0
+    };
+    const SUBST = {
+      className: "subst",
+      begin: "\\$\\{",
+      end: "\\}",
+      keywords: KEYWORDS$1,
+      contains: []
+    };
+    const HTML_TEMPLATE = {
+      begin: ".?html`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "xml"
+      }
+    };
+    const CSS_TEMPLATE = {
+      begin: ".?css`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "css"
+      }
+    };
+    const GRAPHQL_TEMPLATE = {
+      begin: ".?gql`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "graphql"
+      }
+    };
+    const TEMPLATE_STRING = {
+      className: "string",
+      begin: "`",
+      end: "`",
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        SUBST
+      ]
+    };
+    const JSDOC_COMMENT = hljs.COMMENT(/\/\*\*(?!\/)/, "\\*/", {
+      relevance: 0,
+      contains: [
+        {
+          begin: "(?=@[A-Za-z]+)",
+          relevance: 0,
+          contains: [
+            {
+              className: "doctag",
+              begin: "@[A-Za-z]+"
+            },
+            {
+              className: "type",
+              begin: "\\{",
+              end: "\\}",
+              excludeEnd: true,
+              excludeBegin: true,
+              relevance: 0
+            },
+            {
+              className: "variable",
+              begin: IDENT_RE$1 + "(?=\\s*(-)|$)",
+              endsParent: true,
+              relevance: 0
+            },
+            {
+              begin: /(?=[^\n])\s/,
+              relevance: 0
+            }
+          ]
+        }
+      ]
+    });
+    const COMMENT = {
+      className: "comment",
+      variants: [
+        JSDOC_COMMENT,
+        hljs.C_BLOCK_COMMENT_MODE,
+        hljs.C_LINE_COMMENT_MODE
+      ]
+    };
+    const SUBST_INTERNALS = [
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      HTML_TEMPLATE,
+      CSS_TEMPLATE,
+      GRAPHQL_TEMPLATE,
+      TEMPLATE_STRING,
+      { match: /\$\d+/ },
+      NUMBER
+    ];
+    SUBST.contains = SUBST_INTERNALS.concat({
+      begin: /\{/,
+      end: /\}/,
+      keywords: KEYWORDS$1,
+      contains: [
+        "self"
+      ].concat(SUBST_INTERNALS)
+    });
+    const SUBST_AND_COMMENTS = [].concat(COMMENT, SUBST.contains);
+    const PARAMS_CONTAINS = SUBST_AND_COMMENTS.concat([
+      {
+        begin: /(\s*)\(/,
+        end: /\)/,
+        keywords: KEYWORDS$1,
+        contains: ["self"].concat(SUBST_AND_COMMENTS)
+      }
+    ]);
+    const PARAMS = {
+      className: "params",
+      begin: /(\s*)\(/,
+      end: /\)/,
+      excludeBegin: true,
+      excludeEnd: true,
+      keywords: KEYWORDS$1,
+      contains: PARAMS_CONTAINS
+    };
+    const CLASS_OR_EXTENDS = {
+      variants: [
+        {
+          match: [
+            /class/,
+            /\s+/,
+            IDENT_RE$1,
+            /\s+/,
+            /extends/,
+            /\s+/,
+            regex.concat(IDENT_RE$1, "(", regex.concat(/\./, IDENT_RE$1), ")*")
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class",
+            5: "keyword",
+            7: "title.class.inherited"
+          }
+        },
+        {
+          match: [
+            /class/,
+            /\s+/,
+            IDENT_RE$1
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class"
+          }
+        }
+      ]
+    };
+    const CLASS_REFERENCE = {
+      relevance: 0,
+      match: regex.either(/\bJSON/, /\b[A-Z][a-z]+([A-Z][a-z]*|\d)*/, /\b[A-Z]{2,}([A-Z][a-z]+|\d)+([A-Z][a-z]*)*/, /\b[A-Z]{2,}[a-z]+([A-Z][a-z]+|\d)*([A-Z][a-z]*)*/),
+      className: "title.class",
+      keywords: {
+        _: [
+          ...TYPES,
+          ...ERROR_TYPES
+        ]
+      }
+    };
+    const USE_STRICT = {
+      label: "use_strict",
+      className: "meta",
+      relevance: 10,
+      begin: /^\s*['"]use (strict|asm)['"]/
+    };
+    const FUNCTION_DEFINITION = {
+      variants: [
+        {
+          match: [
+            /function/,
+            /\s+/,
+            IDENT_RE$1,
+            /(?=\s*\()/
+          ]
+        },
+        {
+          match: [
+            /function/,
+            /\s*(?=\()/
+          ]
+        }
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      label: "func.def",
+      contains: [PARAMS],
+      illegal: /%/
+    };
+    const UPPER_CASE_CONSTANT = {
+      relevance: 0,
+      match: /\b[A-Z][A-Z_0-9]+\b/,
+      className: "variable.constant"
+    };
+    function noneOf(list) {
+      return regex.concat("(?!", list.join("|"), ")");
+    }
+    const FUNCTION_CALL = {
+      match: regex.concat(/\b/, noneOf([
+        ...BUILT_IN_GLOBALS,
+        "super",
+        "import",
+        "await"
+      ].map((x) => `${x}\\s*\\(`)), IDENT_RE$1, regex.lookahead(/\s*\(/)),
+      className: "title.function",
+      relevance: 0
+    };
+    const PROPERTY_ACCESS = {
+      begin: regex.concat(/\./, regex.lookahead(regex.concat(IDENT_RE$1, /(?![0-9A-Za-z$_(])/))),
+      end: IDENT_RE$1,
+      excludeBegin: true,
+      keywords: "prototype",
+      className: "property",
+      relevance: 0
+    };
+    const GETTER_OR_SETTER = {
+      match: [
+        /get|set/,
+        /\s+/,
+        IDENT_RE$1,
+        /(?=\()/
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        {
+          begin: /\(\)/
+        },
+        PARAMS
+      ]
+    };
+    const FUNC_LEAD_IN_RE = "(\\(" + "[^()]*(\\(" + "[^()]*(\\(" + "[^()]*" + "\\)[^()]*)*" + "\\)[^()]*)*" + "\\)|" + hljs.UNDERSCORE_IDENT_RE + ")\\s*=>";
+    const FUNCTION_VARIABLE = {
+      match: [
+        /const|var|let/,
+        /\s+/,
+        IDENT_RE$1,
+        /\s*/,
+        /=\s*/,
+        /(async\s*)?/,
+        regex.lookahead(FUNC_LEAD_IN_RE)
+      ],
+      keywords: "async",
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        PARAMS
+      ]
+    };
+    return {
+      name: "JavaScript",
+      aliases: ["js", "jsx", "mjs", "cjs"],
+      keywords: KEYWORDS$1,
+      exports: { PARAMS_CONTAINS, CLASS_REFERENCE },
+      illegal: /#(?![$_A-Za-z])/,
+      contains: [
+        hljs.SHEBANG({
+          label: "shebang",
+          binary: "node",
+          relevance: 5
+        }),
+        USE_STRICT,
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE,
+        HTML_TEMPLATE,
+        CSS_TEMPLATE,
+        GRAPHQL_TEMPLATE,
+        TEMPLATE_STRING,
+        COMMENT,
+        { match: /\$\d+/ },
+        NUMBER,
+        CLASS_REFERENCE,
+        {
+          scope: "attr",
+          match: IDENT_RE$1 + regex.lookahead(":"),
+          relevance: 0
+        },
+        FUNCTION_VARIABLE,
+        {
+          begin: "(" + hljs.RE_STARTERS_RE + "|\\b(case|return|throw)\\b)\\s*",
+          keywords: "return throw case",
+          relevance: 0,
+          contains: [
+            COMMENT,
+            hljs.REGEXP_MODE,
+            {
+              className: "function",
+              begin: FUNC_LEAD_IN_RE,
+              returnBegin: true,
+              end: "\\s*=>",
+              contains: [
+                {
+                  className: "params",
+                  variants: [
+                    {
+                      begin: hljs.UNDERSCORE_IDENT_RE,
+                      relevance: 0
+                    },
+                    {
+                      className: null,
+                      begin: /\(\s*\)/,
+                      skip: true
+                    },
+                    {
+                      begin: /(\s*)\(/,
+                      end: /\)/,
+                      excludeBegin: true,
+                      excludeEnd: true,
+                      keywords: KEYWORDS$1,
+                      contains: PARAMS_CONTAINS
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              begin: /,/,
+              relevance: 0
+            },
+            {
+              match: /\s+/,
+              relevance: 0
+            },
+            {
+              variants: [
+                { begin: FRAGMENT.begin, end: FRAGMENT.end },
+                { match: XML_SELF_CLOSING },
+                {
+                  begin: XML_TAG.begin,
+                  "on:begin": XML_TAG.isTrulyOpeningTag,
+                  end: XML_TAG.end
+                }
+              ],
+              subLanguage: "xml",
+              contains: [
+                {
+                  begin: XML_TAG.begin,
+                  end: XML_TAG.end,
+                  skip: true,
+                  contains: ["self"]
+                }
+              ]
+            }
+          ]
+        },
+        FUNCTION_DEFINITION,
+        {
+          beginKeywords: "while if switch catch for"
+        },
+        {
+          begin: "\\b(?!function)" + hljs.UNDERSCORE_IDENT_RE + "\\(" + "[^()]*(\\(" + "[^()]*(\\(" + "[^()]*" + "\\)[^()]*)*" + "\\)[^()]*)*" + "\\)\\s*\\{",
+          returnBegin: true,
+          label: "func.def",
+          contains: [
+            PARAMS,
+            hljs.inherit(hljs.TITLE_MODE, { begin: IDENT_RE$1, className: "title.function" })
+          ]
+        },
+        {
+          match: /\.\.\./,
+          relevance: 0
+        },
+        PROPERTY_ACCESS,
+        {
+          match: "\\$" + IDENT_RE$1,
+          relevance: 0
+        },
+        {
+          match: [/\bconstructor(?=\s*\()/],
+          className: { 1: "title.function" },
+          contains: [PARAMS]
+        },
+        FUNCTION_CALL,
+        UPPER_CASE_CONSTANT,
+        CLASS_OR_EXTENDS,
+        GETTER_OR_SETTER,
+        {
+          match: /\$[(.]/
+        }
+      ]
+    };
+  }
+  module.exports = javascript;
+});
+
+// node_modules/highlight.js/lib/languages/json.js
+var require_json = __commonJS(function(exports, module) {
+  var EXTENDED_NUMBER_RE = "([-+]?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)|NaN|[-+]?Infinity";
+  var EXTENDED_NUMBER_MODE = {
+    scope: "number",
+    match: EXTENDED_NUMBER_RE,
+    relevance: 0
+  };
+  function json(hljs) {
+    const ATTRIBUTE = {
+      className: "attr",
+      begin: /(("(\\.|[^\\"\r\n])*")|('(\\.|[^\\'\r\n])*'))(?=\s*:)/,
+      relevance: 1.01
+    };
+    const PUNCTUATION = {
+      match: /[{}[\],:]/,
+      className: "punctuation",
+      relevance: 0
+    };
+    const LITERALS = [
+      "true",
+      "false",
+      "null"
+    ];
+    const LITERALS_MODE = {
+      scope: "literal",
+      beginKeywords: LITERALS.join(" ")
+    };
+    return {
+      name: "JSON",
+      aliases: ["jsonc", "json5"],
+      keywords: {
+        literal: LITERALS
+      },
+      contains: [
+        ATTRIBUTE,
+        PUNCTUATION,
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE,
+        LITERALS_MODE,
+        EXTENDED_NUMBER_MODE,
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE
+      ],
+      illegal: "\\S"
+    };
+  }
+  module.exports = json;
+});
+
+// node_modules/highlight.js/lib/languages/kotlin.js
+var require_kotlin = __commonJS(function(exports, module) {
+  var decimalDigits = "[0-9](_*[0-9])*";
+  var frac = `\\.(${decimalDigits})`;
+  var hexDigits = "[0-9a-fA-F](_*[0-9a-fA-F])*";
+  var NUMERIC = {
+    className: "number",
+    variants: [
+      { begin: `(\\b(${decimalDigits})((${frac})|\\.)?|(${frac}))` + `[eE][+-]?(${decimalDigits})[fFdD]?\\b` },
+      { begin: `\\b(${decimalDigits})((${frac})[fFdD]?\\b|\\.([fFdD]\\b)?)` },
+      { begin: `(${frac})[fFdD]?\\b` },
+      { begin: `\\b(${decimalDigits})[fFdD]\\b` },
+      { begin: `\\b0[xX]((${hexDigits})\\.?|(${hexDigits})?\\.(${hexDigits}))` + `[pP][+-]?(${decimalDigits})[fFdD]?\\b` },
+      { begin: "\\b(0|[1-9](_*[0-9])*)[lL]?\\b" },
+      { begin: `\\b0[xX](${hexDigits})[lL]?\\b` },
+      { begin: "\\b0(_*[0-7])*[lL]?\\b" },
+      { begin: "\\b0[bB][01](_*[01])*[lL]?\\b" }
+    ],
+    relevance: 0
+  };
+  function kotlin(hljs) {
+    const KEYWORDS = {
+      keyword: "abstract as val var vararg get set class object open private protected public noinline " + "crossinline dynamic final enum if else do while for when throw try catch finally " + "import package is in fun override companion reified inline lateinit init " + "interface annotation data sealed internal infix operator out by constructor super " + "tailrec where const inner suspend typealias external expect actual",
+      built_in: "Byte Short Char Int Long Boolean Float Double Void Unit Nothing",
+      literal: "true false null"
+    };
+    const KEYWORDS_WITH_LABEL = {
+      className: "keyword",
+      begin: /\b(break|continue|return|this)\b/,
+      starts: { contains: [
+        {
+          className: "symbol",
+          begin: /@\w+/
+        }
+      ] }
+    };
+    const LABEL = {
+      className: "symbol",
+      begin: hljs.UNDERSCORE_IDENT_RE + "@"
+    };
+    const SUBST = {
+      className: "subst",
+      begin: /\$\{/,
+      end: /\}/,
+      contains: [hljs.C_NUMBER_MODE]
+    };
+    const VARIABLE = {
+      className: "variable",
+      begin: "\\$" + hljs.UNDERSCORE_IDENT_RE
+    };
+    const STRING = {
+      className: "string",
+      variants: [
+        {
+          begin: '"""',
+          end: '"""(?=[^"])',
+          contains: [
+            VARIABLE,
+            SUBST
+          ]
+        },
+        {
+          begin: "'",
+          end: "'",
+          illegal: /\n/,
+          contains: [hljs.BACKSLASH_ESCAPE]
+        },
+        {
+          begin: '"',
+          end: '"',
+          illegal: /\n/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            VARIABLE,
+            SUBST
+          ]
+        }
+      ]
+    };
+    SUBST.contains.push(STRING);
+    const ANNOTATION_USE_SITE = {
+      className: "meta",
+      begin: "@(?:file|property|field|get|set|receiver|param|setparam|delegate)\\s*:(?:\\s*" + hljs.UNDERSCORE_IDENT_RE + ")?"
+    };
+    const ANNOTATION = {
+      className: "meta",
+      begin: "@" + hljs.UNDERSCORE_IDENT_RE,
+      contains: [
+        {
+          begin: /\(/,
+          end: /\)/,
+          contains: [
+            hljs.inherit(STRING, { className: "string" }),
+            "self"
+          ]
+        }
+      ]
+    };
+    const KOTLIN_NUMBER_MODE = NUMERIC;
+    const KOTLIN_NESTED_COMMENT = hljs.COMMENT("/\\*", "\\*/", { contains: [hljs.C_BLOCK_COMMENT_MODE] });
+    const KOTLIN_PAREN_TYPE = { variants: [
+      {
+        className: "type",
+        begin: hljs.UNDERSCORE_IDENT_RE
+      },
+      {
+        begin: /\(/,
+        end: /\)/,
+        contains: []
+      }
+    ] };
+    const KOTLIN_PAREN_TYPE2 = KOTLIN_PAREN_TYPE;
+    KOTLIN_PAREN_TYPE2.variants[1].contains = [KOTLIN_PAREN_TYPE];
+    KOTLIN_PAREN_TYPE.variants[1].contains = [KOTLIN_PAREN_TYPE2];
+    return {
+      name: "Kotlin",
+      aliases: [
+        "kt",
+        "kts",
+        "ktm",
+        "ktx"
+      ],
+      keywords: KEYWORDS,
+      contains: [
+        hljs.COMMENT("/\\*\\*", "\\*/", {
+          relevance: 0,
+          contains: [
+            {
+              className: "doctag",
+              begin: "@[A-Za-z]+"
+            }
+          ]
+        }),
+        hljs.C_LINE_COMMENT_MODE,
+        KOTLIN_NESTED_COMMENT,
+        KEYWORDS_WITH_LABEL,
+        LABEL,
+        ANNOTATION_USE_SITE,
+        ANNOTATION,
+        {
+          className: "function",
+          beginKeywords: "fun",
+          end: "[(]|$",
+          returnBegin: true,
+          excludeEnd: true,
+          keywords: KEYWORDS,
+          relevance: 5,
+          contains: [
+            {
+              begin: hljs.UNDERSCORE_IDENT_RE + "\\s*\\(",
+              returnBegin: true,
+              relevance: 0,
+              contains: [hljs.UNDERSCORE_TITLE_MODE]
+            },
+            {
+              className: "type",
+              begin: /</,
+              end: />/,
+              keywords: "reified",
+              relevance: 0
+            },
+            {
+              className: "params",
+              begin: /\(/,
+              end: /\)/,
+              endsParent: true,
+              keywords: KEYWORDS,
+              relevance: 0,
+              contains: [
+                {
+                  begin: /:/,
+                  end: /[=,\/]/,
+                  endsWithParent: true,
+                  contains: [
+                    KOTLIN_PAREN_TYPE,
+                    hljs.C_LINE_COMMENT_MODE,
+                    KOTLIN_NESTED_COMMENT
+                  ],
+                  relevance: 0
+                },
+                hljs.C_LINE_COMMENT_MODE,
+                KOTLIN_NESTED_COMMENT,
+                ANNOTATION_USE_SITE,
+                ANNOTATION,
+                STRING,
+                hljs.C_NUMBER_MODE
+              ]
+            },
+            KOTLIN_NESTED_COMMENT
+          ]
+        },
+        {
+          begin: [
+            /class|interface|trait/,
+            /\s+/,
+            hljs.UNDERSCORE_IDENT_RE
+          ],
+          beginScope: {
+            3: "title.class"
+          },
+          keywords: "class interface trait",
+          end: /[:\{(]|$/,
+          excludeEnd: true,
+          illegal: "extends implements",
+          contains: [
+            { beginKeywords: "public protected internal private constructor" },
+            hljs.UNDERSCORE_TITLE_MODE,
+            {
+              className: "type",
+              begin: /</,
+              end: />/,
+              excludeBegin: true,
+              excludeEnd: true,
+              relevance: 0
+            },
+            {
+              className: "type",
+              begin: /[,:]\s*/,
+              end: /[<\(,){\s]|$/,
+              excludeBegin: true,
+              returnEnd: true
+            },
+            ANNOTATION_USE_SITE,
+            ANNOTATION
+          ]
+        },
+        STRING,
+        {
+          className: "meta",
+          begin: "^#!/usr/bin/env",
+          end: "$",
+          illegal: `
+`
+        },
+        KOTLIN_NUMBER_MODE
+      ]
+    };
+  }
+  module.exports = kotlin;
+});
+
+// node_modules/highlight.js/lib/languages/less.js
+var require_less = __commonJS(function(exports, module) {
+  var MODES = (hljs) => {
+    return {
+      IMPORTANT: {
+        scope: "meta",
+        begin: "!important"
+      },
+      BLOCK_COMMENT: hljs.C_BLOCK_COMMENT_MODE,
+      HEXCOLOR: {
+        scope: "number",
+        begin: /#(([0-9a-fA-F]{3,4})|(([0-9a-fA-F]{2}){3,4}))\b/
+      },
+      UNICODE_RANGE: {
+        scope: "number",
+        begin: /\b[Uu]\+[0-9A-Fa-f][0-9A-Fa-f?]{0,5}(-[0-9A-Fa-f][0-9A-Fa-f]{0,5})?/
+      },
+      FUNCTION_DISPATCH: {
+        className: "built_in",
+        begin: /[\w-]+(?=\()/
+      },
+      ATTRIBUTE_SELECTOR_MODE: {
+        scope: "selector-attr",
+        begin: /\[/,
+        end: /\]/,
+        illegal: "$",
+        contains: [
+          hljs.APOS_STRING_MODE,
+          hljs.QUOTE_STRING_MODE
+        ]
+      },
+      CSS_NUMBER_MODE: {
+        scope: "number",
+        begin: hljs.NUMBER_RE + "(" + "%|em|ex|ch|rem" + "|vw|vh|vmin|vmax" + "|cm|mm|in|pt|pc|px" + "|deg|grad|rad|turn" + "|s|ms" + "|Hz|kHz" + "|dpi|dpcm|dppx" + ")?",
+        relevance: 0
+      },
+      CSS_VARIABLE: {
+        className: "attr",
+        begin: /--[A-Za-z_][A-Za-z0-9_-]*/
+      }
+    };
+  };
+  var HTML_TAGS = [
+    "a",
+    "abbr",
+    "address",
+    "article",
+    "aside",
+    "audio",
+    "b",
+    "blockquote",
+    "body",
+    "button",
+    "canvas",
+    "caption",
+    "cite",
+    "code",
+    "dd",
+    "del",
+    "details",
+    "dfn",
+    "div",
+    "dl",
+    "dt",
+    "em",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "html",
+    "i",
+    "iframe",
+    "img",
+    "input",
+    "ins",
+    "kbd",
+    "label",
+    "legend",
+    "li",
+    "main",
+    "mark",
+    "menu",
+    "nav",
+    "object",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "picture",
+    "q",
+    "quote",
+    "samp",
+    "section",
+    "select",
+    "source",
+    "span",
+    "strong",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "time",
+    "tr",
+    "ul",
+    "var",
+    "video"
+  ];
+  var SVG_TAGS = [
+    "defs",
+    "g",
+    "marker",
+    "mask",
+    "pattern",
+    "svg",
+    "switch",
+    "symbol",
+    "feBlend",
+    "feColorMatrix",
+    "feComponentTransfer",
+    "feComposite",
+    "feConvolveMatrix",
+    "feDiffuseLighting",
+    "feDisplacementMap",
+    "feFlood",
+    "feGaussianBlur",
+    "feImage",
+    "feMerge",
+    "feMorphology",
+    "feOffset",
+    "feSpecularLighting",
+    "feTile",
+    "feTurbulence",
+    "linearGradient",
+    "radialGradient",
+    "stop",
+    "circle",
+    "ellipse",
+    "image",
+    "line",
+    "path",
+    "polygon",
+    "polyline",
+    "rect",
+    "text",
+    "use",
+    "textPath",
+    "tspan",
+    "foreignObject",
+    "clipPath"
+  ];
+  var TAGS = [
+    ...HTML_TAGS,
+    ...SVG_TAGS
+  ];
+  var MEDIA_FEATURES = [
+    "any-hover",
+    "any-pointer",
+    "aspect-ratio",
+    "color",
+    "color-gamut",
+    "color-index",
+    "device-aspect-ratio",
+    "device-height",
+    "device-width",
+    "display-mode",
+    "forced-colors",
+    "grid",
+    "height",
+    "hover",
+    "inverted-colors",
+    "monochrome",
+    "orientation",
+    "overflow-block",
+    "overflow-inline",
+    "pointer",
+    "prefers-color-scheme",
+    "prefers-contrast",
+    "prefers-reduced-motion",
+    "prefers-reduced-transparency",
+    "resolution",
+    "scan",
+    "scripting",
+    "update",
+    "width",
+    "min-width",
+    "max-width",
+    "min-height",
+    "max-height"
+  ].sort().reverse();
+  var PSEUDO_CLASSES = [
+    "active",
+    "any-link",
+    "blank",
+    "checked",
+    "current",
+    "default",
+    "defined",
+    "dir",
+    "disabled",
+    "drop",
+    "empty",
+    "enabled",
+    "first",
+    "first-child",
+    "first-of-type",
+    "fullscreen",
+    "future",
+    "focus",
+    "focus-visible",
+    "focus-within",
+    "has",
+    "host",
+    "host-context",
+    "hover",
+    "indeterminate",
+    "in-range",
+    "invalid",
+    "is",
+    "lang",
+    "last-child",
+    "last-of-type",
+    "left",
+    "link",
+    "local-link",
+    "not",
+    "nth-child",
+    "nth-col",
+    "nth-last-child",
+    "nth-last-col",
+    "nth-last-of-type",
+    "nth-of-type",
+    "only-child",
+    "only-of-type",
+    "optional",
+    "out-of-range",
+    "past",
+    "placeholder-shown",
+    "read-only",
+    "read-write",
+    "required",
+    "right",
+    "root",
+    "scope",
+    "target",
+    "target-within",
+    "user-invalid",
+    "valid",
+    "visited",
+    "where"
+  ].sort().reverse();
+  var PSEUDO_ELEMENTS = [
+    "after",
+    "backdrop",
+    "before",
+    "cue",
+    "cue-region",
+    "first-letter",
+    "first-line",
+    "grammar-error",
+    "marker",
+    "part",
+    "placeholder",
+    "selection",
+    "slotted",
+    "spelling-error"
+  ].sort().reverse();
+  var ATTRIBUTES = [
+    "accent-color",
+    "align-content",
+    "align-items",
+    "align-self",
+    "alignment-baseline",
+    "all",
+    "anchor-name",
+    "animation",
+    "animation-composition",
+    "animation-delay",
+    "animation-direction",
+    "animation-duration",
+    "animation-fill-mode",
+    "animation-iteration-count",
+    "animation-name",
+    "animation-play-state",
+    "animation-range",
+    "animation-range-end",
+    "animation-range-start",
+    "animation-timeline",
+    "animation-timing-function",
+    "appearance",
+    "aspect-ratio",
+    "backdrop-filter",
+    "backface-visibility",
+    "background",
+    "background-attachment",
+    "background-blend-mode",
+    "background-clip",
+    "background-color",
+    "background-image",
+    "background-origin",
+    "background-position",
+    "background-position-x",
+    "background-position-y",
+    "background-repeat",
+    "background-size",
+    "baseline-shift",
+    "block-size",
+    "border",
+    "border-block",
+    "border-block-color",
+    "border-block-end",
+    "border-block-end-color",
+    "border-block-end-style",
+    "border-block-end-width",
+    "border-block-start",
+    "border-block-start-color",
+    "border-block-start-style",
+    "border-block-start-width",
+    "border-block-style",
+    "border-block-width",
+    "border-bottom",
+    "border-bottom-color",
+    "border-bottom-left-radius",
+    "border-bottom-right-radius",
+    "border-bottom-style",
+    "border-bottom-width",
+    "border-collapse",
+    "border-color",
+    "border-end-end-radius",
+    "border-end-start-radius",
+    "border-image",
+    "border-image-outset",
+    "border-image-repeat",
+    "border-image-slice",
+    "border-image-source",
+    "border-image-width",
+    "border-inline",
+    "border-inline-color",
+    "border-inline-end",
+    "border-inline-end-color",
+    "border-inline-end-style",
+    "border-inline-end-width",
+    "border-inline-start",
+    "border-inline-start-color",
+    "border-inline-start-style",
+    "border-inline-start-width",
+    "border-inline-style",
+    "border-inline-width",
+    "border-left",
+    "border-left-color",
+    "border-left-style",
+    "border-left-width",
+    "border-radius",
+    "border-right",
+    "border-right-color",
+    "border-right-style",
+    "border-right-width",
+    "border-spacing",
+    "border-start-end-radius",
+    "border-start-start-radius",
+    "border-style",
+    "border-top",
+    "border-top-color",
+    "border-top-left-radius",
+    "border-top-right-radius",
+    "border-top-style",
+    "border-top-width",
+    "border-width",
+    "bottom",
+    "box-align",
+    "box-decoration-break",
+    "box-direction",
+    "box-flex",
+    "box-flex-group",
+    "box-lines",
+    "box-ordinal-group",
+    "box-orient",
+    "box-pack",
+    "box-shadow",
+    "box-sizing",
+    "break-after",
+    "break-before",
+    "break-inside",
+    "caption-side",
+    "caret-color",
+    "clear",
+    "clip",
+    "clip-path",
+    "clip-rule",
+    "color",
+    "color-interpolation",
+    "color-interpolation-filters",
+    "color-profile",
+    "color-rendering",
+    "color-scheme",
+    "column-count",
+    "column-fill",
+    "column-gap",
+    "column-rule",
+    "column-rule-color",
+    "column-rule-style",
+    "column-rule-width",
+    "column-span",
+    "column-width",
+    "columns",
+    "contain",
+    "contain-intrinsic-block-size",
+    "contain-intrinsic-height",
+    "contain-intrinsic-inline-size",
+    "contain-intrinsic-size",
+    "contain-intrinsic-width",
+    "container",
+    "container-name",
+    "container-type",
+    "content",
+    "content-visibility",
+    "corner-bottom-left-shape",
+    "corner-bottom-right-shape",
+    "corner-shape",
+    "corner-top-left-shape",
+    "corner-top-right-shape",
+    "counter-increment",
+    "counter-reset",
+    "counter-set",
+    "cue",
+    "cue-after",
+    "cue-before",
+    "cursor",
+    "cx",
+    "cy",
+    "direction",
+    "display",
+    "dominant-baseline",
+    "empty-cells",
+    "enable-background",
+    "field-sizing",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "filter",
+    "flex",
+    "flex-basis",
+    "flex-direction",
+    "flex-flow",
+    "flex-grow",
+    "flex-shrink",
+    "flex-wrap",
+    "float",
+    "flood-color",
+    "flood-opacity",
+    "flow",
+    "font",
+    "font-display",
+    "font-family",
+    "font-feature-settings",
+    "font-kerning",
+    "font-language-override",
+    "font-optical-sizing",
+    "font-palette",
+    "font-size",
+    "font-size-adjust",
+    "font-smooth",
+    "font-smoothing",
+    "font-stretch",
+    "font-style",
+    "font-synthesis",
+    "font-synthesis-position",
+    "font-synthesis-small-caps",
+    "font-synthesis-style",
+    "font-synthesis-weight",
+    "font-variant",
+    "font-variant-alternates",
+    "font-variant-caps",
+    "font-variant-east-asian",
+    "font-variant-emoji",
+    "font-variant-ligatures",
+    "font-variant-numeric",
+    "font-variant-position",
+    "font-variation-settings",
+    "font-weight",
+    "forced-color-adjust",
+    "gap",
+    "glyph-orientation-horizontal",
+    "glyph-orientation-vertical",
+    "grid",
+    "grid-area",
+    "grid-auto-columns",
+    "grid-auto-flow",
+    "grid-auto-rows",
+    "grid-column",
+    "grid-column-end",
+    "grid-column-start",
+    "grid-gap",
+    "grid-row",
+    "grid-row-end",
+    "grid-row-start",
+    "grid-template",
+    "grid-template-areas",
+    "grid-template-columns",
+    "grid-template-rows",
+    "hanging-punctuation",
+    "height",
+    "hyphenate-character",
+    "hyphenate-limit-chars",
+    "hyphens",
+    "icon",
+    "image-orientation",
+    "image-rendering",
+    "image-resolution",
+    "ime-mode",
+    "initial-letter",
+    "initial-letter-align",
+    "inline-size",
+    "inset",
+    "inset-area",
+    "inset-block",
+    "inset-block-end",
+    "inset-block-start",
+    "inset-inline",
+    "inset-inline-end",
+    "inset-inline-start",
+    "isolation",
+    "justify-content",
+    "justify-items",
+    "justify-self",
+    "kerning",
+    "left",
+    "letter-spacing",
+    "lighting-color",
+    "line-break",
+    "line-height",
+    "line-height-step",
+    "list-style",
+    "list-style-image",
+    "list-style-position",
+    "list-style-type",
+    "margin",
+    "margin-block",
+    "margin-block-end",
+    "margin-block-start",
+    "margin-bottom",
+    "margin-inline",
+    "margin-inline-end",
+    "margin-inline-start",
+    "margin-left",
+    "margin-right",
+    "margin-top",
+    "margin-trim",
+    "marker",
+    "marker-end",
+    "marker-mid",
+    "marker-start",
+    "marks",
+    "mask",
+    "mask-border",
+    "mask-border-mode",
+    "mask-border-outset",
+    "mask-border-repeat",
+    "mask-border-slice",
+    "mask-border-source",
+    "mask-border-width",
+    "mask-clip",
+    "mask-composite",
+    "mask-image",
+    "mask-mode",
+    "mask-origin",
+    "mask-position",
+    "mask-repeat",
+    "mask-size",
+    "mask-type",
+    "masonry-auto-flow",
+    "math-depth",
+    "math-shift",
+    "math-style",
+    "max-block-size",
+    "max-height",
+    "max-inline-size",
+    "max-width",
+    "min-block-size",
+    "min-height",
+    "min-inline-size",
+    "min-width",
+    "mix-blend-mode",
+    "nav-down",
+    "nav-index",
+    "nav-left",
+    "nav-right",
+    "nav-up",
+    "none",
+    "normal",
+    "object-fit",
+    "object-position",
+    "offset",
+    "offset-anchor",
+    "offset-distance",
+    "offset-path",
+    "offset-position",
+    "offset-rotate",
+    "opacity",
+    "order",
+    "orphans",
+    "outline",
+    "outline-color",
+    "outline-offset",
+    "outline-style",
+    "outline-width",
+    "overflow",
+    "overflow-anchor",
+    "overflow-block",
+    "overflow-clip-margin",
+    "overflow-inline",
+    "overflow-wrap",
+    "overflow-x",
+    "overflow-y",
+    "overlay",
+    "overscroll-behavior",
+    "overscroll-behavior-block",
+    "overscroll-behavior-inline",
+    "overscroll-behavior-x",
+    "overscroll-behavior-y",
+    "padding",
+    "padding-block",
+    "padding-block-end",
+    "padding-block-start",
+    "padding-bottom",
+    "padding-inline",
+    "padding-inline-end",
+    "padding-inline-start",
+    "padding-left",
+    "padding-right",
+    "padding-top",
+    "page",
+    "page-break-after",
+    "page-break-before",
+    "page-break-inside",
+    "paint-order",
+    "pause",
+    "pause-after",
+    "pause-before",
+    "perspective",
+    "perspective-origin",
+    "place-content",
+    "place-items",
+    "place-self",
+    "pointer-events",
+    "position",
+    "position-anchor",
+    "position-visibility",
+    "print-color-adjust",
+    "quotes",
+    "r",
+    "resize",
+    "rest",
+    "rest-after",
+    "rest-before",
+    "right",
+    "rotate",
+    "row-gap",
+    "ruby-align",
+    "ruby-position",
+    "scale",
+    "scroll-behavior",
+    "scroll-margin",
+    "scroll-margin-block",
+    "scroll-margin-block-end",
+    "scroll-margin-block-start",
+    "scroll-margin-bottom",
+    "scroll-margin-inline",
+    "scroll-margin-inline-end",
+    "scroll-margin-inline-start",
+    "scroll-margin-left",
+    "scroll-margin-right",
+    "scroll-margin-top",
+    "scroll-padding",
+    "scroll-padding-block",
+    "scroll-padding-block-end",
+    "scroll-padding-block-start",
+    "scroll-padding-bottom",
+    "scroll-padding-inline",
+    "scroll-padding-inline-end",
+    "scroll-padding-inline-start",
+    "scroll-padding-left",
+    "scroll-padding-right",
+    "scroll-padding-top",
+    "scroll-snap-align",
+    "scroll-snap-stop",
+    "scroll-snap-type",
+    "scroll-timeline",
+    "scroll-timeline-axis",
+    "scroll-timeline-name",
+    "scrollbar-color",
+    "scrollbar-gutter",
+    "scrollbar-width",
+    "shape-image-threshold",
+    "shape-margin",
+    "shape-outside",
+    "shape-rendering",
+    "speak",
+    "speak-as",
+    "src",
+    "stop-color",
+    "stop-opacity",
+    "stroke",
+    "stroke-dasharray",
+    "stroke-dashoffset",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-miterlimit",
+    "stroke-opacity",
+    "stroke-width",
+    "tab-size",
+    "table-layout",
+    "text-align",
+    "text-align-all",
+    "text-align-last",
+    "text-anchor",
+    "text-combine-upright",
+    "text-decoration",
+    "text-decoration-color",
+    "text-decoration-line",
+    "text-decoration-skip",
+    "text-decoration-skip-ink",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-emphasis",
+    "text-emphasis-color",
+    "text-emphasis-position",
+    "text-emphasis-style",
+    "text-indent",
+    "text-justify",
+    "text-orientation",
+    "text-overflow",
+    "text-rendering",
+    "text-shadow",
+    "text-size-adjust",
+    "text-transform",
+    "text-underline-offset",
+    "text-underline-position",
+    "text-wrap",
+    "text-wrap-mode",
+    "text-wrap-style",
+    "timeline-scope",
+    "top",
+    "touch-action",
+    "transform",
+    "transform-box",
+    "transform-origin",
+    "transform-style",
+    "transition",
+    "transition-behavior",
+    "transition-delay",
+    "transition-duration",
+    "transition-property",
+    "transition-timing-function",
+    "translate",
+    "unicode-bidi",
+    "unicode-range",
+    "user-modify",
+    "user-select",
+    "vector-effect",
+    "vertical-align",
+    "view-timeline",
+    "view-timeline-axis",
+    "view-timeline-inset",
+    "view-timeline-name",
+    "view-transition-name",
+    "visibility",
+    "voice-balance",
+    "voice-duration",
+    "voice-family",
+    "voice-pitch",
+    "voice-range",
+    "voice-rate",
+    "voice-stress",
+    "voice-volume",
+    "white-space",
+    "white-space-collapse",
+    "widows",
+    "width",
+    "will-change",
+    "word-break",
+    "word-spacing",
+    "word-wrap",
+    "writing-mode",
+    "x",
+    "y",
+    "z-index",
+    "zoom"
+  ].sort().reverse();
+  var PSEUDO_SELECTORS = PSEUDO_CLASSES.concat(PSEUDO_ELEMENTS).sort().reverse();
+  function less(hljs) {
+    const modes = MODES(hljs);
+    const PSEUDO_SELECTORS$1 = PSEUDO_SELECTORS;
+    const AT_MODIFIERS = "and or not only";
+    const IDENT_RE = "[\\w-]+";
+    const INTERP_IDENT_RE = "(" + IDENT_RE + "|@\\{" + IDENT_RE + "\\})";
+    const RULES = [];
+    const VALUE_MODES = [];
+    const STRING_MODE = function(c) {
+      return {
+        className: "string",
+        begin: "~?" + c + ".*?" + c
+      };
+    };
+    const IDENT_MODE = function(name, begin, relevance) {
+      return {
+        className: name,
+        begin,
+        relevance
+      };
+    };
+    const AT_KEYWORDS = {
+      $pattern: /[a-z-]+/,
+      keyword: AT_MODIFIERS,
+      attribute: MEDIA_FEATURES.join(" ")
+    };
+    const PARENS_MODE = {
+      begin: "\\(",
+      end: "\\)",
+      contains: VALUE_MODES,
+      keywords: AT_KEYWORDS,
+      relevance: 0
+    };
+    VALUE_MODES.push(hljs.C_LINE_COMMENT_MODE, hljs.C_BLOCK_COMMENT_MODE, STRING_MODE("'"), STRING_MODE('"'), modes.CSS_NUMBER_MODE, {
+      begin: "(url|data-uri)\\(",
+      starts: {
+        className: "string",
+        end: "[\\)\\n]",
+        excludeEnd: true
+      }
+    }, modes.UNICODE_RANGE, modes.HEXCOLOR, PARENS_MODE, IDENT_MODE("variable", "@@?" + IDENT_RE, 10), IDENT_MODE("variable", "@\\{" + IDENT_RE + "\\}"), IDENT_MODE("built_in", "~?`[^`]*?`"), {
+      className: "attribute",
+      begin: IDENT_RE + "\\s*:",
+      end: ":",
+      returnBegin: true,
+      excludeEnd: true
+    }, modes.IMPORTANT, { beginKeywords: "and not" }, modes.FUNCTION_DISPATCH);
+    const VALUE_WITH_RULESETS = VALUE_MODES.concat({
+      begin: /\{/,
+      end: /\}/,
+      contains: RULES
+    });
+    const MIXIN_GUARD_MODE = {
+      beginKeywords: "when",
+      endsWithParent: true,
+      contains: [{ beginKeywords: "and not" }].concat(VALUE_MODES)
+    };
+    const RULE_MODE = {
+      begin: INTERP_IDENT_RE + "\\s*:",
+      returnBegin: true,
+      end: /[;}]/,
+      relevance: 0,
+      contains: [
+        { begin: /-(webkit|moz|ms|o)-/ },
+        modes.CSS_VARIABLE,
+        {
+          className: "attribute",
+          begin: "\\b(" + ATTRIBUTES.join("|") + ")\\b",
+          end: /(?=:)/,
+          starts: {
+            endsWithParent: true,
+            illegal: "[<=$]",
+            relevance: 0,
+            contains: VALUE_MODES
+          }
+        }
+      ]
+    };
+    const AT_RULE_MODE = {
+      className: "keyword",
+      begin: "@(import|media|charset|font-face|(-[a-z]+-)?keyframes|supports|document|namespace|page|viewport|host)\\b",
+      starts: {
+        end: "[;{}]",
+        keywords: AT_KEYWORDS,
+        returnEnd: true,
+        contains: VALUE_MODES,
+        relevance: 0
+      }
+    };
+    const VAR_RULE_MODE = {
+      className: "variable",
+      variants: [
+        {
+          begin: "@" + IDENT_RE + "\\s*:",
+          relevance: 15
+        },
+        { begin: "@" + IDENT_RE }
+      ],
+      starts: {
+        end: "[;}]",
+        returnEnd: true,
+        contains: VALUE_WITH_RULESETS
+      }
+    };
+    const SELECTOR_MODE = {
+      variants: [
+        {
+          begin: "[\\.#:&\\[>]",
+          end: "[;{}]"
+        },
+        {
+          begin: INTERP_IDENT_RE,
+          end: /\{/
+        }
+      ],
+      returnBegin: true,
+      returnEnd: true,
+      illegal: `[<='$"]`,
+      relevance: 0,
+      contains: [
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        MIXIN_GUARD_MODE,
+        IDENT_MODE("keyword", "all\\b"),
+        IDENT_MODE("variable", "@\\{" + IDENT_RE + "\\}"),
+        {
+          begin: "\\b(" + TAGS.join("|") + ")\\b",
+          className: "selector-tag"
+        },
+        modes.CSS_NUMBER_MODE,
+        IDENT_MODE("selector-tag", INTERP_IDENT_RE, 0),
+        IDENT_MODE("selector-id", "#" + INTERP_IDENT_RE),
+        IDENT_MODE("selector-class", "\\." + INTERP_IDENT_RE, 0),
+        IDENT_MODE("selector-tag", "&", 0),
+        modes.ATTRIBUTE_SELECTOR_MODE,
+        {
+          className: "selector-pseudo",
+          begin: ":(" + PSEUDO_CLASSES.join("|") + ")"
+        },
+        {
+          className: "selector-pseudo",
+          begin: ":(:)?(" + PSEUDO_ELEMENTS.join("|") + ")"
+        },
+        {
+          begin: /\(/,
+          end: /\)/,
+          relevance: 0,
+          contains: VALUE_WITH_RULESETS
+        },
+        { begin: "!important" },
+        modes.FUNCTION_DISPATCH
+      ]
+    };
+    const PSEUDO_SELECTOR_MODE = {
+      begin: IDENT_RE + ":(:)?" + `(${PSEUDO_SELECTORS$1.join("|")})`,
+      returnBegin: true,
+      contains: [SELECTOR_MODE]
+    };
+    RULES.push(hljs.C_LINE_COMMENT_MODE, hljs.C_BLOCK_COMMENT_MODE, AT_RULE_MODE, VAR_RULE_MODE, PSEUDO_SELECTOR_MODE, RULE_MODE, SELECTOR_MODE, MIXIN_GUARD_MODE, modes.FUNCTION_DISPATCH);
+    return {
+      name: "Less",
+      case_insensitive: true,
+      illegal: `[=>'/<($"]`,
+      contains: RULES
+    };
+  }
+  module.exports = less;
+});
+
+// node_modules/highlight.js/lib/languages/lua.js
+var require_lua = __commonJS(function(exports, module) {
+  function lua(hljs) {
+    const OPENING_LONG_BRACKET = "\\[=*\\[";
+    const CLOSING_LONG_BRACKET = "\\]=*\\]";
+    const LONG_BRACKETS = {
+      begin: OPENING_LONG_BRACKET,
+      end: CLOSING_LONG_BRACKET,
+      contains: ["self"]
+    };
+    const COMMENTS = [
+      hljs.COMMENT("--(?!" + OPENING_LONG_BRACKET + ")", "$"),
+      hljs.COMMENT("--" + OPENING_LONG_BRACKET, CLOSING_LONG_BRACKET, {
+        contains: [LONG_BRACKETS],
+        relevance: 10
+      })
+    ];
+    return {
+      name: "Lua",
+      aliases: ["pluto"],
+      keywords: {
+        $pattern: hljs.UNDERSCORE_IDENT_RE,
+        literal: "true false nil",
+        keyword: "and break do else elseif end for goto if in local global not or repeat return then until while",
+        built_in: "_G _ENV _VERSION __index __newindex __mode __call __metatable __tostring __len " + "__gc __add __sub __mul __div __mod __pow __concat __unm __eq __lt __le assert " + "collectgarbage dofile error getfenv getmetatable ipairs load loadfile loadstring " + "module next pairs pcall print rawequal rawget rawset require select setfenv " + "setmetatable tonumber tostring type unpack xpcall arg self " + "coroutine resume yield status wrap create running debug getupvalue " + "debug sethook getmetatable gethook setmetatable setlocal traceback setfenv getinfo setupvalue getlocal getregistry getfenv " + "io lines write close flush open output type read stderr stdin input stdout popen tmpfile " + "math log max acos huge ldexp pi cos tanh pow deg tan cosh sinh random randomseed frexp ceil floor rad abs sqrt modf asin min mod fmod log10 atan2 exp sin atan " + "os exit setlocale date getenv difftime remove time clock tmpname rename execute package preload loadlib loaded loaders cpath config path seeall " + "string sub upper len gfind rep find match char dump gmatch reverse byte format gsub lower " + "table setn insert getn foreachi maxn foreach concat sort remove"
+      },
+      contains: COMMENTS.concat([
+        {
+          className: "function",
+          beginKeywords: "function",
+          end: "\\)",
+          contains: [
+            hljs.inherit(hljs.TITLE_MODE, { begin: "([_a-zA-Z]\\w*\\.)*([_a-zA-Z]\\w*:)?[_a-zA-Z]\\w*" }),
+            {
+              className: "params",
+              begin: "\\(",
+              endsWithParent: true,
+              contains: COMMENTS
+            }
+          ].concat(COMMENTS)
+        },
+        hljs.C_NUMBER_MODE,
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE,
+        {
+          className: "string",
+          begin: OPENING_LONG_BRACKET,
+          end: CLOSING_LONG_BRACKET,
+          contains: [LONG_BRACKETS],
+          relevance: 5
+        }
+      ])
+    };
+  }
+  module.exports = lua;
+});
+
+// node_modules/highlight.js/lib/languages/makefile.js
+var require_makefile = __commonJS(function(exports, module) {
+  function makefile(hljs) {
+    const VARIABLE = {
+      className: "variable",
+      variants: [
+        {
+          begin: "\\$\\(" + hljs.UNDERSCORE_IDENT_RE + "\\)",
+          contains: [hljs.BACKSLASH_ESCAPE]
+        },
+        { begin: /\$[@%<?\^\+\*]/ }
+      ]
+    };
+    const QUOTE_STRING = {
+      className: "string",
+      begin: /"/,
+      end: /"/,
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        VARIABLE
+      ]
+    };
+    const FUNC = {
+      className: "variable",
+      begin: /\$\([\w-]+\s/,
+      end: /\)/,
+      keywords: { built_in: "subst patsubst strip findstring filter filter-out sort " + "word wordlist firstword lastword dir notdir suffix basename " + "addsuffix addprefix join wildcard realpath abspath error warning " + "shell origin flavor foreach if or and call eval file value" },
+      contains: [
+        VARIABLE,
+        QUOTE_STRING
+      ]
+    };
+    const ASSIGNMENT = { begin: "^" + hljs.UNDERSCORE_IDENT_RE + "\\s*(?=[:+?]?=)" };
+    const META = {
+      className: "meta",
+      begin: /^\.PHONY:/,
+      end: /$/,
+      keywords: {
+        $pattern: /[\.\w]+/,
+        keyword: ".PHONY"
+      }
+    };
+    const TARGET = {
+      className: "section",
+      begin: /^[^\s]+:/,
+      end: /$/,
+      contains: [VARIABLE]
+    };
+    return {
+      name: "Makefile",
+      aliases: [
+        "mk",
+        "mak",
+        "make"
+      ],
+      keywords: {
+        $pattern: /[\w-]+/,
+        keyword: "define endef undefine ifdef ifndef ifeq ifneq else endif " + "include -include sinclude override export unexport private vpath"
+      },
+      contains: [
+        hljs.HASH_COMMENT_MODE,
+        VARIABLE,
+        QUOTE_STRING,
+        FUNC,
+        ASSIGNMENT,
+        META,
+        TARGET
+      ]
+    };
+  }
+  module.exports = makefile;
+});
+
+// node_modules/highlight.js/lib/languages/perl.js
+var require_perl = __commonJS(function(exports, module) {
+  function perl(hljs) {
+    const regex = hljs.regex;
+    const KEYWORDS = [
+      "abs",
+      "accept",
+      "alarm",
+      "and",
+      "atan2",
+      "bind",
+      "binmode",
+      "bless",
+      "break",
+      "caller",
+      "chdir",
+      "chmod",
+      "chomp",
+      "chop",
+      "chown",
+      "chr",
+      "chroot",
+      "class",
+      "close",
+      "closedir",
+      "connect",
+      "continue",
+      "cos",
+      "crypt",
+      "dbmclose",
+      "dbmopen",
+      "defined",
+      "delete",
+      "die",
+      "do",
+      "dump",
+      "each",
+      "else",
+      "elsif",
+      "endgrent",
+      "endhostent",
+      "endnetent",
+      "endprotoent",
+      "endpwent",
+      "endservent",
+      "eof",
+      "eval",
+      "exec",
+      "exists",
+      "exit",
+      "exp",
+      "fcntl",
+      "field",
+      "fileno",
+      "flock",
+      "for",
+      "foreach",
+      "fork",
+      "format",
+      "formline",
+      "getc",
+      "getgrent",
+      "getgrgid",
+      "getgrnam",
+      "gethostbyaddr",
+      "gethostbyname",
+      "gethostent",
+      "getlogin",
+      "getnetbyaddr",
+      "getnetbyname",
+      "getnetent",
+      "getpeername",
+      "getpgrp",
+      "getpriority",
+      "getprotobyname",
+      "getprotobynumber",
+      "getprotoent",
+      "getpwent",
+      "getpwnam",
+      "getpwuid",
+      "getservbyname",
+      "getservbyport",
+      "getservent",
+      "getsockname",
+      "getsockopt",
+      "given",
+      "glob",
+      "gmtime",
+      "goto",
+      "grep",
+      "gt",
+      "hex",
+      "if",
+      "index",
+      "int",
+      "ioctl",
+      "join",
+      "keys",
+      "kill",
+      "last",
+      "lc",
+      "lcfirst",
+      "length",
+      "link",
+      "listen",
+      "local",
+      "localtime",
+      "log",
+      "lstat",
+      "lt",
+      "ma",
+      "map",
+      "method",
+      "mkdir",
+      "msgctl",
+      "msgget",
+      "msgrcv",
+      "msgsnd",
+      "my",
+      "ne",
+      "next",
+      "no",
+      "not",
+      "oct",
+      "open",
+      "opendir",
+      "or",
+      "ord",
+      "our",
+      "pack",
+      "package",
+      "pipe",
+      "pop",
+      "pos",
+      "print",
+      "printf",
+      "prototype",
+      "push",
+      "q|0",
+      "qq",
+      "quotemeta",
+      "qw",
+      "qx",
+      "rand",
+      "read",
+      "readdir",
+      "readline",
+      "readlink",
+      "readpipe",
+      "recv",
+      "redo",
+      "ref",
+      "rename",
+      "require",
+      "reset",
+      "return",
+      "reverse",
+      "rewinddir",
+      "rindex",
+      "rmdir",
+      "say",
+      "scalar",
+      "seek",
+      "seekdir",
+      "select",
+      "semctl",
+      "semget",
+      "semop",
+      "send",
+      "setgrent",
+      "sethostent",
+      "setnetent",
+      "setpgrp",
+      "setpriority",
+      "setprotoent",
+      "setpwent",
+      "setservent",
+      "setsockopt",
+      "shift",
+      "shmctl",
+      "shmget",
+      "shmread",
+      "shmwrite",
+      "shutdown",
+      "sin",
+      "sleep",
+      "socket",
+      "socketpair",
+      "sort",
+      "splice",
+      "split",
+      "sprintf",
+      "sqrt",
+      "srand",
+      "stat",
+      "state",
+      "study",
+      "sub",
+      "substr",
+      "symlink",
+      "syscall",
+      "sysopen",
+      "sysread",
+      "sysseek",
+      "system",
+      "syswrite",
+      "tell",
+      "telldir",
+      "tie",
+      "tied",
+      "time",
+      "times",
+      "tr",
+      "truncate",
+      "uc",
+      "ucfirst",
+      "umask",
+      "undef",
+      "unless",
+      "unlink",
+      "unpack",
+      "unshift",
+      "untie",
+      "until",
+      "use",
+      "utime",
+      "values",
+      "vec",
+      "wait",
+      "waitpid",
+      "wantarray",
+      "warn",
+      "when",
+      "while",
+      "write",
+      "x|0",
+      "xor",
+      "y|0"
+    ];
+    const REGEX_MODIFIERS = /[dualxmsipngr]{0,12}/;
+    const PERL_KEYWORDS = {
+      $pattern: /[\w.]+/,
+      keyword: KEYWORDS.join(" ")
+    };
+    const SUBST = {
+      className: "subst",
+      begin: "[$@]\\{",
+      end: "\\}",
+      keywords: PERL_KEYWORDS
+    };
+    const METHOD = {
+      begin: /->\{/,
+      end: /\}/
+    };
+    const ATTR = {
+      scope: "attr",
+      match: /\s+:\s*\w+(\s*\(.*?\))?/
+    };
+    const VAR = {
+      scope: "variable",
+      variants: [
+        { begin: /\$\d/ },
+        {
+          begin: regex.concat(/[$%@](?!")(\^\w\b|#\w+(::\w+)*|\{\w+\}|\w+(::\w*)*)/, `(?![A-Za-z])(?![@$%])`)
+        },
+        {
+          begin: /[$%@](?!")[^\s\w{=]|\$=/,
+          relevance: 0
+        }
+      ],
+      contains: [ATTR]
+    };
+    const NUMBER = {
+      className: "number",
+      variants: [
+        { match: /0?\.[0-9][0-9_]+\b/ },
+        { match: /\bv?(0|[1-9][0-9_]*(\.[0-9_]+)?|[1-9][0-9_]*)\b/ },
+        { match: /\b0[0-7][0-7_]*\b/ },
+        { match: /\b0x[0-9a-fA-F][0-9a-fA-F_]*\b/ },
+        { match: /\b0b[0-1][0-1_]*\b/ }
+      ],
+      relevance: 0
+    };
+    const STRING_CONTAINS = [
+      hljs.BACKSLASH_ESCAPE,
+      SUBST,
+      VAR
+    ];
+    const REGEX_DELIMS = [
+      /!/,
+      /\//,
+      /\|/,
+      /\?/,
+      /'/,
+      /"/,
+      /#/
+    ];
+    const PAIRED_DOUBLE_RE = (prefix, open, close = "\\1") => {
+      const middle = close === "\\1" ? close : regex.concat(close, open);
+      return regex.concat(regex.concat("(?:", prefix, ")"), open, /(?:\\.|[^\\\/])*?/, middle, /(?:\\.|[^\\\/])*?/, close, REGEX_MODIFIERS);
+    };
+    const PAIRED_RE = (prefix, open, close) => {
+      return regex.concat(regex.concat("(?:", prefix, ")"), open, /(?:\\.|[^\\\/])*?/, close, REGEX_MODIFIERS);
+    };
+    const PERL_DEFAULT_CONTAINS = [
+      VAR,
+      hljs.HASH_COMMENT_MODE,
+      hljs.COMMENT(/^=\w/, /=cut/, { endsWithParent: true }),
+      METHOD,
+      {
+        className: "string",
+        contains: STRING_CONTAINS,
+        variants: [
+          {
+            begin: "q[qwxr]?\\s*\\(",
+            end: "\\)",
+            relevance: 5
+          },
+          {
+            begin: "q[qwxr]?\\s*\\[",
+            end: "\\]",
+            relevance: 5
+          },
+          {
+            begin: "q[qwxr]?\\s*\\{",
+            end: "\\}",
+            relevance: 5
+          },
+          {
+            begin: "q[qwxr]?\\s*\\|",
+            end: "\\|",
+            relevance: 5
+          },
+          {
+            begin: "q[qwxr]?\\s*<",
+            end: ">",
+            relevance: 5
+          },
+          {
+            begin: "qw\\s+q",
+            end: "q",
+            relevance: 5
+          },
+          {
+            begin: "'",
+            end: "'",
+            contains: [hljs.BACKSLASH_ESCAPE]
+          },
+          {
+            begin: '"',
+            end: '"'
+          },
+          {
+            begin: "`",
+            end: "`",
+            contains: [hljs.BACKSLASH_ESCAPE]
+          },
+          {
+            begin: /\{\w+\}/,
+            relevance: 0
+          },
+          {
+            begin: "-?\\w+\\s*=>",
+            relevance: 0
+          }
+        ]
+      },
+      NUMBER,
+      {
+        begin: "(\\/\\/|" + hljs.RE_STARTERS_RE + "|\\b(split|return|print|reverse|grep)\\b)\\s*",
+        keywords: "split return print reverse grep",
+        relevance: 0,
+        contains: [
+          hljs.HASH_COMMENT_MODE,
+          {
+            className: "regexp",
+            variants: [
+              { begin: PAIRED_DOUBLE_RE("s|tr|y", regex.either(...REGEX_DELIMS, { capture: true })) },
+              { begin: PAIRED_DOUBLE_RE("s|tr|y", "\\(", "\\)") },
+              { begin: PAIRED_DOUBLE_RE("s|tr|y", "\\[", "\\]") },
+              { begin: PAIRED_DOUBLE_RE("s|tr|y", "\\{", "\\}") }
+            ],
+            relevance: 2
+          },
+          {
+            className: "regexp",
+            variants: [
+              {
+                begin: /(m|qr)\/\//,
+                relevance: 0
+              },
+              { begin: PAIRED_RE("(?:m|qr)?", /\//, /\//) },
+              { begin: PAIRED_RE("m|qr", regex.either(...REGEX_DELIMS, { capture: true }), /\1/) },
+              { begin: PAIRED_RE("m|qr", /\(/, /\)/) },
+              { begin: PAIRED_RE("m|qr", /\[/, /\]/) },
+              { begin: PAIRED_RE("m|qr", /\{/, /\}/) }
+            ]
+          }
+        ]
+      },
+      {
+        className: "function",
+        beginKeywords: "sub method",
+        end: "(\\s*\\(.*?\\))?[;{]",
+        excludeEnd: true,
+        relevance: 5,
+        contains: [hljs.TITLE_MODE, ATTR]
+      },
+      {
+        className: "class",
+        beginKeywords: "class",
+        end: "[;{]",
+        excludeEnd: true,
+        relevance: 5,
+        contains: [hljs.TITLE_MODE, ATTR, NUMBER]
+      },
+      {
+        begin: "-\\w\\b",
+        relevance: 0
+      },
+      {
+        begin: "^__DATA__$",
+        end: "^__END__$",
+        subLanguage: "mojolicious",
+        contains: [
+          {
+            begin: "^@@.*",
+            end: "$",
+            className: "comment"
+          }
+        ]
+      }
+    ];
+    SUBST.contains = PERL_DEFAULT_CONTAINS;
+    METHOD.contains = PERL_DEFAULT_CONTAINS;
+    return {
+      name: "Perl",
+      aliases: [
+        "pl",
+        "pm"
+      ],
+      keywords: PERL_KEYWORDS,
+      contains: PERL_DEFAULT_CONTAINS
+    };
+  }
+  module.exports = perl;
+});
+
+// node_modules/highlight.js/lib/languages/objectivec.js
+var require_objectivec = __commonJS(function(exports, module) {
+  function objectivec(hljs) {
+    const API_CLASS = {
+      className: "built_in",
+      begin: "\\b(AV|CA|CF|CG|CI|CL|CM|CN|CT|MK|MP|MTK|MTL|NS|SCN|SK|UI|WK|XC)\\w+"
+    };
+    const IDENTIFIER_RE = /[a-zA-Z@][a-zA-Z0-9_]*/;
+    const TYPES = [
+      "int",
+      "float",
+      "char",
+      "unsigned",
+      "signed",
+      "short",
+      "long",
+      "double",
+      "wchar_t",
+      "unichar",
+      "void",
+      "bool",
+      "BOOL",
+      "id|0",
+      "_Bool"
+    ];
+    const KWS = [
+      "while",
+      "export",
+      "sizeof",
+      "typedef",
+      "const",
+      "struct",
+      "for",
+      "union",
+      "volatile",
+      "static",
+      "mutable",
+      "if",
+      "do",
+      "return",
+      "goto",
+      "enum",
+      "else",
+      "break",
+      "extern",
+      "asm",
+      "case",
+      "default",
+      "register",
+      "explicit",
+      "typename",
+      "switch",
+      "continue",
+      "inline",
+      "readonly",
+      "assign",
+      "readwrite",
+      "self",
+      "@synchronized",
+      "id",
+      "typeof",
+      "nonatomic",
+      "IBOutlet",
+      "IBAction",
+      "strong",
+      "weak",
+      "copy",
+      "in",
+      "out",
+      "inout",
+      "bycopy",
+      "byref",
+      "oneway",
+      "__strong",
+      "__weak",
+      "__block",
+      "__autoreleasing",
+      "@private",
+      "@protected",
+      "@public",
+      "@try",
+      "@property",
+      "@end",
+      "@throw",
+      "@catch",
+      "@finally",
+      "@autoreleasepool",
+      "@synthesize",
+      "@dynamic",
+      "@selector",
+      "@optional",
+      "@required",
+      "@encode",
+      "@package",
+      "@import",
+      "@defs",
+      "@compatibility_alias",
+      "__bridge",
+      "__bridge_transfer",
+      "__bridge_retained",
+      "__bridge_retain",
+      "__covariant",
+      "__contravariant",
+      "__kindof",
+      "_Nonnull",
+      "_Nullable",
+      "_Null_unspecified",
+      "__FUNCTION__",
+      "__PRETTY_FUNCTION__",
+      "__attribute__",
+      "getter",
+      "setter",
+      "retain",
+      "unsafe_unretained",
+      "nonnull",
+      "nullable",
+      "null_unspecified",
+      "null_resettable",
+      "class",
+      "instancetype",
+      "NS_DESIGNATED_INITIALIZER",
+      "NS_UNAVAILABLE",
+      "NS_REQUIRES_SUPER",
+      "NS_RETURNS_INNER_POINTER",
+      "NS_INLINE",
+      "NS_AVAILABLE",
+      "NS_DEPRECATED",
+      "NS_ENUM",
+      "NS_OPTIONS",
+      "NS_SWIFT_UNAVAILABLE",
+      "NS_ASSUME_NONNULL_BEGIN",
+      "NS_ASSUME_NONNULL_END",
+      "NS_REFINED_FOR_SWIFT",
+      "NS_SWIFT_NAME",
+      "NS_SWIFT_NOTHROW",
+      "NS_DURING",
+      "NS_HANDLER",
+      "NS_ENDHANDLER",
+      "NS_VALUERETURN",
+      "NS_VOIDRETURN"
+    ];
+    const LITERALS = [
+      "false",
+      "true",
+      "FALSE",
+      "TRUE",
+      "nil",
+      "YES",
+      "NO",
+      "NULL"
+    ];
+    const BUILT_INS = [
+      "dispatch_once_t",
+      "dispatch_queue_t",
+      "dispatch_sync",
+      "dispatch_async",
+      "dispatch_once"
+    ];
+    const KEYWORDS = {
+      "variable.language": [
+        "this",
+        "super"
+      ],
+      $pattern: IDENTIFIER_RE,
+      keyword: KWS,
+      literal: LITERALS,
+      built_in: BUILT_INS,
+      type: TYPES
+    };
+    const CLASS_KEYWORDS = {
+      $pattern: IDENTIFIER_RE,
+      keyword: [
+        "@interface",
+        "@class",
+        "@protocol",
+        "@implementation"
+      ]
+    };
+    return {
+      name: "Objective-C",
+      aliases: [
+        "mm",
+        "objc",
+        "obj-c",
+        "obj-c++",
+        "objective-c++"
+      ],
+      keywords: KEYWORDS,
+      illegal: "</",
+      contains: [
+        API_CLASS,
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        hljs.C_NUMBER_MODE,
+        hljs.QUOTE_STRING_MODE,
+        hljs.APOS_STRING_MODE,
+        {
+          className: "string",
+          variants: [
+            {
+              begin: '@"',
+              end: '"',
+              illegal: "\\n",
+              contains: [hljs.BACKSLASH_ESCAPE]
+            }
+          ]
+        },
+        {
+          className: "meta",
+          begin: /#\s*[a-z]+\b/,
+          end: /$/,
+          keywords: { keyword: "if else elif endif define undef warning error line " + "pragma ifdef ifndef include" },
+          contains: [
+            {
+              begin: /\\\n/,
+              relevance: 0
+            },
+            hljs.inherit(hljs.QUOTE_STRING_MODE, { className: "string" }),
+            {
+              className: "string",
+              begin: /<.*?>/,
+              end: /$/,
+              illegal: "\\n"
+            },
+            hljs.C_LINE_COMMENT_MODE,
+            hljs.C_BLOCK_COMMENT_MODE
+          ]
+        },
+        {
+          className: "class",
+          begin: "(" + CLASS_KEYWORDS.keyword.join("|") + ")\\b",
+          end: /(\{|$)/,
+          excludeEnd: true,
+          keywords: CLASS_KEYWORDS,
+          contains: [hljs.UNDERSCORE_TITLE_MODE]
+        },
+        {
+          begin: "\\." + hljs.UNDERSCORE_IDENT_RE,
+          relevance: 0
+        }
+      ]
+    };
+  }
+  module.exports = objectivec;
+});
+
+// node_modules/highlight.js/lib/languages/php.js
+var require_php = __commonJS(function(exports, module) {
+  function php(hljs) {
+    const regex = hljs.regex;
+    const NOT_PERL_ETC = /(?![A-Za-z0-9])(?![$])/;
+    const IDENT_RE = regex.concat(/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/, NOT_PERL_ETC);
+    const PASCAL_CASE_CLASS_NAME_RE = regex.concat(/(\\?[A-Z][a-z0-9_\x7f-\xff]+|\\?[A-Z]+(?=[A-Z][a-z0-9_\x7f-\xff])){1,}/, NOT_PERL_ETC);
+    const UPCASE_NAME_RE = regex.concat(/[A-Z]+/, NOT_PERL_ETC);
+    const VARIABLE = {
+      scope: "variable",
+      match: "\\$+" + IDENT_RE
+    };
+    const PREPROCESSOR = {
+      scope: "meta",
+      variants: [
+        { begin: /<\?php/, relevance: 10 },
+        { begin: /<\?=/ },
+        { begin: /<\?/, relevance: 0.1 },
+        { begin: /\?>/ }
+      ]
+    };
+    const SUBST = {
+      scope: "subst",
+      variants: [
+        { begin: /\$\w+/ },
+        {
+          begin: /\{\$/,
+          end: /\}/
+        }
+      ]
+    };
+    const SINGLE_QUOTED = hljs.inherit(hljs.APOS_STRING_MODE, { illegal: null });
+    const DOUBLE_QUOTED = hljs.inherit(hljs.QUOTE_STRING_MODE, {
+      illegal: null,
+      contains: hljs.QUOTE_STRING_MODE.contains.concat(SUBST)
+    });
+    const HEREDOC = {
+      begin: /<<<[ \t]*(?:(\w+)|"(\w+)")\n/,
+      end: /[ \t]*(\w+)\b/,
+      contains: hljs.QUOTE_STRING_MODE.contains.concat(SUBST),
+      "on:begin": (m, resp) => {
+        resp.data._beginMatch = m[1] || m[2];
+      },
+      "on:end": (m, resp) => {
+        if (resp.data._beginMatch !== m[1])
+          resp.ignoreMatch();
+      }
+    };
+    const NOWDOC = hljs.END_SAME_AS_BEGIN({
+      begin: /<<<[ \t]*'(\w+)'\n/,
+      end: /[ \t]*(\w+)\b/
+    });
+    const WHITESPACE = `[ 	
+]`;
+    const STRING = {
+      scope: "string",
+      variants: [
+        DOUBLE_QUOTED,
+        SINGLE_QUOTED,
+        HEREDOC,
+        NOWDOC
+      ]
+    };
+    const NUMBER = {
+      scope: "number",
+      variants: [
+        { begin: `\\b0[bB][01]+(?:_[01]+)*\\b` },
+        { begin: `\\b0[oO][0-7]+(?:_[0-7]+)*\\b` },
+        { begin: `\\b0[xX][\\da-fA-F]+(?:_[\\da-fA-F]+)*\\b` },
+        { begin: `(?:\\b\\d+(?:_\\d+)*(\\.(?:\\d+(?:_\\d+)*))?|\\B\\.\\d+)(?:[eE][+-]?\\d+)?` }
+      ],
+      relevance: 0
+    };
+    const LITERALS = [
+      "false",
+      "null",
+      "true"
+    ];
+    const KWS = [
+      "__CLASS__",
+      "__DIR__",
+      "__FILE__",
+      "__FUNCTION__",
+      "__COMPILER_HALT_OFFSET__",
+      "__LINE__",
+      "__METHOD__",
+      "__NAMESPACE__",
+      "__TRAIT__",
+      "die",
+      "echo",
+      "exit",
+      "include",
+      "include_once",
+      "print",
+      "require",
+      "require_once",
+      "array",
+      "abstract",
+      "and",
+      "as",
+      "binary",
+      "bool",
+      "boolean",
+      "break",
+      "callable",
+      "case",
+      "catch",
+      "class",
+      "clone",
+      "const",
+      "continue",
+      "declare",
+      "default",
+      "do",
+      "double",
+      "else",
+      "elseif",
+      "empty",
+      "enddeclare",
+      "endfor",
+      "endforeach",
+      "endif",
+      "endswitch",
+      "endwhile",
+      "enum",
+      "eval",
+      "extends",
+      "final",
+      "finally",
+      "float",
+      "for",
+      "foreach",
+      "from",
+      "global",
+      "goto",
+      "if",
+      "implements",
+      "instanceof",
+      "insteadof",
+      "int",
+      "integer",
+      "interface",
+      "isset",
+      "iterable",
+      "list",
+      "match|0",
+      "mixed",
+      "new",
+      "never",
+      "object",
+      "or",
+      "private",
+      "protected",
+      "public",
+      "readonly",
+      "real",
+      "return",
+      "string",
+      "switch",
+      "throw",
+      "trait",
+      "try",
+      "unset",
+      "use",
+      "var",
+      "void",
+      "while",
+      "xor",
+      "yield"
+    ];
+    const BUILT_INS = [
+      "Error|0",
+      "AppendIterator",
+      "ArgumentCountError",
+      "ArithmeticError",
+      "ArrayIterator",
+      "ArrayObject",
+      "AssertionError",
+      "BadFunctionCallException",
+      "BadMethodCallException",
+      "CachingIterator",
+      "CallbackFilterIterator",
+      "CompileError",
+      "Countable",
+      "DirectoryIterator",
+      "DivisionByZeroError",
+      "DomainException",
+      "EmptyIterator",
+      "ErrorException",
+      "Exception",
+      "FilesystemIterator",
+      "FilterIterator",
+      "GlobIterator",
+      "InfiniteIterator",
+      "InvalidArgumentException",
+      "IteratorIterator",
+      "LengthException",
+      "LimitIterator",
+      "LogicException",
+      "MultipleIterator",
+      "NoRewindIterator",
+      "OutOfBoundsException",
+      "OutOfRangeException",
+      "OuterIterator",
+      "OverflowException",
+      "ParentIterator",
+      "ParseError",
+      "RangeException",
+      "RecursiveArrayIterator",
+      "RecursiveCachingIterator",
+      "RecursiveCallbackFilterIterator",
+      "RecursiveDirectoryIterator",
+      "RecursiveFilterIterator",
+      "RecursiveIterator",
+      "RecursiveIteratorIterator",
+      "RecursiveRegexIterator",
+      "RecursiveTreeIterator",
+      "RegexIterator",
+      "RuntimeException",
+      "SeekableIterator",
+      "SplDoublyLinkedList",
+      "SplFileInfo",
+      "SplFileObject",
+      "SplFixedArray",
+      "SplHeap",
+      "SplMaxHeap",
+      "SplMinHeap",
+      "SplObjectStorage",
+      "SplObserver",
+      "SplPriorityQueue",
+      "SplQueue",
+      "SplStack",
+      "SplSubject",
+      "SplTempFileObject",
+      "TypeError",
+      "UnderflowException",
+      "UnexpectedValueException",
+      "UnhandledMatchError",
+      "ArrayAccess",
+      "BackedEnum",
+      "Closure",
+      "Fiber",
+      "Generator",
+      "Iterator",
+      "IteratorAggregate",
+      "Serializable",
+      "Stringable",
+      "Throwable",
+      "Traversable",
+      "UnitEnum",
+      "WeakReference",
+      "WeakMap",
+      "Directory",
+      "__PHP_Incomplete_Class",
+      "parent",
+      "php_user_filter",
+      "self",
+      "static",
+      "stdClass"
+    ];
+    const dualCase = (items) => {
+      const result = [];
+      items.forEach((item) => {
+        result.push(item);
+        if (item.toLowerCase() === item) {
+          result.push(item.toUpperCase());
+        } else {
+          result.push(item.toLowerCase());
+        }
+      });
+      return result;
+    };
+    const KEYWORDS = {
+      keyword: KWS,
+      literal: dualCase(LITERALS),
+      built_in: BUILT_INS
+    };
+    const normalizeKeywords = (items) => {
+      return items.map((item) => {
+        return item.replace(/\|\d+$/, "");
+      });
+    };
+    const CONSTRUCTOR_CALL = { variants: [
+      {
+        match: [
+          /new/,
+          regex.concat(WHITESPACE, "+"),
+          regex.concat("(?!", normalizeKeywords(BUILT_INS).join("\\b|"), "\\b)"),
+          PASCAL_CASE_CLASS_NAME_RE
+        ],
+        scope: {
+          1: "keyword",
+          4: "title.class"
+        }
+      }
+    ] };
+    const CONSTANT_REFERENCE = regex.concat(IDENT_RE, "\\b(?!\\()");
+    const LEFT_AND_RIGHT_SIDE_OF_DOUBLE_COLON = { variants: [
+      {
+        match: [
+          regex.concat(/::/, regex.lookahead(/(?!class\b)/)),
+          CONSTANT_REFERENCE
+        ],
+        scope: { 2: "variable.constant" }
+      },
+      {
+        match: [
+          /::/,
+          /class/
+        ],
+        scope: { 2: "variable.language" }
+      },
+      {
+        match: [
+          PASCAL_CASE_CLASS_NAME_RE,
+          regex.concat(/::/, regex.lookahead(/(?!class\b)/)),
+          CONSTANT_REFERENCE
+        ],
+        scope: {
+          1: "title.class",
+          3: "variable.constant"
+        }
+      },
+      {
+        match: [
+          PASCAL_CASE_CLASS_NAME_RE,
+          regex.concat("::", regex.lookahead(/(?!class\b)/))
+        ],
+        scope: { 1: "title.class" }
+      },
+      {
+        match: [
+          PASCAL_CASE_CLASS_NAME_RE,
+          /::/,
+          /class/
+        ],
+        scope: {
+          1: "title.class",
+          3: "variable.language"
+        }
+      }
+    ] };
+    const NAMED_ARGUMENT = {
+      scope: "attr",
+      match: regex.concat(IDENT_RE, regex.lookahead(":"), regex.lookahead(/(?!::)/))
+    };
+    const PARAMS_MODE = {
+      relevance: 0,
+      begin: /\(/,
+      end: /\)/,
+      keywords: KEYWORDS,
+      contains: [
+        NAMED_ARGUMENT,
+        VARIABLE,
+        LEFT_AND_RIGHT_SIDE_OF_DOUBLE_COLON,
+        hljs.C_BLOCK_COMMENT_MODE,
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.HASH_COMMENT_MODE,
+        STRING,
+        NUMBER,
+        CONSTRUCTOR_CALL
+      ]
+    };
+    const FUNCTION_INVOKE = {
+      relevance: 0,
+      match: [
+        /\b/,
+        regex.concat("(?!fn\\b|function\\b|", normalizeKeywords(KWS).join("\\b|"), "|", normalizeKeywords(BUILT_INS).join("\\b|"), "\\b)"),
+        IDENT_RE,
+        regex.concat(WHITESPACE, "*"),
+        regex.lookahead(/(?=\()/)
+      ],
+      scope: { 3: "title.function.invoke" },
+      contains: [PARAMS_MODE]
+    };
+    PARAMS_MODE.contains.push(FUNCTION_INVOKE);
+    const ATTRIBUTE_CONTAINS = [
+      NAMED_ARGUMENT,
+      LEFT_AND_RIGHT_SIDE_OF_DOUBLE_COLON,
+      hljs.C_BLOCK_COMMENT_MODE,
+      hljs.C_LINE_COMMENT_MODE,
+      hljs.HASH_COMMENT_MODE,
+      STRING,
+      NUMBER,
+      CONSTRUCTOR_CALL
+    ];
+    const ATTRIBUTES = {
+      begin: regex.concat(/#\[\s*\\?/, regex.either(PASCAL_CASE_CLASS_NAME_RE, UPCASE_NAME_RE)),
+      beginScope: "meta",
+      end: /]/,
+      endScope: "meta",
+      keywords: {
+        literal: LITERALS,
+        keyword: [
+          "new",
+          "array"
+        ]
+      },
+      contains: [
+        {
+          begin: /\[/,
+          end: /]/,
+          keywords: {
+            literal: LITERALS,
+            keyword: [
+              "new",
+              "array"
+            ]
+          },
+          contains: [
+            "self",
+            ...ATTRIBUTE_CONTAINS
+          ]
+        },
+        ...ATTRIBUTE_CONTAINS,
+        {
+          scope: "meta",
+          variants: [
+            { match: PASCAL_CASE_CLASS_NAME_RE },
+            { match: UPCASE_NAME_RE }
+          ]
+        }
+      ]
+    };
+    return {
+      case_insensitive: false,
+      keywords: KEYWORDS,
+      contains: [
+        ATTRIBUTES,
+        hljs.HASH_COMMENT_MODE,
+        hljs.COMMENT("//", "$"),
+        hljs.COMMENT("/\\*", "\\*/", { contains: [
+          {
+            scope: "doctag",
+            match: "@[A-Za-z]+"
+          }
+        ] }),
+        {
+          match: /__halt_compiler\(\);/,
+          keywords: "__halt_compiler",
+          starts: {
+            scope: "comment",
+            end: hljs.MATCH_NOTHING_RE,
+            contains: [
+              {
+                match: /\?>/,
+                scope: "meta",
+                endsParent: true
+              }
+            ]
+          }
+        },
+        PREPROCESSOR,
+        {
+          scope: "variable.language",
+          match: /\$this\b/
+        },
+        VARIABLE,
+        FUNCTION_INVOKE,
+        LEFT_AND_RIGHT_SIDE_OF_DOUBLE_COLON,
+        {
+          match: [
+            /const/,
+            /\s/,
+            IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "variable.constant"
+          }
+        },
+        CONSTRUCTOR_CALL,
+        {
+          scope: "function",
+          relevance: 0,
+          beginKeywords: "fn function",
+          end: /[;{]/,
+          excludeEnd: true,
+          illegal: "[$%\\[]",
+          contains: [
+            { beginKeywords: "use" },
+            hljs.UNDERSCORE_TITLE_MODE,
+            {
+              begin: "=>",
+              endsParent: true
+            },
+            {
+              scope: "params",
+              begin: "\\(",
+              end: "\\)",
+              excludeBegin: true,
+              excludeEnd: true,
+              keywords: KEYWORDS,
+              contains: [
+                "self",
+                ATTRIBUTES,
+                VARIABLE,
+                LEFT_AND_RIGHT_SIDE_OF_DOUBLE_COLON,
+                hljs.C_BLOCK_COMMENT_MODE,
+                hljs.C_LINE_COMMENT_MODE,
+                hljs.HASH_COMMENT_MODE,
+                STRING,
+                NUMBER
+              ]
+            }
+          ]
+        },
+        {
+          scope: "class",
+          variants: [
+            {
+              beginKeywords: "enum",
+              illegal: /[($"]/
+            },
+            {
+              beginKeywords: "class interface trait",
+              illegal: /[:($"]/
+            }
+          ],
+          relevance: 0,
+          end: /\{/,
+          excludeEnd: true,
+          contains: [
+            { beginKeywords: "extends implements" },
+            hljs.UNDERSCORE_TITLE_MODE
+          ]
+        },
+        {
+          beginKeywords: "namespace",
+          relevance: 0,
+          end: ";",
+          illegal: /[.']/,
+          contains: [hljs.inherit(hljs.UNDERSCORE_TITLE_MODE, { scope: "title.class" })]
+        },
+        {
+          beginKeywords: "use",
+          relevance: 0,
+          end: ";",
+          contains: [
+            {
+              match: /\b(as|const|function)\b/,
+              scope: "keyword"
+            },
+            hljs.UNDERSCORE_TITLE_MODE
+          ]
+        },
+        STRING,
+        NUMBER
+      ]
+    };
+  }
+  module.exports = php;
+});
+
+// node_modules/highlight.js/lib/languages/php-template.js
+var require_php_template = __commonJS(function(exports, module) {
+  function phpTemplate(hljs) {
+    return {
+      name: "PHP template",
+      subLanguage: "xml",
+      contains: [
+        {
+          begin: /<\?(php|=)?/,
+          end: /\?>/,
+          subLanguage: "php",
+          contains: [
+            {
+              begin: "/\\*",
+              end: "\\*/",
+              skip: true
+            },
+            {
+              begin: 'b"',
+              end: '"',
+              skip: true
+            },
+            {
+              begin: "b'",
+              end: "'",
+              skip: true
+            },
+            hljs.inherit(hljs.APOS_STRING_MODE, {
+              illegal: null,
+              className: null,
+              contains: null,
+              skip: true
+            }),
+            hljs.inherit(hljs.QUOTE_STRING_MODE, {
+              illegal: null,
+              className: null,
+              contains: null,
+              skip: true
+            })
+          ]
+        }
+      ]
+    };
+  }
+  module.exports = phpTemplate;
+});
+
+// node_modules/highlight.js/lib/languages/plaintext.js
+var require_plaintext = __commonJS(function(exports, module) {
+  function plaintext(hljs) {
+    return {
+      name: "Plain text",
+      aliases: [
+        "text",
+        "txt"
+      ],
+      disableAutodetect: true
+    };
+  }
+  module.exports = plaintext;
+});
+
+// node_modules/highlight.js/lib/languages/python.js
+var require_python = __commonJS(function(exports, module) {
+  function python(hljs) {
+    const regex = hljs.regex;
+    const IDENT_RE = /[\p{XID_Start}_]\p{XID_Continue}*/u;
+    const RESERVED_WORDS = [
+      "and",
+      "as",
+      "assert",
+      "async",
+      "await",
+      "break",
+      "case",
+      "class",
+      "continue",
+      "def",
+      "del",
+      "elif",
+      "else",
+      "except",
+      "finally",
+      "for",
+      "from",
+      "global",
+      "if",
+      "import",
+      "in",
+      "is",
+      "lambda",
+      "lazy",
+      "match",
+      "nonlocal|10",
+      "not",
+      "or",
+      "pass",
+      "raise",
+      "return",
+      "try",
+      "while",
+      "with",
+      "yield"
+    ];
+    const BUILT_INS = [
+      "__import__",
+      "abs",
+      "aiter",
+      "all",
+      "anext",
+      "any",
+      "ascii",
+      "bin",
+      "bool",
+      "breakpoint",
+      "bytearray",
+      "bytes",
+      "callable",
+      "chr",
+      "classmethod",
+      "compile",
+      "complex",
+      "delattr",
+      "dict",
+      "dir",
+      "divmod",
+      "enumerate",
+      "eval",
+      "exec",
+      "filter",
+      "float",
+      "format",
+      "frozendict",
+      "frozenset",
+      "getattr",
+      "globals",
+      "hasattr",
+      "hash",
+      "help",
+      "hex",
+      "id",
+      "input",
+      "int",
+      "isinstance",
+      "issubclass",
+      "iter",
+      "len",
+      "list",
+      "locals",
+      "map",
+      "max",
+      "memoryview",
+      "min",
+      "next",
+      "object",
+      "oct",
+      "open",
+      "ord",
+      "pow",
+      "print",
+      "property",
+      "range",
+      "repr",
+      "reversed",
+      "round",
+      "sentinel",
+      "set",
+      "setattr",
+      "slice",
+      "sorted",
+      "staticmethod",
+      "str",
+      "sum",
+      "super",
+      "tuple",
+      "type",
+      "vars",
+      "zip"
+    ];
+    const LITERALS = [
+      "__debug__",
+      "Ellipsis",
+      "False",
+      "None",
+      "NotImplemented",
+      "True"
+    ];
+    const TYPES = [
+      "Any",
+      "Callable",
+      "Coroutine",
+      "Dict",
+      "List",
+      "Literal",
+      "Generic",
+      "Optional",
+      "Sequence",
+      "Set",
+      "Tuple",
+      "Type",
+      "Union"
+    ];
+    const KEYWORDS = {
+      $pattern: /[A-Za-z]\w+|__\w+__/,
+      keyword: RESERVED_WORDS,
+      built_in: BUILT_INS,
+      literal: LITERALS,
+      type: TYPES
+    };
+    const PROMPT = {
+      className: "meta",
+      begin: /^(>>>|\.\.\.) /
+    };
+    const SUBST = {
+      className: "subst",
+      begin: /\{/,
+      end: /\}/,
+      keywords: KEYWORDS,
+      illegal: /#/
+    };
+    const LITERAL_BRACKET = {
+      begin: /\{\{/,
+      relevance: 0
+    };
+    const STRING = {
+      className: "string",
+      contains: [hljs.BACKSLASH_ESCAPE],
+      variants: [
+        {
+          begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?'''/,
+          end: /'''/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT
+          ],
+          relevance: 10
+        },
+        {
+          begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?"""/,
+          end: /"""/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT
+          ],
+          relevance: 10
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])'''/,
+          end: /'''/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])"""/,
+          end: /"""/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            PROMPT,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([uU]|[rR])'/,
+          end: /'/,
+          relevance: 10
+        },
+        {
+          begin: /([uU]|[rR])"/,
+          end: /"/,
+          relevance: 10
+        },
+        {
+          begin: /([bB]|[bB][rR]|[rR][bB])'/,
+          end: /'/
+        },
+        {
+          begin: /([bB]|[bB][rR]|[rR][bB])"/,
+          end: /"/
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])'/,
+          end: /'/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        {
+          begin: /([fFtT][rR]|[rR][fFtT]|[fFtT])"/,
+          end: /"/,
+          contains: [
+            hljs.BACKSLASH_ESCAPE,
+            LITERAL_BRACKET,
+            SUBST
+          ]
+        },
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE
+      ]
+    };
+    const digitpart = "[0-9](_?[0-9])*";
+    const pointfloat = `(\\b(${digitpart}))?\\.(${digitpart})|\\b(${digitpart})\\.`;
+    const lookahead = `\\b|${RESERVED_WORDS.join("|")}`;
+    const NUMBER = {
+      className: "number",
+      relevance: 0,
+      variants: [
+        {
+          begin: `(\\b(${digitpart})|(${pointfloat}))[eE][+-]?(${digitpart})[jJ]?(?=${lookahead})`
+        },
+        {
+          begin: `(${pointfloat})[jJ]?`
+        },
+        {
+          begin: `\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[bB](_?[01])+[lL]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[oO](_?[0-7])+[lL]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b0[xX](_?[0-9a-fA-F])+[lL]?(?=${lookahead})`
+        },
+        {
+          begin: `\\b(${digitpart})[jJ](?=${lookahead})`
+        }
+      ]
+    };
+    const COMMENT_TYPE = {
+      className: "comment",
+      begin: regex.lookahead(/# type:/),
+      end: /$/,
+      keywords: KEYWORDS,
+      contains: [
+        {
+          begin: /# type:/
+        },
+        {
+          begin: /#/,
+          end: /\b\B/,
+          endsWithParent: true
+        }
+      ]
+    };
+    const PARAMS = {
+      className: "params",
+      variants: [
+        {
+          className: "",
+          begin: /\(\s*\)/,
+          skip: true
+        },
+        {
+          begin: /\(/,
+          end: /\)/,
+          excludeBegin: true,
+          excludeEnd: true,
+          keywords: KEYWORDS,
+          contains: [
+            "self",
+            PROMPT,
+            NUMBER,
+            STRING,
+            hljs.HASH_COMMENT_MODE
+          ]
+        }
+      ]
+    };
+    SUBST.contains = [
+      STRING,
+      NUMBER,
+      PROMPT
+    ];
+    return {
+      name: "Python",
+      aliases: [
+        "py",
+        "gyp",
+        "ipython"
+      ],
+      unicodeRegex: true,
+      keywords: KEYWORDS,
+      illegal: /(<\/|\?)|=>/,
+      contains: [
+        PROMPT,
+        NUMBER,
+        {
+          scope: "variable.language",
+          match: /\bself\b/
+        },
+        {
+          beginKeywords: "if",
+          relevance: 0
+        },
+        { match: /\bor\b/, scope: "keyword" },
+        STRING,
+        COMMENT_TYPE,
+        hljs.HASH_COMMENT_MODE,
+        {
+          match: [
+            /\bdef/,
+            /\s+/,
+            IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.function"
+          },
+          contains: [PARAMS]
+        },
+        {
+          variants: [
+            {
+              match: [
+                /\bclass/,
+                /\s+/,
+                IDENT_RE,
+                /\s*/,
+                /\(\s*/,
+                IDENT_RE,
+                /\s*\)/
+              ]
+            },
+            {
+              match: [
+                /\bclass/,
+                /\s+/,
+                IDENT_RE
+              ]
+            }
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class",
+            6: "title.class.inherited"
+          }
+        },
+        {
+          className: "meta",
+          begin: /^[\t ]*@/,
+          end: /(?=#)|$/,
+          contains: [
+            NUMBER,
+            PARAMS,
+            STRING
+          ]
+        }
+      ]
+    };
+  }
+  module.exports = python;
+});
+
+// node_modules/highlight.js/lib/languages/python-repl.js
+var require_python_repl = __commonJS(function(exports, module) {
+  function pythonRepl(hljs) {
+    return {
+      aliases: ["pycon"],
+      contains: [
+        {
+          className: "meta.prompt",
+          starts: {
+            end: / |$/,
+            starts: {
+              end: "$",
+              subLanguage: "python"
+            }
+          },
+          variants: [
+            { begin: /^>>>(?=[ ]|$)/ },
+            { begin: /^\.\.\.(?=[ ]|$)/ }
+          ]
+        }
+      ]
+    };
+  }
+  module.exports = pythonRepl;
+});
+
+// node_modules/highlight.js/lib/languages/r.js
+var require_r = __commonJS(function(exports, module) {
+  function r(hljs) {
+    const regex = hljs.regex;
+    const IDENT_RE = /(?:(?:[a-zA-Z]|\.[._a-zA-Z])[._a-zA-Z0-9]*)|\.(?!\d)/;
+    const NUMBER_TYPES_RE = regex.either(/0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*[pP][+-]?\d+i?/, /0[xX][0-9a-fA-F]+(?:[pP][+-]?\d+)?[Li]?/, /(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?[Li]?/);
+    const OPERATORS_RE = /[=!<>:]=|\|\||&&|:::?|<-|<<-|->>|->|\|>|[-+*\/?!$&|:<=>@^~]|\*\*/;
+    const PUNCTUATION_RE = regex.either(/[()]/, /[{}]/, /\[\[/, /[[\]]/, /\\/, /,/);
+    return {
+      name: "R",
+      keywords: {
+        $pattern: IDENT_RE,
+        keyword: "function if in break next repeat else for while",
+        literal: "NULL NA TRUE FALSE Inf NaN NA_integer_|10 NA_real_|10 " + "NA_character_|10 NA_complex_|10",
+        built_in: "LETTERS letters month.abb month.name pi T F " + "abs acos acosh all any anyNA Arg as.call as.character " + "as.complex as.double as.environment as.integer as.logical " + "as.null.default as.numeric as.raw asin asinh atan atanh attr " + "attributes baseenv browser c call ceiling class Conj cos cosh " + "cospi cummax cummin cumprod cumsum digamma dim dimnames " + "emptyenv exp expression floor forceAndCall gamma gc.time " + "globalenv Im interactive invisible is.array is.atomic is.call " + "is.character is.complex is.double is.environment is.expression " + "is.finite is.function is.infinite is.integer is.language " + "is.list is.logical is.matrix is.na is.name is.nan is.null " + "is.numeric is.object is.pairlist is.raw is.recursive is.single " + "is.symbol lazyLoadDBfetch length lgamma list log max min " + "missing Mod names nargs nzchar oldClass on.exit pos.to.env " + "proc.time prod quote range Re rep retracemem return round " + "seq_along seq_len seq.int sign signif sin sinh sinpi sqrt " + "standardGeneric substitute sum switch tan tanh tanpi tracemem " + "trigamma trunc unclass untracemem UseMethod xtfrm"
+      },
+      contains: [
+        hljs.COMMENT(/#'/, /$/, { contains: [
+          {
+            scope: "doctag",
+            match: /@examples/,
+            starts: {
+              end: regex.lookahead(regex.either(/\n^#'\s*(?=@[a-zA-Z]+)/, /\n^(?!#')/)),
+              endsParent: true
+            }
+          },
+          {
+            scope: "doctag",
+            begin: "@param",
+            end: /$/,
+            contains: [
+              {
+                scope: "variable",
+                variants: [
+                  { match: IDENT_RE },
+                  { match: /`(?:\\.|[^`\\])+`/ }
+                ],
+                endsParent: true
+              }
+            ]
+          },
+          {
+            scope: "doctag",
+            match: /@[a-zA-Z]+/
+          },
+          {
+            scope: "keyword",
+            match: /\\[a-zA-Z]+/
+          }
+        ] }),
+        hljs.HASH_COMMENT_MODE,
+        {
+          scope: "string",
+          contains: [hljs.BACKSLASH_ESCAPE],
+          variants: [
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]"(-*)\(/,
+              end: /\)(-*)"/
+            }),
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]"(-*)\{/,
+              end: /\}(-*)"/
+            }),
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]"(-*)\[/,
+              end: /\](-*)"/
+            }),
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]'(-*)\(/,
+              end: /\)(-*)'/
+            }),
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]'(-*)\{/,
+              end: /\}(-*)'/
+            }),
+            hljs.END_SAME_AS_BEGIN({
+              begin: /[rR]'(-*)\[/,
+              end: /\](-*)'/
+            }),
+            {
+              begin: '"',
+              end: '"',
+              relevance: 0
+            },
+            {
+              begin: "'",
+              end: "'",
+              relevance: 0
+            }
+          ]
+        },
+        {
+          relevance: 0,
+          variants: [
+            {
+              scope: {
+                1: "operator",
+                2: "number"
+              },
+              match: [
+                OPERATORS_RE,
+                NUMBER_TYPES_RE
+              ]
+            },
+            {
+              scope: {
+                1: "operator",
+                2: "number"
+              },
+              match: [
+                /%[^%]*%/,
+                NUMBER_TYPES_RE
+              ]
+            },
+            {
+              scope: {
+                1: "punctuation",
+                2: "number"
+              },
+              match: [
+                PUNCTUATION_RE,
+                NUMBER_TYPES_RE
+              ]
+            },
+            {
+              scope: { 2: "number" },
+              match: [
+                /[^a-zA-Z0-9._]|^/,
+                NUMBER_TYPES_RE
+              ]
+            }
+          ]
+        },
+        {
+          scope: { 3: "operator" },
+          match: [
+            IDENT_RE,
+            /\s+/,
+            /<-/,
+            /\s+/
+          ]
+        },
+        {
+          scope: "operator",
+          relevance: 0,
+          variants: [
+            { match: OPERATORS_RE },
+            { match: /%[^%]*%/ }
+          ]
+        },
+        {
+          scope: "punctuation",
+          relevance: 0,
+          match: PUNCTUATION_RE
+        },
+        {
+          begin: "`",
+          end: "`",
+          contains: [{ begin: /\\./ }]
+        }
+      ]
+    };
+  }
+  module.exports = r;
+});
+
+// node_modules/highlight.js/lib/languages/rust.js
+var require_rust = __commonJS(function(exports, module) {
+  function rust(hljs) {
+    const regex = hljs.regex;
+    const RAW_IDENTIFIER = /(r#)?/;
+    const UNDERSCORE_IDENT_RE = regex.concat(RAW_IDENTIFIER, hljs.UNDERSCORE_IDENT_RE);
+    const IDENT_RE = regex.concat(RAW_IDENTIFIER, hljs.IDENT_RE);
+    const FUNCTION_INVOKE = {
+      scope: "title.function.invoke",
+      relevance: 0,
+      begin: regex.concat(/\b/, /(?!(?:let|for|while|if|else|match)\b)/, IDENT_RE, regex.lookahead(/\s*\(/))
+    };
+    const NUMBER_SUFFIX = "([ui](8|16|32|64|128|size)|f(16|32|64|128))?";
+    const KEYWORDS = [
+      "abstract",
+      "as",
+      "async",
+      "await",
+      "become",
+      "box",
+      "break",
+      "const",
+      "continue",
+      "crate",
+      "do",
+      "dyn",
+      "else",
+      "enum",
+      "extern",
+      "false",
+      "final",
+      "fn",
+      "for",
+      "if",
+      "impl",
+      "in",
+      "let",
+      "loop",
+      "macro",
+      "match",
+      "mod",
+      "move",
+      "mut",
+      "override",
+      "priv",
+      "pub",
+      "raw",
+      "ref",
+      "return",
+      "self",
+      "Self",
+      "static",
+      "struct",
+      "super",
+      "trait",
+      "true",
+      "try",
+      "type",
+      "typeof",
+      "union",
+      "unsafe",
+      "unsized",
+      "use",
+      "virtual",
+      "where",
+      "while",
+      "yield"
+    ];
+    const LITERALS = [
+      "true",
+      "false",
+      "Some",
+      "None",
+      "Ok",
+      "Err"
+    ];
+    const BUILTINS = [
+      "drop ",
+      "Copy",
+      "Send",
+      "Sized",
+      "Sync",
+      "Drop",
+      "Fn",
+      "FnMut",
+      "FnOnce",
+      "ToOwned",
+      "Clone",
+      "Debug",
+      "PartialEq",
+      "PartialOrd",
+      "Eq",
+      "Ord",
+      "AsRef",
+      "AsMut",
+      "Into",
+      "From",
+      "Default",
+      "Iterator",
+      "Extend",
+      "IntoIterator",
+      "DoubleEndedIterator",
+      "ExactSizeIterator",
+      "SliceConcatExt",
+      "ToString",
+      "assert!",
+      "assert_eq!",
+      "bitflags!",
+      "bytes!",
+      "cfg!",
+      "col!",
+      "concat!",
+      "concat_idents!",
+      "debug_assert!",
+      "debug_assert_eq!",
+      "env!",
+      "eprintln!",
+      "panic!",
+      "file!",
+      "format!",
+      "format_args!",
+      "include_bytes!",
+      "include_str!",
+      "line!",
+      "local_data_key!",
+      "module_path!",
+      "option_env!",
+      "print!",
+      "println!",
+      "select!",
+      "stringify!",
+      "try!",
+      "unimplemented!",
+      "unreachable!",
+      "vec!",
+      "write!",
+      "writeln!",
+      "macro_rules!",
+      "assert_ne!",
+      "debug_assert_ne!"
+    ];
+    const TYPES = [
+      "i8",
+      "i16",
+      "i32",
+      "i64",
+      "i128",
+      "isize",
+      "u8",
+      "u16",
+      "u32",
+      "u64",
+      "u128",
+      "usize",
+      "f16",
+      "f32",
+      "f64",
+      "f128",
+      "str",
+      "char",
+      "bool",
+      "Box",
+      "Option",
+      "Result",
+      "String",
+      "Vec"
+    ];
+    return {
+      name: "Rust",
+      aliases: ["rs"],
+      keywords: {
+        $pattern: hljs.IDENT_RE + "!?",
+        type: TYPES,
+        keyword: KEYWORDS,
+        literal: LITERALS,
+        built_in: BUILTINS
+      },
+      illegal: "</",
+      contains: [
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.COMMENT("/\\*", "\\*/", { contains: ["self"] }),
+        hljs.inherit(hljs.QUOTE_STRING_MODE, {
+          begin: /b?"/,
+          illegal: null
+        }),
+        {
+          scope: "symbol",
+          begin: /'[a-zA-Z_][a-zA-Z0-9_]*(?!')/
+        },
+        {
+          scope: "string",
+          variants: [
+            { begin: /b?r(#*)"(.|\n)*?"\1(?!#)/ },
+            {
+              begin: /b?'/,
+              end: /'/,
+              contains: [
+                {
+                  scope: "char.escape",
+                  match: /\\('|"|\\|\w|x\w{2}|u\w{4}|U\w{8})/
+                }
+              ]
+            }
+          ]
+        },
+        {
+          scope: "number",
+          variants: [
+            { begin: "\\b0b([01_]+)" + NUMBER_SUFFIX },
+            { begin: "\\b0o([0-7_]+)" + NUMBER_SUFFIX },
+            { begin: "\\b0x([A-Fa-f0-9_]+)" + NUMBER_SUFFIX },
+            { begin: "\\b(\\d[\\d_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?)" + NUMBER_SUFFIX }
+          ],
+          relevance: 0
+        },
+        {
+          begin: [
+            /\bsafe/,
+            /\s+/,
+            /extern/
+          ],
+          scope: {
+            1: "keyword",
+            3: "keyword"
+          }
+        },
+        {
+          begin: [
+            /fn/,
+            /\s+/,
+            UNDERSCORE_IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.function"
+          }
+        },
+        {
+          scope: "meta",
+          begin: "#!?\\[",
+          end: "\\]",
+          contains: [
+            {
+              scope: "string",
+              begin: /"/,
+              end: /"/,
+              contains: [
+                hljs.BACKSLASH_ESCAPE
+              ]
+            }
+          ]
+        },
+        {
+          begin: [
+            /let/,
+            /\s+/,
+            /(?:mut\s+)?/,
+            UNDERSCORE_IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "keyword",
+            4: "variable"
+          }
+        },
+        {
+          begin: [
+            /for/,
+            /\s+/,
+            UNDERSCORE_IDENT_RE,
+            /\s+/,
+            /in/
+          ],
+          scope: {
+            1: "keyword",
+            3: "variable",
+            5: "keyword"
+          }
+        },
+        {
+          begin: [
+            /type/,
+            /\s+/,
+            UNDERSCORE_IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class"
+          }
+        },
+        {
+          begin: [
+            /(?:trait|enum|struct|union|impl|for)/,
+            /\s+/,
+            UNDERSCORE_IDENT_RE
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class"
+          }
+        },
+        {
+          begin: hljs.IDENT_RE + "::",
+          keywords: {
+            keyword: "Self",
+            built_in: BUILTINS,
+            type: TYPES
+          }
+        },
+        {
+          scope: "punctuation",
+          begin: "->"
+        },
+        FUNCTION_INVOKE
+      ]
+    };
+  }
+  module.exports = rust;
+});
+
+// node_modules/highlight.js/lib/languages/scss.js
+var require_scss = __commonJS(function(exports, module) {
+  var MODES = (hljs) => {
+    return {
+      IMPORTANT: {
+        scope: "meta",
+        begin: "!important"
+      },
+      BLOCK_COMMENT: hljs.C_BLOCK_COMMENT_MODE,
+      HEXCOLOR: {
+        scope: "number",
+        begin: /#(([0-9a-fA-F]{3,4})|(([0-9a-fA-F]{2}){3,4}))\b/
+      },
+      UNICODE_RANGE: {
+        scope: "number",
+        begin: /\b[Uu]\+[0-9A-Fa-f][0-9A-Fa-f?]{0,5}(-[0-9A-Fa-f][0-9A-Fa-f]{0,5})?/
+      },
+      FUNCTION_DISPATCH: {
+        className: "built_in",
+        begin: /[\w-]+(?=\()/
+      },
+      ATTRIBUTE_SELECTOR_MODE: {
+        scope: "selector-attr",
+        begin: /\[/,
+        end: /\]/,
+        illegal: "$",
+        contains: [
+          hljs.APOS_STRING_MODE,
+          hljs.QUOTE_STRING_MODE
+        ]
+      },
+      CSS_NUMBER_MODE: {
+        scope: "number",
+        begin: hljs.NUMBER_RE + "(" + "%|em|ex|ch|rem" + "|vw|vh|vmin|vmax" + "|cm|mm|in|pt|pc|px" + "|deg|grad|rad|turn" + "|s|ms" + "|Hz|kHz" + "|dpi|dpcm|dppx" + ")?",
+        relevance: 0
+      },
+      CSS_VARIABLE: {
+        className: "attr",
+        begin: /--[A-Za-z_][A-Za-z0-9_-]*/
+      }
+    };
+  };
+  var HTML_TAGS = [
+    "a",
+    "abbr",
+    "address",
+    "article",
+    "aside",
+    "audio",
+    "b",
+    "blockquote",
+    "body",
+    "button",
+    "canvas",
+    "caption",
+    "cite",
+    "code",
+    "dd",
+    "del",
+    "details",
+    "dfn",
+    "div",
+    "dl",
+    "dt",
+    "em",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "html",
+    "i",
+    "iframe",
+    "img",
+    "input",
+    "ins",
+    "kbd",
+    "label",
+    "legend",
+    "li",
+    "main",
+    "mark",
+    "menu",
+    "nav",
+    "object",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "picture",
+    "q",
+    "quote",
+    "samp",
+    "section",
+    "select",
+    "source",
+    "span",
+    "strong",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "time",
+    "tr",
+    "ul",
+    "var",
+    "video"
+  ];
+  var SVG_TAGS = [
+    "defs",
+    "g",
+    "marker",
+    "mask",
+    "pattern",
+    "svg",
+    "switch",
+    "symbol",
+    "feBlend",
+    "feColorMatrix",
+    "feComponentTransfer",
+    "feComposite",
+    "feConvolveMatrix",
+    "feDiffuseLighting",
+    "feDisplacementMap",
+    "feFlood",
+    "feGaussianBlur",
+    "feImage",
+    "feMerge",
+    "feMorphology",
+    "feOffset",
+    "feSpecularLighting",
+    "feTile",
+    "feTurbulence",
+    "linearGradient",
+    "radialGradient",
+    "stop",
+    "circle",
+    "ellipse",
+    "image",
+    "line",
+    "path",
+    "polygon",
+    "polyline",
+    "rect",
+    "text",
+    "use",
+    "textPath",
+    "tspan",
+    "foreignObject",
+    "clipPath"
+  ];
+  var TAGS = [
+    ...HTML_TAGS,
+    ...SVG_TAGS
+  ];
+  var MEDIA_FEATURES = [
+    "any-hover",
+    "any-pointer",
+    "aspect-ratio",
+    "color",
+    "color-gamut",
+    "color-index",
+    "device-aspect-ratio",
+    "device-height",
+    "device-width",
+    "display-mode",
+    "forced-colors",
+    "grid",
+    "height",
+    "hover",
+    "inverted-colors",
+    "monochrome",
+    "orientation",
+    "overflow-block",
+    "overflow-inline",
+    "pointer",
+    "prefers-color-scheme",
+    "prefers-contrast",
+    "prefers-reduced-motion",
+    "prefers-reduced-transparency",
+    "resolution",
+    "scan",
+    "scripting",
+    "update",
+    "width",
+    "min-width",
+    "max-width",
+    "min-height",
+    "max-height"
+  ].sort().reverse();
+  var PSEUDO_CLASSES = [
+    "active",
+    "any-link",
+    "blank",
+    "checked",
+    "current",
+    "default",
+    "defined",
+    "dir",
+    "disabled",
+    "drop",
+    "empty",
+    "enabled",
+    "first",
+    "first-child",
+    "first-of-type",
+    "fullscreen",
+    "future",
+    "focus",
+    "focus-visible",
+    "focus-within",
+    "has",
+    "host",
+    "host-context",
+    "hover",
+    "indeterminate",
+    "in-range",
+    "invalid",
+    "is",
+    "lang",
+    "last-child",
+    "last-of-type",
+    "left",
+    "link",
+    "local-link",
+    "not",
+    "nth-child",
+    "nth-col",
+    "nth-last-child",
+    "nth-last-col",
+    "nth-last-of-type",
+    "nth-of-type",
+    "only-child",
+    "only-of-type",
+    "optional",
+    "out-of-range",
+    "past",
+    "placeholder-shown",
+    "read-only",
+    "read-write",
+    "required",
+    "right",
+    "root",
+    "scope",
+    "target",
+    "target-within",
+    "user-invalid",
+    "valid",
+    "visited",
+    "where"
+  ].sort().reverse();
+  var PSEUDO_ELEMENTS = [
+    "after",
+    "backdrop",
+    "before",
+    "cue",
+    "cue-region",
+    "first-letter",
+    "first-line",
+    "grammar-error",
+    "marker",
+    "part",
+    "placeholder",
+    "selection",
+    "slotted",
+    "spelling-error"
+  ].sort().reverse();
+  var ATTRIBUTES = [
+    "accent-color",
+    "align-content",
+    "align-items",
+    "align-self",
+    "alignment-baseline",
+    "all",
+    "anchor-name",
+    "animation",
+    "animation-composition",
+    "animation-delay",
+    "animation-direction",
+    "animation-duration",
+    "animation-fill-mode",
+    "animation-iteration-count",
+    "animation-name",
+    "animation-play-state",
+    "animation-range",
+    "animation-range-end",
+    "animation-range-start",
+    "animation-timeline",
+    "animation-timing-function",
+    "appearance",
+    "aspect-ratio",
+    "backdrop-filter",
+    "backface-visibility",
+    "background",
+    "background-attachment",
+    "background-blend-mode",
+    "background-clip",
+    "background-color",
+    "background-image",
+    "background-origin",
+    "background-position",
+    "background-position-x",
+    "background-position-y",
+    "background-repeat",
+    "background-size",
+    "baseline-shift",
+    "block-size",
+    "border",
+    "border-block",
+    "border-block-color",
+    "border-block-end",
+    "border-block-end-color",
+    "border-block-end-style",
+    "border-block-end-width",
+    "border-block-start",
+    "border-block-start-color",
+    "border-block-start-style",
+    "border-block-start-width",
+    "border-block-style",
+    "border-block-width",
+    "border-bottom",
+    "border-bottom-color",
+    "border-bottom-left-radius",
+    "border-bottom-right-radius",
+    "border-bottom-style",
+    "border-bottom-width",
+    "border-collapse",
+    "border-color",
+    "border-end-end-radius",
+    "border-end-start-radius",
+    "border-image",
+    "border-image-outset",
+    "border-image-repeat",
+    "border-image-slice",
+    "border-image-source",
+    "border-image-width",
+    "border-inline",
+    "border-inline-color",
+    "border-inline-end",
+    "border-inline-end-color",
+    "border-inline-end-style",
+    "border-inline-end-width",
+    "border-inline-start",
+    "border-inline-start-color",
+    "border-inline-start-style",
+    "border-inline-start-width",
+    "border-inline-style",
+    "border-inline-width",
+    "border-left",
+    "border-left-color",
+    "border-left-style",
+    "border-left-width",
+    "border-radius",
+    "border-right",
+    "border-right-color",
+    "border-right-style",
+    "border-right-width",
+    "border-spacing",
+    "border-start-end-radius",
+    "border-start-start-radius",
+    "border-style",
+    "border-top",
+    "border-top-color",
+    "border-top-left-radius",
+    "border-top-right-radius",
+    "border-top-style",
+    "border-top-width",
+    "border-width",
+    "bottom",
+    "box-align",
+    "box-decoration-break",
+    "box-direction",
+    "box-flex",
+    "box-flex-group",
+    "box-lines",
+    "box-ordinal-group",
+    "box-orient",
+    "box-pack",
+    "box-shadow",
+    "box-sizing",
+    "break-after",
+    "break-before",
+    "break-inside",
+    "caption-side",
+    "caret-color",
+    "clear",
+    "clip",
+    "clip-path",
+    "clip-rule",
+    "color",
+    "color-interpolation",
+    "color-interpolation-filters",
+    "color-profile",
+    "color-rendering",
+    "color-scheme",
+    "column-count",
+    "column-fill",
+    "column-gap",
+    "column-rule",
+    "column-rule-color",
+    "column-rule-style",
+    "column-rule-width",
+    "column-span",
+    "column-width",
+    "columns",
+    "contain",
+    "contain-intrinsic-block-size",
+    "contain-intrinsic-height",
+    "contain-intrinsic-inline-size",
+    "contain-intrinsic-size",
+    "contain-intrinsic-width",
+    "container",
+    "container-name",
+    "container-type",
+    "content",
+    "content-visibility",
+    "corner-bottom-left-shape",
+    "corner-bottom-right-shape",
+    "corner-shape",
+    "corner-top-left-shape",
+    "corner-top-right-shape",
+    "counter-increment",
+    "counter-reset",
+    "counter-set",
+    "cue",
+    "cue-after",
+    "cue-before",
+    "cursor",
+    "cx",
+    "cy",
+    "direction",
+    "display",
+    "dominant-baseline",
+    "empty-cells",
+    "enable-background",
+    "field-sizing",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "filter",
+    "flex",
+    "flex-basis",
+    "flex-direction",
+    "flex-flow",
+    "flex-grow",
+    "flex-shrink",
+    "flex-wrap",
+    "float",
+    "flood-color",
+    "flood-opacity",
+    "flow",
+    "font",
+    "font-display",
+    "font-family",
+    "font-feature-settings",
+    "font-kerning",
+    "font-language-override",
+    "font-optical-sizing",
+    "font-palette",
+    "font-size",
+    "font-size-adjust",
+    "font-smooth",
+    "font-smoothing",
+    "font-stretch",
+    "font-style",
+    "font-synthesis",
+    "font-synthesis-position",
+    "font-synthesis-small-caps",
+    "font-synthesis-style",
+    "font-synthesis-weight",
+    "font-variant",
+    "font-variant-alternates",
+    "font-variant-caps",
+    "font-variant-east-asian",
+    "font-variant-emoji",
+    "font-variant-ligatures",
+    "font-variant-numeric",
+    "font-variant-position",
+    "font-variation-settings",
+    "font-weight",
+    "forced-color-adjust",
+    "gap",
+    "glyph-orientation-horizontal",
+    "glyph-orientation-vertical",
+    "grid",
+    "grid-area",
+    "grid-auto-columns",
+    "grid-auto-flow",
+    "grid-auto-rows",
+    "grid-column",
+    "grid-column-end",
+    "grid-column-start",
+    "grid-gap",
+    "grid-row",
+    "grid-row-end",
+    "grid-row-start",
+    "grid-template",
+    "grid-template-areas",
+    "grid-template-columns",
+    "grid-template-rows",
+    "hanging-punctuation",
+    "height",
+    "hyphenate-character",
+    "hyphenate-limit-chars",
+    "hyphens",
+    "icon",
+    "image-orientation",
+    "image-rendering",
+    "image-resolution",
+    "ime-mode",
+    "initial-letter",
+    "initial-letter-align",
+    "inline-size",
+    "inset",
+    "inset-area",
+    "inset-block",
+    "inset-block-end",
+    "inset-block-start",
+    "inset-inline",
+    "inset-inline-end",
+    "inset-inline-start",
+    "isolation",
+    "justify-content",
+    "justify-items",
+    "justify-self",
+    "kerning",
+    "left",
+    "letter-spacing",
+    "lighting-color",
+    "line-break",
+    "line-height",
+    "line-height-step",
+    "list-style",
+    "list-style-image",
+    "list-style-position",
+    "list-style-type",
+    "margin",
+    "margin-block",
+    "margin-block-end",
+    "margin-block-start",
+    "margin-bottom",
+    "margin-inline",
+    "margin-inline-end",
+    "margin-inline-start",
+    "margin-left",
+    "margin-right",
+    "margin-top",
+    "margin-trim",
+    "marker",
+    "marker-end",
+    "marker-mid",
+    "marker-start",
+    "marks",
+    "mask",
+    "mask-border",
+    "mask-border-mode",
+    "mask-border-outset",
+    "mask-border-repeat",
+    "mask-border-slice",
+    "mask-border-source",
+    "mask-border-width",
+    "mask-clip",
+    "mask-composite",
+    "mask-image",
+    "mask-mode",
+    "mask-origin",
+    "mask-position",
+    "mask-repeat",
+    "mask-size",
+    "mask-type",
+    "masonry-auto-flow",
+    "math-depth",
+    "math-shift",
+    "math-style",
+    "max-block-size",
+    "max-height",
+    "max-inline-size",
+    "max-width",
+    "min-block-size",
+    "min-height",
+    "min-inline-size",
+    "min-width",
+    "mix-blend-mode",
+    "nav-down",
+    "nav-index",
+    "nav-left",
+    "nav-right",
+    "nav-up",
+    "none",
+    "normal",
+    "object-fit",
+    "object-position",
+    "offset",
+    "offset-anchor",
+    "offset-distance",
+    "offset-path",
+    "offset-position",
+    "offset-rotate",
+    "opacity",
+    "order",
+    "orphans",
+    "outline",
+    "outline-color",
+    "outline-offset",
+    "outline-style",
+    "outline-width",
+    "overflow",
+    "overflow-anchor",
+    "overflow-block",
+    "overflow-clip-margin",
+    "overflow-inline",
+    "overflow-wrap",
+    "overflow-x",
+    "overflow-y",
+    "overlay",
+    "overscroll-behavior",
+    "overscroll-behavior-block",
+    "overscroll-behavior-inline",
+    "overscroll-behavior-x",
+    "overscroll-behavior-y",
+    "padding",
+    "padding-block",
+    "padding-block-end",
+    "padding-block-start",
+    "padding-bottom",
+    "padding-inline",
+    "padding-inline-end",
+    "padding-inline-start",
+    "padding-left",
+    "padding-right",
+    "padding-top",
+    "page",
+    "page-break-after",
+    "page-break-before",
+    "page-break-inside",
+    "paint-order",
+    "pause",
+    "pause-after",
+    "pause-before",
+    "perspective",
+    "perspective-origin",
+    "place-content",
+    "place-items",
+    "place-self",
+    "pointer-events",
+    "position",
+    "position-anchor",
+    "position-visibility",
+    "print-color-adjust",
+    "quotes",
+    "r",
+    "resize",
+    "rest",
+    "rest-after",
+    "rest-before",
+    "right",
+    "rotate",
+    "row-gap",
+    "ruby-align",
+    "ruby-position",
+    "scale",
+    "scroll-behavior",
+    "scroll-margin",
+    "scroll-margin-block",
+    "scroll-margin-block-end",
+    "scroll-margin-block-start",
+    "scroll-margin-bottom",
+    "scroll-margin-inline",
+    "scroll-margin-inline-end",
+    "scroll-margin-inline-start",
+    "scroll-margin-left",
+    "scroll-margin-right",
+    "scroll-margin-top",
+    "scroll-padding",
+    "scroll-padding-block",
+    "scroll-padding-block-end",
+    "scroll-padding-block-start",
+    "scroll-padding-bottom",
+    "scroll-padding-inline",
+    "scroll-padding-inline-end",
+    "scroll-padding-inline-start",
+    "scroll-padding-left",
+    "scroll-padding-right",
+    "scroll-padding-top",
+    "scroll-snap-align",
+    "scroll-snap-stop",
+    "scroll-snap-type",
+    "scroll-timeline",
+    "scroll-timeline-axis",
+    "scroll-timeline-name",
+    "scrollbar-color",
+    "scrollbar-gutter",
+    "scrollbar-width",
+    "shape-image-threshold",
+    "shape-margin",
+    "shape-outside",
+    "shape-rendering",
+    "speak",
+    "speak-as",
+    "src",
+    "stop-color",
+    "stop-opacity",
+    "stroke",
+    "stroke-dasharray",
+    "stroke-dashoffset",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-miterlimit",
+    "stroke-opacity",
+    "stroke-width",
+    "tab-size",
+    "table-layout",
+    "text-align",
+    "text-align-all",
+    "text-align-last",
+    "text-anchor",
+    "text-combine-upright",
+    "text-decoration",
+    "text-decoration-color",
+    "text-decoration-line",
+    "text-decoration-skip",
+    "text-decoration-skip-ink",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-emphasis",
+    "text-emphasis-color",
+    "text-emphasis-position",
+    "text-emphasis-style",
+    "text-indent",
+    "text-justify",
+    "text-orientation",
+    "text-overflow",
+    "text-rendering",
+    "text-shadow",
+    "text-size-adjust",
+    "text-transform",
+    "text-underline-offset",
+    "text-underline-position",
+    "text-wrap",
+    "text-wrap-mode",
+    "text-wrap-style",
+    "timeline-scope",
+    "top",
+    "touch-action",
+    "transform",
+    "transform-box",
+    "transform-origin",
+    "transform-style",
+    "transition",
+    "transition-behavior",
+    "transition-delay",
+    "transition-duration",
+    "transition-property",
+    "transition-timing-function",
+    "translate",
+    "unicode-bidi",
+    "unicode-range",
+    "user-modify",
+    "user-select",
+    "vector-effect",
+    "vertical-align",
+    "view-timeline",
+    "view-timeline-axis",
+    "view-timeline-inset",
+    "view-timeline-name",
+    "view-transition-name",
+    "visibility",
+    "voice-balance",
+    "voice-duration",
+    "voice-family",
+    "voice-pitch",
+    "voice-range",
+    "voice-rate",
+    "voice-stress",
+    "voice-volume",
+    "white-space",
+    "white-space-collapse",
+    "widows",
+    "width",
+    "will-change",
+    "word-break",
+    "word-spacing",
+    "word-wrap",
+    "writing-mode",
+    "x",
+    "y",
+    "z-index",
+    "zoom"
+  ].sort().reverse();
+  function scss(hljs) {
+    const modes = MODES(hljs);
+    const PSEUDO_ELEMENTS$1 = PSEUDO_ELEMENTS;
+    const PSEUDO_CLASSES$1 = PSEUDO_CLASSES;
+    const AT_IDENTIFIER = "@[a-z-]+";
+    const AT_MODIFIERS = "and or not only";
+    const IDENT_RE = "[a-zA-Z-][a-zA-Z0-9_-]*";
+    const VARIABLE = {
+      className: "variable",
+      begin: "(\\$" + IDENT_RE + ")\\b",
+      relevance: 0
+    };
+    return {
+      name: "SCSS",
+      case_insensitive: true,
+      illegal: "[=/|']",
+      contains: [
+        hljs.C_LINE_COMMENT_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        modes.CSS_NUMBER_MODE,
+        {
+          className: "selector-id",
+          begin: "#[A-Za-z0-9_-]+",
+          relevance: 0
+        },
+        {
+          className: "selector-class",
+          begin: "\\.[A-Za-z0-9_-]+",
+          relevance: 0
+        },
+        modes.ATTRIBUTE_SELECTOR_MODE,
+        {
+          className: "selector-tag",
+          begin: "\\b(" + TAGS.join("|") + ")\\b",
+          relevance: 0
+        },
+        {
+          className: "selector-pseudo",
+          begin: ":(" + PSEUDO_CLASSES$1.join("|") + ")"
+        },
+        {
+          className: "selector-pseudo",
+          begin: ":(:)?(" + PSEUDO_ELEMENTS$1.join("|") + ")"
+        },
+        VARIABLE,
+        {
+          begin: /\(/,
+          end: /\)/,
+          contains: [modes.CSS_NUMBER_MODE]
+        },
+        modes.CSS_VARIABLE,
+        {
+          className: "attribute",
+          begin: "\\b(" + ATTRIBUTES.join("|") + ")\\b"
+        },
+        { begin: "\\b(whitespace|wait|w-resize|visible|vertical-text|vertical-ideographic|uppercase|upper-roman|upper-alpha|underline|transparent|top|thin|thick|text|text-top|text-bottom|tb-rl|table-header-group|table-footer-group|sw-resize|super|strict|static|square|solid|small-caps|separate|se-resize|scroll|s-resize|rtl|row-resize|ridge|right|repeat|repeat-y|repeat-x|relative|progress|pointer|overline|outside|outset|oblique|nowrap|not-allowed|normal|none|nw-resize|no-repeat|no-drop|newspaper|ne-resize|n-resize|move|middle|medium|ltr|lr-tb|lowercase|lower-roman|lower-alpha|loose|list-item|line|line-through|line-edge|lighter|left|keep-all|justify|italic|inter-word|inter-ideograph|inside|inset|inline|inline-block|inherit|inactive|ideograph-space|ideograph-parenthesis|ideograph-numeric|ideograph-alpha|horizontal|hidden|help|hand|groove|fixed|ellipsis|e-resize|double|dotted|distribute|distribute-space|distribute-letter|distribute-all-lines|disc|disabled|default|decimal|dashed|crosshair|collapse|col-resize|circle|char|center|capitalize|break-word|break-all|bottom|both|bolder|bold|block|bidi-override|below|baseline|auto|always|all-scroll|absolute|table|table-cell)\\b" },
+        {
+          begin: /:/,
+          end: /[;}{]/,
+          relevance: 0,
+          contains: [
+            modes.BLOCK_COMMENT,
+            VARIABLE,
+            modes.HEXCOLOR,
+            modes.CSS_NUMBER_MODE,
+            modes.UNICODE_RANGE,
+            hljs.QUOTE_STRING_MODE,
+            hljs.APOS_STRING_MODE,
+            modes.IMPORTANT,
+            modes.FUNCTION_DISPATCH
+          ]
+        },
+        {
+          begin: "@(page|font-face)",
+          keywords: {
+            $pattern: AT_IDENTIFIER,
+            keyword: "@page @font-face"
+          }
+        },
+        {
+          begin: "@",
+          end: "[{;]",
+          returnBegin: true,
+          keywords: {
+            $pattern: /[a-z-]+/,
+            keyword: AT_MODIFIERS,
+            attribute: MEDIA_FEATURES.join(" ")
+          },
+          contains: [
+            {
+              begin: AT_IDENTIFIER,
+              className: "keyword"
+            },
+            {
+              begin: /[a-z-]+(?=:)/,
+              className: "attribute"
+            },
+            VARIABLE,
+            hljs.QUOTE_STRING_MODE,
+            hljs.APOS_STRING_MODE,
+            modes.HEXCOLOR,
+            modes.CSS_NUMBER_MODE
+          ]
+        },
+        modes.FUNCTION_DISPATCH
+      ]
+    };
+  }
+  module.exports = scss;
+});
+
+// node_modules/highlight.js/lib/languages/shell.js
+var require_shell = __commonJS(function(exports, module) {
+  function shell(hljs) {
+    return {
+      name: "Shell Session",
+      aliases: [
+        "console",
+        "shellsession"
+      ],
+      contains: [
+        {
+          className: "meta.prompt",
+          begin: /^\s{0,3}[./~\w\d[\]()@-]*[>%$#][ ]?/,
+          starts: {
+            end: /[^\\](?=\s*$)/,
+            subLanguage: "bash"
+          }
+        }
+      ]
+    };
+  }
+  module.exports = shell;
+});
+
+// node_modules/highlight.js/lib/languages/sql.js
+var require_sql = __commonJS(function(exports, module) {
+  function sql(hljs) {
+    const regex = hljs.regex;
+    const COMMENT_MODE = hljs.COMMENT("--", "$");
+    const STRING = {
+      scope: "string",
+      variants: [
+        {
+          begin: /'/,
+          end: /'/,
+          contains: [{ match: /''/ }]
+        }
+      ]
+    };
+    const QUOTED_IDENTIFIER = {
+      begin: /"/,
+      end: /"/,
+      contains: [{ match: /""/ }]
+    };
+    const LITERALS = [
+      "true",
+      "false",
+      "unknown"
+    ];
+    const MULTI_WORD_TYPES = [
+      "double precision",
+      "large object",
+      "with timezone",
+      "without timezone"
+    ];
+    const TYPES = [
+      "bigint",
+      "binary",
+      "blob",
+      "boolean",
+      "char",
+      "character",
+      "clob",
+      "date",
+      "dec",
+      "decfloat",
+      "decimal",
+      "float",
+      "int",
+      "integer",
+      "interval",
+      "nchar",
+      "nclob",
+      "national",
+      "numeric",
+      "real",
+      "row",
+      "smallint",
+      "time",
+      "timestamp",
+      "varchar",
+      "varying",
+      "varbinary"
+    ];
+    const NON_RESERVED_WORDS = [
+      "add",
+      "asc",
+      "collation",
+      "desc",
+      "final",
+      "first",
+      "last",
+      "view"
+    ];
+    const RESERVED_WORDS = [
+      "abs",
+      "acos",
+      "all",
+      "allocate",
+      "alter",
+      "and",
+      "any",
+      "are",
+      "array",
+      "array_agg",
+      "array_max_cardinality",
+      "as",
+      "asensitive",
+      "asin",
+      "asymmetric",
+      "at",
+      "atan",
+      "atomic",
+      "authorization",
+      "avg",
+      "begin",
+      "begin_frame",
+      "begin_partition",
+      "between",
+      "bigint",
+      "binary",
+      "blob",
+      "boolean",
+      "both",
+      "by",
+      "call",
+      "called",
+      "cardinality",
+      "cascaded",
+      "case",
+      "cast",
+      "ceil",
+      "ceiling",
+      "char",
+      "char_length",
+      "character",
+      "character_length",
+      "check",
+      "classifier",
+      "clob",
+      "close",
+      "coalesce",
+      "collate",
+      "collect",
+      "column",
+      "commit",
+      "condition",
+      "connect",
+      "constraint",
+      "contains",
+      "convert",
+      "copy",
+      "corr",
+      "corresponding",
+      "cos",
+      "cosh",
+      "count",
+      "covar_pop",
+      "covar_samp",
+      "create",
+      "cross",
+      "cube",
+      "cume_dist",
+      "current",
+      "current_catalog",
+      "current_date",
+      "current_default_transform_group",
+      "current_path",
+      "current_role",
+      "current_row",
+      "current_schema",
+      "current_time",
+      "current_timestamp",
+      "current_path",
+      "current_role",
+      "current_transform_group_for_type",
+      "current_user",
+      "cursor",
+      "cycle",
+      "date",
+      "day",
+      "deallocate",
+      "dec",
+      "decimal",
+      "decfloat",
+      "declare",
+      "default",
+      "define",
+      "delete",
+      "dense_rank",
+      "deref",
+      "describe",
+      "deterministic",
+      "disconnect",
+      "distinct",
+      "double",
+      "drop",
+      "dynamic",
+      "each",
+      "element",
+      "else",
+      "empty",
+      "end",
+      "end_frame",
+      "end_partition",
+      "end-exec",
+      "equals",
+      "escape",
+      "every",
+      "except",
+      "exec",
+      "execute",
+      "exists",
+      "exp",
+      "external",
+      "extract",
+      "false",
+      "fetch",
+      "filter",
+      "first_value",
+      "float",
+      "floor",
+      "for",
+      "foreign",
+      "frame_row",
+      "free",
+      "from",
+      "full",
+      "function",
+      "fusion",
+      "get",
+      "global",
+      "grant",
+      "group",
+      "grouping",
+      "groups",
+      "having",
+      "hold",
+      "hour",
+      "identity",
+      "in",
+      "indicator",
+      "initial",
+      "inner",
+      "inout",
+      "insensitive",
+      "insert",
+      "int",
+      "integer",
+      "intersect",
+      "intersection",
+      "interval",
+      "into",
+      "is",
+      "join",
+      "json_array",
+      "json_arrayagg",
+      "json_exists",
+      "json_object",
+      "json_objectagg",
+      "json_query",
+      "json_table",
+      "json_table_primitive",
+      "json_value",
+      "lag",
+      "language",
+      "large",
+      "last_value",
+      "lateral",
+      "lead",
+      "leading",
+      "left",
+      "like",
+      "like_regex",
+      "listagg",
+      "ln",
+      "local",
+      "localtime",
+      "localtimestamp",
+      "log",
+      "log10",
+      "lower",
+      "match",
+      "match_number",
+      "match_recognize",
+      "matches",
+      "max",
+      "member",
+      "merge",
+      "method",
+      "min",
+      "minute",
+      "mod",
+      "modifies",
+      "module",
+      "month",
+      "multiset",
+      "national",
+      "natural",
+      "nchar",
+      "nclob",
+      "new",
+      "no",
+      "none",
+      "normalize",
+      "not",
+      "nth_value",
+      "ntile",
+      "null",
+      "nullif",
+      "numeric",
+      "octet_length",
+      "occurrences_regex",
+      "of",
+      "offset",
+      "old",
+      "omit",
+      "on",
+      "one",
+      "only",
+      "open",
+      "or",
+      "order",
+      "out",
+      "outer",
+      "over",
+      "overlaps",
+      "overlay",
+      "parameter",
+      "partition",
+      "pattern",
+      "per",
+      "percent",
+      "percent_rank",
+      "percentile_cont",
+      "percentile_disc",
+      "period",
+      "portion",
+      "position",
+      "position_regex",
+      "power",
+      "precedes",
+      "precision",
+      "prepare",
+      "primary",
+      "procedure",
+      "ptf",
+      "range",
+      "rank",
+      "reads",
+      "real",
+      "recursive",
+      "ref",
+      "references",
+      "referencing",
+      "regr_avgx",
+      "regr_avgy",
+      "regr_count",
+      "regr_intercept",
+      "regr_r2",
+      "regr_slope",
+      "regr_sxx",
+      "regr_sxy",
+      "regr_syy",
+      "release",
+      "result",
+      "return",
+      "returns",
+      "revoke",
+      "right",
+      "rollback",
+      "rollup",
+      "row",
+      "row_number",
+      "rows",
+      "running",
+      "savepoint",
+      "scope",
+      "scroll",
+      "search",
+      "second",
+      "seek",
+      "select",
+      "sensitive",
+      "session_user",
+      "set",
+      "show",
+      "similar",
+      "sin",
+      "sinh",
+      "skip",
+      "smallint",
+      "some",
+      "specific",
+      "specifictype",
+      "sql",
+      "sqlexception",
+      "sqlstate",
+      "sqlwarning",
+      "sqrt",
+      "start",
+      "static",
+      "stddev_pop",
+      "stddev_samp",
+      "submultiset",
+      "subset",
+      "substring",
+      "substring_regex",
+      "succeeds",
+      "sum",
+      "symmetric",
+      "system",
+      "system_time",
+      "system_user",
+      "table",
+      "tablesample",
+      "tan",
+      "tanh",
+      "then",
+      "time",
+      "timestamp",
+      "timezone_hour",
+      "timezone_minute",
+      "to",
+      "trailing",
+      "translate",
+      "translate_regex",
+      "translation",
+      "treat",
+      "trigger",
+      "trim",
+      "trim_array",
+      "true",
+      "truncate",
+      "uescape",
+      "union",
+      "unique",
+      "unknown",
+      "unnest",
+      "update",
+      "upper",
+      "user",
+      "using",
+      "value",
+      "values",
+      "value_of",
+      "var_pop",
+      "var_samp",
+      "varbinary",
+      "varchar",
+      "varying",
+      "versioning",
+      "when",
+      "whenever",
+      "where",
+      "width_bucket",
+      "window",
+      "with",
+      "within",
+      "without",
+      "year"
+    ];
+    const RESERVED_FUNCTIONS = [
+      "abs",
+      "acos",
+      "array_agg",
+      "asin",
+      "atan",
+      "avg",
+      "cast",
+      "ceil",
+      "ceiling",
+      "coalesce",
+      "corr",
+      "cos",
+      "cosh",
+      "count",
+      "covar_pop",
+      "covar_samp",
+      "cume_dist",
+      "dense_rank",
+      "deref",
+      "element",
+      "exp",
+      "extract",
+      "first_value",
+      "floor",
+      "json_array",
+      "json_arrayagg",
+      "json_exists",
+      "json_object",
+      "json_objectagg",
+      "json_query",
+      "json_table",
+      "json_table_primitive",
+      "json_value",
+      "lag",
+      "last_value",
+      "lead",
+      "listagg",
+      "ln",
+      "log",
+      "log10",
+      "lower",
+      "max",
+      "min",
+      "mod",
+      "nth_value",
+      "ntile",
+      "nullif",
+      "percent_rank",
+      "percentile_cont",
+      "percentile_disc",
+      "position",
+      "position_regex",
+      "power",
+      "rank",
+      "regr_avgx",
+      "regr_avgy",
+      "regr_count",
+      "regr_intercept",
+      "regr_r2",
+      "regr_slope",
+      "regr_sxx",
+      "regr_sxy",
+      "regr_syy",
+      "row_number",
+      "sin",
+      "sinh",
+      "sqrt",
+      "stddev_pop",
+      "stddev_samp",
+      "substring",
+      "substring_regex",
+      "sum",
+      "tan",
+      "tanh",
+      "translate",
+      "translate_regex",
+      "treat",
+      "trim",
+      "trim_array",
+      "unnest",
+      "upper",
+      "value_of",
+      "var_pop",
+      "var_samp",
+      "width_bucket"
+    ];
+    const POSSIBLE_WITHOUT_PARENS = [
+      "current_catalog",
+      "current_date",
+      "current_default_transform_group",
+      "current_path",
+      "current_role",
+      "current_schema",
+      "current_transform_group_for_type",
+      "current_user",
+      "session_user",
+      "system_time",
+      "system_user",
+      "current_time",
+      "localtime",
+      "current_timestamp",
+      "localtimestamp"
+    ];
+    const COMBOS = [
+      "create table",
+      "insert into",
+      "primary key",
+      "foreign key",
+      "not null",
+      "alter table",
+      "add constraint",
+      "grouping sets",
+      "on overflow",
+      "character set",
+      "respect nulls",
+      "ignore nulls",
+      "nulls first",
+      "nulls last",
+      "depth first",
+      "breadth first"
+    ];
+    const FUNCTIONS = RESERVED_FUNCTIONS;
+    const KEYWORDS = [
+      ...RESERVED_WORDS,
+      ...NON_RESERVED_WORDS
+    ].filter((keyword) => {
+      return !RESERVED_FUNCTIONS.includes(keyword);
+    });
+    const VARIABLE = {
+      scope: "variable",
+      match: /@[a-z0-9][a-z0-9_]*/
+    };
+    const OPERATOR = {
+      scope: "operator",
+      match: /[-+*/=%^~]|&&?|\|\|?|!=?|<(?:=>?|<|>)?|>[>=]?/,
+      relevance: 0
+    };
+    const FUNCTION_CALL = {
+      match: regex.concat(/\b/, regex.either(...FUNCTIONS), /\s*\(/),
+      relevance: 0,
+      keywords: { built_in: FUNCTIONS }
+    };
+    function kws_to_regex(list) {
+      return regex.concat(/\b/, regex.either(...list.map((kw) => {
+        return kw.replace(/\s+/, "\\s+");
+      })), /\b/);
+    }
+    const MULTI_WORD_KEYWORDS = {
+      scope: "keyword",
+      match: kws_to_regex(COMBOS),
+      relevance: 0
+    };
+    function reduceRelevancy(list, {
+      exceptions,
+      when
+    } = {}) {
+      const qualifyFn = when;
+      exceptions = exceptions || [];
+      return list.map((item) => {
+        if (item.match(/\|\d+$/) || exceptions.includes(item)) {
+          return item;
+        } else if (qualifyFn(item)) {
+          return `${item}|0`;
+        } else {
+          return item;
+        }
+      });
+    }
+    return {
+      name: "SQL",
+      case_insensitive: true,
+      illegal: /[{}]|<\//,
+      keywords: {
+        $pattern: /\b[\w\.]+/,
+        keyword: reduceRelevancy(KEYWORDS, { when: (x) => x.length < 3 }),
+        literal: LITERALS,
+        type: TYPES,
+        built_in: POSSIBLE_WITHOUT_PARENS
+      },
+      contains: [
+        {
+          scope: "type",
+          match: kws_to_regex(MULTI_WORD_TYPES)
+        },
+        MULTI_WORD_KEYWORDS,
+        FUNCTION_CALL,
+        VARIABLE,
+        STRING,
+        QUOTED_IDENTIFIER,
+        hljs.C_NUMBER_MODE,
+        hljs.C_BLOCK_COMMENT_MODE,
+        COMMENT_MODE,
+        OPERATOR
+      ]
+    };
+  }
+  module.exports = sql;
+});
+
+// node_modules/highlight.js/lib/languages/swift.js
+var require_swift = __commonJS(function(exports, module) {
+  function source(re) {
+    if (!re)
+      return null;
+    if (typeof re === "string")
+      return re;
+    return re.source;
+  }
+  function lookahead(re) {
+    return concat("(?=", re, ")");
+  }
+  function concat(...args) {
+    const joined = args.map((x) => source(x)).join("");
+    return joined;
+  }
+  function stripOptionsFromArgs(args) {
+    const opts = args[args.length - 1];
+    if (typeof opts === "object" && opts.constructor === Object) {
+      args.splice(args.length - 1, 1);
+      return opts;
+    } else {
+      return {};
+    }
+  }
+  function either(...args) {
+    const opts = stripOptionsFromArgs(args);
+    const joined = "(" + (opts.capture ? "" : "?:") + args.map((x) => source(x)).join("|") + ")";
+    return joined;
+  }
+  new RegExp(either(/\[(?:[^\\\]]|\\.)*\]/, /\(\?<(?![=!])[^>]+>/, /\(\?'[^']+'/, /\(\??/, /\\([1-9][0-9]*)/, /\\./));
+  var keywordWrapper = (keyword) => concat(/\b/, keyword, /\w$/.test(keyword) ? /\b/ : /\B/);
+  var dotKeywords = [
+    "Protocol",
+    "Type"
+  ].map(keywordWrapper);
+  var optionalDotKeywords = [
+    "init",
+    "self"
+  ].map(keywordWrapper);
+  var keywordTypes = [
+    "Any",
+    "Self"
+  ];
+  var keywords = [
+    "actor",
+    "any",
+    "associatedtype",
+    "async",
+    "await",
+    /as\?/,
+    /as!/,
+    "as",
+    "borrowing",
+    "break",
+    "case",
+    "catch",
+    "class",
+    "consume",
+    "consuming",
+    "continue",
+    "convenience",
+    "copy",
+    "default",
+    "defer",
+    "deinit",
+    "didSet",
+    "distributed",
+    "do",
+    "dynamic",
+    "each",
+    "else",
+    "enum",
+    "extension",
+    "fallthrough",
+    /fileprivate\(set\)/,
+    "fileprivate",
+    "final",
+    "for",
+    "func",
+    "get",
+    "guard",
+    "if",
+    "import",
+    "indirect",
+    "infix",
+    /init\?/,
+    /init!/,
+    "inout",
+    /internal\(set\)/,
+    "internal",
+    "in",
+    "is",
+    "isolated",
+    "nonisolated",
+    "lazy",
+    "let",
+    "macro",
+    "mutating",
+    "nonmutating",
+    /open\(set\)/,
+    "open",
+    "operator",
+    "optional",
+    "override",
+    "package",
+    "postfix",
+    "precedencegroup",
+    "prefix",
+    /private\(set\)/,
+    "private",
+    "protocol",
+    /public\(set\)/,
+    "public",
+    "repeat",
+    "required",
+    "rethrows",
+    "return",
+    "set",
+    "some",
+    "static",
+    "struct",
+    "subscript",
+    "super",
+    "switch",
+    "throws",
+    "throw",
+    /try\?/,
+    /try!/,
+    "try",
+    "typealias",
+    /unowned\(safe\)/,
+    /unowned\(unsafe\)/,
+    "unowned",
+    "var",
+    "weak",
+    "where",
+    "while",
+    "willSet"
+  ];
+  var literals = [
+    "false",
+    "nil",
+    "true"
+  ];
+  var precedencegroupKeywords = [
+    "assignment",
+    "associativity",
+    "higherThan",
+    "left",
+    "lowerThan",
+    "none",
+    "right"
+  ];
+  var numberSignKeywords = [
+    "#colorLiteral",
+    "#column",
+    "#dsohandle",
+    "#else",
+    "#elseif",
+    "#endif",
+    "#error",
+    "#file",
+    "#fileID",
+    "#fileLiteral",
+    "#filePath",
+    "#function",
+    "#if",
+    "#imageLiteral",
+    "#keyPath",
+    "#line",
+    "#selector",
+    "#sourceLocation",
+    "#warning"
+  ];
+  var builtIns = [
+    "abs",
+    "all",
+    "any",
+    "assert",
+    "assertionFailure",
+    "debugPrint",
+    "dump",
+    "fatalError",
+    "getVaList",
+    "isKnownUniquelyReferenced",
+    "max",
+    "min",
+    "numericCast",
+    "pointwiseMax",
+    "pointwiseMin",
+    "precondition",
+    "preconditionFailure",
+    "print",
+    "readLine",
+    "repeatElement",
+    "sequence",
+    "stride",
+    "swap",
+    "swift_unboxFromSwiftValueWithType",
+    "transcode",
+    "type",
+    "unsafeBitCast",
+    "unsafeDowncast",
+    "withExtendedLifetime",
+    "withUnsafeMutablePointer",
+    "withUnsafePointer",
+    "withVaList",
+    "withoutActuallyEscaping",
+    "zip"
+  ];
+  var operatorHead = either(/[/=\-+!*%<>&|^~?]/, /[\u00A1-\u00A7]/, /[\u00A9\u00AB]/, /[\u00AC\u00AE]/, /[\u00B0\u00B1]/, /[\u00B6\u00BB\u00BF\u00D7\u00F7]/, /[\u2016-\u2017]/, /[\u2020-\u2027]/, /[\u2030-\u203E]/, /[\u2041-\u2053]/, /[\u2055-\u205E]/, /[\u2190-\u23FF]/, /[\u2500-\u2775]/, /[\u2794-\u2BFF]/, /[\u2E00-\u2E7F]/, /[\u3001-\u3003]/, /[\u3008-\u3020]/, /[\u3030]/);
+  var operatorCharacter = either(operatorHead, /[\u0300-\u036F]/, /[\u1DC0-\u1DFF]/, /[\u20D0-\u20FF]/, /[\uFE00-\uFE0F]/, /[\uFE20-\uFE2F]/);
+  var operator = concat(operatorHead, operatorCharacter, "*");
+  var identifierHead = either(/[a-zA-Z_]/, /[\u00A8\u00AA\u00AD\u00AF\u00B2-\u00B5\u00B7-\u00BA]/, /[\u00BC-\u00BE\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF]/, /[\u0100-\u02FF\u0370-\u167F\u1681-\u180D\u180F-\u1DBF]/, /[\u1E00-\u1FFF]/, /[\u200B-\u200D\u202A-\u202E\u203F-\u2040\u2054\u2060-\u206F]/, /[\u2070-\u20CF\u2100-\u218F\u2460-\u24FF\u2776-\u2793]/, /[\u2C00-\u2DFF\u2E80-\u2FFF]/, /[\u3004-\u3007\u3021-\u302F\u3031-\u303F\u3040-\uD7FF]/, /[\uF900-\uFD3D\uFD40-\uFDCF\uFDF0-\uFE1F\uFE30-\uFE44]/, /[\uFE47-\uFEFE\uFF00-\uFFFD]/);
+  var identifierCharacter = either(identifierHead, /\d/, /[\u0300-\u036F\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/);
+  var identifier = concat(identifierHead, identifierCharacter, "*");
+  var typeIdentifier = concat(/[A-Z]/, identifierCharacter, "*");
+  var keywordAttributes = [
+    "attached",
+    "autoclosure",
+    concat(/convention\(/, either("swift", "block", "c"), /\)/),
+    "discardableResult",
+    "dynamicCallable",
+    "dynamicMemberLookup",
+    "escaping",
+    "freestanding",
+    "frozen",
+    "GKInspectable",
+    "IBAction",
+    "IBDesignable",
+    "IBInspectable",
+    "IBOutlet",
+    "IBSegueAction",
+    "inlinable",
+    "main",
+    "nonobjc",
+    "NSApplicationMain",
+    "NSCopying",
+    "NSManaged",
+    concat(/objc\(/, identifier, /\)/),
+    "objc",
+    "objcMembers",
+    "propertyWrapper",
+    "requires_stored_property_inits",
+    "resultBuilder",
+    "Sendable",
+    "testable",
+    "UIApplicationMain",
+    "unchecked",
+    "unknown",
+    "usableFromInline",
+    "warn_unqualified_access"
+  ];
+  var availabilityKeywords = [
+    "iOS",
+    "iOSApplicationExtension",
+    "macOS",
+    "macOSApplicationExtension",
+    "macCatalyst",
+    "macCatalystApplicationExtension",
+    "watchOS",
+    "watchOSApplicationExtension",
+    "tvOS",
+    "tvOSApplicationExtension",
+    "swift"
+  ];
+  function swift(hljs) {
+    const WHITESPACE = {
+      match: /\s+/,
+      relevance: 0
+    };
+    const BLOCK_COMMENT = hljs.COMMENT("/\\*", "\\*/", { contains: ["self"] });
+    const COMMENTS = [
+      hljs.C_LINE_COMMENT_MODE,
+      BLOCK_COMMENT
+    ];
+    const DOT_KEYWORD = {
+      match: [
+        /\./,
+        either(...dotKeywords, ...optionalDotKeywords)
+      ],
+      className: { 2: "keyword" }
+    };
+    const KEYWORD_GUARD = {
+      match: concat(/\./, either(...keywords)),
+      relevance: 0
+    };
+    const PLAIN_KEYWORDS = keywords.filter((kw) => typeof kw === "string").concat(["_|0"]);
+    const REGEX_KEYWORDS = keywords.filter((kw) => typeof kw !== "string").concat(keywordTypes).map(keywordWrapper);
+    const KEYWORD = { variants: [
+      {
+        className: "keyword",
+        match: either(...REGEX_KEYWORDS, ...optionalDotKeywords)
+      }
+    ] };
+    const KEYWORDS = {
+      $pattern: either(/\b\w+/, /#\w+/),
+      keyword: PLAIN_KEYWORDS.concat(numberSignKeywords),
+      literal: literals
+    };
+    const KEYWORD_MODES = [
+      DOT_KEYWORD,
+      KEYWORD_GUARD,
+      KEYWORD
+    ];
+    const BUILT_IN_GUARD = {
+      match: concat(/\./, either(...builtIns)),
+      relevance: 0
+    };
+    const BUILT_IN = {
+      className: "built_in",
+      match: concat(/\b/, either(...builtIns), /(?=\()/)
+    };
+    const BUILT_INS = [
+      BUILT_IN_GUARD,
+      BUILT_IN
+    ];
+    const OPERATOR_GUARD = {
+      match: /->/,
+      relevance: 0
+    };
+    const OPERATOR = {
+      className: "operator",
+      relevance: 0,
+      variants: [
+        { match: operator },
+        {
+          match: `\\.(\\.|${operatorCharacter})+`
+        }
+      ]
+    };
+    const OPERATORS = [
+      OPERATOR_GUARD,
+      OPERATOR
+    ];
+    const decimalDigits = "([0-9]_*)+";
+    const hexDigits = "([0-9a-fA-F]_*)+";
+    const NUMBER = {
+      className: "number",
+      relevance: 0,
+      variants: [
+        { match: `\\b(${decimalDigits})(\\.(${decimalDigits}))?` + `([eE][+-]?(${decimalDigits}))?\\b` },
+        { match: `\\b0x(${hexDigits})(\\.(${hexDigits}))?` + `([pP][+-]?(${decimalDigits}))?\\b` },
+        { match: /\b0o([0-7]_*)+\b/ },
+        { match: /\b0b([01]_*)+\b/ }
+      ]
+    };
+    const ESCAPED_CHARACTER = (rawDelimiter = "") => ({
+      className: "subst",
+      variants: [
+        { match: concat(/\\/, rawDelimiter, /[0\\tnr"']/) },
+        { match: concat(/\\/, rawDelimiter, /u\{[0-9a-fA-F]{1,8}\}/) }
+      ]
+    });
+    const ESCAPED_NEWLINE = (rawDelimiter = "") => ({
+      className: "subst",
+      match: concat(/\\/, rawDelimiter, /[\t ]*(?:[\r\n]|\r\n)/)
+    });
+    const INTERPOLATION = (rawDelimiter = "") => ({
+      className: "subst",
+      label: "interpol",
+      begin: concat(/\\/, rawDelimiter, /\(/),
+      end: /\)/
+    });
+    const MULTILINE_STRING = (rawDelimiter = "") => ({
+      begin: concat(rawDelimiter, /"""/),
+      end: concat(/"""/, rawDelimiter),
+      contains: [
+        ESCAPED_CHARACTER(rawDelimiter),
+        ESCAPED_NEWLINE(rawDelimiter),
+        INTERPOLATION(rawDelimiter)
+      ]
+    });
+    const SINGLE_LINE_STRING = (rawDelimiter = "") => ({
+      begin: concat(rawDelimiter, /"/),
+      end: concat(/"/, rawDelimiter),
+      contains: [
+        ESCAPED_CHARACTER(rawDelimiter),
+        INTERPOLATION(rawDelimiter)
+      ]
+    });
+    const STRING = {
+      className: "string",
+      variants: [
+        MULTILINE_STRING(),
+        MULTILINE_STRING("#"),
+        MULTILINE_STRING("##"),
+        MULTILINE_STRING("###"),
+        SINGLE_LINE_STRING(),
+        SINGLE_LINE_STRING("#"),
+        SINGLE_LINE_STRING("##"),
+        SINGLE_LINE_STRING("###")
+      ]
+    };
+    const REGEXP_CONTENTS = [
+      hljs.BACKSLASH_ESCAPE,
+      {
+        begin: /\[/,
+        end: /\]/,
+        relevance: 0,
+        contains: [hljs.BACKSLASH_ESCAPE]
+      }
+    ];
+    const BARE_REGEXP_LITERAL = {
+      begin: /\/[^\s](?=[^/\n]*\/)/,
+      end: /\//,
+      contains: REGEXP_CONTENTS
+    };
+    const EXTENDED_REGEXP_LITERAL = (rawDelimiter) => {
+      const begin = concat(rawDelimiter, /\//);
+      const end = concat(/\//, rawDelimiter);
+      return {
+        begin,
+        end,
+        contains: [
+          ...REGEXP_CONTENTS,
+          {
+            scope: "comment",
+            begin: `#(?!.*${end})`,
+            end: /$/
+          }
+        ]
+      };
+    };
+    const REGEXP = {
+      scope: "regexp",
+      variants: [
+        EXTENDED_REGEXP_LITERAL("###"),
+        EXTENDED_REGEXP_LITERAL("##"),
+        EXTENDED_REGEXP_LITERAL("#"),
+        BARE_REGEXP_LITERAL
+      ]
+    };
+    const QUOTED_IDENTIFIER = { match: concat(/`/, identifier, /`/) };
+    const IMPLICIT_PARAMETER = {
+      className: "variable",
+      match: /\$\d+/
+    };
+    const PROPERTY_WRAPPER_PROJECTION = {
+      className: "variable",
+      match: `\\$${identifierCharacter}+`
+    };
+    const IDENTIFIERS = [
+      QUOTED_IDENTIFIER,
+      IMPLICIT_PARAMETER,
+      PROPERTY_WRAPPER_PROJECTION
+    ];
+    const AVAILABLE_ATTRIBUTE = {
+      match: /(@|#(un)?)available/,
+      scope: "keyword",
+      starts: { contains: [
+        {
+          begin: /\(/,
+          end: /\)/,
+          keywords: availabilityKeywords,
+          contains: [
+            ...OPERATORS,
+            NUMBER,
+            STRING
+          ]
+        }
+      ] }
+    };
+    const KEYWORD_ATTRIBUTE = {
+      scope: "keyword",
+      match: concat(/@/, either(...keywordAttributes), lookahead(either(/\(/, /\s+/)))
+    };
+    const USER_DEFINED_ATTRIBUTE = {
+      scope: "meta",
+      match: concat(/@/, identifier)
+    };
+    const ATTRIBUTES = [
+      AVAILABLE_ATTRIBUTE,
+      KEYWORD_ATTRIBUTE,
+      USER_DEFINED_ATTRIBUTE
+    ];
+    const TYPE = {
+      match: lookahead(/\b[A-Z]/),
+      relevance: 0,
+      contains: [
+        {
+          className: "type",
+          match: concat(/(AV|CA|CF|CG|CI|CL|CM|CN|CT|MK|MP|MTK|MTL|NS|SCN|SK|UI|WK|XC)/, identifierCharacter, "+")
+        },
+        {
+          className: "type",
+          match: typeIdentifier,
+          relevance: 0
+        },
+        {
+          match: /[?!]+/,
+          relevance: 0
+        },
+        {
+          match: /\.\.\./,
+          relevance: 0
+        },
+        {
+          match: concat(/\s+&\s+/, lookahead(typeIdentifier)),
+          relevance: 0
+        }
+      ]
+    };
+    const GENERIC_ARGUMENTS = {
+      begin: /</,
+      end: />/,
+      keywords: KEYWORDS,
+      contains: [
+        ...COMMENTS,
+        ...KEYWORD_MODES,
+        ...ATTRIBUTES,
+        OPERATOR_GUARD,
+        TYPE
+      ]
+    };
+    TYPE.contains.push(GENERIC_ARGUMENTS);
+    const TUPLE_ELEMENT_NAME = {
+      match: concat(identifier, /\s*:/),
+      keywords: "_|0",
+      relevance: 0
+    };
+    const TUPLE = {
+      begin: /\(/,
+      end: /\)/,
+      relevance: 0,
+      keywords: KEYWORDS,
+      contains: [
+        "self",
+        TUPLE_ELEMENT_NAME,
+        ...COMMENTS,
+        REGEXP,
+        ...KEYWORD_MODES,
+        ...BUILT_INS,
+        ...OPERATORS,
+        NUMBER,
+        STRING,
+        ...IDENTIFIERS,
+        ...ATTRIBUTES,
+        TYPE
+      ]
+    };
+    const GENERIC_PARAMETERS = {
+      begin: /</,
+      end: />/,
+      keywords: "repeat each",
+      contains: [
+        ...COMMENTS,
+        TYPE
+      ]
+    };
+    const FUNCTION_PARAMETER_NAME = {
+      begin: either(lookahead(concat(identifier, /\s*:/)), lookahead(concat(identifier, /\s+/, identifier, /\s*:/))),
+      end: /:/,
+      relevance: 0,
+      contains: [
+        {
+          className: "keyword",
+          match: /\b_\b/
+        },
+        {
+          className: "params",
+          match: identifier
+        }
+      ]
+    };
+    const FUNCTION_PARAMETERS = {
+      begin: /\(/,
+      end: /\)/,
+      keywords: KEYWORDS,
+      contains: [
+        FUNCTION_PARAMETER_NAME,
+        ...COMMENTS,
+        ...KEYWORD_MODES,
+        ...OPERATORS,
+        NUMBER,
+        STRING,
+        ...ATTRIBUTES,
+        TYPE,
+        TUPLE
+      ],
+      endsParent: true,
+      illegal: /["']/
+    };
+    const FUNCTION_OR_MACRO = {
+      match: [
+        /(func|macro)/,
+        /\s+/,
+        either(QUOTED_IDENTIFIER.match, identifier, operator)
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        GENERIC_PARAMETERS,
+        FUNCTION_PARAMETERS,
+        WHITESPACE
+      ],
+      illegal: [
+        /\[/,
+        /%/
+      ]
+    };
+    const INIT_SUBSCRIPT = {
+      match: [
+        /\b(?:subscript|init[?!]?)/,
+        /\s*(?=[<(])/
+      ],
+      className: { 1: "keyword" },
+      contains: [
+        GENERIC_PARAMETERS,
+        FUNCTION_PARAMETERS,
+        WHITESPACE
+      ],
+      illegal: /\[|%/
+    };
+    const OPERATOR_DECLARATION = {
+      match: [
+        /operator/,
+        /\s+/,
+        operator
+      ],
+      className: {
+        1: "keyword",
+        3: "title"
+      }
+    };
+    const PRECEDENCEGROUP = {
+      begin: [
+        /precedencegroup/,
+        /\s+/,
+        typeIdentifier
+      ],
+      className: {
+        1: "keyword",
+        3: "title"
+      },
+      contains: [TYPE],
+      keywords: [
+        ...precedencegroupKeywords,
+        ...literals
+      ],
+      end: /}/
+    };
+    const CLASS_FUNC_DECLARATION = {
+      match: [
+        /class\b/,
+        /\s+/,
+        /func\b/,
+        /\s+/,
+        /\b[A-Za-z_][A-Za-z0-9_]*\b/
+      ],
+      scope: {
+        1: "keyword",
+        3: "keyword",
+        5: "title.function"
+      }
+    };
+    const CLASS_VAR_DECLARATION = {
+      match: [
+        /class\b/,
+        /\s+/,
+        /var\b/
+      ],
+      scope: {
+        1: "keyword",
+        3: "keyword"
+      }
+    };
+    const TYPE_DECLARATION = {
+      begin: [
+        /(struct|protocol|class|extension|enum|actor)/,
+        /\s+/,
+        identifier,
+        /\s*/
+      ],
+      beginScope: {
+        1: "keyword",
+        3: "title.class"
+      },
+      keywords: KEYWORDS,
+      contains: [
+        GENERIC_PARAMETERS,
+        ...KEYWORD_MODES,
+        {
+          begin: /:/,
+          end: /\{/,
+          keywords: KEYWORDS,
+          contains: [
+            {
+              scope: "title.class.inherited",
+              match: typeIdentifier
+            },
+            ...KEYWORD_MODES
+          ],
+          relevance: 0
+        }
+      ]
+    };
+    for (const variant of STRING.variants) {
+      const interpolation = variant.contains.find((mode) => mode.label === "interpol");
+      interpolation.keywords = KEYWORDS;
+      const submodes = [
+        ...KEYWORD_MODES,
+        ...BUILT_INS,
+        ...OPERATORS,
+        NUMBER,
+        STRING,
+        ...IDENTIFIERS
+      ];
+      interpolation.contains = [
+        ...submodes,
+        {
+          begin: /\(/,
+          end: /\)/,
+          contains: [
+            "self",
+            ...submodes
+          ]
+        }
+      ];
+    }
+    return {
+      name: "Swift",
+      keywords: KEYWORDS,
+      contains: [
+        ...COMMENTS,
+        FUNCTION_OR_MACRO,
+        INIT_SUBSCRIPT,
+        CLASS_FUNC_DECLARATION,
+        CLASS_VAR_DECLARATION,
+        TYPE_DECLARATION,
+        OPERATOR_DECLARATION,
+        PRECEDENCEGROUP,
+        {
+          beginKeywords: "import",
+          end: /$/,
+          contains: [...COMMENTS],
+          relevance: 0
+        },
+        REGEXP,
+        ...KEYWORD_MODES,
+        ...BUILT_INS,
+        ...OPERATORS,
+        NUMBER,
+        STRING,
+        ...IDENTIFIERS,
+        ...ATTRIBUTES,
+        TYPE,
+        TUPLE
+      ]
+    };
+  }
+  module.exports = swift;
+});
+
+// node_modules/highlight.js/lib/languages/yaml.js
+var require_yaml = __commonJS(function(exports, module) {
+  function yaml(hljs) {
+    const LITERALS = "true false yes no null";
+    const URI_CHARACTERS = "[\\w#;/?:@&=+$,.~*'()[\\]]+";
+    const KEY = {
+      className: "attr",
+      variants: [
+        { begin: /[\w*@][\w*@ :()\./-]*:(?=[ \t]|$)/ },
+        {
+          begin: /"[\w*@][\w*@ :()\./-]*":(?=[ \t]|$)/
+        },
+        {
+          begin: /'[\w*@][\w*@ :()\./-]*':(?=[ \t]|$)/
+        }
+      ]
+    };
+    const TEMPLATE_VARIABLES = {
+      className: "template-variable",
+      variants: [
+        {
+          begin: /\{\{/,
+          end: /\}\}/
+        },
+        {
+          begin: /%\{/,
+          end: /\}/
+        }
+      ]
+    };
+    const SINGLE_QUOTE_STRING = {
+      className: "string",
+      relevance: 0,
+      begin: /'/,
+      end: /'/,
+      contains: [
+        {
+          match: /''/,
+          scope: "char.escape",
+          relevance: 0
+        }
+      ]
+    };
+    const STRING = {
+      className: "string",
+      relevance: 0,
+      variants: [
+        {
+          begin: /"/,
+          end: /"/
+        },
+        { begin: /\S+/ }
+      ],
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        TEMPLATE_VARIABLES
+      ]
+    };
+    const CONTAINER_STRING = hljs.inherit(STRING, { variants: [
+      {
+        begin: /'/,
+        end: /'/,
+        contains: [
+          {
+            begin: /''/,
+            relevance: 0
+          }
+        ]
+      },
+      {
+        begin: /"/,
+        end: /"/
+      },
+      { begin: /[^\s,{}[\]]+/ }
+    ] });
+    const DATE_RE = "[0-9]{4}(-[0-9][0-9]){0,2}";
+    const TIME_RE = "([Tt \\t][0-9][0-9]?(:[0-9][0-9]){2})?";
+    const FRACTION_RE = "(\\.[0-9]*)?";
+    const ZONE_RE = "([ \\t])*(Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?";
+    const TIMESTAMP = {
+      className: "number",
+      begin: "\\b" + DATE_RE + TIME_RE + FRACTION_RE + ZONE_RE + "\\b"
+    };
+    const VALUE_CONTAINER = {
+      end: ",",
+      endsWithParent: true,
+      excludeEnd: true,
+      keywords: LITERALS,
+      relevance: 0
+    };
+    const OBJECT = {
+      begin: /\{/,
+      end: /\}/,
+      contains: [VALUE_CONTAINER],
+      illegal: "\\n",
+      relevance: 0
+    };
+    const ARRAY = {
+      begin: "\\[",
+      end: "\\]",
+      contains: [VALUE_CONTAINER],
+      illegal: "\\n",
+      relevance: 0
+    };
+    const MODES = [
+      KEY,
+      {
+        className: "meta",
+        begin: "^---\\s*$",
+        relevance: 10
+      },
+      {
+        className: "string",
+        begin: "[\\|>]([1-9]?[+-])?[ ]*\\n( +)[^ ][^\\n]*\\n(\\2[^\\n]+\\n?)*"
+      },
+      {
+        begin: "<%[%=-]?",
+        end: "[%-]?%>",
+        subLanguage: "ruby",
+        excludeBegin: true,
+        excludeEnd: true,
+        relevance: 0
+      },
+      {
+        className: "type",
+        begin: "!\\w+!" + URI_CHARACTERS
+      },
+      {
+        className: "type",
+        begin: "!<" + URI_CHARACTERS + ">"
+      },
+      {
+        className: "type",
+        begin: "!" + URI_CHARACTERS
+      },
+      {
+        className: "type",
+        begin: "!!" + URI_CHARACTERS
+      },
+      {
+        className: "meta",
+        begin: "&" + hljs.UNDERSCORE_IDENT_RE + "$"
+      },
+      {
+        className: "meta",
+        begin: "\\*" + hljs.UNDERSCORE_IDENT_RE + "$"
+      },
+      {
+        className: "bullet",
+        begin: "-(?=[ ]|$)",
+        relevance: 0
+      },
+      hljs.HASH_COMMENT_MODE,
+      {
+        beginKeywords: LITERALS,
+        keywords: { literal: LITERALS }
+      },
+      TIMESTAMP,
+      {
+        className: "number",
+        begin: hljs.C_NUMBER_RE + "\\b",
+        relevance: 0
+      },
+      OBJECT,
+      ARRAY,
+      SINGLE_QUOTE_STRING,
+      STRING
+    ];
+    const VALUE_MODES = [...MODES];
+    VALUE_MODES.pop();
+    VALUE_MODES.push(CONTAINER_STRING);
+    VALUE_CONTAINER.contains = VALUE_MODES;
+    return {
+      name: "YAML",
+      case_insensitive: true,
+      aliases: ["yml"],
+      contains: MODES
+    };
+  }
+  module.exports = yaml;
+});
+
+// node_modules/highlight.js/lib/languages/typescript.js
+var require_typescript = __commonJS(function(exports, module) {
+  var IDENT_RE = "[A-Za-z$_][0-9A-Za-z$_]*";
+  var KEYWORDS = [
+    "as",
+    "in",
+    "of",
+    "if",
+    "for",
+    "while",
+    "finally",
+    "var",
+    "new",
+    "function",
+    "do",
+    "return",
+    "void",
+    "else",
+    "break",
+    "catch",
+    "instanceof",
+    "with",
+    "throw",
+    "case",
+    "default",
+    "try",
+    "switch",
+    "continue",
+    "typeof",
+    "delete",
+    "let",
+    "yield",
+    "const",
+    "class",
+    "debugger",
+    "async",
+    "await",
+    "static",
+    "import",
+    "from",
+    "export",
+    "extends",
+    "using"
+  ];
+  var LITERALS = [
+    "true",
+    "false",
+    "null",
+    "undefined",
+    "NaN",
+    "Infinity"
+  ];
+  var TYPES = [
+    "Object",
+    "Function",
+    "Boolean",
+    "Symbol",
+    "Math",
+    "Date",
+    "Number",
+    "BigInt",
+    "String",
+    "RegExp",
+    "Array",
+    "Float32Array",
+    "Float64Array",
+    "Int8Array",
+    "Uint8Array",
+    "Uint8ClampedArray",
+    "Int16Array",
+    "Int32Array",
+    "Uint16Array",
+    "Uint32Array",
+    "BigInt64Array",
+    "BigUint64Array",
+    "Set",
+    "Map",
+    "WeakSet",
+    "WeakMap",
+    "ArrayBuffer",
+    "SharedArrayBuffer",
+    "Atomics",
+    "DataView",
+    "JSON",
+    "Promise",
+    "Generator",
+    "GeneratorFunction",
+    "AsyncFunction",
+    "Reflect",
+    "Proxy",
+    "Intl",
+    "WebAssembly"
+  ];
+  var ERROR_TYPES = [
+    "Error",
+    "EvalError",
+    "InternalError",
+    "RangeError",
+    "ReferenceError",
+    "SyntaxError",
+    "TypeError",
+    "URIError"
+  ];
+  var BUILT_IN_GLOBALS = [
+    "setInterval",
+    "setTimeout",
+    "clearInterval",
+    "clearTimeout",
+    "require",
+    "exports",
+    "eval",
+    "isFinite",
+    "isNaN",
+    "parseFloat",
+    "parseInt",
+    "decodeURI",
+    "decodeURIComponent",
+    "encodeURI",
+    "encodeURIComponent",
+    "escape",
+    "unescape"
+  ];
+  var BUILT_IN_VARIABLES = [
+    "arguments",
+    "this",
+    "super",
+    "console",
+    "window",
+    "document",
+    "localStorage",
+    "sessionStorage",
+    "module",
+    "self",
+    "global"
+  ];
+  var BUILT_INS = [].concat(BUILT_IN_GLOBALS, TYPES, ERROR_TYPES);
+  function javascript(hljs) {
+    const regex = hljs.regex;
+    const hasClosingTag = (match, { after }) => {
+      const tag = "</" + match[0].slice(1);
+      const pos = match.input.indexOf(tag, after);
+      return pos !== -1;
+    };
+    const IDENT_RE$1 = IDENT_RE;
+    const FRAGMENT = {
+      begin: "<>",
+      end: "</>"
+    };
+    const XML_SELF_CLOSING = /<[A-Za-z0-9\\._:-]+\s*\/>/;
+    const XML_TAG = {
+      begin: /<[A-Za-z0-9\\._:-]+/,
+      end: /\/[A-Za-z0-9\\._:-]+>|\/>/,
+      isTrulyOpeningTag: (match, response) => {
+        const afterMatchIndex = match[0].length + match.index;
+        const nextChar = match.input[afterMatchIndex];
+        if (nextChar === "<" || nextChar === ",") {
+          response.ignoreMatch();
+          return;
+        }
+        if (nextChar === ">") {
+          if (!hasClosingTag(match, { after: afterMatchIndex })) {
+            response.ignoreMatch();
+          }
+        }
+        let m;
+        const afterMatch = match.input.substring(afterMatchIndex);
+        if (m = afterMatch.match(/^\s*=/)) {
+          response.ignoreMatch();
+          return;
+        }
+        if (m = afterMatch.match(/^\s+extends\s+/)) {
+          if (m.index === 0) {
+            response.ignoreMatch();
+            return;
+          }
+        }
+      }
+    };
+    const KEYWORDS$1 = {
+      $pattern: IDENT_RE,
+      keyword: KEYWORDS,
+      literal: LITERALS,
+      built_in: BUILT_INS,
+      "variable.language": BUILT_IN_VARIABLES
+    };
+    const decimalDigits = "[0-9](_?[0-9])*";
+    const frac = `\\.(${decimalDigits})`;
+    const decimalInteger = `0|[1-9](_?[0-9])*|0[0-7]*[89][0-9]*`;
+    const NUMBER = {
+      className: "number",
+      variants: [
+        { begin: `(\\b(${decimalInteger})((${frac})|\\.)?|(${frac}))` + `[eE][+-]?(${decimalDigits})\\b` },
+        { begin: `\\b(${decimalInteger})\\b((${frac})\\b|\\.)?|(${frac})\\b` },
+        { begin: `\\b(0|[1-9](_?[0-9])*)n\\b` },
+        { begin: "\\b0[xX][0-9a-fA-F](_?[0-9a-fA-F])*n?\\b" },
+        { begin: "\\b0[bB][0-1](_?[0-1])*n?\\b" },
+        { begin: "\\b0[oO][0-7](_?[0-7])*n?\\b" },
+        { begin: "\\b0[0-7]+n?\\b" }
+      ],
+      relevance: 0
+    };
+    const SUBST = {
+      className: "subst",
+      begin: "\\$\\{",
+      end: "\\}",
+      keywords: KEYWORDS$1,
+      contains: []
+    };
+    const HTML_TEMPLATE = {
+      begin: ".?html`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "xml"
+      }
+    };
+    const CSS_TEMPLATE = {
+      begin: ".?css`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "css"
+      }
+    };
+    const GRAPHQL_TEMPLATE = {
+      begin: ".?gql`",
+      end: "",
+      starts: {
+        end: "`",
+        returnEnd: false,
+        contains: [
+          hljs.BACKSLASH_ESCAPE,
+          SUBST
+        ],
+        subLanguage: "graphql"
+      }
+    };
+    const TEMPLATE_STRING = {
+      className: "string",
+      begin: "`",
+      end: "`",
+      contains: [
+        hljs.BACKSLASH_ESCAPE,
+        SUBST
+      ]
+    };
+    const JSDOC_COMMENT = hljs.COMMENT(/\/\*\*(?!\/)/, "\\*/", {
+      relevance: 0,
+      contains: [
+        {
+          begin: "(?=@[A-Za-z]+)",
+          relevance: 0,
+          contains: [
+            {
+              className: "doctag",
+              begin: "@[A-Za-z]+"
+            },
+            {
+              className: "type",
+              begin: "\\{",
+              end: "\\}",
+              excludeEnd: true,
+              excludeBegin: true,
+              relevance: 0
+            },
+            {
+              className: "variable",
+              begin: IDENT_RE$1 + "(?=\\s*(-)|$)",
+              endsParent: true,
+              relevance: 0
+            },
+            {
+              begin: /(?=[^\n])\s/,
+              relevance: 0
+            }
+          ]
+        }
+      ]
+    });
+    const COMMENT = {
+      className: "comment",
+      variants: [
+        JSDOC_COMMENT,
+        hljs.C_BLOCK_COMMENT_MODE,
+        hljs.C_LINE_COMMENT_MODE
+      ]
+    };
+    const SUBST_INTERNALS = [
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      HTML_TEMPLATE,
+      CSS_TEMPLATE,
+      GRAPHQL_TEMPLATE,
+      TEMPLATE_STRING,
+      { match: /\$\d+/ },
+      NUMBER
+    ];
+    SUBST.contains = SUBST_INTERNALS.concat({
+      begin: /\{/,
+      end: /\}/,
+      keywords: KEYWORDS$1,
+      contains: [
+        "self"
+      ].concat(SUBST_INTERNALS)
+    });
+    const SUBST_AND_COMMENTS = [].concat(COMMENT, SUBST.contains);
+    const PARAMS_CONTAINS = SUBST_AND_COMMENTS.concat([
+      {
+        begin: /(\s*)\(/,
+        end: /\)/,
+        keywords: KEYWORDS$1,
+        contains: ["self"].concat(SUBST_AND_COMMENTS)
+      }
+    ]);
+    const PARAMS = {
+      className: "params",
+      begin: /(\s*)\(/,
+      end: /\)/,
+      excludeBegin: true,
+      excludeEnd: true,
+      keywords: KEYWORDS$1,
+      contains: PARAMS_CONTAINS
+    };
+    const CLASS_OR_EXTENDS = {
+      variants: [
+        {
+          match: [
+            /class/,
+            /\s+/,
+            IDENT_RE$1,
+            /\s+/,
+            /extends/,
+            /\s+/,
+            regex.concat(IDENT_RE$1, "(", regex.concat(/\./, IDENT_RE$1), ")*")
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class",
+            5: "keyword",
+            7: "title.class.inherited"
+          }
+        },
+        {
+          match: [
+            /class/,
+            /\s+/,
+            IDENT_RE$1
+          ],
+          scope: {
+            1: "keyword",
+            3: "title.class"
+          }
+        }
+      ]
+    };
+    const CLASS_REFERENCE = {
+      relevance: 0,
+      match: regex.either(/\bJSON/, /\b[A-Z][a-z]+([A-Z][a-z]*|\d)*/, /\b[A-Z]{2,}([A-Z][a-z]+|\d)+([A-Z][a-z]*)*/, /\b[A-Z]{2,}[a-z]+([A-Z][a-z]+|\d)*([A-Z][a-z]*)*/),
+      className: "title.class",
+      keywords: {
+        _: [
+          ...TYPES,
+          ...ERROR_TYPES
+        ]
+      }
+    };
+    const USE_STRICT = {
+      label: "use_strict",
+      className: "meta",
+      relevance: 10,
+      begin: /^\s*['"]use (strict|asm)['"]/
+    };
+    const FUNCTION_DEFINITION = {
+      variants: [
+        {
+          match: [
+            /function/,
+            /\s+/,
+            IDENT_RE$1,
+            /(?=\s*\()/
+          ]
+        },
+        {
+          match: [
+            /function/,
+            /\s*(?=\()/
+          ]
+        }
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      label: "func.def",
+      contains: [PARAMS],
+      illegal: /%/
+    };
+    const UPPER_CASE_CONSTANT = {
+      relevance: 0,
+      match: /\b[A-Z][A-Z_0-9]+\b/,
+      className: "variable.constant"
+    };
+    function noneOf(list) {
+      return regex.concat("(?!", list.join("|"), ")");
+    }
+    const FUNCTION_CALL = {
+      match: regex.concat(/\b/, noneOf([
+        ...BUILT_IN_GLOBALS,
+        "super",
+        "import",
+        "await"
+      ].map((x) => `${x}\\s*\\(`)), IDENT_RE$1, regex.lookahead(/\s*\(/)),
+      className: "title.function",
+      relevance: 0
+    };
+    const PROPERTY_ACCESS = {
+      begin: regex.concat(/\./, regex.lookahead(regex.concat(IDENT_RE$1, /(?![0-9A-Za-z$_(])/))),
+      end: IDENT_RE$1,
+      excludeBegin: true,
+      keywords: "prototype",
+      className: "property",
+      relevance: 0
+    };
+    const GETTER_OR_SETTER = {
+      match: [
+        /get|set/,
+        /\s+/,
+        IDENT_RE$1,
+        /(?=\()/
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        {
+          begin: /\(\)/
+        },
+        PARAMS
+      ]
+    };
+    const FUNC_LEAD_IN_RE = "(\\(" + "[^()]*(\\(" + "[^()]*(\\(" + "[^()]*" + "\\)[^()]*)*" + "\\)[^()]*)*" + "\\)|" + hljs.UNDERSCORE_IDENT_RE + ")\\s*=>";
+    const FUNCTION_VARIABLE = {
+      match: [
+        /const|var|let/,
+        /\s+/,
+        IDENT_RE$1,
+        /\s*/,
+        /=\s*/,
+        /(async\s*)?/,
+        regex.lookahead(FUNC_LEAD_IN_RE)
+      ],
+      keywords: "async",
+      className: {
+        1: "keyword",
+        3: "title.function"
+      },
+      contains: [
+        PARAMS
+      ]
+    };
+    return {
+      name: "JavaScript",
+      aliases: ["js", "jsx", "mjs", "cjs"],
+      keywords: KEYWORDS$1,
+      exports: { PARAMS_CONTAINS, CLASS_REFERENCE },
+      illegal: /#(?![$_A-Za-z])/,
+      contains: [
+        hljs.SHEBANG({
+          label: "shebang",
+          binary: "node",
+          relevance: 5
+        }),
+        USE_STRICT,
+        hljs.APOS_STRING_MODE,
+        hljs.QUOTE_STRING_MODE,
+        HTML_TEMPLATE,
+        CSS_TEMPLATE,
+        GRAPHQL_TEMPLATE,
+        TEMPLATE_STRING,
+        COMMENT,
+        { match: /\$\d+/ },
+        NUMBER,
+        CLASS_REFERENCE,
+        {
+          scope: "attr",
+          match: IDENT_RE$1 + regex.lookahead(":"),
+          relevance: 0
+        },
+        FUNCTION_VARIABLE,
+        {
+          begin: "(" + hljs.RE_STARTERS_RE + "|\\b(case|return|throw)\\b)\\s*",
+          keywords: "return throw case",
+          relevance: 0,
+          contains: [
+            COMMENT,
+            hljs.REGEXP_MODE,
+            {
+              className: "function",
+              begin: FUNC_LEAD_IN_RE,
+              returnBegin: true,
+              end: "\\s*=>",
+              contains: [
+                {
+                  className: "params",
+                  variants: [
+                    {
+                      begin: hljs.UNDERSCORE_IDENT_RE,
+                      relevance: 0
+                    },
+                    {
+                      className: null,
+                      begin: /\(\s*\)/,
+                      skip: true
+                    },
+                    {
+                      begin: /(\s*)\(/,
+                      end: /\)/,
+                      excludeBegin: true,
+                      excludeEnd: true,
+                      keywords: KEYWORDS$1,
+                      contains: PARAMS_CONTAINS
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              begin: /,/,
+              relevance: 0
+            },
+            {
+              match: /\s+/,
+              relevance: 0
+            },
+            {
+              variants: [
+                { begin: FRAGMENT.begin, end: FRAGMENT.end },
+                { match: XML_SELF_CLOSING },
+                {
+                  begin: XML_TAG.begin,
+                  "on:begin": XML_TAG.isTrulyOpeningTag,
+                  end: XML_TAG.end
+                }
+              ],
+              subLanguage: "xml",
+              contains: [
+                {
+                  begin: XML_TAG.begin,
+                  end: XML_TAG.end,
+                  skip: true,
+                  contains: ["self"]
+                }
+              ]
+            }
+          ]
+        },
+        FUNCTION_DEFINITION,
+        {
+          beginKeywords: "while if switch catch for"
+        },
+        {
+          begin: "\\b(?!function)" + hljs.UNDERSCORE_IDENT_RE + "\\(" + "[^()]*(\\(" + "[^()]*(\\(" + "[^()]*" + "\\)[^()]*)*" + "\\)[^()]*)*" + "\\)\\s*\\{",
+          returnBegin: true,
+          label: "func.def",
+          contains: [
+            PARAMS,
+            hljs.inherit(hljs.TITLE_MODE, { begin: IDENT_RE$1, className: "title.function" })
+          ]
+        },
+        {
+          match: /\.\.\./,
+          relevance: 0
+        },
+        PROPERTY_ACCESS,
+        {
+          match: "\\$" + IDENT_RE$1,
+          relevance: 0
+        },
+        {
+          match: [/\bconstructor(?=\s*\()/],
+          className: { 1: "title.function" },
+          contains: [PARAMS]
+        },
+        FUNCTION_CALL,
+        UPPER_CASE_CONSTANT,
+        CLASS_OR_EXTENDS,
+        GETTER_OR_SETTER,
+        {
+          match: /\$[(.]/
+        }
+      ]
+    };
+  }
+  function typescript(hljs) {
+    const regex = hljs.regex;
+    const tsLanguage = javascript(hljs);
+    const IDENT_RE$1 = IDENT_RE;
+    const TYPES2 = [
+      "any",
+      "void",
+      "number",
+      "boolean",
+      "string",
+      "object",
+      "never",
+      "symbol",
+      "bigint",
+      "unknown"
+    ];
+    const NAMESPACE = {
+      begin: [
+        /namespace/,
+        /\s+/,
+        hljs.IDENT_RE
+      ],
+      beginScope: {
+        1: "keyword",
+        3: "title.class"
+      }
+    };
+    const INTERFACE = {
+      beginKeywords: "interface",
+      end: /\{/,
+      excludeEnd: true,
+      keywords: {
+        keyword: "interface extends",
+        built_in: TYPES2
+      },
+      contains: [tsLanguage.exports.CLASS_REFERENCE]
+    };
+    const USE_STRICT = {
+      className: "meta",
+      relevance: 10,
+      begin: /^\s*['"]use strict['"]/
+    };
+    const TS_SPECIFIC_KEYWORDS = [
+      "type",
+      "interface",
+      "public",
+      "private",
+      "protected",
+      "implements",
+      "declare",
+      "abstract",
+      "readonly",
+      "enum",
+      "override",
+      "satisfies"
+    ];
+    const KEYWORDS$1 = {
+      $pattern: IDENT_RE,
+      keyword: KEYWORDS.concat(TS_SPECIFIC_KEYWORDS),
+      literal: LITERALS,
+      built_in: BUILT_INS.concat(TYPES2),
+      "variable.language": BUILT_IN_VARIABLES
+    };
+    const DECORATOR = {
+      className: "meta",
+      begin: "@" + IDENT_RE$1
+    };
+    const swapMode = (mode, label, replacement) => {
+      const indx = mode.contains.findIndex((m) => m.label === label);
+      if (indx === -1) {
+        throw new Error("can not find mode to replace");
+      }
+      mode.contains.splice(indx, 1, replacement);
+    };
+    Object.assign(tsLanguage.keywords, KEYWORDS$1);
+    tsLanguage.exports.PARAMS_CONTAINS.push(DECORATOR);
+    const ATTRIBUTE_HIGHLIGHT = tsLanguage.contains.find((c) => c.scope === "attr");
+    const OPTIONAL_KEY_OR_ARGUMENT = Object.assign({}, ATTRIBUTE_HIGHLIGHT, { match: regex.concat(IDENT_RE$1, regex.lookahead(/\s*\?:/)) });
+    tsLanguage.exports.PARAMS_CONTAINS.push([
+      tsLanguage.exports.CLASS_REFERENCE,
+      ATTRIBUTE_HIGHLIGHT,
+      OPTIONAL_KEY_OR_ARGUMENT
+    ]);
+    tsLanguage.contains = tsLanguage.contains.concat([
+      DECORATOR,
+      NAMESPACE,
+      INTERFACE,
+      OPTIONAL_KEY_OR_ARGUMENT
+    ]);
+    swapMode(tsLanguage, "shebang", hljs.SHEBANG());
+    swapMode(tsLanguage, "use_strict", USE_STRICT);
+    const functionDeclaration = tsLanguage.contains.find((m) => m.label === "func.def");
+    functionDeclaration.relevance = 0;
+    Object.assign(tsLanguage, {
+      name: "TypeScript",
+      aliases: [
+        "ts",
+        "tsx",
+        "mts",
+        "cts"
+      ]
+    });
+    return tsLanguage;
+  }
+  module.exports = typescript;
+});
+
+// node_modules/highlight.js/lib/languages/vbnet.js
+var require_vbnet = __commonJS(function(exports, module) {
+  function vbnet(hljs) {
+    const regex = hljs.regex;
+    const CHARACTER = {
+      className: "string",
+      begin: /"(""|[^/n])"C\b/
+    };
+    const STRING = {
+      className: "string",
+      begin: /"/,
+      end: /"/,
+      illegal: /\n/,
+      contains: [
+        {
+          begin: /""/
+        }
+      ]
+    };
+    const MM_DD_YYYY = /\d{1,2}\/\d{1,2}\/\d{4}/;
+    const YYYY_MM_DD = /\d{4}-\d{1,2}-\d{1,2}/;
+    const TIME_12H = /(\d|1[012])(:\d+){0,2} *(AM|PM)/;
+    const TIME_24H = /\d{1,2}(:\d{1,2}){1,2}/;
+    const DATE = {
+      className: "literal",
+      variants: [
+        {
+          begin: regex.concat(/# */, regex.either(YYYY_MM_DD, MM_DD_YYYY), / *#/)
+        },
+        {
+          begin: regex.concat(/# */, TIME_24H, / *#/)
+        },
+        {
+          begin: regex.concat(/# */, TIME_12H, / *#/)
+        },
+        {
+          begin: regex.concat(/# */, regex.either(YYYY_MM_DD, MM_DD_YYYY), / +/, regex.either(TIME_12H, TIME_24H), / *#/)
+        }
+      ]
+    };
+    const NUMBER = {
+      className: "number",
+      relevance: 0,
+      variants: [
+        {
+          begin: /\b\d[\d_]*((\.[\d_]+(E[+-]?[\d_]+)?)|(E[+-]?[\d_]+))[RFD@!#]?/
+        },
+        {
+          begin: /\b\d[\d_]*((U?[SIL])|[%&])?/
+        },
+        {
+          begin: /&H[\dA-F_]+((U?[SIL])|[%&])?/
+        },
+        {
+          begin: /&O[0-7_]+((U?[SIL])|[%&])?/
+        },
+        {
+          begin: /&B[01_]+((U?[SIL])|[%&])?/
+        }
+      ]
+    };
+    const LABEL = {
+      className: "label",
+      begin: /^\w+:/
+    };
+    const DOC_COMMENT = hljs.COMMENT(/'''/, /$/, { contains: [
+      {
+        className: "doctag",
+        begin: /<\/?/,
+        end: />/
+      }
+    ] });
+    const COMMENT = hljs.COMMENT(null, /$/, { variants: [
+      { begin: /'/ },
+      {
+        begin: /([\t ]|^)REM(?=\s)/
+      }
+    ] });
+    const DIRECTIVES = {
+      className: "meta",
+      begin: /[\t ]*#(const|disable|else|elseif|enable|end|externalsource|if|region)\b/,
+      end: /$/,
+      keywords: { keyword: "const disable else elseif enable end externalsource if region then" },
+      contains: [COMMENT]
+    };
+    return {
+      name: "Visual Basic .NET",
+      aliases: ["vb"],
+      case_insensitive: true,
+      classNameAliases: { label: "symbol" },
+      keywords: {
+        keyword: "addhandler alias aggregate ansi as async assembly auto binary by byref byval " + "call case catch class compare const continue custom declare default delegate dim distinct do " + "each equals else elseif end enum erase error event exit explicit finally for friend from function " + "get global goto group handles if implements imports in inherits interface into iterator " + "join key let lib loop me mid module mustinherit mustoverride mybase myclass " + "namespace narrowing new next notinheritable notoverridable " + "of off on operator option optional order overloads overridable overrides " + "paramarray partial preserve private property protected public " + "raiseevent readonly redim removehandler resume return " + "select set shadows shared skip static step stop structure strict sub synclock " + "take text then throw to try unicode until using when where while widening with withevents writeonly yield",
+        built_in: "addressof and andalso await directcast gettype getxmlnamespace is isfalse isnot istrue like mod nameof new not or orelse trycast typeof xor " + "cbool cbyte cchar cdate cdbl cdec cint clng cobj csbyte cshort csng cstr cuint culng cushort",
+        type: "boolean byte char date decimal double integer long object sbyte short single string uinteger ulong ushort",
+        literal: "true false nothing"
+      },
+      illegal: "//|\\{|\\}|endif|gosub|variant|wend|^\\$ ",
+      contains: [
+        CHARACTER,
+        STRING,
+        DATE,
+        NUMBER,
+        LABEL,
+        DOC_COMMENT,
+        COMMENT,
+        DIRECTIVES
+      ]
+    };
+  }
+  module.exports = vbnet;
+});
+
+// node_modules/highlight.js/lib/languages/wasm.js
+var require_wasm = __commonJS(function(exports, module) {
+  function wasm(hljs) {
+    hljs.regex;
+    const BLOCK_COMMENT = hljs.COMMENT(/\(;/, /;\)/);
+    BLOCK_COMMENT.contains.push("self");
+    const LINE_COMMENT = hljs.COMMENT(/;;/, /$/);
+    const KWS = [
+      "anyfunc",
+      "block",
+      "br",
+      "br_if",
+      "br_table",
+      "call",
+      "call_indirect",
+      "data",
+      "drop",
+      "elem",
+      "else",
+      "end",
+      "export",
+      "func",
+      "global.get",
+      "global.set",
+      "local.get",
+      "local.set",
+      "local.tee",
+      "get_global",
+      "get_local",
+      "global",
+      "if",
+      "import",
+      "local",
+      "loop",
+      "memory",
+      "memory.grow",
+      "memory.size",
+      "module",
+      "mut",
+      "nop",
+      "offset",
+      "param",
+      "result",
+      "return",
+      "select",
+      "set_global",
+      "set_local",
+      "start",
+      "table",
+      "tee_local",
+      "then",
+      "type",
+      "unreachable"
+    ];
+    const FUNCTION_REFERENCE = {
+      begin: [
+        /(?:func|call|call_indirect)/,
+        /\s+/,
+        /\$[^\s)]+/
+      ],
+      className: {
+        1: "keyword",
+        3: "title.function"
+      }
+    };
+    const ARGUMENT = {
+      className: "variable",
+      begin: /\$[\w_]+/
+    };
+    const PARENS = {
+      match: /(\((?!;)|\))+/,
+      className: "punctuation",
+      relevance: 0
+    };
+    const NUMBER = {
+      className: "number",
+      relevance: 0,
+      match: /[+-]?\b(?:\d(?:_?\d)*(?:\.\d(?:_?\d)*)?(?:[eE][+-]?\d(?:_?\d)*)?|0x[\da-fA-F](?:_?[\da-fA-F])*(?:\.[\da-fA-F](?:_?[\da-fA-D])*)?(?:[pP][+-]?\d(?:_?\d)*)?)\b|\binf\b|\bnan(?::0x[\da-fA-F](?:_?[\da-fA-D])*)?\b/
+    };
+    const TYPE = {
+      match: /(i32|i64|f32|f64)(?!\.)/,
+      className: "type"
+    };
+    const MATH_OPERATIONS = {
+      className: "keyword",
+      match: /\b(f32|f64|i32|i64)(?:\.(?:abs|add|and|ceil|clz|const|convert_[su]\/i(?:32|64)|copysign|ctz|demote\/f64|div(?:_[su])?|eqz?|extend_[su]\/i32|floor|ge(?:_[su])?|gt(?:_[su])?|le(?:_[su])?|load(?:(?:8|16|32)_[su])?|lt(?:_[su])?|max|min|mul|nearest|neg?|or|popcnt|promote\/f32|reinterpret\/[fi](?:32|64)|rem_[su]|rot[lr]|shl|shr_[su]|store(?:8|16|32)?|sqrt|sub|trunc(?:_[su]\/f(?:32|64))?|wrap\/i64|xor))\b/
+    };
+    const OFFSET_ALIGN = {
+      match: [
+        /(?:offset|align)/,
+        /\s*/,
+        /=/
+      ],
+      className: {
+        1: "keyword",
+        3: "operator"
+      }
+    };
+    return {
+      name: "WebAssembly",
+      keywords: {
+        $pattern: /[\w.]+/,
+        keyword: KWS
+      },
+      contains: [
+        LINE_COMMENT,
+        BLOCK_COMMENT,
+        OFFSET_ALIGN,
+        ARGUMENT,
+        PARENS,
+        FUNCTION_REFERENCE,
+        hljs.QUOTE_STRING_MODE,
+        TYPE,
+        MATH_OPERATIONS,
+        NUMBER
+      ]
+    };
+  }
+  module.exports = wasm;
+});
+
+// node_modules/highlight.js/lib/common.js
+var require_common = __commonJS(function(exports, module) {
+  var hljs = require_core();
+  hljs.registerLanguage("xml", require_xml());
+  hljs.registerLanguage("bash", require_bash());
+  hljs.registerLanguage("c", require_c());
+  hljs.registerLanguage("cpp", require_cpp());
+  hljs.registerLanguage("csharp", require_csharp());
+  hljs.registerLanguage("css", require_css());
+  hljs.registerLanguage("markdown", require_markdown());
+  hljs.registerLanguage("diff", require_diff());
+  hljs.registerLanguage("ruby", require_ruby());
+  hljs.registerLanguage("go", require_go());
+  hljs.registerLanguage("graphql", require_graphql());
+  hljs.registerLanguage("ini", require_ini());
+  hljs.registerLanguage("java", require_java());
+  hljs.registerLanguage("javascript", require_javascript());
+  hljs.registerLanguage("json", require_json());
+  hljs.registerLanguage("kotlin", require_kotlin());
+  hljs.registerLanguage("less", require_less());
+  hljs.registerLanguage("lua", require_lua());
+  hljs.registerLanguage("makefile", require_makefile());
+  hljs.registerLanguage("perl", require_perl());
+  hljs.registerLanguage("objectivec", require_objectivec());
+  hljs.registerLanguage("php", require_php());
+  hljs.registerLanguage("php-template", require_php_template());
+  hljs.registerLanguage("plaintext", require_plaintext());
+  hljs.registerLanguage("python", require_python());
+  hljs.registerLanguage("python-repl", require_python_repl());
+  hljs.registerLanguage("r", require_r());
+  hljs.registerLanguage("rust", require_rust());
+  hljs.registerLanguage("scss", require_scss());
+  hljs.registerLanguage("shell", require_shell());
+  hljs.registerLanguage("sql", require_sql());
+  hljs.registerLanguage("swift", require_swift());
+  hljs.registerLanguage("yaml", require_yaml());
+  hljs.registerLanguage("typescript", require_typescript());
+  hljs.registerLanguage("vbnet", require_vbnet());
+  hljs.registerLanguage("wasm", require_wasm());
+  hljs.HighlightJS = hljs;
+  hljs.default = hljs;
+  module.exports = hljs;
+});
+
+// src/digestify/surface/main.tsx
+var import_client = __toESM(require_client(), 1);
+
+// src/digestify/surface/App.tsx
+var import_react10 = __toESM(require_react(), 1);
+
+// src/digestify/surface/components/AmbientMascot.tsx
+var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
+function AmbientMascot({ src, theme }) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("img", {
+    className: "pointer-events-none fixed right-[max(22px,calc((100vw-1120px)/2))] bottom-[18px] z-2 w-[clamp(120px,16vw,220px)] translate-y-3 rotate-[-3deg] opacity-0 transition-[opacity,transform] duration-200 [filter:var(--mascot-filter)] max-narrow:hidden [&[src]]:translate-y-0 [&[src]]:opacity-100 data-[theme=classic]:hidden",
+    "data-theme": theme,
+    src: src || undefined,
+    alt: "",
+    "aria-hidden": "true"
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/highlight.js/es/common.js
+var import_common = __toESM(require_common(), 1);
+var common_default = import_common.default;
+
+// src/digestify/surface/components/DocumentView.tsx
+var import_react6 = __toESM(require_react(), 1);
+
+// src/digestify/surface/state/document.ts
+var VOID_TAGS = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr"
+]);
+var MARKER_RE = /^<div\s+data-qblock="([^"]*)"\s*>\s*<\/div>/;
+var TAG_RE = /^<\/?([a-zA-Z][a-zA-Z0-9-]*)/;
+function splitDocument(html) {
+  const segments = [];
+  let buffer = "";
+  let depth = 0;
+  let i = 0;
+  const flush = () => {
+    if (buffer !== "")
+      segments.push({ kind: "html", html: buffer });
+    buffer = "";
+  };
+  while (i < html.length) {
+    if (html[i] !== "<") {
+      buffer += html[i];
+      i++;
+      continue;
+    }
+    if (depth === 0) {
+      const marker = MARKER_RE.exec(html.slice(i));
+      if (marker?.[1] !== undefined) {
+        flush();
+        segments.push({ kind: "question", id: marker[1], marker: marker[0] });
+        i += marker[0].length;
+        continue;
+      }
+    }
+    const end = html.indexOf(">", i);
+    if (end === -1) {
+      buffer += html.slice(i);
+      break;
+    }
+    const tag = html.slice(i, end + 1);
+    const name = TAG_RE.exec(tag);
+    if (name?.[1] !== undefined) {
+      const lower = name[1].toLowerCase();
+      if (tag.startsWith("</"))
+        depth = Math.max(0, depth - 1);
+      else if (!VOID_TAGS.has(lower) && !tag.endsWith("/>"))
+        depth++;
+    }
+    buffer += tag;
+    i = end + 1;
+  }
+  flush();
+  return segments;
+}
+
+// node_modules/dompurify/dist/purify.es.mjs
+/*! @license DOMPurify 3.4.15 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.4.15/LICENSE */
+function _arrayLikeToArray(r, a) {
+  (a == null || a > r.length) && (a = r.length);
+  for (var e = 0, n = Array(a);e < a; e++)
+    n[e] = r[e];
+  return n;
+}
+function _arrayWithHoles(r) {
+  if (Array.isArray(r))
+    return r;
+}
+function _iterableToArrayLimit(r, l) {
+  var t = r == null ? null : typeof Symbol != "undefined" && r[Symbol.iterator] || r["@@iterator"];
+  if (t != null) {
+    var e, n, i, u, a = [], f = true, o = false;
+    try {
+      if (i = (t = t.call(r)).next, l === 0)
+        ;
+      else
+        for (;!(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = true)
+          ;
+    } catch (r2) {
+      o = true, n = r2;
+    } finally {
+      try {
+        if (!f && t.return != null && (u = t.return(), Object(u) !== u))
+          return;
+      } finally {
+        if (o)
+          throw n;
+      }
+    }
+    return a;
+  }
+}
+function _nonIterableRest() {
+  throw new TypeError(`Invalid attempt to destructure non-iterable instance.
+In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
+}
+function _slicedToArray(r, e) {
+  return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest();
+}
+function _unsupportedIterableToArray(r, a) {
+  if (r) {
+    if (typeof r == "string")
+      return _arrayLikeToArray(r, a);
+    var t = {}.toString.call(r).slice(8, -1);
+    return t === "Object" && r.constructor && (t = r.constructor.name), t === "Map" || t === "Set" ? Array.from(r) : t === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : undefined;
+  }
+}
+var entries = Object.entries;
+var setPrototypeOf = Object.setPrototypeOf;
+var isFrozen = Object.isFrozen;
+var getPrototypeOf = Object.getPrototypeOf;
+var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+var freeze = Object.freeze;
+var seal = Object.seal;
+var create = Object.create;
+var _ref = typeof Reflect !== "undefined" && Reflect;
+var apply = _ref.apply;
+var construct = _ref.construct;
+if (!freeze) {
+  freeze = function freeze2(x) {
+    return x;
+  };
+}
+if (!seal) {
+  seal = function seal2(x) {
+    return x;
+  };
+}
+if (!apply) {
+  apply = function apply2(func, thisArg) {
+    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2;_key < _len; _key++) {
+      args[_key - 2] = arguments[_key];
+    }
+    return func.apply(thisArg, args);
+  };
+}
+if (!construct) {
+  construct = function construct2(Func) {
+    for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1;_key2 < _len2; _key2++) {
+      args[_key2 - 1] = arguments[_key2];
+    }
+    return new Func(...args);
+  };
+}
+var arrayForEach = unapply(Array.prototype.forEach);
+var arrayLastIndexOf = unapply(Array.prototype.lastIndexOf);
+var arrayPop = unapply(Array.prototype.pop);
+var arrayPush = unapply(Array.prototype.push);
+var arraySplice = unapply(Array.prototype.splice);
+var arrayIsArray = Array.isArray;
+var stringToLowerCase = unapply(String.prototype.toLowerCase);
+var stringToString = unapply(String.prototype.toString);
+var stringMatch = unapply(String.prototype.match);
+var stringReplace = unapply(String.prototype.replace);
+var stringIndexOf = unapply(String.prototype.indexOf);
+var stringTrim = unapply(String.prototype.trim);
+var numberToString = unapply(Number.prototype.toString);
+var booleanToString = unapply(Boolean.prototype.toString);
+var bigintToString = typeof BigInt === "undefined" ? null : unapply(BigInt.prototype.toString);
+var symbolToString = typeof Symbol === "undefined" ? null : unapply(Symbol.prototype.toString);
+var objectHasOwnProperty = unapply(Object.prototype.hasOwnProperty);
+var objectToString = unapply(Object.prototype.toString);
+var regExpTest = unapply(RegExp.prototype.test);
+var typeErrorCreate = unconstruct(TypeError);
+function unapply(func) {
+  return function(thisArg) {
+    if (thisArg instanceof RegExp) {
+      thisArg.lastIndex = 0;
+    }
+    for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1;_key3 < _len3; _key3++) {
+      args[_key3 - 1] = arguments[_key3];
+    }
+    return apply(func, thisArg, args);
+  };
+}
+function unconstruct(Func) {
+  return function() {
+    for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0;_key4 < _len4; _key4++) {
+      args[_key4] = arguments[_key4];
+    }
+    return construct(Func, args);
+  };
+}
+function addToSet(set, array) {
+  let transformCaseFunc = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : stringToLowerCase;
+  if (setPrototypeOf) {
+    setPrototypeOf(set, null);
+  }
+  if (!arrayIsArray(array)) {
+    return set;
+  }
+  let l = array.length;
+  while (l--) {
+    let element = array[l];
+    if (typeof element === "string") {
+      const lcElement = transformCaseFunc(element);
+      if (lcElement !== element) {
+        if (!isFrozen(array)) {
+          array[l] = lcElement;
+        }
+        element = lcElement;
+      }
+    }
+    set[element] = true;
+  }
+  return set;
+}
+function cleanArray(array) {
+  for (let index = 0;index < array.length; index++) {
+    const isPropertyExist = objectHasOwnProperty(array, index);
+    if (!isPropertyExist) {
+      array[index] = null;
+    }
+  }
+  return array;
+}
+function clone(object) {
+  const newObject = create(null);
+  for (const _ref2 of entries(object)) {
+    var _ref3 = _slicedToArray(_ref2, 2);
+    const property = _ref3[0];
+    const value = _ref3[1];
+    const isPropertyExist = objectHasOwnProperty(object, property);
+    if (isPropertyExist) {
+      if (arrayIsArray(value)) {
+        newObject[property] = cleanArray(value);
+      } else if (value && typeof value === "object" && value.constructor === Object) {
+        newObject[property] = clone(value);
+      } else {
+        newObject[property] = value;
+      }
+    }
+  }
+  return newObject;
+}
+function stringifyValue(value) {
+  switch (typeof value) {
+    case "string": {
+      return value;
+    }
+    case "number": {
+      return numberToString(value);
+    }
+    case "boolean": {
+      return booleanToString(value);
+    }
+    case "bigint": {
+      return bigintToString ? bigintToString(value) : "0";
+    }
+    case "symbol": {
+      return symbolToString ? symbolToString(value) : "Symbol()";
+    }
+    case "undefined": {
+      return objectToString(value);
+    }
+    case "function":
+    case "object": {
+      if (value === null) {
+        return objectToString(value);
+      }
+      const valueAsRecord = value;
+      const valueToString = lookupGetter(valueAsRecord, "toString");
+      if (typeof valueToString === "function") {
+        const stringified = valueToString(valueAsRecord);
+        return typeof stringified === "string" ? stringified : objectToString(stringified);
+      }
+      return objectToString(value);
+    }
+    default: {
+      return objectToString(value);
+    }
+  }
+}
+function lookupGetter(object, prop) {
+  while (object !== null) {
+    const desc = getOwnPropertyDescriptor(object, prop);
+    if (desc) {
+      if (desc.get) {
+        return unapply(desc.get);
+      }
+      if (typeof desc.value === "function") {
+        return unapply(desc.value);
+      }
+    }
+    object = getPrototypeOf(object);
+  }
+  function fallbackValue() {
+    return null;
+  }
+  return fallbackValue;
+}
+function isRegex(value) {
+  try {
+    regExpTest(value, "");
+    return true;
+  } catch (_unused) {
+    return false;
+  }
+}
+var html$1 = freeze(["a", "abbr", "acronym", "address", "area", "article", "aside", "audio", "b", "bdi", "bdo", "big", "blink", "blockquote", "body", "br", "button", "canvas", "caption", "center", "cite", "code", "col", "colgroup", "content", "data", "datalist", "dd", "decorator", "del", "details", "dfn", "dialog", "dir", "div", "dl", "dt", "element", "em", "fieldset", "figcaption", "figure", "font", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "img", "input", "ins", "kbd", "label", "legend", "li", "main", "map", "mark", "marquee", "menu", "menuitem", "meter", "nav", "nobr", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "search", "section", "select", "shadow", "slot", "small", "source", "spacer", "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "tr", "track", "tt", "u", "ul", "var", "video", "wbr"]);
+var svg$1 = freeze(["svg", "a", "altglyph", "altglyphdef", "altglyphitem", "animatecolor", "animatemotion", "animatetransform", "circle", "clippath", "defs", "desc", "ellipse", "enterkeyhint", "exportparts", "filter", "font", "g", "glyph", "glyphref", "hkern", "image", "inputmode", "line", "lineargradient", "marker", "mask", "metadata", "mpath", "part", "path", "pattern", "polygon", "polyline", "radialgradient", "rect", "stop", "style", "switch", "symbol", "text", "textpath", "title", "tref", "tspan", "view", "vkern"]);
+var svgFilters = freeze(["feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap", "feDistantLight", "feDropShadow", "feFlood", "feFuncA", "feFuncB", "feFuncG", "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology", "feOffset", "fePointLight", "feSpecularLighting", "feSpotLight", "feTile", "feTurbulence"]);
+var svgDisallowed = freeze(["animate", "color-profile", "cursor", "discard", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri", "foreignobject", "hatch", "hatchpath", "mesh", "meshgradient", "meshpatch", "meshrow", "missing-glyph", "script", "set", "solidcolor", "unknown", "use"]);
+var mathMl$1 = freeze(["math", "menclose", "merror", "mfenced", "mfrac", "mglyph", "mi", "mlabeledtr", "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom", "mroot", "mrow", "ms", "mspace", "msqrt", "mstyle", "msub", "msup", "msubsup", "mtable", "mtd", "mtext", "mtr", "munder", "munderover", "mprescripts"]);
+var mathMlDisallowed = freeze(["maction", "maligngroup", "malignmark", "mlongdiv", "mscarries", "mscarry", "msgroup", "mstack", "msline", "msrow", "semantics", "annotation", "annotation-xml", "mprescripts", "none"]);
+var text = freeze(["#text"]);
+var html = freeze(["accept", "action", "align", "alt", "autocapitalize", "autocomplete", "autopictureinpicture", "autoplay", "background", "bgcolor", "border", "capture", "cellpadding", "cellspacing", "checked", "cite", "class", "clear", "color", "cols", "colspan", "command", "commandfor", "controls", "controlslist", "coords", "crossorigin", "datetime", "decoding", "default", "dir", "disabled", "disablepictureinpicture", "disableremoteplayback", "download", "draggable", "enctype", "enterkeyhint", "exportparts", "face", "for", "headers", "height", "hidden", "high", "href", "hreflang", "id", "inert", "inputmode", "integrity", "ismap", "kind", "label", "lang", "list", "loading", "loop", "low", "max", "maxlength", "media", "method", "min", "minlength", "multiple", "muted", "name", "nonce", "noshade", "novalidate", "nowrap", "open", "optimum", "part", "pattern", "placeholder", "playsinline", "popover", "popovertarget", "popovertargetaction", "poster", "preload", "pubdate", "radiogroup", "readonly", "rel", "required", "rev", "reversed", "role", "rows", "rowspan", "spellcheck", "scope", "selected", "shape", "size", "sizes", "slot", "span", "srclang", "start", "src", "srcset", "step", "style", "summary", "tabindex", "title", "translate", "type", "usemap", "valign", "value", "width", "wrap", "xmlns"]);
+var svg = freeze(["accent-height", "accumulate", "additive", "alignment-baseline", "amplitude", "ascent", "attributename", "attributetype", "azimuth", "basefrequency", "baseline-shift", "begin", "bias", "by", "class", "clip", "clippathunits", "clip-path", "clip-rule", "color", "color-interpolation", "color-interpolation-filters", "color-profile", "color-rendering", "cx", "cy", "d", "dx", "dy", "diffuseconstant", "direction", "display", "divisor", "dominant-baseline", "dur", "edgemode", "elevation", "end", "exponent", "fill", "fill-opacity", "fill-rule", "filter", "filterunits", "flood-color", "flood-opacity", "font-family", "font-size", "font-size-adjust", "font-stretch", "font-style", "font-variant", "font-weight", "fx", "fy", "g1", "g2", "glyph-name", "glyphref", "gradientunits", "gradienttransform", "height", "href", "id", "image-rendering", "in", "in2", "intercept", "k", "k1", "k2", "k3", "k4", "kerning", "keypoints", "keysplines", "keytimes", "lang", "lengthadjust", "letter-spacing", "kernelmatrix", "kernelunitlength", "lighting-color", "local", "marker-end", "marker-mid", "marker-start", "markerheight", "markerunits", "markerwidth", "maskcontentunits", "maskunits", "max", "mask", "mask-type", "media", "method", "mode", "min", "name", "numoctaves", "offset", "operator", "opacity", "order", "orient", "orientation", "origin", "overflow", "paint-order", "path", "pathlength", "patterncontentunits", "patterntransform", "patternunits", "pointer-events", "points", "preservealpha", "preserveaspectratio", "primitiveunits", "r", "rx", "ry", "radius", "refx", "refy", "repeatcount", "repeatdur", "restart", "result", "rotate", "scale", "seed", "shape-rendering", "slope", "specularconstant", "specularexponent", "spreadmethod", "startoffset", "stddeviation", "stitchtiles", "stop-color", "stop-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity", "stroke", "stroke-width", "style", "surfacescale", "systemlanguage", "tabindex", "tablevalues", "targetx", "targety", "transform", "transform-origin", "text-anchor", "text-decoration", "text-orientation", "text-rendering", "textlength", "type", "u1", "u2", "unicode", "values", "vector-effect", "viewbox", "visibility", "version", "vert-adv-y", "vert-origin-x", "vert-origin-y", "width", "word-spacing", "wrap", "writing-mode", "xchannelselector", "ychannelselector", "x", "x1", "x2", "xmlns", "y", "y1", "y2", "z", "zoomandpan"]);
+var mathMl = freeze(["accent", "accentunder", "align", "bevelled", "close", "columnalign", "columnlines", "columnspacing", "columnspan", "denomalign", "depth", "dir", "display", "displaystyle", "encoding", "fence", "frame", "height", "href", "id", "largeop", "length", "linethickness", "lquote", "lspace", "mathbackground", "mathcolor", "mathsize", "mathvariant", "maxsize", "minsize", "movablelimits", "notation", "numalign", "open", "rowalign", "rowlines", "rowspacing", "rowspan", "rspace", "rquote", "scriptlevel", "scriptminsize", "scriptsizemultiplier", "selection", "separator", "separators", "stretchy", "subscriptshift", "supscriptshift", "symmetric", "voffset", "width", "xmlns"]);
+var xml = freeze(["xlink:href", "xml:id", "xlink:title", "xml:space", "xmlns:xlink"]);
+var MUSTACHE_EXPR = seal(/{{[\w\W]*|^[\w\W]*}}/g);
+var ERB_EXPR = seal(/<%[\w\W]*|^[\w\W]*%>/g);
+var TMPLIT_EXPR = seal(/\${[\w\W]*/g);
+var DATA_ATTR = seal(/^data-[\-\w.\u00B7-\uFFFF]+$/);
+var ARIA_ATTR = seal(/^aria-[\-\w]+$/);
+var IS_ALLOWED_URI = seal(/^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|matrix):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i);
+var IS_SCRIPT_OR_DATA = seal(/^(?:\w+script|data):/i);
+var ATTR_WHITESPACE = seal(/[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g);
+var DOCTYPE_NAME = seal(/^html$/i);
+var CUSTOM_ELEMENT = seal(/^[a-z][.\w]*(-[.\w]+)+$/i);
+var ELEMENT_MARKUP_PROBE = seal(/<[/\w!]/g);
+var COMMENT_MARKUP_PROBE = seal(/<[/\w]/g);
+var FALLBACK_TAG_CLOSE = seal(/<\/no(script|embed|frames)/i);
+var SELF_CLOSING_TAG = seal(/\/>/i);
+var NODE_TYPE = {
+  element: 1,
+  attribute: 2,
+  text: 3,
+  cdataSection: 4,
+  entityReference: 5,
+  entityNode: 6,
+  processingInstruction: 7,
+  comment: 8,
+  document: 9,
+  documentType: 10,
+  documentFragment: 11,
+  notation: 12
+};
+var LITERAL_TEXT_ELEMENT_NAMES = ["style", "script", "xmp", "iframe", "noembed", "noframes", "plaintext", "noscript"];
+var LITERAL_TEXT_ELEMENTS = freeze(addToSet({}, LITERAL_TEXT_ELEMENT_NAMES));
+var LITERAL_TEXT_CLOSE = function() {
+  const map = {};
+  arrayForEach(LITERAL_TEXT_ELEMENT_NAMES, (name) => {
+    map[name] = seal(new RegExp("</" + name + "(?=[\\t\\n\\f\\r />])", "i"));
+  });
+  return freeze(map);
+}();
+var getGlobal = function getGlobal2() {
+  return typeof window === "undefined" ? null : window;
+};
+var _createTrustedTypesPolicy = function _createTrustedTypesPolicy2(trustedTypes, purifyHostElement) {
+  if (typeof trustedTypes !== "object" || typeof trustedTypes.createPolicy !== "function") {
+    return null;
+  }
+  let suffix = null;
+  const ATTR_NAME = "data-tt-policy-suffix";
+  if (purifyHostElement && purifyHostElement.hasAttribute(ATTR_NAME)) {
+    suffix = purifyHostElement.getAttribute(ATTR_NAME);
+  }
+  const policyName = "dompurify" + (suffix ? "#" + suffix : "");
+  try {
+    return trustedTypes.createPolicy(policyName, {
+      createHTML(html2) {
+        return html2;
+      },
+      createScriptURL(scriptUrl) {
+        return scriptUrl;
+      }
+    });
+  } catch (_) {
+    console.warn("TrustedTypes policy " + policyName + " could not be created.");
+    return null;
+  }
+};
+var _createHooksMap = function _createHooksMap2() {
+  return {
+    afterSanitizeAttributes: [],
+    afterSanitizeElements: [],
+    afterSanitizeShadowDOM: [],
+    beforeSanitizeAttributes: [],
+    beforeSanitizeElements: [],
+    beforeSanitizeShadowDOM: [],
+    uponSanitizeAttribute: [],
+    uponSanitizeElement: [],
+    uponSanitizeShadowNode: []
+  };
+};
+var _resolveSetOption = function _resolveSetOption2(cfg, key, fallback, options) {
+  return objectHasOwnProperty(cfg, key) && arrayIsArray(cfg[key]) ? addToSet(options.base ? clone(options.base) : {}, cfg[key], options.transform) : fallback;
+};
+var _resolveObjectOption = function _resolveObjectOption2(cfg, key, makeFallback) {
+  const value = objectHasOwnProperty(cfg, key) ? cfg[key] : undefined;
+  return value && typeof value === "object" ? clone(value) : makeFallback();
+};
+function createDOMPurify() {
+  let window2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getGlobal();
+  const DOMPurify = (root) => createDOMPurify(root);
+  DOMPurify.version = "3.4.15";
+  DOMPurify.removed = [];
+  if (!window2 || !window2.document || window2.document.nodeType !== NODE_TYPE.document || !window2.Element) {
+    DOMPurify.isSupported = false;
+    return DOMPurify;
+  }
+  let document2 = window2.document;
+  const originalDocument = document2;
+  const currentScript = originalDocument.currentScript;
+  window2.DocumentFragment;
+  const { HTMLTemplateElement, Node: Node2, Element: Element2, NodeFilter, NamedNodeMap: _window$NamedNodeMap } = window2;
+  _window$NamedNodeMap === undefined && (window2.NamedNodeMap || window2.MozNamedAttrMap);
+  window2.HTMLFormElement;
+  const { DOMParser, trustedTypes } = window2;
+  const ElementPrototype = Element2.prototype;
+  const cloneNode = lookupGetter(ElementPrototype, "cloneNode");
+  const remove = lookupGetter(ElementPrototype, "remove");
+  const removeAttributeNode = lookupGetter(ElementPrototype, "removeAttributeNode");
+  const getNextSibling = lookupGetter(ElementPrototype, "nextSibling");
+  const getChildNodes = lookupGetter(ElementPrototype, "childNodes");
+  const getParentNode = lookupGetter(ElementPrototype, "parentNode");
+  const getShadowRoot = lookupGetter(ElementPrototype, "shadowRoot");
+  const getAttributes = lookupGetter(ElementPrototype, "attributes");
+  const getNodeType = Node2 && Node2.prototype ? lookupGetter(Node2.prototype, "nodeType") : null;
+  const getNodeName = Node2 && Node2.prototype ? lookupGetter(Node2.prototype, "nodeName") : null;
+  const getOwnerDocument = Node2 && Node2.prototype ? lookupGetter(Node2.prototype, "ownerDocument") : null;
+  const _readNodeType = function _readNodeType2(node) {
+    return getNodeType ? getNodeType(node) : node.nodeType;
+  };
+  const _readNodeName = function _readNodeName2(node) {
+    return getNodeName ? getNodeName(node) : node.nodeName;
+  };
+  if (typeof HTMLTemplateElement === "function") {
+    const template = document2.createElement("template");
+    if (template.content && template.content.ownerDocument) {
+      document2 = template.content.ownerDocument;
+    }
+  }
+  let trustedTypesPolicy;
+  let emptyHTML = "";
+  let defaultTrustedTypesPolicy;
+  let defaultTrustedTypesPolicyResolved = false;
+  let IN_TRUSTED_TYPES_POLICY = 0;
+  const _assertNotInTrustedTypesPolicy = function _assertNotInTrustedTypesPolicy2() {
+    if (IN_TRUSTED_TYPES_POLICY > 0) {
+      throw typeErrorCreate("A configured TRUSTED_TYPES_POLICY callback (createHTML or " + "createScriptURL) must not call DOMPurify.sanitize, as that causes " + "infinite recursion. Do not pass a policy whose callbacks wrap " + 'DOMPurify as TRUSTED_TYPES_POLICY; see the "DOMPurify and Trusted ' + 'Types" section of the README.');
+    }
+  };
+  const _createTrustedHTML = function _createTrustedHTML2(html2) {
+    _assertNotInTrustedTypesPolicy();
+    IN_TRUSTED_TYPES_POLICY++;
+    try {
+      return trustedTypesPolicy.createHTML(html2);
+    } finally {
+      IN_TRUSTED_TYPES_POLICY--;
+    }
+  };
+  const _createTrustedScriptURL = function _createTrustedScriptURL2(scriptUrl) {
+    _assertNotInTrustedTypesPolicy();
+    IN_TRUSTED_TYPES_POLICY++;
+    try {
+      return trustedTypesPolicy.createScriptURL(scriptUrl);
+    } finally {
+      IN_TRUSTED_TYPES_POLICY--;
+    }
+  };
+  const _getDefaultTrustedTypesPolicy = function _getDefaultTrustedTypesPolicy2() {
+    if (!defaultTrustedTypesPolicyResolved) {
+      defaultTrustedTypesPolicy = _createTrustedTypesPolicy(trustedTypes, currentScript);
+      defaultTrustedTypesPolicyResolved = true;
+    }
+    return defaultTrustedTypesPolicy;
+  };
+  const _document = document2, implementation = _document.implementation, createNodeIterator = _document.createNodeIterator, createDocumentFragment = _document.createDocumentFragment, getElementsByTagName = _document.getElementsByTagName;
+  const importNode = originalDocument.importNode;
+  let hooks = _createHooksMap();
+  DOMPurify.isSupported = typeof entries === "function" && typeof getParentNode === "function" && implementation && implementation.createHTMLDocument !== undefined;
+  const MUSTACHE_EXPR$1 = MUSTACHE_EXPR, ERB_EXPR$1 = ERB_EXPR, TMPLIT_EXPR$1 = TMPLIT_EXPR, DATA_ATTR$1 = DATA_ATTR, ARIA_ATTR$1 = ARIA_ATTR, IS_SCRIPT_OR_DATA$1 = IS_SCRIPT_OR_DATA, ATTR_WHITESPACE$1 = ATTR_WHITESPACE, CUSTOM_ELEMENT$1 = CUSTOM_ELEMENT;
+  let IS_ALLOWED_URI$1 = IS_ALLOWED_URI;
+  let ALLOWED_TAGS = null;
+  const DEFAULT_ALLOWED_TAGS = addToSet({}, [...html$1, ...svg$1, ...svgFilters, ...mathMl$1, ...text]);
+  let ALLOWED_ATTR = null;
+  const DEFAULT_ALLOWED_ATTR = addToSet({}, [...html, ...svg, ...mathMl, ...xml]);
+  let CUSTOM_ELEMENT_HANDLING = Object.seal(create(null, {
+    tagNameCheck: {
+      writable: true,
+      configurable: false,
+      enumerable: true,
+      value: null
+    },
+    attributeNameCheck: {
+      writable: true,
+      configurable: false,
+      enumerable: true,
+      value: null
+    },
+    allowCustomizedBuiltInElements: {
+      writable: true,
+      configurable: false,
+      enumerable: true,
+      value: false
+    }
+  }));
+  let FORBID_TAGS = null;
+  let FORBID_ATTR = null;
+  const EXTRA_ELEMENT_HANDLING = Object.seal(create(null, {
+    tagCheck: {
+      writable: true,
+      configurable: false,
+      enumerable: true,
+      value: null
+    },
+    attributeCheck: {
+      writable: true,
+      configurable: false,
+      enumerable: true,
+      value: null
+    }
+  }));
+  let ALLOW_ARIA_ATTR = true;
+  let ALLOW_DATA_ATTR = true;
+  let ALLOW_UNKNOWN_PROTOCOLS = false;
+  let ALLOW_SELF_CLOSE_IN_ATTR = true;
+  let SAFE_FOR_TEMPLATES = false;
+  let SAFE_FOR_XML = true;
+  let WHOLE_DOCUMENT = false;
+  let SET_CONFIG = false;
+  let SET_CONFIG_ALLOWED_TAGS = null;
+  let SET_CONFIG_ALLOWED_ATTR = null;
+  let FORCE_BODY = false;
+  let RETURN_DOM = false;
+  let RETURN_DOM_FRAGMENT = false;
+  let RETURN_TRUSTED_TYPE = false;
+  let SANITIZE_DOM = true;
+  let SANITIZE_NAMED_PROPS = false;
+  const SANITIZE_NAMED_PROPS_PREFIX = "user-content-";
+  let KEEP_CONTENT = true;
+  let IN_PLACE = false;
+  let USE_PROFILES = {};
+  let FORBID_CONTENTS = null;
+  const DEFAULT_FORBID_CONTENTS = addToSet({}, [
+    "annotation-xml",
+    "audio",
+    "colgroup",
+    "desc",
+    "foreignobject",
+    "head",
+    "iframe",
+    "math",
+    "mi",
+    "mn",
+    "mo",
+    "ms",
+    "mtext",
+    "noembed",
+    "noframes",
+    "noscript",
+    "plaintext",
+    "script",
+    "selectedcontent",
+    "style",
+    "svg",
+    "template",
+    "thead",
+    "title",
+    "video",
+    "xmp"
+  ]);
+  let DATA_URI_TAGS = null;
+  const DEFAULT_DATA_URI_TAGS = addToSet({}, ["audio", "video", "img", "source", "image", "track"]);
+  let URI_SAFE_ATTRIBUTES = null;
+  const DEFAULT_URI_SAFE_ATTRIBUTES = addToSet({}, ["alt", "class", "for", "id", "label", "name", "pattern", "placeholder", "role", "summary", "title", "value", "style", "xmlns"]);
+  const MATHML_NAMESPACE = "http://www.w3.org/1998/Math/MathML";
+  const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+  const HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
+  let NAMESPACE = HTML_NAMESPACE;
+  let IS_EMPTY_INPUT = false;
+  let ALLOWED_NAMESPACES = null;
+  const DEFAULT_ALLOWED_NAMESPACES = addToSet({}, [MATHML_NAMESPACE, SVG_NAMESPACE, HTML_NAMESPACE], stringToString);
+  const DEFAULT_MATHML_TEXT_INTEGRATION_POINTS = freeze(["mi", "mo", "mn", "ms", "mtext"]);
+  let MATHML_TEXT_INTEGRATION_POINTS = addToSet({}, DEFAULT_MATHML_TEXT_INTEGRATION_POINTS);
+  const DEFAULT_HTML_INTEGRATION_POINTS = freeze(["annotation-xml"]);
+  let HTML_INTEGRATION_POINTS = addToSet({}, DEFAULT_HTML_INTEGRATION_POINTS);
+  const COMMON_SVG_AND_HTML_ELEMENTS = addToSet({}, ["title", "style", "font", "a", "script"]);
+  let PARSER_MEDIA_TYPE = null;
+  const SUPPORTED_PARSER_MEDIA_TYPES = ["application/xhtml+xml", "text/html"];
+  const DEFAULT_PARSER_MEDIA_TYPE = "text/html";
+  let transformCaseFunc = null;
+  let CONFIG = null;
+  const formElement = document2.createElement("form");
+  const isRegexOrFunction = function isRegexOrFunction2(testValue) {
+    return testValue instanceof RegExp || testValue instanceof Function;
+  };
+  const _parseConfig = function _parseConfig2() {
+    let cfg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    if (CONFIG && CONFIG === cfg) {
+      return;
+    }
+    if (!cfg || typeof cfg !== "object") {
+      cfg = {};
+    }
+    cfg = clone(cfg);
+    PARSER_MEDIA_TYPE = SUPPORTED_PARSER_MEDIA_TYPES.indexOf(cfg.PARSER_MEDIA_TYPE) === -1 ? DEFAULT_PARSER_MEDIA_TYPE : cfg.PARSER_MEDIA_TYPE;
+    transformCaseFunc = PARSER_MEDIA_TYPE === "application/xhtml+xml" ? stringToString : stringToLowerCase;
+    ALLOWED_TAGS = _resolveSetOption(cfg, "ALLOWED_TAGS", DEFAULT_ALLOWED_TAGS, {
+      transform: transformCaseFunc
+    });
+    ALLOWED_ATTR = _resolveSetOption(cfg, "ALLOWED_ATTR", DEFAULT_ALLOWED_ATTR, {
+      transform: transformCaseFunc
+    });
+    ALLOWED_NAMESPACES = _resolveSetOption(cfg, "ALLOWED_NAMESPACES", DEFAULT_ALLOWED_NAMESPACES, {
+      transform: stringToString
+    });
+    URI_SAFE_ATTRIBUTES = _resolveSetOption(cfg, "ADD_URI_SAFE_ATTR", DEFAULT_URI_SAFE_ATTRIBUTES, {
+      transform: transformCaseFunc,
+      base: DEFAULT_URI_SAFE_ATTRIBUTES
+    });
+    DATA_URI_TAGS = _resolveSetOption(cfg, "ADD_DATA_URI_TAGS", DEFAULT_DATA_URI_TAGS, {
+      transform: transformCaseFunc,
+      base: DEFAULT_DATA_URI_TAGS
+    });
+    FORBID_CONTENTS = _resolveSetOption(cfg, "FORBID_CONTENTS", DEFAULT_FORBID_CONTENTS, {
+      transform: transformCaseFunc
+    });
+    FORBID_TAGS = _resolveSetOption(cfg, "FORBID_TAGS", clone({}), {
+      transform: transformCaseFunc
+    });
+    FORBID_ATTR = _resolveSetOption(cfg, "FORBID_ATTR", clone({}), {
+      transform: transformCaseFunc
+    });
+    USE_PROFILES = objectHasOwnProperty(cfg, "USE_PROFILES") ? cfg.USE_PROFILES && typeof cfg.USE_PROFILES === "object" ? clone(cfg.USE_PROFILES) : cfg.USE_PROFILES : false;
+    ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR !== false;
+    ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false;
+    ALLOW_UNKNOWN_PROTOCOLS = cfg.ALLOW_UNKNOWN_PROTOCOLS || false;
+    ALLOW_SELF_CLOSE_IN_ATTR = cfg.ALLOW_SELF_CLOSE_IN_ATTR !== false;
+    SAFE_FOR_TEMPLATES = cfg.SAFE_FOR_TEMPLATES || false;
+    SAFE_FOR_XML = cfg.SAFE_FOR_XML !== false;
+    WHOLE_DOCUMENT = cfg.WHOLE_DOCUMENT || false;
+    RETURN_DOM = cfg.RETURN_DOM || false;
+    RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false;
+    RETURN_TRUSTED_TYPE = cfg.RETURN_TRUSTED_TYPE || false;
+    FORCE_BODY = cfg.FORCE_BODY || false;
+    SANITIZE_DOM = cfg.SANITIZE_DOM !== false;
+    SANITIZE_NAMED_PROPS = cfg.SANITIZE_NAMED_PROPS || false;
+    KEEP_CONTENT = cfg.KEEP_CONTENT !== false;
+    IN_PLACE = cfg.IN_PLACE || false;
+    IS_ALLOWED_URI$1 = isRegex(cfg.ALLOWED_URI_REGEXP) ? cfg.ALLOWED_URI_REGEXP : IS_ALLOWED_URI;
+    NAMESPACE = typeof cfg.NAMESPACE === "string" ? cfg.NAMESPACE : HTML_NAMESPACE;
+    MATHML_TEXT_INTEGRATION_POINTS = _resolveObjectOption(cfg, "MATHML_TEXT_INTEGRATION_POINTS", () => addToSet({}, DEFAULT_MATHML_TEXT_INTEGRATION_POINTS));
+    HTML_INTEGRATION_POINTS = _resolveObjectOption(cfg, "HTML_INTEGRATION_POINTS", () => addToSet({}, DEFAULT_HTML_INTEGRATION_POINTS));
+    const customElementHandling = _resolveObjectOption(cfg, "CUSTOM_ELEMENT_HANDLING", () => create(null));
+    CUSTOM_ELEMENT_HANDLING = create(null);
+    if (objectHasOwnProperty(customElementHandling, "tagNameCheck") && isRegexOrFunction(customElementHandling.tagNameCheck)) {
+      CUSTOM_ELEMENT_HANDLING.tagNameCheck = customElementHandling.tagNameCheck;
+    }
+    if (objectHasOwnProperty(customElementHandling, "attributeNameCheck") && isRegexOrFunction(customElementHandling.attributeNameCheck)) {
+      CUSTOM_ELEMENT_HANDLING.attributeNameCheck = customElementHandling.attributeNameCheck;
+    }
+    if (objectHasOwnProperty(customElementHandling, "allowCustomizedBuiltInElements") && typeof customElementHandling.allowCustomizedBuiltInElements === "boolean") {
+      CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements = customElementHandling.allowCustomizedBuiltInElements;
+    }
+    seal(CUSTOM_ELEMENT_HANDLING);
+    if (SAFE_FOR_TEMPLATES) {
+      ALLOW_DATA_ATTR = false;
+    }
+    if (RETURN_DOM_FRAGMENT) {
+      RETURN_DOM = true;
+    }
+    if (USE_PROFILES) {
+      ALLOWED_TAGS = addToSet({}, text);
+      ALLOWED_ATTR = create(null);
+      if (USE_PROFILES.html === true) {
+        addToSet(ALLOWED_TAGS, html$1);
+        addToSet(ALLOWED_ATTR, html);
+      }
+      if (USE_PROFILES.svg === true) {
+        addToSet(ALLOWED_TAGS, svg$1);
+        addToSet(ALLOWED_ATTR, svg);
+        addToSet(ALLOWED_ATTR, xml);
+      }
+      if (USE_PROFILES.svgFilters === true) {
+        addToSet(ALLOWED_TAGS, svgFilters);
+        addToSet(ALLOWED_ATTR, svg);
+        addToSet(ALLOWED_ATTR, xml);
+      }
+      if (USE_PROFILES.mathMl === true) {
+        addToSet(ALLOWED_TAGS, mathMl$1);
+        addToSet(ALLOWED_ATTR, mathMl);
+        addToSet(ALLOWED_ATTR, xml);
+      }
+    }
+    EXTRA_ELEMENT_HANDLING.tagCheck = null;
+    EXTRA_ELEMENT_HANDLING.attributeCheck = null;
+    if (objectHasOwnProperty(cfg, "ADD_TAGS")) {
+      if (typeof cfg.ADD_TAGS === "function") {
+        EXTRA_ELEMENT_HANDLING.tagCheck = cfg.ADD_TAGS;
+      } else if (arrayIsArray(cfg.ADD_TAGS)) {
+        if (ALLOWED_TAGS === DEFAULT_ALLOWED_TAGS) {
+          ALLOWED_TAGS = clone(ALLOWED_TAGS);
+        }
+        addToSet(ALLOWED_TAGS, cfg.ADD_TAGS, transformCaseFunc);
+      }
+    }
+    if (objectHasOwnProperty(cfg, "ADD_ATTR")) {
+      if (typeof cfg.ADD_ATTR === "function") {
+        EXTRA_ELEMENT_HANDLING.attributeCheck = cfg.ADD_ATTR;
+      } else if (arrayIsArray(cfg.ADD_ATTR)) {
+        if (ALLOWED_ATTR === DEFAULT_ALLOWED_ATTR) {
+          ALLOWED_ATTR = clone(ALLOWED_ATTR);
+        }
+        addToSet(ALLOWED_ATTR, cfg.ADD_ATTR, transformCaseFunc);
+      }
+    }
+    if (objectHasOwnProperty(cfg, "ADD_FORBID_CONTENTS") && arrayIsArray(cfg.ADD_FORBID_CONTENTS)) {
+      if (FORBID_CONTENTS === DEFAULT_FORBID_CONTENTS) {
+        FORBID_CONTENTS = clone(FORBID_CONTENTS);
+      }
+      addToSet(FORBID_CONTENTS, cfg.ADD_FORBID_CONTENTS, transformCaseFunc);
+    }
+    if (KEEP_CONTENT) {
+      ALLOWED_TAGS["#text"] = true;
+    }
+    if (WHOLE_DOCUMENT) {
+      addToSet(ALLOWED_TAGS, ["html", "head", "body"]);
+    }
+    if (ALLOWED_TAGS.table) {
+      addToSet(ALLOWED_TAGS, ["tbody"]);
+      delete FORBID_TAGS.tbody;
+    }
+    if (cfg.TRUSTED_TYPES_POLICY) {
+      if (typeof cfg.TRUSTED_TYPES_POLICY.createHTML !== "function") {
+        throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');
+      }
+      if (typeof cfg.TRUSTED_TYPES_POLICY.createScriptURL !== "function") {
+        throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');
+      }
+      const previousTrustedTypesPolicy = trustedTypesPolicy;
+      trustedTypesPolicy = cfg.TRUSTED_TYPES_POLICY;
+      try {
+        emptyHTML = _createTrustedHTML("");
+      } catch (error) {
+        trustedTypesPolicy = previousTrustedTypesPolicy;
+        throw error;
+      }
+    } else if (cfg.TRUSTED_TYPES_POLICY === null) {
+      trustedTypesPolicy = undefined;
+      emptyHTML = "";
+    } else {
+      if (trustedTypesPolicy === undefined) {
+        trustedTypesPolicy = _getDefaultTrustedTypesPolicy();
+      }
+      if (trustedTypesPolicy && typeof emptyHTML === "string") {
+        emptyHTML = _createTrustedHTML("");
+      }
+    }
+    if (freeze) {
+      freeze(cfg);
+    }
+    CONFIG = cfg;
+  };
+  const ALL_SVG_TAGS = addToSet({}, [...svg$1, ...svgFilters, ...svgDisallowed]);
+  const ALL_MATHML_TAGS = addToSet({}, [...mathMl$1, ...mathMlDisallowed]);
+  const _checkSvgNamespace = function _checkSvgNamespace2(tagName, parent, parentTagName) {
+    if (parent.namespaceURI === HTML_NAMESPACE) {
+      return tagName === "svg";
+    }
+    if (parent.namespaceURI === MATHML_NAMESPACE) {
+      return tagName === "svg" && (parentTagName === "annotation-xml" || MATHML_TEXT_INTEGRATION_POINTS[parentTagName]);
+    }
+    return Boolean(ALL_SVG_TAGS[tagName]);
+  };
+  const _checkMathMlNamespace = function _checkMathMlNamespace2(tagName, parent, parentTagName) {
+    if (parent.namespaceURI === HTML_NAMESPACE) {
+      return tagName === "math";
+    }
+    if (parent.namespaceURI === SVG_NAMESPACE) {
+      return tagName === "math" && HTML_INTEGRATION_POINTS[parentTagName];
+    }
+    return Boolean(ALL_MATHML_TAGS[tagName]);
+  };
+  const _checkHtmlNamespace = function _checkHtmlNamespace2(tagName, parent, parentTagName) {
+    if (parent.namespaceURI === SVG_NAMESPACE && !HTML_INTEGRATION_POINTS[parentTagName]) {
+      return false;
+    }
+    if (parent.namespaceURI === MATHML_NAMESPACE && !MATHML_TEXT_INTEGRATION_POINTS[parentTagName]) {
+      return false;
+    }
+    return !ALL_MATHML_TAGS[tagName] && (COMMON_SVG_AND_HTML_ELEMENTS[tagName] || !ALL_SVG_TAGS[tagName]);
+  };
+  const _checkValidNamespace = function _checkValidNamespace2(element) {
+    let parent = getParentNode(element);
+    if (!parent || !parent.tagName) {
+      parent = {
+        namespaceURI: NAMESPACE,
+        tagName: "template"
+      };
+    }
+    const tagName = stringToLowerCase(element.tagName);
+    const parentTagName = stringToLowerCase(parent.tagName);
+    if (!ALLOWED_NAMESPACES[element.namespaceURI]) {
+      return false;
+    }
+    if (element.namespaceURI === SVG_NAMESPACE) {
+      return _checkSvgNamespace(tagName, parent, parentTagName);
+    }
+    if (element.namespaceURI === MATHML_NAMESPACE) {
+      return _checkMathMlNamespace(tagName, parent, parentTagName);
+    }
+    if (element.namespaceURI === HTML_NAMESPACE) {
+      return _checkHtmlNamespace(tagName, parent, parentTagName);
+    }
+    if (PARSER_MEDIA_TYPE === "application/xhtml+xml" && ALLOWED_NAMESPACES[element.namespaceURI]) {
+      return true;
+    }
+    return false;
+  };
+  const _forceRemove = function _forceRemove2(node) {
+    arrayPush(DOMPurify.removed, {
+      element: node
+    });
+    try {
+      getParentNode(node).removeChild(node);
+    } catch (_) {
+      remove(node);
+      if (!getParentNode(node)) {
+        throw typeErrorCreate("a node selected for removal could not be detached from its tree " + "and cannot be safely returned; refusing to sanitize in place");
+      }
+    }
+  };
+  const _stripAttributeNode = function _stripAttributeNode2(element, attribute, name) {
+    try {
+      removeAttributeNode(element, attribute);
+    } catch (_) {
+      try {
+        element.removeAttribute(name);
+      } catch (_2) {}
+    }
+  };
+  const _neutralizeRoot = function _neutralizeRoot2(root) {
+    _neutralizeSubtree(root);
+    const childNodes = getChildNodes(root);
+    if (childNodes) {
+      const snapshot = [];
+      arrayForEach(childNodes, (child) => {
+        arrayPush(snapshot, child);
+      });
+      arrayForEach(snapshot, (child) => {
+        try {
+          remove(child);
+        } catch (_) {}
+      });
+    }
+    const attributes = getAttributes(root);
+    if (attributes) {
+      for (let i = attributes.length - 1;i >= 0; --i) {
+        const attribute = attributes[i];
+        const name = attribute && attribute.name;
+        if (typeof name === "string") {
+          _stripAttributeNode(root, attribute, name);
+        }
+      }
+    }
+  };
+  const _removeAttribute = function _removeAttribute2(name, element, attr) {
+    if (!attr) {
+      try {
+        attr = element.getAttributeNode(name);
+      } catch (_) {
+        attr = null;
+      }
+    }
+    arrayPush(DOMPurify.removed, {
+      attribute: attr || null,
+      from: element
+    });
+    try {
+      if (attr) {
+        removeAttributeNode(element, attr);
+      } else {
+        element.removeAttribute(name);
+      }
+    } catch (_) {
+      try {
+        element.removeAttribute(name);
+      } catch (_2) {}
+    }
+    if (name === "is") {
+      if (RETURN_DOM || RETURN_DOM_FRAGMENT) {
+        try {
+          _forceRemove(element);
+        } catch (_) {}
+      } else {
+        try {
+          element.setAttribute(name, "");
+        } catch (_) {}
+      }
+    }
+  };
+  const _stripDisallowedAttributes = function _stripDisallowedAttributes2(element) {
+    const attributes = getAttributes(element);
+    if (!attributes) {
+      return;
+    }
+    for (let i = attributes.length - 1;i >= 0; --i) {
+      const attribute = attributes[i];
+      const name = attribute && attribute.name;
+      if (typeof name !== "string" || ALLOWED_ATTR[transformCaseFunc(name)]) {
+        continue;
+      }
+      _stripAttributeNode(element, attribute, name);
+    }
+  };
+  const _neutralizeSubtree = function _neutralizeSubtree2(root) {
+    const stack = [root];
+    while (stack.length > 0) {
+      const node = stack.pop();
+      const nodeType = _readNodeType(node);
+      if (nodeType === NODE_TYPE.element) {
+        _stripDisallowedAttributes(node);
+      }
+      const childNodes = getChildNodes(node);
+      if (childNodes) {
+        for (let i = childNodes.length - 1;i >= 0; --i) {
+          stack.push(childNodes[i]);
+        }
+      }
+    }
+  };
+  const _isPatchLinkageAttribute = function _isPatchLinkageAttribute2(lcName, lcTag) {
+    if (!SAFE_FOR_XML) {
+      return false;
+    }
+    if (lcName === "patchsrc") {
+      return true;
+    }
+    return lcName === "for" && lcTag !== "label" && lcTag !== "output";
+  };
+  const _neutralizePatchLinkage = function _neutralizePatchLinkage2(root) {
+    if (!SAFE_FOR_XML) {
+      return;
+    }
+    const stack = [root];
+    while (stack.length > 0) {
+      const node = stack.pop();
+      const nodeType = _readNodeType(node);
+      if (nodeType === NODE_TYPE.processingInstruction || nodeType === NODE_TYPE.comment && regExpTest(COMMENT_MARKUP_PROBE, node.data)) {
+        try {
+          remove(node);
+        } catch (_) {}
+        continue;
+      }
+      if (nodeType === NODE_TYPE.element) {
+        const element = node;
+        const lcTag = transformCaseFunc(_readNodeName(node));
+        try {
+          if (element.hasAttribute && element.hasAttribute("patchsrc")) {
+            element.removeAttribute("patchsrc");
+          }
+          if (element.hasAttribute && element.hasAttribute("for") && _isPatchLinkageAttribute("for", lcTag)) {
+            element.removeAttribute("for");
+          }
+        } catch (_) {}
+      }
+      const childNodes = getChildNodes(node);
+      if (childNodes) {
+        for (let i = childNodes.length - 1;i >= 0; --i) {
+          stack.push(childNodes[i]);
+        }
+      }
+    }
+  };
+  const _initDocument = function _initDocument2(dirty) {
+    let doc = null;
+    let leadingWhitespace = null;
+    if (FORCE_BODY) {
+      dirty = "<remove></remove>" + dirty;
+    } else {
+      const matches = stringMatch(dirty, /^[\r\n\t ]+/);
+      leadingWhitespace = matches && matches[0];
+    }
+    if (PARSER_MEDIA_TYPE === "application/xhtml+xml" && NAMESPACE === HTML_NAMESPACE) {
+      dirty = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>' + dirty + "</body></html>";
+    }
+    const dirtyPayload = trustedTypesPolicy ? _createTrustedHTML(dirty) : dirty;
+    if (NAMESPACE === HTML_NAMESPACE) {
+      try {
+        doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+      } catch (_) {}
+    }
+    if (!doc || !doc.documentElement) {
+      doc = implementation.createDocument(NAMESPACE, "template", null);
+      try {
+        doc.documentElement.innerHTML = IS_EMPTY_INPUT ? emptyHTML : dirtyPayload;
+      } catch (_) {}
+    }
+    const body = doc.body || doc.documentElement;
+    if (dirty && leadingWhitespace) {
+      body.insertBefore(document2.createTextNode(leadingWhitespace), body.childNodes[0] || null);
+    }
+    if (NAMESPACE === HTML_NAMESPACE) {
+      return getElementsByTagName.call(doc, WHOLE_DOCUMENT ? "html" : "body")[0];
+    }
+    return WHOLE_DOCUMENT ? doc.documentElement : body;
+  };
+  const _createNodeIterator = function _createNodeIterator2(root) {
+    const doc = getOwnerDocument ? getOwnerDocument(root) : root.ownerDocument;
+    return createNodeIterator.call(doc || root, root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT | NodeFilter.SHOW_PROCESSING_INSTRUCTION | NodeFilter.SHOW_CDATA_SECTION, null);
+  };
+  const _stripTemplateExpressions = function _stripTemplateExpressions2(value) {
+    value = stringReplace(value, MUSTACHE_EXPR$1, " ");
+    value = stringReplace(value, ERB_EXPR$1, " ");
+    value = stringReplace(value, TMPLIT_EXPR$1, " ");
+    return value;
+  };
+  const _scrubTemplateExpressions2 = function _scrubTemplateExpressions(node) {
+    var _node$querySelectorAl;
+    node.normalize();
+    const doc = getOwnerDocument ? getOwnerDocument(node) : node.ownerDocument;
+    const walker = createNodeIterator.call(doc || node, node, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_CDATA_SECTION | NodeFilter.SHOW_PROCESSING_INSTRUCTION, null);
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      currentNode.data = _stripTemplateExpressions(currentNode.data);
+      currentNode = walker.nextNode();
+    }
+    const templates = (_node$querySelectorAl = node.querySelectorAll) === null || _node$querySelectorAl === undefined ? undefined : _node$querySelectorAl.call(node, "template");
+    if (templates) {
+      arrayForEach(templates, (tmpl) => {
+        if (_isDocumentFragment(tmpl.content)) {
+          _scrubTemplateExpressions2(tmpl.content);
+        }
+      });
+    }
+  };
+  const _isClobbered = function _isClobbered2(element) {
+    const realTagName = getNodeName ? getNodeName(element) : null;
+    if (typeof realTagName !== "string") {
+      return false;
+    }
+    if (transformCaseFunc(realTagName) !== "form") {
+      return false;
+    }
+    return typeof element.nodeName !== "string" || typeof element.textContent !== "string" || typeof element.removeChild !== "function" || element.attributes !== getAttributes(element) || typeof element.removeAttribute !== "function" || typeof element.removeAttributeNode !== "function" || typeof element.getAttributeNode !== "function" || typeof element.setAttribute !== "function" || typeof element.namespaceURI !== "string" || typeof element.insertBefore !== "function" || typeof element.hasChildNodes !== "function" || element.nodeType !== getNodeType(element) || element.childNodes !== getChildNodes(element);
+  };
+  const _isDocumentFragment = function _isDocumentFragment2(value) {
+    if (!getNodeType || typeof value !== "object" || value === null) {
+      return false;
+    }
+    try {
+      return getNodeType(value) === NODE_TYPE.documentFragment;
+    } catch (_) {
+      return false;
+    }
+  };
+  const _isNode = function _isNode2(value) {
+    if (!getNodeType || typeof value !== "object" || value === null) {
+      return false;
+    }
+    try {
+      return typeof getNodeType(value) === "number";
+    } catch (_) {
+      return false;
+    }
+  };
+  function _executeHooks(hooks2, currentNode, data) {
+    if (hooks2.length === 0) {
+      return;
+    }
+    arrayForEach(hooks2, (hook) => {
+      hook.call(DOMPurify, currentNode, data, CONFIG);
+    });
+  }
+  const _isUnsafeNode = function _isUnsafeNode2(currentNode, tagName) {
+    if (SAFE_FOR_XML && currentNode.hasChildNodes() && !_isNode(currentNode.firstElementChild) && regExpTest(ELEMENT_MARKUP_PROBE, currentNode.textContent) && regExpTest(ELEMENT_MARKUP_PROBE, currentNode.innerHTML)) {
+      return true;
+    }
+    if (SAFE_FOR_XML && currentNode.namespaceURI === HTML_NAMESPACE && LITERAL_TEXT_ELEMENTS[tagName] && (_isNode(currentNode.firstElementChild) || typeof currentNode.textContent === "string" && regExpTest(LITERAL_TEXT_CLOSE[tagName], currentNode.textContent))) {
+      return true;
+    }
+    if (currentNode.nodeType === NODE_TYPE.processingInstruction) {
+      return true;
+    }
+    if (SAFE_FOR_XML && currentNode.nodeType === NODE_TYPE.comment && regExpTest(COMMENT_MARKUP_PROBE, currentNode.data)) {
+      return true;
+    }
+    return false;
+  };
+  const _matchesNameCheck = function _matchesNameCheck2(check, name) {
+    if (check instanceof RegExp) {
+      return regExpTest(check, name);
+    }
+    if (check instanceof Function) {
+      for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2;_key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+      return Boolean(check(name, ...args));
+    }
+    return false;
+  };
+  const _sanitizeDisallowedNode = function _sanitizeDisallowedNode2(currentNode, tagName, root) {
+    if (!FORBID_TAGS[tagName] && _isBasicCustomElement(tagName) && _matchesNameCheck(CUSTOM_ELEMENT_HANDLING.tagNameCheck, tagName)) {
+      return false;
+    }
+    if (KEEP_CONTENT && !FORBID_CONTENTS[tagName]) {
+      const parentNode = getParentNode(currentNode);
+      const childNodes = getChildNodes(currentNode);
+      if (childNodes && parentNode) {
+        const childCount = childNodes.length;
+        for (let i = childCount - 1;i >= 0; --i) {
+          const hoisted = currentNode === root ? cloneNode(childNodes[i], true) : childNodes[i];
+          parentNode.insertBefore(hoisted, getNextSibling(currentNode));
+        }
+      }
+    }
+    _forceRemove(currentNode);
+    return true;
+  };
+  const _forkSharedAllowlist = function _forkSharedAllowlist2(hookList, set, defaultSet, setConfigSet) {
+    if (hookList.length === 0) {
+      return set;
+    }
+    return set === defaultSet || set === setConfigSet ? clone(set) : set;
+  };
+  const _handleHookDetachedNode = function _handleHookDetachedNode2(currentNode, root) {
+    if (currentNode === root || getParentNode(currentNode) !== null) {
+      return false;
+    }
+    if (IN_PLACE) {
+      _neutralizeSubtree(currentNode);
+    }
+    return true;
+  };
+  const _sanitizeElements = function _sanitizeElements2(currentNode, root) {
+    _executeHooks(hooks.beforeSanitizeElements, currentNode, null);
+    if (_handleHookDetachedNode(currentNode, root)) {
+      return true;
+    }
+    if (_isClobbered(currentNode)) {
+      _forceRemove(currentNode);
+      return true;
+    }
+    const tagName = transformCaseFunc(_readNodeName(currentNode));
+    ALLOWED_TAGS = _forkSharedAllowlist(hooks.uponSanitizeElement, ALLOWED_TAGS, DEFAULT_ALLOWED_TAGS, SET_CONFIG_ALLOWED_TAGS);
+    _executeHooks(hooks.uponSanitizeElement, currentNode, {
+      tagName,
+      allowedTags: ALLOWED_TAGS
+    });
+    if (_handleHookDetachedNode(currentNode, root)) {
+      return true;
+    }
+    if (_isUnsafeNode(currentNode, tagName)) {
+      _forceRemove(currentNode);
+      return true;
+    }
+    if (FORBID_TAGS[tagName] || !(EXTRA_ELEMENT_HANDLING.tagCheck instanceof Function && EXTRA_ELEMENT_HANDLING.tagCheck(tagName)) && !ALLOWED_TAGS[tagName]) {
+      const removed = _sanitizeDisallowedNode(currentNode, tagName, root);
+      if (removed === false) {
+        _executeHooks(hooks.afterSanitizeElements, currentNode, null);
+      }
+      return removed;
+    }
+    const nt = _readNodeType(currentNode);
+    if (nt === NODE_TYPE.element && !_checkValidNamespace(currentNode)) {
+      _forceRemove(currentNode);
+      return true;
+    }
+    if ((tagName === "noscript" || tagName === "noembed" || tagName === "noframes") && regExpTest(FALLBACK_TAG_CLOSE, currentNode.innerHTML)) {
+      _forceRemove(currentNode);
+      return true;
+    }
+    if (SAFE_FOR_TEMPLATES && currentNode.nodeType === NODE_TYPE.text) {
+      const content = _stripTemplateExpressions(currentNode.textContent);
+      if (currentNode.textContent !== content) {
+        arrayPush(DOMPurify.removed, {
+          element: currentNode.cloneNode()
+        });
+        currentNode.textContent = content;
+      }
+    }
+    _executeHooks(hooks.afterSanitizeElements, currentNode, null);
+    return false;
+  };
+  const _isValidAttribute = function _isValidAttribute2(lcTag, lcName, value) {
+    if (FORBID_ATTR[lcName]) {
+      return false;
+    }
+    if (_isPatchLinkageAttribute(lcName, lcTag)) {
+      return false;
+    }
+    if (SANITIZE_DOM && (lcName === "id" || lcName === "name") && ((value in document2) || (value in formElement))) {
+      return false;
+    }
+    const nameIsPermitted = ALLOWED_ATTR[lcName] || EXTRA_ELEMENT_HANDLING.attributeCheck instanceof Function && EXTRA_ELEMENT_HANDLING.attributeCheck(lcName, lcTag);
+    if (ALLOW_DATA_ATTR && regExpTest(DATA_ATTR$1, lcName)) {
+      return true;
+    }
+    if (ALLOW_ARIA_ATTR && regExpTest(ARIA_ATTR$1, lcName)) {
+      return true;
+    }
+    if (!nameIsPermitted) {
+      return _isBasicCustomElement(lcTag) && _matchesNameCheck(CUSTOM_ELEMENT_HANDLING.tagNameCheck, lcTag) && _matchesNameCheck(CUSTOM_ELEMENT_HANDLING.attributeNameCheck, lcName, lcTag) || lcName === "is" && CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements && _matchesNameCheck(CUSTOM_ELEMENT_HANDLING.tagNameCheck, value);
+    }
+    if (URI_SAFE_ATTRIBUTES[lcName]) {
+      return true;
+    }
+    if (regExpTest(IS_ALLOWED_URI$1, stringReplace(value, ATTR_WHITESPACE$1, ""))) {
+      return true;
+    }
+    if ((lcName === "src" || lcName === "xlink:href" || lcName === "href") && lcTag !== "script" && stringIndexOf(value, "data:") === 0 && DATA_URI_TAGS[lcTag]) {
+      return true;
+    }
+    if (ALLOW_UNKNOWN_PROTOCOLS && !regExpTest(IS_SCRIPT_OR_DATA$1, stringReplace(value, ATTR_WHITESPACE$1, ""))) {
+      return true;
+    }
+    return !value;
+  };
+  const RESERVED_CUSTOM_ELEMENT_NAMES = addToSet({}, ["annotation-xml", "color-profile", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri", "missing-glyph"]);
+  const _isBasicCustomElement = function _isBasicCustomElement2(tagName) {
+    return !RESERVED_CUSTOM_ELEMENT_NAMES[stringToLowerCase(tagName)] && regExpTest(CUSTOM_ELEMENT$1, tagName);
+  };
+  const _applyTrustedTypesToAttribute = function _applyTrustedTypesToAttribute2(lcTag, lcName, namespaceURI, value) {
+    if (trustedTypesPolicy && typeof trustedTypes === "object" && typeof trustedTypes.getAttributeType === "function" && !namespaceURI) {
+      switch (trustedTypes.getAttributeType(lcTag, lcName)) {
+        case "TrustedHTML": {
+          return _createTrustedHTML(value);
+        }
+        case "TrustedScriptURL": {
+          return _createTrustedScriptURL(value);
+        }
+      }
+    }
+    return value;
+  };
+  const _setAttributeValue = function _setAttributeValue2(currentNode, name, namespaceURI, value) {
+    try {
+      if (namespaceURI) {
+        currentNode.setAttributeNS(namespaceURI, name, value);
+      } else {
+        currentNode.setAttribute(name, value);
+      }
+      if (_isClobbered(currentNode)) {
+        _forceRemove(currentNode);
+        return false;
+      }
+      return true;
+    } catch (_) {
+      _removeAttribute(name, currentNode);
+      return false;
+    }
+  };
+  const _sanitizeAttributes = function _sanitizeAttributes2(currentNode) {
+    _executeHooks(hooks.beforeSanitizeAttributes, currentNode, null);
+    const attributes = currentNode.attributes;
+    if (!attributes || _isClobbered(currentNode)) {
+      return;
+    }
+    ALLOWED_ATTR = _forkSharedAllowlist(hooks.uponSanitizeAttribute, ALLOWED_ATTR, DEFAULT_ALLOWED_ATTR, SET_CONFIG_ALLOWED_ATTR);
+    const hookEvent = {
+      attrName: "",
+      attrValue: "",
+      keepAttr: true,
+      allowedAttributes: ALLOWED_ATTR,
+      forceKeepAttr: undefined
+    };
+    let l = attributes.length;
+    const lcTag = transformCaseFunc(currentNode.nodeName);
+    while (l--) {
+      const attr = attributes[l];
+      const { name, namespaceURI, value: attrValue } = attr;
+      const lcName = transformCaseFunc(name);
+      const initValue = attrValue;
+      let value = name === "value" ? initValue : stringTrim(initValue);
+      let recreatedNamedProp = false;
+      hookEvent.attrName = lcName;
+      hookEvent.attrValue = value;
+      hookEvent.keepAttr = true;
+      hookEvent.forceKeepAttr = undefined;
+      _executeHooks(hooks.uponSanitizeAttribute, currentNode, hookEvent);
+      value = hookEvent.attrValue;
+      if (SANITIZE_NAMED_PROPS && (lcName === "id" || lcName === "name") && stringIndexOf(value, SANITIZE_NAMED_PROPS_PREFIX) !== 0) {
+        _removeAttribute(name, currentNode, attr);
+        value = SANITIZE_NAMED_PROPS_PREFIX + value;
+        recreatedNamedProp = true;
+      }
+      if (SAFE_FOR_XML && regExpTest(/((--!?|])>)|<\/(style|script|title|xmp|textarea|noscript|iframe|noembed|noframes)/i, value)) {
+        _removeAttribute(name, currentNode, attr);
+        continue;
+      }
+      if (lcName === "attributename" && stringMatch(value, "href")) {
+        _removeAttribute(name, currentNode, attr);
+        continue;
+      }
+      if (hookEvent.forceKeepAttr) {
+        continue;
+      }
+      if (!hookEvent.keepAttr) {
+        _removeAttribute(name, currentNode, attr);
+        continue;
+      }
+      if (!ALLOW_SELF_CLOSE_IN_ATTR && regExpTest(SELF_CLOSING_TAG, value)) {
+        _removeAttribute(name, currentNode, attr);
+        continue;
+      }
+      if (SAFE_FOR_TEMPLATES) {
+        value = _stripTemplateExpressions(value);
+      }
+      if (!_isValidAttribute(lcTag, lcName, value)) {
+        _removeAttribute(name, currentNode, attr);
+        continue;
+      }
+      value = _applyTrustedTypesToAttribute(lcTag, lcName, namespaceURI, value);
+      if (value !== initValue) {
+        const cleanWrite = _setAttributeValue(currentNode, name, namespaceURI, value);
+        if (cleanWrite && recreatedNamedProp) {
+          arrayPop(DOMPurify.removed);
+        }
+      }
+    }
+    _executeHooks(hooks.afterSanitizeAttributes, currentNode, null);
+  };
+  const _sanitizeShadowDOM2 = function _sanitizeShadowDOM(fragment) {
+    let shadowNode = null;
+    const shadowIterator = _createNodeIterator(fragment);
+    _executeHooks(hooks.beforeSanitizeShadowDOM, fragment, null);
+    while (shadowNode = shadowIterator.nextNode()) {
+      _executeHooks(hooks.uponSanitizeShadowNode, shadowNode, null);
+      _sanitizeElements(shadowNode, fragment);
+      _sanitizeAttributes(shadowNode);
+      if (_isDocumentFragment(shadowNode.content)) {
+        _sanitizeShadowDOM2(shadowNode.content);
+      }
+      if (_readNodeType(shadowNode) === NODE_TYPE.element) {
+        const innerSr = getShadowRoot(shadowNode);
+        if (_isDocumentFragment(innerSr)) {
+          _sanitizeAttachedShadowRoots(innerSr);
+          _sanitizeShadowDOM2(innerSr);
+        }
+      }
+    }
+    _executeHooks(hooks.afterSanitizeShadowDOM, fragment, null);
+  };
+  const _sanitizeAttachedShadowRoots = function _sanitizeAttachedShadowRoots2(root) {
+    const stack = [{
+      node: root,
+      shadow: null
+    }];
+    while (stack.length > 0) {
+      const item = stack.pop();
+      if (item.shadow) {
+        _sanitizeShadowDOM2(item.shadow);
+        continue;
+      }
+      const node = item.node;
+      const nodeType = _readNodeType(node);
+      const isElement = nodeType === NODE_TYPE.element;
+      const childNodes = getChildNodes(node);
+      if (childNodes) {
+        for (let i = childNodes.length - 1;i >= 0; --i) {
+          stack.push({
+            node: childNodes[i],
+            shadow: null
+          });
+        }
+      }
+      if (isElement) {
+        const rootName = getNodeName ? getNodeName(node) : null;
+        if (typeof rootName === "string" && transformCaseFunc(rootName) === "template") {
+          const content = node.content;
+          if (_isDocumentFragment(content)) {
+            stack.push({
+              node: content,
+              shadow: null
+            });
+          }
+        }
+      }
+      if (isElement) {
+        const sr = getShadowRoot(node);
+        if (_isDocumentFragment(sr)) {
+          stack.push({
+            node: null,
+            shadow: sr
+          }, {
+            node: sr,
+            shadow: null
+          });
+        }
+      }
+    }
+  };
+  DOMPurify.sanitize = function(dirty) {
+    let cfg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    let body = null;
+    let importedNode = null;
+    let currentNode = null;
+    let returnNode = null;
+    IS_EMPTY_INPUT = !dirty;
+    if (IS_EMPTY_INPUT) {
+      dirty = "<!-->";
+    }
+    if (typeof dirty !== "string" && !_isNode(dirty)) {
+      dirty = stringifyValue(dirty);
+      if (typeof dirty !== "string") {
+        throw typeErrorCreate("dirty is not a string, aborting");
+      }
+    }
+    if (!DOMPurify.isSupported) {
+      return dirty;
+    }
+    if (SET_CONFIG) {
+      ALLOWED_TAGS = SET_CONFIG_ALLOWED_TAGS;
+      ALLOWED_ATTR = SET_CONFIG_ALLOWED_ATTR;
+    } else {
+      _parseConfig(cfg);
+    }
+    if (hooks.uponSanitizeElement.length > 0 || hooks.uponSanitizeAttribute.length > 0) {
+      ALLOWED_TAGS = clone(ALLOWED_TAGS);
+    }
+    if (hooks.uponSanitizeAttribute.length > 0) {
+      ALLOWED_ATTR = clone(ALLOWED_ATTR);
+    }
+    DOMPurify.removed = [];
+    const inPlace = IN_PLACE && typeof dirty !== "string" && _isNode(dirty);
+    if (inPlace) {
+      _neutralizePatchLinkage(dirty);
+      const nn = _readNodeName(dirty);
+      if (typeof nn === "string") {
+        const tagName = transformCaseFunc(nn);
+        if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
+          _neutralizeRoot(dirty);
+          throw typeErrorCreate("root node is forbidden and cannot be sanitized in-place");
+        }
+      }
+      if (_isClobbered(dirty)) {
+        _neutralizeRoot(dirty);
+        throw typeErrorCreate("root node is clobbered and cannot be sanitized in-place");
+      }
+      try {
+        _sanitizeAttachedShadowRoots(dirty);
+      } catch (error) {
+        _neutralizeRoot(dirty);
+        throw error;
+      }
+    } else if (_isNode(dirty)) {
+      body = _initDocument("<!---->");
+      importedNode = body.ownerDocument.importNode(dirty, true);
+      if (importedNode.nodeType === NODE_TYPE.element && importedNode.nodeName === "BODY") {
+        body = importedNode;
+      } else if (importedNode.nodeName === "HTML") {
+        body = importedNode;
+      } else {
+        body.appendChild(importedNode);
+      }
+      _sanitizeAttachedShadowRoots(body);
+    } else {
+      if (!RETURN_DOM && !SAFE_FOR_TEMPLATES && !WHOLE_DOCUMENT && dirty.indexOf("<") === -1) {
+        return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? _createTrustedHTML(dirty) : dirty;
+      }
+      body = _initDocument(dirty);
+      if (!body) {
+        return RETURN_DOM ? null : RETURN_TRUSTED_TYPE ? emptyHTML : "";
+      }
+    }
+    if (body && FORCE_BODY) {
+      _forceRemove(body.firstChild);
+    }
+    const walkRoot = inPlace ? dirty : body;
+    try {
+      const nodeIterator = _createNodeIterator(walkRoot);
+      while (currentNode = nodeIterator.nextNode()) {
+        _sanitizeElements(currentNode, walkRoot);
+        _sanitizeAttributes(currentNode);
+        if (_isDocumentFragment(currentNode.content)) {
+          _sanitizeShadowDOM2(currentNode.content);
+        }
+      }
+    } catch (error) {
+      if (inPlace) {
+        _neutralizeRoot(dirty);
+        arrayForEach(DOMPurify.removed, (entry) => {
+          if (entry.element) {
+            _neutralizeSubtree(entry.element);
+          }
+        });
+      }
+      throw error;
+    }
+    if (inPlace) {
+      arrayForEach(DOMPurify.removed, (entry) => {
+        if (entry.element) {
+          _neutralizeSubtree(entry.element);
+        }
+      });
+      if (SAFE_FOR_TEMPLATES) {
+        _scrubTemplateExpressions2(dirty);
+      }
+      return dirty;
+    }
+    if (RETURN_DOM) {
+      if (SAFE_FOR_TEMPLATES) {
+        _scrubTemplateExpressions2(body);
+      }
+      if (RETURN_DOM_FRAGMENT) {
+        returnNode = createDocumentFragment.call(body.ownerDocument);
+        while (body.firstChild) {
+          returnNode.appendChild(body.firstChild);
+        }
+      } else {
+        returnNode = body;
+      }
+      if (ALLOWED_ATTR.shadowroot || ALLOWED_ATTR.shadowrootmode) {
+        returnNode = importNode.call(originalDocument, returnNode, true);
+      }
+      return returnNode;
+    }
+    let serializedHTML = WHOLE_DOCUMENT ? body.outerHTML : body.innerHTML;
+    if (WHOLE_DOCUMENT && ALLOWED_TAGS["!doctype"] && body.ownerDocument && body.ownerDocument.doctype && body.ownerDocument.doctype.name && regExpTest(DOCTYPE_NAME, body.ownerDocument.doctype.name)) {
+      serializedHTML = "<!DOCTYPE " + body.ownerDocument.doctype.name + `>
+` + serializedHTML;
+    }
+    if (SAFE_FOR_TEMPLATES) {
+      serializedHTML = _stripTemplateExpressions(serializedHTML);
+    }
+    return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? _createTrustedHTML(serializedHTML) : serializedHTML;
+  };
+  DOMPurify.setConfig = function() {
+    let cfg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    _parseConfig(cfg);
+    SET_CONFIG = true;
+    SET_CONFIG_ALLOWED_TAGS = ALLOWED_TAGS;
+    SET_CONFIG_ALLOWED_ATTR = ALLOWED_ATTR;
+  };
+  DOMPurify.clearConfig = function() {
+    CONFIG = null;
+    SET_CONFIG = false;
+    SET_CONFIG_ALLOWED_TAGS = null;
+    SET_CONFIG_ALLOWED_ATTR = null;
+    trustedTypesPolicy = defaultTrustedTypesPolicy;
+    emptyHTML = "";
+  };
+  DOMPurify.isValidAttribute = function(tag, attr, value) {
+    if (!CONFIG) {
+      _parseConfig({});
+    }
+    const lcTag = transformCaseFunc(tag);
+    const lcName = transformCaseFunc(attr);
+    return _isValidAttribute(lcTag, lcName, value);
+  };
+  DOMPurify.addHook = function(entryPoint, hookFunction) {
+    if (typeof hookFunction !== "function") {
+      return;
+    }
+    if (!objectHasOwnProperty(hooks, entryPoint)) {
+      return;
+    }
+    arrayPush(hooks[entryPoint], hookFunction);
+  };
+  DOMPurify.removeHook = function(entryPoint, hookFunction) {
+    if (!objectHasOwnProperty(hooks, entryPoint)) {
+      return;
+    }
+    if (hookFunction !== undefined) {
+      const index = arrayLastIndexOf(hooks[entryPoint], hookFunction);
+      return index === -1 ? undefined : arraySplice(hooks[entryPoint], index, 1)[0];
+    }
+    return arrayPop(hooks[entryPoint]);
+  };
+  DOMPurify.removeHooks = function(entryPoint) {
+    if (!objectHasOwnProperty(hooks, entryPoint)) {
+      return;
+    }
+    hooks[entryPoint] = [];
+  };
+  DOMPurify.removeAllHooks = function() {
+    hooks = _createHooksMap();
+  };
+  return DOMPurify;
+}
+var purify = createDOMPurify();
+
+// node_modules/marked/lib/marked.esm.js
+function _getDefaults() {
+  return {
+    async: false,
+    breaks: false,
+    extensions: null,
+    gfm: true,
+    hooks: null,
+    pedantic: false,
+    renderer: null,
+    silent: false,
+    tokenizer: null,
+    walkTokens: null
+  };
+}
+var _defaults = _getDefaults();
+function changeDefaults(newDefaults) {
+  _defaults = newDefaults;
+}
+var escapeTest = /[&<>"']/;
+var escapeReplace = new RegExp(escapeTest.source, "g");
+var escapeTestNoEncode = /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/;
+var escapeReplaceNoEncode = new RegExp(escapeTestNoEncode.source, "g");
+var escapeReplacements = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;"
+};
+var getEscapeReplacement = (ch) => escapeReplacements[ch];
+function escape$1(html2, encode) {
+  if (encode) {
+    if (escapeTest.test(html2)) {
+      return html2.replace(escapeReplace, getEscapeReplacement);
+    }
+  } else {
+    if (escapeTestNoEncode.test(html2)) {
+      return html2.replace(escapeReplaceNoEncode, getEscapeReplacement);
+    }
+  }
+  return html2;
+}
+var unescapeTest = /&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/ig;
+function unescape(html2) {
+  return html2.replace(unescapeTest, (_, n) => {
+    n = n.toLowerCase();
+    if (n === "colon")
+      return ":";
+    if (n.charAt(0) === "#") {
+      return n.charAt(1) === "x" ? String.fromCharCode(parseInt(n.substring(2), 16)) : String.fromCharCode(+n.substring(1));
+    }
+    return "";
+  });
+}
+var caret = /(^|[^\[])\^/g;
+function edit(regex, opt) {
+  let source = typeof regex === "string" ? regex : regex.source;
+  opt = opt || "";
+  const obj = {
+    replace: (name, val) => {
+      let valSource = typeof val === "string" ? val : val.source;
+      valSource = valSource.replace(caret, "$1");
+      source = source.replace(name, valSource);
+      return obj;
+    },
+    getRegex: () => {
+      return new RegExp(source, opt);
+    }
+  };
+  return obj;
+}
+function cleanUrl(href) {
+  try {
+    href = encodeURI(href).replace(/%25/g, "%");
+  } catch (e) {
+    return null;
+  }
+  return href;
+}
+var noopTest = { exec: () => null };
+function splitCells(tableRow, count) {
+  const row = tableRow.replace(/\|/g, (match, offset, str) => {
+    let escaped = false;
+    let curr = offset;
+    while (--curr >= 0 && str[curr] === "\\")
+      escaped = !escaped;
+    if (escaped) {
+      return "|";
+    } else {
+      return " |";
+    }
+  }), cells = row.split(/ \|/);
+  let i = 0;
+  if (!cells[0].trim()) {
+    cells.shift();
+  }
+  if (cells.length > 0 && !cells[cells.length - 1].trim()) {
+    cells.pop();
+  }
+  if (count) {
+    if (cells.length > count) {
+      cells.splice(count);
+    } else {
+      while (cells.length < count)
+        cells.push("");
+    }
+  }
+  for (;i < cells.length; i++) {
+    cells[i] = cells[i].trim().replace(/\\\|/g, "|");
+  }
+  return cells;
+}
+function rtrim(str, c, invert) {
+  const l = str.length;
+  if (l === 0) {
+    return "";
+  }
+  let suffLen = 0;
+  while (suffLen < l) {
+    const currChar = str.charAt(l - suffLen - 1);
+    if (currChar === c && !invert) {
+      suffLen++;
+    } else if (currChar !== c && invert) {
+      suffLen++;
+    } else {
+      break;
+    }
+  }
+  return str.slice(0, l - suffLen);
+}
+function findClosingBracket(str, b) {
+  if (str.indexOf(b[1]) === -1) {
+    return -1;
+  }
+  let level = 0;
+  for (let i = 0;i < str.length; i++) {
+    if (str[i] === "\\") {
+      i++;
+    } else if (str[i] === b[0]) {
+      level++;
+    } else if (str[i] === b[1]) {
+      level--;
+      if (level < 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+function outputLink(cap, link, raw, lexer) {
+  const href = link.href;
+  const title = link.title ? escape$1(link.title) : null;
+  const text2 = cap[1].replace(/\\([\[\]])/g, "$1");
+  if (cap[0].charAt(0) !== "!") {
+    lexer.state.inLink = true;
+    const token = {
+      type: "link",
+      raw,
+      href,
+      title,
+      text: text2,
+      tokens: lexer.inlineTokens(text2)
+    };
+    lexer.state.inLink = false;
+    return token;
+  }
+  return {
+    type: "image",
+    raw,
+    href,
+    title,
+    text: escape$1(text2)
+  };
+}
+function indentCodeCompensation(raw, text2) {
+  const matchIndentToCode = raw.match(/^(\s+)(?:```)/);
+  if (matchIndentToCode === null) {
+    return text2;
+  }
+  const indentToCode = matchIndentToCode[1];
+  return text2.split(`
+`).map((node) => {
+    const matchIndentInNode = node.match(/^\s+/);
+    if (matchIndentInNode === null) {
+      return node;
+    }
+    const [indentInNode] = matchIndentInNode;
+    if (indentInNode.length >= indentToCode.length) {
+      return node.slice(indentToCode.length);
+    }
+    return node;
+  }).join(`
+`);
+}
+
+class _Tokenizer {
+  options;
+  rules;
+  lexer;
+  constructor(options) {
+    this.options = options || _defaults;
+  }
+  space(src) {
+    const cap = this.rules.block.newline.exec(src);
+    if (cap && cap[0].length > 0) {
+      return {
+        type: "space",
+        raw: cap[0]
+      };
+    }
+  }
+  code(src) {
+    const cap = this.rules.block.code.exec(src);
+    if (cap) {
+      const text2 = cap[0].replace(/^ {1,4}/gm, "");
+      return {
+        type: "code",
+        raw: cap[0],
+        codeBlockStyle: "indented",
+        text: !this.options.pedantic ? rtrim(text2, `
+`) : text2
+      };
+    }
+  }
+  fences(src) {
+    const cap = this.rules.block.fences.exec(src);
+    if (cap) {
+      const raw = cap[0];
+      const text2 = indentCodeCompensation(raw, cap[3] || "");
+      return {
+        type: "code",
+        raw,
+        lang: cap[2] ? cap[2].trim().replace(this.rules.inline.anyPunctuation, "$1") : cap[2],
+        text: text2
+      };
+    }
+  }
+  heading(src) {
+    const cap = this.rules.block.heading.exec(src);
+    if (cap) {
+      let text2 = cap[2].trim();
+      if (/#$/.test(text2)) {
+        const trimmed = rtrim(text2, "#");
+        if (this.options.pedantic) {
+          text2 = trimmed.trim();
+        } else if (!trimmed || / $/.test(trimmed)) {
+          text2 = trimmed.trim();
+        }
+      }
+      return {
+        type: "heading",
+        raw: cap[0],
+        depth: cap[1].length,
+        text: text2,
+        tokens: this.lexer.inline(text2)
+      };
+    }
+  }
+  hr(src) {
+    const cap = this.rules.block.hr.exec(src);
+    if (cap) {
+      return {
+        type: "hr",
+        raw: cap[0]
+      };
+    }
+  }
+  blockquote(src) {
+    const cap = this.rules.block.blockquote.exec(src);
+    if (cap) {
+      let text2 = cap[0].replace(/\n {0,3}((?:=+|-+) *)(?=\n|$)/g, `
+    $1`);
+      text2 = rtrim(text2.replace(/^ *>[ \t]?/gm, ""), `
+`);
+      const top = this.lexer.state.top;
+      this.lexer.state.top = true;
+      const tokens = this.lexer.blockTokens(text2);
+      this.lexer.state.top = top;
+      return {
+        type: "blockquote",
+        raw: cap[0],
+        tokens,
+        text: text2
+      };
+    }
+  }
+  list(src) {
+    let cap = this.rules.block.list.exec(src);
+    if (cap) {
+      let bull = cap[1].trim();
+      const isordered = bull.length > 1;
+      const list = {
+        type: "list",
+        raw: "",
+        ordered: isordered,
+        start: isordered ? +bull.slice(0, -1) : "",
+        loose: false,
+        items: []
+      };
+      bull = isordered ? `\\d{1,9}\\${bull.slice(-1)}` : `\\${bull}`;
+      if (this.options.pedantic) {
+        bull = isordered ? bull : "[*+-]";
+      }
+      const itemRegex = new RegExp(`^( {0,3}${bull})((?:[	 ][^\\n]*)?(?:\\n|$))`);
+      let raw = "";
+      let itemContents = "";
+      let endsWithBlankLine = false;
+      while (src) {
+        let endEarly = false;
+        if (!(cap = itemRegex.exec(src))) {
+          break;
+        }
+        if (this.rules.block.hr.test(src)) {
+          break;
+        }
+        raw = cap[0];
+        src = src.substring(raw.length);
+        let line = cap[2].split(`
+`, 1)[0].replace(/^\t+/, (t) => " ".repeat(3 * t.length));
+        let nextLine = src.split(`
+`, 1)[0];
+        let indent = 0;
+        if (this.options.pedantic) {
+          indent = 2;
+          itemContents = line.trimStart();
+        } else {
+          indent = cap[2].search(/[^ ]/);
+          indent = indent > 4 ? 1 : indent;
+          itemContents = line.slice(indent);
+          indent += cap[1].length;
+        }
+        let blankLine = false;
+        if (!line && /^ *$/.test(nextLine)) {
+          raw += nextLine + `
+`;
+          src = src.substring(nextLine.length + 1);
+          endEarly = true;
+        }
+        if (!endEarly) {
+          const nextBulletRegex = new RegExp(`^ {0,${Math.min(3, indent - 1)}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`);
+          const hrRegex = new RegExp(`^ {0,${Math.min(3, indent - 1)}}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)`);
+          const fencesBeginRegex = new RegExp(`^ {0,${Math.min(3, indent - 1)}}(?:\`\`\`|~~~)`);
+          const headingBeginRegex = new RegExp(`^ {0,${Math.min(3, indent - 1)}}#`);
+          while (src) {
+            const rawLine = src.split(`
+`, 1)[0];
+            nextLine = rawLine;
+            if (this.options.pedantic) {
+              nextLine = nextLine.replace(/^ {1,4}(?=( {4})*[^ ])/g, "  ");
+            }
+            if (fencesBeginRegex.test(nextLine)) {
+              break;
+            }
+            if (headingBeginRegex.test(nextLine)) {
+              break;
+            }
+            if (nextBulletRegex.test(nextLine)) {
+              break;
+            }
+            if (hrRegex.test(src)) {
+              break;
+            }
+            if (nextLine.search(/[^ ]/) >= indent || !nextLine.trim()) {
+              itemContents += `
+` + nextLine.slice(indent);
+            } else {
+              if (blankLine) {
+                break;
+              }
+              if (line.search(/[^ ]/) >= 4) {
+                break;
+              }
+              if (fencesBeginRegex.test(line)) {
+                break;
+              }
+              if (headingBeginRegex.test(line)) {
+                break;
+              }
+              if (hrRegex.test(line)) {
+                break;
+              }
+              itemContents += `
+` + nextLine;
+            }
+            if (!blankLine && !nextLine.trim()) {
+              blankLine = true;
+            }
+            raw += rawLine + `
+`;
+            src = src.substring(rawLine.length + 1);
+            line = nextLine.slice(indent);
+          }
+        }
+        if (!list.loose) {
+          if (endsWithBlankLine) {
+            list.loose = true;
+          } else if (/\n *\n *$/.test(raw)) {
+            endsWithBlankLine = true;
+          }
+        }
+        let istask = null;
+        let ischecked;
+        if (this.options.gfm) {
+          istask = /^\[[ xX]\] /.exec(itemContents);
+          if (istask) {
+            ischecked = istask[0] !== "[ ] ";
+            itemContents = itemContents.replace(/^\[[ xX]\] +/, "");
+          }
+        }
+        list.items.push({
+          type: "list_item",
+          raw,
+          task: !!istask,
+          checked: ischecked,
+          loose: false,
+          text: itemContents,
+          tokens: []
+        });
+        list.raw += raw;
+      }
+      list.items[list.items.length - 1].raw = raw.trimEnd();
+      list.items[list.items.length - 1].text = itemContents.trimEnd();
+      list.raw = list.raw.trimEnd();
+      for (let i = 0;i < list.items.length; i++) {
+        this.lexer.state.top = false;
+        list.items[i].tokens = this.lexer.blockTokens(list.items[i].text, []);
+        if (!list.loose) {
+          const spacers = list.items[i].tokens.filter((t) => t.type === "space");
+          const hasMultipleLineBreaks = spacers.length > 0 && spacers.some((t) => /\n.*\n/.test(t.raw));
+          list.loose = hasMultipleLineBreaks;
+        }
+      }
+      if (list.loose) {
+        for (let i = 0;i < list.items.length; i++) {
+          list.items[i].loose = true;
+        }
+      }
+      return list;
+    }
+  }
+  html(src) {
+    const cap = this.rules.block.html.exec(src);
+    if (cap) {
+      const token = {
+        type: "html",
+        block: true,
+        raw: cap[0],
+        pre: cap[1] === "pre" || cap[1] === "script" || cap[1] === "style",
+        text: cap[0]
+      };
+      return token;
+    }
+  }
+  def(src) {
+    const cap = this.rules.block.def.exec(src);
+    if (cap) {
+      const tag = cap[1].toLowerCase().replace(/\s+/g, " ");
+      const href = cap[2] ? cap[2].replace(/^<(.*)>$/, "$1").replace(this.rules.inline.anyPunctuation, "$1") : "";
+      const title = cap[3] ? cap[3].substring(1, cap[3].length - 1).replace(this.rules.inline.anyPunctuation, "$1") : cap[3];
+      return {
+        type: "def",
+        tag,
+        raw: cap[0],
+        href,
+        title
+      };
+    }
+  }
+  table(src) {
+    const cap = this.rules.block.table.exec(src);
+    if (!cap) {
+      return;
+    }
+    if (!/[:|]/.test(cap[2])) {
+      return;
+    }
+    const headers = splitCells(cap[1]);
+    const aligns = cap[2].replace(/^\||\| *$/g, "").split("|");
+    const rows = cap[3] && cap[3].trim() ? cap[3].replace(/\n[ \t]*$/, "").split(`
+`) : [];
+    const item = {
+      type: "table",
+      raw: cap[0],
+      header: [],
+      align: [],
+      rows: []
+    };
+    if (headers.length !== aligns.length) {
+      return;
+    }
+    for (const align of aligns) {
+      if (/^ *-+: *$/.test(align)) {
+        item.align.push("right");
+      } else if (/^ *:-+: *$/.test(align)) {
+        item.align.push("center");
+      } else if (/^ *:-+ *$/.test(align)) {
+        item.align.push("left");
+      } else {
+        item.align.push(null);
+      }
+    }
+    for (const header of headers) {
+      item.header.push({
+        text: header,
+        tokens: this.lexer.inline(header)
+      });
+    }
+    for (const row of rows) {
+      item.rows.push(splitCells(row, item.header.length).map((cell) => {
+        return {
+          text: cell,
+          tokens: this.lexer.inline(cell)
+        };
+      }));
+    }
+    return item;
+  }
+  lheading(src) {
+    const cap = this.rules.block.lheading.exec(src);
+    if (cap) {
+      return {
+        type: "heading",
+        raw: cap[0],
+        depth: cap[2].charAt(0) === "=" ? 1 : 2,
+        text: cap[1],
+        tokens: this.lexer.inline(cap[1])
+      };
+    }
+  }
+  paragraph(src) {
+    const cap = this.rules.block.paragraph.exec(src);
+    if (cap) {
+      const text2 = cap[1].charAt(cap[1].length - 1) === `
+` ? cap[1].slice(0, -1) : cap[1];
+      return {
+        type: "paragraph",
+        raw: cap[0],
+        text: text2,
+        tokens: this.lexer.inline(text2)
+      };
+    }
+  }
+  text(src) {
+    const cap = this.rules.block.text.exec(src);
+    if (cap) {
+      return {
+        type: "text",
+        raw: cap[0],
+        text: cap[0],
+        tokens: this.lexer.inline(cap[0])
+      };
+    }
+  }
+  escape(src) {
+    const cap = this.rules.inline.escape.exec(src);
+    if (cap) {
+      return {
+        type: "escape",
+        raw: cap[0],
+        text: escape$1(cap[1])
+      };
+    }
+  }
+  tag(src) {
+    const cap = this.rules.inline.tag.exec(src);
+    if (cap) {
+      if (!this.lexer.state.inLink && /^<a /i.test(cap[0])) {
+        this.lexer.state.inLink = true;
+      } else if (this.lexer.state.inLink && /^<\/a>/i.test(cap[0])) {
+        this.lexer.state.inLink = false;
+      }
+      if (!this.lexer.state.inRawBlock && /^<(pre|code|kbd|script)(\s|>)/i.test(cap[0])) {
+        this.lexer.state.inRawBlock = true;
+      } else if (this.lexer.state.inRawBlock && /^<\/(pre|code|kbd|script)(\s|>)/i.test(cap[0])) {
+        this.lexer.state.inRawBlock = false;
+      }
+      return {
+        type: "html",
+        raw: cap[0],
+        inLink: this.lexer.state.inLink,
+        inRawBlock: this.lexer.state.inRawBlock,
+        block: false,
+        text: cap[0]
+      };
+    }
+  }
+  link(src) {
+    const cap = this.rules.inline.link.exec(src);
+    if (cap) {
+      const trimmedUrl = cap[2].trim();
+      if (!this.options.pedantic && /^</.test(trimmedUrl)) {
+        if (!/>$/.test(trimmedUrl)) {
+          return;
+        }
+        const rtrimSlash = rtrim(trimmedUrl.slice(0, -1), "\\");
+        if ((trimmedUrl.length - rtrimSlash.length) % 2 === 0) {
+          return;
+        }
+      } else {
+        const lastParenIndex = findClosingBracket(cap[2], "()");
+        if (lastParenIndex > -1) {
+          const start = cap[0].indexOf("!") === 0 ? 5 : 4;
+          const linkLen = start + cap[1].length + lastParenIndex;
+          cap[2] = cap[2].substring(0, lastParenIndex);
+          cap[0] = cap[0].substring(0, linkLen).trim();
+          cap[3] = "";
+        }
+      }
+      let href = cap[2];
+      let title = "";
+      if (this.options.pedantic) {
+        const link = /^([^'"]*[^\s])\s+(['"])(.*)\2/.exec(href);
+        if (link) {
+          href = link[1];
+          title = link[3];
+        }
+      } else {
+        title = cap[3] ? cap[3].slice(1, -1) : "";
+      }
+      href = href.trim();
+      if (/^</.test(href)) {
+        if (this.options.pedantic && !/>$/.test(trimmedUrl)) {
+          href = href.slice(1);
+        } else {
+          href = href.slice(1, -1);
+        }
+      }
+      return outputLink(cap, {
+        href: href ? href.replace(this.rules.inline.anyPunctuation, "$1") : href,
+        title: title ? title.replace(this.rules.inline.anyPunctuation, "$1") : title
+      }, cap[0], this.lexer);
+    }
+  }
+  reflink(src, links) {
+    let cap;
+    if ((cap = this.rules.inline.reflink.exec(src)) || (cap = this.rules.inline.nolink.exec(src))) {
+      const linkString = (cap[2] || cap[1]).replace(/\s+/g, " ");
+      const link = links[linkString.toLowerCase()];
+      if (!link) {
+        const text2 = cap[0].charAt(0);
+        return {
+          type: "text",
+          raw: text2,
+          text: text2
+        };
+      }
+      return outputLink(cap, link, cap[0], this.lexer);
+    }
+  }
+  emStrong(src, maskedSrc, prevChar = "") {
+    let match = this.rules.inline.emStrongLDelim.exec(src);
+    if (!match)
+      return;
+    if (match[3] && prevChar.match(/[\p{L}\p{N}]/u))
+      return;
+    const nextChar = match[1] || match[2] || "";
+    if (!nextChar || !prevChar || this.rules.inline.punctuation.exec(prevChar)) {
+      const lLength = [...match[0]].length - 1;
+      let rDelim, rLength, delimTotal = lLength, midDelimTotal = 0;
+      const endReg = match[0][0] === "*" ? this.rules.inline.emStrongRDelimAst : this.rules.inline.emStrongRDelimUnd;
+      endReg.lastIndex = 0;
+      maskedSrc = maskedSrc.slice(-1 * src.length + lLength);
+      while ((match = endReg.exec(maskedSrc)) != null) {
+        rDelim = match[1] || match[2] || match[3] || match[4] || match[5] || match[6];
+        if (!rDelim)
+          continue;
+        rLength = [...rDelim].length;
+        if (match[3] || match[4]) {
+          delimTotal += rLength;
+          continue;
+        } else if (match[5] || match[6]) {
+          if (lLength % 3 && !((lLength + rLength) % 3)) {
+            midDelimTotal += rLength;
+            continue;
+          }
+        }
+        delimTotal -= rLength;
+        if (delimTotal > 0)
+          continue;
+        rLength = Math.min(rLength, rLength + delimTotal + midDelimTotal);
+        const lastCharLength = [...match[0]][0].length;
+        const raw = src.slice(0, lLength + match.index + lastCharLength + rLength);
+        if (Math.min(lLength, rLength) % 2) {
+          const text3 = raw.slice(1, -1);
+          return {
+            type: "em",
+            raw,
+            text: text3,
+            tokens: this.lexer.inlineTokens(text3)
+          };
+        }
+        const text2 = raw.slice(2, -2);
+        return {
+          type: "strong",
+          raw,
+          text: text2,
+          tokens: this.lexer.inlineTokens(text2)
+        };
+      }
+    }
+  }
+  codespan(src) {
+    const cap = this.rules.inline.code.exec(src);
+    if (cap) {
+      let text2 = cap[2].replace(/\n/g, " ");
+      const hasNonSpaceChars = /[^ ]/.test(text2);
+      const hasSpaceCharsOnBothEnds = /^ /.test(text2) && / $/.test(text2);
+      if (hasNonSpaceChars && hasSpaceCharsOnBothEnds) {
+        text2 = text2.substring(1, text2.length - 1);
+      }
+      text2 = escape$1(text2, true);
+      return {
+        type: "codespan",
+        raw: cap[0],
+        text: text2
+      };
+    }
+  }
+  br(src) {
+    const cap = this.rules.inline.br.exec(src);
+    if (cap) {
+      return {
+        type: "br",
+        raw: cap[0]
+      };
+    }
+  }
+  del(src) {
+    const cap = this.rules.inline.del.exec(src);
+    if (cap) {
+      return {
+        type: "del",
+        raw: cap[0],
+        text: cap[2],
+        tokens: this.lexer.inlineTokens(cap[2])
+      };
+    }
+  }
+  autolink(src) {
+    const cap = this.rules.inline.autolink.exec(src);
+    if (cap) {
+      let text2, href;
+      if (cap[2] === "@") {
+        text2 = escape$1(cap[1]);
+        href = "mailto:" + text2;
+      } else {
+        text2 = escape$1(cap[1]);
+        href = text2;
+      }
+      return {
+        type: "link",
+        raw: cap[0],
+        text: text2,
+        href,
+        tokens: [
+          {
+            type: "text",
+            raw: text2,
+            text: text2
+          }
+        ]
+      };
+    }
+  }
+  url(src) {
+    let cap;
+    if (cap = this.rules.inline.url.exec(src)) {
+      let text2, href;
+      if (cap[2] === "@") {
+        text2 = escape$1(cap[0]);
+        href = "mailto:" + text2;
+      } else {
+        let prevCapZero;
+        do {
+          prevCapZero = cap[0];
+          cap[0] = this.rules.inline._backpedal.exec(cap[0])?.[0] ?? "";
+        } while (prevCapZero !== cap[0]);
+        text2 = escape$1(cap[0]);
+        if (cap[1] === "www.") {
+          href = "http://" + cap[0];
+        } else {
+          href = cap[0];
+        }
+      }
+      return {
+        type: "link",
+        raw: cap[0],
+        text: text2,
+        href,
+        tokens: [
+          {
+            type: "text",
+            raw: text2,
+            text: text2
+          }
+        ]
+      };
+    }
+  }
+  inlineText(src) {
+    const cap = this.rules.inline.text.exec(src);
+    if (cap) {
+      let text2;
+      if (this.lexer.state.inRawBlock) {
+        text2 = cap[0];
+      } else {
+        text2 = escape$1(cap[0]);
+      }
+      return {
+        type: "text",
+        raw: cap[0],
+        text: text2
+      };
+    }
+  }
+}
+var newline = /^(?: *(?:\n|$))+/;
+var blockCode = /^( {4}[^\n]+(?:\n(?: *(?:\n|$))*)?)+/;
+var fences = /^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/;
+var hr = /^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/;
+var heading = /^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/;
+var bullet = /(?:[*+-]|\d{1,9}[.)])/;
+var lheading = edit(/^(?!bull |blockCode|fences|blockquote|heading|html)((?:.|\n(?!\s*?\n|bull |blockCode|fences|blockquote|heading|html))+?)\n {0,3}(=+|-+) *(?:\n+|$)/).replace(/bull/g, bullet).replace(/blockCode/g, / {4}/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}/).replace(/html/g, / {0,3}<[^\n>]+>\n/).getRegex();
+var _paragraph = /^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table| +\n)[^\n]+)*)/;
+var blockText = /^[^\n]+/;
+var _blockLabel = /(?!\s*\])(?:\\.|[^\[\]\\])+/;
+var def = edit(/^ {0,3}\[(label)\]: *(?:\n *)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n *)?| *\n *)(title))? *(?:\n+|$)/).replace("label", _blockLabel).replace("title", /(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex();
+var list = edit(/^( {0,3}bull)([ \t][^\n]+?)?(?:\n|$)/).replace(/bull/g, bullet).getRegex();
+var _tag = "address|article|aside|base|basefont|blockquote|body|caption" + "|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption" + "|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe" + "|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option" + "|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title" + "|tr|track|ul";
+var _comment = /<!--(?:-?>|[\s\S]*?(?:-->|$))/;
+var html2 = edit("^ {0,3}(?:" + "<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n+|$)" + "|comment[^\\n]*(\\n+|$)" + "|<\\?[\\s\\S]*?(?:\\?>\\n*|$)" + "|<![A-Z][\\s\\S]*?(?:>\\n*|$)" + "|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>\\n*|$)" + "|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n *)+\\n|$)" + "|<(?!script|pre|style|textarea)([a-z][\\w-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n *)+\\n|$)" + "|</(?!script|pre|style|textarea)[a-z][\\w-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n *)+\\n|$)" + ")", "i").replace("comment", _comment).replace("tag", _tag).replace("attribute", / +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex();
+var paragraph = edit(_paragraph).replace("hr", hr).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("|table", "").replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", _tag).getRegex();
+var blockquote = edit(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph", paragraph).getRegex();
+var blockNormal = {
+  blockquote,
+  code: blockCode,
+  def,
+  fences,
+  heading,
+  hr,
+  html: html2,
+  lheading,
+  list,
+  newline,
+  paragraph,
+  table: noopTest,
+  text: blockText
+};
+var gfmTable = edit("^ *([^\\n ].*)\\n" + " {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)" + "(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr", hr).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("blockquote", " {0,3}>").replace("code", " {4}[^\\n]").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", _tag).getRegex();
+var blockGfm = {
+  ...blockNormal,
+  table: gfmTable,
+  paragraph: edit(_paragraph).replace("hr", hr).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("table", gfmTable).replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", _tag).getRegex()
+};
+var blockPedantic = {
+  ...blockNormal,
+  html: edit("^ *(?:comment *(?:\\n|\\s*$)" + "|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)" + `|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment", _comment).replace(/tag/g, "(?!(?:" + "a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub" + "|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)" + "\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(),
+  def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/,
+  heading: /^(#{1,6})(.*)(?:\n+|$)/,
+  fences: noopTest,
+  lheading: /^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/,
+  paragraph: edit(_paragraph).replace("hr", hr).replace("heading", ` *#{1,6} *[^
+]`).replace("lheading", lheading).replace("|table", "").replace("blockquote", " {0,3}>").replace("|fences", "").replace("|list", "").replace("|html", "").replace("|tag", "").getRegex()
+};
+var escape = /^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/;
+var inlineCode = /^(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/;
+var br = /^( {2,}|\\)\n(?!\s*$)/;
+var inlineText = /^(`+|[^`])(?:(?= {2,}\n)|[\s\S]*?(?:(?=[\\<!\[`*_]|\b_|$)|[^ ](?= {2,}\n)))/;
+var _punctuation = "\\p{P}\\p{S}";
+var punctuation = edit(/^((?![*_])[\spunctuation])/, "u").replace(/punctuation/g, _punctuation).getRegex();
+var blockSkip = /\[[^[\]]*?\]\([^\(\)]*?\)|`[^`]*?`|<[^<>]*?>/g;
+var emStrongLDelim = edit(/^(?:\*+(?:((?!\*)[punct])|[^\s*]))|^_+(?:((?!_)[punct])|([^\s_]))/, "u").replace(/punct/g, _punctuation).getRegex();
+var emStrongRDelimAst = edit("^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)" + "|[^*]+(?=[^*])" + "|(?!\\*)[punct](\\*+)(?=[\\s]|$)" + "|[^punct\\s](\\*+)(?!\\*)(?=[punct\\s]|$)" + "|(?!\\*)[punct\\s](\\*+)(?=[^punct\\s])" + "|[\\s](\\*+)(?!\\*)(?=[punct])" + "|(?!\\*)[punct](\\*+)(?!\\*)(?=[punct])" + "|[^punct\\s](\\*+)(?=[^punct\\s])", "gu").replace(/punct/g, _punctuation).getRegex();
+var emStrongRDelimUnd = edit("^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)" + "|[^_]+(?=[^_])" + "|(?!_)[punct](_+)(?=[\\s]|$)" + "|[^punct\\s](_+)(?!_)(?=[punct\\s]|$)" + "|(?!_)[punct\\s](_+)(?=[^punct\\s])" + "|[\\s](_+)(?!_)(?=[punct])" + "|(?!_)[punct](_+)(?!_)(?=[punct])", "gu").replace(/punct/g, _punctuation).getRegex();
+var anyPunctuation = edit(/\\([punct])/, "gu").replace(/punct/g, _punctuation).getRegex();
+var autolink = edit(/^<(scheme:[^\s\x00-\x1f<>]*|email)>/).replace("scheme", /[a-zA-Z][a-zA-Z0-9+.-]{1,31}/).replace("email", /[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])/).getRegex();
+var _inlineComment = edit(_comment).replace("(?:-->|$)", "-->").getRegex();
+var tag = edit("^comment" + "|^</[a-zA-Z][\\w:-]*\\s*>" + "|^<[a-zA-Z][\\w-]*(?:attribute)*?\\s*/?>" + "|^<\\?[\\s\\S]*?\\?>" + "|^<![a-zA-Z]+\\s[\\s\\S]*?>" + "|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>").replace("comment", _inlineComment).replace("attribute", /\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?/).getRegex();
+var _inlineLabel = /(?:\[(?:\\.|[^\[\]\\])*\]|\\.|`[^`]*`|[^\[\]\\`])*?/;
+var link = edit(/^!?\[(label)\]\(\s*(href)(?:\s+(title))?\s*\)/).replace("label", _inlineLabel).replace("href", /<(?:\\.|[^\n<>\\])+>|[^\s\x00-\x1f]*/).replace("title", /"(?:\\"?|[^"\\])*"|'(?:\\'?|[^'\\])*'|\((?:\\\)?|[^)\\])*\)/).getRegex();
+var reflink = edit(/^!?\[(label)\]\[(ref)\]/).replace("label", _inlineLabel).replace("ref", _blockLabel).getRegex();
+var nolink = edit(/^!?\[(ref)\](?:\[\])?/).replace("ref", _blockLabel).getRegex();
+var reflinkSearch = edit("reflink|nolink(?!\\()", "g").replace("reflink", reflink).replace("nolink", nolink).getRegex();
+var inlineNormal = {
+  _backpedal: noopTest,
+  anyPunctuation,
+  autolink,
+  blockSkip,
+  br,
+  code: inlineCode,
+  del: noopTest,
+  emStrongLDelim,
+  emStrongRDelimAst,
+  emStrongRDelimUnd,
+  escape,
+  link,
+  nolink,
+  punctuation,
+  reflink,
+  reflinkSearch,
+  tag,
+  text: inlineText,
+  url: noopTest
+};
+var inlinePedantic = {
+  ...inlineNormal,
+  link: edit(/^!?\[(label)\]\((.*?)\)/).replace("label", _inlineLabel).getRegex(),
+  reflink: edit(/^!?\[(label)\]\s*\[([^\]]*)\]/).replace("label", _inlineLabel).getRegex()
+};
+var inlineGfm = {
+  ...inlineNormal,
+  escape: edit(escape).replace("])", "~|])").getRegex(),
+  url: edit(/^((?:ftp|https?):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/, "i").replace("email", /[A-Za-z0-9._+-]+(@)[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![-_])/).getRegex(),
+  _backpedal: /(?:[^?!.,:;*_'"~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_'"~)]+(?!$))+/,
+  del: /^(~~?)(?=[^\s~])([\s\S]*?[^\s~])\1(?=[^~]|$)/,
+  text: /^([`~]+|[^`~])(?:(?= {2,}\n)|(?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)|[\s\S]*?(?:(?=[\\<!\[`*~_]|\b_|https?:\/\/|ftp:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)))/
+};
+var inlineBreaks = {
+  ...inlineGfm,
+  br: edit(br).replace("{2,}", "*").getRegex(),
+  text: edit(inlineGfm.text).replace("\\b_", "\\b_| {2,}\\n").replace(/\{2,\}/g, "*").getRegex()
+};
+var block = {
+  normal: blockNormal,
+  gfm: blockGfm,
+  pedantic: blockPedantic
+};
+var inline = {
+  normal: inlineNormal,
+  gfm: inlineGfm,
+  breaks: inlineBreaks,
+  pedantic: inlinePedantic
+};
+
+class _Lexer {
+  tokens;
+  options;
+  state;
+  tokenizer;
+  inlineQueue;
+  constructor(options) {
+    this.tokens = [];
+    this.tokens.links = Object.create(null);
+    this.options = options || _defaults;
+    this.options.tokenizer = this.options.tokenizer || new _Tokenizer;
+    this.tokenizer = this.options.tokenizer;
+    this.tokenizer.options = this.options;
+    this.tokenizer.lexer = this;
+    this.inlineQueue = [];
+    this.state = {
+      inLink: false,
+      inRawBlock: false,
+      top: true
+    };
+    const rules = {
+      block: block.normal,
+      inline: inline.normal
+    };
+    if (this.options.pedantic) {
+      rules.block = block.pedantic;
+      rules.inline = inline.pedantic;
+    } else if (this.options.gfm) {
+      rules.block = block.gfm;
+      if (this.options.breaks) {
+        rules.inline = inline.breaks;
+      } else {
+        rules.inline = inline.gfm;
+      }
+    }
+    this.tokenizer.rules = rules;
+  }
+  static get rules() {
+    return {
+      block,
+      inline
+    };
+  }
+  static lex(src, options) {
+    const lexer = new _Lexer(options);
+    return lexer.lex(src);
+  }
+  static lexInline(src, options) {
+    const lexer = new _Lexer(options);
+    return lexer.inlineTokens(src);
+  }
+  lex(src) {
+    src = src.replace(/\r\n|\r/g, `
+`);
+    this.blockTokens(src, this.tokens);
+    for (let i = 0;i < this.inlineQueue.length; i++) {
+      const next = this.inlineQueue[i];
+      this.inlineTokens(next.src, next.tokens);
+    }
+    this.inlineQueue = [];
+    return this.tokens;
+  }
+  blockTokens(src, tokens = []) {
+    if (this.options.pedantic) {
+      src = src.replace(/\t/g, "    ").replace(/^ +$/gm, "");
+    } else {
+      src = src.replace(/^( *)(\t+)/gm, (_, leading, tabs) => {
+        return leading + "    ".repeat(tabs.length);
+      });
+    }
+    let token;
+    let lastToken;
+    let cutSrc;
+    let lastParagraphClipped;
+    while (src) {
+      if (this.options.extensions && this.options.extensions.block && this.options.extensions.block.some((extTokenizer) => {
+        if (token = extTokenizer.call({ lexer: this }, src, tokens)) {
+          src = src.substring(token.raw.length);
+          tokens.push(token);
+          return true;
+        }
+        return false;
+      })) {
+        continue;
+      }
+      if (token = this.tokenizer.space(src)) {
+        src = src.substring(token.raw.length);
+        if (token.raw.length === 1 && tokens.length > 0) {
+          tokens[tokens.length - 1].raw += `
+`;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (token = this.tokenizer.code(src)) {
+        src = src.substring(token.raw.length);
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && (lastToken.type === "paragraph" || lastToken.type === "text")) {
+          lastToken.raw += `
+` + token.raw;
+          lastToken.text += `
+` + token.text;
+          this.inlineQueue[this.inlineQueue.length - 1].src = lastToken.text;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (token = this.tokenizer.fences(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.heading(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.hr(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.blockquote(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.list(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.html(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.def(src)) {
+        src = src.substring(token.raw.length);
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && (lastToken.type === "paragraph" || lastToken.type === "text")) {
+          lastToken.raw += `
+` + token.raw;
+          lastToken.text += `
+` + token.raw;
+          this.inlineQueue[this.inlineQueue.length - 1].src = lastToken.text;
+        } else if (!this.tokens.links[token.tag]) {
+          this.tokens.links[token.tag] = {
+            href: token.href,
+            title: token.title
+          };
+        }
+        continue;
+      }
+      if (token = this.tokenizer.table(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.lheading(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      cutSrc = src;
+      if (this.options.extensions && this.options.extensions.startBlock) {
+        let startIndex = Infinity;
+        const tempSrc = src.slice(1);
+        let tempStart;
+        this.options.extensions.startBlock.forEach((getStartIndex) => {
+          tempStart = getStartIndex.call({ lexer: this }, tempSrc);
+          if (typeof tempStart === "number" && tempStart >= 0) {
+            startIndex = Math.min(startIndex, tempStart);
+          }
+        });
+        if (startIndex < Infinity && startIndex >= 0) {
+          cutSrc = src.substring(0, startIndex + 1);
+        }
+      }
+      if (this.state.top && (token = this.tokenizer.paragraph(cutSrc))) {
+        lastToken = tokens[tokens.length - 1];
+        if (lastParagraphClipped && lastToken.type === "paragraph") {
+          lastToken.raw += `
+` + token.raw;
+          lastToken.text += `
+` + token.text;
+          this.inlineQueue.pop();
+          this.inlineQueue[this.inlineQueue.length - 1].src = lastToken.text;
+        } else {
+          tokens.push(token);
+        }
+        lastParagraphClipped = cutSrc.length !== src.length;
+        src = src.substring(token.raw.length);
+        continue;
+      }
+      if (token = this.tokenizer.text(src)) {
+        src = src.substring(token.raw.length);
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && lastToken.type === "text") {
+          lastToken.raw += `
+` + token.raw;
+          lastToken.text += `
+` + token.text;
+          this.inlineQueue.pop();
+          this.inlineQueue[this.inlineQueue.length - 1].src = lastToken.text;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (src) {
+        const errMsg = "Infinite loop on byte: " + src.charCodeAt(0);
+        if (this.options.silent) {
+          console.error(errMsg);
+          break;
+        } else {
+          throw new Error(errMsg);
+        }
+      }
+    }
+    this.state.top = true;
+    return tokens;
+  }
+  inline(src, tokens = []) {
+    this.inlineQueue.push({ src, tokens });
+    return tokens;
+  }
+  inlineTokens(src, tokens = []) {
+    let token, lastToken, cutSrc;
+    let maskedSrc = src;
+    let match;
+    let keepPrevChar, prevChar;
+    if (this.tokens.links) {
+      const links = Object.keys(this.tokens.links);
+      if (links.length > 0) {
+        while ((match = this.tokenizer.rules.inline.reflinkSearch.exec(maskedSrc)) != null) {
+          if (links.includes(match[0].slice(match[0].lastIndexOf("[") + 1, -1))) {
+            maskedSrc = maskedSrc.slice(0, match.index) + "[" + "a".repeat(match[0].length - 2) + "]" + maskedSrc.slice(this.tokenizer.rules.inline.reflinkSearch.lastIndex);
+          }
+        }
+      }
+    }
+    while ((match = this.tokenizer.rules.inline.blockSkip.exec(maskedSrc)) != null) {
+      maskedSrc = maskedSrc.slice(0, match.index) + "[" + "a".repeat(match[0].length - 2) + "]" + maskedSrc.slice(this.tokenizer.rules.inline.blockSkip.lastIndex);
+    }
+    while ((match = this.tokenizer.rules.inline.anyPunctuation.exec(maskedSrc)) != null) {
+      maskedSrc = maskedSrc.slice(0, match.index) + "++" + maskedSrc.slice(this.tokenizer.rules.inline.anyPunctuation.lastIndex);
+    }
+    while (src) {
+      if (!keepPrevChar) {
+        prevChar = "";
+      }
+      keepPrevChar = false;
+      if (this.options.extensions && this.options.extensions.inline && this.options.extensions.inline.some((extTokenizer) => {
+        if (token = extTokenizer.call({ lexer: this }, src, tokens)) {
+          src = src.substring(token.raw.length);
+          tokens.push(token);
+          return true;
+        }
+        return false;
+      })) {
+        continue;
+      }
+      if (token = this.tokenizer.escape(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.tag(src)) {
+        src = src.substring(token.raw.length);
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && token.type === "text" && lastToken.type === "text") {
+          lastToken.raw += token.raw;
+          lastToken.text += token.text;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (token = this.tokenizer.link(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.reflink(src, this.tokens.links)) {
+        src = src.substring(token.raw.length);
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && token.type === "text" && lastToken.type === "text") {
+          lastToken.raw += token.raw;
+          lastToken.text += token.text;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (token = this.tokenizer.emStrong(src, maskedSrc, prevChar)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.codespan(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.br(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.del(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (token = this.tokenizer.autolink(src)) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      if (!this.state.inLink && (token = this.tokenizer.url(src))) {
+        src = src.substring(token.raw.length);
+        tokens.push(token);
+        continue;
+      }
+      cutSrc = src;
+      if (this.options.extensions && this.options.extensions.startInline) {
+        let startIndex = Infinity;
+        const tempSrc = src.slice(1);
+        let tempStart;
+        this.options.extensions.startInline.forEach((getStartIndex) => {
+          tempStart = getStartIndex.call({ lexer: this }, tempSrc);
+          if (typeof tempStart === "number" && tempStart >= 0) {
+            startIndex = Math.min(startIndex, tempStart);
+          }
+        });
+        if (startIndex < Infinity && startIndex >= 0) {
+          cutSrc = src.substring(0, startIndex + 1);
+        }
+      }
+      if (token = this.tokenizer.inlineText(cutSrc)) {
+        src = src.substring(token.raw.length);
+        if (token.raw.slice(-1) !== "_") {
+          prevChar = token.raw.slice(-1);
+        }
+        keepPrevChar = true;
+        lastToken = tokens[tokens.length - 1];
+        if (lastToken && lastToken.type === "text") {
+          lastToken.raw += token.raw;
+          lastToken.text += token.text;
+        } else {
+          tokens.push(token);
+        }
+        continue;
+      }
+      if (src) {
+        const errMsg = "Infinite loop on byte: " + src.charCodeAt(0);
+        if (this.options.silent) {
+          console.error(errMsg);
+          break;
+        } else {
+          throw new Error(errMsg);
+        }
+      }
+    }
+    return tokens;
   }
 }
 
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-var React23 = __toESM(require_react(), 1);
+class _Renderer {
+  options;
+  constructor(options) {
+    this.options = options || _defaults;
+  }
+  code(code, infostring, escaped) {
+    const lang = (infostring || "").match(/^\S*/)?.[0];
+    code = code.replace(/\n$/, "") + `
+`;
+    if (!lang) {
+      return "<pre><code>" + (escaped ? code : escape$1(code, true)) + `</code></pre>
+`;
+    }
+    return '<pre><code class="language-' + escape$1(lang) + '">' + (escaped ? code : escape$1(code, true)) + `</code></pre>
+`;
+  }
+  blockquote(quote) {
+    return `<blockquote>
+${quote}</blockquote>
+`;
+  }
+  html(html3, block2) {
+    return html3;
+  }
+  heading(text2, level, raw) {
+    return `<h${level}>${text2}</h${level}>
+`;
+  }
+  hr() {
+    return `<hr>
+`;
+  }
+  list(body, ordered, start) {
+    const type = ordered ? "ol" : "ul";
+    const startatt = ordered && start !== 1 ? ' start="' + start + '"' : "";
+    return "<" + type + startatt + `>
+` + body + "</" + type + `>
+`;
+  }
+  listitem(text2, task, checked) {
+    return `<li>${text2}</li>
+`;
+  }
+  checkbox(checked) {
+    return "<input " + (checked ? 'checked="" ' : "") + 'disabled="" type="checkbox">';
+  }
+  paragraph(text2) {
+    return `<p>${text2}</p>
+`;
+  }
+  table(header, body) {
+    if (body)
+      body = `<tbody>${body}</tbody>`;
+    return `<table>
+` + `<thead>
+` + header + `</thead>
+` + body + `</table>
+`;
+  }
+  tablerow(content) {
+    return `<tr>
+${content}</tr>
+`;
+  }
+  tablecell(content, flags) {
+    const type = flags.header ? "th" : "td";
+    const tag2 = flags.align ? `<${type} align="${flags.align}">` : `<${type}>`;
+    return tag2 + content + `</${type}>
+`;
+  }
+  strong(text2) {
+    return `<strong>${text2}</strong>`;
+  }
+  em(text2) {
+    return `<em>${text2}</em>`;
+  }
+  codespan(text2) {
+    return `<code>${text2}</code>`;
+  }
+  br() {
+    return "<br>";
+  }
+  del(text2) {
+    return `<del>${text2}</del>`;
+  }
+  link(href, title, text2) {
+    const cleanHref = cleanUrl(href);
+    if (cleanHref === null) {
+      return text2;
+    }
+    href = cleanHref;
+    let out = '<a href="' + href + '"';
+    if (title) {
+      out += ' title="' + title + '"';
+    }
+    out += ">" + text2 + "</a>";
+    return out;
+  }
+  image(href, title, text2) {
+    const cleanHref = cleanUrl(href);
+    if (cleanHref === null) {
+      return text2;
+    }
+    href = cleanHref;
+    let out = `<img src="${href}" alt="${text2}"`;
+    if (title) {
+      out += ` title="${title}"`;
+    }
+    out += ">";
+    return out;
+  }
+  text(text2) {
+    return text2;
+  }
+}
+
+class _TextRenderer {
+  strong(text2) {
+    return text2;
+  }
+  em(text2) {
+    return text2;
+  }
+  codespan(text2) {
+    return text2;
+  }
+  del(text2) {
+    return text2;
+  }
+  html(text2) {
+    return text2;
+  }
+  text(text2) {
+    return text2;
+  }
+  link(href, title, text2) {
+    return "" + text2;
+  }
+  image(href, title, text2) {
+    return "" + text2;
+  }
+  br() {
+    return "";
+  }
+}
+
+class _Parser {
+  options;
+  renderer;
+  textRenderer;
+  constructor(options) {
+    this.options = options || _defaults;
+    this.options.renderer = this.options.renderer || new _Renderer;
+    this.renderer = this.options.renderer;
+    this.renderer.options = this.options;
+    this.textRenderer = new _TextRenderer;
+  }
+  static parse(tokens, options) {
+    const parser = new _Parser(options);
+    return parser.parse(tokens);
+  }
+  static parseInline(tokens, options) {
+    const parser = new _Parser(options);
+    return parser.parseInline(tokens);
+  }
+  parse(tokens, top = true) {
+    let out = "";
+    for (let i = 0;i < tokens.length; i++) {
+      const token = tokens[i];
+      if (this.options.extensions && this.options.extensions.renderers && this.options.extensions.renderers[token.type]) {
+        const genericToken = token;
+        const ret = this.options.extensions.renderers[genericToken.type].call({ parser: this }, genericToken);
+        if (ret !== false || !["space", "hr", "heading", "code", "table", "blockquote", "list", "html", "paragraph", "text"].includes(genericToken.type)) {
+          out += ret || "";
+          continue;
+        }
+      }
+      switch (token.type) {
+        case "space": {
+          continue;
+        }
+        case "hr": {
+          out += this.renderer.hr();
+          continue;
+        }
+        case "heading": {
+          const headingToken = token;
+          out += this.renderer.heading(this.parseInline(headingToken.tokens), headingToken.depth, unescape(this.parseInline(headingToken.tokens, this.textRenderer)));
+          continue;
+        }
+        case "code": {
+          const codeToken = token;
+          out += this.renderer.code(codeToken.text, codeToken.lang, !!codeToken.escaped);
+          continue;
+        }
+        case "table": {
+          const tableToken = token;
+          let header = "";
+          let cell = "";
+          for (let j = 0;j < tableToken.header.length; j++) {
+            cell += this.renderer.tablecell(this.parseInline(tableToken.header[j].tokens), { header: true, align: tableToken.align[j] });
+          }
+          header += this.renderer.tablerow(cell);
+          let body = "";
+          for (let j = 0;j < tableToken.rows.length; j++) {
+            const row = tableToken.rows[j];
+            cell = "";
+            for (let k = 0;k < row.length; k++) {
+              cell += this.renderer.tablecell(this.parseInline(row[k].tokens), { header: false, align: tableToken.align[k] });
+            }
+            body += this.renderer.tablerow(cell);
+          }
+          out += this.renderer.table(header, body);
+          continue;
+        }
+        case "blockquote": {
+          const blockquoteToken = token;
+          const body = this.parse(blockquoteToken.tokens);
+          out += this.renderer.blockquote(body);
+          continue;
+        }
+        case "list": {
+          const listToken = token;
+          const ordered = listToken.ordered;
+          const start = listToken.start;
+          const loose = listToken.loose;
+          let body = "";
+          for (let j = 0;j < listToken.items.length; j++) {
+            const item = listToken.items[j];
+            const checked = item.checked;
+            const task = item.task;
+            let itemBody = "";
+            if (item.task) {
+              const checkbox = this.renderer.checkbox(!!checked);
+              if (loose) {
+                if (item.tokens.length > 0 && item.tokens[0].type === "paragraph") {
+                  item.tokens[0].text = checkbox + " " + item.tokens[0].text;
+                  if (item.tokens[0].tokens && item.tokens[0].tokens.length > 0 && item.tokens[0].tokens[0].type === "text") {
+                    item.tokens[0].tokens[0].text = checkbox + " " + item.tokens[0].tokens[0].text;
+                  }
+                } else {
+                  item.tokens.unshift({
+                    type: "text",
+                    text: checkbox + " "
+                  });
+                }
+              } else {
+                itemBody += checkbox + " ";
+              }
+            }
+            itemBody += this.parse(item.tokens, loose);
+            body += this.renderer.listitem(itemBody, task, !!checked);
+          }
+          out += this.renderer.list(body, ordered, start);
+          continue;
+        }
+        case "html": {
+          const htmlToken = token;
+          out += this.renderer.html(htmlToken.text, htmlToken.block);
+          continue;
+        }
+        case "paragraph": {
+          const paragraphToken = token;
+          out += this.renderer.paragraph(this.parseInline(paragraphToken.tokens));
+          continue;
+        }
+        case "text": {
+          let textToken = token;
+          let body = textToken.tokens ? this.parseInline(textToken.tokens) : textToken.text;
+          while (i + 1 < tokens.length && tokens[i + 1].type === "text") {
+            textToken = tokens[++i];
+            body += `
+` + (textToken.tokens ? this.parseInline(textToken.tokens) : textToken.text);
+          }
+          out += top ? this.renderer.paragraph(body) : body;
+          continue;
+        }
+        default: {
+          const errMsg = 'Token with "' + token.type + '" type was not found.';
+          if (this.options.silent) {
+            console.error(errMsg);
+            return "";
+          } else {
+            throw new Error(errMsg);
+          }
+        }
+      }
+    }
+    return out;
+  }
+  parseInline(tokens, renderer) {
+    renderer = renderer || this.renderer;
+    let out = "";
+    for (let i = 0;i < tokens.length; i++) {
+      const token = tokens[i];
+      if (this.options.extensions && this.options.extensions.renderers && this.options.extensions.renderers[token.type]) {
+        const ret = this.options.extensions.renderers[token.type].call({ parser: this }, token);
+        if (ret !== false || !["escape", "html", "link", "image", "strong", "em", "codespan", "br", "del", "text"].includes(token.type)) {
+          out += ret || "";
+          continue;
+        }
+      }
+      switch (token.type) {
+        case "escape": {
+          const escapeToken = token;
+          out += renderer.text(escapeToken.text);
+          break;
+        }
+        case "html": {
+          const tagToken = token;
+          out += renderer.html(tagToken.text);
+          break;
+        }
+        case "link": {
+          const linkToken = token;
+          out += renderer.link(linkToken.href, linkToken.title, this.parseInline(linkToken.tokens, renderer));
+          break;
+        }
+        case "image": {
+          const imageToken = token;
+          out += renderer.image(imageToken.href, imageToken.title, imageToken.text);
+          break;
+        }
+        case "strong": {
+          const strongToken = token;
+          out += renderer.strong(this.parseInline(strongToken.tokens, renderer));
+          break;
+        }
+        case "em": {
+          const emToken = token;
+          out += renderer.em(this.parseInline(emToken.tokens, renderer));
+          break;
+        }
+        case "codespan": {
+          const codespanToken = token;
+          out += renderer.codespan(codespanToken.text);
+          break;
+        }
+        case "br": {
+          out += renderer.br();
+          break;
+        }
+        case "del": {
+          const delToken = token;
+          out += renderer.del(this.parseInline(delToken.tokens, renderer));
+          break;
+        }
+        case "text": {
+          const textToken = token;
+          out += renderer.text(textToken.text);
+          break;
+        }
+        default: {
+          const errMsg = 'Token with "' + token.type + '" type was not found.';
+          if (this.options.silent) {
+            console.error(errMsg);
+            return "";
+          } else {
+            throw new Error(errMsg);
+          }
+        }
+      }
+    }
+    return out;
+  }
+}
+
+class _Hooks {
+  options;
+  constructor(options) {
+    this.options = options || _defaults;
+  }
+  static passThroughHooks = new Set([
+    "preprocess",
+    "postprocess",
+    "processAllTokens"
+  ]);
+  preprocess(markdown) {
+    return markdown;
+  }
+  postprocess(html3) {
+    return html3;
+  }
+  processAllTokens(tokens) {
+    return tokens;
+  }
+}
+
+class Marked {
+  defaults = _getDefaults();
+  options = this.setOptions;
+  parse = this.#parseMarkdown(_Lexer.lex, _Parser.parse);
+  parseInline = this.#parseMarkdown(_Lexer.lexInline, _Parser.parseInline);
+  Parser = _Parser;
+  Renderer = _Renderer;
+  TextRenderer = _TextRenderer;
+  Lexer = _Lexer;
+  Tokenizer = _Tokenizer;
+  Hooks = _Hooks;
+  constructor(...args) {
+    this.use(...args);
+  }
+  walkTokens(tokens, callback) {
+    let values = [];
+    for (const token of tokens) {
+      values = values.concat(callback.call(this, token));
+      switch (token.type) {
+        case "table": {
+          const tableToken = token;
+          for (const cell of tableToken.header) {
+            values = values.concat(this.walkTokens(cell.tokens, callback));
+          }
+          for (const row of tableToken.rows) {
+            for (const cell of row) {
+              values = values.concat(this.walkTokens(cell.tokens, callback));
+            }
+          }
+          break;
+        }
+        case "list": {
+          const listToken = token;
+          values = values.concat(this.walkTokens(listToken.items, callback));
+          break;
+        }
+        default: {
+          const genericToken = token;
+          if (this.defaults.extensions?.childTokens?.[genericToken.type]) {
+            this.defaults.extensions.childTokens[genericToken.type].forEach((childTokens) => {
+              const tokens2 = genericToken[childTokens].flat(Infinity);
+              values = values.concat(this.walkTokens(tokens2, callback));
+            });
+          } else if (genericToken.tokens) {
+            values = values.concat(this.walkTokens(genericToken.tokens, callback));
+          }
+        }
+      }
+    }
+    return values;
+  }
+  use(...args) {
+    const extensions = this.defaults.extensions || { renderers: {}, childTokens: {} };
+    args.forEach((pack) => {
+      const opts = { ...pack };
+      opts.async = this.defaults.async || opts.async || false;
+      if (pack.extensions) {
+        pack.extensions.forEach((ext) => {
+          if (!ext.name) {
+            throw new Error("extension name required");
+          }
+          if ("renderer" in ext) {
+            const prevRenderer = extensions.renderers[ext.name];
+            if (prevRenderer) {
+              extensions.renderers[ext.name] = function(...args2) {
+                let ret = ext.renderer.apply(this, args2);
+                if (ret === false) {
+                  ret = prevRenderer.apply(this, args2);
+                }
+                return ret;
+              };
+            } else {
+              extensions.renderers[ext.name] = ext.renderer;
+            }
+          }
+          if ("tokenizer" in ext) {
+            if (!ext.level || ext.level !== "block" && ext.level !== "inline") {
+              throw new Error("extension level must be 'block' or 'inline'");
+            }
+            const extLevel = extensions[ext.level];
+            if (extLevel) {
+              extLevel.unshift(ext.tokenizer);
+            } else {
+              extensions[ext.level] = [ext.tokenizer];
+            }
+            if (ext.start) {
+              if (ext.level === "block") {
+                if (extensions.startBlock) {
+                  extensions.startBlock.push(ext.start);
+                } else {
+                  extensions.startBlock = [ext.start];
+                }
+              } else if (ext.level === "inline") {
+                if (extensions.startInline) {
+                  extensions.startInline.push(ext.start);
+                } else {
+                  extensions.startInline = [ext.start];
+                }
+              }
+            }
+          }
+          if ("childTokens" in ext && ext.childTokens) {
+            extensions.childTokens[ext.name] = ext.childTokens;
+          }
+        });
+        opts.extensions = extensions;
+      }
+      if (pack.renderer) {
+        const renderer = this.defaults.renderer || new _Renderer(this.defaults);
+        for (const prop in pack.renderer) {
+          if (!(prop in renderer)) {
+            throw new Error(`renderer '${prop}' does not exist`);
+          }
+          if (prop === "options") {
+            continue;
+          }
+          const rendererProp = prop;
+          const rendererFunc = pack.renderer[rendererProp];
+          const prevRenderer = renderer[rendererProp];
+          renderer[rendererProp] = (...args2) => {
+            let ret = rendererFunc.apply(renderer, args2);
+            if (ret === false) {
+              ret = prevRenderer.apply(renderer, args2);
+            }
+            return ret || "";
+          };
+        }
+        opts.renderer = renderer;
+      }
+      if (pack.tokenizer) {
+        const tokenizer = this.defaults.tokenizer || new _Tokenizer(this.defaults);
+        for (const prop in pack.tokenizer) {
+          if (!(prop in tokenizer)) {
+            throw new Error(`tokenizer '${prop}' does not exist`);
+          }
+          if (["options", "rules", "lexer"].includes(prop)) {
+            continue;
+          }
+          const tokenizerProp = prop;
+          const tokenizerFunc = pack.tokenizer[tokenizerProp];
+          const prevTokenizer = tokenizer[tokenizerProp];
+          tokenizer[tokenizerProp] = (...args2) => {
+            let ret = tokenizerFunc.apply(tokenizer, args2);
+            if (ret === false) {
+              ret = prevTokenizer.apply(tokenizer, args2);
+            }
+            return ret;
+          };
+        }
+        opts.tokenizer = tokenizer;
+      }
+      if (pack.hooks) {
+        const hooks = this.defaults.hooks || new _Hooks;
+        for (const prop in pack.hooks) {
+          if (!(prop in hooks)) {
+            throw new Error(`hook '${prop}' does not exist`);
+          }
+          if (prop === "options") {
+            continue;
+          }
+          const hooksProp = prop;
+          const hooksFunc = pack.hooks[hooksProp];
+          const prevHook = hooks[hooksProp];
+          if (_Hooks.passThroughHooks.has(prop)) {
+            hooks[hooksProp] = (arg) => {
+              if (this.defaults.async) {
+                return Promise.resolve(hooksFunc.call(hooks, arg)).then((ret2) => {
+                  return prevHook.call(hooks, ret2);
+                });
+              }
+              const ret = hooksFunc.call(hooks, arg);
+              return prevHook.call(hooks, ret);
+            };
+          } else {
+            hooks[hooksProp] = (...args2) => {
+              let ret = hooksFunc.apply(hooks, args2);
+              if (ret === false) {
+                ret = prevHook.apply(hooks, args2);
+              }
+              return ret;
+            };
+          }
+        }
+        opts.hooks = hooks;
+      }
+      if (pack.walkTokens) {
+        const walkTokens = this.defaults.walkTokens;
+        const packWalktokens = pack.walkTokens;
+        opts.walkTokens = function(token) {
+          let values = [];
+          values.push(packWalktokens.call(this, token));
+          if (walkTokens) {
+            values = values.concat(walkTokens.call(this, token));
+          }
+          return values;
+        };
+      }
+      this.defaults = { ...this.defaults, ...opts };
+    });
+    return this;
+  }
+  setOptions(opt) {
+    this.defaults = { ...this.defaults, ...opt };
+    return this;
+  }
+  lexer(src, options) {
+    return _Lexer.lex(src, options ?? this.defaults);
+  }
+  parser(tokens, options) {
+    return _Parser.parse(tokens, options ?? this.defaults);
+  }
+  #parseMarkdown(lexer, parser) {
+    return (src, options) => {
+      const origOpt = { ...options };
+      const opt = { ...this.defaults, ...origOpt };
+      if (this.defaults.async === true && origOpt.async === false) {
+        if (!opt.silent) {
+          console.warn("marked(): The async option was set to true by an extension. The async: false option sent to parse will be ignored.");
+        }
+        opt.async = true;
+      }
+      const throwError = this.#onError(!!opt.silent, !!opt.async);
+      if (typeof src === "undefined" || src === null) {
+        return throwError(new Error("marked(): input parameter is undefined or null"));
+      }
+      if (typeof src !== "string") {
+        return throwError(new Error("marked(): input parameter is of type " + Object.prototype.toString.call(src) + ", string expected"));
+      }
+      if (opt.hooks) {
+        opt.hooks.options = opt;
+      }
+      if (opt.async) {
+        return Promise.resolve(opt.hooks ? opt.hooks.preprocess(src) : src).then((src2) => lexer(src2, opt)).then((tokens) => opt.hooks ? opt.hooks.processAllTokens(tokens) : tokens).then((tokens) => opt.walkTokens ? Promise.all(this.walkTokens(tokens, opt.walkTokens)).then(() => tokens) : tokens).then((tokens) => parser(tokens, opt)).then((html3) => opt.hooks ? opt.hooks.postprocess(html3) : html3).catch(throwError);
+      }
+      try {
+        if (opt.hooks) {
+          src = opt.hooks.preprocess(src);
+        }
+        let tokens = lexer(src, opt);
+        if (opt.hooks) {
+          tokens = opt.hooks.processAllTokens(tokens);
+        }
+        if (opt.walkTokens) {
+          this.walkTokens(tokens, opt.walkTokens);
+        }
+        let html3 = parser(tokens, opt);
+        if (opt.hooks) {
+          html3 = opt.hooks.postprocess(html3);
+        }
+        return html3;
+      } catch (e) {
+        return throwError(e);
+      }
+    };
+  }
+  #onError(silent, async) {
+    return (e) => {
+      e.message += `
+Please report this to https://github.com/markedjs/marked.`;
+      if (silent) {
+        const msg = "<p>An error occurred:</p><pre>" + escape$1(e.message + "", true) + "</pre>";
+        if (async) {
+          return Promise.resolve(msg);
+        }
+        return msg;
+      }
+      if (async) {
+        return Promise.reject(e);
+      }
+      throw e;
+    };
+  }
+}
+var markedInstance = new Marked;
+function marked(src, opt) {
+  return markedInstance.parse(src, opt);
+}
+marked.options = marked.setOptions = function(options) {
+  markedInstance.setOptions(options);
+  marked.defaults = markedInstance.defaults;
+  changeDefaults(marked.defaults);
+  return marked;
+};
+marked.getDefaults = _getDefaults;
+marked.defaults = _defaults;
+marked.use = function(...args) {
+  markedInstance.use(...args);
+  marked.defaults = markedInstance.defaults;
+  changeDefaults(marked.defaults);
+  return marked;
+};
+marked.walkTokens = function(tokens, callback) {
+  return markedInstance.walkTokens(tokens, callback);
+};
+marked.parseInline = markedInstance.parseInline;
+marked.Parser = _Parser;
+marked.parser = _Parser.parse;
+marked.Renderer = _Renderer;
+marked.TextRenderer = _TextRenderer;
+marked.Lexer = _Lexer;
+marked.lexer = _Lexer.lex;
+marked.Tokenizer = _Tokenizer;
+marked.Hooks = _Hooks;
+marked.parse = marked;
+var options = marked.options;
+var setOptions = marked.setOptions;
+var use = marked.use;
+var walkTokens = marked.walkTokens;
+var parseInline = marked.parseInline;
+var parser = _Parser.parse;
+var lexer = _Lexer.lex;
+
+// src/digestify/surface/state/markdown.ts
+var SANITIZE_CONFIG = { USE_PROFILES: { html: true } };
+function renderMarkdown(md, deps) {
+  return deps.sanitize(deps.parse(md), SANITIZE_CONFIG);
+}
+var parseMarkdown = (md) => marked.parse(md, { async: false });
+var sanitize = (html3, config) => purify.sanitize(html3, config);
+var renderMd = (md) => renderMarkdown(md, { parse: parseMarkdown, sanitize });
+
+// src/digestify/surface/components/AnnotationLayer.tsx
+var import_react3 = __toESM(require_react(), 1);
+var import_react_dom = __toESM(require_react_dom(), 1);
+
+// src/digestify/surface/state/comments.ts
+var CHIP_ANCHOR_CHARS = 60;
+var EDITOR_ANCHOR_CHARS = 80;
+function truncate(text2, max) {
+  return text2.slice(0, max) + (text2.length > max ? "…" : "");
+}
+var commentId = (seq) => `c${seq}`;
+var stripIds = (comments) => comments.map(({ anchor, text: text2 }) => ({ anchor, text: text2 }));
+function updateCommentText(comments, id, text2) {
+  return comments.map((c) => c.id === id ? { ...c, text: text2 } : c);
+}
+function removeComment(comments, id) {
+  return comments.filter((c) => c.id !== id);
+}
+var BLOCK_SELECTOR = "p,li,blockquote,pre,h1,h2,h3,h4,h5,h6";
+var anchorNeedle = (anchor) => anchor.slice(0, CHIP_ANCHOR_CHARS);
+
+// src/digestify/surface/components/CommentChip.tsx
+var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
+function CommentChip({ comment, onEdit, onDelete }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
+    "data-comment-id": comment.id,
+    className: "my-2 inline-block max-w-full rounded-[10px] border border-note-edge bg-note px-3 py-2 text-[13px] shadow-[0_8px_18px_color-mix(in_srgb,var(--color-brand)_14%,transparent)]",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("span", {
+        className: "text-ink-dim italic",
+        children: `"${truncate(comment.anchor, CHIP_ANCHOR_CHARS)}"`
+      }, undefined, false, undefined, this),
+      ": ",
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("span", {
+        className: "break-words whitespace-pre-wrap",
+        children: comment.text
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
+        className: "mt-1.5 flex gap-1",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ChipAction, {
+            onClick: onEdit,
+            children: "Edit"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ChipAction, {
+            onClick: onDelete,
+            children: "Delete"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ChipAction({ onClick, children }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("button", {
+    type: "button",
+    onClick,
+    className: "cursor-pointer rounded border-0 bg-transparent px-1.5 py-0.5 text-[11px] font-extrabold tracking-[0.04em] text-brand-ink uppercase opacity-55 hover:bg-[color-mix(in_srgb,var(--color-brand-ink)_8%,transparent)] hover:opacity-100",
+    children
+  }, undefined, false, undefined, this);
+}
+
+// src/digestify/surface/components/CommentEditor.tsx
+var import_react2 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/button/Button.mjs
+var React10 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/use-button/useButton.mjs
+var React6 = __toESM(require_react(), 1);
 
 // node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
 function hasWindow() {
   return typeof window !== "undefined";
 }
-function getNodeName(node) {
-  if (isNode(node)) {
-    return (node.nodeName || "").toLowerCase();
-  }
-  return "#document";
-}
 function getWindow(node) {
   var _node$ownerDocument;
   return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? undefined : _node$ownerDocument.defaultView) || window;
-}
-function getDocumentElement(node) {
-  var _ref;
-  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null ? undefined : _ref.documentElement;
-}
-function isNode(value) {
-  if (!hasWindow()) {
-    return false;
-  }
-  return value instanceof Node || value instanceof getWindow(value).Node;
-}
-function isElement(value) {
-  if (!hasWindow()) {
-    return false;
-  }
-  return value instanceof Element || value instanceof getWindow(value).Element;
 }
 function isHTMLElement(value) {
   if (!hasWindow()) {
@@ -17555,607 +33930,24 @@ function isHTMLElement(value) {
   }
   return value instanceof HTMLElement || value instanceof getWindow(value).HTMLElement;
 }
-function isShadowRoot(value) {
-  if (!hasWindow() || typeof ShadowRoot === "undefined") {
-    return false;
-  }
-  return value instanceof ShadowRoot || value instanceof getWindow(value).ShadowRoot;
-}
-function isOverflowElement(element) {
-  const {
-    overflow,
-    overflowX,
-    overflowY,
-    display
-  } = getComputedStyle2(element);
-  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && display !== "inline" && display !== "contents";
-}
-function isLastTraversableNode(node) {
-  return /^(html|body|#document)$/.test(getNodeName(node));
-}
-function getComputedStyle2(element) {
-  return getWindow(element).getComputedStyle(element);
-}
-function getParentNode(node) {
-  if (getNodeName(node) === "html") {
-    return node;
-  }
-  const result = node.assignedSlot || node.parentNode || isShadowRoot(node) && node.host || getDocumentElement(node);
-  return isShadowRoot(result) ? result.host : result;
-}
 
-// node_modules/@base-ui/utils/addEventListener.mjs
-function addEventListener(target, type, listener, options) {
-  target.addEventListener(type, listener, options);
-  return () => {
-    target.removeEventListener(type, listener, options);
-  };
-}
-
-// node_modules/@base-ui/utils/platform/parts.mjs
-var exports_parts = {};
-__export(exports_parts, {
-  screenReader: () => exports_screen_reader,
-  os: () => exports_os,
-  env: () => exports_env,
-  engine: () => exports_engine
-});
-
-// node_modules/@base-ui/utils/platform/os.mjs
-var exports_os = {};
-__export(exports_os, {
-  windows: () => windows,
-  mac: () => mac,
-  linux: () => linux,
-  ios: () => ios,
-  apple: () => apple,
-  android: () => android
-});
-
-// node_modules/@base-ui/utils/platform/shared.mjs
-function readRawData() {
-  if (typeof navigator === "undefined") {
-    return {
-      userAgent: "",
-      platform: "",
-      maxTouchPoints: 0
-    };
-  }
-  if (true) {
-    const uaData = navigator.userAgentData;
-    if (uaData && Array.isArray(uaData.brands)) {
-      return {
-        userAgent: uaData.brands.map(({
-          brand,
-          version
-        }) => `${brand}/${version}`).join(" "),
-        platform: uaData.platform ?? navigator.platform ?? "",
-        maxTouchPoints: navigator.maxTouchPoints ?? 0
-      };
-    }
-  }
-  return {
-    userAgent: navigator.userAgent,
-    platform: navigator.platform ?? "",
-    maxTouchPoints: navigator.maxTouchPoints ?? 0
-  };
-}
-var {
-  userAgent,
-  platform,
-  maxTouchPoints
-} = readRawData();
-var lowerUserAgent = userAgent.toLowerCase();
-var lowerPlatform = platform.toLowerCase();
-
-// node_modules/@base-ui/utils/platform/os.mjs
-var ios = /^i(os$|p)/.test(lowerPlatform) || lowerPlatform === "macintel" && maxTouchPoints > 1;
-var ANDROID_STRING = "android";
-var android = lowerPlatform === ANDROID_STRING || lowerUserAgent.includes(ANDROID_STRING);
-var mac = !ios && lowerPlatform.startsWith("mac");
-var windows = lowerPlatform.startsWith("win");
-var linux = !android && /^(linux|chrome os)/.test(lowerPlatform);
-var apple = mac || ios;
-// node_modules/@base-ui/utils/platform/engine.mjs
-var exports_engine = {};
-__export(exports_engine, {
-  webkit: () => webkit,
-  gecko: () => gecko,
-  blink: () => blink
-});
-var webkit = typeof CSS !== "undefined" && !!CSS.supports?.("-webkit-backdrop-filter:none");
-var gecko = !webkit && lowerUserAgent.includes("firefox");
-var blink = !webkit && lowerUserAgent.includes("chrom");
-// node_modules/@base-ui/utils/platform/screen-reader.mjs
-var exports_screen_reader = {};
-__export(exports_screen_reader, {
-  voiceOver: () => voiceOver
-});
-var voiceOver = apple;
-// node_modules/@base-ui/utils/platform/env.mjs
-var exports_env = {};
-__export(exports_env, {
-  jsdom: () => jsdom
-});
-var jsdom = /jsdom|happydom/.test(lowerUserAgent);
-// node_modules/@base-ui/utils/owner.mjs
-function ownerDocument(node) {
-  return node?.ownerDocument || document;
-}
-
-// node_modules/@base-ui/utils/useIsoLayoutEffect.mjs
-var React2 = __toESM(require_react(), 1);
-"use client";
-var noop = () => {};
-var useIsoLayoutEffect = typeof document !== "undefined" ? React2.useLayoutEffect : noop;
+// node_modules/@base-ui/utils/safeReact.mjs
+var React = __toESM(require_react(), 1);
+var SafeReact = {
+  ...React
+};
 
 // node_modules/@base-ui/utils/useRefWithInit.mjs
-var React3 = __toESM(require_react(), 1);
+var React2 = __toESM(require_react(), 1);
 "use client";
 var UNINITIALIZED = {};
 function useRefWithInit(init, initArg) {
-  const ref = React3.useRef(UNINITIALIZED);
+  const ref = React2.useRef(UNINITIALIZED);
   if (ref.current === UNINITIALIZED) {
     ref.current = init(initArg);
   }
   return ref;
 }
-
-// node_modules/@base-ui/utils/useOnMount.mjs
-var React4 = __toESM(require_react(), 1);
-"use client";
-var EMPTY = [];
-function useOnMount(fn) {
-  React4.useEffect(fn, EMPTY);
-}
-
-// node_modules/@base-ui/utils/useTimeout.mjs
-"use client";
-var EMPTY2 = 0;
-
-class Timeout {
-  static create() {
-    return new Timeout;
-  }
-  currentId = EMPTY2;
-  start(delay, fn) {
-    this.clear();
-    this.currentId = setTimeout(() => {
-      this.currentId = EMPTY2;
-      fn();
-    }, delay);
-  }
-  isStarted() {
-    return this.currentId !== EMPTY2;
-  }
-  clear = () => {
-    if (this.currentId !== EMPTY2) {
-      clearTimeout(this.currentId);
-      this.currentId = EMPTY2;
-    }
-  };
-  disposeEffect = () => {
-    return this.clear;
-  };
-}
-function useTimeout() {
-  const timeout = useRefWithInit(Timeout.create).current;
-  useOnMount(timeout.disposeEffect);
-  return timeout;
-}
-
-// node_modules/@base-ui/utils/useAnimationFrame.mjs
-"use client";
-var EMPTY3 = null;
-var LAST_RAF = globalThis.requestAnimationFrame;
-
-class Scheduler {
-  callbacks = [];
-  callbacksCount = 0;
-  nextId = 1;
-  startId = 1;
-  isScheduled = false;
-  tick = (timestamp) => {
-    this.isScheduled = false;
-    const currentCallbacks = this.callbacks;
-    const currentCallbacksCount = this.callbacksCount;
-    this.callbacks = [];
-    this.callbacksCount = 0;
-    this.startId = this.nextId;
-    if (currentCallbacksCount > 0) {
-      for (let i = 0;i < currentCallbacks.length; i += 1) {
-        currentCallbacks[i]?.(timestamp);
-      }
-    }
-  };
-  request(fn) {
-    const id = this.nextId;
-    this.nextId += 1;
-    this.callbacks.push(fn);
-    this.callbacksCount += 1;
-    const didRAFChange = LAST_RAF !== requestAnimationFrame && (LAST_RAF = requestAnimationFrame, true);
-    if (!this.isScheduled || didRAFChange) {
-      requestAnimationFrame(this.tick);
-      this.isScheduled = true;
-    }
-    return id;
-  }
-  cancel(id) {
-    const index = id - this.startId;
-    if (index < 0 || index >= this.callbacks.length) {
-      return;
-    }
-    this.callbacks[index] = null;
-    this.callbacksCount -= 1;
-  }
-}
-var scheduler = new Scheduler;
-
-class AnimationFrame {
-  static create() {
-    return new AnimationFrame;
-  }
-  static request(fn) {
-    return scheduler.request(fn);
-  }
-  static cancel(id) {
-    return scheduler.cancel(id);
-  }
-  currentId = EMPTY3;
-  request(fn) {
-    this.cancel();
-    this.currentId = scheduler.request(() => {
-      this.currentId = EMPTY3;
-      fn();
-    });
-  }
-  cancel = () => {
-    if (this.currentId !== EMPTY3) {
-      scheduler.cancel(this.currentId);
-      this.currentId = EMPTY3;
-    }
-  };
-  disposeEffect = () => {
-    return this.cancel;
-  };
-}
-function useAnimationFrame() {
-  const timeout = useRefWithInit(AnimationFrame.create).current;
-  useOnMount(timeout.disposeEffect);
-  return timeout;
-}
-
-// node_modules/@base-ui/utils/empty.mjs
-function NOOP() {}
-var EMPTY_ARRAY = Object.freeze([]);
-var EMPTY_OBJECT = Object.freeze({});
-
-// node_modules/@base-ui/utils/useScrollLock.mjs
-"use client";
-var originalHtmlStyles = {};
-var originalBodyStyles = {};
-var originalHtmlScrollBehavior = "";
-function hasInsetScrollbars(referenceElement) {
-  if (typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const win = getWindow(doc);
-  return win.innerWidth - doc.documentElement.clientWidth > 0;
-}
-function supportsStableScrollbarGutter(referenceElement) {
-  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
-  if (!supported || typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const scrollContainer = isOverflowElement(html) ? html : body;
-  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
-  const originalHtmlStyleGutter = html.style.scrollbarGutter;
-  html.style.scrollbarGutter = "stable";
-  scrollContainer.style.overflowY = "scroll";
-  const before = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = "hidden";
-  const after = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
-  html.style.scrollbarGutter = originalHtmlStyleGutter;
-  return before === after;
-}
-function preventScrollOverlayScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const elementToLock = isOverflowElement(html) ? html : body;
-  const originalElementToLockStyles = {
-    overflowY: elementToLock.style.overflowY,
-    overflowX: elementToLock.style.overflowX
-  };
-  Object.assign(elementToLock.style, {
-    overflowY: "hidden",
-    overflowX: "hidden"
-  });
-  return () => {
-    Object.assign(elementToLock.style, originalElementToLockStyles);
-  };
-}
-function preventScrollInsetScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const win = getWindow(html);
-  let scrollTop = 0;
-  let scrollLeft = 0;
-  let updateGutterOnly = false;
-  const resizeFrame = AnimationFrame.create();
-  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
-    return () => {};
-  }
-  function lockScroll() {
-    const htmlStyles = win.getComputedStyle(html);
-    const bodyStyles = win.getComputedStyle(body);
-    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
-    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
-    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
-    scrollTop = html.scrollTop;
-    scrollLeft = html.scrollLeft;
-    originalHtmlStyles = {
-      scrollbarGutter: html.style.scrollbarGutter,
-      overflowY: html.style.overflowY,
-      overflowX: html.style.overflowX
-    };
-    originalHtmlScrollBehavior = html.style.scrollBehavior;
-    originalBodyStyles = {
-      position: body.style.position,
-      height: body.style.height,
-      width: body.style.width,
-      boxSizing: body.style.boxSizing,
-      overflowY: body.style.overflowY,
-      overflowX: body.style.overflowX,
-      scrollBehavior: body.style.scrollBehavior
-    };
-    const isScrollableY = html.scrollHeight > html.clientHeight;
-    const isScrollableX = html.scrollWidth > html.clientWidth;
-    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
-    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
-    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
-    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
-    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
-    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
-    const elementToLock = isOverflowElement(html) ? html : body;
-    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
-    if (updateGutterOnly) {
-      html.style.scrollbarGutter = scrollbarGutterValue;
-      elementToLock.style.overflowY = "hidden";
-      elementToLock.style.overflowX = "hidden";
-      return;
-    }
-    Object.assign(html.style, {
-      scrollbarGutter: scrollbarGutterValue,
-      overflowY: "hidden",
-      overflowX: "hidden"
-    });
-    if (isScrollableY || hasConstantOverflowY) {
-      html.style.overflowY = "scroll";
-    }
-    if (isScrollableX || hasConstantOverflowX) {
-      html.style.overflowX = "scroll";
-    }
-    Object.assign(body.style, {
-      position: "relative",
-      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
-      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
-      boxSizing: "border-box",
-      overflow: "hidden",
-      scrollBehavior: "unset"
-    });
-    body.scrollTop = scrollTop;
-    body.scrollLeft = scrollLeft;
-    html.setAttribute("data-base-ui-scroll-locked", "");
-    html.style.scrollBehavior = "unset";
-  }
-  function cleanup() {
-    Object.assign(html.style, originalHtmlStyles);
-    Object.assign(body.style, originalBodyStyles);
-    if (!updateGutterOnly) {
-      html.scrollTop = scrollTop;
-      html.scrollLeft = scrollLeft;
-      html.removeAttribute("data-base-ui-scroll-locked");
-      html.style.scrollBehavior = originalHtmlScrollBehavior;
-    }
-  }
-  function handleResize() {
-    cleanup();
-    resizeFrame.request(lockScroll);
-  }
-  lockScroll();
-  const unsubscribeResize = addEventListener(win, "resize", handleResize);
-  return () => {
-    resizeFrame.cancel();
-    cleanup();
-    if (typeof win.removeEventListener === "function") {
-      unsubscribeResize();
-    }
-  };
-}
-
-class ScrollLocker {
-  lockCount = 0;
-  restore = null;
-  timeoutLock = Timeout.create();
-  timeoutUnlock = Timeout.create();
-  acquire(referenceElement) {
-    this.lockCount += 1;
-    if (this.lockCount === 1 && this.restore === null) {
-      this.timeoutLock.start(0, () => this.lock(referenceElement));
-    }
-    return this.release;
-  }
-  release = () => {
-    this.lockCount -= 1;
-    if (this.lockCount === 0 && this.restore) {
-      this.timeoutUnlock.start(0, this.unlock);
-    }
-  };
-  unlock = () => {
-    if (this.lockCount === 0 && this.restore) {
-      this.restore?.();
-      this.restore = null;
-    }
-  };
-  lock(referenceElement) {
-    if (this.lockCount === 0 || this.restore !== null) {
-      return;
-    }
-    const doc = ownerDocument(referenceElement);
-    const html = doc.documentElement;
-    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
-    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
-      this.restore = NOOP;
-      return;
-    }
-    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
-    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
-  }
-}
-var SCROLL_LOCKER = new ScrollLocker;
-function useScrollLock(enabled = true, referenceElement = null) {
-  useIsoLayoutEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    return SCROLL_LOCKER.acquire(referenceElement);
-  }, [enabled, referenceElement]);
-}
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
-var React13 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/mergeCleanups.mjs
-function mergeCleanups(...cleanups) {
-  return () => {
-    for (let i = 0;i < cleanups.length; i += 1) {
-      const cleanup = cleanups[i];
-      if (cleanup) {
-        cleanup();
-      }
-    }
-  };
-}
-
-// node_modules/@base-ui/utils/useMergedRefs.mjs
-function useMergedRefs(a, b, c, d) {
-  const forkRef = useRefWithInit(createForkRef).current;
-  if (didChange(forkRef, a, b, c, d)) {
-    update(forkRef, [a, b, c, d]);
-  }
-  return forkRef.callback;
-}
-function useMergedRefsN(refs) {
-  const forkRef = useRefWithInit(createForkRef).current;
-  if (didChangeN(forkRef, refs)) {
-    update(forkRef, refs);
-  }
-  return forkRef.callback;
-}
-function createForkRef() {
-  return {
-    callback: null,
-    cleanup: null,
-    refs: []
-  };
-}
-function didChange(forkRef, a, b, c, d) {
-  return forkRef.refs[0] !== a || forkRef.refs[1] !== b || forkRef.refs[2] !== c || forkRef.refs[3] !== d;
-}
-function didChangeN(forkRef, newRefs) {
-  return forkRef.refs.length !== newRefs.length || forkRef.refs.some((ref, index) => ref !== newRefs[index]);
-}
-function update(forkRef, refs) {
-  forkRef.refs = refs;
-  if (refs.every((ref) => ref == null)) {
-    forkRef.callback = null;
-    return;
-  }
-  forkRef.callback = (instance) => {
-    if (forkRef.cleanup) {
-      forkRef.cleanup();
-      forkRef.cleanup = null;
-    }
-    if (instance != null) {
-      const cleanupCallbacks = Array(refs.length).fill(null);
-      for (let i = 0;i < refs.length; i += 1) {
-        const ref = refs[i];
-        if (ref == null) {
-          continue;
-        }
-        switch (typeof ref) {
-          case "function": {
-            const refCleanup = ref(instance);
-            if (typeof refCleanup === "function") {
-              cleanupCallbacks[i] = refCleanup;
-            }
-            break;
-          }
-          case "object": {
-            ref.current = instance;
-            break;
-          }
-          default:
-        }
-      }
-      forkRef.cleanup = () => {
-        for (let i = 0;i < refs.length; i += 1) {
-          const ref = refs[i];
-          if (ref == null) {
-            continue;
-          }
-          switch (typeof ref) {
-            case "function": {
-              const cleanupCallback = cleanupCallbacks[i];
-              if (typeof cleanupCallback === "function") {
-                cleanupCallback();
-              } else {
-                ref(null);
-              }
-              break;
-            }
-            case "object": {
-              ref.current = null;
-              break;
-            }
-            default:
-          }
-        }
-      };
-    }
-  };
-}
-
-// node_modules/@base-ui/utils/useValueAsRef.mjs
-"use client";
-function useValueAsRef(value) {
-  const latest = useRefWithInit(createLatestRef, value).current;
-  latest.next = value;
-  useIsoLayoutEffect(latest.effect);
-  return latest;
-}
-function createLatestRef(value) {
-  const latest = {
-    current: value,
-    next: value,
-    effect: () => {
-      latest.current = latest.next;
-    }
-  };
-  return latest;
-}
-
-// node_modules/@base-ui/utils/safeReact.mjs
-var React5 = __toESM(require_react(), 1);
-var SafeReact = {
-  ...React5
-};
 
 // node_modules/@base-ui/utils/useStableCallback.mjs
 "use client";
@@ -18184,705 +33976,26 @@ function assertNotCalled() {
   }
 }
 
-// node_modules/@base-ui/react/utils/FocusGuard.mjs
-var React6 = __toESM(require_react(), 1);
+// node_modules/@base-ui/utils/error.mjs
+var set;
+if (true) {
+  set = new Set;
+}
+function error(...messages) {
+  if (true) {
+    const messageKey = messages.join(" ");
+    if (!set.has(messageKey)) {
+      set.add(messageKey);
+      console.error(`Base UI: ${messageKey}`);
+    }
+  }
+}
 
-// node_modules/@base-ui/utils/visuallyHidden.mjs
-var visuallyHiddenBase = {
-  clipPath: "inset(50%)",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  border: 0,
-  padding: 0,
-  width: 1,
-  height: 1,
-  margin: -1
-};
-var visuallyHidden = {
-  ...visuallyHiddenBase,
-  position: "fixed",
-  top: 0,
-  left: 0
-};
-var visuallyHiddenInput = {
-  ...visuallyHiddenBase,
-  position: "absolute"
-};
-
-// node_modules/@base-ui/react/utils/FocusGuard.mjs
-var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+// node_modules/@base-ui/utils/useIsoLayoutEffect.mjs
+var React3 = __toESM(require_react(), 1);
 "use client";
-var FocusGuard = /* @__PURE__ */ React6.forwardRef(function FocusGuard2(props, ref) {
-  const [role, setRole] = React6.useState();
-  useIsoLayoutEffect(() => {
-    if (exports_parts.screenReader.voiceOver && exports_parts.engine.webkit) {
-      setRole("button");
-    }
-  }, []);
-  const restProps = {
-    tabIndex: 0,
-    role
-  };
-  return /* @__PURE__ */ import_jsx_runtime.jsx("span", {
-    ...props,
-    ref,
-    style: visuallyHidden,
-    "aria-hidden": role ? undefined : true,
-    ...restProps,
-    "data-base-ui-focus-guard": ""
-  });
-});
-if (true)
-  FocusGuard.displayName = "FocusGuard";
-
-// node_modules/@base-ui/react/floating-ui-react/utils/constants.mjs
-var FOCUSABLE_ATTRIBUTE = "data-base-ui-focusable";
-var TYPEABLE_SELECTOR = "input:not([type='hidden']):not([disabled])," + "[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
-
-// node_modules/@base-ui/react/internals/shadowDom.mjs
-function activeElement(doc) {
-  let element = doc.activeElement;
-  while (element?.shadowRoot?.activeElement != null) {
-    element = element.shadowRoot.activeElement;
-  }
-  return element;
-}
-function contains(parent, child) {
-  if (!parent || !child) {
-    return false;
-  }
-  const rootNode = child.getRootNode?.();
-  if (parent.contains(child)) {
-    return true;
-  }
-  if (rootNode && isShadowRoot(rootNode)) {
-    let next = child;
-    while (next) {
-      if (parent === next) {
-        return true;
-      }
-      next = next.parentNode || next.host;
-    }
-  }
-  return false;
-}
-function getTarget(event) {
-  if ("composedPath" in event) {
-    return event.composedPath()[0];
-  }
-  return event.target;
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/element.mjs
-function isEventTargetWithin(event, node) {
-  if (node == null) {
-    return false;
-  }
-  if ("composedPath" in event) {
-    return event.composedPath().includes(node);
-  }
-  const eventAgain = event;
-  return eventAgain.target != null && node.contains(eventAgain.target);
-}
-function isRootElement(element) {
-  return element.matches("html,body");
-}
-function isTypeableElement(element) {
-  return isHTMLElement(element) && element.matches(TYPEABLE_SELECTOR);
-}
-function isTypeableCombobox(element) {
-  if (!element) {
-    return false;
-  }
-  return element.getAttribute("role") === "combobox" && isTypeableElement(element);
-}
-function getFloatingFocusElement(floatingElement) {
-  if (!floatingElement) {
-    return null;
-  }
-  return floatingElement.hasAttribute(FOCUSABLE_ATTRIBUTE) ? floatingElement : floatingElement.querySelector(`[${FOCUSABLE_ATTRIBUTE}]`) || floatingElement;
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/event.mjs
-function stopEvent(event) {
-  event.preventDefault();
-  event.stopPropagation();
-}
-function isReactEvent(event) {
-  return "nativeEvent" in event;
-}
-function isVirtualClick(event) {
-  if (event.pointerType === "" && event.isTrusted) {
-    return true;
-  }
-  if (exports_parts.os.android && event.pointerType) {
-    return event.type === "click" && event.buttons === 1;
-  }
-  return event.detail === 0 && !event.pointerType;
-}
-function isVirtualPointerEvent(event) {
-  if (exports_parts.env.jsdom) {
-    return false;
-  }
-  return !exports_parts.os.android && event.width === 0 && event.height === 0 || exports_parts.os.android && event.width === 1 && event.height === 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "mouse" || event.width < 1 && event.height < 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "touch";
-}
-function isMouseLikePointerType(pointerType, strict) {
-  const values = ["mouse", "pen"];
-  if (!strict) {
-    values.push("", undefined);
-  }
-  return values.includes(pointerType);
-}
-function isClickLikeEvent(event) {
-  const type = event.type;
-  return type === "click" || type === "mousedown" || type === "keydown" || type === "keyup";
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/composite.mjs
-function isHiddenByStyles(styles) {
-  return styles.visibility === "hidden" || styles.visibility === "collapse";
-}
-function isElementVisible(element, styles = element ? getComputedStyle2(element) : null) {
-  if (!element || !element.isConnected || !styles || isHiddenByStyles(styles)) {
-    return false;
-  }
-  if (typeof element.checkVisibility === "function") {
-    return element.checkVisibility();
-  }
-  return styles.display !== "none" && styles.display !== "contents";
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/tabbable.mjs
-var CANDIDATE_SELECTOR = 'a[href],button,input,select,textarea,summary,details,iframe,object,embed,[tabindex],[contenteditable]:not([contenteditable="false"]),audio[controls],video[controls]';
-function getParentElement(element) {
-  const assignedSlot = element.assignedSlot;
-  if (assignedSlot) {
-    return assignedSlot;
-  }
-  if (element.parentElement) {
-    return element.parentElement;
-  }
-  const rootNode = element.getRootNode();
-  return isShadowRoot(rootNode) ? rootNode.host : null;
-}
-function getDetailsSummary(details) {
-  for (const child of Array.from(details.children)) {
-    if (getNodeName(child) === "summary") {
-      return child;
-    }
-  }
-  return null;
-}
-function isWithinOpenDetailsSummary(element, details) {
-  const summary = getDetailsSummary(details);
-  return !!summary && (element === summary || contains(summary, element));
-}
-function isFocusableCandidate(element) {
-  const nodeName = element ? getNodeName(element) : "";
-  return element != null && element.matches(CANDIDATE_SELECTOR) && (nodeName !== "summary" || element.parentElement != null && getNodeName(element.parentElement) === "details" && getDetailsSummary(element.parentElement) === element) && (nodeName !== "details" || getDetailsSummary(element) == null) && (nodeName !== "input" || element.type !== "hidden");
-}
-function isFocusableElement(element) {
-  if (!isFocusableCandidate(element) || !element.isConnected || element.matches(":disabled")) {
-    return false;
-  }
-  for (let current = element;current; current = getParentElement(current)) {
-    const isAncestor = current !== element;
-    const isSlot = getNodeName(current) === "slot";
-    if (current.hasAttribute("inert")) {
-      return false;
-    }
-    if (isAncestor && getNodeName(current) === "details" && !current.open && !isWithinOpenDetailsSummary(element, current) || current.hasAttribute("hidden") || !isSlot && !isVisibleInTabbableTree(current, isAncestor)) {
-      return false;
-    }
-  }
-  return true;
-}
-function isVisibleInTabbableTree(element, isAncestor) {
-  const styles = getComputedStyle2(element);
-  if (!isAncestor) {
-    return isElementVisible(element, styles);
-  }
-  return styles.display !== "none";
-}
-function getTabIndex(element) {
-  const tabIndex = element.tabIndex;
-  if (tabIndex < 0) {
-    const nodeName = getNodeName(element);
-    if (nodeName === "details" || nodeName === "audio" || nodeName === "video" || isHTMLElement(element) && element.isContentEditable) {
-      return 0;
-    }
-  }
-  return tabIndex;
-}
-function getNamedRadioInput(element) {
-  if (getNodeName(element) !== "input") {
-    return null;
-  }
-  const input = element;
-  return input.type === "radio" && input.name !== "" ? input : null;
-}
-function isTabbableRadio(element, candidates) {
-  const input = getNamedRadioInput(element);
-  if (!input) {
-    return true;
-  }
-  const checkedRadio = candidates.find((candidate) => {
-    const radio = getNamedRadioInput(candidate);
-    return radio?.name === input.name && radio.form === input.form && radio.checked;
-  });
-  if (checkedRadio) {
-    return checkedRadio === input;
-  }
-  return candidates.find((candidate) => {
-    const radio = getNamedRadioInput(candidate);
-    return radio?.name === input.name && radio.form === input.form;
-  }) === input;
-}
-function getComposedChildren(container) {
-  if (isHTMLElement(container) && getNodeName(container) === "slot") {
-    const assignedElements = container.assignedElements({
-      flatten: true
-    });
-    if (assignedElements.length > 0) {
-      return assignedElements;
-    }
-  }
-  if (isHTMLElement(container) && container.shadowRoot) {
-    return Array.from(container.shadowRoot.children);
-  }
-  return Array.from(container.children);
-}
-function appendCandidates(container, list) {
-  getComposedChildren(container).forEach((child) => {
-    if (isFocusableCandidate(child)) {
-      list.push(child);
-    }
-    appendCandidates(child, list);
-  });
-}
-function appendMatchingElements(container, selector, list) {
-  getComposedChildren(container).forEach((child) => {
-    if (isHTMLElement(child) && child.matches(selector)) {
-      list.push(child);
-    }
-    appendMatchingElements(child, selector, list);
-  });
-}
-function isTabbable(element) {
-  return isFocusableElement(element) && getTabIndex(element) >= 0;
-}
-function focusable(container) {
-  const candidates = [];
-  appendCandidates(container, candidates);
-  return candidates.filter(isFocusableElement);
-}
-function tabbable(container) {
-  const candidates = focusable(container);
-  return candidates.filter((element) => getTabIndex(element) >= 0 && isTabbableRadio(element, candidates));
-}
-function getTabbableIn(container, dir) {
-  const list = tabbable(container);
-  const len = list.length;
-  if (len === 0) {
-    return;
-  }
-  const active = activeElement(ownerDocument(container));
-  const index = list.indexOf(active);
-  const nextIndex = index === -1 ? dir === 1 ? 0 : len - 1 : index + dir;
-  return list[nextIndex];
-}
-function getNextTabbable(referenceElement) {
-  return getTabbableIn(ownerDocument(referenceElement).body, 1) || referenceElement;
-}
-function getPreviousTabbable(referenceElement) {
-  return getTabbableIn(ownerDocument(referenceElement).body, -1) || referenceElement;
-}
-function isOutsideEvent(event, container) {
-  const containerElement = container || event.currentTarget;
-  const relatedTarget = event.relatedTarget;
-  return !relatedTarget || !contains(containerElement, relatedTarget);
-}
-function disableFocusInside(container) {
-  const tabbableElements = tabbable(container);
-  tabbableElements.forEach((element) => {
-    element.dataset.tabindex = element.getAttribute("tabindex") || "";
-    element.setAttribute("tabindex", "-1");
-  });
-}
-function enableFocusInside(container) {
-  const elements = [];
-  appendMatchingElements(container, "[data-tabindex]", elements);
-  elements.forEach((element) => {
-    const tabindex = element.dataset.tabindex;
-    delete element.dataset.tabindex;
-    if (tabindex) {
-      element.setAttribute("tabindex", tabindex);
-    } else {
-      element.removeAttribute("tabindex");
-    }
-  });
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/nodes.mjs
-function getNodeChildren(nodes, id, onlyOpenChildren = true) {
-  const directChildren = nodes.filter((node) => node.parentId === id);
-  return directChildren.flatMap((child) => [...!onlyOpenChildren || child.context?.open ? [child] : [], ...getNodeChildren(nodes, child.id, onlyOpenChildren)]);
-}
-function getNodeAncestors(nodes, id) {
-  let allAncestors = [];
-  let currentParentId = nodes.find((node) => node.id === id)?.parentId;
-  while (currentParentId) {
-    const currentNode = nodes.find((node) => node.id === currentParentId);
-    currentParentId = currentNode?.parentId;
-    if (currentNode) {
-      allAncestors = allAncestors.concat(currentNode);
-    }
-  }
-  return allAncestors;
-}
-
-// node_modules/@base-ui/react/internals/reason-parts.mjs
-var exports_reason_parts = {};
-__export(exports_reason_parts, {
-  windowResize: () => windowResize,
-  wheel: () => wheel,
-  triggerPress: () => triggerPress,
-  triggerHover: () => triggerHover,
-  triggerFocus: () => triggerFocus,
-  trackPress: () => trackPress,
-  swipe: () => swipe,
-  siblingOpen: () => siblingOpen,
-  scrub: () => scrub,
-  pointer: () => pointer,
-  outsidePress: () => outsidePress,
-  none: () => none,
-  missing: () => missing,
-  listNavigation: () => listNavigation,
-  linkPress: () => linkPress,
-  keyboard: () => keyboard,
-  itemPress: () => itemPress,
-  inputPress: () => inputPress,
-  inputPaste: () => inputPaste,
-  inputClear: () => inputClear,
-  inputChange: () => inputChange,
-  inputBlur: () => inputBlur,
-  initial: () => initial,
-  incrementPress: () => incrementPress,
-  imperativeAction: () => imperativeAction,
-  focusOut: () => focusOut,
-  escapeKey: () => escapeKey,
-  drag: () => drag,
-  disabled: () => disabled,
-  decrementPress: () => decrementPress,
-  closeWatcher: () => closeWatcher,
-  closePress: () => closePress,
-  clearPress: () => clearPress,
-  chipRemovePress: () => chipRemovePress,
-  cancelOpen: () => cancelOpen
-});
-var none = "none";
-var triggerPress = "trigger-press";
-var triggerHover = "trigger-hover";
-var triggerFocus = "trigger-focus";
-var outsidePress = "outside-press";
-var itemPress = "item-press";
-var closePress = "close-press";
-var linkPress = "link-press";
-var clearPress = "clear-press";
-var chipRemovePress = "chip-remove-press";
-var trackPress = "track-press";
-var incrementPress = "increment-press";
-var decrementPress = "decrement-press";
-var inputChange = "input-change";
-var inputClear = "input-clear";
-var inputBlur = "input-blur";
-var inputPaste = "input-paste";
-var inputPress = "input-press";
-var focusOut = "focus-out";
-var escapeKey = "escape-key";
-var closeWatcher = "close-watcher";
-var listNavigation = "list-navigation";
-var keyboard = "keyboard";
-var pointer = "pointer";
-var drag = "drag";
-var wheel = "wheel";
-var scrub = "scrub";
-var cancelOpen = "cancel-open";
-var siblingOpen = "sibling-open";
-var disabled = "disabled";
-var missing = "missing";
-var initial = "initial";
-var imperativeAction = "imperative-action";
-var swipe = "swipe";
-var windowResize = "window-resize";
-
-// node_modules/@base-ui/react/internals/createBaseUIEventDetails.mjs
-function createChangeEventDetails(reason, event, trigger, customProperties) {
-  let canceled = false;
-  let allowPropagation = false;
-  const custom = customProperties ?? EMPTY_OBJECT;
-  const details = {
-    reason,
-    event: event ?? new Event("base-ui"),
-    cancel() {
-      canceled = true;
-    },
-    allowPropagation() {
-      allowPropagation = true;
-    },
-    get isCanceled() {
-      return canceled;
-    },
-    get isPropagationAllowed() {
-      return allowPropagation;
-    },
-    trigger,
-    ...custom
-  };
-  return details;
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/createAttribute.mjs
-function createAttribute(name) {
-  return `data-base-ui-${name}`;
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/enqueueFocus.mjs
-var rafId = 0;
-function enqueueFocus(el, options = {}) {
-  const {
-    preventScroll = false,
-    sync = false,
-    shouldFocus
-  } = options;
-  cancelAnimationFrame(rafId);
-  function exec() {
-    if (shouldFocus && !shouldFocus()) {
-      return;
-    }
-    el?.focus({
-      preventScroll
-    });
-  }
-  if (sync) {
-    exec();
-    return NOOP;
-  }
-  const currentRafId = requestAnimationFrame(exec);
-  rafId = currentRafId;
-  return () => {
-    if (rafId === currentRafId) {
-      cancelAnimationFrame(currentRafId);
-      rafId = 0;
-    }
-  };
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/markOthers.mjs
-var counters = {
-  inert: new WeakMap,
-  "aria-hidden": new WeakMap
-};
-var markerName = "data-base-ui-inert";
-var uncontrolledElementsSets = {
-  inert: new WeakSet,
-  "aria-hidden": new WeakSet
-};
-var markerCounterMap = new WeakMap;
-var lockCount = 0;
-function getUncontrolledElementsSet(controlAttribute) {
-  return uncontrolledElementsSets[controlAttribute];
-}
-function unwrapHost(node) {
-  if (!node) {
-    return null;
-  }
-  return isShadowRoot(node) ? node.host : unwrapHost(node.parentNode);
-}
-var correctElements = (parent, targets) => targets.map((target) => {
-  if (parent.contains(target)) {
-    return target;
-  }
-  const correctedTarget = unwrapHost(target);
-  if (parent.contains(correctedTarget)) {
-    return correctedTarget;
-  }
-  return null;
-}).filter((x) => x != null);
-var buildKeepSet = (targets) => {
-  const keep = new Set;
-  targets.forEach((target) => {
-    let node = target;
-    while (node && !keep.has(node)) {
-      keep.add(node);
-      node = node.parentNode;
-    }
-  });
-  return keep;
-};
-var collectOutsideElements = (root, keepElements, stopElements) => {
-  const outside = [];
-  const walk = (parent) => {
-    if (!parent || stopElements.has(parent)) {
-      return;
-    }
-    Array.from(parent.children).forEach((node) => {
-      if (getNodeName(node) === "script") {
-        return;
-      }
-      if (keepElements.has(node)) {
-        walk(node);
-      } else {
-        outside.push(node);
-      }
-    });
-  };
-  walk(root);
-  return outside;
-};
-function applyAttributeToOthers(uncorrectedAvoidElements, body, ariaHidden, inert, {
-  mark = true
-}) {
-  let controlAttribute = null;
-  if (inert) {
-    controlAttribute = "inert";
-  } else if (ariaHidden) {
-    controlAttribute = "aria-hidden";
-  }
-  let counterMap = null;
-  let uncontrolledElementsSet = null;
-  const avoidElements = correctElements(body, uncorrectedAvoidElements);
-  const markerTargets = mark ? collectOutsideElements(body, buildKeepSet(avoidElements), new Set(avoidElements)) : [];
-  const hiddenElements = [];
-  const markedElements = [];
-  if (controlAttribute) {
-    const map = counters[controlAttribute];
-    const currentUncontrolledElementsSet = getUncontrolledElementsSet(controlAttribute);
-    uncontrolledElementsSet = currentUncontrolledElementsSet;
-    counterMap = map;
-    const ariaLiveElements = correctElements(body, Array.from(body.querySelectorAll("[aria-live]")));
-    const controlElements = avoidElements.concat(ariaLiveElements);
-    const controlTargets = collectOutsideElements(body, buildKeepSet(controlElements), new Set(controlElements));
-    controlTargets.forEach((node) => {
-      const attr = node.getAttribute(controlAttribute);
-      const alreadyHidden = attr !== null && attr !== "false";
-      const counterValue = (map.get(node) || 0) + 1;
-      map.set(node, counterValue);
-      hiddenElements.push(node);
-      if (counterValue === 1 && alreadyHidden) {
-        currentUncontrolledElementsSet.add(node);
-      }
-      if (!alreadyHidden) {
-        node.setAttribute(controlAttribute, controlAttribute === "inert" ? "" : "true");
-      }
-    });
-  }
-  if (mark) {
-    markerTargets.forEach((node) => {
-      const markerValue = (markerCounterMap.get(node) || 0) + 1;
-      markerCounterMap.set(node, markerValue);
-      markedElements.push(node);
-      if (markerValue === 1) {
-        node.setAttribute(markerName, "");
-      }
-    });
-  }
-  lockCount += 1;
-  return () => {
-    if (counterMap) {
-      hiddenElements.forEach((element) => {
-        const currentCounterValue = counterMap.get(element) || 0;
-        const counterValue = currentCounterValue - 1;
-        counterMap.set(element, counterValue);
-        if (!counterValue) {
-          if (!uncontrolledElementsSet?.has(element) && controlAttribute) {
-            element.removeAttribute(controlAttribute);
-          }
-          uncontrolledElementsSet?.delete(element);
-        }
-      });
-    }
-    if (mark) {
-      markedElements.forEach((element) => {
-        const markerValue = (markerCounterMap.get(element) || 0) - 1;
-        markerCounterMap.set(element, markerValue);
-        if (!markerValue) {
-          element.removeAttribute(markerName);
-        }
-      });
-    }
-    lockCount -= 1;
-    if (!lockCount) {
-      counters.inert = new WeakMap;
-      counters["aria-hidden"] = new WeakMap;
-      uncontrolledElementsSets.inert = new WeakSet;
-      uncontrolledElementsSets["aria-hidden"] = new WeakSet;
-      markerCounterMap = new WeakMap;
-    }
-  };
-}
-function markOthers(avoidElements, options = {}) {
-  const {
-    ariaHidden = false,
-    inert = false,
-    mark = true
-  } = options;
-  const body = ownerDocument(avoidElements[0]).body;
-  return applyAttributeToOthers(avoidElements, body, ariaHidden, inert, {
-    mark
-  });
-}
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
-var React11 = __toESM(require_react(), 1);
-var ReactDOM = __toESM(require_react_dom(), 1);
-
-// node_modules/@base-ui/utils/useId.mjs
-var React7 = __toESM(require_react(), 1);
-"use client";
-var globalId = 0;
-function useGlobalId(idOverride, prefix = "mui") {
-  const [defaultId, setDefaultId] = React7.useState(idOverride);
-  const id = idOverride || defaultId;
-  React7.useEffect(() => {
-    if (defaultId == null) {
-      globalId += 1;
-      setDefaultId(`${prefix}-${globalId}`);
-    }
-  }, [defaultId, prefix]);
-  return id;
-}
-var maybeReactUseId = SafeReact.useId;
-function useId(idOverride, prefix) {
-  if (maybeReactUseId !== undefined) {
-    const reactId = maybeReactUseId();
-    return idOverride ?? (prefix ? `${prefix}-${reactId}` : reactId);
-  }
-  return useGlobalId(idOverride, prefix);
-}
-
-// node_modules/@base-ui/react/internals/useRenderElement.mjs
-var React10 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/getReactElementRef.mjs
-var React9 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/reactVersion.mjs
-var React8 = __toESM(require_react(), 1);
-var majorVersion = parseInt(React8.version, 10);
-function isReactVersionAtLeast(reactVersionToCheck) {
-  return majorVersion >= reactVersionToCheck;
-}
-
-// node_modules/@base-ui/utils/getReactElementRef.mjs
-function getReactElementRef(element) {
-  if (!/* @__PURE__ */ React9.isValidElement(element)) {
-    return null;
-  }
-  const reactElement = element;
-  const propsWithRef = reactElement.props;
-  return (isReactVersionAtLeast(19) ? propsWithRef?.ref : reactElement.ref) ?? null;
-}
+var noop = () => {};
+var useIsoLayoutEffect = typeof document !== "undefined" ? React3.useLayoutEffect : noop;
 
 // node_modules/@base-ui/utils/mergeObjects.mjs
 function mergeObjects(a, b) {
@@ -18899,52 +34012,6 @@ function mergeObjects(a, b) {
     };
   }
   return;
-}
-
-// node_modules/@base-ui/utils/warn.mjs
-var set;
-if (true) {
-  set = new Set;
-}
-function warn(...messages) {
-  if (true) {
-    const messageKey = messages.join(" ");
-    if (!set.has(messageKey)) {
-      set.add(messageKey);
-      console.warn(`Base UI: ${messageKey}`);
-    }
-  }
-}
-
-// node_modules/@base-ui/react/internals/getStateAttributesProps.mjs
-function getStateAttributesProps(state, customMapping) {
-  const props = {};
-  for (const key in state) {
-    const value = state[key];
-    if (customMapping?.hasOwnProperty(key)) {
-      const customProps = customMapping[key](value);
-      if (customProps != null) {
-        Object.assign(props, customProps);
-      }
-      continue;
-    }
-    if (value === true) {
-      props[`data-${key.toLowerCase()}`] = "";
-    } else if (value) {
-      props[`data-${key.toLowerCase()}`] = value.toString();
-    }
-  }
-  return props;
-}
-
-// node_modules/@base-ui/react/utils/resolveClassName.mjs
-function resolveClassName(className, state) {
-  return typeof className === "function" ? className(state) : className;
-}
-
-// node_modules/@base-ui/react/utils/resolveStyle.mjs
-function resolveStyle(style, state) {
-  return typeof style === "function" ? style(state) : style;
 }
 
 // node_modules/@base-ui/react/merge-props/mergeProps.mjs
@@ -19102,6 +34169,382 @@ function isSyntheticEvent(event) {
   return event != null && typeof event === "object" && "nativeEvent" in event;
 }
 
+// node_modules/@base-ui/react/internals/composite/root/CompositeRootContext.mjs
+var React4 = __toESM(require_react(), 1);
+"use client";
+var CompositeRootContext = /* @__PURE__ */ React4.createContext(undefined);
+if (true)
+  CompositeRootContext.displayName = "CompositeRootContext";
+function useCompositeRootContext(optional = false) {
+  const context = React4.useContext(CompositeRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: CompositeRootContext is missing. Composite parts must be placed within <Composite.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/utils/useFocusableWhenDisabled.mjs
+var React5 = __toESM(require_react(), 1);
+"use client";
+function useFocusableWhenDisabled(parameters) {
+  const {
+    focusableWhenDisabled,
+    disabled,
+    composite = false,
+    tabIndex: tabIndexProp = 0,
+    isNativeButton
+  } = parameters;
+  const isFocusableComposite = composite && focusableWhenDisabled !== false;
+  const isNonFocusableComposite = composite && focusableWhenDisabled === false;
+  const props = React5.useMemo(() => {
+    const additionalProps = {
+      onKeyDown(event) {
+        if (disabled && focusableWhenDisabled && event.key !== "Tab") {
+          event.preventDefault();
+        }
+      }
+    };
+    if (!composite) {
+      additionalProps.tabIndex = tabIndexProp;
+      if (!isNativeButton && disabled) {
+        additionalProps.tabIndex = focusableWhenDisabled ? tabIndexProp : -1;
+      }
+    }
+    if (isNativeButton && (focusableWhenDisabled || isFocusableComposite) || !isNativeButton && disabled) {
+      additionalProps["aria-disabled"] = disabled;
+    }
+    if (isNativeButton && (!focusableWhenDisabled || isNonFocusableComposite)) {
+      additionalProps.disabled = disabled;
+    }
+    return additionalProps;
+  }, [composite, disabled, focusableWhenDisabled, isFocusableComposite, isNonFocusableComposite, isNativeButton, tabIndexProp]);
+  return {
+    props
+  };
+}
+
+// node_modules/@base-ui/react/internals/use-button/useButton.mjs
+"use client";
+function useButton(parameters = {}) {
+  const {
+    disabled = false,
+    focusableWhenDisabled,
+    tabIndex = 0,
+    native: isNativeButton = true,
+    composite: compositeProp
+  } = parameters;
+  const elementRef = React6.useRef(null);
+  const compositeRootContext = useCompositeRootContext(true);
+  const isCompositeItem = compositeProp ?? compositeRootContext !== undefined;
+  const {
+    props: focusableWhenDisabledProps
+  } = useFocusableWhenDisabled({
+    focusableWhenDisabled,
+    disabled,
+    composite: isCompositeItem,
+    tabIndex,
+    isNativeButton
+  });
+  if (true) {
+    React6.useEffect(() => {
+      if (!elementRef.current) {
+        return;
+      }
+      const isButtonTag = isButtonElement(elementRef.current);
+      if (isNativeButton) {
+        if (!isButtonTag) {
+          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+          const message = "A component that acts as a button expected a native <button> because the " + "`nativeButton` prop is true. Rendering a non-<button> removes native button " + "semantics, which can impact forms and accessibility. Use a real <button> in the " + "`render` prop, or set `nativeButton` to `false`.";
+          error(`${message}${ownerStackMessage}`);
+        }
+      } else if (isButtonTag) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        const message = "A component that acts as a button expected a non-<button> because the `nativeButton` " + "prop is false. Rendering a <button> keeps native behavior while Base UI applies " + "non-native attributes and handlers, which can add unintended extra attributes (such " + "as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set " + "`nativeButton` to `true`.";
+        error(`${message}${ownerStackMessage}`);
+      }
+    }, [isNativeButton]);
+  }
+  const updateDisabled = React6.useCallback(() => {
+    const element = elementRef.current;
+    if (!isButtonElement(element)) {
+      return;
+    }
+    if (isCompositeItem && disabled && focusableWhenDisabledProps.disabled === undefined && element.disabled) {
+      element.disabled = false;
+    }
+  }, [disabled, focusableWhenDisabledProps.disabled, isCompositeItem]);
+  useIsoLayoutEffect(updateDisabled, [updateDisabled]);
+  const getButtonProps = React6.useCallback((externalProps = {}) => {
+    const {
+      onClick: externalOnClick,
+      onMouseDown: externalOnMouseDown,
+      onKeyUp: externalOnKeyUp,
+      onKeyDown: externalOnKeyDown,
+      onPointerDown: externalOnPointerDown,
+      ...otherExternalProps
+    } = externalProps;
+    return mergeProps({
+      onClick(event) {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+        externalOnClick?.(event);
+      },
+      onMouseDown(event) {
+        if (!disabled) {
+          externalOnMouseDown?.(event);
+        }
+      },
+      onKeyDown(event) {
+        if (disabled) {
+          return;
+        }
+        makeEventPreventable(event);
+        externalOnKeyDown?.(event);
+        if (event.baseUIHandlerPrevented) {
+          return;
+        }
+        const isCurrentTarget = event.target === event.currentTarget;
+        const currentTarget = event.currentTarget;
+        const isButton = isButtonElement(currentTarget);
+        const isLink = !isNativeButton && isValidLinkElement(currentTarget);
+        const shouldClick = isCurrentTarget && (isNativeButton ? isButton : !isLink);
+        const isEnterKey = event.key === "Enter";
+        const isSpaceKey = event.key === " ";
+        const role = currentTarget.getAttribute("role");
+        const isTextNavigationRole = role?.startsWith("menuitem") || role === "option" || role === "gridcell";
+        if (isCurrentTarget && isCompositeItem && isSpaceKey) {
+          if (event.defaultPrevented && isTextNavigationRole) {
+            return;
+          }
+          event.preventDefault();
+          if (isLink || isNativeButton && isButton) {
+            currentTarget.click();
+            event.preventBaseUIHandler();
+          } else if (shouldClick) {
+            externalOnClick?.(event);
+            event.preventBaseUIHandler();
+          }
+          return;
+        }
+        if (shouldClick) {
+          if (!isNativeButton && (isSpaceKey || isEnterKey)) {
+            event.preventDefault();
+          }
+          if (!isNativeButton && isEnterKey) {
+            externalOnClick?.(event);
+          }
+        }
+      },
+      onKeyUp(event) {
+        if (disabled) {
+          return;
+        }
+        makeEventPreventable(event);
+        externalOnKeyUp?.(event);
+        if (event.target === event.currentTarget && isNativeButton && isCompositeItem && isButtonElement(event.currentTarget) && event.key === " ") {
+          event.preventDefault();
+          return;
+        }
+        if (event.baseUIHandlerPrevented) {
+          return;
+        }
+        if (event.target === event.currentTarget && !isNativeButton && !isCompositeItem && event.key === " ") {
+          externalOnClick?.(event);
+        }
+      },
+      onPointerDown(event) {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+        externalOnPointerDown?.(event);
+      }
+    }, isNativeButton ? {
+      type: "button"
+    } : {
+      role: "button"
+    }, focusableWhenDisabledProps, otherExternalProps);
+  }, [disabled, focusableWhenDisabledProps, isCompositeItem, isNativeButton]);
+  const buttonRef = useStableCallback((element) => {
+    elementRef.current = element;
+    updateDisabled();
+  });
+  return {
+    getButtonProps,
+    buttonRef
+  };
+}
+function isButtonElement(elem) {
+  return isHTMLElement(elem) && elem.tagName === "BUTTON";
+}
+function isValidLinkElement(elem) {
+  return Boolean(elem?.tagName === "A" && elem?.href);
+}
+
+// node_modules/@base-ui/react/internals/useRenderElement.mjs
+var React9 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useMergedRefs.mjs
+function useMergedRefs(a, b, c, d) {
+  const forkRef = useRefWithInit(createForkRef).current;
+  if (didChange(forkRef, a, b, c, d)) {
+    update(forkRef, [a, b, c, d]);
+  }
+  return forkRef.callback;
+}
+function useMergedRefsN(refs) {
+  const forkRef = useRefWithInit(createForkRef).current;
+  if (didChangeN(forkRef, refs)) {
+    update(forkRef, refs);
+  }
+  return forkRef.callback;
+}
+function createForkRef() {
+  return {
+    callback: null,
+    cleanup: null,
+    refs: []
+  };
+}
+function didChange(forkRef, a, b, c, d) {
+  return forkRef.refs[0] !== a || forkRef.refs[1] !== b || forkRef.refs[2] !== c || forkRef.refs[3] !== d;
+}
+function didChangeN(forkRef, newRefs) {
+  return forkRef.refs.length !== newRefs.length || forkRef.refs.some((ref, index) => ref !== newRefs[index]);
+}
+function update(forkRef, refs) {
+  forkRef.refs = refs;
+  if (refs.every((ref) => ref == null)) {
+    forkRef.callback = null;
+    return;
+  }
+  forkRef.callback = (instance) => {
+    if (forkRef.cleanup) {
+      forkRef.cleanup();
+      forkRef.cleanup = null;
+    }
+    if (instance != null) {
+      const cleanupCallbacks = Array(refs.length).fill(null);
+      for (let i = 0;i < refs.length; i += 1) {
+        const ref = refs[i];
+        if (ref == null) {
+          continue;
+        }
+        switch (typeof ref) {
+          case "function": {
+            const refCleanup = ref(instance);
+            if (typeof refCleanup === "function") {
+              cleanupCallbacks[i] = refCleanup;
+            }
+            break;
+          }
+          case "object": {
+            ref.current = instance;
+            break;
+          }
+          default:
+        }
+      }
+      forkRef.cleanup = () => {
+        for (let i = 0;i < refs.length; i += 1) {
+          const ref = refs[i];
+          if (ref == null) {
+            continue;
+          }
+          switch (typeof ref) {
+            case "function": {
+              const cleanupCallback = cleanupCallbacks[i];
+              if (typeof cleanupCallback === "function") {
+                cleanupCallback();
+              } else {
+                ref(null);
+              }
+              break;
+            }
+            case "object": {
+              ref.current = null;
+              break;
+            }
+            default:
+          }
+        }
+      };
+    }
+  };
+}
+
+// node_modules/@base-ui/utils/getReactElementRef.mjs
+var React8 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/reactVersion.mjs
+var React7 = __toESM(require_react(), 1);
+var majorVersion = parseInt(React7.version, 10);
+function isReactVersionAtLeast(reactVersionToCheck) {
+  return majorVersion >= reactVersionToCheck;
+}
+
+// node_modules/@base-ui/utils/getReactElementRef.mjs
+function getReactElementRef(element) {
+  if (!/* @__PURE__ */ React8.isValidElement(element)) {
+    return null;
+  }
+  const reactElement = element;
+  const propsWithRef = reactElement.props;
+  return (isReactVersionAtLeast(19) ? propsWithRef?.ref : reactElement.ref) ?? null;
+}
+
+// node_modules/@base-ui/utils/warn.mjs
+var set2;
+if (true) {
+  set2 = new Set;
+}
+function warn(...messages) {
+  if (true) {
+    const messageKey = messages.join(" ");
+    if (!set2.has(messageKey)) {
+      set2.add(messageKey);
+      console.warn(`Base UI: ${messageKey}`);
+    }
+  }
+}
+
+// node_modules/@base-ui/utils/empty.mjs
+var EMPTY_ARRAY = Object.freeze([]);
+var EMPTY_OBJECT = Object.freeze({});
+
+// node_modules/@base-ui/react/internals/getStateAttributesProps.mjs
+function getStateAttributesProps(state, customMapping) {
+  const props = {};
+  for (const key in state) {
+    const value = state[key];
+    if (customMapping?.hasOwnProperty(key)) {
+      const customProps = customMapping[key](value);
+      if (customProps != null) {
+        Object.assign(props, customProps);
+      }
+      continue;
+    }
+    if (value === true) {
+      props[`data-${key.toLowerCase()}`] = "";
+    } else if (value) {
+      props[`data-${key.toLowerCase()}`] = value.toString();
+    }
+  }
+  return props;
+}
+
+// node_modules/@base-ui/react/utils/resolveClassName.mjs
+function resolveClassName(className, state) {
+  return typeof className === "function" ? className(state) : className;
+}
+
+// node_modules/@base-ui/react/utils/resolveStyle.mjs
+function resolveStyle(style, state) {
+  return typeof style === "function" ? style(state) : style;
+}
+
 // node_modules/@base-ui/react/internals/useRenderElement.mjs
 var import_react = __toESM(require_react(), 1);
 function useRenderElement(element, componentProps, params = {}) {
@@ -19172,16 +34615,16 @@ function evaluateRenderProp(element, render, props, state) {
     mergedProps.ref = props.ref;
     let newElement = render;
     if (newElement?.$$typeof === REACT_LAZY_TYPE) {
-      const children = React10.Children.toArray(render);
+      const children = React9.Children.toArray(render);
       newElement = children[0];
     }
     if (true) {
-      if (!/* @__PURE__ */ React10.isValidElement(newElement)) {
+      if (!/* @__PURE__ */ React9.isValidElement(newElement)) {
         throw new Error(["Base UI: The `render` prop was provided an invalid React element as `React.isValidElement(render)` is `false`.", "A valid React element must be provided to the `render` prop because it is cloned with props to replace the default element.", "https://base-ui.com/r/invalid-render-prop"].join(`
 `));
       }
     }
-    return /* @__PURE__ */ React10.cloneElement(newElement, mergedProps);
+    return /* @__PURE__ */ React9.cloneElement(newElement, mergedProps);
   }
   if (element) {
     if (typeof element === "string") {
@@ -19218,3339 +34661,105 @@ function renderTag(Tag, props) {
       key: props.key
     });
   }
-  return /* @__PURE__ */ React10.createElement(Tag, props);
+  return /* @__PURE__ */ React9.createElement(Tag, props);
 }
 
-// node_modules/@base-ui/react/internals/constants.mjs
-var CLICK_TRIGGER_IDENTIFIER = "data-base-ui-click-trigger";
-var BASE_UI_SWIPE_IGNORE_ATTRIBUTE = "data-base-ui-swipe-ignore";
-var LEGACY_SWIPE_IGNORE_ATTRIBUTE = "data-swipe-ignore";
-var BASE_UI_SWIPE_IGNORE_SELECTOR = `[${BASE_UI_SWIPE_IGNORE_ATTRIBUTE}]`;
-var LEGACY_SWIPE_IGNORE_SELECTOR = `[${LEGACY_SWIPE_IGNORE_ATTRIBUTE}]`;
-var ownerVisuallyHidden = {
-  clipPath: "inset(50%)",
-  position: "fixed",
-  top: 0,
-  left: 0
-};
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
-var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+// node_modules/@base-ui/react/button/Button.mjs
 "use client";
-var PortalContext = /* @__PURE__ */ React11.createContext(null);
-if (true)
-  PortalContext.displayName = "PortalContext";
-var usePortalContext = () => React11.useContext(PortalContext);
-var attr = createAttribute("portal");
-function useFloatingPortalNode(props = {}) {
-  const {
-    ref,
-    container: containerProp,
-    componentProps = EMPTY_OBJECT,
-    elementProps
-  } = props;
-  const uniqueId = useId();
-  const portalContext = usePortalContext();
-  const parentPortalNode = portalContext?.portalNode;
-  const [containerElement, setContainerElement] = React11.useState(null);
-  const [portalNode, setPortalNode] = React11.useState(null);
-  const setPortalNodeRef = useStableCallback((node) => {
-    if (node !== null) {
-      setPortalNode(node);
-    }
-  });
-  const containerRef = React11.useRef(null);
-  useIsoLayoutEffect(() => {
-    if (containerProp === null) {
-      if (containerRef.current) {
-        containerRef.current = null;
-        setPortalNode(null);
-        setContainerElement(null);
-      }
-      return;
-    }
-    if (uniqueId == null) {
-      return;
-    }
-    const resolvedContainer = (containerProp && (isNode(containerProp) ? containerProp : containerProp.current)) ?? parentPortalNode ?? document.body;
-    if (resolvedContainer == null) {
-      if (containerRef.current) {
-        containerRef.current = null;
-        setPortalNode(null);
-        setContainerElement(null);
-      }
-      return;
-    }
-    if (containerRef.current !== resolvedContainer) {
-      containerRef.current = resolvedContainer;
-      setPortalNode(null);
-      setContainerElement(resolvedContainer);
-    }
-  }, [containerProp, parentPortalNode, uniqueId]);
-  const portalElement = useRenderElement("div", componentProps, {
-    ref: [ref, setPortalNodeRef],
-    props: [{
-      id: uniqueId,
-      [attr]: ""
-    }, elementProps]
-  });
-  const portalSubtree = containerElement && portalElement ? /* @__PURE__ */ ReactDOM.createPortal(portalElement, containerElement) : null;
-  return {
-    portalNode,
-    portalSubtree
-  };
-}
-var FloatingPortal = /* @__PURE__ */ React11.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
+var Button = /* @__PURE__ */ React10.forwardRef(function Button2(componentProps, forwardedRef) {
   const {
     render,
     className,
-    style,
-    children,
-    container,
-    renderGuards,
-    ...elementProps
-  } = componentProps;
-  const {
-    portalNode,
-    portalSubtree
-  } = useFloatingPortalNode({
-    container,
-    ref: forwardedRef,
-    componentProps,
-    elementProps
-  });
-  const beforeOutsideRef = React11.useRef(null);
-  const afterOutsideRef = React11.useRef(null);
-  const beforeInsideRef = React11.useRef(null);
-  const afterInsideRef = React11.useRef(null);
-  const [focusManagerState, setFocusManagerState] = React11.useState(null);
-  const focusInsideDisabledRef = React11.useRef(false);
-  const modal = focusManagerState?.modal;
-  const open = focusManagerState?.open;
-  const shouldRenderGuards = typeof renderGuards === "boolean" ? renderGuards : !!focusManagerState && !focusManagerState.modal && focusManagerState.open && !!portalNode;
-  React11.useEffect(() => {
-    if (!portalNode || modal) {
-      return;
-    }
-    function onFocus(event) {
-      if (portalNode && event.relatedTarget && isOutsideEvent(event)) {
-        if (event.type === "focusin") {
-          if (focusInsideDisabledRef.current) {
-            enableFocusInside(portalNode);
-            focusInsideDisabledRef.current = false;
-          }
-        } else {
-          disableFocusInside(portalNode);
-          focusInsideDisabledRef.current = true;
-        }
-      }
-    }
-    return mergeCleanups(addEventListener(portalNode, "focusin", onFocus, true), addEventListener(portalNode, "focusout", onFocus, true));
-  }, [portalNode, modal]);
-  useIsoLayoutEffect(() => {
-    if (!portalNode || open !== true || !focusInsideDisabledRef.current) {
-      return;
-    }
-    enableFocusInside(portalNode);
-    focusInsideDisabledRef.current = false;
-  }, [open, portalNode]);
-  const portalContextValue = React11.useMemo(() => ({
-    beforeOutsideRef,
-    afterOutsideRef,
-    beforeInsideRef,
-    afterInsideRef,
-    portalNode,
-    setFocusManagerState
-  }), [portalNode]);
-  return /* @__PURE__ */ import_jsx_runtime2.jsxs(React11.Fragment, {
-    children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime2.jsxs(PortalContext.Provider, {
-      value: portalContextValue,
-      children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime2.jsx(FocusGuard, {
-        "data-type": "outside",
-        ref: beforeOutsideRef,
-        onFocus: (event) => {
-          if (isOutsideEvent(event, portalNode)) {
-            beforeInsideRef.current?.focus();
-          } else {
-            const domReference = focusManagerState ? focusManagerState.domReference : null;
-            const prevTabbable = getPreviousTabbable(domReference);
-            prevTabbable?.focus();
-          }
-        }
-      }), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime2.jsx("span", {
-        "aria-owns": portalNode.id,
-        style: ownerVisuallyHidden
-      }), portalNode && /* @__PURE__ */ ReactDOM.createPortal(children, portalNode), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime2.jsx(FocusGuard, {
-        "data-type": "outside",
-        ref: afterOutsideRef,
-        onFocus: (event) => {
-          if (isOutsideEvent(event, portalNode)) {
-            afterInsideRef.current?.focus();
-          } else {
-            const domReference = focusManagerState ? focusManagerState.domReference : null;
-            const nextTabbable = getNextTabbable(domReference);
-            nextTabbable?.focus();
-            if (focusManagerState?.closeOnFocusOut) {
-              focusManagerState?.onOpenChange(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent));
-            }
-          }
-        }
-      })]
-    })]
-  });
-});
-if (true)
-  FloatingPortal.displayName = "FloatingPortal";
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
-var React12 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/floating-ui-react/utils/createEventEmitter.mjs
-function createEventEmitter() {
-  const map = new Map;
-  return {
-    emit(event, data) {
-      map.get(event)?.forEach((listener) => listener(data));
-    },
-    on(event, listener) {
-      if (!map.has(event)) {
-        map.set(event, new Set);
-      }
-      map.get(event).add(listener);
-    },
-    off(event, listener) {
-      map.get(event)?.delete(listener);
-    }
-  };
-}
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
-var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var FloatingNodeContext = /* @__PURE__ */ React12.createContext(null);
-if (true)
-  FloatingNodeContext.displayName = "FloatingNodeContext";
-var FloatingTreeContext = /* @__PURE__ */ React12.createContext(null);
-if (true)
-  FloatingTreeContext.displayName = "FloatingTreeContext";
-var useFloatingParentNodeId = () => React12.useContext(FloatingNodeContext)?.id || null;
-var useFloatingTree = (externalTree) => {
-  const contextTree = React12.useContext(FloatingTreeContext);
-  return externalTree ?? contextTree;
-};
-
-// node_modules/@base-ui/react/utils/resolveRef.mjs
-function resolveRef(maybeRef) {
-  if (maybeRef == null) {
-    return maybeRef;
-  }
-  return "current" in maybeRef ? maybeRef.current : maybeRef;
-}
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
-var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function getEventType(event, lastInteractionType) {
-  const win = getWindow(getTarget(event));
-  if (event instanceof win.KeyboardEvent) {
-    return "keyboard";
-  }
-  if (event instanceof win.FocusEvent) {
-    return lastInteractionType || "keyboard";
-  }
-  if ("pointerType" in event) {
-    return event.pointerType || "keyboard";
-  }
-  if ("touches" in event) {
-    return "touch";
-  }
-  if (event instanceof win.MouseEvent) {
-    return lastInteractionType || (event.detail === 0 ? "keyboard" : "mouse");
-  }
-  return "";
-}
-var LIST_LIMIT = 20;
-var previouslyFocusedElements = [];
-function clearDisconnectedPreviouslyFocusedElements() {
-  previouslyFocusedElements = previouslyFocusedElements.filter((entry) => {
-    return entry.deref()?.isConnected;
-  });
-}
-function addPreviouslyFocusedElement(element) {
-  clearDisconnectedPreviouslyFocusedElements();
-  if (element && getNodeName(element) !== "body") {
-    previouslyFocusedElements.push(new WeakRef(element));
-    if (previouslyFocusedElements.length > LIST_LIMIT) {
-      previouslyFocusedElements = previouslyFocusedElements.slice(-LIST_LIMIT);
-    }
-  }
-}
-function getPreviouslyFocusedElement() {
-  clearDisconnectedPreviouslyFocusedElements();
-  return previouslyFocusedElements[previouslyFocusedElements.length - 1]?.deref();
-}
-function getFirstTabbableElement(container) {
-  if (!container) {
-    return null;
-  }
-  if (isTabbable(container)) {
-    return container;
-  }
-  return tabbable(container)[0] || container;
-}
-function handleTabIndex(floatingFocusElement) {
-  if (floatingFocusElement.hasAttribute("tabindex") && !floatingFocusElement.hasAttribute("data-tabindex")) {
-    return;
-  }
-  if (!floatingFocusElement.getAttribute("role")?.includes("dialog")) {
-    return;
-  }
-  const focusableElements = focusable(floatingFocusElement);
-  const tabbableContent = focusableElements.filter((element) => {
-    const dataTabIndex = element.getAttribute("data-tabindex") || "";
-    return isTabbable(element) || element.hasAttribute("data-tabindex") && !dataTabIndex.startsWith("-");
-  });
-  const tabIndex = floatingFocusElement.getAttribute("tabindex");
-  if (tabbableContent.length === 0) {
-    if (tabIndex !== "0") {
-      floatingFocusElement.setAttribute("tabindex", "0");
-      floatingFocusElement.setAttribute("data-tabindex", "0");
-    }
-  } else if (tabIndex !== "-1" || floatingFocusElement.hasAttribute("data-tabindex") && floatingFocusElement.getAttribute("data-tabindex") !== "-1") {
-    floatingFocusElement.setAttribute("tabindex", "-1");
-    floatingFocusElement.setAttribute("data-tabindex", "-1");
-  }
-}
-function FloatingFocusManager(props) {
-  const {
-    context,
-    children,
-    disabled: disabled2 = false,
-    initialFocus = true,
-    returnFocus = true,
-    restoreFocus = false,
-    modal = true,
-    closeOnFocusOut = true,
-    openInteractionType = "",
-    nextFocusableElement,
-    previousFocusableElement,
-    beforeContentFocusGuardRef,
-    externalTree,
-    getInsideElements
-  } = props;
-  const store = "rootStore" in context ? context.rootStore : context;
-  const open = store.useState("open");
-  const domReference = store.useState("domReferenceElement");
-  const floating = store.useState("floatingElement");
-  const {
-    events,
-    dataRef
-  } = store.context;
-  const getNodeId = useStableCallback(() => dataRef.current.floatingContext?.nodeId);
-  const ignoreInitialFocus = initialFocus === false;
-  const isUntrappedTypeableCombobox = isTypeableCombobox(domReference) && ignoreInitialFocus;
-  const initialFocusRef = useValueAsRef(initialFocus);
-  const returnFocusRef = useValueAsRef(returnFocus);
-  const openInteractionTypeRef = useValueAsRef(openInteractionType);
-  const openRef = useValueAsRef(open);
-  const tree = useFloatingTree(externalTree);
-  const portalContext = usePortalContext();
-  const preventReturnFocusRef = React13.useRef(false);
-  const isPointerDownRef = React13.useRef(false);
-  const pointerDownOutsideRef = React13.useRef(false);
-  const lastFocusedTabbableRef = React13.useRef(null);
-  const closeTypeRef = React13.useRef("");
-  const lastInteractionTypeRef = React13.useRef("");
-  const beforeGuardRef = React13.useRef(null);
-  const afterGuardRef = React13.useRef(null);
-  const mergedBeforeGuardRef = useMergedRefs(beforeGuardRef, beforeContentFocusGuardRef, portalContext?.beforeInsideRef);
-  const mergedAfterGuardRef = useMergedRefs(afterGuardRef, portalContext?.afterInsideRef);
-  const blurTimeout = useTimeout();
-  const pointerDownTimeout = useTimeout();
-  const restoreFocusFrame = useAnimationFrame();
-  const isInsidePortal = portalContext != null;
-  const floatingFocusElement = getFloatingFocusElement(floating);
-  const getTabbableContent = useStableCallback((container = floatingFocusElement) => {
-    return container ? tabbable(container) : [];
-  });
-  const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element) => element != null) ?? []);
-  React13.useEffect(() => {
-    if (disabled2 || !modal) {
-      return;
-    }
-    function onKeyDown(event) {
-      if (event.key === "Tab") {
-        if (contains(floatingFocusElement, activeElement(ownerDocument(floatingFocusElement))) && getTabbableContent().length === 0 && !isUntrappedTypeableCombobox) {
-          stopEvent(event);
-        }
-      }
-    }
-    const doc = ownerDocument(floatingFocusElement);
-    return addEventListener(doc, "keydown", onKeyDown);
-  }, [disabled2, floatingFocusElement, modal, isUntrappedTypeableCombobox, getTabbableContent]);
-  React13.useEffect(() => {
-    if (disabled2 || !open) {
-      return;
-    }
-    const doc = ownerDocument(floatingFocusElement);
-    function clearPointerDownOutside() {
-      pointerDownOutsideRef.current = false;
-    }
-    function onPointerDown(event) {
-      const target = getTarget(event);
-      const insideElements = getResolvedInsideElements();
-      const pointerTargetInside = contains(floating, target) || contains(domReference, target) || contains(portalContext?.portalNode, target) || insideElements.some((element) => element === target || contains(element, target));
-      pointerDownOutsideRef.current = !pointerTargetInside;
-      lastInteractionTypeRef.current = event.pointerType || "keyboard";
-      if (target?.closest(`[${CLICK_TRIGGER_IDENTIFIER}]`)) {
-        isPointerDownRef.current = true;
-        pointerDownTimeout.start(0, () => {
-          isPointerDownRef.current = false;
-        });
-      }
-    }
-    function onKeyDown() {
-      lastInteractionTypeRef.current = "keyboard";
-    }
-    return mergeCleanups(addEventListener(doc, "pointerdown", onPointerDown, true), addEventListener(doc, "pointerup", clearPointerDownOutside, true), addEventListener(doc, "pointercancel", clearPointerDownOutside, true), addEventListener(doc, "keydown", onKeyDown, true), clearPointerDownOutside);
-  }, [disabled2, floating, domReference, floatingFocusElement, open, portalContext, pointerDownTimeout, getResolvedInsideElements]);
-  React13.useEffect(() => {
-    if (disabled2 || !closeOnFocusOut) {
-      return;
-    }
-    const doc = ownerDocument(floatingFocusElement);
-    function handlePointerDown() {
-      isPointerDownRef.current = true;
-      pointerDownTimeout.start(0, () => {
-        isPointerDownRef.current = false;
-      });
-    }
-    function handleFocusIn(event) {
-      const target = getTarget(event);
-      if (isTabbable(target)) {
-        lastFocusedTabbableRef.current = target;
-      }
-    }
-    function handleFocusOutside(event) {
-      const relatedTarget = event.relatedTarget;
-      const currentTarget = event.currentTarget;
-      const target = getTarget(event);
-      if (modal && relatedTarget == null && target != null && contains(floating, target)) {
-        addPreviouslyFocusedElement(target);
-      }
-      queueMicrotask(() => {
-        const nodeId = getNodeId();
-        const triggers = store.context.triggerElements;
-        const insideElements = getResolvedInsideElements();
-        const isRelatedFocusGuard = relatedTarget?.hasAttribute(createAttribute("focus-guard")) && [beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeInsideRef.current, portalContext?.afterInsideRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement)].includes(relatedTarget);
-        const movedToUnrelatedNode = !(contains(domReference, relatedTarget) || contains(floating, relatedTarget) || contains(relatedTarget, floating) || contains(portalContext?.portalNode, relatedTarget) || insideElements.some((element) => element === relatedTarget || contains(element, relatedTarget)) || relatedTarget != null && triggers.hasElement(relatedTarget) || triggers.hasMatchingElement((trigger) => contains(trigger, relatedTarget)) || isRelatedFocusGuard || tree && (getNodeChildren(tree.nodesRef.current, nodeId).find((node) => contains(node.context?.elements.floating, relatedTarget) || contains(node.context?.elements.domReference, relatedTarget)) || getNodeAncestors(tree.nodesRef.current, nodeId).find((node) => [node.context?.elements.floating, getFloatingFocusElement(node.context?.elements.floating)].includes(relatedTarget) || node.context?.elements.domReference === relatedTarget)));
-        if (currentTarget === domReference && floatingFocusElement) {
-          handleTabIndex(floatingFocusElement);
-        }
-        if (restoreFocus && currentTarget !== domReference && !isElementVisible(target) && activeElement(doc) === doc.body) {
-          if (isHTMLElement(floatingFocusElement)) {
-            floatingFocusElement.focus();
-            if (restoreFocus === "popup") {
-              restoreFocusFrame.request(() => {
-                floatingFocusElement.focus();
-              });
-              return;
-            }
-          }
-          const tabbableContent = getTabbableContent();
-          const prevTabbable = lastFocusedTabbableRef.current;
-          const nodeToFocus = (prevTabbable && tabbableContent.includes(prevTabbable) ? prevTabbable : null) || tabbableContent[tabbableContent.length - 1] || floatingFocusElement;
-          if (isHTMLElement(nodeToFocus)) {
-            nodeToFocus.focus();
-          }
-        }
-        if (dataRef.current.insideReactTree) {
-          dataRef.current.insideReactTree = false;
-          return;
-        }
-        if ((isUntrappedTypeableCombobox ? true : !modal) && relatedTarget && movedToUnrelatedNode && !isPointerDownRef.current && (isUntrappedTypeableCombobox || relatedTarget !== getPreviouslyFocusedElement())) {
-          preventReturnFocusRef.current = true;
-          store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event));
-        }
-      });
-    }
-    function markInsideReactTree() {
-      if (pointerDownOutsideRef.current) {
-        return;
-      }
-      dataRef.current.insideReactTree = true;
-      blurTimeout.start(0, () => {
-        dataRef.current.insideReactTree = false;
-      });
-    }
-    const domReferenceElement = isHTMLElement(domReference) ? domReference : null;
-    if (!floating && !domReferenceElement) {
-      return;
-    }
-    return mergeCleanups(domReferenceElement && addEventListener(domReferenceElement, "focusout", handleFocusOutside), domReferenceElement && addEventListener(domReferenceElement, "pointerdown", handlePointerDown), floating && addEventListener(floating, "focusin", handleFocusIn), floating && addEventListener(floating, "focusout", handleFocusOutside), floating && portalContext && addEventListener(floating, "focusout", markInsideReactTree, true));
-  }, [disabled2, domReference, floating, floatingFocusElement, modal, tree, portalContext, store, closeOnFocusOut, restoreFocus, getTabbableContent, isUntrappedTypeableCombobox, getNodeId, dataRef, blurTimeout, pointerDownTimeout, restoreFocusFrame, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
-  React13.useEffect(() => {
-    if (disabled2 || !floating || !open) {
-      return;
-    }
-    const portalNodes = Array.from(portalContext?.portalNode?.querySelectorAll(`[${createAttribute("portal")}]`) || []);
-    const ancestors = tree ? getNodeAncestors(tree.nodesRef.current, getNodeId()) : [];
-    const rootAncestorComboboxDomReference = ancestors.find((node) => isTypeableCombobox(node.context?.elements.domReference || null))?.context?.elements.domReference;
-    const controlInsideElements = [floating, ...portalNodes, beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, ...getResolvedInsideElements()];
-    const insideElements = [...controlInsideElements, rootAncestorComboboxDomReference, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement), isUntrappedTypeableCombobox ? domReference : null].filter((x) => x != null);
-    const ariaHiddenCleanup = markOthers(insideElements, {
-      ariaHidden: modal || isUntrappedTypeableCombobox,
-      mark: false
-    });
-    const markerInsideElements = [floating, ...portalNodes].filter((x) => x != null);
-    const markerCleanup = markOthers(markerInsideElements);
-    return () => {
-      markerCleanup();
-      ariaHiddenCleanup();
-    };
-  }, [open, disabled2, domReference, floating, modal, portalContext, isUntrappedTypeableCombobox, tree, getNodeId, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
-  useIsoLayoutEffect(() => {
-    if (!open || disabled2 || !isHTMLElement(floatingFocusElement)) {
-      return;
-    }
-    const doc = ownerDocument(floatingFocusElement);
-    const previouslyFocusedElement = activeElement(doc);
-    queueMicrotask(() => {
-      const initialFocusValueOrFn = initialFocusRef.current;
-      const resolvedInitialFocus = typeof initialFocusValueOrFn === "function" ? initialFocusValueOrFn(openInteractionTypeRef.current || "") : initialFocusValueOrFn;
-      if (resolvedInitialFocus === undefined || resolvedInitialFocus === false) {
-        return;
-      }
-      const focusAlreadyInsideFloatingEl = contains(floatingFocusElement, previouslyFocusedElement);
-      if (focusAlreadyInsideFloatingEl) {
-        return;
-      }
-      let focusableElements = null;
-      const getDefaultFocusElement = () => {
-        if (focusableElements == null) {
-          focusableElements = getTabbableContent(floatingFocusElement);
-        }
-        return focusableElements[0] || floatingFocusElement;
-      };
-      let elToFocus;
-      if (resolvedInitialFocus === true || resolvedInitialFocus === null) {
-        elToFocus = getDefaultFocusElement();
-      } else {
-        elToFocus = resolveRef(resolvedInitialFocus);
-      }
-      elToFocus = elToFocus || getDefaultFocusElement();
-      const hadFocusInside = contains(floatingFocusElement, activeElement(doc));
-      enqueueFocus(elToFocus, {
-        preventScroll: elToFocus === floatingFocusElement,
-        shouldFocus() {
-          if (!openRef.current) {
-            return false;
-          }
-          if (hadFocusInside) {
-            return true;
-          }
-          const currentActiveElement = activeElement(doc);
-          const focusMovedInside = currentActiveElement !== elToFocus && contains(floatingFocusElement, currentActiveElement);
-          return !focusMovedInside;
-        }
-      });
-    });
-  }, [disabled2, open, floatingFocusElement, getTabbableContent, initialFocusRef, openInteractionTypeRef, openRef]);
-  useIsoLayoutEffect(() => {
-    if (disabled2 || !floatingFocusElement) {
-      return;
-    }
-    const doc = ownerDocument(floatingFocusElement);
-    const elementFocusedBeforeOpen = activeElement(doc);
-    const preferPreviousFocus = openInteractionTypeRef.current == null;
-    addPreviouslyFocusedElement(elementFocusedBeforeOpen);
-    function onOpenChangeLocal(details) {
-      if (!details.open) {
-        closeTypeRef.current = getEventType(details.nativeEvent, lastInteractionTypeRef.current);
-      }
-      if (details.reason === exports_reason_parts.triggerHover && details.nativeEvent.type === "mouseleave") {
-        preventReturnFocusRef.current = true;
-      }
-      if (details.reason !== exports_reason_parts.outsidePress) {
-        return;
-      }
-      if (details.nested) {
-        preventReturnFocusRef.current = false;
-      } else if (isVirtualClick(details.nativeEvent) || isVirtualPointerEvent(details.nativeEvent)) {
-        preventReturnFocusRef.current = false;
-      } else {
-        let isPreventScrollSupported = false;
-        ownerDocument(floatingFocusElement).createElement("div").focus({
-          get preventScroll() {
-            isPreventScrollSupported = true;
-            return false;
-          }
-        });
-        if (isPreventScrollSupported) {
-          preventReturnFocusRef.current = false;
-        } else {
-          preventReturnFocusRef.current = true;
-        }
-      }
-    }
-    events.on("openchange", onOpenChangeLocal);
-    function getReturnElement() {
-      const returnFocusValueOrFn = returnFocusRef.current;
-      let resolvedReturnFocusValue = typeof returnFocusValueOrFn === "function" ? returnFocusValueOrFn(closeTypeRef.current) : returnFocusValueOrFn;
-      if (resolvedReturnFocusValue === undefined || resolvedReturnFocusValue === false) {
-        return null;
-      }
-      if (resolvedReturnFocusValue === null) {
-        resolvedReturnFocusValue = true;
-      }
-      const referenceReturnElement = domReference?.isConnected ? domReference : null;
-      const previousReturnElement = elementFocusedBeforeOpen?.isConnected && getNodeName(elementFocusedBeforeOpen) !== "body" ? elementFocusedBeforeOpen : null;
-      let defaultReturnElement = preferPreviousFocus ? previousReturnElement || referenceReturnElement : referenceReturnElement || previousReturnElement;
-      if (!defaultReturnElement) {
-        defaultReturnElement = getPreviouslyFocusedElement() || null;
-      }
-      if (typeof resolvedReturnFocusValue === "boolean") {
-        return defaultReturnElement;
-      }
-      return resolveRef(resolvedReturnFocusValue) || defaultReturnElement || null;
-    }
-    return () => {
-      events.off("openchange", onOpenChangeLocal);
-      const activeEl = activeElement(doc);
-      const insideElements = getResolvedInsideElements();
-      const isFocusInsideFloatingTree = contains(floating, activeEl) || insideElements.some((element) => element === activeEl || contains(element, activeEl)) || tree && getNodeChildren(tree.nodesRef.current, getNodeId(), false).some((node) => contains(node.context?.elements.floating, activeEl));
-      const returnFocusValueOrFn = returnFocusRef.current;
-      const returnElement = getReturnElement();
-      queueMicrotask(() => {
-        const tabbableReturnElement = getFirstTabbableElement(returnElement);
-        const hasExplicitReturnFocus = typeof returnFocusValueOrFn !== "boolean";
-        if (returnFocusValueOrFn && !preventReturnFocusRef.current && isHTMLElement(tabbableReturnElement) && (!hasExplicitReturnFocus && tabbableReturnElement !== activeEl && activeEl !== doc.body ? isFocusInsideFloatingTree : true)) {
-          tabbableReturnElement.focus({
-            preventScroll: true
-          });
-        }
-        preventReturnFocusRef.current = false;
-      });
-    };
-  }, [disabled2, floating, floatingFocusElement, returnFocusRef, openInteractionTypeRef, events, tree, domReference, getNodeId, getResolvedInsideElements]);
-  useIsoLayoutEffect(() => {
-    if (!exports_parts.engine.webkit || open || !floating) {
-      return;
-    }
-    const activeEl = activeElement(ownerDocument(floating));
-    if (!isHTMLElement(activeEl) || !isTypeableElement(activeEl)) {
-      return;
-    }
-    if (contains(floating, activeEl)) {
-      activeEl.blur();
-    }
-  }, [open, floating]);
-  useIsoLayoutEffect(() => {
-    if (disabled2 || !portalContext) {
-      return;
-    }
-    portalContext.setFocusManagerState({
-      modal,
-      closeOnFocusOut,
-      open,
-      onOpenChange: store.setOpen,
-      domReference
-    });
-    return () => {
-      portalContext.setFocusManagerState(null);
-    };
-  }, [disabled2, portalContext, modal, open, store, closeOnFocusOut, domReference]);
-  useIsoLayoutEffect(() => {
-    if (disabled2 || !floatingFocusElement) {
-      return;
-    }
-    handleTabIndex(floatingFocusElement);
-    return () => {
-      queueMicrotask(clearDisconnectedPreviouslyFocusedElements);
-    };
-  }, [disabled2, floatingFocusElement]);
-  const shouldRenderGuards = !disabled2 && (modal ? !isUntrappedTypeableCombobox : true) && (isInsidePortal || modal);
-  return /* @__PURE__ */ import_jsx_runtime4.jsxs(React13.Fragment, {
-    children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime4.jsx(FocusGuard, {
-      "data-type": "inside",
-      ref: mergedBeforeGuardRef,
-      onFocus: (event) => {
-        if (modal) {
-          const els = getTabbableContent();
-          enqueueFocus(els[els.length - 1]);
-        } else if (portalContext?.portalNode) {
-          preventReturnFocusRef.current = false;
-          if (isOutsideEvent(event, portalContext.portalNode)) {
-            const nextTabbable = getNextTabbable(domReference);
-            nextTabbable?.focus();
-          } else {
-            resolveRef(previousFocusableElement ?? portalContext.beforeOutsideRef)?.focus();
-          }
-        }
-      }
-    }), children, shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime4.jsx(FocusGuard, {
-      "data-type": "inside",
-      ref: mergedAfterGuardRef,
-      onFocus: (event) => {
-        if (modal) {
-          enqueueFocus(getTabbableContent()[0]);
-        } else if (portalContext?.portalNode) {
-          if (closeOnFocusOut) {
-            preventReturnFocusRef.current = true;
-          }
-          if (isOutsideEvent(event, portalContext.portalNode)) {
-            const prevTabbable = getPreviousTabbable(domReference);
-            prevTabbable?.focus();
-          } else {
-            resolveRef(nextFocusableElement ?? portalContext.afterOutsideRef)?.focus();
-          }
-        }
-      }
-    })]
-  });
-}
-// node_modules/@base-ui/react/floating-ui-react/hooks/useClick.mjs
-var React14 = __toESM(require_react(), 1);
-"use client";
-function useClick(context, props = {}) {
-  const {
-    enabled = true,
-    event: eventOption = "click",
-    toggle = true,
-    ignoreMouse = false,
-    stickIfOpen = true,
-    touchOpenDelay = 0,
-    reason = exports_reason_parts.triggerPress
-  } = props;
-  const store = "rootStore" in context ? context.rootStore : context;
-  const dataRef = store.context.dataRef;
-  const pointerTypeRef = React14.useRef(undefined);
-  const frame = useAnimationFrame();
-  const touchOpenTimeout = useTimeout();
-  const reference = React14.useMemo(() => {
-    function setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType) {
-      const details = createChangeEventDetails(reason, nativeEvent, target);
-      if (nextOpen && pointerType === "touch" && touchOpenDelay > 0) {
-        touchOpenTimeout.start(touchOpenDelay, () => {
-          store.setOpen(true, details);
-        });
-      } else {
-        store.setOpen(nextOpen, details);
-      }
-    }
-    function getNextOpen(open, currentTarget, isClickLikeOpenEvent) {
-      const openEvent = dataRef.current.openEvent;
-      const hasClickedOnInactiveTrigger = store.select("domReferenceElement") !== currentTarget;
-      if (open && hasClickedOnInactiveTrigger) {
-        return true;
-      }
-      if (!open) {
-        return true;
-      }
-      if (!toggle) {
-        return true;
-      }
-      if (openEvent && stickIfOpen) {
-        return !isClickLikeOpenEvent(openEvent.type);
-      }
-      return false;
-    }
-    return {
-      onPointerDown(event) {
-        pointerTypeRef.current = event.pointerType;
-      },
-      onMouseDown(event) {
-        const pointerType = pointerTypeRef.current;
-        const nativeEvent = event.nativeEvent;
-        const open = store.select("open");
-        if (event.button !== 0 || eventOption === "click" || isMouseLikePointerType(pointerType, true) && ignoreMouse) {
-          return;
-        }
-        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown");
-        const target = getTarget(nativeEvent);
-        if (isTypeableElement(target)) {
-          setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType);
-          return;
-        }
-        const eventCurrentTarget = event.currentTarget;
-        frame.request(() => {
-          setOpenWithTouchDelay(nextOpen, nativeEvent, eventCurrentTarget, pointerType);
-        });
-      },
-      onClick(event) {
-        if (eventOption === "mousedown-only") {
-          return;
-        }
-        const pointerType = pointerTypeRef.current;
-        if (eventOption === "mousedown" && pointerType) {
-          pointerTypeRef.current = undefined;
-          return;
-        }
-        if (isMouseLikePointerType(pointerType, true) && ignoreMouse) {
-          return;
-        }
-        const open = store.select("open");
-        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown" || openEventType === "keydown" || openEventType === "keyup");
-        setOpenWithTouchDelay(nextOpen, event.nativeEvent, event.currentTarget, pointerType);
-      },
-      onKeyDown() {
-        pointerTypeRef.current = undefined;
-      }
-    };
-  }, [dataRef, eventOption, ignoreMouse, reason, store, stickIfOpen, toggle, frame, touchOpenTimeout, touchOpenDelay]);
-  return React14.useMemo(() => enabled ? {
-    reference
-  } : EMPTY_OBJECT, [enabled, reference]);
-}
-// node_modules/@base-ui/react/floating-ui-react/hooks/useDismiss.mjs
-var React15 = __toESM(require_react(), 1);
-"use client";
-function alwaysFalse() {
-  return false;
-}
-function normalizeProp(normalizable) {
-  return {
-    escapeKey: typeof normalizable === "boolean" ? normalizable : normalizable?.escapeKey ?? false,
-    outsidePress: typeof normalizable === "boolean" ? normalizable : normalizable?.outsidePress ?? true
-  };
-}
-function useDismiss(context, props = {}) {
-  const {
-    enabled = true,
-    escapeKey: escapeKey2 = true,
-    outsidePress: outsidePressProp = true,
-    outsidePressEvent = "sloppy",
-    referencePress = alwaysFalse,
-    bubbles,
-    externalTree
-  } = props;
-  const store = "rootStore" in context ? context.rootStore : context;
-  const open = store.useState("open");
-  const floatingElement = store.useState("floatingElement");
-  const {
-    dataRef
-  } = store.context;
-  const tree = useFloatingTree(externalTree);
-  const outsidePressFn = useStableCallback(typeof outsidePressProp === "function" ? outsidePressProp : () => false);
-  const outsidePress2 = typeof outsidePressProp === "function" ? outsidePressFn : outsidePressProp;
-  const outsidePressEnabled = outsidePress2 !== false;
-  const getOutsidePressEventProp = useStableCallback(() => outsidePressEvent);
-  const {
-    escapeKey: escapeKeyBubbles,
-    outsidePress: outsidePressBubbles
-  } = normalizeProp(bubbles);
-  const pressStartedInsideRef = React15.useRef(false);
-  const pressStartPreventedRef = React15.useRef(false);
-  const suppressNextOutsideClickRef = React15.useRef(false);
-  const isComposingRef = React15.useRef(false);
-  const currentPointerTypeRef = React15.useRef("");
-  const touchStateRef = React15.useRef(null);
-  const cancelDismissOnEndTimeout = useTimeout();
-  const clearInsideReactTreeTimeout = useTimeout();
-  const clearInsideReactTree = useStableCallback(() => {
-    clearInsideReactTreeTimeout.clear();
-    dataRef.current.insideReactTree = false;
-  });
-  const hasBlockingChild = useStableCallback((bubbleKey) => {
-    const nodeId = dataRef.current.floatingContext?.nodeId;
-    const children = tree ? getNodeChildren(tree.nodesRef.current, nodeId) : [];
-    return children.some((child) => child.context?.open && !child.context.dataRef.current[bubbleKey]);
-  });
-  const isEventWithinOwnElements = useStableCallback((event) => {
-    return isEventTargetWithin(event, store.select("floatingElement")) || isEventTargetWithin(event, store.select("domReferenceElement"));
-  });
-  const closeOnReferencePress = useStableCallback((event) => {
-    if (!referencePress()) {
-      return;
-    }
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerPress, event.nativeEvent));
-  });
-  const closeOnEscapeKeyDown = useStableCallback((event) => {
-    if (!open || !enabled || !escapeKey2 || event.key !== "Escape") {
-      return;
-    }
-    if (isComposingRef.current) {
-      return;
-    }
-    if (!escapeKeyBubbles && hasBlockingChild("__escapeKeyBubbles")) {
-      return;
-    }
-    const native = isReactEvent(event) ? event.nativeEvent : event;
-    const eventDetails = createChangeEventDetails(exports_reason_parts.escapeKey, native);
-    store.setOpen(false, eventDetails);
-    if (!eventDetails.isCanceled) {
-      event.preventDefault();
-    }
-    if (!escapeKeyBubbles && !eventDetails.isPropagationAllowed) {
-      event.stopPropagation();
-    }
-  });
-  const markInsideReactTree = useStableCallback(() => {
-    dataRef.current.insideReactTree = true;
-    clearInsideReactTreeTimeout.start(0, clearInsideReactTree);
-  });
-  const markPressStartedInsideReactTree = useStableCallback((event) => {
-    if (!open || !enabled || event.button !== 0) {
-      return;
-    }
-    const target = getTarget(event.nativeEvent);
-    if (!contains(store.select("floatingElement"), target)) {
-      return;
-    }
-    if (!pressStartedInsideRef.current) {
-      pressStartedInsideRef.current = true;
-      pressStartPreventedRef.current = false;
-    }
-  });
-  const markInsidePressStartPrevented = useStableCallback((event) => {
-    if (!open || !enabled) {
-      return;
-    }
-    if (!(event.defaultPrevented || event.nativeEvent.defaultPrevented)) {
-      return;
-    }
-    if (pressStartedInsideRef.current) {
-      pressStartPreventedRef.current = true;
-    }
-  });
-  React15.useEffect(() => {
-    if (!open || !enabled) {
-      return;
-    }
-    dataRef.current.__escapeKeyBubbles = escapeKeyBubbles;
-    dataRef.current.__outsidePressBubbles = outsidePressBubbles;
-    const compositionTimeout = new Timeout;
-    const preventedPressSuppressionTimeout = new Timeout;
-    function handleCompositionStart() {
-      compositionTimeout.clear();
-      isComposingRef.current = true;
-    }
-    function handleCompositionEnd() {
-      compositionTimeout.start(exports_parts.engine.webkit ? 5 : 0, () => {
-        isComposingRef.current = false;
-      });
-    }
-    function suppressImmediateOutsideClickAfterPreventedStart() {
-      suppressNextOutsideClickRef.current = true;
-      preventedPressSuppressionTimeout.start(0, () => {
-        suppressNextOutsideClickRef.current = false;
-      });
-    }
-    function resetPressStartState() {
-      pressStartedInsideRef.current = false;
-      pressStartPreventedRef.current = false;
-    }
-    function getOutsidePressEvent() {
-      const type = currentPointerTypeRef.current;
-      const computedType = type === "pen" || !type ? "mouse" : type;
-      const outsidePressEventValue = getOutsidePressEventProp();
-      const resolved = typeof outsidePressEventValue === "function" ? outsidePressEventValue() : outsidePressEventValue;
-      if (typeof resolved === "string") {
-        return resolved;
-      }
-      return resolved[computedType];
-    }
-    function shouldIgnoreEvent(event) {
-      const computedOutsidePressEvent = getOutsidePressEvent();
-      return computedOutsidePressEvent === "intentional" && event.type !== "click" || computedOutsidePressEvent === "sloppy" && event.type === "click";
-    }
-    function isEventWithinFloatingTree(event) {
-      const nodeId = dataRef.current.floatingContext?.nodeId;
-      const targetIsInsideChildren = tree && getNodeChildren(tree.nodesRef.current, nodeId).some((node) => isEventTargetWithin(event, node.context?.elements.floating));
-      return isEventWithinOwnElements(event) || targetIsInsideChildren;
-    }
-    function closeOnPressOutside(event) {
-      if (shouldIgnoreEvent(event)) {
-        if (event.type !== "click" && !isEventWithinOwnElements(event)) {
-          preventedPressSuppressionTimeout.clear();
-          suppressNextOutsideClickRef.current = false;
-        }
-        clearInsideReactTree();
-        return;
-      }
-      if (dataRef.current.insideReactTree) {
-        clearInsideReactTree();
-        return;
-      }
-      const target = getTarget(event);
-      const inertSelector = `[${createAttribute("inert")}]`;
-      const targetRoot = isElement(target) ? target.getRootNode() : null;
-      const markers = Array.from((isShadowRoot(targetRoot) ? targetRoot : ownerDocument(store.select("floatingElement"))).querySelectorAll(inertSelector));
-      const triggers = store.context.triggerElements;
-      if (target && (triggers.hasElement(target) || triggers.hasMatchingElement((trigger) => contains(trigger, target)))) {
-        return;
-      }
-      let targetRootAncestor = isElement(target) ? target : null;
-      while (targetRootAncestor && !isLastTraversableNode(targetRootAncestor)) {
-        const nextParent = getParentNode(targetRootAncestor);
-        if (isLastTraversableNode(nextParent) || !isElement(nextParent)) {
-          break;
-        }
-        targetRootAncestor = nextParent;
-      }
-      if (markers.length && isElement(target) && !isRootElement(target) && !contains(target, store.select("floatingElement")) && markers.every((marker) => !contains(targetRootAncestor, marker))) {
-        return;
-      }
-      if (isHTMLElement(target) && !("touches" in event)) {
-        const lastTraversableNode = isLastTraversableNode(target);
-        const style = getComputedStyle2(target);
-        const scrollRe = /auto|scroll/;
-        const isScrollableX = lastTraversableNode || scrollRe.test(style.overflowX);
-        const isScrollableY = lastTraversableNode || scrollRe.test(style.overflowY);
-        const canScrollX = isScrollableX && target.clientWidth > 0 && target.scrollWidth > target.clientWidth;
-        const canScrollY = isScrollableY && target.clientHeight > 0 && target.scrollHeight > target.clientHeight;
-        const isRTL = style.direction === "rtl";
-        const pressedVerticalScrollbar = canScrollY && (isRTL ? event.offsetX <= target.offsetWidth - target.clientWidth : event.offsetX > target.clientWidth);
-        const pressedHorizontalScrollbar = canScrollX && event.offsetY > target.clientHeight;
-        if (pressedVerticalScrollbar || pressedHorizontalScrollbar) {
-          return;
-        }
-      }
-      if (isEventWithinFloatingTree(event)) {
-        return;
-      }
-      if (getOutsidePressEvent() === "intentional" && suppressNextOutsideClickRef.current) {
-        preventedPressSuppressionTimeout.clear();
-        suppressNextOutsideClickRef.current = false;
-        return;
-      }
-      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
-        return;
-      }
-      if (hasBlockingChild("__outsidePressBubbles")) {
-        return;
-      }
-      store.setOpen(false, createChangeEventDetails(exports_reason_parts.outsidePress, event));
-      clearInsideReactTree();
-    }
-    function handlePointerDown(event) {
-      if (getOutsidePressEvent() !== "sloppy" || event.pointerType === "touch" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
-        return;
-      }
-      closeOnPressOutside(event);
-    }
-    function handleTouchStart(event) {
-      if (getOutsidePressEvent() !== "sloppy" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
-        return;
-      }
-      const touch = event.touches[0];
-      if (touch) {
-        touchStateRef.current = {
-          startTime: Date.now(),
-          startX: touch.clientX,
-          startY: touch.clientY,
-          dismissOnTouchEnd: false,
-          dismissOnMouseDown: true
-        };
-        cancelDismissOnEndTimeout.start(1000, () => {
-          if (touchStateRef.current) {
-            touchStateRef.current.dismissOnTouchEnd = false;
-            touchStateRef.current.dismissOnMouseDown = false;
-          }
-        });
-      }
-    }
-    function addTargetEventListenerOnce(event, listener) {
-      const target = getTarget(event);
-      if (!target) {
-        return;
-      }
-      const unsubscribe2 = addEventListener(target, event.type, () => {
-        listener(event);
-        unsubscribe2();
-      });
-    }
-    function handleTouchStartCapture(event) {
-      currentPointerTypeRef.current = "touch";
-      addTargetEventListenerOnce(event, handleTouchStart);
-    }
-    function closeOnPressOutsideCapture(event) {
-      cancelDismissOnEndTimeout.clear();
-      if (event.type === "pointerdown") {
-        currentPointerTypeRef.current = event.pointerType;
-      }
-      if (event.type === "mousedown" && touchStateRef.current && !touchStateRef.current.dismissOnMouseDown) {
-        return;
-      }
-      addTargetEventListenerOnce(event, (targetEvent) => {
-        if (targetEvent.type === "pointerdown") {
-          handlePointerDown(targetEvent);
-        } else {
-          closeOnPressOutside(targetEvent);
-        }
-      });
-    }
-    function handlePressEndCapture(event) {
-      if (!pressStartedInsideRef.current) {
-        return;
-      }
-      const pressStartedInsideDefaultPrevented = pressStartPreventedRef.current;
-      resetPressStartState();
-      if (getOutsidePressEvent() !== "intentional") {
-        return;
-      }
-      if (event.type === "pointercancel") {
-        if (pressStartedInsideDefaultPrevented) {
-          suppressImmediateOutsideClickAfterPreventedStart();
-        }
-        return;
-      }
-      if (isEventWithinFloatingTree(event)) {
-        return;
-      }
-      if (pressStartedInsideDefaultPrevented) {
-        suppressImmediateOutsideClickAfterPreventedStart();
-        return;
-      }
-      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
-        return;
-      }
-      preventedPressSuppressionTimeout.clear();
-      suppressNextOutsideClickRef.current = true;
-      clearInsideReactTree();
-    }
-    function handleTouchMove(event) {
-      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
-        return;
-      }
-      const touch = event.touches[0];
-      if (!touch) {
-        return;
-      }
-      const deltaX = Math.abs(touch.clientX - touchStateRef.current.startX);
-      const deltaY = Math.abs(touch.clientY - touchStateRef.current.startY);
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      if (distance > 5) {
-        touchStateRef.current.dismissOnTouchEnd = true;
-      }
-      if (distance > 10) {
-        closeOnPressOutside(event);
-        cancelDismissOnEndTimeout.clear();
-        touchStateRef.current = null;
-      }
-    }
-    function handleTouchMoveCapture(event) {
-      addTargetEventListenerOnce(event, handleTouchMove);
-    }
-    function handleTouchEnd(event) {
-      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
-        return;
-      }
-      if (touchStateRef.current.dismissOnTouchEnd) {
-        closeOnPressOutside(event);
-      }
-      cancelDismissOnEndTimeout.clear();
-      touchStateRef.current = null;
-    }
-    function handleTouchEndCapture(event) {
-      addTargetEventListenerOnce(event, handleTouchEnd);
-    }
-    const doc = ownerDocument(floatingElement);
-    const unsubscribe = mergeCleanups(escapeKey2 && mergeCleanups(addEventListener(doc, "keydown", closeOnEscapeKeyDown), addEventListener(doc, "compositionstart", handleCompositionStart), addEventListener(doc, "compositionend", handleCompositionEnd)), outsidePressEnabled && mergeCleanups(addEventListener(doc, "click", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerdown", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerup", handlePressEndCapture, true), addEventListener(doc, "pointercancel", handlePressEndCapture, true), addEventListener(doc, "mousedown", closeOnPressOutsideCapture, true), addEventListener(doc, "mouseup", handlePressEndCapture, true), addEventListener(doc, "touchstart", handleTouchStartCapture, true), addEventListener(doc, "touchmove", handleTouchMoveCapture, true), addEventListener(doc, "touchend", handleTouchEndCapture, true)));
-    return () => {
-      unsubscribe();
-      compositionTimeout.clear();
-      preventedPressSuppressionTimeout.clear();
-      resetPressStartState();
-      suppressNextOutsideClickRef.current = false;
-    };
-  }, [dataRef, floatingElement, escapeKey2, outsidePressEnabled, outsidePress2, open, enabled, escapeKeyBubbles, outsidePressBubbles, closeOnEscapeKeyDown, clearInsideReactTree, getOutsidePressEventProp, hasBlockingChild, isEventWithinOwnElements, tree, store, cancelDismissOnEndTimeout]);
-  React15.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
-  const reference = React15.useMemo(() => ({
-    onKeyDown: closeOnEscapeKeyDown,
-    onPointerDown: closeOnReferencePress,
-    onClick: closeOnReferencePress
-  }), [closeOnEscapeKeyDown, closeOnReferencePress]);
-  const floating = React15.useMemo(() => ({
-    onKeyDown: closeOnEscapeKeyDown,
-    onPointerDown: markInsidePressStartPrevented,
-    onMouseDown: markInsidePressStartPrevented,
-    onClickCapture: markInsideReactTree,
-    onMouseDownCapture(event) {
-      markInsideReactTree();
-      markPressStartedInsideReactTree(event);
-    },
-    onPointerDownCapture(event) {
-      markInsideReactTree();
-      markPressStartedInsideReactTree(event);
-    },
-    onMouseUpCapture: markInsideReactTree,
-    onTouchEndCapture: markInsideReactTree,
-    onTouchMoveCapture: markInsideReactTree
-  }), [closeOnEscapeKeyDown, markInsideReactTree, markPressStartedInsideReactTree, markInsidePressStartPrevented]);
-  return React15.useMemo(() => enabled ? {
-    reference,
-    floating,
-    trigger: reference
-  } : {}, [enabled, reference, floating]);
-}
-// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
-var React22 = __toESM(require_react(), 1);
-var ReactDOM3 = __toESM(require_react_dom(), 1);
-
-// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
-var React19 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/store/createSelector.mjs
-var createSelector = (a, b, c, d, e, f, ...other) => {
-  if (other.length > 0) {
-    throw new Error("Unsupported number of selectors");
-  }
-  let selector;
-  if (a && b && c && d && e && f) {
-    selector = (state, a1, a2, a3) => {
-      const va = a(state, a1, a2, a3);
-      const vb = b(state, a1, a2, a3);
-      const vc = c(state, a1, a2, a3);
-      const vd = d(state, a1, a2, a3);
-      const ve = e(state, a1, a2, a3);
-      return f(va, vb, vc, vd, ve, a1, a2, a3);
-    };
-  } else if (a && b && c && d && e) {
-    selector = (state, a1, a2, a3) => {
-      const va = a(state, a1, a2, a3);
-      const vb = b(state, a1, a2, a3);
-      const vc = c(state, a1, a2, a3);
-      const vd = d(state, a1, a2, a3);
-      return e(va, vb, vc, vd, a1, a2, a3);
-    };
-  } else if (a && b && c && d) {
-    selector = (state, a1, a2, a3) => {
-      const va = a(state, a1, a2, a3);
-      const vb = b(state, a1, a2, a3);
-      const vc = c(state, a1, a2, a3);
-      return d(va, vb, vc, a1, a2, a3);
-    };
-  } else if (a && b && c) {
-    selector = (state, a1, a2, a3) => {
-      const va = a(state, a1, a2, a3);
-      const vb = b(state, a1, a2, a3);
-      return c(va, vb, a1, a2, a3);
-    };
-  } else if (a && b) {
-    selector = (state, a1, a2, a3) => {
-      const va = a(state, a1, a2, a3);
-      return b(va, a1, a2, a3);
-    };
-  } else if (a) {
-    selector = a;
-  } else {
-    throw new Error("Missing arguments");
-  }
-  return selector;
-};
-
-// node_modules/@base-ui/utils/store/useStore.mjs
-var React17 = __toESM(require_react(), 1);
-var import_shim = __toESM(require_shim(), 1);
-var import_with_selector = __toESM(require_with_selector(), 1);
-
-// node_modules/@base-ui/utils/fastHooks.mjs
-var React16 = __toESM(require_react(), 1);
-var hooks = [];
-var currentInstance = undefined;
-function getInstance() {
-  return currentInstance;
-}
-function register(hook) {
-  hooks.push(hook);
-}
-
-// node_modules/@base-ui/utils/store/useStore.mjs
-var canUseRawUseSyncExternalStore = isReactVersionAtLeast(19);
-var useStoreImplementation = canUseRawUseSyncExternalStore ? useStoreFast : useStoreLegacy;
-function useStore(store, selector, a1, a2, a3) {
-  return useStoreImplementation(store, selector, a1, a2, a3);
-}
-function useStoreR19(store, selector, a1, a2, a3) {
-  const getSelection = React17.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
-  return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
-}
-register({
-  before(instance) {
-    instance.syncIndex = 0;
-    if (!instance.didInitialize) {
-      instance.syncTick = 1;
-      instance.syncHooks = [];
-      instance.didChangeStore = true;
-      instance.getSnapshot = () => {
-        let didChange2 = false;
-        for (let i = 0;i < instance.syncHooks.length; i += 1) {
-          const hook = instance.syncHooks[i];
-          const value = hook.selector(hook.store.state, hook.a1, hook.a2, hook.a3);
-          if (!Object.is(hook.value, value)) {
-            didChange2 = true;
-            hook.value = value;
-          }
-        }
-        if (didChange2) {
-          instance.syncTick += 1;
-        }
-        return instance.syncTick;
-      };
-    }
-  },
-  after(instance) {
-    if (instance.syncHooks.length > 0) {
-      if (instance.didChangeStore) {
-        instance.didChangeStore = false;
-        instance.subscribe = (onStoreChange) => {
-          const stores = new Set;
-          for (const hook of instance.syncHooks) {
-            stores.add(hook.store);
-          }
-          const unsubscribes = [];
-          for (const store of stores) {
-            unsubscribes.push(store.subscribe(onStoreChange));
-          }
-          return () => {
-            for (const unsubscribe of unsubscribes) {
-              unsubscribe();
-            }
-          };
-        };
-      }
-      import_shim.useSyncExternalStore(instance.subscribe, instance.getSnapshot, instance.getSnapshot);
-    }
-  }
-});
-function useStoreFast(store, selector, a1, a2, a3) {
-  const instance = getInstance();
-  if (!instance) {
-    return useStoreR19(store, selector, a1, a2, a3);
-  }
-  const index = instance.syncIndex;
-  instance.syncIndex += 1;
-  let hook;
-  if (!instance.didInitialize) {
-    hook = {
-      store,
-      selector,
-      a1,
-      a2,
-      a3,
-      value: selector(store.getSnapshot(), a1, a2, a3)
-    };
-    instance.syncHooks.push(hook);
-  } else {
-    hook = instance.syncHooks[index];
-    if (hook.store !== store || hook.selector !== selector || !Object.is(hook.a1, a1) || !Object.is(hook.a2, a2) || !Object.is(hook.a3, a3)) {
-      if (hook.store !== store) {
-        instance.didChangeStore = true;
-      }
-      hook.store = store;
-      hook.selector = selector;
-      hook.a1 = a1;
-      hook.a2 = a2;
-      hook.a3 = a3;
-      hook.value = selector(store.getSnapshot(), a1, a2, a3);
-    }
-  }
-  return hook.value;
-}
-function useStoreLegacy(store, selector, a1, a2, a3) {
-  return import_with_selector.useSyncExternalStoreWithSelector(store.subscribe, store.getSnapshot, store.getSnapshot, (state) => selector(state, a1, a2, a3));
-}
-
-// node_modules/@base-ui/utils/store/Store.mjs
-class Store {
-  constructor(state) {
-    this.state = state;
-    this.listeners = new Set;
-    this.updateTick = 0;
-  }
-  subscribe = (fn) => {
-    this.listeners.add(fn);
-    return () => {
-      this.listeners.delete(fn);
-    };
-  };
-  getSnapshot = () => {
-    return this.state;
-  };
-  setState(newState) {
-    if (this.state === newState) {
-      return;
-    }
-    this.state = newState;
-    this.updateTick += 1;
-    const currentTick = this.updateTick;
-    for (const listener of this.listeners) {
-      if (currentTick !== this.updateTick) {
-        return;
-      }
-      listener(newState);
-    }
-  }
-  update(changes) {
-    for (const key in changes) {
-      if (!Object.is(this.state[key], changes[key])) {
-        this.setState({
-          ...this.state,
-          ...changes
-        });
-        return;
-      }
-    }
-  }
-  set(key, value) {
-    if (!Object.is(this.state[key], value)) {
-      this.setState({
-        ...this.state,
-        [key]: value
-      });
-    }
-  }
-  notifyAll() {
-    const newState = {
-      ...this.state
-    };
-    this.setState(newState);
-  }
-  use(selector, a1, a2, a3) {
-    return useStore(this, selector, a1, a2, a3);
-  }
-}
-
-// node_modules/@base-ui/utils/store/ReactStore.mjs
-var React18 = __toESM(require_react(), 1);
-"use client";
-
-class ReactStore extends Store {
-  constructor(state, context = {}, selectors) {
-    super(state);
-    this.context = context;
-    this.selectors = selectors;
-  }
-  useSyncedValue(key, value) {
-    React18.useDebugValue(key);
-    const store = this;
-    useIsoLayoutEffect(() => {
-      if (store.state[key] !== value) {
-        store.set(key, value);
-      }
-    }, [store, key, value]);
-  }
-  useSyncedValueWithCleanup(key, value) {
-    const store = this;
-    useIsoLayoutEffect(() => {
-      if (store.state[key] !== value) {
-        store.set(key, value);
-      }
-      return () => {
-        store.set(key, undefined);
-      };
-    }, [store, key, value]);
-  }
-  useSyncedValues(statePart) {
-    const store = this;
-    if (true) {
-      React18.useDebugValue(statePart, (p) => Object.keys(p));
-      const keys = React18.useRef(Object.keys(statePart)).current;
-      const nextKeys = Object.keys(statePart);
-      if (keys.length !== nextKeys.length || keys.some((key, index) => key !== nextKeys[index])) {
-        console.error("ReactStore.useSyncedValues expects the same prop keys on every render. Keys should be stable.");
-      }
-    }
-    const dependencies = Object.values(statePart);
-    useIsoLayoutEffect(() => {
-      store.update(statePart);
-    }, [store, ...dependencies]);
-  }
-  useControlledProp(key, controlled) {
-    React18.useDebugValue(key);
-    const store = this;
-    const isControlled = controlled !== undefined;
-    useIsoLayoutEffect(() => {
-      if (isControlled && !Object.is(store.state[key], controlled)) {
-        store.setState({
-          ...store.state,
-          [key]: controlled
-        });
-      }
-    }, [store, key, controlled, isControlled]);
-    if (true) {
-      const cache = this.controlledValues ??= new Map;
-      if (!cache.has(key)) {
-        cache.set(key, isControlled);
-      }
-      const previouslyControlled = cache.get(key);
-      if (previouslyControlled !== undefined && previouslyControlled !== isControlled) {
-        console.error(`A component is changing the ${isControlled ? "" : "un"}controlled state of ${key.toString()} to be ${isControlled ? "un" : ""}controlled. Elements should not switch from uncontrolled to controlled (or vice versa).`);
-      }
-    }
-  }
-  select(key, a1, a2, a3) {
-    const selector = this.selectors[key];
-    return selector(this.state, a1, a2, a3);
-  }
-  useState(key, a1, a2, a3) {
-    React18.useDebugValue(key);
-    return useStore(this, this.selectors[key], a1, a2, a3);
-  }
-  useContextCallback(key, fn) {
-    React18.useDebugValue(key);
-    const stableFunction = useStableCallback(fn ?? NOOP);
-    this.context[key] = stableFunction;
-  }
-  useStateSetter(key) {
-    const ref = React18.useRef(undefined);
-    if (ref.current === undefined) {
-      ref.current = (value) => {
-        this.set(key, value);
-      };
-    }
-    return ref.current;
-  }
-  observe(selector, listener) {
-    let selectFn;
-    if (typeof selector === "function") {
-      selectFn = selector;
-    } else {
-      selectFn = this.selectors[selector];
-    }
-    let prevValue = selectFn(this.state);
-    listener(prevValue, prevValue, this);
-    return this.subscribe((nextState) => {
-      const nextValue = selectFn(nextState);
-      if (!Object.is(prevValue, nextValue)) {
-        const oldValue = prevValue;
-        prevValue = nextValue;
-        listener(nextValue, oldValue, this);
-      }
-    });
-  }
-}
-
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingRootStore.mjs
-var selectors = {
-  open: createSelector((state) => state.open),
-  transitionStatus: createSelector((state) => state.transitionStatus),
-  domReferenceElement: createSelector((state) => state.domReferenceElement),
-  referenceElement: createSelector((state) => state.positionReference ?? state.referenceElement),
-  floatingElement: createSelector((state) => state.floatingElement),
-  floatingId: createSelector((state) => state.floatingId)
-};
-
-class FloatingRootStore extends ReactStore {
-  constructor(options) {
-    const {
-      syncOnly,
-      nested,
-      onOpenChange,
-      triggerElements,
-      ...initialState
-    } = options;
-    super({
-      ...initialState,
-      positionReference: initialState.referenceElement,
-      domReferenceElement: initialState.referenceElement
-    }, {
-      onOpenChange,
-      dataRef: {
-        current: {}
-      },
-      events: createEventEmitter(),
-      nested,
-      triggerElements
-    }, selectors);
-    this.syncOnly = syncOnly;
-  }
-  syncOpenEvent = (newOpen, event) => {
-    if (!newOpen || !this.state.open || event != null && isClickLikeEvent(event)) {
-      this.context.dataRef.current.openEvent = newOpen ? event : undefined;
-    }
-  };
-  dispatchOpenChange = (newOpen, eventDetails) => {
-    this.syncOpenEvent(newOpen, eventDetails.event);
-    const details = {
-      open: newOpen,
-      reason: eventDetails.reason,
-      nativeEvent: eventDetails.event,
-      nested: this.context.nested,
-      triggerElement: eventDetails.trigger
-    };
-    this.context.events.emit("openchange", details);
-  };
-  setOpen = (newOpen, eventDetails) => {
-    if (this.syncOnly) {
-      this.context.onOpenChange?.(newOpen, eventDetails);
-      return;
-    }
-    this.dispatchOpenChange(newOpen, eventDetails);
-    this.context.onOpenChange?.(newOpen, eventDetails);
-  };
-}
-
-// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
-"use client";
-function useSyncedFloatingRootContext2(options) {
-  const {
-    popupStore,
-    treatPopupAsFloatingElement = false,
-    floatingRootContext: floatingRootContextProp,
-    floatingId,
-    nested,
-    onOpenChange
-  } = options;
-  const open = popupStore.useState("open");
-  const referenceElement = popupStore.useState("activeTriggerElement");
-  const floatingElement = popupStore.useState(treatPopupAsFloatingElement ? "popupElement" : "positionerElement");
-  const triggerElements = popupStore.context.triggerElements;
-  const handleOpenChange = onOpenChange;
-  const internalStoreRef = React19.useRef(null);
-  if (floatingRootContextProp === undefined && internalStoreRef.current === null) {
-    internalStoreRef.current = new FloatingRootStore({
-      open,
-      transitionStatus: undefined,
-      referenceElement,
-      floatingElement,
-      triggerElements,
-      onOpenChange: handleOpenChange,
-      floatingId,
-      syncOnly: true,
-      nested
-    });
-  }
-  const store = floatingRootContextProp ?? internalStoreRef.current;
-  popupStore.useSyncedValue("floatingId", floatingId);
-  useIsoLayoutEffect(() => {
-    const valuesToSync = {
-      open,
-      floatingId,
-      referenceElement,
-      floatingElement
-    };
-    if (isElement(referenceElement)) {
-      valuesToSync.domReferenceElement = referenceElement;
-    }
-    if (store.state.positionReference === store.state.referenceElement) {
-      valuesToSync.positionReference = referenceElement;
-    }
-    store.update(valuesToSync);
-  }, [open, floatingId, referenceElement, floatingElement, store]);
-  store.context.onOpenChange = handleOpenChange;
-  store.context.nested = nested;
-  return store;
-}
-
-// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
-var React20 = __toESM(require_react(), 1);
-"use client";
-function useTransitionStatus(open, enableIdleState = false, deferEndingState = false) {
-  const [transitionStatus, setTransitionStatus] = React20.useState(open && enableIdleState ? "idle" : undefined);
-  const [mounted, setMounted] = React20.useState(open);
-  if (open && !mounted) {
-    setMounted(true);
-    setTransitionStatus("starting");
-  }
-  if (!open && mounted && transitionStatus !== "ending" && !deferEndingState) {
-    setTransitionStatus("ending");
-  }
-  if (!open && !mounted && transitionStatus === "ending") {
-    setTransitionStatus(undefined);
-  }
-  useIsoLayoutEffect(() => {
-    if (!open && mounted && transitionStatus !== "ending" && deferEndingState) {
-      const frame = AnimationFrame.request(() => {
-        setTransitionStatus("ending");
-      });
-      return () => {
-        AnimationFrame.cancel(frame);
-      };
-    }
-    return;
-  }, [open, mounted, transitionStatus, deferEndingState]);
-  useIsoLayoutEffect(() => {
-    if (!open || enableIdleState) {
-      return;
-    }
-    const frame = AnimationFrame.request(() => {
-      setTransitionStatus(undefined);
-    });
-    return () => {
-      AnimationFrame.cancel(frame);
-    };
-  }, [enableIdleState, open]);
-  useIsoLayoutEffect(() => {
-    if (!open || !enableIdleState) {
-      return;
-    }
-    if (open && mounted && transitionStatus !== "idle") {
-      setTransitionStatus("starting");
-    }
-    const frame = AnimationFrame.request(() => {
-      setTransitionStatus("idle");
-    });
-    return () => {
-      AnimationFrame.cancel(frame);
-    };
-  }, [enableIdleState, open, mounted, transitionStatus]);
-  return {
-    mounted,
-    setMounted,
-    transitionStatus
-  };
-}
-
-// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
-var React21 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
-var ReactDOM2 = __toESM(require_react_dom(), 1);
-
-// node_modules/@base-ui/react/internals/stateAttributesMapping.mjs
-var TransitionStatusDataAttributes = /* @__PURE__ */ function(TransitionStatusDataAttributes2) {
-  TransitionStatusDataAttributes2["startingStyle"] = "data-starting-style";
-  TransitionStatusDataAttributes2["endingStyle"] = "data-ending-style";
-  return TransitionStatusDataAttributes2;
-}({});
-var STARTING_HOOK = {
-  [TransitionStatusDataAttributes.startingStyle]: ""
-};
-var ENDING_HOOK = {
-  [TransitionStatusDataAttributes.endingStyle]: ""
-};
-var transitionStatusMapping = {
-  transitionStatus(value) {
-    if (value === "starting") {
-      return STARTING_HOOK;
-    }
-    if (value === "ending") {
-      return ENDING_HOOK;
-    }
-    return null;
-  }
-};
-
-// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
-"use client";
-function useAnimationsFinished(elementOrRef, waitForStartingStyleRemoved = false, treatAbortedAsFinished = true) {
-  const frame = useAnimationFrame();
-  return useStableCallback((fnToExecute, signal = null) => {
-    frame.cancel();
-    const element = resolveRef(elementOrRef);
-    if (element == null) {
-      return;
-    }
-    const resolvedElement = element;
-    const done = () => {
-      ReactDOM2.flushSync(fnToExecute);
-    };
-    if (typeof resolvedElement.getAnimations !== "function" || globalThis.BASE_UI_ANIMATIONS_DISABLED) {
-      fnToExecute();
-      return;
-    }
-    function exec() {
-      Promise.all(resolvedElement.getAnimations().map((animation) => animation.finished)).then(() => {
-        if (!signal?.aborted) {
-          done();
-        }
-      }).catch(() => {
-        if (treatAbortedAsFinished) {
-          if (!signal?.aborted) {
-            done();
-          }
-          return;
-        }
-        const currentAnimations = resolvedElement.getAnimations();
-        if (!signal?.aborted && currentAnimations.length > 0 && currentAnimations.some((animation) => animation.pending || animation.playState !== "finished")) {
-          exec();
-        }
-      });
-    }
-    if (waitForStartingStyleRemoved) {
-      const startingStyleAttribute = TransitionStatusDataAttributes.startingStyle;
-      if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
-        frame.request(exec);
-        return;
-      }
-      const attributeObserver = new MutationObserver(() => {
-        if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
-          attributeObserver.disconnect();
-          exec();
-        }
-      });
-      attributeObserver.observe(resolvedElement, {
-        attributes: true,
-        attributeFilter: [startingStyleAttribute]
-      });
-      signal?.addEventListener("abort", () => attributeObserver.disconnect(), {
-        once: true
-      });
-      return;
-    }
-    frame.request(exec);
-  });
-}
-
-// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
-"use client";
-function useOpenChangeComplete(parameters) {
-  const {
-    enabled = true,
-    open,
-    ref,
-    onComplete: onCompleteParam
-  } = parameters;
-  const onComplete = useStableCallback(onCompleteParam);
-  const runOnceAnimationsFinish = useAnimationsFinished(ref, open, false);
-  React21.useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    const abortController = new AbortController;
-    runOnceAnimationsFinish(onComplete, abortController.signal);
-    return () => {
-      abortController.abort();
-    };
-  }, [enabled, open, onComplete, runOnceAnimationsFinish]);
-}
-
-// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
-"use client";
-var FOCUSABLE_POPUP_PROPS = {
-  tabIndex: -1,
-  [FOCUSABLE_ATTRIBUTE]: ""
-};
-function createDefaultInitialFocus(popupRef) {
-  return (interactionType) => interactionType === "touch" ? popupRef.current : true;
-}
-function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
-  const floatingId = useId();
-  const nested = useFloatingParentNodeId() != null;
-  const internalStoreRef = React22.useRef(null);
-  if (externalStore === undefined && internalStoreRef.current === null) {
-    internalStoreRef.current = createStore(floatingId, nested);
-  }
-  const store = externalStore ?? internalStoreRef.current;
-  useSyncedFloatingRootContext2({
-    popupStore: store,
-    treatPopupAsFloatingElement,
-    floatingRootContext: store.state.floatingRootContext,
-    floatingId,
-    nested,
-    onOpenChange: store.setOpen
-  });
-  return {
-    store,
-    internalStore: internalStoreRef.current
-  };
-}
-function useTriggerRegistration(id, store) {
-  const registeredElementIdRef = React22.useRef(null);
-  const registeredElementRef = React22.useRef(null);
-  return React22.useCallback((element) => {
-    if (id === undefined) {
-      return;
-    }
-    let shouldSyncTriggerCount = false;
-    if (registeredElementIdRef.current !== null) {
-      const registeredId = registeredElementIdRef.current;
-      const registeredElement = registeredElementRef.current;
-      const currentElement = store.context.triggerElements.getById(registeredId);
-      if (registeredElement && currentElement === registeredElement) {
-        store.context.triggerElements.delete(registeredId);
-        shouldSyncTriggerCount = true;
-      }
-      registeredElementIdRef.current = null;
-      registeredElementRef.current = null;
-    }
-    if (element !== null) {
-      registeredElementIdRef.current = id;
-      registeredElementRef.current = element;
-      store.context.triggerElements.add(id, element);
-      shouldSyncTriggerCount = true;
-    }
-    if (shouldSyncTriggerCount) {
-      const triggerCount = store.context.triggerElements.size;
-      if (store.select("open") && store.state.triggerCount !== triggerCount) {
-        store.set("triggerCount", triggerCount);
-      }
-    }
-  }, [store, id]);
-}
-function setPopupOpenState(state, open, trigger, preventUnmountOnClose = false) {
-  if (open) {
-    state.preventUnmountingOnClose = false;
-  } else if (preventUnmountOnClose) {
-    state.preventUnmountingOnClose = true;
-  }
-  const triggerId = trigger?.id ?? null;
-  if (triggerId || open) {
-    state.activeTriggerId = triggerId;
-    state.activeTriggerElement = trigger ?? null;
-  }
-}
-function useTriggerDataForwarding(triggerId, triggerElementRef, store, stateUpdates) {
-  const isMountedByThisTrigger = store.useState("isMountedByTrigger", triggerId);
-  const baseRegisterTrigger = useTriggerRegistration(triggerId, store);
-  const registerTrigger = useStableCallback((element) => {
-    baseRegisterTrigger(element);
-    if (!element) {
-      return;
-    }
-    const open = store.select("open");
-    const activeTriggerId = store.select("activeTriggerId");
-    if (activeTriggerId === triggerId) {
-      store.update({
-        activeTriggerElement: element,
-        ...open ? stateUpdates : null
-      });
-      return;
-    }
-    if (activeTriggerId == null && open) {
-      store.update({
-        activeTriggerId: triggerId,
-        activeTriggerElement: element,
-        ...stateUpdates
-      });
-    }
-  });
-  useIsoLayoutEffect(() => {
-    if (isMountedByThisTrigger) {
-      store.update({
-        activeTriggerElement: triggerElementRef.current,
-        ...stateUpdates
-      });
-    }
-  }, [isMountedByThisTrigger, store, triggerElementRef, ...Object.values(stateUpdates)]);
-  return {
-    registerTrigger,
-    isMountedByThisTrigger
-  };
-}
-function useImplicitActiveTrigger(store, options = {}) {
-  const {
-    closeOnActiveTriggerUnmount = false
-  } = options;
-  const open = store.useState("open");
-  const reactiveTriggerCount = store.useState("triggerCount");
-  useIsoLayoutEffect(() => {
-    if (!open) {
-      if (store.state.triggerCount !== 0) {
-        store.set("triggerCount", 0);
-      }
-      return;
-    }
-    const triggerCount = store.context.triggerElements.size;
-    const stateUpdates = {};
-    if (store.state.triggerCount !== triggerCount) {
-      stateUpdates.triggerCount = triggerCount;
-    }
-    const activeTriggerId = store.select("activeTriggerId");
-    let lostActiveTriggerId = null;
-    if (activeTriggerId) {
-      const activeTriggerElement = store.context.triggerElements.getById(activeTriggerId);
-      if (!activeTriggerElement) {
-        lostActiveTriggerId = activeTriggerId;
-      } else if (activeTriggerElement !== store.state.activeTriggerElement) {
-        stateUpdates.activeTriggerElement = activeTriggerElement;
-      }
-    }
-    if (!lostActiveTriggerId && !activeTriggerId && triggerCount === 1) {
-      const iteratorResult = store.context.triggerElements.entries().next();
-      if (!iteratorResult.done) {
-        const [implicitTriggerId, implicitTriggerElement] = iteratorResult.value;
-        stateUpdates.activeTriggerId = implicitTriggerId;
-        stateUpdates.activeTriggerElement = implicitTriggerElement;
-      }
-    }
-    if (stateUpdates.triggerCount !== undefined || stateUpdates.activeTriggerId !== undefined || stateUpdates.activeTriggerElement !== undefined) {
-      store.update(stateUpdates);
-    }
-    if (lostActiveTriggerId) {
-      if (closeOnActiveTriggerUnmount) {
-        queueMicrotask(() => {
-          if (store.select("open") && store.select("activeTriggerId") === lostActiveTriggerId && !store.context.triggerElements.getById(lostActiveTriggerId)) {
-            const eventDetails = createChangeEventDetails(exports_reason_parts.none);
-            store.setOpen(false, eventDetails);
-            if (!eventDetails.isCanceled) {
-              store.update({
-                activeTriggerId: null,
-                activeTriggerElement: null
-              });
-            }
-          }
-        });
-      }
-    }
-  }, [open, store, reactiveTriggerCount, closeOnActiveTriggerUnmount]);
-}
-function useOpenStateTransitions(open, store, onUnmount) {
-  const {
-    mounted,
-    setMounted,
-    transitionStatus
-  } = useTransitionStatus(open);
-  const preventUnmountingOnClose = store.useState("preventUnmountingOnClose");
-  const syncedPreventUnmountingOnClose = open ? false : preventUnmountingOnClose;
-  store.useSyncedValues({
-    mounted,
-    transitionStatus,
-    preventUnmountingOnClose: syncedPreventUnmountingOnClose
-  });
-  const forceUnmount = useStableCallback(() => {
-    setMounted(false);
-    store.update({
-      activeTriggerId: null,
-      activeTriggerElement: null,
-      mounted: false,
-      preventUnmountingOnClose: false
-    });
-    onUnmount?.();
-    store.context.onOpenChangeComplete?.(false);
-  });
-  useOpenChangeComplete({
-    enabled: mounted && !open && !syncedPreventUnmountingOnClose,
-    open,
-    ref: store.context.popupRef,
-    onComplete() {
-      if (!open) {
-        forceUnmount();
-      }
-    }
-  });
-  return {
-    forceUnmount,
-    transitionStatus
-  };
-}
-function usePopupInteractionProps(store, statePart) {
-  store.useSyncedValues(statePart);
-  useIsoLayoutEffect(() => () => {
-    store.update({
-      activeTriggerProps: EMPTY_OBJECT,
-      inactiveTriggerProps: EMPTY_OBJECT,
-      popupProps: EMPTY_OBJECT
-    });
-  }, [store]);
-}
-function usePopupRootSync(store, open) {
-  useIsoLayoutEffect(() => {
-    if (!open && store.state.openMethod !== null) {
-      store.set("openMethod", null);
-    }
-  }, [open, store]);
-  useIsoLayoutEffect(() => () => {
-    if (store.state.openMethod !== null) {
-      store.set("openMethod", null);
-    }
-  }, [store]);
-}
-
-// node_modules/@base-ui/react/utils/popups/popupTriggerMap.mjs
-class PopupTriggerMap {
-  constructor() {
-    this.elementsSet = new Set;
-    this.idMap = new Map;
-  }
-  add(id, element) {
-    const existingElement = this.idMap.get(id);
-    if (existingElement === element) {
-      return;
-    }
-    if (existingElement !== undefined) {
-      this.elementsSet.delete(existingElement);
-    }
-    this.elementsSet.add(element);
-    this.idMap.set(id, element);
-    if (true) {
-      if (this.elementsSet.size !== this.idMap.size) {
-        throw new Error("Base UI: A trigger element cannot be registered under multiple IDs in PopupTriggerMap.");
-      }
-    }
-  }
-  delete(id) {
-    const element = this.idMap.get(id);
-    if (element) {
-      this.elementsSet.delete(element);
-      this.idMap.delete(id);
-    }
-  }
-  hasElement(element) {
-    return this.elementsSet.has(element);
-  }
-  hasMatchingElement(predicate) {
-    for (const element of this.elementsSet) {
-      if (predicate(element)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  getById(id) {
-    return this.idMap.get(id);
-  }
-  entries() {
-    return this.idMap.entries();
-  }
-  elements() {
-    return this.elementsSet.values();
-  }
-  get size() {
-    return this.idMap.size;
-  }
-}
-
-// node_modules/@base-ui/react/floating-ui-react/utils/getEmptyRootContext.mjs
-function getEmptyRootContext() {
-  return new FloatingRootStore({
-    open: false,
-    transitionStatus: undefined,
-    floatingElement: null,
-    referenceElement: null,
-    triggerElements: new PopupTriggerMap,
-    floatingId: undefined,
-    syncOnly: false,
-    nested: false,
-    onOpenChange: undefined
-  });
-}
-
-// node_modules/@base-ui/react/utils/popups/store.mjs
-function createInitialPopupStoreState() {
-  return {
-    open: false,
-    openProp: undefined,
-    mounted: false,
-    transitionStatus: undefined,
-    floatingRootContext: getEmptyRootContext(),
-    floatingId: undefined,
-    triggerCount: 0,
-    preventUnmountingOnClose: false,
-    payload: undefined,
-    activeTriggerId: null,
-    activeTriggerElement: null,
-    triggerIdProp: undefined,
-    popupElement: null,
-    positionerElement: null,
-    activeTriggerProps: EMPTY_OBJECT,
-    inactiveTriggerProps: EMPTY_OBJECT,
-    popupProps: EMPTY_OBJECT
-  };
-}
-function createPopupFloatingRootContext(triggerElements, floatingId, nested = false) {
-  return new FloatingRootStore({
-    open: false,
-    transitionStatus: undefined,
-    floatingElement: null,
-    referenceElement: null,
-    triggerElements,
-    floatingId,
-    syncOnly: true,
-    nested,
-    onOpenChange: undefined
-  });
-}
-var activeTriggerIdSelector = createSelector((state) => state.triggerIdProp ?? state.activeTriggerId);
-var openSelector = createSelector((state) => state.openProp ?? state.open);
-var popupIdSelector = createSelector((state) => {
-  const popupId = state.popupElement?.id ?? state.floatingId;
-  return popupId || undefined;
-});
-function triggerOwnsOpenPopup(state, triggerId) {
-  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) === triggerId;
-}
-function triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) {
-  if (triggerOwnsOpenPopup(state, triggerId)) {
-    return true;
-  }
-  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) == null && state.triggerCount === 1;
-}
-var popupStoreSelectors = {
-  open: openSelector,
-  mounted: createSelector((state) => state.mounted),
-  transitionStatus: createSelector((state) => state.transitionStatus),
-  floatingRootContext: createSelector((state) => state.floatingRootContext),
-  triggerCount: createSelector((state) => state.triggerCount),
-  preventUnmountingOnClose: createSelector((state) => state.preventUnmountingOnClose),
-  payload: createSelector((state) => state.payload),
-  activeTriggerId: activeTriggerIdSelector,
-  activeTriggerElement: createSelector((state) => state.mounted ? state.activeTriggerElement : null),
-  popupId: popupIdSelector,
-  isTriggerActive: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId),
-  isOpenedByTrigger: createSelector((state, triggerId) => triggerOwnsOpenPopup(state, triggerId)),
-  isMountedByTrigger: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId && state.mounted),
-  triggerProps: createSelector((state, isActive) => isActive ? state.activeTriggerProps : state.inactiveTriggerProps),
-  triggerPopupId: createSelector((state, triggerId) => triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) ? popupIdSelector(state) : undefined),
-  popupProps: createSelector((state) => state.popupProps),
-  popupElement: createSelector((state) => state.popupElement),
-  positionerElement: createSelector((state) => state.positionerElement)
-};
-
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-"use client";
-function useDialogRoot(params) {
-  const {
-    store,
-    actionsRef
-  } = params;
-  const open = store.useState("open");
-  usePopupRootSync(store, open);
-  useImplicitActiveTrigger(store);
-  const {
-    forceUnmount
-  } = useOpenStateTransitions(open, store);
-  const handleImperativeClose = React23.useCallback(() => {
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
-  }, [store]);
-  React23.useImperativeHandle(actionsRef, () => ({
-    unmount: forceUnmount,
-    close: handleImperativeClose
-  }), [forceUnmount, handleImperativeClose]);
-}
-function DialogInteractions({
-  store,
-  parentContext,
-  isDrawer
-}) {
-  const open = store.useState("open");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const modal = store.useState("modal");
-  const popupElement = store.useState("popupElement");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React23.useState(0);
-  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React23.useState(0);
-  const isTopmost = ownNestedOpenDialogs === 0;
-  const dismiss = useDismiss(floatingRootContext, {
-    outsidePressEvent() {
-      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
-        return "intentional";
-      }
-      return {
-        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
-        touch: "sloppy"
-      };
-    },
-    outsidePress(event) {
-      if (!store.context.outsidePressEnabledRef.current) {
-        return false;
-      }
-      if ("button" in event && event.button !== 0) {
-        return false;
-      }
-      if ("touches" in event && event.touches.length !== 1) {
-        return false;
-      }
-      const target = getTarget(event);
-      if (isTopmost && !disablePointerDismissal) {
-        if (modal) {
-          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
-        }
-        return true;
-      }
-      return false;
-    },
-    escapeKey: isTopmost
-  });
-  useScrollLock(open && modal === true, popupElement);
-  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
-    setOwnNestedOpenDialogs(dialogCount);
-    setOwnNestedOpenDrawers(drawerCount);
-  });
-  store.useContextCallback("onNestedDialogClose", () => {
-    setOwnNestedOpenDialogs(0);
-    setOwnNestedOpenDrawers(0);
-  });
-  React23.useEffect(() => {
-    if (parentContext?.onNestedDialogOpen && open) {
-      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
-    }
-    if (parentContext?.onNestedDialogClose && !open) {
-      parentContext.onNestedDialogClose();
-    }
-    return () => {
-      if (parentContext?.onNestedDialogClose && open) {
-        parentContext.onNestedDialogClose();
-      }
-    };
-  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
-  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
-  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
-  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
-  usePopupInteractionProps(store, {
-    activeTriggerProps,
-    inactiveTriggerProps,
-    popupProps,
-    nestedOpenDialogCount: ownNestedOpenDialogs,
-    nestedOpenDrawerCount: ownNestedOpenDrawers
-  });
-  return null;
-}
-
-// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
-var React24 = __toESM(require_react(), 1);
-"use client";
-var IsDrawerContext = /* @__PURE__ */ React24.createContext(false);
-if (true)
-  IsDrawerContext.displayName = "IsDrawerContext";
-var DialogRootContext = /* @__PURE__ */ React24.createContext(undefined);
-if (true)
-  DialogRootContext.displayName = "DialogRootContext";
-function useDialogRootContext(optional) {
-  const dialogRootContext = React24.useContext(DialogRootContext);
-  if (optional === false && dialogRootContext === undefined) {
-    throw new Error("Base UI: DialogRootContext is missing. Dialog parts must be placed within <Dialog.Root>.");
-  }
-  return dialogRootContext;
-}
-
-// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
-var React25 = __toESM(require_react(), 1);
-var selectors2 = {
-  ...popupStoreSelectors,
-  modal: createSelector((state) => state.modal),
-  nested: createSelector((state) => state.nested),
-  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
-  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
-  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
-  openMethod: createSelector((state) => state.openMethod),
-  descriptionElementId: createSelector((state) => state.descriptionElementId),
-  titleElementId: createSelector((state) => state.titleElementId),
-  viewportElement: createSelector((state) => state.viewportElement),
-  role: createSelector((state) => state.role)
-};
-
-class DialogStore extends ReactStore {
-  constructor(initialState, floatingId, nested = false) {
-    const triggerElements = new PopupTriggerMap;
-    const state = createInitialState(initialState);
-    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
-    super(state, {
-      popupRef: /* @__PURE__ */ React25.createRef(),
-      backdropRef: /* @__PURE__ */ React25.createRef(),
-      internalBackdropRef: /* @__PURE__ */ React25.createRef(),
-      outsidePressEnabledRef: {
-        current: true
-      },
-      triggerElements,
-      onOpenChange: undefined,
-      onOpenChangeComplete: undefined
-    }, selectors2);
-  }
-  setOpen = (nextOpen, eventDetails) => {
-    eventDetails.preventUnmountOnClose = () => {
-      this.set("preventUnmountingOnClose", true);
-    };
-    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
-      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
-    }
-    this.context.onOpenChange?.(nextOpen, eventDetails);
-    if (eventDetails.isCanceled) {
-      return;
-    }
-    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
-    const updatedState = {
-      open: nextOpen
-    };
-    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
-    this.update(updatedState);
-  };
-  static useStore(externalStore, initialState) {
-    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
-    return store;
-  }
-}
-function createInitialState(initialState = {}) {
-  return {
-    ...createInitialPopupStoreState(),
-    modal: true,
-    disablePointerDismissal: false,
-    popupElement: null,
-    viewportElement: null,
-    descriptionElementId: undefined,
-    titleElementId: undefined,
-    openMethod: null,
-    nested: false,
-    nestedOpenDialogCount: 0,
-    nestedOpenDrawerCount: 0,
-    role: "dialog",
-    ...initialState
-  };
-}
-
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function useRenderDialogRoot(props, mode = "dialog") {
-  const {
-    children,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    onOpenChangeComplete,
-    disablePointerDismissal: disablePointerDismissalProp = false,
-    modal: modalProp = true,
-    actionsRef,
-    handle,
-    triggerId: triggerIdProp,
-    defaultTriggerId: defaultTriggerIdProp = null
-  } = props;
-  const isDrawer = mode === "drawer";
-  const isAlertDialog = mode === "alert-dialog";
-  const modal = isAlertDialog ? true : modalProp;
-  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
-  const role = isAlertDialog ? "alertdialog" : "dialog";
-  const parentDialogRootContext = useDialogRootContext(true);
-  const nested = Boolean(parentDialogRootContext);
-  const rootState = {
-    modal,
-    disablePointerDismissal,
-    nested,
-    role
-  };
-  const store = DialogStore.useStore(handle?.store, {
-    open: defaultOpen,
-    openProp,
-    activeTriggerId: defaultTriggerIdProp,
-    triggerIdProp,
-    ...rootState
-  });
-  useOnFirstRender(() => {
-    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
-      open: true,
-      activeTriggerId: defaultTriggerIdProp
-    } : null;
-    if (isAlertDialog) {
-      store.update(nextState ? {
-        ...rootState,
-        ...nextState
-      } : rootState);
-    } else if (nextState) {
-      store.update(nextState);
-    }
-  });
-  store.useControlledProp("openProp", openProp);
-  store.useControlledProp("triggerIdProp", triggerIdProp);
-  store.useSyncedValues(rootState);
-  store.useContextCallback("onOpenChange", onOpenChange);
-  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const payload = store.useState("payload");
-  useDialogRoot({
-    store,
-    actionsRef
-  });
-  const shouldRenderInteractions = open || mounted;
-  const contextValue = React26.useMemo(() => ({
-    store
-  }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime5.jsx(IsDrawerContext.Provider, {
-    value: false,
-    children: /* @__PURE__ */ import_jsx_runtime5.jsxs(DialogRootContext.Provider, {
-      value: contextValue,
-      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime5.jsx(DialogInteractions, {
-        store,
-        parentContext: parentDialogRootContext?.store.context,
-        isDrawer
-      }), typeof children === "function" ? children({
-        payload
-      }) : children]
-    })
-  });
-}
-
-// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
-"use client";
-function AlertDialogRoot(props) {
-  return useRenderDialogRoot(props, "alert-dialog");
-}
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-var React27 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/utils/popupStateMapping.mjs
-var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
-  CommonPopupDataAttributes2["open"] = "data-open";
-  CommonPopupDataAttributes2["closed"] = "data-closed";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
-  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
-  CommonPopupDataAttributes2["side"] = "data-side";
-  CommonPopupDataAttributes2["align"] = "data-align";
-  return CommonPopupDataAttributes2;
-}({});
-var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
-  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
-  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
-  return CommonTriggerDataAttributes2;
-}({});
-var TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: ""
-};
-var PRESSABLE_TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: "",
-  [CommonTriggerDataAttributes.pressed]: ""
-};
-var POPUP_OPEN_HOOK = {
-  [CommonPopupDataAttributes.open]: ""
-};
-var POPUP_CLOSED_HOOK = {
-  [CommonPopupDataAttributes.closed]: ""
-};
-var ANCHOR_HIDDEN_HOOK = {
-  [CommonPopupDataAttributes.anchorHidden]: ""
-};
-var triggerOpenStateMapping = {
-  open(value) {
-    if (value) {
-      return TRIGGER_HOOK;
-    }
-    return null;
-  }
-};
-var popupStateMapping = {
-  open(value) {
-    if (value) {
-      return POPUP_OPEN_HOOK;
-    }
-    return POPUP_CLOSED_HOOK;
-  },
-  anchorHidden(value) {
-    if (value) {
-      return ANCHOR_HIDDEN_HOOK;
-    }
-    return null;
-  }
-};
-
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-"use client";
-var stateAttributesMapping = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var DialogBackdrop = /* @__PURE__ */ React27.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    forceRender = false,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const state = {
-    open,
-    transitionStatus
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    ref: [store.context.backdropRef, forwardedRef],
-    stateAttributesMapping,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps],
-    enabled: forceRender || !nested
-  });
-});
-if (true)
-  DialogBackdrop.displayName = "DialogBackdrop";
-// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
-var React31 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/use-button/useButton.mjs
-var React30 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/error.mjs
-var set2;
-if (true) {
-  set2 = new Set;
-}
-function error(...messages) {
-  if (true) {
-    const messageKey = messages.join(" ");
-    if (!set2.has(messageKey)) {
-      set2.add(messageKey);
-      console.error(`Base UI: ${messageKey}`);
-    }
-  }
-}
-
-// node_modules/@base-ui/react/internals/composite/root/CompositeRootContext.mjs
-var React28 = __toESM(require_react(), 1);
-"use client";
-var CompositeRootContext = /* @__PURE__ */ React28.createContext(undefined);
-if (true)
-  CompositeRootContext.displayName = "CompositeRootContext";
-function useCompositeRootContext(optional = false) {
-  const context = React28.useContext(CompositeRootContext);
-  if (context === undefined && !optional) {
-    throw new Error("Base UI: CompositeRootContext is missing. Composite parts must be placed within <Composite.Root>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/utils/useFocusableWhenDisabled.mjs
-var React29 = __toESM(require_react(), 1);
-"use client";
-function useFocusableWhenDisabled(parameters) {
-  const {
-    focusableWhenDisabled,
-    disabled: disabled2,
-    composite = false,
-    tabIndex: tabIndexProp = 0,
-    isNativeButton
-  } = parameters;
-  const isFocusableComposite = composite && focusableWhenDisabled !== false;
-  const isNonFocusableComposite = composite && focusableWhenDisabled === false;
-  const props = React29.useMemo(() => {
-    const additionalProps = {
-      onKeyDown(event) {
-        if (disabled2 && focusableWhenDisabled && event.key !== "Tab") {
-          event.preventDefault();
-        }
-      }
-    };
-    if (!composite) {
-      additionalProps.tabIndex = tabIndexProp;
-      if (!isNativeButton && disabled2) {
-        additionalProps.tabIndex = focusableWhenDisabled ? tabIndexProp : -1;
-      }
-    }
-    if (isNativeButton && (focusableWhenDisabled || isFocusableComposite) || !isNativeButton && disabled2) {
-      additionalProps["aria-disabled"] = disabled2;
-    }
-    if (isNativeButton && (!focusableWhenDisabled || isNonFocusableComposite)) {
-      additionalProps.disabled = disabled2;
-    }
-    return additionalProps;
-  }, [composite, disabled2, focusableWhenDisabled, isFocusableComposite, isNonFocusableComposite, isNativeButton, tabIndexProp]);
-  return {
-    props
-  };
-}
-
-// node_modules/@base-ui/react/internals/use-button/useButton.mjs
-"use client";
-function useButton(parameters = {}) {
-  const {
-    disabled: disabled2 = false,
-    focusableWhenDisabled,
-    tabIndex = 0,
-    native: isNativeButton = true,
-    composite: compositeProp
-  } = parameters;
-  const elementRef = React30.useRef(null);
-  const compositeRootContext = useCompositeRootContext(true);
-  const isCompositeItem = compositeProp ?? compositeRootContext !== undefined;
-  const {
-    props: focusableWhenDisabledProps
-  } = useFocusableWhenDisabled({
-    focusableWhenDisabled,
-    disabled: disabled2,
-    composite: isCompositeItem,
-    tabIndex,
-    isNativeButton
-  });
-  if (true) {
-    React30.useEffect(() => {
-      if (!elementRef.current) {
-        return;
-      }
-      const isButtonTag = isButtonElement(elementRef.current);
-      if (isNativeButton) {
-        if (!isButtonTag) {
-          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
-          const message = "A component that acts as a button expected a native <button> because the " + "`nativeButton` prop is true. Rendering a non-<button> removes native button " + "semantics, which can impact forms and accessibility. Use a real <button> in the " + "`render` prop, or set `nativeButton` to `false`.";
-          error(`${message}${ownerStackMessage}`);
-        }
-      } else if (isButtonTag) {
-        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
-        const message = "A component that acts as a button expected a non-<button> because the `nativeButton` " + "prop is false. Rendering a <button> keeps native behavior while Base UI applies " + "non-native attributes and handlers, which can add unintended extra attributes (such " + "as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set " + "`nativeButton` to `true`.";
-        error(`${message}${ownerStackMessage}`);
-      }
-    }, [isNativeButton]);
-  }
-  const updateDisabled = React30.useCallback(() => {
-    const element = elementRef.current;
-    if (!isButtonElement(element)) {
-      return;
-    }
-    if (isCompositeItem && disabled2 && focusableWhenDisabledProps.disabled === undefined && element.disabled) {
-      element.disabled = false;
-    }
-  }, [disabled2, focusableWhenDisabledProps.disabled, isCompositeItem]);
-  useIsoLayoutEffect(updateDisabled, [updateDisabled]);
-  const getButtonProps = React30.useCallback((externalProps = {}) => {
-    const {
-      onClick: externalOnClick,
-      onMouseDown: externalOnMouseDown,
-      onKeyUp: externalOnKeyUp,
-      onKeyDown: externalOnKeyDown,
-      onPointerDown: externalOnPointerDown,
-      ...otherExternalProps
-    } = externalProps;
-    return mergeProps({
-      onClick(event) {
-        if (disabled2) {
-          event.preventDefault();
-          return;
-        }
-        externalOnClick?.(event);
-      },
-      onMouseDown(event) {
-        if (!disabled2) {
-          externalOnMouseDown?.(event);
-        }
-      },
-      onKeyDown(event) {
-        if (disabled2) {
-          return;
-        }
-        makeEventPreventable(event);
-        externalOnKeyDown?.(event);
-        if (event.baseUIHandlerPrevented) {
-          return;
-        }
-        const isCurrentTarget = event.target === event.currentTarget;
-        const currentTarget = event.currentTarget;
-        const isButton = isButtonElement(currentTarget);
-        const isLink = !isNativeButton && isValidLinkElement(currentTarget);
-        const shouldClick = isCurrentTarget && (isNativeButton ? isButton : !isLink);
-        const isEnterKey = event.key === "Enter";
-        const isSpaceKey = event.key === " ";
-        const role = currentTarget.getAttribute("role");
-        const isTextNavigationRole = role?.startsWith("menuitem") || role === "option" || role === "gridcell";
-        if (isCurrentTarget && isCompositeItem && isSpaceKey) {
-          if (event.defaultPrevented && isTextNavigationRole) {
-            return;
-          }
-          event.preventDefault();
-          if (isLink || isNativeButton && isButton) {
-            currentTarget.click();
-            event.preventBaseUIHandler();
-          } else if (shouldClick) {
-            externalOnClick?.(event);
-            event.preventBaseUIHandler();
-          }
-          return;
-        }
-        if (shouldClick) {
-          if (!isNativeButton && (isSpaceKey || isEnterKey)) {
-            event.preventDefault();
-          }
-          if (!isNativeButton && isEnterKey) {
-            externalOnClick?.(event);
-          }
-        }
-      },
-      onKeyUp(event) {
-        if (disabled2) {
-          return;
-        }
-        makeEventPreventable(event);
-        externalOnKeyUp?.(event);
-        if (event.target === event.currentTarget && isNativeButton && isCompositeItem && isButtonElement(event.currentTarget) && event.key === " ") {
-          event.preventDefault();
-          return;
-        }
-        if (event.baseUIHandlerPrevented) {
-          return;
-        }
-        if (event.target === event.currentTarget && !isNativeButton && !isCompositeItem && event.key === " ") {
-          externalOnClick?.(event);
-        }
-      },
-      onPointerDown(event) {
-        if (disabled2) {
-          event.preventDefault();
-          return;
-        }
-        externalOnPointerDown?.(event);
-      }
-    }, isNativeButton ? {
-      type: "button"
-    } : {
-      role: "button"
-    }, focusableWhenDisabledProps, otherExternalProps);
-  }, [disabled2, focusableWhenDisabledProps, isCompositeItem, isNativeButton]);
-  const buttonRef = useStableCallback((element) => {
-    elementRef.current = element;
-    updateDisabled();
-  });
-  return {
-    getButtonProps,
-    buttonRef
-  };
-}
-function isButtonElement(elem) {
-  return isHTMLElement(elem) && elem.tagName === "BUTTON";
-}
-function isValidLinkElement(elem) {
-  return Boolean(elem?.tagName === "A" && elem?.href);
-}
-// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
-"use client";
-var DialogClose = /* @__PURE__ */ React31.forwardRef(function DialogClose2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    disabled: disabled2 = false,
+    disabled = false,
+    focusableWhenDisabled = false,
     nativeButton = true,
+    style,
     ...elementProps
   } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
   const {
     getButtonProps,
     buttonRef
   } = useButton({
-    disabled: disabled2,
+    disabled,
+    focusableWhenDisabled,
     native: nativeButton
   });
   const state = {
-    disabled: disabled2
+    disabled
   };
-  function handleClick(event) {
-    if (open) {
-      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
-    }
-  }
   return useRenderElement("button", componentProps, {
     state,
     ref: [forwardedRef, buttonRef],
-    props: [{
-      onClick: handleClick
-    }, elementProps, getButtonProps]
+    props: [elementProps, getButtonProps]
   });
 });
 if (true)
-  DialogClose.displayName = "DialogClose";
-// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
-var React32 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/useBaseUiId.mjs
-"use client";
-function useBaseUiId(idOverride) {
-  return useId(idOverride, "base-ui");
+  Button.displayName = "Button";
+// node_modules/clsx/dist/clsx.mjs
+function r(e) {
+  var t, f, n = "";
+  if (typeof e == "string" || typeof e == "number")
+    n += e;
+  else if (typeof e == "object")
+    if (Array.isArray(e)) {
+      var o = e.length;
+      for (t = 0;t < o; t++)
+        e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+    } else
+      for (f in e)
+        e[f] && (n && (n += " "), n += f);
+  return n;
+}
+function clsx() {
+  for (var e, t, f = 0, n = "", o = arguments.length;f < o; f++)
+    (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+  return n;
 }
 
-// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
-"use client";
-var DialogDescription = /* @__PURE__ */ React32.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("descriptionElementId", id);
-  return useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
+// node_modules/class-variance-authority/dist/index.mjs
+var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
+var cx = clsx;
+var cva = (base, config) => (props) => {
+  var _config_compoundVariants;
+  if ((config === null || config === undefined ? undefined : config.variants) == null)
+    return cx(base, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
+  const { variants, defaultVariants } = config;
+  const getVariantClassNames = Object.keys(variants).map((variant) => {
+    const variantProp = props === null || props === undefined ? undefined : props[variant];
+    const defaultVariantProp = defaultVariants === null || defaultVariants === undefined ? undefined : defaultVariants[variant];
+    if (variantProp === null)
+      return null;
+    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
+    return variants[variant][variantKey];
   });
-});
-if (true)
-  DialogDescription.displayName = "DialogDescription";
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var React34 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
-var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
-  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
-  return DialogPopupCssVars2;
-}({});
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
-var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogPopupDataAttributes2["nested"] = "data-nested";
-  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogPopupDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
-var React33 = __toESM(require_react(), 1);
-"use client";
-var DialogPortalContext = /* @__PURE__ */ React33.createContext(undefined);
-if (true)
-  DialogPortalContext.displayName = "DialogPortalContext";
-function useDialogPortalContext() {
-  const value = React33.useContext(DialogPortalContext);
-  if (value === undefined) {
-    throw new Error("Base UI: <Dialog.Portal> is missing.");
-  }
-  return value;
-}
-
-// node_modules/@base-ui/react/internals/composite/composite.mjs
-var ARROW_UP = "ArrowUp";
-var ARROW_DOWN = "ArrowDown";
-var ARROW_LEFT = "ArrowLeft";
-var ARROW_RIGHT = "ArrowRight";
-var HOME = "Home";
-var END = "End";
-var HORIZONTAL_KEYS = new Set([ARROW_LEFT, ARROW_RIGHT]);
-var HORIZONTAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_LEFT, ARROW_RIGHT, HOME, END]);
-var VERTICAL_KEYS = new Set([ARROW_UP, ARROW_DOWN]);
-var VERTICAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_UP, ARROW_DOWN, HOME, END]);
-var ARROW_KEYS = new Set([...HORIZONTAL_KEYS, ...VERTICAL_KEYS]);
-var COMPOSITE_KEYS = new Set([...ARROW_KEYS, HOME, END]);
-var SHIFT = "Shift";
-var CONTROL = "Control";
-var ALT = "Alt";
-var META = "Meta";
-var MODIFIER_KEYS = new Set([SHIFT, CONTROL, ALT, META]);
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var stateAttributesMapping2 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogPopupDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogPopup = /* @__PURE__ */ React34.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    finalFocus,
-    initialFocus,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const descriptionElementId = store.useState("descriptionElementId");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const rootPopupProps = store.useState("popupProps");
-  const modal = store.useState("modal");
-  const mounted = store.useState("mounted");
-  const nested = store.useState("nested");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const open = store.useState("open");
-  const openMethod = store.useState("openMethod");
-  const titleElementId = store.useState("titleElementId");
-  const transitionStatus = store.useState("transitionStatus");
-  const role = store.useState("role");
-  const floatingId = floatingRootContext.useState("floatingId");
-  const popupId = elementProps.id ?? floatingId;
-  useDialogPortalContext();
-  useOpenChangeComplete({
-    open,
-    ref: store.context.popupRef,
-    onComplete() {
-      if (open) {
-        store.context.onOpenChangeComplete?.(true);
-      }
+  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
+    let [key, value] = param;
+    if (value === undefined) {
+      return acc;
     }
-  });
-  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const setPopupElement = store.useStateSetter("popupElement");
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const element = useRenderElement("div", componentProps, {
-    state,
-    props: [rootPopupProps, {
-      id: popupId,
-      "aria-labelledby": titleElementId ?? undefined,
-      "aria-describedby": descriptionElementId ?? undefined,
-      role,
-      ...FOCUSABLE_POPUP_PROPS,
-      hidden: !mounted,
-      onKeyDown(event) {
-        if (COMPOSITE_KEYS.has(event.key)) {
-          event.stopPropagation();
-        }
-      },
-      style: {
-        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
-      }
-    }, elementProps],
-    ref: [forwardedRef, store.context.popupRef, setPopupElement],
-    stateAttributesMapping: stateAttributesMapping2
-  });
-  return /* @__PURE__ */ import_jsx_runtime6.jsx(FloatingFocusManager, {
-    context: floatingRootContext,
-    openInteractionType: openMethod,
-    disabled: !mounted,
-    closeOnFocusOut: !disablePointerDismissal,
-    initialFocus: resolvedInitialFocus,
-    returnFocus: finalFocus,
-    modal: modal !== false,
-    restoreFocus: "popup",
-    children: element
-  });
-});
-if (true)
-  DialogPopup.displayName = "DialogPopup";
-// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var React36 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/inertValue.mjs
-function inertValue(value) {
-  if (isReactVersionAtLeast(19)) {
-    return value;
-  }
-  return value ? "true" : undefined;
-}
-
-// node_modules/@base-ui/react/utils/InternalBackdrop.mjs
-var React35 = __toESM(require_react(), 1);
-var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
-var InternalBackdrop = /* @__PURE__ */ React35.forwardRef(function InternalBackdrop2(props, ref) {
-  const {
-    cutout,
-    ...otherProps
-  } = props;
-  let clipPath;
-  if (cutout) {
-    const rect = cutout.getBoundingClientRect();
-    clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
-  }
-  return /* @__PURE__ */ import_jsx_runtime7.jsx("div", {
-    ref,
-    role: "presentation",
-    "data-base-ui-inert": "",
-    ...otherProps,
-    style: {
-      position: "fixed",
-      inset: 0,
-      userSelect: "none",
-      WebkitUserSelect: "none",
-      clipPath
-    }
-  });
-});
-if (true)
-  InternalBackdrop.displayName = "InternalBackdrop";
-
-// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var DialogPortal = /* @__PURE__ */ React36.forwardRef(function DialogPortal2(props, forwardedRef) {
-  const {
-    keepMounted = false,
-    ...portalProps
-  } = props;
-  const {
-    store
-  } = useDialogRootContext();
-  const mounted = store.useState("mounted");
-  const modal = store.useState("modal");
-  const open = store.useState("open");
-  const shouldRender = mounted || keepMounted;
-  if (!shouldRender) {
-    return null;
-  }
-  return /* @__PURE__ */ import_jsx_runtime8.jsx(DialogPortalContext.Provider, {
-    value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime8.jsxs(FloatingPortal, {
-      ref: forwardedRef,
-      ...portalProps,
-      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime8.jsx(InternalBackdrop, {
-        ref: store.context.internalBackdropRef,
-        inert: inertValue(!open)
-      }), props.children]
-    })
-  });
-});
-if (true)
-  DialogPortal.displayName = "DialogPortal";
-// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
-var React37 = __toESM(require_react(), 1);
-"use client";
-var DialogTitle = /* @__PURE__ */ React37.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("titleElementId", id);
-  return useRenderElement("h2", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
-  });
-});
-if (true)
-  DialogTitle.displayName = "DialogTitle";
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-var React40 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-var React39 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
-var React38 = __toESM(require_react(), 1);
-"use client";
-function useEnhancedClickHandler(handler) {
-  const lastClickInteractionTypeRef = React38.useRef("");
-  const handlePointerDown = React38.useCallback((event) => {
-    if (event.defaultPrevented) {
-      return;
-    }
-    lastClickInteractionTypeRef.current = event.pointerType;
-    handler(event, event.pointerType);
-  }, [handler]);
-  const handleClick = React38.useCallback((event) => {
-    if (event.detail === 0) {
-      handler(event, "keyboard");
-      return;
-    }
-    if ("pointerType" in event) {
-      handler(event, event.pointerType);
-    } else {
-      handler(event, lastClickInteractionTypeRef.current);
-    }
-    lastClickInteractionTypeRef.current = "";
-  }, [handler]);
-  return {
-    onClick: handleClick,
-    onPointerDown: handlePointerDown
-  };
-}
-
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-"use client";
-function useOpenMethodTriggerProps(open, setOpenMethod) {
-  const handleTriggerClick = useStableCallback((_, interactionType) => {
-    const isOpen = typeof open === "function" ? open() : open;
-    if (!isOpen) {
-      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
-    }
-  });
-  const {
-    onClick,
-    onPointerDown
-  } = useEnhancedClickHandler(handleTriggerClick);
-  return React39.useMemo(() => ({
-    onClick,
-    onPointerDown
-  }), [onClick, onPointerDown]);
-}
-
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-"use client";
-var DialogTrigger = /* @__PURE__ */ React40.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    id: idProp,
-    payload,
-    handle,
-    ...elementProps
-  } = componentProps;
-  const dialogRootContext = useDialogRootContext(true);
-  const store = handle?.store ?? dialogRootContext?.store;
-  if (!store) {
-    throw new Error("Base UI: <Dialog.Trigger> must be used within <Dialog.Root> or provided with a handle.");
-  }
-  const thisTriggerId = useBaseUiId(idProp);
-  const floatingContext = store.useState("floatingRootContext");
-  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
-  const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React40.useRef(null);
-  const {
-    registerTrigger,
-    isMountedByThisTrigger
-  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
-    payload
-  });
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const click = useClick(floatingContext, {
-    enabled: floatingContext != null
-  });
-  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
-    store.set("openMethod", interactionType);
-  });
-  const state = {
-    disabled: disabled2,
-    open: isOpenedByThisTrigger
-  };
-  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
-    props: [click.reference, rootTriggerProps, interactionTypeProps, {
-      [CLICK_TRIGGER_IDENTIFIER]: "",
-      id: thisTriggerId,
-      "aria-haspopup": "dialog",
-      "aria-expanded": isOpenedByThisTrigger,
-      "aria-controls": popupId
-    }, elementProps, getButtonProps],
-    stateAttributesMapping: triggerOpenStateMapping
-  });
-});
-if (true)
-  DialogTrigger.displayName = "DialogTrigger";
-
-// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
-"use client";
-var AlertDialogTrigger = DialogTrigger;
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-var React41 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
-var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogViewportDataAttributes2["nested"] = "data-nested";
-  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogViewportDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-"use client";
-var stateAttributesMapping3 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nested(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nested]: ""
-    } : null;
-  },
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogViewport = /* @__PURE__ */ React41.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    children,
-    ...elementProps
-  } = componentProps;
-  const keepMounted = useDialogPortalContext();
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const transitionStatus = store.useState("transitionStatus");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const mounted = store.useState("mounted");
-  const setViewportElement = store.useStateSetter("viewportElement");
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const shouldRender = keepMounted || mounted;
-  return useRenderElement("div", componentProps, {
-    enabled: shouldRender,
-    state,
-    ref: [forwardedRef, setViewportElement],
-    stateAttributesMapping: stateAttributesMapping3,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        pointerEvents: !open ? "none" : undefined
-      },
-      children
-    }, elementProps]
-  });
-});
-if (true)
-  DialogViewport.displayName = "DialogViewport";
-// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
-class DialogHandle {
-  constructor(store) {
-    this.store = store ?? new DialogStore;
-  }
-  open(triggerId) {
-    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
-    if (true) {
-      if (triggerId && !triggerElement) {
-        console.warn(`Base UI: DialogHandle.open: No trigger found with id "${triggerId}". The dialog will open, but the trigger will not be associated with the dialog.`);
-      }
-    }
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
-  }
-  openWithPayload(payload) {
-    this.store.set("payload", payload);
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  close() {
-    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  get isOpen() {
-    return this.store.select("open");
-  }
-}
-function createDialogHandle() {
-  return new DialogHandle;
-}
-
-// node_modules/@base-ui/react/alert-dialog/handle.mjs
-var alertDialogState = {
-  modal: true,
-  disablePointerDismissal: true,
-  role: "alertdialog"
+    acc[key] = value;
+    return acc;
+  }, {});
+  const getCompoundVariantClassNames = config === null || config === undefined ? undefined : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === undefined ? undefined : _config_compoundVariants.reduce((acc, param) => {
+    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
+    return Object.entries(compoundVariantOptions).every((param2) => {
+      let [key, value] = param2;
+      return Array.isArray(value) ? value.includes({
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key]) : {
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key] === value;
+    }) ? [
+      ...acc,
+      cvClass,
+      cvClassName
+    ] : acc;
+  }, []);
+  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
 };
 
-class AlertDialogHandle extends DialogHandle {
-  constructor(store) {
-    const alertDialogStore = store ?? new DialogStore(alertDialogState);
-    super(alertDialogStore);
-    if (store) {
-      this.store.update(alertDialogState);
-    }
-  }
-}
-function createAlertDialogHandle() {
-  return new AlertDialogHandle;
-}
 // node_modules/cn/dist/tables.js
 var P = 48;
 var U = (s, o = 0) => {
@@ -22631,17 +34840,17 @@ var poolOffsets = /* @__PURE__ */ new Int32Array(1008);
   let e = 0;
   for (let i = 0;i < AA.length; i++)
     for (const tail of SETS[AS[i]]) {
-      let r = tailRef.get(tail);
-      if (r === undefined) {
-        r = nextRef++;
-        tailRef.set(tail, r);
-        poolOffsets[r * 2] = poolText.length;
-        poolOffsets[r * 2 + 1] = tail.length;
+      let r2 = tailRef.get(tail);
+      if (r2 === undefined) {
+        r2 = nextRef++;
+        tailRef.set(tail, r2);
+        poolOffsets[r2 * 2] = poolText.length;
+        poolOffsets[r2 * 2 + 1] = tail.length;
         poolText += tail;
       }
       litAnchor[e] = AA[i];
       litGroup[e] = AG[i];
-      litPool[e] = r;
+      litPool[e] = r2;
       e++;
     }
 }
@@ -22703,14 +34912,14 @@ var spanHash = (str, s, e) => {
   }
   return h ^ h >>> 15 | 0;
 };
-var createEngine = (T, validatorImpls, options = {}) => {
+var createEngine = (T, validatorImpls, options2 = {}) => {
   const { GROUP_COUNT: GROUP_COUNT2, edgeStart: edgeStart2, labelStart: labelStart2, labelText: labelText2, edgeTarget: edgeTarget2, nodeGroup: nodeGroup2, nodeVlist: nodeVlist2, vlistPat: vlistPat2, vlistOps: vlistOps2, vlistRef: vlistRef2, vlistGroup: vlistGroup2, litAnchor: litAnchor2, litGroup: litGroup2, litPool: litPool2, poolOffsets: poolOffsets2, poolText: poolText2, adjGid: adjGid2, adjStart: adjStart2, adjTgt: adjTgt2, patGid: patGid2, patTgt: patTgt2, postfixLookupGroups: postfixLookupGroups2, customValidatorNames: customValidatorNames2, orderSensitiveModifiers: orderSensitiveModifiers2 } = T;
   const adjRow = new Int32Array(GROUP_COUNT2).fill(-1);
   for (let i = 0;i < adjGid2.length; i++)
     adjRow[adjGid2[i]] = i;
   let maxAdj = 0;
-  for (let r = 0;r + 1 < adjStart2.length; r++) {
-    const n = adjStart2[r + 1] - adjStart2[r];
+  for (let r2 = 0;r2 + 1 < adjStart2.length; r2++) {
+    const n = adjStart2[r2 + 1] - adjStart2[r2];
     if (n > maxAdj)
       maxAdj = n;
   }
@@ -22768,8 +34977,8 @@ var createEngine = (T, validatorImpls, options = {}) => {
       idx = idx + 1 & LIT_SIZE - 1;
     }
   };
-  const cacheSize = options.cacheSize ?? 8192;
-  const RAW_PREFIX = options.prefix ?? T.prefix ?? "";
+  const cacheSize = options2.cacheSize ?? 8192;
+  const RAW_PREFIX = options2.prefix ?? T.prefix ?? "";
   const FULL_PREFIX = RAW_PREFIX === "" ? "" : RAW_PREFIX + ":";
   const FPL = FULL_PREFIX.length;
   const vCustom = (customValidatorNames2 ?? []).map((name) => {
@@ -23388,9 +35597,9 @@ var createEngine = (T, validatorImpls, options = {}) => {
       }
       keep[t2] = 1;
       if (gid < GROUP_COUNT2) {
-        const r = adjRow[gid];
-        if (r >= 0)
-          for (let k = adjStart2[r];k < adjStart2[r + 1]; k++)
+        const r2 = adjRow[gid];
+        if (r2 >= 0)
+          for (let k = adjStart2[r2];k < adjStart2[r2 + 1]; k++)
             claimTest(ctxId, adjTgt2[k]);
         if (tokFlags[t2] & 1) {
           for (let k = 0;k < patGid2.length; k++)
@@ -23533,11 +35742,11 @@ var resolveValue = (v, clsxMode) => {
       const item = arr[i];
       if (!item)
         continue;
-      const r = typeof item === "string" ? item : resolveValue(item, clsxMode);
-      if (r) {
+      const r2 = typeof item === "string" ? item : resolveValue(item, clsxMode);
+      if (r2) {
         if (out)
           out += " ";
-        out += r;
+        out += r2;
       }
     }
     return out;
@@ -23562,11 +35771,11 @@ var joinArgs = (args, clsxMode) => {
     const a = args[i];
     if (!a)
       continue;
-    const r = typeof a === "string" ? a : resolveValue(a, clsxMode);
-    if (r) {
+    const r2 = typeof a === "string" ? a : resolveValue(a, clsxMode);
+    if (r2) {
       if (s)
         s += " ";
-      s += r;
+      s += r2;
     }
   }
   return s;
@@ -23790,105 +35999,8 @@ var instance = /* @__PURE__ */ createEngine(tables_generated_default);
 var cn = /* @__PURE__ */ wrapClsx(instance.mergeString, instance);
 var twMerge = instance.merge;
 
-// node_modules/@base-ui/react/button/Button.mjs
-var React42 = __toESM(require_react(), 1);
-"use client";
-var Button = /* @__PURE__ */ React42.forwardRef(function Button2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    disabled: disabled2 = false,
-    focusableWhenDisabled = false,
-    nativeButton = true,
-    style,
-    ...elementProps
-  } = componentProps;
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    focusableWhenDisabled,
-    native: nativeButton
-  });
-  const state = {
-    disabled: disabled2
-  };
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [forwardedRef, buttonRef],
-    props: [elementProps, getButtonProps]
-  });
-});
-if (true)
-  Button.displayName = "Button";
-// node_modules/clsx/dist/clsx.mjs
-function r(e) {
-  var t, f, n = "";
-  if (typeof e == "string" || typeof e == "number")
-    n += e;
-  else if (typeof e == "object")
-    if (Array.isArray(e)) {
-      var o = e.length;
-      for (t = 0;t < o; t++)
-        e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
-    } else
-      for (f in e)
-        e[f] && (n && (n += " "), n += f);
-  return n;
-}
-function clsx2() {
-  for (var e, t, f = 0, n = "", o = arguments.length;f < o; f++)
-    (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
-  return n;
-}
-
-// node_modules/class-variance-authority/dist/index.mjs
-var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
-var cx = clsx2;
-var cva = (base, config) => (props) => {
-  var _config_compoundVariants;
-  if ((config === null || config === undefined ? undefined : config.variants) == null)
-    return cx(base, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
-  const { variants, defaultVariants } = config;
-  const getVariantClassNames = Object.keys(variants).map((variant) => {
-    const variantProp = props === null || props === undefined ? undefined : props[variant];
-    const defaultVariantProp = defaultVariants === null || defaultVariants === undefined ? undefined : defaultVariants[variant];
-    if (variantProp === null)
-      return null;
-    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
-    return variants[variant][variantKey];
-  });
-  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
-    let [key, value] = param;
-    if (value === undefined) {
-      return acc;
-    }
-    acc[key] = value;
-    return acc;
-  }, {});
-  const getCompoundVariantClassNames = config === null || config === undefined ? undefined : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === undefined ? undefined : _config_compoundVariants.reduce((acc, param) => {
-    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
-    return Object.entries(compoundVariantOptions).every((param2) => {
-      let [key, value] = param2;
-      return Array.isArray(value) ? value.includes({
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key]) : {
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key] === value;
-    }) ? [
-      ...acc,
-      cvClass,
-      cvClassName
-    ] : acc;
-  }, []);
-  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
-};
-
-// src/bounty/surface/ui/button.tsx
-var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
+// src/digestify/surface/ui/button.tsx
+var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
 var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
   variants: {
     variant: {
@@ -23897,9 +36009,7 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
       secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
       ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
       destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-      link: "text-primary underline-offset-4 hover:underline",
-      chip: "rounded-full border-border bg-loam-bg text-loam-ink hover:border-edge-hover hover:text-foreground aria-pressed:border-mammoth aria-pressed:bg-mammoth-bg aria-pressed:text-mammoth-ink",
-      pill: "rounded-full border-border bg-well text-muted-foreground hover:border-edge-hover hover:text-foreground"
+      link: "text-primary underline-offset-4 hover:underline"
     },
     size: {
       default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
@@ -23909,14 +36019,7 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
       icon: "size-8",
       "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
       "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-      "icon-lg": "size-9",
-      chip: "h-auto gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-normal"
-    },
-    tone: {
-      todo: "border-loam bg-loam-bg text-loam-ink",
-      doing: "border-mammoth bg-mammoth-bg text-mammoth-ink",
-      review: "border-amethyst bg-amethyst-bg text-amethyst-ink",
-      done: "border-ice bg-ice-bg text-ice-ink"
+      "icon-lg": "size-9"
     }
   },
   defaultVariants: {
@@ -23927,2510 +36030,68 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
 function Button3({
   className,
   variant = "default",
-  size: size2 = "default",
-  tone,
+  size = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(Button, {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button, {
     "data-slot": "button",
-    className: cn(buttonVariants({ variant, size: size2, tone, className })),
+    className: cn(buttonVariants({ variant, size, className })),
     ...props
   }, undefined, false, undefined, this);
 }
 
-// src/bounty/surface/ui/alert-dialog.tsx
-var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
-"use client";
-function AlertDialog({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Root, {
-    "data-slot": "alert-dialog",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogTrigger2({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Trigger, {
-    "data-slot": "alert-dialog-trigger",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogPortal({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Portal, {
-    "data-slot": "alert-dialog-portal",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogOverlay({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Backdrop, {
-    "data-slot": "alert-dialog-overlay",
-    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogContent({
-  className,
-  size: size2 = "default",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(AlertDialogPortal, {
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(AlertDialogOverlay, {}, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Popup, {
-        "data-slot": "alert-dialog-content",
-        "data-size": size2,
-        className: cn("group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
-        ...props
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function AlertDialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
-    "data-slot": "alert-dialog-footer",
-    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogTitle({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Title, {
-    "data-slot": "alert-dialog-title",
-    className: cn("text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogDescription({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Description, {
-    "data-slot": "alert-dialog-description",
-    className: cn("text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogAction({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Button3, {
-    "data-slot": "alert-dialog-action",
-    className: cn(className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function AlertDialogCancel({
-  className,
-  variant = "outline",
-  size: size2 = "default",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Close, {
-    "data-slot": "alert-dialog-cancel",
-    className: cn(className),
-    render: /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Button3, {
-      variant,
-      size: size2
-    }, undefined, false, undefined, this),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/components/BoardFooter.tsx
-var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
-function BoardFooter({ onClose }) {
-  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-    className: "mt-6 flex max-w-[1200px] items-center gap-2",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-        "aria-hidden": "true",
-        style: { backgroundImage: "url(/assets/mascot.webp)" },
-        className: "mr-1.5 size-9 bg-contain bg-center bg-no-repeat opacity-35"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-        className: "flex-1"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialog, {
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogTrigger2, {
-            render: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button3, {
-              size: "lg",
-              children: "Close board"
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogContent, {
-            className: "border-edge-hover bg-surface",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogTitle, {
-                children: "Close this board?"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogDescription, {
-                children: "The agent can reopen it later from a snapshot."
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogFooter, {
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogCancel, {
-                    children: "Cancel"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogAction, {
-                    onClick: onClose,
-                    children: "Close board"
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/bounty/surface/components/Column.tsx
-var import_react3 = __toESM(require_react(), 1);
-
-// src/bounty/surface/state/drag.ts
-function dropIndex(boxes, clientY) {
-  for (let i = 0;i < boxes.length; i++) {
-    const b = boxes[i];
-    if (clientY < b.top + b.height / 2)
-      return i;
-  }
-  return boxes.length;
-}
-function dropMarker(boxes, clientY) {
-  const i = dropIndex(boxes, clientY);
-  const before = boxes[i];
-  if (before)
-    return { id: before.id, edge: "before" };
-  const last = boxes[boxes.length - 1];
-  if (last)
-    return { id: last.id, edge: "after" };
-  return null;
-}
-
-// node_modules/@base-ui/react/use-render/useRender.mjs
-function useRender(params) {
-  return useRenderElement(params.defaultTagName ?? "div", params, params);
-}
-
-// src/bounty/surface/ui/badge.tsx
-var badgeVariants = cva("group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!", {
-  variants: {
-    variant: {
-      default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-      secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
-      destructive: "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
-      outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-      ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-      link: "text-primary underline-offset-4 hover:underline",
-      chip: "border-border bg-loam-bg text-loam-ink",
-      count: "bg-well text-muted-foreground tabular-nums"
-    }
-  },
-  defaultVariants: {
-    variant: "default"
-  }
-});
-function Badge({
-  className,
-  variant = "default",
-  render,
-  ...props
-}) {
-  return useRender({
-    defaultTagName: "span",
-    props: mergeProps({
-      className: cn(badgeVariants({ variant }), className)
-    }, props),
-    render,
-    state: {
-      slot: "badge",
-      variant
-    }
-  });
-}
-
-// node_modules/@base-ui/react/input/Input.mjs
-var React62 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/field/index.parts.mjs
-var exports_index_parts2 = {};
-__export(exports_index_parts2, {
-  Validity: () => FieldValidity,
-  Root: () => FieldRoot,
-  Label: () => FieldLabel,
-  Item: () => FieldItem,
-  Error: () => FieldError,
-  Description: () => FieldDescription,
-  Control: () => FieldControl
-});
-
-// node_modules/@base-ui/react/field/root/FieldRoot.mjs
-var React50 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
-var React43 = __toESM(require_react(), 1);
-// node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
-var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
-  FieldControlDataAttributes2["disabled"] = "data-disabled";
-  FieldControlDataAttributes2["valid"] = "data-valid";
-  FieldControlDataAttributes2["invalid"] = "data-invalid";
-  FieldControlDataAttributes2["touched"] = "data-touched";
-  FieldControlDataAttributes2["dirty"] = "data-dirty";
-  FieldControlDataAttributes2["filled"] = "data-filled";
-  FieldControlDataAttributes2["focused"] = "data-focused";
-  return FieldControlDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/internals/field-constants/constants.mjs
-var DEFAULT_VALIDITY_STATE = {
-  badInput: false,
-  customError: false,
-  patternMismatch: false,
-  rangeOverflow: false,
-  rangeUnderflow: false,
-  stepMismatch: false,
-  tooLong: false,
-  tooShort: false,
-  typeMismatch: false,
-  valid: null,
-  valueMissing: false
-};
-var DEFAULT_FIELD_STATE_ATTRIBUTES = {
-  valid: null,
-  touched: false,
-  dirty: false,
-  filled: false,
-  focused: false
-};
-var DEFAULT_FIELD_ROOT_STATE = {
-  disabled: false,
-  ...DEFAULT_FIELD_STATE_ATTRIBUTES
-};
-var fieldValidityMapping = {
-  valid(value) {
-    if (value === null) {
-      return null;
-    }
-    if (value) {
-      return {
-        [FieldControlDataAttributes.valid]: ""
-      };
-    }
-    return {
-      [FieldControlDataAttributes.invalid]: ""
-    };
-  }
-};
-
-// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
-"use client";
-var DEFAULT_FIELD_ROOT_CONTEXT = {
-  invalid: undefined,
-  name: undefined,
-  validityData: {
-    state: DEFAULT_VALIDITY_STATE,
-    errors: [],
-    error: "",
-    value: "",
-    initialValue: null
-  },
-  setValidityData: NOOP,
-  disabled: undefined,
-  touched: DEFAULT_FIELD_STATE_ATTRIBUTES.touched,
-  setTouched: NOOP,
-  dirty: DEFAULT_FIELD_STATE_ATTRIBUTES.dirty,
-  setDirty: NOOP,
-  filled: DEFAULT_FIELD_STATE_ATTRIBUTES.filled,
-  setFilled: NOOP,
-  focused: DEFAULT_FIELD_STATE_ATTRIBUTES.focused,
-  setFocused: NOOP,
-  validate: () => null,
-  validationMode: "onSubmit",
-  validationDebounceTime: 0,
-  shouldValidateOnChange: () => false,
-  state: DEFAULT_FIELD_ROOT_STATE,
-  markedDirtyRef: {
-    current: false
-  },
-  registerFieldControl: NOOP,
-  validation: {
-    getValidationProps: (_disabled, props = EMPTY_OBJECT) => props,
-    inputRef: {
-      current: null
-    },
-    registerInput: NOOP,
-    commit: async () => {},
-    change: NOOP
-  }
-};
-var FieldRootContext = /* @__PURE__ */ React43.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
-if (true)
-  FieldRootContext.displayName = "FieldRootContext";
-function useFieldRootContext(optional = true) {
-  const context = React43.useContext(FieldRootContext);
-  if (context.setValidityData === NOOP && !optional) {
-    throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
-var React44 = __toESM(require_react(), 1);
-"use client";
-var FieldsetRootContext = /* @__PURE__ */ React44.createContext(undefined);
-if (true)
-  FieldsetRootContext.displayName = "FieldsetRootContext";
-function useFieldsetRootContext(optional = false) {
-  const context = React44.useContext(FieldsetRootContext);
-  if (!context && !optional) {
-    throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/internals/form-context/FormContext.mjs
-var React45 = __toESM(require_react(), 1);
-"use client";
-var FormContext = /* @__PURE__ */ React45.createContext({
-  formRef: {
-    current: {
-      fields: new Map
-    }
-  },
-  errors: {},
-  clearErrors: NOOP,
-  validationMode: "onSubmit",
-  submitAttemptedRef: {
-    current: false
-  }
-});
-if (true)
-  FormContext.displayName = "FormContext";
-function useFormContext() {
-  return React45.useContext(FormContext);
-}
-
-// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
-var React47 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
-var React46 = __toESM(require_react(), 1);
-"use client";
-var LabelableContext = /* @__PURE__ */ React46.createContext({
-  controlId: undefined,
-  registerControlId: NOOP,
-  labelId: undefined,
-  setLabelId: NOOP,
-  messageIds: [],
-  setMessageIds: NOOP,
-  getDescriptionProps: (externalProps) => externalProps
-});
-if (true)
-  LabelableContext.displayName = "LabelableContext";
-function useLabelableContext() {
-  return React46.useContext(LabelableContext);
-}
-
-// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
-var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var LabelableProvider = function LabelableProvider2(props) {
-  const defaultId = useBaseUiId();
-  const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
-  const [controlId, setControlIdState] = React47.useState(initialControlId);
-  const [labelId, setLabelId] = React47.useState(props.labelId);
-  const [messageIds, setMessageIds] = React47.useState([]);
-  const registrationsRef = useRefWithInit(() => new Map);
-  const {
-    messageIds: parentMessageIds
-  } = useLabelableContext();
-  const registerControlId = useStableCallback((source, nextId) => {
-    const registrations = registrationsRef.current;
-    if (nextId === undefined) {
-      registrations.delete(source);
-      return;
-    }
-    registrations.set(source, nextId);
-    setControlIdState((prev) => {
-      if (registrations.size === 0) {
-        return;
-      }
-      let nextControlId;
-      for (const id of registrations.values()) {
-        if (prev !== undefined && id === prev) {
-          return prev;
-        }
-        if (nextControlId === undefined) {
-          nextControlId = id;
-        }
-      }
-      return nextControlId;
-    });
-  });
-  const getDescriptionProps = React47.useCallback((externalProps) => {
-    const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
-    ids.push(...parentMessageIds, ...messageIds);
-    return {
-      ...externalProps,
-      "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
-    };
-  }, [parentMessageIds, messageIds]);
-  const contextValue = React47.useMemo(() => ({
-    controlId,
-    registerControlId,
-    labelId,
-    setLabelId,
-    messageIds,
-    setMessageIds,
-    getDescriptionProps
-  }), [controlId, registerControlId, labelId, setLabelId, messageIds, setMessageIds, getDescriptionProps]);
-  return /* @__PURE__ */ import_jsx_runtime9.jsx(LabelableContext.Provider, {
-    value: contextValue,
-    children: props.children
-  });
-};
-if (true)
-  LabelableProvider.displayName = "LabelableProvider";
-
-// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
-var React48 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
-function getCombinedFieldValidityData(validityData, invalid) {
-  return {
-    ...validityData,
-    state: {
-      ...validityData.state,
-      valid: !invalid && validityData.state.valid
-    }
-  };
-}
-
-// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
-"use client";
-var validityKeys = Object.keys(DEFAULT_VALIDITY_STATE);
-function isOnlyValueMissing(state) {
-  if (!state || state.valid || !state.valueMissing) {
-    return false;
-  }
-  let onlyValueMissing = false;
-  for (const key of validityKeys) {
-    if (key === "valid") {
-      continue;
-    }
-    if (key === "valueMissing") {
-      onlyValueMissing = state[key];
-    } else if (state[key]) {
-      onlyValueMissing = false;
-    }
-  }
-  return onlyValueMissing;
-}
-function findRepresentativeInput(inputs) {
-  let fallback = null;
-  for (const input of inputs) {
-    if (input.disabled) {
-      continue;
-    }
-    if (!input.validity.valid) {
-      return input;
-    }
-    fallback ??= input;
-  }
-  return fallback;
-}
-function clearCustomValidity(element, inputs) {
-  let didClearElement = false;
-  for (const input of inputs) {
-    input.setCustomValidity("");
-    didClearElement ||= input === element;
-  }
-  if (!didClearElement) {
-    element.setCustomValidity("");
-  }
-}
-function useFieldValidation(params) {
-  const {
-    formRef
-  } = useFormContext();
-  const {
-    setValidityData,
-    validate,
-    validityData,
-    validationDebounceTime,
-    invalid,
-    markedDirtyRef,
-    state,
-    shouldValidateOnChange,
-    getRegisteredFieldId
-  } = params;
-  const {
-    controlId,
-    getDescriptionProps
-  } = useLabelableContext();
-  const timeout = useTimeout();
-  const inputRef = React48.useRef(null);
-  const registeredInputs = useRefWithInit(() => new Set).current;
-  const validationCommitIdRef = React48.useRef(0);
-  const registerInput = React48.useCallback((element) => {
-    if (!element) {
-      return;
-    }
-    registeredInputs.add(element);
-    return () => {
-      registeredInputs.delete(element);
-    };
-  }, [registeredInputs]);
-  const commit = useStableCallback(async (value, revalidate = false) => {
-    const element = findRepresentativeInput(registeredInputs) ?? inputRef.current;
-    if (!element) {
-      return;
-    }
-    validationCommitIdRef.current += 1;
-    const validationCommitId = validationCommitIdRef.current;
-    function updateRegisteredFieldValidity(nextValidityData2, externalInvalid = invalid) {
-      const fieldId = getRegisteredFieldId() ?? controlId;
-      if (fieldId == null) {
-        return;
-      }
-      const currentFieldData = formRef.current.fields.get(fieldId);
-      if (!currentFieldData) {
-        return;
-      }
-      const validityDataWithFormErrors = getCombinedFieldValidityData(nextValidityData2, externalInvalid);
-      formRef.current.fields.set(fieldId, {
-        ...currentFieldData,
-        validityData: validityDataWithFormErrors
-      });
-    }
-    if (revalidate) {
-      if (state.valid !== false) {
-        return;
-      }
-      const currentNativeValidity = element.validity;
-      if (!currentNativeValidity.valueMissing) {
-        const nextValidityData2 = {
-          value,
-          state: {
-            ...DEFAULT_VALIDITY_STATE,
-            valid: true
-          },
-          error: "",
-          errors: [],
-          initialValue: validityData.initialValue
-        };
-        clearCustomValidity(element, registeredInputs);
-        updateRegisteredFieldValidity(nextValidityData2, false);
-        setValidityData(nextValidityData2);
-        return;
-      }
-      const currentNativeValidityObject = validityKeys.reduce((acc, key) => {
-        acc[key] = currentNativeValidity[key];
-        return acc;
-      }, {});
-      if (!currentNativeValidityObject.valid && !isOnlyValueMissing(currentNativeValidityObject)) {
-        return;
-      }
-    }
-    function getState(el) {
-      const computedState = validityKeys.reduce((acc, key) => {
-        acc[key] = el.validity[key];
-        return acc;
-      }, {});
-      let hasOnlyValueMissingError = false;
-      for (const key of validityKeys) {
-        if (key === "valid") {
-          continue;
-        }
-        if (key === "valueMissing" && computedState[key]) {
-          hasOnlyValueMissingError = true;
-        } else if (computedState[key]) {
-          return computedState;
-        }
-      }
-      if (hasOnlyValueMissingError && !markedDirtyRef.current) {
-        computedState.valid = true;
-        computedState.valueMissing = false;
-      }
-      return computedState;
-    }
-    timeout.clear();
-    let result = null;
-    let validationErrors = [];
-    const nextState = getState(element);
-    let defaultValidationMessage;
-    const isValidatingOnChange = shouldValidateOnChange();
-    if (element.validationMessage && !isValidatingOnChange) {
-      defaultValidationMessage = element.validationMessage;
-      validationErrors = [element.validationMessage];
-    } else {
-      const formValues = Array.from(formRef.current.fields.values()).reduce((acc, field) => {
-        if (field.name) {
-          acc[field.name] = field.getValue();
-        }
-        return acc;
-      }, {});
-      const resultOrPromise = validate(value, formValues);
-      if (typeof resultOrPromise === "object" && resultOrPromise !== null && "then" in resultOrPromise) {
-        result = await resultOrPromise;
-        if (validationCommitId !== validationCommitIdRef.current) {
-          return;
-        }
-      } else {
-        result = resultOrPromise;
-      }
-      if (result !== null) {
-        nextState.valid = false;
-        nextState.customError = true;
-        if (Array.isArray(result)) {
-          validationErrors = result;
-          element.setCustomValidity(result.join(`
-`));
-        } else if (result) {
-          validationErrors = [result];
-          element.setCustomValidity(result);
-        }
-      } else if (isValidatingOnChange) {
-        clearCustomValidity(element, registeredInputs);
-        nextState.customError = false;
-        if (element.validationMessage) {
-          defaultValidationMessage = element.validationMessage;
-          validationErrors = [element.validationMessage];
-        } else if (element.validity.valid && !nextState.valid) {
-          nextState.valid = true;
-        }
-      }
-    }
-    const nextValidityData = {
-      value,
-      state: nextState,
-      error: defaultValidationMessage ?? (Array.isArray(result) ? result[0] : result ?? ""),
-      errors: validationErrors,
-      initialValue: validityData.initialValue
-    };
-    updateRegisteredFieldValidity(nextValidityData);
-    setValidityData(nextValidityData);
-  });
-  const change = useStableCallback((value) => {
-    timeout.clear();
-    const validateOnChange = shouldValidateOnChange();
-    if (validateOnChange && value !== "" && validationDebounceTime) {
-      validationCommitIdRef.current += 1;
-      timeout.start(validationDebounceTime, () => {
-        commit(value);
-      });
-    } else {
-      commit(value, !validateOnChange);
-    }
-  });
-  const getValidationProps = React48.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
-    "aria-invalid": true
-  } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
-  return React48.useMemo(() => ({
-    getValidationProps,
-    inputRef,
-    registerInput,
-    commit,
-    change
-  }), [getValidationProps, registerInput, commit, change]);
-}
-
-// node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
-var React49 = __toESM(require_react(), 1);
-"use client";
-function useFieldControlRegistration(params) {
-  const {
-    commit,
-    invalid,
-    markedDirtyRef,
-    name,
-    setRegisteredFieldName,
-    setRegisteredFieldId,
-    setValidityData,
-    validityData
-  } = params;
-  const {
-    formRef
-  } = useFormContext();
-  const activeFieldControlSourceRef = React49.useRef(null);
-  const registrationRef = React49.useRef(null);
-  const fallbackControlRef = React49.useRef(null);
-  const getValueForForm = useStableCallback(() => {
-    const registration = registrationRef.current;
-    if (!registration) {
-      return;
-    }
-    if (registration.getValue) {
-      return registration.getValue();
-    }
-    return registration.value;
-  });
-  function getRegistrationValue(registration) {
-    return registration.value === undefined ? getValueForForm() : registration.value;
-  }
-  const validate = useStableCallback(() => {
-    const registration = registrationRef.current;
-    markedDirtyRef.current = true;
-    if (!registration) {
-      commit(validityData.value);
-      return;
-    }
-    commit(getRegistrationValue(registration));
-  });
-  function refreshRegistration() {
-    const registration = registrationRef.current;
-    if (!registration || !registration.id) {
-      return;
-    }
-    formRef.current.fields.set(registration.id, {
-      getValue: getValueForForm,
-      name: name ?? registration.name,
-      controlRef: registration.controlRef ?? fallbackControlRef,
-      validityData: getCombinedFieldValidityData(validityData, invalid),
-      validate
-    });
-  }
-  function deleteRegistration(id = registrationRef.current?.id) {
-    if (id) {
-      formRef.current.fields.delete(id);
-    }
-  }
-  function syncInitialValue() {
-    const registration = registrationRef.current;
-    if (!registration) {
-      return;
-    }
-    const initialValue = getRegistrationValue(registration);
-    if (validityData.initialValue === null && initialValue !== null) {
-      setValidityData((prev) => ({
-        ...prev,
-        initialValue
-      }));
-    }
-  }
-  useIsoLayoutEffect(() => {
-    const registration = registrationRef.current;
-    if (!registration || !registration.id) {
-      return;
-    }
-    setRegisteredFieldName(name ? undefined : registration.name);
-    formRef.current.fields.set(registration.id, {
-      getValue: getValueForForm,
-      name: name ?? registration.name,
-      controlRef: registration.controlRef ?? fallbackControlRef,
-      validityData: getCombinedFieldValidityData(validityData, invalid),
-      validate
-    });
-  }, [formRef, getValueForForm, invalid, name, setRegisteredFieldName, validate, validityData]);
-  useIsoLayoutEffect(() => {
-    const fields = formRef.current.fields;
-    return () => {
-      const id = registrationRef.current?.id;
-      if (id) {
-        fields.delete(id);
-      }
-    };
-  }, [formRef]);
-  const register2 = useStableCallback((source, registration) => {
-    if (!registration) {
-      if (activeFieldControlSourceRef.current === source) {
-        activeFieldControlSourceRef.current = null;
-        deleteRegistration();
-        registrationRef.current = null;
-        setRegisteredFieldName(undefined);
-        setRegisteredFieldId(undefined);
-      }
-      return;
-    }
-    const previousId = registrationRef.current?.id;
-    activeFieldControlSourceRef.current = source;
-    registrationRef.current = registration;
-    if (!name) {
-      setRegisteredFieldName(registration.name);
-    }
-    setRegisteredFieldId(registration.id);
-    if (previousId && previousId !== registration.id) {
-      deleteRegistration(previousId);
-    }
-    syncInitialValue();
-    refreshRegistration();
-  });
-  return [validate, register2];
-}
-
-// node_modules/@base-ui/react/field/root/FieldRoot.mjs
-var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
-  const {
-    errors,
-    validationMode: formValidationMode,
-    submitAttemptedRef
-  } = useFormContext();
-  const {
-    render,
-    className,
-    validate: validateProp,
-    validationDebounceTime = 0,
-    validationMode = formValidationMode,
-    name,
-    disabled: disabledProp = false,
-    invalid: invalidProp,
-    dirty: dirtyProp,
-    touched: touchedProp,
-    actionsRef,
-    style,
-    ...elementProps
-  } = componentProps;
-  const disabledFieldset = useFieldsetRootContext(true)?.disabled;
-  const validate = useStableCallback(validateProp || (() => null));
-  const disabled2 = disabledFieldset || disabledProp;
-  const [touchedState, setTouchedUnwrapped] = React50.useState(false);
-  const [dirtyState, setDirtyUnwrapped] = React50.useState(false);
-  const [filled, setFilled] = React50.useState(false);
-  const [focused, setFocused] = React50.useState(false);
-  const dirty = dirtyProp ?? dirtyState;
-  const touched = touchedProp ?? touchedState;
-  const markedDirtyRef = React50.useRef(dirty);
-  const registeredFieldIdRef = React50.useRef(undefined);
-  const [registeredFieldName, setRegisteredFieldName] = React50.useState();
-  const effectiveName = name ?? registeredFieldName;
-  useIsoLayoutEffect(() => {
-    if (dirtyProp !== undefined) {
-      markedDirtyRef.current = dirtyProp;
-    }
-  }, [dirtyProp]);
-  const getRegisteredFieldId = React50.useCallback(() => registeredFieldIdRef.current, []);
-  const setRegisteredFieldId = React50.useCallback((id) => {
-    registeredFieldIdRef.current = id;
-  }, []);
-  const setDirty = useStableCallback((value) => {
-    if (dirtyProp !== undefined) {
-      return;
-    }
-    if (value) {
-      markedDirtyRef.current = true;
-    }
-    setDirtyUnwrapped(value);
-  });
-  const setTouched = useStableCallback((value) => {
-    if (touchedProp !== undefined) {
-      return;
-    }
-    setTouchedUnwrapped(value);
-  });
-  const shouldValidateOnChange = useStableCallback(() => validationMode === "onChange" || validationMode === "onSubmit" && submitAttemptedRef.current);
-  const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
-  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
-  const invalid = invalidProp === true || hasFormError;
-  const [validityData, setValidityData] = React50.useState({
-    state: DEFAULT_VALIDITY_STATE,
-    error: "",
-    errors: [],
-    value: null,
-    initialValue: null
-  });
-  const valid = disabled2 ? null : !invalid && validityData.state.valid;
-  const state = React50.useMemo(() => ({
-    disabled: disabled2,
-    touched,
-    dirty,
-    valid,
-    filled,
-    focused
-  }), [disabled2, touched, dirty, valid, filled, focused]);
-  const validation = useFieldValidation({
-    setValidityData,
-    validate,
-    validityData,
-    validationDebounceTime,
-    invalid,
-    markedDirtyRef,
-    state,
-    shouldValidateOnChange,
-    getRegisteredFieldId
-  });
-  const [validateFieldControl, registerFieldControl] = useFieldControlRegistration({
-    commit: validation.commit,
-    invalid,
-    markedDirtyRef,
-    name,
-    setRegisteredFieldName,
-    setRegisteredFieldId,
-    setValidityData,
-    validityData
-  });
-  React50.useImperativeHandle(actionsRef, () => ({
-    validate: validateFieldControl
-  }), [validateFieldControl]);
-  const contextValue = React50.useMemo(() => ({
-    invalid,
-    name: effectiveName,
-    validityData,
-    setValidityData,
-    disabled: disabled2,
-    touched,
-    setTouched,
-    dirty,
-    setDirty,
-    filled,
-    setFilled,
-    focused,
-    setFocused,
-    validate,
-    validationMode,
-    validationDebounceTime,
-    shouldValidateOnChange,
-    state,
-    markedDirtyRef,
-    registerFieldControl,
-    validation
-  }), [invalid, effectiveName, validityData, disabled2, touched, setTouched, dirty, setDirty, filled, setFilled, focused, setFocused, validate, validationMode, validationDebounceTime, shouldValidateOnChange, state, registerFieldControl, validation]);
-  const element = useRenderElement("div", componentProps, {
-    ref: forwardedRef,
-    state,
-    props: elementProps,
-    stateAttributesMapping: fieldValidityMapping
-  });
-  return /* @__PURE__ */ import_jsx_runtime10.jsx(FieldRootContext.Provider, {
-    value: contextValue,
-    children: element
-  });
-});
-if (true)
-  FieldRootInner.displayName = "FieldRootInner";
-var FieldRoot = /* @__PURE__ */ React50.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
-  return /* @__PURE__ */ import_jsx_runtime10.jsx(LabelableProvider, {
-    children: /* @__PURE__ */ import_jsx_runtime10.jsx(FieldRootInner, {
-      ...componentProps,
-      ref: forwardedRef
-    })
-  });
-});
-if (true)
-  FieldRoot.displayName = "FieldRoot";
-// node_modules/@base-ui/react/field/label/FieldLabel.mjs
-var React52 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
-"use client";
-function useRegisteredLabelId(idProp, setLabelId) {
-  const id = useBaseUiId(idProp);
-  useIsoLayoutEffect(() => {
-    setLabelId(id);
-    return () => {
-      setLabelId(undefined);
-    };
-  }, [id, setLabelId]);
-  return id;
-}
-
-// node_modules/@base-ui/react/internals/labelable-provider/useLabel.mjs
-"use client";
-function useLabel(params = {}) {
-  const {
-    id: idProp,
-    fallbackControlId,
-    native = false,
-    setLabelId: setLabelIdProp,
-    focusControl: focusControlProp
-  } = params;
-  const {
-    controlId: contextControlId,
-    setLabelId: setContextLabelId
-  } = useLabelableContext();
-  const syncLabelId = useStableCallback((nextLabelId) => {
-    setContextLabelId(nextLabelId);
-    setLabelIdProp?.(nextLabelId);
-  });
-  const id = useRegisteredLabelId(idProp, syncLabelId);
-  const resolvedControlId = contextControlId ?? fallbackControlId;
-  function focusControl(event) {
-    if (focusControlProp) {
-      focusControlProp(event, resolvedControlId);
-      return;
-    }
-    if (!resolvedControlId) {
-      return;
-    }
-    const controlElement = ownerDocument(event.currentTarget).getElementById(resolvedControlId);
-    if (isHTMLElement(controlElement)) {
-      focusElementWithVisible(controlElement);
-    }
-  }
-  function handleInteraction(event) {
-    const target = getTarget(event.nativeEvent);
-    if (target?.closest("button,input,select,textarea")) {
-      return;
-    }
-    if (!event.defaultPrevented && event.detail > 1) {
-      event.preventDefault();
-    }
-    if (native) {
-      return;
-    }
-    focusControl(event);
-  }
-  return native ? {
-    id,
-    htmlFor: resolvedControlId ?? undefined,
-    onMouseDown: handleInteraction
-  } : {
-    id,
-    onClick: handleInteraction,
-    onPointerDown(event) {
-      event.preventDefault();
-    }
-  };
-}
-function focusElementWithVisible(element) {
-  element.focus({
-    focusVisible: true
-  });
-}
-
-// node_modules/@base-ui/react/field/item/FieldItemContext.mjs
-var React51 = __toESM(require_react(), 1);
-"use client";
-var FieldItemContext = /* @__PURE__ */ React51.createContext({
-  disabled: false
-});
-if (true)
-  FieldItemContext.displayName = "FieldItemContext";
-function useFieldItemContext() {
-  const context = React51.useContext(FieldItemContext);
-  return context;
-}
-
-// node_modules/@base-ui/react/field/label/FieldLabel.mjs
-"use client";
-var FieldLabel = /* @__PURE__ */ React52.forwardRef(function FieldLabel2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    id: idProp,
-    nativeLabel = true,
-    ...elementProps
-  } = componentProps;
-  const fieldRootContext = useFieldRootContext(false);
-  const fieldItemContext = useFieldItemContext();
-  const {
-    labelId
-  } = useLabelableContext();
-  const state = {
-    ...fieldRootContext.state,
-    disabled: fieldRootContext.disabled || fieldItemContext.disabled
-  };
-  const labelRef = React52.useRef(null);
-  const labelProps = useLabel({
-    id: labelId ?? idProp,
-    native: nativeLabel
-  });
-  if (true) {
-    React52.useEffect(() => {
-      if (!labelRef.current) {
-        return;
-      }
-      const isLabelTag = labelRef.current.tagName === "LABEL";
-      if (nativeLabel) {
-        if (!isLabelTag) {
-          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
-          const message = "<Field.Label> expected a <label> element because the `nativeLabel` prop is true. " + "Rendering a non-<label> disables native label association, so `htmlFor` will not " + "work. Use a real <label> in the `render` prop, or set `nativeLabel` to `false`.";
-          error(`${message}${ownerStackMessage}`);
-        }
-      } else if (isLabelTag) {
-        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
-        const message = "<Field.Label> expected a non-<label> element because the `nativeLabel` prop is false. " + "Rendering a <label> assumes native label behavior while Base UI treats it as " + "non-native, which can cause unexpected pointer behavior. Use a non-<label> in the " + "`render` prop, or set `nativeLabel` to `true`.";
-        error(`${message}${ownerStackMessage}`);
-      }
-    }, [nativeLabel]);
-  }
-  const element = useRenderElement("label", componentProps, {
-    ref: [forwardedRef, labelRef],
-    state,
-    props: [labelProps, elementProps],
-    stateAttributesMapping: fieldValidityMapping
-  });
-  return element;
-});
-if (true)
-  FieldLabel.displayName = "FieldLabel";
-// node_modules/@base-ui/react/field/error/FieldError.mjs
-var React53 = __toESM(require_react(), 1);
-var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var stateAttributesMapping4 = {
-  ...fieldValidityMapping,
-  ...transitionStatusMapping
-};
-var FieldError = /* @__PURE__ */ React53.forwardRef(function FieldError2(componentProps, forwardedRef) {
-  const {
-    render,
-    id: idProp,
-    className,
-    match,
-    style,
-    ...elementProps
-  } = componentProps;
-  const id = useBaseUiId(idProp);
-  const {
-    validityData,
-    state: fieldState,
-    name
-  } = useFieldRootContext(false);
-  const {
-    setMessageIds
-  } = useLabelableContext();
-  const {
-    errors
-  } = useFormContext();
-  const formError = name && Object.hasOwn(errors, name) ? errors[name] : null;
-  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
-  const hasSpecificMatch = typeof match === "string";
-  let rendered = false;
-  if (match === true) {
-    rendered = true;
-  } else if (fieldState.disabled) {
-    rendered = false;
-  } else if (hasSpecificMatch) {
-    rendered = Boolean(validityData.state[match]);
-  } else {
-    rendered = hasFormError || validityData.state.valid === false;
-  }
-  const {
-    mounted,
-    transitionStatus,
-    setMounted
-  } = useTransitionStatus(rendered);
-  useIsoLayoutEffect(() => {
-    if (!rendered || !id) {
-      return;
-    }
-    setMessageIds((v) => v.concat(id));
-    return () => {
-      setMessageIds((v) => v.filter((item) => item !== id));
-    };
-  }, [rendered, id, setMessageIds]);
-  const errorRef = React53.useRef(null);
-  const [lastRenderedMessage, setLastRenderedMessage] = React53.useState(null);
-  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React53.useState(null);
-  let error2 = validityData.error;
-  if (!hasSpecificMatch && hasFormError) {
-    error2 = formError;
-  } else if (validityData.errors.length > 1) {
-    error2 = validityData.errors;
-  }
-  let errorMessage = error2 ?? "";
-  if (Array.isArray(error2)) {
-    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime11.jsx("ul", {
-      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime11.jsx("li", {
-        children: message
-      }, message))
-    }) : error2[0] ?? "";
-  }
-  const errorKey = Array.isArray(error2) ? JSON.stringify(error2) : error2;
-  if (rendered && errorKey !== lastRenderedMessageKey) {
-    setLastRenderedMessageKey(errorKey);
-    setLastRenderedMessage(errorMessage);
-  }
-  useOpenChangeComplete({
-    open: rendered,
-    ref: errorRef,
-    onComplete() {
-      if (!rendered) {
-        setMounted(false);
-      }
-    }
-  });
-  const state = {
-    ...fieldState,
-    transitionStatus
-  };
-  const element = useRenderElement("div", componentProps, {
-    ref: [forwardedRef, errorRef],
-    state,
-    props: [{
-      id,
-      children: rendered ? errorMessage : lastRenderedMessage
-    }, elementProps],
-    stateAttributesMapping: stateAttributesMapping4,
-    enabled: mounted
-  });
-  if (!mounted) {
-    return null;
-  }
-  return element;
-});
-if (true)
-  FieldError.displayName = "FieldError";
-// node_modules/@base-ui/react/field/description/FieldDescription.mjs
-var React54 = __toESM(require_react(), 1);
-"use client";
-var FieldDescription = /* @__PURE__ */ React54.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    id: idProp,
-    className,
-    style,
-    ...elementProps
-  } = componentProps;
-  const id = useBaseUiId(idProp);
-  const fieldRootContext = useFieldRootContext(false);
-  const fieldItemContext = useFieldItemContext();
-  const {
-    setMessageIds
-  } = useLabelableContext();
-  const state = {
-    ...fieldRootContext.state,
-    disabled: fieldRootContext.disabled || fieldItemContext.disabled
-  };
-  useIsoLayoutEffect(() => {
-    if (!id) {
-      return;
-    }
-    setMessageIds((v) => v.concat(id));
-    return () => {
-      setMessageIds((v) => v.filter((item) => item !== id));
-    };
-  }, [id, setMessageIds]);
-  const element = useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    state,
-    props: [{
-      id
-    }, elementProps],
-    stateAttributesMapping: fieldValidityMapping
-  });
-  return element;
-});
-if (true)
-  FieldDescription.displayName = "FieldDescription";
-// node_modules/@base-ui/react/field/control/FieldControl.mjs
-var React58 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useControlled.mjs
-var React55 = __toESM(require_react(), 1);
-"use client";
-function useControlled({
-  controlled,
-  default: defaultProp,
-  name,
-  state = "value"
-}) {
-  const {
-    current: isControlled
-  } = React55.useRef(controlled !== undefined);
-  const [valueState, setValue] = React55.useState(defaultProp);
-  const value = isControlled ? controlled : valueState;
-  if (true) {
-    React55.useEffect(() => {
-      if (isControlled !== (controlled !== undefined)) {
-        error([`A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} ` + "element for the lifetime of the component.", "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join(`
-`));
-      }
-    }, [state, name, controlled]);
-    const {
-      current: defaultValue
-    } = React55.useRef(defaultProp);
-    React55.useEffect(() => {
-      if (!isControlled && serializeToDevModeString(defaultValue) !== serializeToDevModeString(defaultProp)) {
-        error([`A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. ` + `To suppress this warning opt to use a controlled ${name}.`].join(`
-`));
-      }
-    }, [defaultProp]);
-  }
-  const setValueIfUncontrolled = React55.useCallback((newValue) => {
-    if (!isControlled) {
-      setValue(newValue);
-    }
-  }, []);
-  return [value, setValueIfUncontrolled];
-}
-function serializeToDevModeString(input) {
-  let nextId = 0;
-  const seen = new WeakMap;
-  try {
-    const result = JSON.stringify(input, function replacer(key, value) {
-      if (key === "_owner" && this != null && typeof this === "object" && "$$typeof" in this) {
-        return;
-      }
-      if (typeof value === "bigint") {
-        return `__bigint__:${value}`;
-      }
-      if (value !== null && typeof value === "object") {
-        const id = seen.get(value);
-        if (id !== undefined) {
-          return `__object__:${id}`;
-        }
-        seen.set(value, nextId);
-        nextId += 1;
-      }
-      return value;
-    });
-    return result ?? `__top__:${typeof input}`;
-  } catch {
-    return "__unserializable__";
-  }
-}
-
-// node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
-var React56 = __toESM(require_react(), 1);
-"use client";
-function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
-  const {
-    registerFieldControl
-  } = useFieldRootContext();
-  const sourceRef = React56.useRef(null);
-  if (!sourceRef.current) {
-    sourceRef.current = Symbol();
-  }
-  useIsoLayoutEffect(() => {
-    const source = sourceRef.current;
-    if (!source || !enabled) {
-      return;
-    }
-    const registration = {
-      controlRef,
-      getValue: getFormValueOverride,
-      id,
-      name,
-      value
-    };
-    registerFieldControl(source, registration);
-    return () => {
-      registerFieldControl(source, undefined);
-    };
-  }, [controlRef, enabled, getFormValueOverride, id, name, registerFieldControl, value]);
-}
-
-// node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
-var React57 = __toESM(require_react(), 1);
-"use client";
-function useLabelableId(params = {}) {
-  const {
-    id,
-    implicit = false,
-    controlRef
-  } = params;
-  const {
-    controlId,
-    registerControlId
-  } = useLabelableContext();
-  const defaultId = useBaseUiId(id);
-  const controlIdForEffect = implicit ? controlId : undefined;
-  const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
-  const hasRegisteredRef = React57.useRef(false);
-  const hadExplicitIdRef = React57.useRef(id != null);
-  const unregisterControlId = useStableCallback(() => {
-    if (!hasRegisteredRef.current || registerControlId === NOOP) {
-      return;
-    }
-    hasRegisteredRef.current = false;
-    registerControlId(controlSourceRef.current, undefined);
-  });
-  useIsoLayoutEffect(() => {
-    if (registerControlId === NOOP) {
-      return;
-    }
-    let nextId;
-    if (implicit) {
-      const elem = controlRef?.current;
-      if (isElement(elem) && elem.closest("label") != null) {
-        nextId = id ?? null;
-      } else {
-        nextId = controlIdForEffect ?? defaultId;
-      }
-    } else if (id != null) {
-      hadExplicitIdRef.current = true;
-      nextId = id;
-    } else if (hadExplicitIdRef.current) {
-      nextId = defaultId;
-    } else {
-      unregisterControlId();
-      return;
-    }
-    if (nextId === undefined) {
-      unregisterControlId();
-      return;
-    }
-    hasRegisteredRef.current = true;
-    registerControlId(controlSourceRef.current, nextId);
-    return;
-  }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
-  React57.useEffect(() => {
-    return unregisterControlId;
-  }, [unregisterControlId]);
-  return controlId ?? defaultId;
-}
-
-// node_modules/@base-ui/react/field/control/FieldControl.mjs
-"use client";
-var FieldControl = /* @__PURE__ */ React58.forwardRef(function FieldControl2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    id: idProp,
-    name: nameProp,
-    value: valueProp,
-    disabled: disabledProp = false,
-    onValueChange,
-    defaultValue,
-    autoFocus = false,
-    style,
-    ...elementProps
-  } = componentProps;
-  const {
-    state: fieldState,
-    name: fieldName,
-    disabled: fieldDisabled,
-    setTouched,
-    setDirty,
-    validityData,
-    setFocused,
-    setFilled,
-    validationMode,
-    validation
-  } = useFieldRootContext();
-  const {
-    clearErrors
-  } = useFormContext();
-  const disabled2 = fieldDisabled || disabledProp;
-  const name = fieldName ?? nameProp;
-  const state = {
-    ...fieldState,
-    disabled: disabled2
-  };
-  const {
-    labelId
-  } = useLabelableContext();
-  const id = useLabelableId({
-    id: idProp
-  });
-  useIsoLayoutEffect(() => {
-    const hasExternalValue = valueProp != null;
-    if (validation.inputRef.current?.value || hasExternalValue && valueProp !== "") {
-      setFilled(true);
-    } else if (hasExternalValue && valueProp === "") {
-      setFilled(false);
-    }
-  }, [validation.inputRef, setFilled, valueProp]);
-  const inputRef = React58.useRef(null);
-  useIsoLayoutEffect(() => {
-    if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
-      setFocused(true);
-    }
-  }, [autoFocus, setFocused]);
-  const [valueUnwrapped] = useControlled({
-    controlled: valueProp,
-    default: defaultValue,
-    name: "FieldControl",
-    state: "value"
-  });
-  const isControlled = valueProp !== undefined;
-  const value = isControlled ? valueUnwrapped : undefined;
-  const getValueFromInput = useStableCallback(() => validation.inputRef.current?.value);
-  useRegisterFieldControl(validation.inputRef, id, value, getValueFromInput, !disabled2, nameProp);
-  const element = useRenderElement("input", componentProps, {
-    ref: [forwardedRef, inputRef],
-    state,
-    props: [{
-      id,
-      disabled: disabled2,
-      name,
-      ref: validation.inputRef,
-      "aria-labelledby": labelId,
-      autoFocus,
-      ...isControlled ? {
-        value
-      } : {
-        defaultValue
-      },
-      onChange(event) {
-        const inputValue = event.currentTarget.value;
-        onValueChange?.(inputValue, createChangeEventDetails(exports_reason_parts.none, event.nativeEvent));
-        setDirty(inputValue !== validityData.initialValue);
-        setFilled(inputValue !== "");
-        if (!event.nativeEvent.defaultPrevented) {
-          clearErrors(name);
-          validation.change(inputValue);
-        }
-      },
-      onFocus() {
-        setFocused(true);
-      },
-      onBlur(event) {
-        setTouched(true);
-        setFocused(false);
-        if (validationMode === "onBlur") {
-          validation.commit(event.currentTarget.value);
-        }
-      },
-      onKeyDown(event) {
-        if (event.currentTarget.tagName === "INPUT" && event.key === "Enter") {
-          setTouched(true);
-          validation.commit(event.currentTarget.value);
-        }
-      }
-    }, elementProps, (props) => validation.getValidationProps(disabled2, props)],
-    stateAttributesMapping: fieldValidityMapping
-  });
-  return element;
-});
-if (true)
-  FieldControl.displayName = "FieldControl";
-// node_modules/@base-ui/react/field/validity/FieldValidity.mjs
-var React59 = __toESM(require_react(), 1);
-var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var FieldValidity = function FieldValidity2(props) {
-  const {
-    children
-  } = props;
-  const {
-    validityData,
-    invalid
-  } = useFieldRootContext(false);
-  const combinedFieldValidityData = React59.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
-  const isInvalid = combinedFieldValidityData.state.valid === false;
-  const {
-    transitionStatus
-  } = useTransitionStatus(isInvalid);
-  const fieldValidityState = React59.useMemo(() => {
-    return {
-      ...combinedFieldValidityData,
-      validity: combinedFieldValidityData.state,
-      transitionStatus
-    };
-  }, [combinedFieldValidityData, transitionStatus]);
-  return /* @__PURE__ */ import_jsx_runtime12.jsx(React59.Fragment, {
-    children: children(fieldValidityState)
-  });
-};
-if (true)
-  FieldValidity.displayName = "FieldValidity";
-// node_modules/@base-ui/react/field/item/FieldItem.mjs
-var React61 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
-var React60 = __toESM(require_react(), 1);
-"use client";
-var CheckboxGroupContext = /* @__PURE__ */ React60.createContext(undefined);
-if (true)
-  CheckboxGroupContext.displayName = "CheckboxGroupContext";
-function useCheckboxGroupContext(optional = true) {
-  const context = React60.useContext(CheckboxGroupContext);
-  if (context === undefined && !optional) {
-    throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/field/item/FieldItem.mjs
-var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var FieldItem = /* @__PURE__ */ React61.forwardRef(function FieldItem2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style,
-    disabled: disabledProp = false,
-    ...elementProps
-  } = componentProps;
-  const {
-    state: fieldState,
-    disabled: rootDisabled
-  } = useFieldRootContext(false);
-  const disabled2 = rootDisabled || disabledProp;
-  const state = {
-    ...fieldState,
-    disabled: disabled2
-  };
-  const checkboxGroupContext = useCheckboxGroupContext();
-  const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
-  const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
-  const fieldItemContext = React61.useMemo(() => ({
-    disabled: disabled2
-  }), [disabled2]);
-  const element = useRenderElement("div", componentProps, {
-    ref: forwardedRef,
-    state,
-    props: elementProps,
-    stateAttributesMapping: fieldValidityMapping
-  });
-  return /* @__PURE__ */ import_jsx_runtime13.jsx(LabelableProvider, {
-    controlId,
-    children: /* @__PURE__ */ import_jsx_runtime13.jsx(FieldItemContext.Provider, {
-      value: fieldItemContext,
-      children: element
-    })
-  });
-});
-if (true)
-  FieldItem.displayName = "FieldItem";
-// node_modules/@base-ui/react/input/Input.mjs
-var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var Input = /* @__PURE__ */ React62.forwardRef(function Input2(props, forwardedRef) {
-  return /* @__PURE__ */ import_jsx_runtime14.jsx(exports_index_parts2.Control, {
-    ref: forwardedRef,
-    ...props
-  });
-});
-if (true)
-  Input.displayName = "Input";
-// src/bounty/surface/ui/input.tsx
+// src/digestify/surface/ui/textarea.tsx
 var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
-function Input3({ className, type, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Input, {
-    type,
-    "data-slot": "input",
-    className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/components/TaskCard.tsx
-var import_react2 = __toESM(require_react(), 1);
-
-// plugins/spellbook/skills/bounty/shared/types.ts
-var SIZE_MINUTES = { S: 5, M: 10, L: 20 };
-
-// plugins/spellbook/skills/bounty/shared/predicates.ts
-function expectedMinutes(task) {
-  if (typeof task.expect === "number" && task.expect > 0)
-    return task.expect;
-  if (task.size && task.size in SIZE_MINUTES)
-    return SIZE_MINUTES[task.size];
-  return;
-}
-function liveBlockerCount(task, tasks) {
-  return (task.blockedBy ?? []).filter((bid) => {
-    const b = tasks.find((t) => t.id === bid);
-    return b !== undefined && b.status !== "done";
-  }).length;
-}
-function isBlocked(task, tasks) {
-  return liveBlockerCount(task, tasks) > 0;
-}
-function cardOverdue(task, tasks, now) {
-  if (task.status !== "doing" || task.enteredStatusAt === undefined)
-    return null;
-  const exp = expectedMinutes(task);
-  if (exp === undefined)
-    return null;
-  if (isBlocked(task, tasks))
-    return null;
-  const ageMs = now - task.enteredStatusAt;
-  const overdueByMs = ageMs - exp * 60000;
-  return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
-}
-function cardPassesFilter(task, activeTags, activeOwners) {
-  const tagPass = activeTags.length === 0 || (task.tags ?? []).some((t) => activeTags.includes(t));
-  const ownerPass = activeOwners.length === 0 || task.owner !== undefined && activeOwners.includes(task.owner);
-  return tagPass && ownerPass;
-}
-function ownersOverWip(tasks, threshold) {
-  const counts = new Map;
-  for (const t of tasks) {
-    if (t.status === "doing" && t.owner !== undefined) {
-      counts.set(t.owner, (counts.get(t.owner) ?? 0) + 1);
-    }
-  }
-  const over = new Set;
-  for (const [owner, n] of counts)
-    if (n >= threshold)
-      over.add(owner);
-  return over;
-}
-
-// src/bounty/surface/state/cards.ts
-function blockedLabel(count) {
-  return `⛔ blocked by ${count}`;
-}
-function mins(ms) {
-  return Math.max(1, Math.round(ms / 60000));
-}
-function staleLabel(task, tasks, now) {
-  const s = cardOverdue(task, tasks, now);
-  if (!s)
-    return "";
-  return `⏱ Doing ${mins(s.ageMs)}m · ${mins(s.overdueByMs)}m over`;
-}
-function wipCued(task, over) {
-  return task.status === "doing" && task.owner !== undefined && over.has(task.owner);
-}
-function wipLabel(task, tasks) {
-  const n = tasks.filter((t) => t.status === "doing" && t.owner === task.owner).length;
-  return `${n} in Doing — wrap one before pulling more`;
-}
-
-// src/bounty/surface/state/types.ts
-var STATUSES = ["todo", "doing", "review", "done"];
-var COLUMNS = [
-  { status: "todo", label: "To do" },
-  { status: "doing", label: "Doing" },
-  { status: "review", label: "Review" },
-  { status: "done", label: "Done" }
-];
-var WIP_THRESHOLD = 2;
-var AGE_TICK_MS = 30000;
-var TOAST_MS = 5000;
-var RECONNECT_MS = 1000;
-
-// src/bounty/surface/components/TaskCard.tsx
-var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
-function TaskCard({
-  task,
-  tasks,
-  now,
-  overWip,
-  dragging,
-  marker,
-  onDragStart,
-  onDragEnd,
-  onToggle,
-  onEditTitle,
-  onOpenDetail,
-  onRemove
-}) {
-  const cardRef = import_react2.useRef(null);
-  const titleRef = import_react2.useRef(null);
-  const blocked = liveBlockerCount(task, tasks);
-  const stale = staleLabel(task, tasks, now);
-  const cued = wipCued(task, overWip);
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-    ref: cardRef,
-    "data-task-id": task.id,
-    "data-task-status": task.status,
-    draggable: "true",
-    onDragStart: (e) => onDragStart(task, e),
-    onDragEnd: () => {
-      cardRef.current?.setAttribute("draggable", "true");
-      onDragEnd();
-    },
-    className: cn("cursor-grab rounded-md border border-edge bg-surface-raised px-2.5 py-2 shadow-[0_1px_2px_var(--color-well)] transition-colors hover:border-edge-hover hover:bg-surface-hover", blocked > 0 && "border-l-2 border-l-danger opacity-[0.82]", stale && "opacity-[0.82]", dragging && "cursor-grabbing opacity-40", marker === "before" && "border-t-2 border-t-ice pt-[calc(0.5rem-2px)]", marker === "after" && "border-b-2 border-b-ice pb-[calc(0.5rem-2px)]"),
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        ref: titleRef,
-        role: "textbox",
-        tabIndex: 0,
-        "aria-multiline": "true",
-        "aria-label": "Task title",
-        contentEditable: true,
-        suppressContentEditableWarning: true,
-        spellCheck: false,
-        className: "title-empty min-h-[1.2em] text-[0.92rem] break-words text-ink outline-none focus:-mx-1.5 focus:-my-0.5 focus:rounded-sm focus:bg-surface-editing focus:px-1.5 focus:py-0.5",
-        onMouseDown: () => cardRef.current?.setAttribute("draggable", "false"),
-        onBlur: (e) => {
-          cardRef.current?.setAttribute("draggable", "true");
-          const next = e.currentTarget.textContent ?? "";
-          if (next.trim() === "")
-            e.currentTarget.textContent = task.title;
-          else
-            onEditTitle(task, next);
-        },
-        onKeyDown: (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.currentTarget.blur();
-          } else if (e.key === "Escape") {
-            e.currentTarget.textContent = task.title;
-            e.currentTarget.blur();
-          }
-        },
-        children: task.title
-      }, undefined, false, undefined, this),
-      blocked > 0 && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-danger",
-        children: blockedLabel(blocked)
-      }, undefined, false, undefined, this),
-      stale && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-1 inline-flex items-center gap-1 text-[0.7rem] text-ink-dim",
-        children: stale
-      }, undefined, false, undefined, this),
-      cued && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-1 inline-flex items-center gap-1.5 text-[0.7rem] text-ice-ink before:size-1.5 before:rounded-full before:bg-ice before:opacity-85 before:content-['']",
-        children: wipLabel(task, tasks)
-      }, undefined, false, undefined, this),
-      task.notes && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("button", {
-        type: "button",
-        title: "View / edit description",
-        onClick: () => onOpenDetail(task),
-        className: "mt-1 w-full cursor-pointer text-left text-[0.78rem] whitespace-pre-wrap text-ink-dim line-clamp-2 hover:text-ink",
-        children: task.notes
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-2 flex flex-wrap items-center gap-1.5",
-        children: [
-          STATUSES.map((s) => /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
-            variant: "pill",
-            size: "chip",
-            tone: task.status === s ? s : undefined,
-            onClick: () => onToggle(task, s),
-            children: s
-          }, s, false, undefined, this)),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
-            variant: "outline",
-            size: "chip",
-            title: "Details / edit description",
-            "aria-label": "Details / edit description",
-            className: "rounded-sm px-1.5 text-[0.85rem] text-ink-faint",
-            onClick: () => onOpenDetail(task),
-            children: "⋯"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
-            variant: "ghost",
-            size: "chip",
-            className: "ml-auto rounded-sm text-ink-faint hover:bg-transparent hover:text-danger",
-            onClick: () => onRemove(task.id),
-            children: "delete"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      task.tags && task.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-1.5 flex flex-wrap gap-1",
-        children: task.tags.map((tag) => /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Badge, {
-          variant: "chip",
-          children: tag
-        }, tag, false, undefined, this))
-      }, undefined, false, undefined, this),
-      task.owner && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
-        className: "mt-1.5 text-[0.7rem] tracking-[0.01em] text-loam-ink",
-        children: [
-          "@",
-          task.owner
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/bounty/surface/components/Column.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
-var PANEL = {
-  todo: "bg-surface",
-  doing: "bg-surface-doing",
-  review: "bg-surface-review",
-  done: "bg-surface-done"
-};
-var HEAD = {
-  todo: "text-ink-dim",
-  doing: "text-mammoth-ink",
-  review: "text-amethyst-ink",
-  done: "text-ice-ink"
-};
-function Column({
-  status,
-  label,
-  cards,
-  tasks,
-  now,
-  overWip,
-  draggingId,
-  hint,
-  onHint,
-  onDragStart,
-  onDragEnd,
-  onDrop,
-  onAdd,
-  onToggle,
-  onEditTitle,
-  onOpenDetail,
-  onRemove
-}) {
-  const [draft, setDraft] = import_react3.useState("");
-  const listRef = import_react3.useRef(null);
-  const isTarget = hint?.status === status;
-  const marker = isTarget ? hint.marker : null;
-  const boxes = () => {
-    const list = listRef.current;
-    if (!list)
-      return [];
-    return Array.from(list.querySelectorAll("[data-task-id]")).filter((n) => n.dataset.taskId !== draggingId).map((n) => {
-      const r2 = n.getBoundingClientRect();
-      return { id: n.dataset.taskId, top: r2.top, height: r2.height };
-    });
-  };
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("section", {
-    "data-status": status,
-    onDragOver: (e) => {
-      if (!draggingId)
-        return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      onHint({ status, marker: dropMarker(boxes(), e.clientY) });
-    },
-    onDragLeave: (e) => {
-      if (isTarget && !e.currentTarget.contains(e.relatedTarget))
-        onHint(null);
-    },
-    onDrop: (e) => {
-      if (!draggingId)
-        return;
-      e.preventDefault();
-      const index = dropIndex(boxes(), e.clientY);
-      onHint(null);
-      onDrop(status, index);
-    },
-    className: cn("min-h-32 rounded-lg border border-edge px-3.5 pt-3 pb-4 transition-colors", PANEL[status], isTarget && "border-ice bg-ice/[0.06]"),
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-        className: "mb-3 flex items-center justify-between",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("h2", {
-            className: cn("m-0 text-xs font-semibold tracking-[0.1em] uppercase", HEAD[status]),
-            children: label
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Badge, {
-            variant: "count",
-            children: cards.length
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-        ref: listRef,
-        className: cn("flex min-h-10 flex-col gap-2 rounded-sm border border-dashed border-transparent", isTarget && "border-ice"),
-        children: cards.map((task) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(TaskCard, {
-          task,
-          tasks,
-          now,
-          overWip,
-          dragging: draggingId === task.id,
-          marker: marker && marker.id === task.id ? marker.edge : null,
-          onDragStart,
-          onDragEnd,
-          onToggle,
-          onEditTitle,
-          onOpenDetail,
-          onRemove
-        }, task.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("form", {
-        className: "mt-3 flex gap-1.5",
-        onSubmit: (e) => {
-          e.preventDefault();
-          onAdd(status, draft);
-          if (draft.trim())
-            setDraft("");
-        },
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
-            value: draft,
-            onChange: (e) => setDraft(e.target.value),
-            placeholder: "Add a task…",
-            "aria-label": `Add a task to ${label}`,
-            className: "flex-1 bg-well text-[0.85rem]"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
-            type: "submit",
-            variant: "outline",
-            size: "sm",
-            className: "text-[0.85rem]",
-            children: "Add"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/bounty/surface/components/DetailDialog.tsx
-var import_react7 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/index.parts.mjs
-var exports_index_parts3 = {};
-__export(exports_index_parts3, {
-  createHandle: () => createDialogHandle,
-  Viewport: () => DialogViewport,
-  Trigger: () => DialogTrigger,
-  Title: () => DialogTitle,
-  Root: () => DialogRoot,
-  Portal: () => DialogPortal,
-  Popup: () => DialogPopup,
-  Handle: () => DialogHandle,
-  Description: () => DialogDescription,
-  Close: () => DialogClose,
-  Backdrop: () => DialogBackdrop
-});
-
-// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
-var React63 = __toESM(require_react(), 1);
-"use client";
-function DialogRoot(props) {
-  const mode = React63.useContext(IsDrawerContext) ? "drawer" : "dialog";
-  return useRenderDialogRoot(props, mode);
-}
-// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
-var import_react6 = __toESM(require_react(), 1);
-
-// node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var mergeClasses = (...classes) => classes.filter((className, index, array) => {
-  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
-}).join(" ").trim();
-
-// node_modules/lucide-react/dist/esm/shared/src/utils/toKebabCase.mjs
-var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-
-// node_modules/lucide-react/dist/esm/shared/src/utils/toCamelCase.mjs
-var toCamelCase = (string) => string.replace(/^([A-Z])|[\s-_]+(\w)/g, (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase());
-
-// node_modules/lucide-react/dist/esm/shared/src/utils/toPascalCase.mjs
-var toPascalCase = (string) => {
-  const camelCase = toCamelCase(string);
-  return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
-};
-
-// node_modules/lucide-react/dist/esm/Icon.mjs
-var import_react5 = __toESM(require_react(), 1);
-
-// node_modules/lucide-react/dist/esm/defaultAttributes.mjs
-var defaultAttributes = {
-  xmlns: "http://www.w3.org/2000/svg",
-  width: 24,
-  height: 24,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round",
-  strokeLinejoin: "round"
-};
-
-// node_modules/lucide-react/dist/esm/shared/src/utils/hasA11yProp.mjs
-var hasA11yProp = (props) => {
-  for (const prop in props) {
-    if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
-      return true;
-    }
-  }
-  return false;
-};
-
-// node_modules/lucide-react/dist/esm/context.mjs
-var import_react4 = __toESM(require_react(), 1);
-"use client";
-var LucideContext = import_react4.createContext({});
-var useLucideContext = () => import_react4.useContext(LucideContext);
-
-// node_modules/lucide-react/dist/esm/Icon.mjs
-"use client";
-var Icon = import_react5.forwardRef(({ color, size: size2, strokeWidth, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
-  const {
-    size: contextSize = 24,
-    strokeWidth: contextStrokeWidth = 2,
-    absoluteStrokeWidth: contextAbsoluteStrokeWidth = false,
-    color: contextColor = "currentColor",
-    className: contextClass = ""
-  } = useLucideContext() ?? {};
-  const calculatedStrokeWidth = absoluteStrokeWidth ?? contextAbsoluteStrokeWidth ? Number(strokeWidth ?? contextStrokeWidth) * 24 / Number(size2 ?? contextSize) : strokeWidth ?? contextStrokeWidth;
-  return import_react5.createElement("svg", {
-    ref,
-    ...defaultAttributes,
-    width: size2 ?? contextSize ?? defaultAttributes.width,
-    height: size2 ?? contextSize ?? defaultAttributes.height,
-    stroke: color ?? contextColor,
-    strokeWidth: calculatedStrokeWidth,
-    className: mergeClasses("lucide", contextClass, className),
-    ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
-    ...rest
-  }, [
-    ...iconNode.map(([tag, attrs]) => import_react5.createElement(tag, attrs)),
-    ...Array.isArray(children) ? children : [children]
-  ]);
-});
-
-// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
-var createLucideIcon = (iconName, iconNode) => {
-  const Component = import_react6.forwardRef(({ className, ...props }, ref) => import_react6.createElement(Icon, {
-    ref,
-    iconNode,
-    className: mergeClasses(`lucide-${toKebabCase(toPascalCase(iconName))}`, `lucide-${iconName}`, className),
-    ...props
-  }));
-  Component.displayName = toPascalCase(iconName);
-  return Component;
-};
-
-// node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode = [
-  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
-  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
-];
-var X = createLucideIcon("x", __iconNode);
-// src/bounty/surface/ui/dialog.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
-function Dialog({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Root, {
-    "data-slot": "dialog",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function DialogPortal3({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Portal, {
-    "data-slot": "dialog-portal",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function DialogClose3({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Close, {
-    "data-slot": "dialog-close",
-    ...props
-  }, undefined, false, undefined, this);
-}
-function DialogOverlay({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Backdrop, {
-    "data-slot": "dialog-overlay",
-    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function DialogContent({
-  className,
-  children,
-  showCloseButton = true,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(DialogPortal3, {
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(DialogOverlay, {}, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Popup, {
-        "data-slot": "dialog-content",
-        className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
-        ...props,
-        children: [
-          children,
-          showCloseButton && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Close, {
-            "data-slot": "dialog-close",
-            render: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button3, {
-              variant: "ghost",
-              className: "absolute top-2 right-2",
-              size: "icon-sm"
-            }, undefined, false, undefined, this),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(X, {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
-                className: "sr-only",
-                children: "Close"
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function DialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
-    "data-slot": "dialog-header",
-    className: cn("flex flex-col gap-2", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
-    "data-slot": "dialog-footer",
-    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
-    ...props,
-    children: [
-      children,
-      showCloseButton && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Close, {
-        render: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button3, {
-          variant: "outline"
-        }, undefined, false, undefined, this),
-        children: "Close"
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function DialogTitle3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(exports_index_parts3.Title, {
-    "data-slot": "dialog-title",
-    className: cn("text-base leading-none font-medium", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/ui/label.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
-"use client";
-function Label({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("label", {
-    "data-slot": "label",
-    className: cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/ui/textarea.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
 function Textarea({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("textarea", {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("textarea", {
     "data-slot": "textarea",
     className: cn("flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
-// src/bounty/surface/components/DetailDialog.tsx
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
-function DetailDialog({
-  task,
-  onClose,
-  onSave
-}) {
-  const [notes, setNotes] = import_react7.useState("");
-  import_react7.useEffect(() => {
-    setNotes(task?.notes ?? "");
-  }, [task]);
-  if (!task)
-    return null;
-  const save = () => {
-    if (notes !== (task.notes ?? ""))
-      onSave(task.id, notes);
-    onClose();
-  };
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Dialog, {
-    open: true,
-    onOpenChange: (open) => {
-      if (!open)
-        onClose();
-    },
-    children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(DialogContent, {
-      className: "max-w-[520px] gap-3 border-edge-hover bg-surface",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(DialogHeader, {
-          children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(DialogTitle3, {
-            className: "text-base break-words",
-            children: task.title
-          }, undefined, false, undefined, this)
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Label, {
-          htmlFor: "detail-notes",
-          className: "text-[0.68rem] tracking-[0.05em] uppercase",
-          children: "Description"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Textarea, {
-          id: "detail-notes",
-          rows: 7,
-          autoFocus: true,
-          value: notes,
-          onChange: (e) => setNotes(e.target.value),
-          placeholder: "No description yet — add one…",
-          className: "min-h-28 resize-y bg-bg text-[0.85rem]"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(DialogFooter, {
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(DialogClose3, {
-              render: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
-                variant: "outline",
-                children: "Cancel"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
-              onClick: save,
-              children: "Save"
-            }, undefined, false, undefined, this)
-          ]
-        }, undefined, true, undefined, this)
-      ]
-    }, undefined, true, undefined, this)
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/state/filters.ts
-var NO_FILTERS = { tags: [], owners: [] };
-var FILTERS_KEY = "bounty:filters";
-function boardTags(tasks, active) {
-  const s = new Set(active);
-  for (const t of tasks)
-    for (const tag of t.tags ?? [])
-      s.add(tag);
-  return [...s].sort();
-}
-function boardOwners(tasks, active) {
-  const s = new Set(active);
-  for (const t of tasks)
-    if (t.owner)
-      s.add(t.owner);
-  return [...s].sort();
-}
-function hasActiveFilters(f) {
-  return f.tags.length > 0 || f.owners.length > 0;
-}
-function toggleFacet(values, value) {
-  const i = values.indexOf(value);
-  return i === -1 ? [...values, value] : [...values.slice(0, i), ...values.slice(i + 1)];
-}
-function persistFilters(storage, f) {
-  try {
-    storage?.setItem(FILTERS_KEY, JSON.stringify({ tags: f.tags, owners: f.owners }));
-  } catch {}
-}
-function loadFilters(storage) {
-  try {
-    const raw = storage?.getItem(FILTERS_KEY);
-    if (!raw)
-      return NO_FILTERS;
-    const v = JSON.parse(raw);
-    return {
-      tags: Array.isArray(v.tags) ? v.tags.filter((x) => typeof x === "string") : [],
-      owners: Array.isArray(v.owners) ? v.owners.filter((x) => typeof x === "string") : []
-    };
-  } catch {
-    return NO_FILTERS;
-  }
-}
-function tasksByStatus(tasks, status, f) {
-  return tasks.filter((t) => t.status === status && cardPassesFilter(t, f.tags, f.owners));
-}
-
-// node_modules/@base-ui/react/separator/Separator.mjs
-var React64 = __toESM(require_react(), 1);
-"use client";
-var Separator = /* @__PURE__ */ React64.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
-  const {
-    className,
-    render,
-    orientation = "horizontal",
-    style,
-    ...elementProps
-  } = componentProps;
-  const state = {
-    orientation
-  };
-  const element = useRenderElement("div", componentProps, {
-    state,
-    ref: forwardedRef,
-    props: [{
-      role: "separator",
-      "aria-orientation": orientation
-    }, elementProps]
-  });
-  return element;
-});
-if (true)
-  Separator.displayName = "Separator";
-// src/bounty/surface/ui/separator.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
-function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator, {
-    "data-slot": "separator",
-    orientation,
-    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// src/bounty/surface/components/FilterBar.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
-function FilterBar({
-  tasks,
-  filters,
-  onToggleTag,
-  onToggleOwner,
-  onClear
-}) {
-  const tags = boardTags(tasks, filters.tags);
-  const owners = boardOwners(tasks, filters.owners);
-  if (tags.length === 0 && owners.length === 0)
-    return null;
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-    className: "mb-4 flex max-w-[1200px] flex-wrap items-center gap-1.5 text-[0.7rem] text-ink-faint",
+// src/digestify/surface/components/CommentEditor.tsx
+var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+function CommentEditor({ anchor, initialText, onSave, onCancel }) {
+  const [text2, setText] = import_react2.useState(initialText);
+  const ref = import_react2.useRef(null);
+  import_react2.useEffect(() => ref.current?.focus(), []);
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+    className: "my-3 rounded-lg border border-edge border-t-[3px] border-t-brand bg-surface p-3.5 shadow-[var(--elevation-soft)]",
     children: [
-      tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-        className: "tracking-[0.08em] uppercase",
-        children: "tags"
-      }, undefined, false, undefined, this),
-      tags.map((tag) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
-        variant: "chip",
-        size: "chip",
-        "aria-pressed": filters.tags.includes(tag),
-        onClick: () => onToggleTag(tag),
-        children: tag
-      }, `ft-${tag}`, false, undefined, this)),
-      tags.length > 0 && owners.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Separator2, {
-        orientation: "vertical",
-        className: "mx-1.5 self-stretch bg-edge"
-      }, undefined, false, undefined, this),
-      owners.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-        className: "tracking-[0.08em] uppercase",
-        children: "owners"
-      }, undefined, false, undefined, this),
-      owners.map((o) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
-        variant: "chip",
-        size: "chip",
-        "aria-pressed": filters.owners.includes(o),
-        onClick: () => onToggleOwner(o),
+      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+        className: "mb-1.5 text-[13px] text-ink-dim",
         children: [
-          "@",
-          o
-        ]
-      }, `fo-${o}`, true, undefined, this)),
-      hasActiveFilters(filters) && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
-        variant: "link",
-        size: "chip",
-        className: "ml-1 text-ink-faint",
-        onClick: onClear,
-        children: "clear"
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/bounty/surface/components/Header.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
-var DOT = {
-  "": "bg-ink-faint",
-  connected: "bg-mammoth shadow-[0_0_6px_var(--color-mammoth)]",
-  closed: "bg-danger"
-};
-function Header({
-  title,
-  conn,
-  statusText,
-  sessionId
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
-    className: "mb-5 flex items-center justify-between gap-4",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "flex flex-col items-start gap-[0.2rem]",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
-            src: "/assets/wordmark.webp",
-            alt: "Bounty Board",
-            className: "block h-12 w-auto"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h1", {
-            className: "m-0 text-base font-medium tracking-[-0.005em] text-ink-dim",
-            children: title
+          "on: ",
+          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("i", {
+            children: `"${truncate(anchor, EDITOR_ANCHOR_CHARS)}"`
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "text-right text-xs tabular-nums text-ink-dim",
+      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Textarea, {
+        ref,
+        placeholder: "Comment...",
+        value: text2,
+        onChange: (e) => setText(e.currentTarget.value),
+        className: "field-sizing-fixed min-h-12.5 w-full rounded-lg border-edge px-2.5 py-2 text-base text-ink"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+        className: "mt-2 flex gap-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                className: cn("mr-1.5 inline-block size-[0.55rem] rounded-full align-middle transition-colors", DOT[conn])
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                children: statusText
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: "text-ink-faint",
-            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("code", {
-              children: sessionId
-            }, undefined, false, undefined, this)
+          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
+            type: "button",
+            size: "sm",
+            className: "rounded-full px-3 py-1.5 text-xs font-extrabold",
+            onClick: () => onSave(text2.trim()),
+            children: "Save"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
+            type: "button",
+            size: "sm",
+            variant: "secondary",
+            className: "rounded-full px-3 py-1.5 text-xs font-extrabold text-brand-ink",
+            onClick: onCancel,
+            children: "Cancel"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this)
@@ -26438,389 +36099,794 @@ function Header({
   }, undefined, true, undefined, this);
 }
 
-// src/bounty/surface/components/RestoreFailedBanner.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
-function RestoreFailedBanner({ info }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-    role: "alert",
-    className: "mb-4 flex max-w-[1200px] flex-wrap items-baseline gap-x-2.5 gap-y-1.5 rounded-md border border-danger bg-danger-bg px-3 py-2.5 text-[0.78rem] leading-normal text-danger",
+// src/digestify/surface/components/FloatingCommentButton.tsx
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+function FloatingCommentButton({ left, top, buttonRef, onOpen }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("button", {
+    type: "button",
+    ref: buttonRef,
+    style: { left: `${left}px`, top: `${top}px` },
+    onMouseDown: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onOpen();
+    },
+    className: "comment-dots absolute z-100 inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-brand-ink px-3 py-2 text-xs font-extrabold text-white shadow-[var(--elevation-popover)]",
+    children: "Comment"
+  }, undefined, false, undefined, this);
+}
+
+// src/digestify/surface/components/AnnotationLayer.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+function AnnotationLayer({ docRef, comments, active, onAdd, onEdit, onDelete }) {
+  const hosts = import_react3.useRef(new Map);
+  const [, bump] = import_react3.useState(0);
+  const rerender = import_react3.useCallback(() => bump((n) => n + 1), []);
+  const [editor, setEditor] = import_react3.useState(null);
+  const [floating, setFloating] = import_react3.useState(null);
+  const floatingRef = import_react3.useRef(null);
+  const nearestBlock = import_react3.useCallback((node) => {
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return el?.closest(BLOCK_SELECTOR) ?? docRef.current;
+  }, [docRef]);
+  const hostAfter = import_react3.useCallback((block2) => {
+    const host = document.createElement("div");
+    block2.parentNode?.insertBefore(host, block2.nextSibling);
+    return host;
+  }, []);
+  import_react3.useEffect(() => {
+    const doc = docRef.current;
+    if (!doc)
+      return;
+    for (const comment of comments) {
+      if (hosts.current.has(comment.id))
+        continue;
+      const needle = anchorNeedle(comment.anchor);
+      let target = null;
+      for (const block2 of doc.querySelectorAll(BLOCK_SELECTOR)) {
+        if (block2.textContent?.includes(needle)) {
+          target = block2;
+          break;
+        }
+      }
+      hosts.current.set(comment.id, target ? hostAfter(target) : hostAfter(doc.lastElementChild ?? doc));
+    }
+    rerender();
+  }, [comments, docRef, hostAfter, rerender]);
+  import_react3.useEffect(() => {
+    if (!active)
+      return;
+    const onMouseUp = (ev) => {
+      const btn = floatingRef.current;
+      if (btn && ev.target instanceof Node && btn.contains(ev.target))
+        return;
+      const sel = window.getSelection();
+      const text2 = sel ? sel.toString().trim() : "";
+      setFloating(null);
+      const doc = docRef.current;
+      if (!text2 || !sel || !doc || !sel.anchorNode || !doc.contains(sel.anchorNode))
+        return;
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      setFloating({
+        anchor: text2,
+        range: range.cloneRange(),
+        left: rect.left + window.scrollX,
+        top: rect.bottom + window.scrollY + 6
+      });
+    };
+    document.addEventListener("mouseup", onMouseUp);
+    return () => document.removeEventListener("mouseup", onMouseUp);
+  }, [active, docRef]);
+  const openEditor = import_react3.useCallback(() => {
+    if (!floating)
+      return;
+    const block2 = nearestBlock(floating.range.endContainer);
+    if (!block2)
+      return;
+    setEditor({ anchor: floating.anchor, commentId: null, host: hostAfter(block2) });
+    setFloating(null);
+  }, [floating, hostAfter, nearestBlock]);
+  const closeEditor = import_react3.useCallback((keepHost) => {
+    if (editor && !keepHost && editor.commentId === null)
+      editor.host.remove();
+    setEditor(null);
+  }, [editor]);
+  const saveEditor = import_react3.useCallback((text2) => {
+    if (!editor)
+      return;
+    if (editor.commentId === null) {
+      if (!text2) {
+        editor.host.remove();
+        setEditor(null);
+        return;
+      }
+      hosts.current.set(onAdd(editor.anchor, text2), editor.host);
+      setEditor(null);
+      rerender();
+      return;
+    }
+    if (text2)
+      onEdit(editor.commentId, text2);
+    setEditor(null);
+  }, [editor, onAdd, onEdit, rerender]);
+  const remove = import_react3.useCallback((id) => {
+    hosts.current.get(id)?.remove();
+    hosts.current.delete(id);
+    onDelete(id);
+  }, [onDelete]);
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(jsx_dev_runtime7.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("strong", {
-        className: "text-[0.82rem]",
-        children: "The saved board could not be restored."
+      comments.map((comment) => {
+        const host = hosts.current.get(comment.id);
+        if (!host || editor?.commentId === comment.id)
+          return null;
+        return import_react_dom.createPortal(/* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CommentChip, {
+          comment,
+          onEdit: () => setEditor({ anchor: comment.anchor, commentId: comment.id, host }),
+          onDelete: () => remove(comment.id)
+        }, undefined, false, undefined, this), host, comment.id);
+      }),
+      editor ? import_react_dom.createPortal(/* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CommentEditor, {
+        anchor: editor.anchor,
+        initialText: editor.commentId === null ? "" : comments.find((c) => c.id === editor.commentId)?.text ?? "",
+        onSave: saveEditor,
+        onCancel: () => closeEditor(false)
+      }, undefined, false, undefined, this), editor.host) : null,
+      floating ? import_react_dom.createPortal(/* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FloatingCommentButton, {
+        left: floating.left,
+        top: floating.top,
+        buttonRef: floatingRef,
+        onOpen: openEditor
+      }, undefined, false, undefined, this), document.body) : null
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/digestify/surface/components/QuestionCard.tsx
+var import_react5 = __toESM(require_react(), 1);
+
+// src/digestify/surface/components/SanitisedHtml.tsx
+var import_react4 = __toESM(require_react(), 1);
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
+var SanitisedHtml = import_react4.memo(function SanitisedHtml2({
+  html: html3,
+  className
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+    className,
+    dangerouslySetInnerHTML: { __html: html3 }
+  }, undefined, false, undefined, this);
+});
+
+// src/digestify/surface/components/QuestionCard.tsx
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+function QuestionCard({ question, stampLines, initialAnswer, onAnswer }) {
+  const prompt = import_react5.useMemo(() => renderMd(question.prompt), [question.prompt]);
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+    className: "relative my-8 overflow-hidden rounded-lg border border-edge bg-surface bg-[image:var(--question-bg)] p-6 shadow-[var(--elevation-card)] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-question-accent before:content-['']",
+    children: [
+      stampLines.length > 0 ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+        "aria-hidden": "true",
+        className: "absolute top-3.5 right-4.5 rotate-[-8deg] text-[22px] leading-[0.95] font-black uppercase text-[color-mix(in_srgb,var(--color-brand-strong)_16%,transparent)]",
+        children: stampLines.map((line) => /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+          className: line.small ? "block text-[0.62em] tracking-[0.03em]" : "block",
+          children: line.text
+        }, line.text, false, undefined, this))
+      }, undefined, false, undefined, this) : null,
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+        className: "qprompt relative mx-0 mt-0 mb-3.5 flex max-w-[88%] items-start gap-2.5 max-narrow:max-w-full",
+        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SanitisedHtml, {
+          html: prompt,
+          className: "doc-prose min-w-0 flex-auto [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p:first-child]:font-extrabold [&>p]:mx-0 [&>p]:mt-0 [&>p]:mb-2.5"
+        }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
-        children: "This board is empty because the snapshot failed to load — not because it has no cards."
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("code", {
-        className: "text-[0.7rem] break-all opacity-90",
-        children: info.path
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
-        className: "text-[0.7rem] italic break-words opacity-75",
-        children: info.reason
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Textarea, {
+        placeholder: "Your answer...",
+        defaultValue: initialAnswer,
+        onInput: (e) => onAnswer(question.id, e.currentTarget.value),
+        className: "field-sizing-fixed min-h-23 w-full resize-y rounded-lg border-edge bg-surface px-3.5 py-3 text-base text-ink"
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/bounty/surface/components/Toasts.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
-function Toasts({ toasts }) {
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-    className: "fixed right-4 bottom-4 z-100 flex flex-col gap-1.5",
-    children: toasts.map((t) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-      className: "max-w-88 animate-toast-in rounded-md border border-mammoth bg-surface-raised px-3.5 py-2 text-[0.85rem] text-ink shadow-[0_6px_20px_var(--color-scrim)]",
-      children: t.text
-    }, t.id, false, undefined, this))
-  }, undefined, false, undefined, this);
+// src/digestify/surface/components/DocumentView.tsx
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+function DocumentView(props) {
+  const { payload, theme, comments, initialAnswers, active, onAnswer } = props;
+  const docRef = import_react6.useRef(null);
+  const segments = import_react6.useMemo(() => splitDocument(renderMd(payload.markdown)), [payload.markdown]);
+  const questions = import_react6.useMemo(() => new Map(payload.questions.map((q) => [q.id, q])), [payload.questions]);
+  import_react6.useEffect(() => {
+    for (const el of docRef.current?.querySelectorAll("pre code") ?? []) {
+      common_default.highlightElement(el);
+    }
+  }, []);
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("main", {
+    id: "doc",
+    ref: docRef,
+    className: "doc-prose relative mx-auto max-w-[860px] px-6 pt-10 pb-30 max-narrow:px-4 max-narrow:pt-8 max-narrow:pb-24",
+    children: [
+      segments.map((segment, i) => {
+        if (segment.kind === "html") {
+          return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SanitisedHtml, {
+            html: segment.html,
+            className: "contents"
+          }, `html-${i}`, false, undefined, this);
+        }
+        const question = questions.get(segment.id);
+        if (!question) {
+          return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SanitisedHtml, {
+            html: segment.marker,
+            className: "contents"
+          }, `orphan-${i}`, false, undefined, this);
+        }
+        return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(QuestionCard, {
+          question,
+          stampLines: theme.stampLines,
+          initialAnswer: initialAnswers[question.id],
+          onAnswer
+        }, `q-${segment.id}`, false, undefined, this);
+      }),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AnnotationLayer, {
+        docRef,
+        comments,
+        active,
+        onAdd: props.onAddComment,
+        onEdit: props.onEditComment,
+        onDelete: props.onDeleteComment
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
 }
 
-// src/bounty/surface/state/useBoard.ts
+// src/digestify/surface/components/Header.tsx
 var import_react8 = __toESM(require_react(), 1);
 
-// src/bounty/surface/state/board.ts
-function applyInit(prev, msg) {
-  return {
-    title: msg.title || "",
-    tasks: Array.isArray(msg.tasks) ? msg.tasks.slice() : [],
-    restoreFailed: msg.restoreFailed && typeof msg.restoreFailed === "object" ? msg.restoreFailed : null,
-    sessionId: typeof msg.sessionId === "string" ? msg.sessionId : prev.sessionId
-  };
-}
-function applyAdd(tasks, task) {
-  if (tasks.some((t) => t.id === task.id))
-    return tasks;
-  return [...tasks, task];
-}
-function applyUpdate(tasks, id, patch) {
-  const idx = tasks.findIndex((t) => t.id === id);
-  if (idx === -1)
-    return tasks;
-  const next = tasks.slice();
-  next[idx] = { ...next[idx], ...patch };
-  return next;
-}
-function applyRemove(tasks, id) {
-  const idx = tasks.findIndex((t) => t.id === id);
-  if (idx === -1)
-    return tasks;
-  return [...tasks.slice(0, idx), ...tasks.slice(idx + 1)];
-}
-var SESSION_ENDED_PREFIX = "session ended:";
-function isSessionEnd(text) {
-  return typeof text === "string" && text.startsWith(SESSION_ENDED_PREFIX);
-}
-function randId(random = (b) => crypto.getRandomValues(b)) {
-  const buf = new Uint8Array(6);
-  random(buf);
-  return `u-${Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+// src/digestify/surface/components/SessionIdButton.tsx
+var import_react7 = __toESM(require_react(), 1);
+
+// src/digestify/surface/state/clipboard.ts
+function copyFeedback(ok) {
+  return ok ? { outcome: "copied", label: "Copied!", holdMs: 1200 } : { outcome: "failed", label: "Copy failed — select it", holdMs: 2400 };
 }
 
-// src/bounty/surface/state/useBoard.ts
-function wsUrl() {
-  const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${proto}//${location.host}/ws`;
-}
-function safeStorage() {
-  try {
-    return window.localStorage;
-  } catch {
-    return;
-  }
-}
-var EMPTY4 = {
-  title: "",
-  tasks: [],
-  restoreFailed: null,
-  sessionId: ""
-};
-function useBoard() {
-  const [board, setBoard] = import_react8.useState(EMPTY4);
-  const [conn, setConn] = import_react8.useState("");
-  const [ended, setEnded] = import_react8.useState(false);
-  const [toasts, setToasts] = import_react8.useState([]);
-  const [now, setNow] = import_react8.useState(() => Date.now());
-  const [filters, setFilters] = import_react8.useState(NO_FILTERS);
-  const socketRef = import_react8.useRef(null);
-  const closedByServer = import_react8.useRef(false);
-  const toastSeq = import_react8.useRef(0);
-  import_react8.useEffect(() => {
-    setFilters(loadFilters(safeStorage()));
-  }, []);
-  import_react8.useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), AGE_TICK_MS);
-    return () => clearInterval(id);
-  }, []);
-  const toast = import_react8.useCallback((text) => {
-    const id = ++toastSeq.current;
-    setToasts((prev) => [...prev, { id, text }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_MS);
-  }, []);
-  import_react8.useEffect(() => {
-    let disposed = false;
-    let retry;
-    const connect = () => {
-      if (disposed)
-        return;
-      setConn("");
-      const socket = new WebSocket(wsUrl());
-      socketRef.current = socket;
-      socket.onopen = () => setConn("connected");
-      socket.onclose = () => {
-        setConn("closed");
-        if (!closedByServer.current && !disposed)
-          retry = setTimeout(connect, RECONNECT_MS);
-      };
-      socket.onerror = () => {};
-      socket.onmessage = (ev) => {
-        let msg;
-        try {
-          msg = JSON.parse(ev.data);
-        } catch {
-          return;
-        }
-        if (msg.type === "init") {
-          setBoard((prev) => applyInit(prev, msg));
-          if (msg.title)
-            document.title = msg.title;
-        } else if (msg.type === "task.add") {
-          setBoard((prev) => {
-            const tasks = applyAdd(prev.tasks, msg.task);
-            return tasks === prev.tasks ? prev : { ...prev, tasks };
-          });
-        } else if (msg.type === "task.update") {
-          setBoard((prev) => {
-            const tasks = applyUpdate(prev.tasks, msg.id, msg.patch);
-            return tasks === prev.tasks ? prev : { ...prev, tasks };
-          });
-        } else if (msg.type === "task.remove") {
-          setBoard((prev) => {
-            const tasks = applyRemove(prev.tasks, msg.id);
-            return tasks === prev.tasks ? prev : { ...prev, tasks };
-          });
-        } else if (msg.type === "message") {
-          toast(msg.text);
-          if (isSessionEnd(msg.text)) {
-            closedByServer.current = true;
-            setEnded(true);
-          }
-        }
-      };
-    };
-    connect();
-    return () => {
-      disposed = true;
-      if (retry)
-        clearTimeout(retry);
-      socketRef.current?.close();
-    };
-  }, [toast]);
-  const send = import_react8.useCallback((msg) => {
-    const s = socketRef.current;
-    if (!s || s.readyState !== WebSocket.OPEN)
-      return;
-    s.send(JSON.stringify(msg));
-  }, []);
-  const updateFilters = import_react8.useCallback((f) => {
-    setFilters((prev) => {
-      const next = f(prev);
-      persistFilters(safeStorage(), next);
-      return next;
-    });
-  }, []);
-  return {
-    title: board.title,
-    tasks: board.tasks,
-    restoreFailed: board.restoreFailed,
-    sessionId: board.sessionId,
-    conn,
-    statusText: conn === "connected" ? "connected" : conn === "closed" ? "closed" : "connecting…",
-    ended,
-    toasts,
-    now,
-    filters,
-    toggleTag: (tag) => updateFilters((p) => ({ ...p, tags: toggleFacet(p.tags, tag) })),
-    toggleOwner: (owner) => updateFilters((p) => ({ ...p, owners: toggleFacet(p.owners, owner) })),
-    clearFilters: () => updateFilters(() => NO_FILTERS),
-    addTask: (status, title) => {
-      const trimmed = title.trim();
-      if (!trimmed)
-        return;
-      send({ type: "task.add", task: { id: randId(), title: trimmed, status } });
+// src/digestify/surface/components/SessionIdButton.tsx
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+function SessionIdButton({ sessionId }) {
+  const [result, setResult] = import_react7.useState("idle");
+  const timer = import_react7.useRef(null);
+  import_react7.useEffect(() => () => timer.current ? clearTimeout(timer.current) : undefined, []);
+  const copied = result === "copied";
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
+    id: "session-id",
+    type: "button",
+    title: "Click to copy session ID — give this to the agent if you need to recover an interrupted session",
+    "data-copied": copied ? "1" : undefined,
+    "data-copy-failed": result === "failed" ? "1" : undefined,
+    onClick: async () => {
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(sessionId);
+        ok = true;
+      } catch {}
+      const fb = copyFeedback(ok);
+      setResult(fb.outcome);
+      if (timer.current)
+        clearTimeout(timer.current);
+      timer.current = setTimeout(() => setResult("idle"), fb.holdMs);
     },
-    toggleStatus: (task, status) => {
-      if (task.status === status)
-        return;
-      send({ type: "task.toggle", id: task.id, status });
-    },
-    editTitle: (task, title) => {
-      const next = title.trim();
-      if (next === "" || next === task.title)
-        return;
-      send({ type: "task.edit", id: task.id, title: next });
-    },
-    editNotes: (id, notes) => send({ type: "task.edit", id, notes }),
-    removeTask: (id) => send({ type: "task.remove", id }),
-    moveTask: (id, status, index2) => send({ type: "task.move", id, status, index: index2 }),
-    closeBoard: () => send({ type: "close" })
-  };
-}
-
-// src/bounty/surface/ui/empty.tsx
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
-function Empty({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    "data-slot": "empty",
-    className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function EmptyHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    "data-slot": "empty-header",
-    className: cn("flex max-w-sm flex-col items-center gap-2", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-var emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
-  variants: {
-    variant: {
-      default: "bg-transparent",
-      icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"
-    }
-  },
-  defaultVariants: {
-    variant: "default"
-  }
-});
-function EmptyMedia({
-  className,
-  variant = "default",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    "data-slot": "empty-icon",
-    "data-variant": variant,
-    className: cn(emptyMediaVariants({ variant, className })),
-    ...props
-  }, undefined, false, undefined, this);
-}
-function EmptyDescription({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    "data-slot": "empty-description",
-    className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
-    ...props
+    className: "cursor-pointer rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 font-mono text-[11px] font-bold text-ink-dim hover:bg-surface hover:text-brand-ink data-[copied=1]:border-brand data-[copied=1]:text-brand-strong data-[copy-failed=1]:border-alarm-edge data-[copy-failed=1]:bg-alarm-bg data-[copy-failed=1]:text-alarm",
+    children: result === "copied" ? "Copied!" : result === "failed" ? "Copy failed — select it" : sessionId
   }, undefined, false, undefined, this);
 }
 
-// src/bounty/surface/App.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
-function App() {
-  const board = useBoard();
-  const [detail, setDetail] = import_react9.useState(null);
-  const [draggingId, setDraggingId] = import_react9.useState(null);
-  const [dropHint, setDropHint] = import_react9.useState(null);
-  const over = ownersOverWip(board.tasks, WIP_THRESHOLD);
-  import_react9.useEffect(() => {
-    document.body.classList.toggle("board-ended", board.ended);
-    return () => document.body.classList.remove("board-ended");
-  }, [board.ended]);
-  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+// src/digestify/surface/components/TimerPill.tsx
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+function TimerPill({ text: text2, state, justReset, onExtend }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
+    type: "button",
+    id: "timer-display",
+    title: "Time remaining before idle timeout — resets on activity, or click to reset manually",
+    "data-state": state ?? undefined,
+    "data-just-reset": justReset ? "1" : undefined,
+    onClick: onExtend,
+    className: "group inline-flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 text-[13px] font-extrabold tabular-nums text-ink-dim transition-colors select-none hover:bg-surface hover:text-brand-ink data-[state=warn]:border-alarm-edge data-[state=warn]:bg-alarm-bg data-[state=warn]:text-alarm data-[state=expired]:border-expired data-[state=expired]:bg-expired data-[state=expired]:text-white",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Header, {
-        title: board.title,
-        conn: board.conn,
-        statusText: board.statusText,
-        sessionId: board.sessionId
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        "aria-hidden": "true",
+        className: "inline-block text-[13px] font-bold opacity-55 transition-transform duration-400 group-hover:opacity-100 data-[spin=1]:rotate-360",
+        "data-spin": justReset ? "1" : undefined,
+        children: "↻"
       }, undefined, false, undefined, this),
-      board.restoreFailed && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(RestoreFailedBanner, {
-        info: board.restoreFailed
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(FilterBar, {
-        tasks: board.tasks,
-        filters: board.filters,
-        onToggleTag: board.toggleTag,
-        onToggleOwner: board.toggleOwner,
-        onClear: board.clearFilters
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-        className: "grid max-w-[1200px] grid-cols-4 gap-4",
-        children: COLUMNS.map((col) => /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Column, {
-          status: col.status,
-          label: col.label,
-          cards: tasksByStatus(board.tasks, col.status, board.filters),
-          tasks: board.tasks,
-          now: board.now,
-          overWip: over,
-          draggingId,
-          hint: dropHint,
-          onHint: setDropHint,
-          onDragStart: (task, e) => {
-            if (e.currentTarget.getAttribute("draggable") !== "true") {
-              e.preventDefault();
-              return;
-            }
-            try {
-              e.dataTransfer.setData("text/plain", task.id);
-            } catch {}
-            e.dataTransfer.effectAllowed = "move";
-            setDraggingId(task.id);
-          },
-          onDragEnd: () => {
-            setDraggingId(null);
-            setDropHint(null);
-          },
-          onDrop: (status, index2) => {
-            const id = draggingId;
-            setDraggingId(null);
-            setDropHint(null);
-            if (id)
-              board.moveTask(id, status, index2);
-          },
-          onAdd: board.addTask,
-          onToggle: board.toggleStatus,
-          onEditTitle: board.editTitle,
-          onOpenDetail: setDetail,
-          onRemove: board.removeTask
-        }, col.status, false, undefined, this))
-      }, undefined, false, undefined, this),
-      board.tasks.length === 0 && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Empty, {
-        className: "max-w-[1200px] px-4 py-16 text-ink-faint",
+      text2
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/digestify/surface/components/Header.tsx
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+function Header({
+  theme,
+  title,
+  sessionId,
+  restored,
+  submitting,
+  timerText,
+  timerState,
+  justReset,
+  onExtend,
+  onSubmit
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
+    className: "sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-header-edge bg-header px-7 py-3 shadow-[var(--elevation-soft)] backdrop-blur-lg max-narrow:px-4 max-narrow:py-2.5",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "min-w-0",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyHeader, {
-            children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyMedia, {
-              "aria-hidden": "true",
-              style: { backgroundImage: "url(/assets/mascot-large.webp)" },
-              className: "mx-auto mb-4 size-50 bg-contain bg-center bg-no-repeat opacity-70"
-            }, undefined, false, undefined, this)
+          theme.logoSrc ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
+            className: "m-0 block h-auto w-[clamp(126px,18vw,192px)] [filter:var(--brand-mark-filter)]",
+            src: theme.logoSrc,
+            alt: "Digestify"
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+            className: "m-0 inline-block text-xl leading-none font-extrabold text-brand-ink",
+            children: theme.brand
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyDescription, {
-            className: "text-[0.95rem]",
-            children: "No tasks yet — add one below, or wait for the agent to drop some in."
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h1", {
+            id: "page-title",
+            className: "mt-1 mb-0 overflow-hidden text-[13px] leading-tight font-bold text-ellipsis whitespace-nowrap text-brand-ink max-narrow:max-w-[58vw]",
+            children: title
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(BoardFooter, {
-        onClose: board.closeBoard
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "mr-3.5 ml-auto flex flex-none items-center gap-2.5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TimerPill, {
+            text: timerText,
+            state: timerState,
+            justReset,
+            onExtend
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(SessionIdButton, {
+            sessionId
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
+        id: "submit-btn",
+        type: "button",
+        size: "lg",
+        className: "h-auto flex-none rounded-full px-5 pt-2.5 pb-3 text-sm font-black disabled:pointer-events-auto disabled:cursor-wait",
+        disabled: submitting,
+        onClick: onSubmit,
+        children: submitting ? theme.submitting : theme.submit
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Toasts, {
-        toasts: board.toasts
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DetailDialog, {
-        task: detail,
-        onClose: () => setDetail(null),
-        onSave: board.editNotes
+      restored ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(RestoredBanner, {}, undefined, false, undefined, this) : null
+    ]
+  }, undefined, true, undefined, this);
+}
+var BANNER_MS = 4000;
+function RestoredBanner() {
+  const [shown, setShown] = import_react8.useState(true);
+  import_react8.useEffect(() => {
+    const t = setTimeout(() => setShown(false), BANNER_MS);
+    return () => clearTimeout(t);
+  }, []);
+  if (!shown)
+    return null;
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+    id: "restored-banner",
+    className: "absolute top-[calc(100%+8px)] left-1/2 z-5 -translate-x-1/2 rounded-full bg-brand-strong px-3.5 py-1.5 text-xs font-extrabold text-white shadow-[var(--elevation-soft)]",
+    children: "Draft restored from earlier session"
+  }, undefined, false, undefined, this);
+}
+
+// src/digestify/surface/components/SentScreen.tsx
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+function SentScreen({ theme }) {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+    className: "px-6 py-20 text-center text-brand-ink",
+    children: [
+      theme.sentMascotSrc ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("img", {
+        className: "mx-auto mt-0 mb-4.5 block w-[clamp(120px,18vw,200px)] [filter:drop-shadow(0_14px_24px_rgb(106_77_188/0.2))]",
+        src: theme.sentMascotSrc,
+        alt: "Digested"
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h2", {
+            className: "mx-0 mt-0 mb-6 inline-block text-[56px] font-black tracking-[-1px] text-brand-strong",
+            children: "✓ Sent"
+          }, undefined, false, undefined, this),
+          theme.mascotSrc ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("img", {
+            className: "mx-auto mt-0 mb-4.5 block w-[clamp(120px,18vw,200px)] [filter:drop-shadow(0_14px_24px_rgb(106_77_188/0.2))]",
+            src: theme.mascotSrc,
+            alt: "",
+            "aria-hidden": "true"
+          }, undefined, false, undefined, this) : null
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+        className: "m-0 text-base text-ink-dim",
+        children: "You can close this tab."
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/bounty/surface/main.tsx
-var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
-var icon = document.querySelector('link[rel="icon"]');
-if (icon)
-  icon.href = "/assets/favicon.png";
+// src/digestify/surface/state/themes.ts
+var THEMES = {
+  digestify: {
+    logoSrc: "/assets/classic/digestify-wordmark-classic.webp",
+    brand: "Digestify",
+    submit: "Digest it",
+    submitting: "Digesting...",
+    mascotSrc: "/assets/classic/digestify-mascot-classic.webp",
+    sentMascotSrc: "/assets/classic/digested-classic.webp",
+    stampLines: [{ text: "nom nom" }]
+  },
+  cthulhu: {
+    logoSrc: "/assets/cthulhu/digestify-wordmark-cthulhu.webp",
+    brand: "Digestify",
+    submit: "Digest it",
+    submitting: "Summoning...",
+    mascotSrc: "/assets/cthulhu/digestify-mascot-cthulhu.webp",
+    sentMascotSrc: "/assets/cthulhu/digested-cthulhu.webp",
+    stampLines: [{ text: "Eldritch" }, { text: "knowledge", small: true }]
+  },
+  classic: {
+    logoSrc: "",
+    brand: "Digestify",
+    submit: "Submit",
+    submitting: "Submitting...",
+    mascotSrc: "",
+    sentMascotSrc: "",
+    stampLines: []
+  }
+};
+var DEFAULT_THEME = "digestify";
+function resolveThemeName(name) {
+  return name !== undefined && Object.hasOwn(THEMES, name) ? name : DEFAULT_THEME;
+}
+
+// src/digestify/surface/state/useReview.ts
+var import_react9 = __toESM(require_react(), 1);
+
+// src/digestify/surface/state/draft.ts
+var browserStorage = {
+  keys: () => Object.keys(localStorage),
+  get: (k) => localStorage.getItem(k),
+  set: (k, v) => {
+    localStorage.setItem(k, v);
+  },
+  remove: (k) => {
+    localStorage.removeItem(k);
+  }
+};
+var KEY_PREFIX = "digestify:";
+var LS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+var draftKey = (sessionId) => KEY_PREFIX + sessionId;
+function pruneDrafts(storage, now) {
+  try {
+    for (const k of storage.keys()) {
+      if (!k.startsWith(KEY_PREFIX))
+        continue;
+      try {
+        const v = JSON.parse(storage.get(k) || "{}");
+        if (!v.savedAt || now - v.savedAt > LS_TTL_MS)
+          storage.remove(k);
+      } catch {
+        storage.remove(k);
+      }
+    }
+  } catch {}
+}
+function loadSnapshot(storage, key, now) {
+  try {
+    const raw = storage.get(key);
+    if (!raw)
+      return null;
+    const snap = JSON.parse(raw);
+    if (snap?.savedAt && now - snap.savedAt <= LS_TTL_MS)
+      return snap;
+  } catch {}
+  return null;
+}
+function saveSnapshot(storage, key, answers, comments, now) {
+  try {
+    storage.set(key, JSON.stringify({ answers, comments, savedAt: now }));
+  } catch {}
+}
+function clearSnapshot(storage, key) {
+  try {
+    storage.remove(key);
+  } catch {}
+}
+function restoreAnswers(snapshot, questionIds) {
+  const out = {};
+  for (const [k, v] of Object.entries(snapshot?.answers ?? {})) {
+    if (questionIds.has(k))
+      out[k] = v;
+  }
+  return out;
+}
+function restoreComments(snapshot) {
+  const out = [];
+  for (const c of snapshot?.comments ?? []) {
+    if (c?.anchor && c.text)
+      out.push({ id: `c${out.length + 1}`, anchor: c.anchor, text: c.text });
+  }
+  return out;
+}
+
+// src/digestify/surface/state/timer.ts
+var WARN_MS = 60000;
+function fmtRemaining(ms) {
+  if (ms <= 0)
+    return "0:00";
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+function timerState(remainingMs) {
+  if (remainingMs <= 0)
+    return "expired";
+  return remainingMs < WARN_MS ? "warn" : null;
+}
+function timerLabel(remainingMs) {
+  return remainingMs <= 0 ? "expired" : fmtRemaining(remainingMs);
+}
+var HEARTBEAT_MIN_GAP_MS = 5000;
+function shouldHeartbeat(now, lastAt) {
+  return now - lastAt >= HEARTBEAT_MIN_GAP_MS;
+}
+
+// src/digestify/surface/state/useReview.ts
+function useReview(payload, storage = browserStorage) {
+  const sessionId = payload.session_id || "digestify-anon";
+  const timeoutSeconds = payload.timeout_seconds || 1800;
+  const timeoutMs = timeoutSeconds * 1000;
+  const key = draftKey(sessionId);
+  const boot = import_react9.useRef(null);
+  if (boot.current === null) {
+    const now = Date.now();
+    pruneDrafts(storage, now);
+    const snapshot = loadSnapshot(storage, key, now);
+    const ids = new Set(payload.questions.map((q) => q.id));
+    boot.current = {
+      answers: restoreAnswers(snapshot, ids),
+      comments: restoreComments(snapshot),
+      restored: snapshot !== null
+    };
+  }
+  const answers = import_react9.useRef({ ...boot.current.answers });
+  const [comments, setComments] = import_react9.useState(boot.current.comments);
+  const commentsRef = import_react9.useRef(comments);
+  commentsRef.current = comments;
+  const seq = import_react9.useRef(boot.current.comments.length);
+  const dirty = import_react9.useRef(false);
+  const startedAt = import_react9.useRef(Date.now());
+  const [submitted, setSubmitted] = import_react9.useState(false);
+  const submittedRef = import_react9.useRef(false);
+  const [expired, setExpired] = import_react9.useState(false);
+  const expiredRef = import_react9.useRef(false);
+  const markExpired = import_react9.useCallback(() => {
+    expiredRef.current = true;
+    setExpired(true);
+  }, []);
+  const deadlineAt = import_react9.useRef(Date.now() + timeoutMs);
+  const lastHeartbeatAt = import_react9.useRef(0);
+  const [remaining, setRemaining] = import_react9.useState(timeoutMs);
+  const [justReset, setJustReset] = import_react9.useState(false);
+  const [submitting, setSubmitting] = import_react9.useState(false);
+  const persist = import_react9.useCallback(() => {
+    saveSnapshot(storage, key, answers.current, stripIds(commentsRef.current), Date.now());
+  }, [storage, key]);
+  const markActivity = import_react9.useCallback(() => {
+    if (submittedRef.current || expiredRef.current)
+      return;
+    dirty.current = true;
+    const now = Date.now();
+    deadlineAt.current = now + timeoutMs;
+    persist();
+    if (shouldHeartbeat(now, lastHeartbeatAt.current)) {
+      lastHeartbeatAt.current = now;
+      fetch("/heartbeat", { method: "POST" }).catch(() => {});
+    }
+  }, [persist, timeoutMs]);
+  const setAnswer = import_react9.useCallback((id, value) => {
+    if (value.trim())
+      answers.current[id] = value;
+    else
+      delete answers.current[id];
+    markActivity();
+  }, [markActivity]);
+  const addComment = import_react9.useCallback((anchor, text2) => {
+    seq.current += 1;
+    const id = commentId(seq.current);
+    setComments((cs) => [...cs, { id, anchor, text: text2 }]);
+    commentsRef.current = [...commentsRef.current, { id, anchor, text: text2 }];
+    markActivity();
+    return id;
+  }, [markActivity]);
+  const editComment = import_react9.useCallback((id, text2) => {
+    commentsRef.current = updateCommentText(commentsRef.current, id, text2);
+    setComments(commentsRef.current);
+    markActivity();
+  }, [markActivity]);
+  const deleteComment = import_react9.useCallback((id) => {
+    commentsRef.current = removeComment(commentsRef.current, id);
+    setComments(commentsRef.current);
+    markActivity();
+  }, [markActivity]);
+  const tick = import_react9.useCallback(() => {
+    if (submittedRef.current)
+      return;
+    const left = deadlineAt.current - Date.now();
+    setRemaining(left);
+    if (left <= 0)
+      markExpired();
+  }, [markExpired]);
+  import_react9.useEffect(() => {
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [tick]);
+  const extendDeadline = import_react9.useCallback(() => {
+    if (submittedRef.current || expiredRef.current)
+      return;
+    const now = Date.now();
+    deadlineAt.current = now + timeoutMs;
+    lastHeartbeatAt.current = now;
+    fetch("/heartbeat", { method: "POST" }).catch(() => {
+      markExpired();
+      setRemaining(0);
+    });
+    tick();
+    setJustReset(true);
+    setTimeout(() => setJustReset(false), 450);
+  }, [markExpired, tick, timeoutMs]);
+  const [submitError, setSubmitError] = import_react9.useState(null);
+  const submit = import_react9.useCallback(async () => {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: answers.current,
+          comments: stripIds(commentsRef.current)
+        })
+      });
+      if (!res.ok)
+        throw new Error("submit failed");
+      submittedRef.current = true;
+      clearSnapshot(storage, key);
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitting(false);
+      setSubmitError(err instanceof Error ? err.message : String(err));
+    }
+  }, [storage, key]);
+  const clearSubmitError = import_react9.useCallback(() => setSubmitError(null), []);
+  import_react9.useEffect(() => {
+    const onBeforeUnload = () => {
+      if (submittedRef.current || !navigator.sendBeacon)
+        return;
+      navigator.sendBeacon("/left", new Blob([
+        JSON.stringify({
+          sessionId,
+          engaged: dirty.current,
+          elapsedMs: Date.now() - startedAt.current,
+          answered: Object.keys(answers.current).length,
+          commented: commentsRef.current.length
+        })
+      ], { type: "application/json" }));
+      if (dirty.current) {
+        navigator.sendBeacon("/cancel", new Blob([JSON.stringify({ sessionId })], { type: "application/json" }));
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [sessionId]);
+  const state = timerState(remaining);
+  return {
+    sessionId,
+    restored: boot.current.restored,
+    initialAnswers: boot.current.answers,
+    comments,
+    submitted,
+    submitting,
+    submitError,
+    clearSubmitError,
+    expired,
+    justReset,
+    timerText: timerLabel(remaining),
+    timerState: state,
+    setAnswer,
+    addComment,
+    editComment,
+    deleteComment,
+    extendDeadline,
+    submit
+  };
+}
+
+// src/digestify/surface/App.tsx
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+function App({ payload }) {
+  const themeName = resolveThemeName(payload.theme);
+  const theme = THEMES[themeName];
+  const review = useReview(payload);
+  import_react10.useEffect(() => {
+    document.body.dataset.theme = themeName;
+  }, [themeName]);
+  import_react10.useEffect(() => {
+    document.title = payload.title;
+  }, [payload.title]);
+  import_react10.useEffect(() => {
+    if (review.submitError === null)
+      return;
+    alert(`Submit failed: ${review.submitError}`);
+    review.clearSubmitError();
+  }, [review.submitError, review.clearSubmitError]);
+  import_react10.useEffect(() => {
+    if (!review.submitted)
+      return;
+    document.getElementById("payload")?.remove();
+    for (const script of document.querySelectorAll('script[type="module"]')) {
+      script.remove();
+    }
+  }, [review.submitted]);
+  if (review.submitted)
+    return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(SentScreen, {
+      theme
+    }, undefined, false, undefined, this);
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Header, {
+        theme,
+        title: payload.title,
+        sessionId: review.sessionId,
+        restored: review.restored,
+        submitting: review.submitting,
+        timerText: review.timerText,
+        timerState: review.timerState,
+        justReset: review.justReset,
+        onExtend: review.extendDeadline,
+        onSubmit: review.submit
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(AmbientMascot, {
+        src: theme.mascotSrc,
+        theme: themeName
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
+        payload,
+        theme,
+        comments: review.comments,
+        initialAnswers: review.initialAnswers,
+        active: !review.submitted,
+        onAnswer: review.setAnswer,
+        onAddComment: review.addComment,
+        onEditComment: review.editComment,
+        onDeleteComment: review.deleteComment
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/digestify/surface/main.tsx
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+function readPayload() {
+  const el = document.getElementById("payload");
+  if (!el)
+    throw new Error("digestify: no payload script tag in the page");
+  return JSON.parse(el.textContent ?? "");
+}
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime18.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime16.jsxDEV(App, {
+    payload: readPayload()
+  }, undefined, false, undefined, this));

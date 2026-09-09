@@ -18,20 +18,35 @@ var __toESM = (mod, isNodeMode, target) => {
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
   const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
-  for (let key of __getOwnPropNames(mod))
-    if (!__hasOwnProp.call(to, key))
-      __defProp(to, key, {
-        get: __accessProp.bind(mod, key),
-        enumerable: true
-      });
+  if (mod && typeof mod === "object" || typeof mod === "function") {
+    for (let key of __getOwnPropNames(mod))
+      if (!__hasOwnProp.call(to, key))
+        __defProp(to, key, {
+          get: __accessProp.bind(mod, key),
+          enumerable: true
+        });
+  }
   if (canCache)
     cache.set(mod, to);
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __returnValue = (v) => v;
+function __exportSetter(name, newValue) {
+  this[name] = __returnValue.bind(null, newValue);
+}
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+      configurable: true,
+      set: __exportSetter.bind(all, name)
+    });
+};
 
 // node_modules/scheduler/cjs/scheduler.development.js
-var require_scheduler_development = __commonJS((exports) => {
+var require_scheduler_development = __commonJS(function(exports) {
   (function() {
     function performWorkUntilDeadline() {
       needsPaint = false;
@@ -286,7 +301,7 @@ var require_scheduler_development = __commonJS((exports) => {
 });
 
 // node_modules/scheduler/index.js
-var require_scheduler = __commonJS((exports, module) => {
+var require_scheduler = __commonJS(function(exports, module) {
   var scheduler_development = __toESM(require_scheduler_development());
   if (false) {} else {
     module.exports = scheduler_development;
@@ -294,7 +309,7 @@ var require_scheduler = __commonJS((exports, module) => {
 });
 
 // node_modules/react/cjs/react.development.js
-var require_react_development = __commonJS((exports, module) => {
+var require_react_development = __commonJS(function(exports, module) {
   (function() {
     function defineDeprecationWarning(methodName, info) {
       Object.defineProperty(Component.prototype, methodName, {
@@ -1117,7 +1132,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
 });
 
 // node_modules/react/index.js
-var require_react = __commonJS((exports, module) => {
+var require_react = __commonJS(function(exports, module) {
   var react_development = __toESM(require_react_development());
   if (false) {} else {
     module.exports = react_development;
@@ -1125,7 +1140,7 @@ var require_react = __commonJS((exports, module) => {
 });
 
 // node_modules/react-dom/cjs/react-dom.development.js
-var require_react_dom_development = __commonJS((exports) => {
+var require_react_dom_development = __commonJS(function(exports) {
   var React = __toESM(require_react());
   (function() {
     function noop() {}
@@ -1308,7 +1323,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
 });
 
 // node_modules/react-dom/index.js
-var require_react_dom = __commonJS((exports, module) => {
+var require_react_dom = __commonJS(function(exports, module) {
   var react_dom_development = __toESM(require_react_dom_development());
   if (false) {} else {
     module.exports = react_dom_development;
@@ -1316,7 +1331,7 @@ var require_react_dom = __commonJS((exports, module) => {
 });
 
 // node_modules/react-dom/cjs/react-dom-client.development.js
-var require_react_dom_client_development = __commonJS((exports) => {
+var require_react_dom_client_development = __commonJS(function(exports) {
   var Scheduler = __toESM(require_scheduler());
   var React = __toESM(require_react());
   var ReactDOM = __toESM(require_react_dom());
@@ -16884,16 +16899,16 @@ You might need to use a local HTTP server (instead of file://): https://react.de
 });
 
 // node_modules/react-dom/client.js
-var require_client = __commonJS((exports, module) => {
+var require_client = __commonJS(function(exports, module) {
   var react_dom_client_development = __toESM(require_react_dom_client_development());
   if (false) {} else {
     module.exports = react_dom_client_development;
   }
 });
 
-// node_modules/react/cjs/react-jsx-dev-runtime.development.js
-var require_react_jsx_dev_runtime_development = __commonJS((exports) => {
-  var React = __toESM(require_react());
+// node_modules/react/cjs/react-jsx-runtime.development.js
+var require_react_jsx_runtime_development = __commonJS(function(exports) {
+  var React6 = __toESM(require_react());
   (function() {
     function getComponentNameFromType(type) {
       if (type == null)
@@ -17085,17 +17100,370 @@ React keys must be passed directly to JSX without using spread:
     function isValidElement(object) {
       return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
     }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React6.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
       return null;
     };
-    React = {
+    React6 = {
       react_stack_bottom_frame: function(callStackForError) {
         return callStackForError();
       }
     };
     var specialPropKeyWarningShown;
     var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React.react_stack_bottom_frame.bind(React, UnknownOwner)();
+    var unknownOwnerDebugStack = React6.react_stack_bottom_frame.bind(React6, UnknownOwner)();
+    var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
+    var didWarnAboutKeySpread = {};
+    exports.Fragment = REACT_FRAGMENT_TYPE;
+    exports.jsx = function(type, config, maybeKey) {
+      var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
+      return jsxDEVImpl(type, config, maybeKey, false, trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack, trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask);
+    };
+    exports.jsxs = function(type, config, maybeKey) {
+      var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
+      return jsxDEVImpl(type, config, maybeKey, true, trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack, trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask);
+    };
+  })();
+});
+
+// node_modules/react/jsx-runtime.js
+var require_jsx_runtime = __commonJS(function(exports, module) {
+  var react_jsx_runtime_development = __toESM(require_react_jsx_runtime_development());
+  if (false) {} else {
+    module.exports = react_jsx_runtime_development;
+  }
+});
+
+// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
+var require_use_sync_external_store_shim_development = __commonJS(function(exports) {
+  var React21 = __toESM(require_react());
+  (function() {
+    function is(x, y) {
+      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
+    }
+    function useSyncExternalStore$2(subscribe, getSnapshot) {
+      didWarnOld18Alpha || React21.startTransition === undefined || (didWarnOld18Alpha = true, console.error("You are using an outdated, pre-release alpha of React 18 that does not support useSyncExternalStore. The use-sync-external-store shim will not work correctly. Upgrade to a newer pre-release."));
+      var value = getSnapshot();
+      if (!didWarnUncachedGetSnapshot) {
+        var cachedValue = getSnapshot();
+        objectIs(value, cachedValue) || (console.error("The result of getSnapshot should be cached to avoid an infinite loop"), didWarnUncachedGetSnapshot = true);
+      }
+      cachedValue = useState8({
+        inst: { value, getSnapshot }
+      });
+      var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
+      useLayoutEffect4(function() {
+        inst.value = value;
+        inst.getSnapshot = getSnapshot;
+        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+      }, [subscribe, value, getSnapshot]);
+      useEffect8(function() {
+        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+        return subscribe(function() {
+          checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+        });
+      }, [subscribe]);
+      useDebugValue2(value);
+      return value;
+    }
+    function checkIfSnapshotChanged(inst) {
+      var latestGetSnapshot = inst.getSnapshot;
+      inst = inst.value;
+      try {
+        var nextValue = latestGetSnapshot();
+        return !objectIs(inst, nextValue);
+      } catch (error) {
+        return true;
+      }
+    }
+    function useSyncExternalStore$1(subscribe, getSnapshot) {
+      return getSnapshot();
+    }
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+    var objectIs = typeof Object.is === "function" ? Object.is : is, useState8 = React21.useState, useEffect8 = React21.useEffect, useLayoutEffect4 = React21.useLayoutEffect, useDebugValue2 = React21.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = typeof window === "undefined" || typeof window.document === "undefined" || typeof window.document.createElement === "undefined" ? useSyncExternalStore$1 : useSyncExternalStore$2;
+    exports.useSyncExternalStore = React21.useSyncExternalStore !== undefined ? React21.useSyncExternalStore : shim;
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+  })();
+});
+
+// node_modules/use-sync-external-store/shim/index.js
+var require_shim = __commonJS(function(exports, module) {
+  if (false) {} else {
+    module.exports = require_use_sync_external_store_shim_development();
+  }
+});
+
+// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
+var require_with_selector_development = __commonJS(function(exports) {
+  var React21 = __toESM(require_react());
+  (function() {
+    function is(x, y) {
+      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
+    }
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+    var shim = require_shim(), objectIs = typeof Object.is === "function" ? Object.is : is, useSyncExternalStore = shim.useSyncExternalStore, useRef11 = React21.useRef, useEffect8 = React21.useEffect, useMemo9 = React21.useMemo, useDebugValue2 = React21.useDebugValue;
+    exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
+      var instRef = useRef11(null);
+      if (instRef.current === null) {
+        var inst = { hasValue: false, value: null };
+        instRef.current = inst;
+      } else
+        inst = instRef.current;
+      instRef = useMemo9(function() {
+        function memoizedSelector(nextSnapshot) {
+          if (!hasMemo) {
+            hasMemo = true;
+            memoizedSnapshot = nextSnapshot;
+            nextSnapshot = selector(nextSnapshot);
+            if (isEqual !== undefined && inst.hasValue) {
+              var currentSelection = inst.value;
+              if (isEqual(currentSelection, nextSnapshot))
+                return memoizedSelection = currentSelection;
+            }
+            return memoizedSelection = nextSnapshot;
+          }
+          currentSelection = memoizedSelection;
+          if (objectIs(memoizedSnapshot, nextSnapshot))
+            return currentSelection;
+          var nextSelection = selector(nextSnapshot);
+          if (isEqual !== undefined && isEqual(currentSelection, nextSelection))
+            return memoizedSnapshot = nextSnapshot, currentSelection;
+          memoizedSnapshot = nextSnapshot;
+          return memoizedSelection = nextSelection;
+        }
+        var hasMemo = false, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = getServerSnapshot === undefined ? null : getServerSnapshot;
+        return [
+          function() {
+            return memoizedSelector(getSnapshot());
+          },
+          maybeGetServerSnapshot === null ? undefined : function() {
+            return memoizedSelector(maybeGetServerSnapshot());
+          }
+        ];
+      }, [getSnapshot, getServerSnapshot, selector, isEqual]);
+      var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
+      useEffect8(function() {
+        inst.hasValue = true;
+        inst.value = value;
+      }, [value]);
+      useDebugValue2(value);
+      return value;
+    };
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+  })();
+});
+
+// node_modules/use-sync-external-store/shim/with-selector.js
+var require_with_selector = __commonJS(function(exports, module) {
+  if (false) {} else {
+    module.exports = require_with_selector_development();
+  }
+});
+
+// node_modules/react/cjs/react-jsx-dev-runtime.development.js
+var require_react_jsx_dev_runtime_development = __commonJS(function(exports) {
+  var React51 = __toESM(require_react());
+  (function() {
+    function getComponentNameFromType(type) {
+      if (type == null)
+        return null;
+      if (typeof type === "function")
+        return type.$$typeof === REACT_CLIENT_REFERENCE ? null : type.displayName || type.name || null;
+      if (typeof type === "string")
+        return type;
+      switch (type) {
+        case REACT_FRAGMENT_TYPE:
+          return "Fragment";
+        case REACT_PROFILER_TYPE:
+          return "Profiler";
+        case REACT_STRICT_MODE_TYPE:
+          return "StrictMode";
+        case REACT_SUSPENSE_TYPE:
+          return "Suspense";
+        case REACT_SUSPENSE_LIST_TYPE:
+          return "SuspenseList";
+        case REACT_ACTIVITY_TYPE:
+          return "Activity";
+      }
+      if (typeof type === "object")
+        switch (typeof type.tag === "number" && console.error("Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."), type.$$typeof) {
+          case REACT_PORTAL_TYPE:
+            return "Portal";
+          case REACT_CONTEXT_TYPE:
+            return type.displayName || "Context";
+          case REACT_CONSUMER_TYPE:
+            return (type._context.displayName || "Context") + ".Consumer";
+          case REACT_FORWARD_REF_TYPE:
+            var innerType = type.render;
+            type = type.displayName;
+            type || (type = innerType.displayName || innerType.name || "", type = type !== "" ? "ForwardRef(" + type + ")" : "ForwardRef");
+            return type;
+          case REACT_MEMO_TYPE:
+            return innerType = type.displayName || null, innerType !== null ? innerType : getComponentNameFromType(type.type) || "Memo";
+          case REACT_LAZY_TYPE2:
+            innerType = type._payload;
+            type = type._init;
+            try {
+              return getComponentNameFromType(type(innerType));
+            } catch (x) {}
+        }
+      return null;
+    }
+    function testStringCoercion(value) {
+      return "" + value;
+    }
+    function checkKeyStringCoercion(value) {
+      try {
+        testStringCoercion(value);
+        var JSCompiler_inline_result = false;
+      } catch (e) {
+        JSCompiler_inline_result = true;
+      }
+      if (JSCompiler_inline_result) {
+        JSCompiler_inline_result = console;
+        var JSCompiler_temp_const = JSCompiler_inline_result.error;
+        var JSCompiler_inline_result$jscomp$0 = typeof Symbol === "function" && Symbol.toStringTag && value[Symbol.toStringTag] || value.constructor.name || "Object";
+        JSCompiler_temp_const.call(JSCompiler_inline_result, "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.", JSCompiler_inline_result$jscomp$0);
+        return testStringCoercion(value);
+      }
+    }
+    function getTaskName(type) {
+      if (type === REACT_FRAGMENT_TYPE)
+        return "<>";
+      if (typeof type === "object" && type !== null && type.$$typeof === REACT_LAZY_TYPE2)
+        return "<...>";
+      try {
+        var name = getComponentNameFromType(type);
+        return name ? "<" + name + ">" : "<...>";
+      } catch (x) {
+        return "<...>";
+      }
+    }
+    function getOwner() {
+      var dispatcher = ReactSharedInternals.A;
+      return dispatcher === null ? null : dispatcher.getOwner();
+    }
+    function UnknownOwner() {
+      return Error("react-stack-top-frame");
+    }
+    function hasValidKey(config) {
+      if (hasOwnProperty.call(config, "key")) {
+        var getter = Object.getOwnPropertyDescriptor(config, "key").get;
+        if (getter && getter.isReactWarning)
+          return false;
+      }
+      return config.key !== undefined;
+    }
+    function defineKeyPropWarningGetter(props, displayName) {
+      function warnAboutAccessingKey() {
+        specialPropKeyWarningShown || (specialPropKeyWarningShown = true, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", displayName));
+      }
+      warnAboutAccessingKey.isReactWarning = true;
+      Object.defineProperty(props, "key", {
+        get: warnAboutAccessingKey,
+        configurable: true
+      });
+    }
+    function elementRefGetterWithDeprecationWarning() {
+      var componentName = getComponentNameFromType(this.type);
+      didWarnAboutElementRef[componentName] || (didWarnAboutElementRef[componentName] = true, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."));
+      componentName = this.props.ref;
+      return componentName !== undefined ? componentName : null;
+    }
+    function ReactElement(type, key, props, owner, debugStack, debugTask) {
+      var refProp = props.ref;
+      type = {
+        $$typeof: REACT_ELEMENT_TYPE,
+        type,
+        key,
+        props,
+        _owner: owner
+      };
+      (refProp !== undefined ? refProp : null) !== null ? Object.defineProperty(type, "ref", {
+        enumerable: false,
+        get: elementRefGetterWithDeprecationWarning
+      }) : Object.defineProperty(type, "ref", { enumerable: false, value: null });
+      type._store = {};
+      Object.defineProperty(type._store, "validated", {
+        configurable: false,
+        enumerable: false,
+        writable: true,
+        value: 0
+      });
+      Object.defineProperty(type, "_debugInfo", {
+        configurable: false,
+        enumerable: false,
+        writable: true,
+        value: null
+      });
+      Object.defineProperty(type, "_debugStack", {
+        configurable: false,
+        enumerable: false,
+        writable: true,
+        value: debugStack
+      });
+      Object.defineProperty(type, "_debugTask", {
+        configurable: false,
+        enumerable: false,
+        writable: true,
+        value: debugTask
+      });
+      Object.freeze && (Object.freeze(type.props), Object.freeze(type));
+      return type;
+    }
+    function jsxDEVImpl(type, config, maybeKey, isStaticChildren, debugStack, debugTask) {
+      var children = config.children;
+      if (children !== undefined)
+        if (isStaticChildren)
+          if (isArrayImpl(children)) {
+            for (isStaticChildren = 0;isStaticChildren < children.length; isStaticChildren++)
+              validateChildKeys(children[isStaticChildren]);
+            Object.freeze && Object.freeze(children);
+          } else
+            console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
+        else
+          validateChildKeys(children);
+      if (hasOwnProperty.call(config, "key")) {
+        children = getComponentNameFromType(type);
+        var keys = Object.keys(config).filter(function(k) {
+          return k !== "key";
+        });
+        isStaticChildren = 0 < keys.length ? "{key: someKey, " + keys.join(": ..., ") + ": ...}" : "{key: someKey}";
+        didWarnAboutKeySpread[children + isStaticChildren] || (keys = 0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}", console.error(`A props object containing a "key" prop is being spread into JSX:
+  let props = %s;
+  <%s {...props} />
+React keys must be passed directly to JSX without using spread:
+  let props = %s;
+  <%s key={someKey} {...props} />`, isStaticChildren, children, keys, children), didWarnAboutKeySpread[children + isStaticChildren] = true);
+      }
+      children = null;
+      maybeKey !== undefined && (checkKeyStringCoercion(maybeKey), children = "" + maybeKey);
+      hasValidKey(config) && (checkKeyStringCoercion(config.key), children = "" + config.key);
+      if ("key" in config) {
+        maybeKey = {};
+        for (var propName in config)
+          propName !== "key" && (maybeKey[propName] = config[propName]);
+      } else
+        maybeKey = config;
+      children && defineKeyPropWarningGetter(maybeKey, typeof type === "function" ? type.displayName || type.name || "Unknown" : type);
+      return ReactElement(type, children, maybeKey, getOwner(), debugStack, debugTask);
+    }
+    function validateChildKeys(node) {
+      isValidElement3(node) ? node._store && (node._store.validated = 1) : typeof node === "object" && node !== null && node.$$typeof === REACT_LAZY_TYPE2 && (node._payload.status === "fulfilled" ? isValidElement3(node._payload.value) && node._payload.value._store && (node._payload.value._store.validated = 1) : node._store && (node._store.validated = 1));
+    }
+    function isValidElement3(object) {
+      return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
+    }
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React51.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+      return null;
+    };
+    React51 = {
+      react_stack_bottom_frame: function(callStackForError) {
+        return callStackForError();
+      }
+    };
+    var specialPropKeyWarningShown;
+    var didWarnAboutElementRef = {};
+    var unknownOwnerDebugStack = React51.react_stack_bottom_frame.bind(React51, UnknownOwner)();
     var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
     var didWarnAboutKeySpread = {};
     exports.Fragment = REACT_FRAGMENT_TYPE;
@@ -17107,24 +17475,10758 @@ React keys must be passed directly to JSX without using spread:
 });
 
 // node_modules/react/jsx-dev-runtime.js
-var require_jsx_dev_runtime = __commonJS((exports, module) => {
+var require_jsx_dev_runtime = __commonJS(function(exports, module) {
   var react_jsx_dev_runtime_development = __toESM(require_react_jsx_dev_runtime_development());
   if (false) {} else {
     module.exports = react_jsx_dev_runtime_development;
   }
 });
 
-// src/imago/surface/main.tsx
+// src/grapevine/surface/main.tsx
 var import_client = __toESM(require_client(), 1);
 
-// src/imago/surface/ImagoShell.tsx
-var import_react16 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/tooltip/index.parts.mjs
+var exports_index_parts = {};
+__export(exports_index_parts, {
+  Arrow: () => TooltipArrow,
+  Handle: () => TooltipHandle,
+  Popup: () => TooltipPopup,
+  Portal: () => TooltipPortal,
+  Positioner: () => TooltipPositioner,
+  Provider: () => TooltipProvider,
+  Root: () => TooltipRoot,
+  Trigger: () => TooltipTrigger,
+  Viewport: () => TooltipViewport,
+  createHandle: () => createTooltipHandle
+});
+
+// node_modules/@base-ui/react/tooltip/root/TooltipRoot.mjs
+var React34 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/fastHooks.mjs
+var React2 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useRefWithInit.mjs
+var React = __toESM(require_react(), 1);
+"use client";
+var UNINITIALIZED = {};
+function useRefWithInit(init, initArg) {
+  const ref = React.useRef(UNINITIALIZED);
+  if (ref.current === UNINITIALIZED) {
+    ref.current = init(initArg);
+  }
+  return ref;
+}
+
+// node_modules/@base-ui/utils/fastHooks.mjs
+var hooks = [];
+var currentInstance = undefined;
+function getInstance() {
+  return currentInstance;
+}
+function register(hook) {
+  hooks.push(hook);
+}
+function fastComponent(fn) {
+  const FastComponent = (props, forwardedRef) => {
+    const instance = useRefWithInit(createInstance).current;
+    let result;
+    try {
+      currentInstance = instance;
+      for (const hook of hooks) {
+        hook.before(instance);
+      }
+      result = fn(props, forwardedRef);
+      for (const hook of hooks) {
+        hook.after(instance);
+      }
+      instance.didInitialize = true;
+    } finally {
+      currentInstance = undefined;
+    }
+    return result;
+  };
+  FastComponent.displayName = fn.displayName || fn.name;
+  return FastComponent;
+}
+function fastComponentRef(fn) {
+  return /* @__PURE__ */ React2.forwardRef(fastComponent(fn));
+}
+function createInstance() {
+  return {
+    didInitialize: false
+  };
+}
+
+// node_modules/@base-ui/utils/useIsoLayoutEffect.mjs
+var React3 = __toESM(require_react(), 1);
+"use client";
+var noop = () => {};
+var useIsoLayoutEffect = typeof document !== "undefined" ? React3.useLayoutEffect : noop;
+
+// node_modules/@base-ui/react/tooltip/root/TooltipRootContext.mjs
+var React4 = __toESM(require_react(), 1);
+"use client";
+var TooltipRootContext = /* @__PURE__ */ React4.createContext(undefined);
+if (true)
+  TooltipRootContext.displayName = "TooltipRootContext";
+function useTooltipRootContext(optional) {
+  const context = React4.useContext(TooltipRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: TooltipRootContext is missing. Tooltip parts must be placed within <Tooltip.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingDelayGroup.mjs
+var React6 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useOnMount.mjs
+var React5 = __toESM(require_react(), 1);
+"use client";
+var EMPTY = [];
+function useOnMount(fn) {
+  React5.useEffect(fn, EMPTY);
+}
+
+// node_modules/@base-ui/utils/useTimeout.mjs
+"use client";
+var EMPTY2 = 0;
+
+class Timeout {
+  static create() {
+    return new Timeout;
+  }
+  currentId = EMPTY2;
+  start(delay, fn) {
+    this.clear();
+    this.currentId = setTimeout(() => {
+      this.currentId = EMPTY2;
+      fn();
+    }, delay);
+  }
+  isStarted() {
+    return this.currentId !== EMPTY2;
+  }
+  clear = () => {
+    if (this.currentId !== EMPTY2) {
+      clearTimeout(this.currentId);
+      this.currentId = EMPTY2;
+    }
+  };
+  disposeEffect = () => {
+    return this.clear;
+  };
+}
+function useTimeout() {
+  const timeout = useRefWithInit(Timeout.create).current;
+  useOnMount(timeout.disposeEffect);
+  return timeout;
+}
+
+// node_modules/@base-ui/utils/platform/parts.mjs
+var exports_parts = {};
+__export(exports_parts, {
+  engine: () => exports_engine,
+  env: () => exports_env,
+  os: () => exports_os,
+  screenReader: () => exports_screen_reader
+});
+
+// node_modules/@base-ui/utils/platform/os.mjs
+var exports_os = {};
+__export(exports_os, {
+  android: () => android,
+  apple: () => apple,
+  ios: () => ios,
+  linux: () => linux,
+  mac: () => mac,
+  windows: () => windows
+});
+
+// node_modules/@base-ui/utils/platform/shared.mjs
+function readRawData() {
+  if (typeof navigator === "undefined") {
+    return {
+      userAgent: "",
+      platform: "",
+      maxTouchPoints: 0
+    };
+  }
+  if (true) {
+    const uaData = navigator.userAgentData;
+    if (uaData && Array.isArray(uaData.brands)) {
+      return {
+        userAgent: uaData.brands.map(({
+          brand,
+          version
+        }) => `${brand}/${version}`).join(" "),
+        platform: uaData.platform ?? navigator.platform ?? "",
+        maxTouchPoints: navigator.maxTouchPoints ?? 0
+      };
+    }
+  }
+  return {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform ?? "",
+    maxTouchPoints: navigator.maxTouchPoints ?? 0
+  };
+}
+var {
+  userAgent,
+  platform,
+  maxTouchPoints
+} = readRawData();
+var lowerUserAgent = userAgent.toLowerCase();
+var lowerPlatform = platform.toLowerCase();
+
+// node_modules/@base-ui/utils/platform/os.mjs
+var ios = /^i(os$|p)/.test(lowerPlatform) || lowerPlatform === "macintel" && maxTouchPoints > 1;
+var ANDROID_STRING = "android";
+var android = lowerPlatform === ANDROID_STRING || lowerUserAgent.includes(ANDROID_STRING);
+var mac = !ios && lowerPlatform.startsWith("mac");
+var windows = lowerPlatform.startsWith("win");
+var linux = !android && /^(linux|chrome os)/.test(lowerPlatform);
+var apple = mac || ios;
+// node_modules/@base-ui/utils/platform/engine.mjs
+var exports_engine = {};
+__export(exports_engine, {
+  blink: () => blink,
+  gecko: () => gecko,
+  webkit: () => webkit
+});
+var webkit = typeof CSS !== "undefined" && !!CSS.supports?.("-webkit-backdrop-filter:none");
+var gecko = !webkit && lowerUserAgent.includes("firefox");
+var blink = !webkit && lowerUserAgent.includes("chrom");
+// node_modules/@base-ui/utils/platform/screen-reader.mjs
+var exports_screen_reader = {};
+__export(exports_screen_reader, {
+  voiceOver: () => voiceOver
+});
+var voiceOver = apple;
+// node_modules/@base-ui/utils/platform/env.mjs
+var exports_env = {};
+__export(exports_env, {
+  jsdom: () => jsdom
+});
+var jsdom = /jsdom|happydom/.test(lowerUserAgent);
+// node_modules/@base-ui/react/floating-ui-react/utils/event.mjs
+function stopEvent(event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+function isReactEvent(event) {
+  return "nativeEvent" in event;
+}
+function isVirtualClick(event) {
+  if (event.pointerType === "" && event.isTrusted) {
+    return true;
+  }
+  if (exports_parts.os.android && event.pointerType) {
+    return event.type === "click" && event.buttons === 1;
+  }
+  return event.detail === 0 && !event.pointerType;
+}
+function isVirtualPointerEvent(event) {
+  if (exports_parts.env.jsdom) {
+    return false;
+  }
+  return !exports_parts.os.android && event.width === 0 && event.height === 0 || exports_parts.os.android && event.width === 1 && event.height === 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "mouse" || event.width < 1 && event.height < 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "touch";
+}
+function isMouseLikePointerType(pointerType, strict) {
+  const values = ["mouse", "pen"];
+  if (!strict) {
+    values.push("", undefined);
+  }
+  return values.includes(pointerType);
+}
+function isClickLikeEvent(event) {
+  const type = event.type;
+  return type === "click" || type === "mousedown" || type === "keydown" || type === "keyup";
+}
+
+// node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
+function hasWindow() {
+  return typeof window !== "undefined";
+}
+function getNodeName(node) {
+  if (isNode(node)) {
+    return (node.nodeName || "").toLowerCase();
+  }
+  return "#document";
+}
+function getWindow(node) {
+  var _node$ownerDocument;
+  return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? undefined : _node$ownerDocument.defaultView) || window;
+}
+function getDocumentElement(node) {
+  var _ref;
+  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null ? undefined : _ref.documentElement;
+}
+function isNode(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Node || value instanceof getWindow(value).Node;
+}
+function isElement(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Element || value instanceof getWindow(value).Element;
+}
+function isHTMLElement(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof HTMLElement || value instanceof getWindow(value).HTMLElement;
+}
+function isShadowRoot(value) {
+  if (!hasWindow() || typeof ShadowRoot === "undefined") {
+    return false;
+  }
+  return value instanceof ShadowRoot || value instanceof getWindow(value).ShadowRoot;
+}
+function isOverflowElement(element) {
+  const {
+    overflow,
+    overflowX,
+    overflowY,
+    display
+  } = getComputedStyle2(element);
+  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && display !== "inline" && display !== "contents";
+}
+function isTableElement(element) {
+  return /^(table|td|th)$/.test(getNodeName(element));
+}
+function isTopLayer(element) {
+  try {
+    if (element.matches(":popover-open")) {
+      return true;
+    }
+  } catch (_e) {}
+  try {
+    return element.matches(":modal");
+  } catch (_e) {
+    return false;
+  }
+}
+var willChangeRe = /transform|translate|scale|rotate|perspective|filter/;
+var containRe = /paint|layout|strict|content/;
+var isNotNone = (value) => !!value && value !== "none";
+var isWebKitValue;
+function isContainingBlock(elementOrCss) {
+  const css = isElement(elementOrCss) ? getComputedStyle2(elementOrCss) : elementOrCss;
+  return isNotNone(css.transform) || isNotNone(css.translate) || isNotNone(css.scale) || isNotNone(css.rotate) || isNotNone(css.perspective) || !isWebKit() && (isNotNone(css.backdropFilter) || isNotNone(css.filter)) || willChangeRe.test(css.willChange || "") || containRe.test(css.contain || "");
+}
+function getContainingBlock(element) {
+  let currentNode = getParentNode(element);
+  while (isHTMLElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    if (isContainingBlock(currentNode)) {
+      return currentNode;
+    } else if (isTopLayer(currentNode)) {
+      return null;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  return null;
+}
+function isWebKit() {
+  if (isWebKitValue == null) {
+    isWebKitValue = typeof CSS !== "undefined" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none");
+  }
+  return isWebKitValue;
+}
+function isLastTraversableNode(node) {
+  return /^(html|body|#document)$/.test(getNodeName(node));
+}
+function getComputedStyle2(element) {
+  return getWindow(element).getComputedStyle(element);
+}
+function getNodeScroll(element) {
+  if (isElement(element)) {
+    return {
+      scrollLeft: element.scrollLeft,
+      scrollTop: element.scrollTop
+    };
+  }
+  return {
+    scrollLeft: element.scrollX,
+    scrollTop: element.scrollY
+  };
+}
+function getParentNode(node) {
+  if (getNodeName(node) === "html") {
+    return node;
+  }
+  const result = node.assignedSlot || node.parentNode || isShadowRoot(node) && node.host || getDocumentElement(node);
+  return isShadowRoot(result) ? result.host : result;
+}
+function getNearestOverflowAncestor(node) {
+  const parentNode = getParentNode(node);
+  if (isLastTraversableNode(parentNode)) {
+    return (node.ownerDocument || node).body;
+  }
+  if (isHTMLElement(parentNode) && isOverflowElement(parentNode)) {
+    return parentNode;
+  }
+  return getNearestOverflowAncestor(parentNode);
+}
+function getOverflowAncestors(node, list, traverseIframes) {
+  var _node$ownerDocument2;
+  if (list === undefined) {
+    list = [];
+  }
+  if (traverseIframes === undefined) {
+    traverseIframes = true;
+  }
+  const scrollableAncestor = getNearestOverflowAncestor(node);
+  const isBody = scrollableAncestor === ((_node$ownerDocument2 = node.ownerDocument) == null ? undefined : _node$ownerDocument2.body);
+  const win = getWindow(scrollableAncestor);
+  if (isBody) {
+    const frameElement = getFrameElement(win);
+    return list.concat(win, win.visualViewport || [], isOverflowElement(scrollableAncestor) ? scrollableAncestor : [], frameElement && traverseIframes ? getOverflowAncestors(frameElement) : []);
+  } else {
+    return list.concat(scrollableAncestor, getOverflowAncestors(scrollableAncestor, [], traverseIframes));
+  }
+}
+function getFrameElement(win) {
+  return win.parent && Object.getPrototypeOf(win.parent) ? win.frameElement : null;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/constants.mjs
+var FOCUSABLE_ATTRIBUTE = "data-base-ui-focusable";
+var TYPEABLE_SELECTOR = "input:not([type='hidden']):not([disabled])," + "[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
+var ARROW_LEFT = "ArrowLeft";
+var ARROW_RIGHT = "ArrowRight";
+var ARROW_UP = "ArrowUp";
+var ARROW_DOWN = "ArrowDown";
+
+// node_modules/@base-ui/react/internals/shadowDom.mjs
+function activeElement(doc) {
+  let element = doc.activeElement;
+  while (element?.shadowRoot?.activeElement != null) {
+    element = element.shadowRoot.activeElement;
+  }
+  return element;
+}
+function contains(parent, child) {
+  if (!parent || !child) {
+    return false;
+  }
+  const rootNode = child.getRootNode?.();
+  if (parent.contains(child)) {
+    return true;
+  }
+  if (rootNode && isShadowRoot(rootNode)) {
+    let next = child;
+    while (next) {
+      if (parent === next) {
+        return true;
+      }
+      next = next.parentNode || next.host;
+    }
+  }
+  return false;
+}
+function getTarget(event) {
+  if ("composedPath" in event) {
+    return event.composedPath()[0];
+  }
+  return event.target;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/element.mjs
+function isTargetInsideEnabledTrigger(target, triggerElements) {
+  if (!isElement(target)) {
+    return false;
+  }
+  const targetElement = target;
+  if (triggerElements.hasElement(targetElement)) {
+    return !targetElement.hasAttribute("data-trigger-disabled");
+  }
+  for (const [, trigger] of triggerElements.entries()) {
+    if (contains(trigger, targetElement)) {
+      return !trigger.hasAttribute("data-trigger-disabled");
+    }
+  }
+  return false;
+}
+function isEventTargetWithin(event, node) {
+  if (node == null) {
+    return false;
+  }
+  if ("composedPath" in event) {
+    return event.composedPath().includes(node);
+  }
+  const eventAgain = event;
+  return eventAgain.target != null && node.contains(eventAgain.target);
+}
+function isRootElement(element) {
+  return element.matches("html,body");
+}
+function isTypeableElement(element) {
+  return isHTMLElement(element) && element.matches(TYPEABLE_SELECTOR);
+}
+function isInteractiveElement(element) {
+  return element?.closest(`button,a[href],[role="button"],select,[tabindex]:not([tabindex="-1"]),${TYPEABLE_SELECTOR}`) != null;
+}
+function isTypeableCombobox(element) {
+  if (!element) {
+    return false;
+  }
+  return element.getAttribute("role") === "combobox" && isTypeableElement(element);
+}
+function matchesFocusVisible(element) {
+  if (!element || exports_parts.env.jsdom) {
+    return true;
+  }
+  try {
+    return element.matches(":focus-visible");
+  } catch (_e) {
+    return true;
+  }
+}
+function getFloatingFocusElement(floatingElement) {
+  if (!floatingElement) {
+    return null;
+  }
+  return floatingElement.hasAttribute(FOCUSABLE_ATTRIBUTE) ? floatingElement : floatingElement.querySelector(`[${FOCUSABLE_ATTRIBUTE}]`) || floatingElement;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverShared.mjs
+function resolveValue(value, pointerType) {
+  if (pointerType != null && !isMouseLikePointerType(pointerType)) {
+    return 0;
+  }
+  if (typeof value === "function") {
+    return value();
+  }
+  return value;
+}
+function getDelay(value, prop, pointerType) {
+  const result = resolveValue(value, pointerType);
+  if (typeof result === "number") {
+    return result;
+  }
+  return result?.[prop];
+}
+function getRestMs(value) {
+  if (typeof value === "function") {
+    return value();
+  }
+  return value;
+}
+function isClickLikeOpenEvent(openEventType, interactedInside) {
+  return interactedInside || openEventType === "click" || openEventType === "mousedown";
+}
+function isHoverOpenEvent(openEventType) {
+  return openEventType?.includes("mouse") && openEventType !== "mousedown";
+}
+
+// node_modules/@base-ui/utils/empty.mjs
+function NOOP() {}
+var EMPTY_ARRAY = Object.freeze([]);
+var EMPTY_OBJECT = Object.freeze({});
+
+// node_modules/@base-ui/react/internals/reason-parts.mjs
+var exports_reason_parts = {};
+__export(exports_reason_parts, {
+  cancelOpen: () => cancelOpen,
+  chipRemovePress: () => chipRemovePress,
+  clearPress: () => clearPress,
+  closePress: () => closePress,
+  closeWatcher: () => closeWatcher,
+  decrementPress: () => decrementPress,
+  disabled: () => disabled,
+  drag: () => drag,
+  escapeKey: () => escapeKey,
+  focusOut: () => focusOut,
+  imperativeAction: () => imperativeAction,
+  incrementPress: () => incrementPress,
+  initial: () => initial,
+  inputBlur: () => inputBlur,
+  inputChange: () => inputChange,
+  inputClear: () => inputClear,
+  inputPaste: () => inputPaste,
+  inputPress: () => inputPress,
+  itemPress: () => itemPress,
+  keyboard: () => keyboard,
+  linkPress: () => linkPress,
+  listNavigation: () => listNavigation,
+  missing: () => missing,
+  none: () => none,
+  outsidePress: () => outsidePress,
+  pointer: () => pointer,
+  scrub: () => scrub,
+  siblingOpen: () => siblingOpen,
+  swipe: () => swipe,
+  trackPress: () => trackPress,
+  triggerFocus: () => triggerFocus,
+  triggerHover: () => triggerHover,
+  triggerPress: () => triggerPress,
+  wheel: () => wheel,
+  windowResize: () => windowResize
+});
+var none = "none";
+var triggerPress = "trigger-press";
+var triggerHover = "trigger-hover";
+var triggerFocus = "trigger-focus";
+var outsidePress = "outside-press";
+var itemPress = "item-press";
+var closePress = "close-press";
+var linkPress = "link-press";
+var clearPress = "clear-press";
+var chipRemovePress = "chip-remove-press";
+var trackPress = "track-press";
+var incrementPress = "increment-press";
+var decrementPress = "decrement-press";
+var inputChange = "input-change";
+var inputClear = "input-clear";
+var inputBlur = "input-blur";
+var inputPaste = "input-paste";
+var inputPress = "input-press";
+var focusOut = "focus-out";
+var escapeKey = "escape-key";
+var closeWatcher = "close-watcher";
+var listNavigation = "list-navigation";
+var keyboard = "keyboard";
+var pointer = "pointer";
+var drag = "drag";
+var wheel = "wheel";
+var scrub = "scrub";
+var cancelOpen = "cancel-open";
+var siblingOpen = "sibling-open";
+var disabled = "disabled";
+var missing = "missing";
+var initial = "initial";
+var imperativeAction = "imperative-action";
+var swipe = "swipe";
+var windowResize = "window-resize";
+
+// node_modules/@base-ui/react/internals/createBaseUIEventDetails.mjs
+function createChangeEventDetails(reason, event, trigger, customProperties) {
+  let canceled = false;
+  let allowPropagation = false;
+  const custom = customProperties ?? EMPTY_OBJECT;
+  const details = {
+    reason,
+    event: event ?? new Event("base-ui"),
+    cancel() {
+      canceled = true;
+    },
+    allowPropagation() {
+      allowPropagation = true;
+    },
+    get isCanceled() {
+      return canceled;
+    },
+    get isPropagationAllowed() {
+      return allowPropagation;
+    },
+    trigger,
+    ...custom
+  };
+  return details;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingDelayGroup.mjs
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FloatingDelayGroupContext = /* @__PURE__ */ React6.createContext({
+  hasProvider: false,
+  timeoutMs: 0,
+  delayRef: {
+    current: 0
+  },
+  initialDelayRef: {
+    current: 0
+  },
+  timeout: new Timeout,
+  currentIdRef: {
+    current: null
+  },
+  currentContextRef: {
+    current: null
+  }
+});
+if (true)
+  FloatingDelayGroupContext.displayName = "FloatingDelayGroupContext";
+function resetDelayRef(delayRef, initialDelayRef) {
+  delayRef.current = initialDelayRef.current;
+}
+function FloatingDelayGroup(props) {
+  const {
+    children,
+    delay,
+    timeoutMs = 0
+  } = props;
+  const delayRef = React6.useRef(delay);
+  const initialDelayRef = React6.useRef(delay);
+  const currentIdRef = React6.useRef(null);
+  const currentContextRef = React6.useRef(null);
+  const timeout = useTimeout();
+  useIsoLayoutEffect(() => {
+    initialDelayRef.current = delay;
+    if (!currentIdRef.current) {
+      delayRef.current = delay;
+      return;
+    }
+    delayRef.current = {
+      open: getDelay(delayRef.current, "open"),
+      close: getDelay(delay, "close")
+    };
+  }, [delay, currentIdRef, delayRef, initialDelayRef]);
+  return /* @__PURE__ */ import_jsx_runtime.jsx(FloatingDelayGroupContext.Provider, {
+    value: React6.useMemo(() => ({
+      hasProvider: true,
+      delayRef,
+      initialDelayRef,
+      currentIdRef,
+      timeoutMs,
+      currentContextRef,
+      timeout
+    }), [timeoutMs, timeout]),
+    children
+  });
+}
+function useDelayGroup(context, options = {
+  open: false
+}) {
+  const {
+    open
+  } = options;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const floatingId = store.useState("floatingId");
+  const groupContext = React6.useContext(FloatingDelayGroupContext);
+  const {
+    currentIdRef,
+    delayRef,
+    timeoutMs,
+    initialDelayRef,
+    currentContextRef,
+    hasProvider,
+    timeout
+  } = groupContext;
+  const [isInstantPhase, setIsInstantPhase] = React6.useState(false);
+  const openRef = React6.useRef(open);
+  const isUnmountedRef = React6.useRef(false);
+  useIsoLayoutEffect(() => {
+    openRef.current = open;
+  }, [open]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      isUnmountedRef.current = true;
+    };
+  }, []);
+  useIsoLayoutEffect(() => {
+    function unset() {
+      if (!isUnmountedRef.current) {
+        setIsInstantPhase(false);
+      }
+      currentContextRef.current?.setIsInstantPhase(false);
+      currentIdRef.current = null;
+      currentContextRef.current = null;
+      delayRef.current = initialDelayRef.current;
+      timeout.clear();
+    }
+    if (!currentIdRef.current) {
+      return;
+    }
+    if (!open && currentIdRef.current === floatingId) {
+      setIsInstantPhase(false);
+      if (timeoutMs) {
+        const closingId = floatingId;
+        timeout.start(timeoutMs, () => {
+          if (store.select("open") || currentIdRef.current && currentIdRef.current !== closingId) {
+            return;
+          }
+          unset();
+        });
+        return () => {
+          if (openRef.current || currentIdRef.current !== closingId) {
+            timeout.clear();
+          }
+        };
+      }
+      unset();
+    }
+    return;
+  }, [open, floatingId, currentIdRef, delayRef, timeoutMs, initialDelayRef, currentContextRef, timeout, store]);
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+    const prevContext = currentContextRef.current;
+    const prevId = currentIdRef.current;
+    timeout.clear();
+    currentContextRef.current = {
+      onOpenChange: store.setOpen,
+      setIsInstantPhase
+    };
+    currentIdRef.current = floatingId;
+    delayRef.current = {
+      open: 0,
+      close: getDelay(initialDelayRef.current, "close")
+    };
+    if (prevId !== null && prevId !== floatingId) {
+      setIsInstantPhase(true);
+      prevContext?.setIsInstantPhase(true);
+      prevContext?.onOpenChange(false, createChangeEventDetails(exports_reason_parts.none));
+    } else {
+      setIsInstantPhase(false);
+      prevContext?.setIsInstantPhase(false);
+    }
+  }, [open, floatingId, store, currentIdRef, delayRef, initialDelayRef, currentContextRef, timeout]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      if (currentIdRef.current === floatingId) {
+        currentContextRef.current = null;
+        if (!openRef.current) {
+          return;
+        }
+        currentIdRef.current = null;
+        resetDelayRef(delayRef, initialDelayRef);
+        timeout.clear();
+      }
+    };
+  }, [currentContextRef, currentIdRef, delayRef, floatingId, initialDelayRef, timeout]);
+  return React6.useMemo(() => ({
+    hasProvider,
+    delayRef,
+    isInstantPhase
+  }), [hasProvider, delayRef, isInstantPhase]);
+}
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
+var React15 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/addEventListener.mjs
+function addEventListener(target, type, listener, options) {
+  target.addEventListener(type, listener, options);
+  return () => {
+    target.removeEventListener(type, listener, options);
+  };
+}
+
+// node_modules/@base-ui/utils/mergeCleanups.mjs
+function mergeCleanups(...cleanups) {
+  return () => {
+    for (let i = 0;i < cleanups.length; i += 1) {
+      const cleanup = cleanups[i];
+      if (cleanup) {
+        cleanup();
+      }
+    }
+  };
+}
+
+// node_modules/@base-ui/utils/useMergedRefs.mjs
+function useMergedRefs(a, b, c, d) {
+  const forkRef = useRefWithInit(createForkRef).current;
+  if (didChange(forkRef, a, b, c, d)) {
+    update(forkRef, [a, b, c, d]);
+  }
+  return forkRef.callback;
+}
+function useMergedRefsN(refs) {
+  const forkRef = useRefWithInit(createForkRef).current;
+  if (didChangeN(forkRef, refs)) {
+    update(forkRef, refs);
+  }
+  return forkRef.callback;
+}
+function createForkRef() {
+  return {
+    callback: null,
+    cleanup: null,
+    refs: []
+  };
+}
+function didChange(forkRef, a, b, c, d) {
+  return forkRef.refs[0] !== a || forkRef.refs[1] !== b || forkRef.refs[2] !== c || forkRef.refs[3] !== d;
+}
+function didChangeN(forkRef, newRefs) {
+  return forkRef.refs.length !== newRefs.length || forkRef.refs.some((ref, index) => ref !== newRefs[index]);
+}
+function update(forkRef, refs) {
+  forkRef.refs = refs;
+  if (refs.every((ref) => ref == null)) {
+    forkRef.callback = null;
+    return;
+  }
+  forkRef.callback = (instance) => {
+    if (forkRef.cleanup) {
+      forkRef.cleanup();
+      forkRef.cleanup = null;
+    }
+    if (instance != null) {
+      const cleanupCallbacks = Array(refs.length).fill(null);
+      for (let i = 0;i < refs.length; i += 1) {
+        const ref = refs[i];
+        if (ref == null) {
+          continue;
+        }
+        switch (typeof ref) {
+          case "function": {
+            const refCleanup = ref(instance);
+            if (typeof refCleanup === "function") {
+              cleanupCallbacks[i] = refCleanup;
+            }
+            break;
+          }
+          case "object": {
+            ref.current = instance;
+            break;
+          }
+          default:
+        }
+      }
+      forkRef.cleanup = () => {
+        for (let i = 0;i < refs.length; i += 1) {
+          const ref = refs[i];
+          if (ref == null) {
+            continue;
+          }
+          switch (typeof ref) {
+            case "function": {
+              const cleanupCallback = cleanupCallbacks[i];
+              if (typeof cleanupCallback === "function") {
+                cleanupCallback();
+              } else {
+                ref(null);
+              }
+              break;
+            }
+            case "object": {
+              ref.current = null;
+              break;
+            }
+            default:
+          }
+        }
+      };
+    }
+  };
+}
+
+// node_modules/@base-ui/utils/useValueAsRef.mjs
+"use client";
+function useValueAsRef(value) {
+  const latest = useRefWithInit(createLatestRef, value).current;
+  latest.next = value;
+  useIsoLayoutEffect(latest.effect);
+  return latest;
+}
+function createLatestRef(value) {
+  const latest = {
+    current: value,
+    next: value,
+    effect: () => {
+      latest.current = latest.next;
+    }
+  };
+  return latest;
+}
+
+// node_modules/@base-ui/utils/safeReact.mjs
+var React7 = __toESM(require_react(), 1);
+var SafeReact = {
+  ...React7
+};
+
+// node_modules/@base-ui/utils/useStableCallback.mjs
+"use client";
+var useInsertionEffect = SafeReact.useInsertionEffect;
+var useSafeInsertionEffect = useInsertionEffect && useInsertionEffect !== SafeReact.useLayoutEffect ? useInsertionEffect : (fn) => fn();
+function useStableCallback(callback) {
+  const stable = useRefWithInit(createStableCallback).current;
+  stable.next = callback;
+  useSafeInsertionEffect(stable.effect);
+  return stable.trampoline;
+}
+function createStableCallback() {
+  const stable = {
+    next: undefined,
+    callback: assertNotCalled,
+    trampoline: (...args) => stable.callback?.(...args),
+    effect: () => {
+      stable.callback = stable.next;
+    }
+  };
+  return stable;
+}
+function assertNotCalled() {
+  if (true) {
+    throw new Error("Base UI: Cannot call an event handler while rendering.");
+  }
+}
+
+// node_modules/@base-ui/utils/useAnimationFrame.mjs
+"use client";
+var EMPTY3 = null;
+var LAST_RAF = globalThis.requestAnimationFrame;
+
+class Scheduler {
+  callbacks = [];
+  callbacksCount = 0;
+  nextId = 1;
+  startId = 1;
+  isScheduled = false;
+  tick = (timestamp) => {
+    this.isScheduled = false;
+    const currentCallbacks = this.callbacks;
+    const currentCallbacksCount = this.callbacksCount;
+    this.callbacks = [];
+    this.callbacksCount = 0;
+    this.startId = this.nextId;
+    if (currentCallbacksCount > 0) {
+      for (let i = 0;i < currentCallbacks.length; i += 1) {
+        currentCallbacks[i]?.(timestamp);
+      }
+    }
+  };
+  request(fn) {
+    const id = this.nextId;
+    this.nextId += 1;
+    this.callbacks.push(fn);
+    this.callbacksCount += 1;
+    const didRAFChange = LAST_RAF !== requestAnimationFrame && (LAST_RAF = requestAnimationFrame, true);
+    if (!this.isScheduled || didRAFChange) {
+      requestAnimationFrame(this.tick);
+      this.isScheduled = true;
+    }
+    return id;
+  }
+  cancel(id) {
+    const index = id - this.startId;
+    if (index < 0 || index >= this.callbacks.length) {
+      return;
+    }
+    this.callbacks[index] = null;
+    this.callbacksCount -= 1;
+  }
+}
+var scheduler = new Scheduler;
+
+class AnimationFrame {
+  static create() {
+    return new AnimationFrame;
+  }
+  static request(fn) {
+    return scheduler.request(fn);
+  }
+  static cancel(id) {
+    return scheduler.cancel(id);
+  }
+  currentId = EMPTY3;
+  request(fn) {
+    this.cancel();
+    this.currentId = scheduler.request(() => {
+      this.currentId = EMPTY3;
+      fn();
+    });
+  }
+  cancel = () => {
+    if (this.currentId !== EMPTY3) {
+      scheduler.cancel(this.currentId);
+      this.currentId = EMPTY3;
+    }
+  };
+  disposeEffect = () => {
+    return this.cancel;
+  };
+}
+function useAnimationFrame() {
+  const timeout = useRefWithInit(AnimationFrame.create).current;
+  useOnMount(timeout.disposeEffect);
+  return timeout;
+}
+
+// node_modules/@base-ui/utils/owner.mjs
+function ownerDocument(node) {
+  return node?.ownerDocument || document;
+}
+
+// node_modules/@base-ui/react/utils/FocusGuard.mjs
+var React8 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/visuallyHidden.mjs
+var visuallyHiddenBase = {
+  clipPath: "inset(50%)",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  border: 0,
+  padding: 0,
+  width: 1,
+  height: 1,
+  margin: -1
+};
+var visuallyHidden = {
+  ...visuallyHiddenBase,
+  position: "fixed",
+  top: 0,
+  left: 0
+};
+var visuallyHiddenInput = {
+  ...visuallyHiddenBase,
+  position: "absolute"
+};
+
+// node_modules/@base-ui/react/utils/FocusGuard.mjs
+var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FocusGuard = /* @__PURE__ */ React8.forwardRef(function FocusGuard2(props, ref) {
+  const [role, setRole] = React8.useState();
+  useIsoLayoutEffect(() => {
+    if (exports_parts.screenReader.voiceOver && exports_parts.engine.webkit) {
+      setRole("button");
+    }
+  }, []);
+  const restProps = {
+    tabIndex: 0,
+    role
+  };
+  return /* @__PURE__ */ import_jsx_runtime2.jsx("span", {
+    ...props,
+    ref,
+    style: visuallyHidden,
+    "aria-hidden": role ? undefined : true,
+    ...restProps,
+    "data-base-ui-focus-guard": ""
+  });
+});
+if (true)
+  FocusGuard.displayName = "FocusGuard";
+
+// node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
+var sides = ["top", "right", "bottom", "left"];
+var min = Math.min;
+var max = Math.max;
+var round = Math.round;
+var floor = Math.floor;
+var createCoords = (v) => ({
+  x: v,
+  y: v
+});
+var oppositeSideMap = {
+  left: "right",
+  right: "left",
+  bottom: "top",
+  top: "bottom"
+};
+function clamp(start, value, end) {
+  return max(start, min(value, end));
+}
+function evaluate(value, param) {
+  return typeof value === "function" ? value(param) : value;
+}
+function getSide(placement) {
+  return placement.split("-")[0];
+}
+function getAlignment(placement) {
+  return placement.split("-")[1];
+}
+function getOppositeAxis(axis) {
+  return axis === "x" ? "y" : "x";
+}
+function getAxisLength(axis) {
+  return axis === "y" ? "height" : "width";
+}
+function getSideAxis(placement) {
+  const firstChar = placement[0];
+  return firstChar === "t" || firstChar === "b" ? "y" : "x";
+}
+function getAlignmentAxis(placement) {
+  return getOppositeAxis(getSideAxis(placement));
+}
+function getAlignmentSides(placement, rects, rtl) {
+  if (rtl === undefined) {
+    rtl = false;
+  }
+  const alignment = getAlignment(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const length = getAxisLength(alignmentAxis);
+  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
+  if (rects.reference[length] > rects.floating[length]) {
+    mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
+  }
+  return [mainAlignmentSide, getOppositePlacement(mainAlignmentSide)];
+}
+function getExpandedPlacements(placement) {
+  const oppositePlacement = getOppositePlacement(placement);
+  return [getOppositeAlignmentPlacement(placement), oppositePlacement, getOppositeAlignmentPlacement(oppositePlacement)];
+}
+function getOppositeAlignmentPlacement(placement) {
+  return placement.includes("start") ? placement.replace("start", "end") : placement.replace("end", "start");
+}
+var lrPlacement = ["left", "right"];
+var rlPlacement = ["right", "left"];
+var tbPlacement = ["top", "bottom"];
+var btPlacement = ["bottom", "top"];
+function getSideList(side, isStart, rtl) {
+  switch (side) {
+    case "top":
+    case "bottom":
+      if (rtl)
+        return isStart ? rlPlacement : lrPlacement;
+      return isStart ? lrPlacement : rlPlacement;
+    case "left":
+    case "right":
+      return isStart ? tbPlacement : btPlacement;
+    default:
+      return [];
+  }
+}
+function getOppositeAxisPlacements(placement, flipAlignment, direction, rtl) {
+  const alignment = getAlignment(placement);
+  let list = getSideList(getSide(placement), direction === "start", rtl);
+  if (alignment) {
+    list = list.map((side) => side + "-" + alignment);
+    if (flipAlignment) {
+      list = list.concat(list.map(getOppositeAlignmentPlacement));
+    }
+  }
+  return list;
+}
+function getOppositePlacement(placement) {
+  const side = getSide(placement);
+  return oppositeSideMap[side] + placement.slice(side.length);
+}
+function expandPaddingObject(padding) {
+  var _padding$top, _padding$right, _padding$bottom, _padding$left;
+  return {
+    top: (_padding$top = padding.top) != null ? _padding$top : 0,
+    right: (_padding$right = padding.right) != null ? _padding$right : 0,
+    bottom: (_padding$bottom = padding.bottom) != null ? _padding$bottom : 0,
+    left: (_padding$left = padding.left) != null ? _padding$left : 0
+  };
+}
+function getPaddingObject(padding) {
+  return typeof padding !== "number" ? expandPaddingObject(padding) : {
+    top: padding,
+    right: padding,
+    bottom: padding,
+    left: padding
+  };
+}
+function rectToClientRect(rect) {
+  const {
+    x,
+    y,
+    width,
+    height
+  } = rect;
+  return {
+    width,
+    height,
+    top: y,
+    left: x,
+    right: x + width,
+    bottom: y + height,
+    x,
+    y
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/composite.mjs
+function isIndexOutOfListBounds(list, index) {
+  return index < 0 || index >= list.length;
+}
+function getMinListIndex(listRef, disabledIndices) {
+  return findNonDisabledListIndex(listRef.current, {
+    disabledIndices
+  });
+}
+function getMaxListIndex(listRef, disabledIndices) {
+  return findNonDisabledListIndex(listRef.current, {
+    decrement: true,
+    startingIndex: listRef.current.length,
+    disabledIndices
+  });
+}
+function findNonDisabledListIndex(list, {
+  startingIndex = -1,
+  decrement = false,
+  disabledIndices,
+  amount = 1
+} = {}) {
+  let index = startingIndex;
+  do {
+    index += decrement ? -amount : amount;
+  } while (index >= 0 && index <= list.length - 1 && isListIndexDisabled(list, index, disabledIndices));
+  return index;
+}
+function isListIndexDisabled(list, index, disabledIndices) {
+  const isExplicitlyDisabled = typeof disabledIndices === "function" ? disabledIndices(index) : disabledIndices?.includes(index) ?? false;
+  if (isExplicitlyDisabled) {
+    return true;
+  }
+  const element = list[index];
+  if (!element) {
+    return false;
+  }
+  if (!isElementVisible(element)) {
+    return true;
+  }
+  return !disabledIndices && (element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true");
+}
+function isHiddenByStyles(styles) {
+  return styles.visibility === "hidden" || styles.visibility === "collapse";
+}
+function isElementVisible(element, styles = element ? getComputedStyle2(element) : null) {
+  if (!element || !element.isConnected || !styles || isHiddenByStyles(styles)) {
+    return false;
+  }
+  if (typeof element.checkVisibility === "function") {
+    return element.checkVisibility();
+  }
+  return styles.display !== "none" && styles.display !== "contents";
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/tabbable.mjs
+var CANDIDATE_SELECTOR = 'a[href],button,input,select,textarea,summary,details,iframe,object,embed,[tabindex],[contenteditable]:not([contenteditable="false"]),audio[controls],video[controls]';
+function getParentElement(element) {
+  const assignedSlot = element.assignedSlot;
+  if (assignedSlot) {
+    return assignedSlot;
+  }
+  if (element.parentElement) {
+    return element.parentElement;
+  }
+  const rootNode = element.getRootNode();
+  return isShadowRoot(rootNode) ? rootNode.host : null;
+}
+function getDetailsSummary(details) {
+  for (const child of Array.from(details.children)) {
+    if (getNodeName(child) === "summary") {
+      return child;
+    }
+  }
+  return null;
+}
+function isWithinOpenDetailsSummary(element, details) {
+  const summary = getDetailsSummary(details);
+  return !!summary && (element === summary || contains(summary, element));
+}
+function isFocusableCandidate(element) {
+  const nodeName = element ? getNodeName(element) : "";
+  return element != null && element.matches(CANDIDATE_SELECTOR) && (nodeName !== "summary" || element.parentElement != null && getNodeName(element.parentElement) === "details" && getDetailsSummary(element.parentElement) === element) && (nodeName !== "details" || getDetailsSummary(element) == null) && (nodeName !== "input" || element.type !== "hidden");
+}
+function isFocusableElement(element) {
+  if (!isFocusableCandidate(element) || !element.isConnected || element.matches(":disabled")) {
+    return false;
+  }
+  for (let current = element;current; current = getParentElement(current)) {
+    const isAncestor = current !== element;
+    const isSlot = getNodeName(current) === "slot";
+    if (current.hasAttribute("inert")) {
+      return false;
+    }
+    if (isAncestor && getNodeName(current) === "details" && !current.open && !isWithinOpenDetailsSummary(element, current) || current.hasAttribute("hidden") || !isSlot && !isVisibleInTabbableTree(current, isAncestor)) {
+      return false;
+    }
+  }
+  return true;
+}
+function isVisibleInTabbableTree(element, isAncestor) {
+  const styles = getComputedStyle2(element);
+  if (!isAncestor) {
+    return isElementVisible(element, styles);
+  }
+  return styles.display !== "none";
+}
+function getTabIndex(element) {
+  const tabIndex = element.tabIndex;
+  if (tabIndex < 0) {
+    const nodeName = getNodeName(element);
+    if (nodeName === "details" || nodeName === "audio" || nodeName === "video" || isHTMLElement(element) && element.isContentEditable) {
+      return 0;
+    }
+  }
+  return tabIndex;
+}
+function getNamedRadioInput(element) {
+  if (getNodeName(element) !== "input") {
+    return null;
+  }
+  const input = element;
+  return input.type === "radio" && input.name !== "" ? input : null;
+}
+function isTabbableRadio(element, candidates) {
+  const input = getNamedRadioInput(element);
+  if (!input) {
+    return true;
+  }
+  const checkedRadio = candidates.find((candidate) => {
+    const radio = getNamedRadioInput(candidate);
+    return radio?.name === input.name && radio.form === input.form && radio.checked;
+  });
+  if (checkedRadio) {
+    return checkedRadio === input;
+  }
+  return candidates.find((candidate) => {
+    const radio = getNamedRadioInput(candidate);
+    return radio?.name === input.name && radio.form === input.form;
+  }) === input;
+}
+function getComposedChildren(container) {
+  if (isHTMLElement(container) && getNodeName(container) === "slot") {
+    const assignedElements = container.assignedElements({
+      flatten: true
+    });
+    if (assignedElements.length > 0) {
+      return assignedElements;
+    }
+  }
+  if (isHTMLElement(container) && container.shadowRoot) {
+    return Array.from(container.shadowRoot.children);
+  }
+  return Array.from(container.children);
+}
+function appendCandidates(container, list) {
+  getComposedChildren(container).forEach((child) => {
+    if (isFocusableCandidate(child)) {
+      list.push(child);
+    }
+    appendCandidates(child, list);
+  });
+}
+function appendMatchingElements(container, selector, list) {
+  getComposedChildren(container).forEach((child) => {
+    if (isHTMLElement(child) && child.matches(selector)) {
+      list.push(child);
+    }
+    appendMatchingElements(child, selector, list);
+  });
+}
+function isTabbable(element) {
+  return isFocusableElement(element) && getTabIndex(element) >= 0;
+}
+function focusable(container) {
+  const candidates = [];
+  appendCandidates(container, candidates);
+  return candidates.filter(isFocusableElement);
+}
+function tabbable(container) {
+  const candidates = focusable(container);
+  return candidates.filter((element) => getTabIndex(element) >= 0 && isTabbableRadio(element, candidates));
+}
+function getTabbableIn(container, dir) {
+  const list = tabbable(container);
+  const len = list.length;
+  if (len === 0) {
+    return;
+  }
+  const active = activeElement(ownerDocument(container));
+  const index = list.indexOf(active);
+  const nextIndex = index === -1 ? dir === 1 ? 0 : len - 1 : index + dir;
+  return list[nextIndex];
+}
+function getNextTabbable(referenceElement) {
+  return getTabbableIn(ownerDocument(referenceElement).body, 1) || referenceElement;
+}
+function getPreviousTabbable(referenceElement) {
+  return getTabbableIn(ownerDocument(referenceElement).body, -1) || referenceElement;
+}
+function getTabbableNearElement(referenceElement, dir) {
+  if (!referenceElement) {
+    return null;
+  }
+  const list = tabbable(ownerDocument(referenceElement).body);
+  const elementCount = list.length;
+  if (elementCount === 0) {
+    return null;
+  }
+  const index = list.indexOf(referenceElement);
+  if (index === -1) {
+    return null;
+  }
+  const nextIndex = (index + dir + elementCount) % elementCount;
+  return list[nextIndex];
+}
+function getTabbableAfterElement(referenceElement) {
+  return getTabbableNearElement(referenceElement, 1);
+}
+function getTabbableBeforeElement(referenceElement) {
+  return getTabbableNearElement(referenceElement, -1);
+}
+function isOutsideEvent(event, container) {
+  const containerElement = container || event.currentTarget;
+  const relatedTarget = event.relatedTarget;
+  return !relatedTarget || !contains(containerElement, relatedTarget);
+}
+function disableFocusInside(container) {
+  const tabbableElements = tabbable(container);
+  tabbableElements.forEach((element) => {
+    element.dataset.tabindex = element.getAttribute("tabindex") || "";
+    element.setAttribute("tabindex", "-1");
+  });
+}
+function enableFocusInside(container) {
+  const elements = [];
+  appendMatchingElements(container, "[data-tabindex]", elements);
+  elements.forEach((element) => {
+    const tabindex = element.dataset.tabindex;
+    delete element.dataset.tabindex;
+    if (tabindex) {
+      element.setAttribute("tabindex", tabindex);
+    } else {
+      element.removeAttribute("tabindex");
+    }
+  });
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/nodes.mjs
+function getNodeChildren(nodes, id, onlyOpenChildren = true) {
+  const directChildren = nodes.filter((node) => node.parentId === id);
+  return directChildren.flatMap((child) => [...!onlyOpenChildren || child.context?.open ? [child] : [], ...getNodeChildren(nodes, child.id, onlyOpenChildren)]);
+}
+function getNodeAncestors(nodes, id) {
+  let allAncestors = [];
+  let currentParentId = nodes.find((node) => node.id === id)?.parentId;
+  while (currentParentId) {
+    const currentNode = nodes.find((node) => node.id === currentParentId);
+    currentParentId = currentNode?.parentId;
+    if (currentNode) {
+      allAncestors = allAncestors.concat(currentNode);
+    }
+  }
+  return allAncestors;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/createAttribute.mjs
+function createAttribute(name) {
+  return `data-base-ui-${name}`;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/enqueueFocus.mjs
+var rafId = 0;
+function enqueueFocus(el, options = {}) {
+  const {
+    preventScroll = false,
+    sync = false,
+    shouldFocus
+  } = options;
+  cancelAnimationFrame(rafId);
+  function exec() {
+    if (shouldFocus && !shouldFocus()) {
+      return;
+    }
+    el?.focus({
+      preventScroll
+    });
+  }
+  if (sync) {
+    exec();
+    return NOOP;
+  }
+  const currentRafId = requestAnimationFrame(exec);
+  rafId = currentRafId;
+  return () => {
+    if (rafId === currentRafId) {
+      cancelAnimationFrame(currentRafId);
+      rafId = 0;
+    }
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/markOthers.mjs
+var counters = {
+  inert: new WeakMap,
+  "aria-hidden": new WeakMap
+};
+var markerName = "data-base-ui-inert";
+var uncontrolledElementsSets = {
+  inert: new WeakSet,
+  "aria-hidden": new WeakSet
+};
+var markerCounterMap = new WeakMap;
+var lockCount = 0;
+function getUncontrolledElementsSet(controlAttribute) {
+  return uncontrolledElementsSets[controlAttribute];
+}
+function unwrapHost(node) {
+  if (!node) {
+    return null;
+  }
+  return isShadowRoot(node) ? node.host : unwrapHost(node.parentNode);
+}
+var correctElements = (parent, targets) => targets.map((target) => {
+  if (parent.contains(target)) {
+    return target;
+  }
+  const correctedTarget = unwrapHost(target);
+  if (parent.contains(correctedTarget)) {
+    return correctedTarget;
+  }
+  return null;
+}).filter((x) => x != null);
+var buildKeepSet = (targets) => {
+  const keep = new Set;
+  targets.forEach((target) => {
+    let node = target;
+    while (node && !keep.has(node)) {
+      keep.add(node);
+      node = node.parentNode;
+    }
+  });
+  return keep;
+};
+var collectOutsideElements = (root, keepElements, stopElements) => {
+  const outside = [];
+  const walk = (parent) => {
+    if (!parent || stopElements.has(parent)) {
+      return;
+    }
+    Array.from(parent.children).forEach((node) => {
+      if (getNodeName(node) === "script") {
+        return;
+      }
+      if (keepElements.has(node)) {
+        walk(node);
+      } else {
+        outside.push(node);
+      }
+    });
+  };
+  walk(root);
+  return outside;
+};
+function applyAttributeToOthers(uncorrectedAvoidElements, body, ariaHidden, inert, {
+  mark = true
+}) {
+  let controlAttribute = null;
+  if (inert) {
+    controlAttribute = "inert";
+  } else if (ariaHidden) {
+    controlAttribute = "aria-hidden";
+  }
+  let counterMap = null;
+  let uncontrolledElementsSet = null;
+  const avoidElements = correctElements(body, uncorrectedAvoidElements);
+  const markerTargets = mark ? collectOutsideElements(body, buildKeepSet(avoidElements), new Set(avoidElements)) : [];
+  const hiddenElements = [];
+  const markedElements = [];
+  if (controlAttribute) {
+    const map = counters[controlAttribute];
+    const currentUncontrolledElementsSet = getUncontrolledElementsSet(controlAttribute);
+    uncontrolledElementsSet = currentUncontrolledElementsSet;
+    counterMap = map;
+    const ariaLiveElements = correctElements(body, Array.from(body.querySelectorAll("[aria-live]")));
+    const controlElements = avoidElements.concat(ariaLiveElements);
+    const controlTargets = collectOutsideElements(body, buildKeepSet(controlElements), new Set(controlElements));
+    controlTargets.forEach((node) => {
+      const attr = node.getAttribute(controlAttribute);
+      const alreadyHidden = attr !== null && attr !== "false";
+      const counterValue = (map.get(node) || 0) + 1;
+      map.set(node, counterValue);
+      hiddenElements.push(node);
+      if (counterValue === 1 && alreadyHidden) {
+        currentUncontrolledElementsSet.add(node);
+      }
+      if (!alreadyHidden) {
+        node.setAttribute(controlAttribute, controlAttribute === "inert" ? "" : "true");
+      }
+    });
+  }
+  if (mark) {
+    markerTargets.forEach((node) => {
+      const markerValue = (markerCounterMap.get(node) || 0) + 1;
+      markerCounterMap.set(node, markerValue);
+      markedElements.push(node);
+      if (markerValue === 1) {
+        node.setAttribute(markerName, "");
+      }
+    });
+  }
+  lockCount += 1;
+  return () => {
+    if (counterMap) {
+      hiddenElements.forEach((element) => {
+        const currentCounterValue = counterMap.get(element) || 0;
+        const counterValue = currentCounterValue - 1;
+        counterMap.set(element, counterValue);
+        if (!counterValue) {
+          if (!uncontrolledElementsSet?.has(element) && controlAttribute) {
+            element.removeAttribute(controlAttribute);
+          }
+          uncontrolledElementsSet?.delete(element);
+        }
+      });
+    }
+    if (mark) {
+      markedElements.forEach((element) => {
+        const markerValue = (markerCounterMap.get(element) || 0) - 1;
+        markerCounterMap.set(element, markerValue);
+        if (!markerValue) {
+          element.removeAttribute(markerName);
+        }
+      });
+    }
+    lockCount -= 1;
+    if (!lockCount) {
+      counters.inert = new WeakMap;
+      counters["aria-hidden"] = new WeakMap;
+      uncontrolledElementsSets.inert = new WeakSet;
+      uncontrolledElementsSets["aria-hidden"] = new WeakSet;
+      markerCounterMap = new WeakMap;
+    }
+  };
+}
+function markOthers(avoidElements, options = {}) {
+  const {
+    ariaHidden = false,
+    inert = false,
+    mark = true
+  } = options;
+  const body = ownerDocument(avoidElements[0]).body;
+  return applyAttributeToOthers(avoidElements, body, ariaHidden, inert, {
+    mark
+  });
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
+var React13 = __toESM(require_react(), 1);
+var ReactDOM = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/useId.mjs
+var React9 = __toESM(require_react(), 1);
+"use client";
+var globalId = 0;
+function useGlobalId(idOverride, prefix = "mui") {
+  const [defaultId, setDefaultId] = React9.useState(idOverride);
+  const id = idOverride || defaultId;
+  React9.useEffect(() => {
+    if (defaultId == null) {
+      globalId += 1;
+      setDefaultId(`${prefix}-${globalId}`);
+    }
+  }, [defaultId, prefix]);
+  return id;
+}
+var maybeReactUseId = SafeReact.useId;
+function useId(idOverride, prefix) {
+  if (maybeReactUseId !== undefined) {
+    const reactId = maybeReactUseId();
+    return idOverride ?? (prefix ? `${prefix}-${reactId}` : reactId);
+  }
+  return useGlobalId(idOverride, prefix);
+}
+
+// node_modules/@base-ui/react/internals/useRenderElement.mjs
+var React12 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/getReactElementRef.mjs
+var React11 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/reactVersion.mjs
+var React10 = __toESM(require_react(), 1);
+var majorVersion = parseInt(React10.version, 10);
+function isReactVersionAtLeast(reactVersionToCheck) {
+  return majorVersion >= reactVersionToCheck;
+}
+
+// node_modules/@base-ui/utils/getReactElementRef.mjs
+function getReactElementRef(element) {
+  if (!/* @__PURE__ */ React11.isValidElement(element)) {
+    return null;
+  }
+  const reactElement = element;
+  const propsWithRef = reactElement.props;
+  return (isReactVersionAtLeast(19) ? propsWithRef?.ref : reactElement.ref) ?? null;
+}
+
+// node_modules/@base-ui/utils/mergeObjects.mjs
+function mergeObjects(a, b) {
+  if (a && !b) {
+    return a;
+  }
+  if (!a && b) {
+    return b;
+  }
+  if (a || b) {
+    return {
+      ...a,
+      ...b
+    };
+  }
+  return;
+}
+
+// node_modules/@base-ui/utils/warn.mjs
+var set;
+if (true) {
+  set = new Set;
+}
+function warn(...messages) {
+  if (true) {
+    const messageKey = messages.join(" ");
+    if (!set.has(messageKey)) {
+      set.add(messageKey);
+      console.warn(`Base UI: ${messageKey}`);
+    }
+  }
+}
+
+// node_modules/@base-ui/react/internals/getStateAttributesProps.mjs
+function getStateAttributesProps(state, customMapping) {
+  const props = {};
+  for (const key in state) {
+    const value = state[key];
+    if (customMapping?.hasOwnProperty(key)) {
+      const customProps = customMapping[key](value);
+      if (customProps != null) {
+        Object.assign(props, customProps);
+      }
+      continue;
+    }
+    if (value === true) {
+      props[`data-${key.toLowerCase()}`] = "";
+    } else if (value) {
+      props[`data-${key.toLowerCase()}`] = value.toString();
+    }
+  }
+  return props;
+}
+
+// node_modules/@base-ui/react/utils/resolveClassName.mjs
+function resolveClassName(className, state) {
+  return typeof className === "function" ? className(state) : className;
+}
+
+// node_modules/@base-ui/react/utils/resolveStyle.mjs
+function resolveStyle(style, state) {
+  return typeof style === "function" ? style(state) : style;
+}
+
+// node_modules/@base-ui/react/merge-props/mergeProps.mjs
+var EMPTY_PROPS = {};
+function mergeProps(a, b, c, d, e) {
+  if (!c && !d && !e && !a) {
+    return createInitialMergedProps(b);
+  }
+  let merged = createInitialMergedProps(a);
+  if (b) {
+    merged = mergeInto(merged, b);
+  }
+  if (c) {
+    merged = mergeInto(merged, c);
+  }
+  if (d) {
+    merged = mergeInto(merged, d);
+  }
+  if (e) {
+    merged = mergeInto(merged, e);
+  }
+  return merged;
+}
+function mergePropsN(props) {
+  if (props.length === 0) {
+    return EMPTY_PROPS;
+  }
+  if (props.length === 1) {
+    return createInitialMergedProps(props[0]);
+  }
+  let merged = createInitialMergedProps(props[0]);
+  for (let i = 1;i < props.length; i += 1) {
+    merged = mergeInto(merged, props[i]);
+  }
+  return merged;
+}
+function createInitialMergedProps(inputProps) {
+  if (isPropsGetter(inputProps)) {
+    return {
+      ...resolvePropsGetter(inputProps, EMPTY_PROPS)
+    };
+  }
+  return copyInitialProps(inputProps);
+}
+function mergeInto(merged, inputProps) {
+  if (isPropsGetter(inputProps)) {
+    return resolvePropsGetter(inputProps, merged);
+  }
+  return mutablyMergeInto(merged, inputProps);
+}
+function copyInitialProps(inputProps) {
+  const copiedProps = {
+    ...inputProps
+  };
+  for (const propName in copiedProps) {
+    const propValue = copiedProps[propName];
+    if (isEventHandler(propName, propValue)) {
+      copiedProps[propName] = wrapEventHandler(propValue);
+    }
+  }
+  return copiedProps;
+}
+function mutablyMergeInto(mergedProps, externalProps) {
+  if (!externalProps) {
+    return mergedProps;
+  }
+  for (const propName in externalProps) {
+    const externalPropValue = externalProps[propName];
+    switch (propName) {
+      case "style": {
+        mergedProps[propName] = mergeObjects(mergedProps.style, externalPropValue);
+        break;
+      }
+      case "className": {
+        mergedProps[propName] = mergeClassNames(mergedProps.className, externalPropValue);
+        break;
+      }
+      default: {
+        if (isEventHandler(propName, externalPropValue)) {
+          mergedProps[propName] = mergeEventHandlers(mergedProps[propName], externalPropValue);
+        } else {
+          mergedProps[propName] = externalPropValue;
+        }
+      }
+    }
+  }
+  return mergedProps;
+}
+function isEventHandler(key, value) {
+  const code0 = key.charCodeAt(0);
+  const code1 = key.charCodeAt(1);
+  const code2 = key.charCodeAt(2);
+  return code0 === 111 && code1 === 110 && code2 >= 65 && code2 <= 90 && (typeof value === "function" || typeof value === "undefined");
+}
+function isPropsGetter(inputProps) {
+  return typeof inputProps === "function";
+}
+function resolvePropsGetter(inputProps, previousProps) {
+  if (isPropsGetter(inputProps)) {
+    return inputProps(previousProps);
+  }
+  return inputProps ?? EMPTY_PROPS;
+}
+function mergeEventHandlers(ourHandler, theirHandler) {
+  if (!theirHandler) {
+    return ourHandler;
+  }
+  if (!ourHandler) {
+    return wrapEventHandler(theirHandler);
+  }
+  return (...args) => {
+    const event = args[0];
+    if (isSyntheticEvent(event)) {
+      const baseUIEvent = event;
+      makeEventPreventable(baseUIEvent);
+      const result2 = theirHandler(...args);
+      if (!baseUIEvent.baseUIHandlerPrevented) {
+        ourHandler?.(...args);
+      }
+      return result2;
+    }
+    const result = theirHandler(...args);
+    ourHandler?.(...args);
+    return result;
+  };
+}
+function wrapEventHandler(handler) {
+  if (!handler) {
+    return handler;
+  }
+  return (...args) => {
+    const event = args[0];
+    if (isSyntheticEvent(event)) {
+      makeEventPreventable(event);
+    }
+    return handler(...args);
+  };
+}
+function makeEventPreventable(event) {
+  event.preventBaseUIHandler = () => {
+    event.baseUIHandlerPrevented = true;
+  };
+  return event;
+}
+function mergeClassNames(ourClassName, theirClassName) {
+  if (theirClassName) {
+    if (ourClassName) {
+      return theirClassName + " " + ourClassName;
+    }
+    return theirClassName;
+  }
+  return ourClassName;
+}
+function isSyntheticEvent(event) {
+  return event != null && typeof event === "object" && "nativeEvent" in event;
+}
+
+// node_modules/@base-ui/react/internals/useRenderElement.mjs
+var import_react = __toESM(require_react(), 1);
+function useRenderElement(element, componentProps, params = {}) {
+  const renderProp = componentProps.render;
+  const outProps = useRenderElementProps(componentProps, params);
+  if (params.enabled === false) {
+    return null;
+  }
+  const state = params.state ?? EMPTY_OBJECT;
+  return evaluateRenderProp(element, renderProp, outProps, state);
+}
+function useRenderElementProps(componentProps, params = {}) {
+  const {
+    className: classNameProp,
+    style: styleProp,
+    render: renderProp
+  } = componentProps;
+  const {
+    state = EMPTY_OBJECT,
+    ref,
+    props,
+    stateAttributesMapping,
+    enabled = true
+  } = params;
+  const className = enabled ? resolveClassName(classNameProp, state) : undefined;
+  const style = enabled ? resolveStyle(styleProp, state) : undefined;
+  const stateProps = enabled ? getStateAttributesProps(state, stateAttributesMapping) : EMPTY_OBJECT;
+  const resolvedProps = enabled && props ? resolveRenderFunctionProps(props) : undefined;
+  const outProps = enabled ? mergeObjects(stateProps, resolvedProps) ?? {} : EMPTY_OBJECT;
+  if (typeof document !== "undefined") {
+    if (!enabled) {
+      useMergedRefs(null, null);
+    } else if (Array.isArray(ref)) {
+      outProps.ref = useMergedRefsN([outProps.ref, getReactElementRef(renderProp), ...ref]);
+    } else {
+      outProps.ref = useMergedRefs(outProps.ref, getReactElementRef(renderProp), ref);
+    }
+  }
+  if (!enabled) {
+    return EMPTY_OBJECT;
+  }
+  if (className !== undefined) {
+    outProps.className = mergeClassNames(outProps.className, className);
+  }
+  if (style !== undefined) {
+    outProps.style = mergeObjects(outProps.style, style);
+  }
+  return outProps;
+}
+function resolveRenderFunctionProps(props) {
+  if (Array.isArray(props)) {
+    return mergePropsN(props);
+  }
+  return mergeProps(undefined, props);
+}
+var REACT_LAZY_TYPE = Symbol.for("react.lazy");
+var COMPONENT_IDENTIFIER_PATTERN = /^[A-Z][A-Za-z0-9$]*$/;
+var LOWERCASE_CHARACTER_PATTERN = /[a-z]/;
+function evaluateRenderProp(element, render, props, state) {
+  if (render) {
+    if (typeof render === "function") {
+      if (true) {
+        warnIfRenderPropLooksLikeComponent(render);
+      }
+      return render(props, state);
+    }
+    const mergedProps = mergeProps(props, render.props);
+    mergedProps.ref = props.ref;
+    let newElement = render;
+    if (newElement?.$$typeof === REACT_LAZY_TYPE) {
+      const children = React12.Children.toArray(render);
+      newElement = children[0];
+    }
+    if (true) {
+      if (!/* @__PURE__ */ React12.isValidElement(newElement)) {
+        throw new Error(["Base UI: The `render` prop was provided an invalid React element as `React.isValidElement(render)` is `false`.", "A valid React element must be provided to the `render` prop because it is cloned with props to replace the default element.", "https://base-ui.com/r/invalid-render-prop"].join(`
+`));
+      }
+    }
+    return /* @__PURE__ */ React12.cloneElement(newElement, mergedProps);
+  }
+  if (element) {
+    if (typeof element === "string") {
+      return renderTag(element, props);
+    }
+  }
+  throw new Error("Base UI: Render element or function are not defined.");
+}
+function warnIfRenderPropLooksLikeComponent(renderFn) {
+  const functionName = renderFn.name;
+  if (functionName.length === 0) {
+    return;
+  }
+  if (!COMPONENT_IDENTIFIER_PATTERN.test(functionName)) {
+    return;
+  }
+  if (!LOWERCASE_CHARACTER_PATTERN.test(functionName)) {
+    return;
+  }
+  warn(`The \`render\` prop received a function named \`${functionName}\` that starts with an uppercase letter.`, "This usually means a React component was passed directly as `render={Component}`.", "Base UI calls `render` as a plain function, which can break the Rules of Hooks during reconciliation.", "If this is an intentional render callback, rename it to start with a lowercase letter.", "Use `render={<Component />}` or `render={(props) => <Component {...props} />}` instead.", "https://base-ui.com/r/invalid-render-prop");
+}
+function renderTag(Tag, props) {
+  if (Tag === "button") {
+    return /* @__PURE__ */ import_react.createElement("button", {
+      type: "button",
+      ...props,
+      key: props.key
+    });
+  }
+  if (Tag === "img") {
+    return /* @__PURE__ */ import_react.createElement("img", {
+      alt: "",
+      ...props,
+      key: props.key
+    });
+  }
+  return /* @__PURE__ */ React12.createElement(Tag, props);
+}
+
+// node_modules/@base-ui/react/internals/constants.mjs
+var TYPEAHEAD_RESET_MS = 500;
+var PATIENT_CLICK_THRESHOLD = 500;
+var DISABLED_TRANSITIONS_STYLE = {
+  style: {
+    transition: "none"
+  }
+};
+var CLICK_TRIGGER_IDENTIFIER = "data-base-ui-click-trigger";
+var BASE_UI_SWIPE_IGNORE_ATTRIBUTE = "data-base-ui-swipe-ignore";
+var LEGACY_SWIPE_IGNORE_ATTRIBUTE = "data-swipe-ignore";
+var BASE_UI_SWIPE_IGNORE_SELECTOR = `[${BASE_UI_SWIPE_IGNORE_ATTRIBUTE}]`;
+var LEGACY_SWIPE_IGNORE_SELECTOR = `[${LEGACY_SWIPE_IGNORE_ATTRIBUTE}]`;
+var DROPDOWN_COLLISION_AVOIDANCE = {
+  fallbackAxisSide: "none"
+};
+var POPUP_COLLISION_AVOIDANCE = {
+  fallbackAxisSide: "end"
+};
+var ownerVisuallyHidden = {
+  clipPath: "inset(50%)",
+  position: "fixed",
+  top: 0,
+  left: 0
+};
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
+var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PortalContext = /* @__PURE__ */ React13.createContext(null);
+if (true)
+  PortalContext.displayName = "PortalContext";
+var usePortalContext = () => React13.useContext(PortalContext);
+var attr = createAttribute("portal");
+function useFloatingPortalNode(props = {}) {
+  const {
+    ref,
+    container: containerProp,
+    componentProps = EMPTY_OBJECT,
+    elementProps
+  } = props;
+  const uniqueId = useId();
+  const portalContext = usePortalContext();
+  const parentPortalNode = portalContext?.portalNode;
+  const [containerElement, setContainerElement] = React13.useState(null);
+  const [portalNode, setPortalNode] = React13.useState(null);
+  const setPortalNodeRef = useStableCallback((node) => {
+    if (node !== null) {
+      setPortalNode(node);
+    }
+  });
+  const containerRef = React13.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (containerProp === null) {
+      if (containerRef.current) {
+        containerRef.current = null;
+        setPortalNode(null);
+        setContainerElement(null);
+      }
+      return;
+    }
+    if (uniqueId == null) {
+      return;
+    }
+    const resolvedContainer = (containerProp && (isNode(containerProp) ? containerProp : containerProp.current)) ?? parentPortalNode ?? document.body;
+    if (resolvedContainer == null) {
+      if (containerRef.current) {
+        containerRef.current = null;
+        setPortalNode(null);
+        setContainerElement(null);
+      }
+      return;
+    }
+    if (containerRef.current !== resolvedContainer) {
+      containerRef.current = resolvedContainer;
+      setPortalNode(null);
+      setContainerElement(resolvedContainer);
+    }
+  }, [containerProp, parentPortalNode, uniqueId]);
+  const portalElement = useRenderElement("div", componentProps, {
+    ref: [ref, setPortalNodeRef],
+    props: [{
+      id: uniqueId,
+      [attr]: ""
+    }, elementProps]
+  });
+  const portalSubtree = containerElement && portalElement ? /* @__PURE__ */ ReactDOM.createPortal(portalElement, containerElement) : null;
+  return {
+    portalNode,
+    portalSubtree
+  };
+}
+var FloatingPortal = /* @__PURE__ */ React13.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    container,
+    renderGuards,
+    ...elementProps
+  } = componentProps;
+  const {
+    portalNode,
+    portalSubtree
+  } = useFloatingPortalNode({
+    container,
+    ref: forwardedRef,
+    componentProps,
+    elementProps
+  });
+  const beforeOutsideRef = React13.useRef(null);
+  const afterOutsideRef = React13.useRef(null);
+  const beforeInsideRef = React13.useRef(null);
+  const afterInsideRef = React13.useRef(null);
+  const [focusManagerState, setFocusManagerState] = React13.useState(null);
+  const focusInsideDisabledRef = React13.useRef(false);
+  const modal = focusManagerState?.modal;
+  const open = focusManagerState?.open;
+  const shouldRenderGuards = typeof renderGuards === "boolean" ? renderGuards : !!focusManagerState && !focusManagerState.modal && focusManagerState.open && !!portalNode;
+  React13.useEffect(() => {
+    if (!portalNode || modal) {
+      return;
+    }
+    function onFocus(event) {
+      if (portalNode && event.relatedTarget && isOutsideEvent(event)) {
+        if (event.type === "focusin") {
+          if (focusInsideDisabledRef.current) {
+            enableFocusInside(portalNode);
+            focusInsideDisabledRef.current = false;
+          }
+        } else {
+          disableFocusInside(portalNode);
+          focusInsideDisabledRef.current = true;
+        }
+      }
+    }
+    return mergeCleanups(addEventListener(portalNode, "focusin", onFocus, true), addEventListener(portalNode, "focusout", onFocus, true));
+  }, [portalNode, modal]);
+  useIsoLayoutEffect(() => {
+    if (!portalNode || open !== true || !focusInsideDisabledRef.current) {
+      return;
+    }
+    enableFocusInside(portalNode);
+    focusInsideDisabledRef.current = false;
+  }, [open, portalNode]);
+  const portalContextValue = React13.useMemo(() => ({
+    beforeOutsideRef,
+    afterOutsideRef,
+    beforeInsideRef,
+    afterInsideRef,
+    portalNode,
+    setFocusManagerState
+  }), [portalNode]);
+  return /* @__PURE__ */ import_jsx_runtime3.jsxs(React13.Fragment, {
+    children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime3.jsxs(PortalContext.Provider, {
+      value: portalContextValue,
+      children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx(FocusGuard, {
+        "data-type": "outside",
+        ref: beforeOutsideRef,
+        onFocus: (event) => {
+          if (isOutsideEvent(event, portalNode)) {
+            beforeInsideRef.current?.focus();
+          } else {
+            const domReference = focusManagerState ? focusManagerState.domReference : null;
+            const prevTabbable = getPreviousTabbable(domReference);
+            prevTabbable?.focus();
+          }
+        }
+      }), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx("span", {
+        "aria-owns": portalNode.id,
+        style: ownerVisuallyHidden
+      }), portalNode && /* @__PURE__ */ ReactDOM.createPortal(children, portalNode), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx(FocusGuard, {
+        "data-type": "outside",
+        ref: afterOutsideRef,
+        onFocus: (event) => {
+          if (isOutsideEvent(event, portalNode)) {
+            afterInsideRef.current?.focus();
+          } else {
+            const domReference = focusManagerState ? focusManagerState.domReference : null;
+            const nextTabbable = getNextTabbable(domReference);
+            nextTabbable?.focus();
+            if (focusManagerState?.closeOnFocusOut) {
+              focusManagerState?.onOpenChange(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent));
+            }
+          }
+        }
+      })]
+    })]
+  });
+});
+if (true)
+  FloatingPortal.displayName = "FloatingPortal";
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
+var React14 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/floating-ui-react/utils/createEventEmitter.mjs
+function createEventEmitter() {
+  const map = new Map;
+  return {
+    emit(event, data) {
+      map.get(event)?.forEach((listener) => listener(data));
+    },
+    on(event, listener) {
+      if (!map.has(event)) {
+        map.set(event, new Set);
+      }
+      map.get(event).add(listener);
+    },
+    off(event, listener) {
+      map.get(event)?.delete(listener);
+    }
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTreeStore.mjs
+class FloatingTreeStore {
+  nodesRef = {
+    current: []
+  };
+  events = createEventEmitter();
+  addNode(node) {
+    this.nodesRef.current.push(node);
+  }
+  removeNode(node) {
+    const index = this.nodesRef.current.findIndex((n) => n === node);
+    if (index !== -1) {
+      this.nodesRef.current.splice(index, 1);
+    }
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
+var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FloatingNodeContext = /* @__PURE__ */ React14.createContext(null);
+if (true)
+  FloatingNodeContext.displayName = "FloatingNodeContext";
+var FloatingTreeContext = /* @__PURE__ */ React14.createContext(null);
+if (true)
+  FloatingTreeContext.displayName = "FloatingTreeContext";
+var useFloatingParentNodeId = () => React14.useContext(FloatingNodeContext)?.id || null;
+var useFloatingTree = (externalTree) => {
+  const contextTree = React14.useContext(FloatingTreeContext);
+  return externalTree ?? contextTree;
+};
+function useFloatingNodeId(externalTree) {
+  const id = useId();
+  const tree = useFloatingTree(externalTree);
+  const parentId = useFloatingParentNodeId();
+  useIsoLayoutEffect(() => {
+    if (!id) {
+      return;
+    }
+    const node = {
+      id,
+      parentId
+    };
+    tree?.addNode(node);
+    return () => {
+      tree?.removeNode(node);
+    };
+  }, [tree, id, parentId]);
+  return id;
+}
+function FloatingNode(props) {
+  const {
+    children,
+    id
+  } = props;
+  const parentId = useFloatingParentNodeId();
+  return /* @__PURE__ */ import_jsx_runtime4.jsx(FloatingNodeContext.Provider, {
+    value: React14.useMemo(() => ({
+      id,
+      parentId
+    }), [id, parentId]),
+    children
+  });
+}
+function FloatingTree(props) {
+  const {
+    children,
+    externalTree
+  } = props;
+  const tree = useRefWithInit(() => externalTree ?? new FloatingTreeStore).current;
+  return /* @__PURE__ */ import_jsx_runtime4.jsx(FloatingTreeContext.Provider, {
+    value: tree,
+    children
+  });
+}
+
+// node_modules/@base-ui/react/utils/resolveRef.mjs
+function resolveRef(maybeRef) {
+  if (maybeRef == null) {
+    return maybeRef;
+  }
+  return "current" in maybeRef ? maybeRef.current : maybeRef;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
+var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function getEventType(event, lastInteractionType) {
+  const win = getWindow(getTarget(event));
+  if (event instanceof win.KeyboardEvent) {
+    return "keyboard";
+  }
+  if (event instanceof win.FocusEvent) {
+    return lastInteractionType || "keyboard";
+  }
+  if ("pointerType" in event) {
+    return event.pointerType || "keyboard";
+  }
+  if ("touches" in event) {
+    return "touch";
+  }
+  if (event instanceof win.MouseEvent) {
+    return lastInteractionType || (event.detail === 0 ? "keyboard" : "mouse");
+  }
+  return "";
+}
+var LIST_LIMIT = 20;
+var previouslyFocusedElements = [];
+function clearDisconnectedPreviouslyFocusedElements() {
+  previouslyFocusedElements = previouslyFocusedElements.filter((entry) => {
+    return entry.deref()?.isConnected;
+  });
+}
+function addPreviouslyFocusedElement(element) {
+  clearDisconnectedPreviouslyFocusedElements();
+  if (element && getNodeName(element) !== "body") {
+    previouslyFocusedElements.push(new WeakRef(element));
+    if (previouslyFocusedElements.length > LIST_LIMIT) {
+      previouslyFocusedElements = previouslyFocusedElements.slice(-LIST_LIMIT);
+    }
+  }
+}
+function getPreviouslyFocusedElement() {
+  clearDisconnectedPreviouslyFocusedElements();
+  return previouslyFocusedElements[previouslyFocusedElements.length - 1]?.deref();
+}
+function getFirstTabbableElement(container) {
+  if (!container) {
+    return null;
+  }
+  if (isTabbable(container)) {
+    return container;
+  }
+  return tabbable(container)[0] || container;
+}
+function handleTabIndex(floatingFocusElement) {
+  if (floatingFocusElement.hasAttribute("tabindex") && !floatingFocusElement.hasAttribute("data-tabindex")) {
+    return;
+  }
+  if (!floatingFocusElement.getAttribute("role")?.includes("dialog")) {
+    return;
+  }
+  const focusableElements = focusable(floatingFocusElement);
+  const tabbableContent = focusableElements.filter((element) => {
+    const dataTabIndex = element.getAttribute("data-tabindex") || "";
+    return isTabbable(element) || element.hasAttribute("data-tabindex") && !dataTabIndex.startsWith("-");
+  });
+  const tabIndex = floatingFocusElement.getAttribute("tabindex");
+  if (tabbableContent.length === 0) {
+    if (tabIndex !== "0") {
+      floatingFocusElement.setAttribute("tabindex", "0");
+      floatingFocusElement.setAttribute("data-tabindex", "0");
+    }
+  } else if (tabIndex !== "-1" || floatingFocusElement.hasAttribute("data-tabindex") && floatingFocusElement.getAttribute("data-tabindex") !== "-1") {
+    floatingFocusElement.setAttribute("tabindex", "-1");
+    floatingFocusElement.setAttribute("data-tabindex", "-1");
+  }
+}
+function FloatingFocusManager(props) {
+  const {
+    context,
+    children,
+    disabled: disabled2 = false,
+    initialFocus = true,
+    returnFocus = true,
+    restoreFocus = false,
+    modal = true,
+    closeOnFocusOut = true,
+    openInteractionType = "",
+    nextFocusableElement,
+    previousFocusableElement,
+    beforeContentFocusGuardRef,
+    externalTree,
+    getInsideElements
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const domReference = store.useState("domReferenceElement");
+  const floating = store.useState("floatingElement");
+  const {
+    events,
+    dataRef
+  } = store.context;
+  const getNodeId = useStableCallback(() => dataRef.current.floatingContext?.nodeId);
+  const ignoreInitialFocus = initialFocus === false;
+  const isUntrappedTypeableCombobox = isTypeableCombobox(domReference) && ignoreInitialFocus;
+  const initialFocusRef = useValueAsRef(initialFocus);
+  const returnFocusRef = useValueAsRef(returnFocus);
+  const openInteractionTypeRef = useValueAsRef(openInteractionType);
+  const openRef = useValueAsRef(open);
+  const tree = useFloatingTree(externalTree);
+  const portalContext = usePortalContext();
+  const preventReturnFocusRef = React15.useRef(false);
+  const isPointerDownRef = React15.useRef(false);
+  const pointerDownOutsideRef = React15.useRef(false);
+  const lastFocusedTabbableRef = React15.useRef(null);
+  const closeTypeRef = React15.useRef("");
+  const lastInteractionTypeRef = React15.useRef("");
+  const beforeGuardRef = React15.useRef(null);
+  const afterGuardRef = React15.useRef(null);
+  const mergedBeforeGuardRef = useMergedRefs(beforeGuardRef, beforeContentFocusGuardRef, portalContext?.beforeInsideRef);
+  const mergedAfterGuardRef = useMergedRefs(afterGuardRef, portalContext?.afterInsideRef);
+  const blurTimeout = useTimeout();
+  const pointerDownTimeout = useTimeout();
+  const restoreFocusFrame = useAnimationFrame();
+  const isInsidePortal = portalContext != null;
+  const floatingFocusElement = getFloatingFocusElement(floating);
+  const getTabbableContent = useStableCallback((container = floatingFocusElement) => {
+    return container ? tabbable(container) : [];
+  });
+  const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element) => element != null) ?? []);
+  React15.useEffect(() => {
+    if (disabled2 || !modal) {
+      return;
+    }
+    function onKeyDown(event) {
+      if (event.key === "Tab") {
+        if (contains(floatingFocusElement, activeElement(ownerDocument(floatingFocusElement))) && getTabbableContent().length === 0 && !isUntrappedTypeableCombobox) {
+          stopEvent(event);
+        }
+      }
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    return addEventListener(doc, "keydown", onKeyDown);
+  }, [disabled2, floatingFocusElement, modal, isUntrappedTypeableCombobox, getTabbableContent]);
+  React15.useEffect(() => {
+    if (disabled2 || !open) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    function clearPointerDownOutside() {
+      pointerDownOutsideRef.current = false;
+    }
+    function onPointerDown(event) {
+      const target = getTarget(event);
+      const insideElements = getResolvedInsideElements();
+      const pointerTargetInside = contains(floating, target) || contains(domReference, target) || contains(portalContext?.portalNode, target) || insideElements.some((element) => element === target || contains(element, target));
+      pointerDownOutsideRef.current = !pointerTargetInside;
+      lastInteractionTypeRef.current = event.pointerType || "keyboard";
+      if (target?.closest(`[${CLICK_TRIGGER_IDENTIFIER}]`)) {
+        isPointerDownRef.current = true;
+        pointerDownTimeout.start(0, () => {
+          isPointerDownRef.current = false;
+        });
+      }
+    }
+    function onKeyDown() {
+      lastInteractionTypeRef.current = "keyboard";
+    }
+    return mergeCleanups(addEventListener(doc, "pointerdown", onPointerDown, true), addEventListener(doc, "pointerup", clearPointerDownOutside, true), addEventListener(doc, "pointercancel", clearPointerDownOutside, true), addEventListener(doc, "keydown", onKeyDown, true), clearPointerDownOutside);
+  }, [disabled2, floating, domReference, floatingFocusElement, open, portalContext, pointerDownTimeout, getResolvedInsideElements]);
+  React15.useEffect(() => {
+    if (disabled2 || !closeOnFocusOut) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    function handlePointerDown() {
+      isPointerDownRef.current = true;
+      pointerDownTimeout.start(0, () => {
+        isPointerDownRef.current = false;
+      });
+    }
+    function handleFocusIn(event) {
+      const target = getTarget(event);
+      if (isTabbable(target)) {
+        lastFocusedTabbableRef.current = target;
+      }
+    }
+    function handleFocusOutside(event) {
+      const relatedTarget = event.relatedTarget;
+      const currentTarget = event.currentTarget;
+      const target = getTarget(event);
+      if (modal && relatedTarget == null && target != null && contains(floating, target)) {
+        addPreviouslyFocusedElement(target);
+      }
+      queueMicrotask(() => {
+        const nodeId = getNodeId();
+        const triggers = store.context.triggerElements;
+        const insideElements = getResolvedInsideElements();
+        const isRelatedFocusGuard = relatedTarget?.hasAttribute(createAttribute("focus-guard")) && [beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeInsideRef.current, portalContext?.afterInsideRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement)].includes(relatedTarget);
+        const movedToUnrelatedNode = !(contains(domReference, relatedTarget) || contains(floating, relatedTarget) || contains(relatedTarget, floating) || contains(portalContext?.portalNode, relatedTarget) || insideElements.some((element) => element === relatedTarget || contains(element, relatedTarget)) || relatedTarget != null && triggers.hasElement(relatedTarget) || triggers.hasMatchingElement((trigger) => contains(trigger, relatedTarget)) || isRelatedFocusGuard || tree && (getNodeChildren(tree.nodesRef.current, nodeId).find((node) => contains(node.context?.elements.floating, relatedTarget) || contains(node.context?.elements.domReference, relatedTarget)) || getNodeAncestors(tree.nodesRef.current, nodeId).find((node) => [node.context?.elements.floating, getFloatingFocusElement(node.context?.elements.floating)].includes(relatedTarget) || node.context?.elements.domReference === relatedTarget)));
+        if (currentTarget === domReference && floatingFocusElement) {
+          handleTabIndex(floatingFocusElement);
+        }
+        if (restoreFocus && currentTarget !== domReference && !isElementVisible(target) && activeElement(doc) === doc.body) {
+          if (isHTMLElement(floatingFocusElement)) {
+            floatingFocusElement.focus();
+            if (restoreFocus === "popup") {
+              restoreFocusFrame.request(() => {
+                floatingFocusElement.focus();
+              });
+              return;
+            }
+          }
+          const tabbableContent = getTabbableContent();
+          const prevTabbable = lastFocusedTabbableRef.current;
+          const nodeToFocus = (prevTabbable && tabbableContent.includes(prevTabbable) ? prevTabbable : null) || tabbableContent[tabbableContent.length - 1] || floatingFocusElement;
+          if (isHTMLElement(nodeToFocus)) {
+            nodeToFocus.focus();
+          }
+        }
+        if (dataRef.current.insideReactTree) {
+          dataRef.current.insideReactTree = false;
+          return;
+        }
+        if ((isUntrappedTypeableCombobox ? true : !modal) && relatedTarget && movedToUnrelatedNode && !isPointerDownRef.current && (isUntrappedTypeableCombobox || relatedTarget !== getPreviouslyFocusedElement())) {
+          preventReturnFocusRef.current = true;
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event));
+        }
+      });
+    }
+    function markInsideReactTree() {
+      if (pointerDownOutsideRef.current) {
+        return;
+      }
+      dataRef.current.insideReactTree = true;
+      blurTimeout.start(0, () => {
+        dataRef.current.insideReactTree = false;
+      });
+    }
+    const domReferenceElement = isHTMLElement(domReference) ? domReference : null;
+    if (!floating && !domReferenceElement) {
+      return;
+    }
+    return mergeCleanups(domReferenceElement && addEventListener(domReferenceElement, "focusout", handleFocusOutside), domReferenceElement && addEventListener(domReferenceElement, "pointerdown", handlePointerDown), floating && addEventListener(floating, "focusin", handleFocusIn), floating && addEventListener(floating, "focusout", handleFocusOutside), floating && portalContext && addEventListener(floating, "focusout", markInsideReactTree, true));
+  }, [disabled2, domReference, floating, floatingFocusElement, modal, tree, portalContext, store, closeOnFocusOut, restoreFocus, getTabbableContent, isUntrappedTypeableCombobox, getNodeId, dataRef, blurTimeout, pointerDownTimeout, restoreFocusFrame, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
+  React15.useEffect(() => {
+    if (disabled2 || !floating || !open) {
+      return;
+    }
+    const portalNodes = Array.from(portalContext?.portalNode?.querySelectorAll(`[${createAttribute("portal")}]`) || []);
+    const ancestors = tree ? getNodeAncestors(tree.nodesRef.current, getNodeId()) : [];
+    const rootAncestorComboboxDomReference = ancestors.find((node) => isTypeableCombobox(node.context?.elements.domReference || null))?.context?.elements.domReference;
+    const controlInsideElements = [floating, ...portalNodes, beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, ...getResolvedInsideElements()];
+    const insideElements = [...controlInsideElements, rootAncestorComboboxDomReference, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement), isUntrappedTypeableCombobox ? domReference : null].filter((x) => x != null);
+    const ariaHiddenCleanup = markOthers(insideElements, {
+      ariaHidden: modal || isUntrappedTypeableCombobox,
+      mark: false
+    });
+    const markerInsideElements = [floating, ...portalNodes].filter((x) => x != null);
+    const markerCleanup = markOthers(markerInsideElements);
+    return () => {
+      markerCleanup();
+      ariaHiddenCleanup();
+    };
+  }, [open, disabled2, domReference, floating, modal, portalContext, isUntrappedTypeableCombobox, tree, getNodeId, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
+  useIsoLayoutEffect(() => {
+    if (!open || disabled2 || !isHTMLElement(floatingFocusElement)) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    const previouslyFocusedElement = activeElement(doc);
+    queueMicrotask(() => {
+      const initialFocusValueOrFn = initialFocusRef.current;
+      const resolvedInitialFocus = typeof initialFocusValueOrFn === "function" ? initialFocusValueOrFn(openInteractionTypeRef.current || "") : initialFocusValueOrFn;
+      if (resolvedInitialFocus === undefined || resolvedInitialFocus === false) {
+        return;
+      }
+      const focusAlreadyInsideFloatingEl = contains(floatingFocusElement, previouslyFocusedElement);
+      if (focusAlreadyInsideFloatingEl) {
+        return;
+      }
+      let focusableElements = null;
+      const getDefaultFocusElement = () => {
+        if (focusableElements == null) {
+          focusableElements = getTabbableContent(floatingFocusElement);
+        }
+        return focusableElements[0] || floatingFocusElement;
+      };
+      let elToFocus;
+      if (resolvedInitialFocus === true || resolvedInitialFocus === null) {
+        elToFocus = getDefaultFocusElement();
+      } else {
+        elToFocus = resolveRef(resolvedInitialFocus);
+      }
+      elToFocus = elToFocus || getDefaultFocusElement();
+      const hadFocusInside = contains(floatingFocusElement, activeElement(doc));
+      enqueueFocus(elToFocus, {
+        preventScroll: elToFocus === floatingFocusElement,
+        shouldFocus() {
+          if (!openRef.current) {
+            return false;
+          }
+          if (hadFocusInside) {
+            return true;
+          }
+          const currentActiveElement = activeElement(doc);
+          const focusMovedInside = currentActiveElement !== elToFocus && contains(floatingFocusElement, currentActiveElement);
+          return !focusMovedInside;
+        }
+      });
+    });
+  }, [disabled2, open, floatingFocusElement, getTabbableContent, initialFocusRef, openInteractionTypeRef, openRef]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !floatingFocusElement) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    const elementFocusedBeforeOpen = activeElement(doc);
+    const preferPreviousFocus = openInteractionTypeRef.current == null;
+    addPreviouslyFocusedElement(elementFocusedBeforeOpen);
+    function onOpenChangeLocal(details) {
+      if (!details.open) {
+        closeTypeRef.current = getEventType(details.nativeEvent, lastInteractionTypeRef.current);
+      }
+      if (details.reason === exports_reason_parts.triggerHover && details.nativeEvent.type === "mouseleave") {
+        preventReturnFocusRef.current = true;
+      }
+      if (details.reason !== exports_reason_parts.outsidePress) {
+        return;
+      }
+      if (details.nested) {
+        preventReturnFocusRef.current = false;
+      } else if (isVirtualClick(details.nativeEvent) || isVirtualPointerEvent(details.nativeEvent)) {
+        preventReturnFocusRef.current = false;
+      } else {
+        let isPreventScrollSupported = false;
+        ownerDocument(floatingFocusElement).createElement("div").focus({
+          get preventScroll() {
+            isPreventScrollSupported = true;
+            return false;
+          }
+        });
+        if (isPreventScrollSupported) {
+          preventReturnFocusRef.current = false;
+        } else {
+          preventReturnFocusRef.current = true;
+        }
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    function getReturnElement() {
+      const returnFocusValueOrFn = returnFocusRef.current;
+      let resolvedReturnFocusValue = typeof returnFocusValueOrFn === "function" ? returnFocusValueOrFn(closeTypeRef.current) : returnFocusValueOrFn;
+      if (resolvedReturnFocusValue === undefined || resolvedReturnFocusValue === false) {
+        return null;
+      }
+      if (resolvedReturnFocusValue === null) {
+        resolvedReturnFocusValue = true;
+      }
+      const referenceReturnElement = domReference?.isConnected ? domReference : null;
+      const previousReturnElement = elementFocusedBeforeOpen?.isConnected && getNodeName(elementFocusedBeforeOpen) !== "body" ? elementFocusedBeforeOpen : null;
+      let defaultReturnElement = preferPreviousFocus ? previousReturnElement || referenceReturnElement : referenceReturnElement || previousReturnElement;
+      if (!defaultReturnElement) {
+        defaultReturnElement = getPreviouslyFocusedElement() || null;
+      }
+      if (typeof resolvedReturnFocusValue === "boolean") {
+        return defaultReturnElement;
+      }
+      return resolveRef(resolvedReturnFocusValue) || defaultReturnElement || null;
+    }
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+      const activeEl = activeElement(doc);
+      const insideElements = getResolvedInsideElements();
+      const isFocusInsideFloatingTree = contains(floating, activeEl) || insideElements.some((element) => element === activeEl || contains(element, activeEl)) || tree && getNodeChildren(tree.nodesRef.current, getNodeId(), false).some((node) => contains(node.context?.elements.floating, activeEl));
+      const returnFocusValueOrFn = returnFocusRef.current;
+      const returnElement = getReturnElement();
+      queueMicrotask(() => {
+        const tabbableReturnElement = getFirstTabbableElement(returnElement);
+        const hasExplicitReturnFocus = typeof returnFocusValueOrFn !== "boolean";
+        if (returnFocusValueOrFn && !preventReturnFocusRef.current && isHTMLElement(tabbableReturnElement) && (!hasExplicitReturnFocus && tabbableReturnElement !== activeEl && activeEl !== doc.body ? isFocusInsideFloatingTree : true)) {
+          tabbableReturnElement.focus({
+            preventScroll: true
+          });
+        }
+        preventReturnFocusRef.current = false;
+      });
+    };
+  }, [disabled2, floating, floatingFocusElement, returnFocusRef, openInteractionTypeRef, events, tree, domReference, getNodeId, getResolvedInsideElements]);
+  useIsoLayoutEffect(() => {
+    if (!exports_parts.engine.webkit || open || !floating) {
+      return;
+    }
+    const activeEl = activeElement(ownerDocument(floating));
+    if (!isHTMLElement(activeEl) || !isTypeableElement(activeEl)) {
+      return;
+    }
+    if (contains(floating, activeEl)) {
+      activeEl.blur();
+    }
+  }, [open, floating]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !portalContext) {
+      return;
+    }
+    portalContext.setFocusManagerState({
+      modal,
+      closeOnFocusOut,
+      open,
+      onOpenChange: store.setOpen,
+      domReference
+    });
+    return () => {
+      portalContext.setFocusManagerState(null);
+    };
+  }, [disabled2, portalContext, modal, open, store, closeOnFocusOut, domReference]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !floatingFocusElement) {
+      return;
+    }
+    handleTabIndex(floatingFocusElement);
+    return () => {
+      queueMicrotask(clearDisconnectedPreviouslyFocusedElements);
+    };
+  }, [disabled2, floatingFocusElement]);
+  const shouldRenderGuards = !disabled2 && (modal ? !isUntrappedTypeableCombobox : true) && (isInsidePortal || modal);
+  return /* @__PURE__ */ import_jsx_runtime5.jsxs(React15.Fragment, {
+    children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+      "data-type": "inside",
+      ref: mergedBeforeGuardRef,
+      onFocus: (event) => {
+        if (modal) {
+          const els = getTabbableContent();
+          enqueueFocus(els[els.length - 1]);
+        } else if (portalContext?.portalNode) {
+          preventReturnFocusRef.current = false;
+          if (isOutsideEvent(event, portalContext.portalNode)) {
+            const nextTabbable = getNextTabbable(domReference);
+            nextTabbable?.focus();
+          } else {
+            resolveRef(previousFocusableElement ?? portalContext.beforeOutsideRef)?.focus();
+          }
+        }
+      }
+    }), children, shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+      "data-type": "inside",
+      ref: mergedAfterGuardRef,
+      onFocus: (event) => {
+        if (modal) {
+          enqueueFocus(getTabbableContent()[0]);
+        } else if (portalContext?.portalNode) {
+          if (closeOnFocusOut) {
+            preventReturnFocusRef.current = true;
+          }
+          if (isOutsideEvent(event, portalContext.portalNode)) {
+            const prevTabbable = getPreviousTabbable(domReference);
+            prevTabbable?.focus();
+          } else {
+            resolveRef(nextFocusableElement ?? portalContext.afterOutsideRef)?.focus();
+          }
+        }
+      }
+    })]
+  });
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useClick.mjs
+var React16 = __toESM(require_react(), 1);
+"use client";
+function useClick(context, props = {}) {
+  const {
+    enabled = true,
+    event: eventOption = "click",
+    toggle = true,
+    ignoreMouse = false,
+    stickIfOpen = true,
+    touchOpenDelay = 0,
+    reason = exports_reason_parts.triggerPress
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const dataRef = store.context.dataRef;
+  const pointerTypeRef = React16.useRef(undefined);
+  const frame = useAnimationFrame();
+  const touchOpenTimeout = useTimeout();
+  const reference = React16.useMemo(() => {
+    function setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType) {
+      const details = createChangeEventDetails(reason, nativeEvent, target);
+      if (nextOpen && pointerType === "touch" && touchOpenDelay > 0) {
+        touchOpenTimeout.start(touchOpenDelay, () => {
+          store.setOpen(true, details);
+        });
+      } else {
+        store.setOpen(nextOpen, details);
+      }
+    }
+    function getNextOpen(open, currentTarget, isClickLikeOpenEvent2) {
+      const openEvent = dataRef.current.openEvent;
+      const hasClickedOnInactiveTrigger = store.select("domReferenceElement") !== currentTarget;
+      if (open && hasClickedOnInactiveTrigger) {
+        return true;
+      }
+      if (!open) {
+        return true;
+      }
+      if (!toggle) {
+        return true;
+      }
+      if (openEvent && stickIfOpen) {
+        return !isClickLikeOpenEvent2(openEvent.type);
+      }
+      return false;
+    }
+    return {
+      onPointerDown(event) {
+        pointerTypeRef.current = event.pointerType;
+      },
+      onMouseDown(event) {
+        const pointerType = pointerTypeRef.current;
+        const nativeEvent = event.nativeEvent;
+        const open = store.select("open");
+        if (event.button !== 0 || eventOption === "click" || isMouseLikePointerType(pointerType, true) && ignoreMouse) {
+          return;
+        }
+        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown");
+        const target = getTarget(nativeEvent);
+        if (isTypeableElement(target)) {
+          setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType);
+          return;
+        }
+        const eventCurrentTarget = event.currentTarget;
+        frame.request(() => {
+          setOpenWithTouchDelay(nextOpen, nativeEvent, eventCurrentTarget, pointerType);
+        });
+      },
+      onClick(event) {
+        if (eventOption === "mousedown-only") {
+          return;
+        }
+        const pointerType = pointerTypeRef.current;
+        if (eventOption === "mousedown" && pointerType) {
+          pointerTypeRef.current = undefined;
+          return;
+        }
+        if (isMouseLikePointerType(pointerType, true) && ignoreMouse) {
+          return;
+        }
+        const open = store.select("open");
+        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown" || openEventType === "keydown" || openEventType === "keyup");
+        setOpenWithTouchDelay(nextOpen, event.nativeEvent, event.currentTarget, pointerType);
+      },
+      onKeyDown() {
+        pointerTypeRef.current = undefined;
+      }
+    };
+  }, [dataRef, eventOption, ignoreMouse, reason, store, stickIfOpen, toggle, frame, touchOpenTimeout, touchOpenDelay]);
+  return React16.useMemo(() => enabled ? {
+    reference
+  } : EMPTY_OBJECT, [enabled, reference]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useClientPoint.mjs
+var React17 = __toESM(require_react(), 1);
+"use client";
+function createVirtualElement(domElement, data) {
+  let offsetX = null;
+  let offsetY = null;
+  let isAutoUpdateEvent = false;
+  return {
+    contextElement: domElement || undefined,
+    getBoundingClientRect() {
+      const domRect = domElement?.getBoundingClientRect() || {
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0
+      };
+      const isXAxis = data.axis === "x" || data.axis === "both";
+      const isYAxis = data.axis === "y" || data.axis === "both";
+      const canTrackCursorOnAutoUpdate = ["mouseenter", "mousemove"].includes(data.dataRef.current.openEvent?.type || "") && data.pointerType !== "touch";
+      let width = domRect.width;
+      let height = domRect.height;
+      let x = domRect.x;
+      let y = domRect.y;
+      if (offsetX == null && data.x && isXAxis) {
+        offsetX = domRect.x - data.x;
+      }
+      if (offsetY == null && data.y && isYAxis) {
+        offsetY = domRect.y - data.y;
+      }
+      x -= offsetX || 0;
+      y -= offsetY || 0;
+      width = 0;
+      height = 0;
+      if (!isAutoUpdateEvent || canTrackCursorOnAutoUpdate) {
+        width = data.axis === "y" ? domRect.width : 0;
+        height = data.axis === "x" ? domRect.height : 0;
+        x = isXAxis && data.x != null ? data.x : x;
+        y = isYAxis && data.y != null ? data.y : y;
+      } else if (isAutoUpdateEvent && !canTrackCursorOnAutoUpdate) {
+        height = data.axis === "x" ? domRect.height : height;
+        width = data.axis === "y" ? domRect.width : width;
+      }
+      isAutoUpdateEvent = true;
+      return {
+        width,
+        height,
+        x,
+        y,
+        top: y,
+        right: x + width,
+        bottom: y + height,
+        left: x
+      };
+    }
+  };
+}
+function isMouseBasedEvent(event) {
+  return event != null && event.clientX != null;
+}
+function useClientPoint(context, props = {}) {
+  const {
+    enabled = true,
+    axis = "both"
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floating = store.useState("floatingElement");
+  const domReference = store.useState("domReferenceElement");
+  const dataRef = store.context.dataRef;
+  const initialRef = React17.useRef(false);
+  const cleanupListenerRef = React17.useRef(null);
+  const [pointerType, setPointerType] = React17.useState();
+  const [reactive, setReactive] = React17.useState([]);
+  const resetReference = useStableCallback((reference2) => {
+    store.set("positionReference", reference2);
+  });
+  const setReference = useStableCallback((newX, newY, referenceElement) => {
+    if (initialRef.current) {
+      return;
+    }
+    if (dataRef.current.openEvent && !isMouseBasedEvent(dataRef.current.openEvent)) {
+      return;
+    }
+    store.set("positionReference", createVirtualElement(referenceElement ?? domReference, {
+      x: newX,
+      y: newY,
+      axis,
+      dataRef,
+      pointerType
+    }));
+  });
+  const handleReferenceEnterOrMove = useStableCallback((event) => {
+    if (!open) {
+      setReference(event.clientX, event.clientY, event.currentTarget);
+    } else if (!cleanupListenerRef.current) {
+      setReference(event.clientX, event.clientY, event.currentTarget);
+      setReactive([]);
+    }
+  });
+  const openCheck = isMouseLikePointerType(pointerType) ? floating : open;
+  React17.useEffect(() => {
+    if (!enabled) {
+      resetReference(domReference);
+      return;
+    }
+    if (!openCheck) {
+      return;
+    }
+    function cleanupListener() {
+      cleanupListenerRef.current?.();
+      cleanupListenerRef.current = null;
+    }
+    const win = getWindow(floating);
+    function handleMouseMove(event) {
+      const target = getTarget(event);
+      if (!contains(floating, target)) {
+        setReference(event.clientX, event.clientY);
+      } else {
+        cleanupListener();
+      }
+    }
+    if (!dataRef.current.openEvent || isMouseBasedEvent(dataRef.current.openEvent)) {
+      cleanupListenerRef.current = addEventListener(win, "mousemove", handleMouseMove);
+    } else {
+      resetReference(domReference);
+    }
+    return cleanupListener;
+  }, [openCheck, enabled, floating, dataRef, domReference, store, setReference, resetReference, reactive]);
+  React17.useEffect(() => () => {
+    store.set("positionReference", null);
+  }, [store]);
+  React17.useEffect(() => {
+    if (enabled && !floating) {
+      initialRef.current = false;
+    }
+  }, [enabled, floating]);
+  React17.useEffect(() => {
+    if (!enabled && open) {
+      initialRef.current = true;
+    }
+  }, [enabled, open]);
+  const reference = React17.useMemo(() => {
+    function setPointerTypeRef(event) {
+      setPointerType(event.pointerType);
+    }
+    return {
+      onPointerDown: setPointerTypeRef,
+      onPointerEnter: setPointerTypeRef,
+      onMouseMove: handleReferenceEnterOrMove,
+      onMouseEnter: handleReferenceEnterOrMove
+    };
+  }, [handleReferenceEnterOrMove]);
+  return React17.useMemo(() => enabled ? {
+    reference,
+    trigger: reference
+  } : {}, [enabled, reference]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useDismiss.mjs
+var React18 = __toESM(require_react(), 1);
+"use client";
+function alwaysFalse() {
+  return false;
+}
+function normalizeProp(normalizable) {
+  return {
+    escapeKey: typeof normalizable === "boolean" ? normalizable : normalizable?.escapeKey ?? false,
+    outsidePress: typeof normalizable === "boolean" ? normalizable : normalizable?.outsidePress ?? true
+  };
+}
+function useDismiss(context, props = {}) {
+  const {
+    enabled = true,
+    escapeKey: escapeKey2 = true,
+    outsidePress: outsidePressProp = true,
+    outsidePressEvent = "sloppy",
+    referencePress = alwaysFalse,
+    bubbles,
+    externalTree
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const {
+    dataRef
+  } = store.context;
+  const tree = useFloatingTree(externalTree);
+  const outsidePressFn = useStableCallback(typeof outsidePressProp === "function" ? outsidePressProp : () => false);
+  const outsidePress2 = typeof outsidePressProp === "function" ? outsidePressFn : outsidePressProp;
+  const outsidePressEnabled = outsidePress2 !== false;
+  const getOutsidePressEventProp = useStableCallback(() => outsidePressEvent);
+  const {
+    escapeKey: escapeKeyBubbles,
+    outsidePress: outsidePressBubbles
+  } = normalizeProp(bubbles);
+  const pressStartedInsideRef = React18.useRef(false);
+  const pressStartPreventedRef = React18.useRef(false);
+  const suppressNextOutsideClickRef = React18.useRef(false);
+  const isComposingRef = React18.useRef(false);
+  const currentPointerTypeRef = React18.useRef("");
+  const touchStateRef = React18.useRef(null);
+  const cancelDismissOnEndTimeout = useTimeout();
+  const clearInsideReactTreeTimeout = useTimeout();
+  const clearInsideReactTree = useStableCallback(() => {
+    clearInsideReactTreeTimeout.clear();
+    dataRef.current.insideReactTree = false;
+  });
+  const hasBlockingChild = useStableCallback((bubbleKey) => {
+    const nodeId = dataRef.current.floatingContext?.nodeId;
+    const children = tree ? getNodeChildren(tree.nodesRef.current, nodeId) : [];
+    return children.some((child) => child.context?.open && !child.context.dataRef.current[bubbleKey]);
+  });
+  const isEventWithinOwnElements = useStableCallback((event) => {
+    return isEventTargetWithin(event, store.select("floatingElement")) || isEventTargetWithin(event, store.select("domReferenceElement"));
+  });
+  const closeOnReferencePress = useStableCallback((event) => {
+    if (!referencePress()) {
+      return;
+    }
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerPress, event.nativeEvent));
+  });
+  const closeOnEscapeKeyDown = useStableCallback((event) => {
+    if (!open || !enabled || !escapeKey2 || event.key !== "Escape") {
+      return;
+    }
+    if (isComposingRef.current) {
+      return;
+    }
+    if (!escapeKeyBubbles && hasBlockingChild("__escapeKeyBubbles")) {
+      return;
+    }
+    const native = isReactEvent(event) ? event.nativeEvent : event;
+    const eventDetails = createChangeEventDetails(exports_reason_parts.escapeKey, native);
+    store.setOpen(false, eventDetails);
+    if (!eventDetails.isCanceled) {
+      event.preventDefault();
+    }
+    if (!escapeKeyBubbles && !eventDetails.isPropagationAllowed) {
+      event.stopPropagation();
+    }
+  });
+  const markInsideReactTree = useStableCallback(() => {
+    dataRef.current.insideReactTree = true;
+    clearInsideReactTreeTimeout.start(0, clearInsideReactTree);
+  });
+  const markPressStartedInsideReactTree = useStableCallback((event) => {
+    if (!open || !enabled || event.button !== 0) {
+      return;
+    }
+    const target = getTarget(event.nativeEvent);
+    if (!contains(store.select("floatingElement"), target)) {
+      return;
+    }
+    if (!pressStartedInsideRef.current) {
+      pressStartedInsideRef.current = true;
+      pressStartPreventedRef.current = false;
+    }
+  });
+  const markInsidePressStartPrevented = useStableCallback((event) => {
+    if (!open || !enabled) {
+      return;
+    }
+    if (!(event.defaultPrevented || event.nativeEvent.defaultPrevented)) {
+      return;
+    }
+    if (pressStartedInsideRef.current) {
+      pressStartPreventedRef.current = true;
+    }
+  });
+  React18.useEffect(() => {
+    if (!open || !enabled) {
+      return;
+    }
+    dataRef.current.__escapeKeyBubbles = escapeKeyBubbles;
+    dataRef.current.__outsidePressBubbles = outsidePressBubbles;
+    const compositionTimeout = new Timeout;
+    const preventedPressSuppressionTimeout = new Timeout;
+    function handleCompositionStart() {
+      compositionTimeout.clear();
+      isComposingRef.current = true;
+    }
+    function handleCompositionEnd() {
+      compositionTimeout.start(exports_parts.engine.webkit ? 5 : 0, () => {
+        isComposingRef.current = false;
+      });
+    }
+    function suppressImmediateOutsideClickAfterPreventedStart() {
+      suppressNextOutsideClickRef.current = true;
+      preventedPressSuppressionTimeout.start(0, () => {
+        suppressNextOutsideClickRef.current = false;
+      });
+    }
+    function resetPressStartState() {
+      pressStartedInsideRef.current = false;
+      pressStartPreventedRef.current = false;
+    }
+    function getOutsidePressEvent() {
+      const type = currentPointerTypeRef.current;
+      const computedType = type === "pen" || !type ? "mouse" : type;
+      const outsidePressEventValue = getOutsidePressEventProp();
+      const resolved = typeof outsidePressEventValue === "function" ? outsidePressEventValue() : outsidePressEventValue;
+      if (typeof resolved === "string") {
+        return resolved;
+      }
+      return resolved[computedType];
+    }
+    function shouldIgnoreEvent(event) {
+      const computedOutsidePressEvent = getOutsidePressEvent();
+      return computedOutsidePressEvent === "intentional" && event.type !== "click" || computedOutsidePressEvent === "sloppy" && event.type === "click";
+    }
+    function isEventWithinFloatingTree(event) {
+      const nodeId = dataRef.current.floatingContext?.nodeId;
+      const targetIsInsideChildren = tree && getNodeChildren(tree.nodesRef.current, nodeId).some((node) => isEventTargetWithin(event, node.context?.elements.floating));
+      return isEventWithinOwnElements(event) || targetIsInsideChildren;
+    }
+    function closeOnPressOutside(event) {
+      if (shouldIgnoreEvent(event)) {
+        if (event.type !== "click" && !isEventWithinOwnElements(event)) {
+          preventedPressSuppressionTimeout.clear();
+          suppressNextOutsideClickRef.current = false;
+        }
+        clearInsideReactTree();
+        return;
+      }
+      if (dataRef.current.insideReactTree) {
+        clearInsideReactTree();
+        return;
+      }
+      const target = getTarget(event);
+      const inertSelector = `[${createAttribute("inert")}]`;
+      const targetRoot = isElement(target) ? target.getRootNode() : null;
+      const markers = Array.from((isShadowRoot(targetRoot) ? targetRoot : ownerDocument(store.select("floatingElement"))).querySelectorAll(inertSelector));
+      const triggers = store.context.triggerElements;
+      if (target && (triggers.hasElement(target) || triggers.hasMatchingElement((trigger) => contains(trigger, target)))) {
+        return;
+      }
+      let targetRootAncestor = isElement(target) ? target : null;
+      while (targetRootAncestor && !isLastTraversableNode(targetRootAncestor)) {
+        const nextParent = getParentNode(targetRootAncestor);
+        if (isLastTraversableNode(nextParent) || !isElement(nextParent)) {
+          break;
+        }
+        targetRootAncestor = nextParent;
+      }
+      if (markers.length && isElement(target) && !isRootElement(target) && !contains(target, store.select("floatingElement")) && markers.every((marker) => !contains(targetRootAncestor, marker))) {
+        return;
+      }
+      if (isHTMLElement(target) && !("touches" in event)) {
+        const lastTraversableNode = isLastTraversableNode(target);
+        const style = getComputedStyle2(target);
+        const scrollRe = /auto|scroll/;
+        const isScrollableX = lastTraversableNode || scrollRe.test(style.overflowX);
+        const isScrollableY = lastTraversableNode || scrollRe.test(style.overflowY);
+        const canScrollX = isScrollableX && target.clientWidth > 0 && target.scrollWidth > target.clientWidth;
+        const canScrollY = isScrollableY && target.clientHeight > 0 && target.scrollHeight > target.clientHeight;
+        const isRTL = style.direction === "rtl";
+        const pressedVerticalScrollbar = canScrollY && (isRTL ? event.offsetX <= target.offsetWidth - target.clientWidth : event.offsetX > target.clientWidth);
+        const pressedHorizontalScrollbar = canScrollX && event.offsetY > target.clientHeight;
+        if (pressedVerticalScrollbar || pressedHorizontalScrollbar) {
+          return;
+        }
+      }
+      if (isEventWithinFloatingTree(event)) {
+        return;
+      }
+      if (getOutsidePressEvent() === "intentional" && suppressNextOutsideClickRef.current) {
+        preventedPressSuppressionTimeout.clear();
+        suppressNextOutsideClickRef.current = false;
+        return;
+      }
+      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
+        return;
+      }
+      if (hasBlockingChild("__outsidePressBubbles")) {
+        return;
+      }
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.outsidePress, event));
+      clearInsideReactTree();
+    }
+    function handlePointerDown(event) {
+      if (getOutsidePressEvent() !== "sloppy" || event.pointerType === "touch" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
+        return;
+      }
+      closeOnPressOutside(event);
+    }
+    function handleTouchStart(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch) {
+        touchStateRef.current = {
+          startTime: Date.now(),
+          startX: touch.clientX,
+          startY: touch.clientY,
+          dismissOnTouchEnd: false,
+          dismissOnMouseDown: true
+        };
+        cancelDismissOnEndTimeout.start(1000, () => {
+          if (touchStateRef.current) {
+            touchStateRef.current.dismissOnTouchEnd = false;
+            touchStateRef.current.dismissOnMouseDown = false;
+          }
+        });
+      }
+    }
+    function addTargetEventListenerOnce(event, listener) {
+      const target = getTarget(event);
+      if (!target) {
+        return;
+      }
+      const unsubscribe2 = addEventListener(target, event.type, () => {
+        listener(event);
+        unsubscribe2();
+      });
+    }
+    function handleTouchStartCapture(event) {
+      currentPointerTypeRef.current = "touch";
+      addTargetEventListenerOnce(event, handleTouchStart);
+    }
+    function closeOnPressOutsideCapture(event) {
+      cancelDismissOnEndTimeout.clear();
+      if (event.type === "pointerdown") {
+        currentPointerTypeRef.current = event.pointerType;
+      }
+      if (event.type === "mousedown" && touchStateRef.current && !touchStateRef.current.dismissOnMouseDown) {
+        return;
+      }
+      addTargetEventListenerOnce(event, (targetEvent) => {
+        if (targetEvent.type === "pointerdown") {
+          handlePointerDown(targetEvent);
+        } else {
+          closeOnPressOutside(targetEvent);
+        }
+      });
+    }
+    function handlePressEndCapture(event) {
+      if (!pressStartedInsideRef.current) {
+        return;
+      }
+      const pressStartedInsideDefaultPrevented = pressStartPreventedRef.current;
+      resetPressStartState();
+      if (getOutsidePressEvent() !== "intentional") {
+        return;
+      }
+      if (event.type === "pointercancel") {
+        if (pressStartedInsideDefaultPrevented) {
+          suppressImmediateOutsideClickAfterPreventedStart();
+        }
+        return;
+      }
+      if (isEventWithinFloatingTree(event)) {
+        return;
+      }
+      if (pressStartedInsideDefaultPrevented) {
+        suppressImmediateOutsideClickAfterPreventedStart();
+        return;
+      }
+      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
+        return;
+      }
+      preventedPressSuppressionTimeout.clear();
+      suppressNextOutsideClickRef.current = true;
+      clearInsideReactTree();
+    }
+    function handleTouchMove(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+      const deltaX = Math.abs(touch.clientX - touchStateRef.current.startX);
+      const deltaY = Math.abs(touch.clientY - touchStateRef.current.startY);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      if (distance > 5) {
+        touchStateRef.current.dismissOnTouchEnd = true;
+      }
+      if (distance > 10) {
+        closeOnPressOutside(event);
+        cancelDismissOnEndTimeout.clear();
+        touchStateRef.current = null;
+      }
+    }
+    function handleTouchMoveCapture(event) {
+      addTargetEventListenerOnce(event, handleTouchMove);
+    }
+    function handleTouchEnd(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
+        return;
+      }
+      if (touchStateRef.current.dismissOnTouchEnd) {
+        closeOnPressOutside(event);
+      }
+      cancelDismissOnEndTimeout.clear();
+      touchStateRef.current = null;
+    }
+    function handleTouchEndCapture(event) {
+      addTargetEventListenerOnce(event, handleTouchEnd);
+    }
+    const doc = ownerDocument(floatingElement);
+    const unsubscribe = mergeCleanups(escapeKey2 && mergeCleanups(addEventListener(doc, "keydown", closeOnEscapeKeyDown), addEventListener(doc, "compositionstart", handleCompositionStart), addEventListener(doc, "compositionend", handleCompositionEnd)), outsidePressEnabled && mergeCleanups(addEventListener(doc, "click", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerdown", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerup", handlePressEndCapture, true), addEventListener(doc, "pointercancel", handlePressEndCapture, true), addEventListener(doc, "mousedown", closeOnPressOutsideCapture, true), addEventListener(doc, "mouseup", handlePressEndCapture, true), addEventListener(doc, "touchstart", handleTouchStartCapture, true), addEventListener(doc, "touchmove", handleTouchMoveCapture, true), addEventListener(doc, "touchend", handleTouchEndCapture, true)));
+    return () => {
+      unsubscribe();
+      compositionTimeout.clear();
+      preventedPressSuppressionTimeout.clear();
+      resetPressStartState();
+      suppressNextOutsideClickRef.current = false;
+    };
+  }, [dataRef, floatingElement, escapeKey2, outsidePressEnabled, outsidePress2, open, enabled, escapeKeyBubbles, outsidePressBubbles, closeOnEscapeKeyDown, clearInsideReactTree, getOutsidePressEventProp, hasBlockingChild, isEventWithinOwnElements, tree, store, cancelDismissOnEndTimeout]);
+  React18.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
+  const reference = React18.useMemo(() => ({
+    onKeyDown: closeOnEscapeKeyDown,
+    onPointerDown: closeOnReferencePress,
+    onClick: closeOnReferencePress
+  }), [closeOnEscapeKeyDown, closeOnReferencePress]);
+  const floating = React18.useMemo(() => ({
+    onKeyDown: closeOnEscapeKeyDown,
+    onPointerDown: markInsidePressStartPrevented,
+    onMouseDown: markInsidePressStartPrevented,
+    onClickCapture: markInsideReactTree,
+    onMouseDownCapture(event) {
+      markInsideReactTree();
+      markPressStartedInsideReactTree(event);
+    },
+    onPointerDownCapture(event) {
+      markInsideReactTree();
+      markPressStartedInsideReactTree(event);
+    },
+    onMouseUpCapture: markInsideReactTree,
+    onTouchEndCapture: markInsideReactTree,
+    onTouchMoveCapture: markInsideReactTree
+  }), [closeOnEscapeKeyDown, markInsideReactTree, markPressStartedInsideReactTree, markInsidePressStartPrevented]);
+  return React18.useMemo(() => enabled ? {
+    reference,
+    floating,
+    trigger: reference
+  } : {}, [enabled, reference, floating]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
+var React27 = __toESM(require_react(), 1);
+
+// node_modules/@floating-ui/core/dist/floating-ui.core.mjs
+function computeCoordsFromPlacement(_ref, placement, rtl) {
+  let {
+    reference,
+    floating
+  } = _ref;
+  const sideAxis = getSideAxis(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const alignLength = getAxisLength(alignmentAxis);
+  const side = getSide(placement);
+  const isVertical = sideAxis === "y";
+  const commonX = reference.x + reference.width / 2 - floating.width / 2;
+  const commonY = reference.y + reference.height / 2 - floating.height / 2;
+  const commonAlign = reference[alignLength] / 2 - floating[alignLength] / 2;
+  let coords;
+  switch (side) {
+    case "top":
+      coords = {
+        x: commonX,
+        y: reference.y - floating.height
+      };
+      break;
+    case "bottom":
+      coords = {
+        x: commonX,
+        y: reference.y + reference.height
+      };
+      break;
+    case "right":
+      coords = {
+        x: reference.x + reference.width,
+        y: commonY
+      };
+      break;
+    case "left":
+      coords = {
+        x: reference.x - floating.width,
+        y: commonY
+      };
+      break;
+    default:
+      coords = {
+        x: reference.x,
+        y: reference.y
+      };
+  }
+  const alignment = getAlignment(placement);
+  if (alignment) {
+    coords[alignmentAxis] += commonAlign * (alignment === "end" ? 1 : -1) * (rtl && isVertical ? -1 : 1);
+  }
+  return coords;
+}
+async function detectOverflow(state, options) {
+  var _await$platform$isEle;
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    x,
+    y,
+    platform: platform2,
+    rects,
+    elements,
+    strategy
+  } = state;
+  const {
+    boundary = "clippingAncestors",
+    rootBoundary = "viewport",
+    elementContext = "floating",
+    altBoundary = false,
+    padding = 0
+  } = evaluate(options, state);
+  const paddingObject = getPaddingObject(padding);
+  const altContext = elementContext === "floating" ? "reference" : "floating";
+  const element = elements[altBoundary ? altContext : elementContext];
+  const clippingClientRect = rectToClientRect(await platform2.getClippingRect({
+    element: ((_await$platform$isEle = await (platform2.isElement == null ? undefined : platform2.isElement(element))) != null ? _await$platform$isEle : true) ? element : element.contextElement || await (platform2.getDocumentElement == null ? undefined : platform2.getDocumentElement(elements.floating)),
+    boundary,
+    rootBoundary,
+    strategy
+  }));
+  const rect = elementContext === "floating" ? {
+    x,
+    y,
+    width: rects.floating.width,
+    height: rects.floating.height
+  } : rects.reference;
+  const offsetParent = await (platform2.getOffsetParent == null ? undefined : platform2.getOffsetParent(elements.floating));
+  const offsetScale = await (platform2.isElement == null ? undefined : platform2.isElement(offsetParent)) && await (platform2.getScale == null ? undefined : platform2.getScale(offsetParent)) || {
+    x: 1,
+    y: 1
+  };
+  const elementClientRect = rectToClientRect(platform2.convertOffsetParentRelativeRectToViewportRelativeRect ? await platform2.convertOffsetParentRelativeRectToViewportRelativeRect({
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  }) : rect);
+  return {
+    top: (clippingClientRect.top - elementClientRect.top + paddingObject.top) / offsetScale.y,
+    bottom: (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
+    left: (clippingClientRect.left - elementClientRect.left + paddingObject.left) / offsetScale.x,
+    right: (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x
+  };
+}
+var MAX_RESET_COUNT = 50;
+var computePosition = async (reference, floating, config) => {
+  const {
+    placement = "bottom",
+    strategy = "absolute",
+    middleware = [],
+    platform: platform2
+  } = config;
+  const platformWithDetectOverflow = platform2.detectOverflow ? platform2 : {
+    ...platform2,
+    detectOverflow
+  };
+  const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(floating));
+  let rects = await platform2.getElementRects({
+    reference,
+    floating,
+    strategy
+  });
+  let {
+    x,
+    y
+  } = computeCoordsFromPlacement(rects, placement, rtl);
+  let statefulPlacement = placement;
+  let resetCount = 0;
+  const middlewareData = {};
+  for (let i = 0;i < middleware.length; i++) {
+    const currentMiddleware = middleware[i];
+    if (!currentMiddleware) {
+      continue;
+    }
+    const {
+      name,
+      fn
+    } = currentMiddleware;
+    const {
+      x: nextX,
+      y: nextY,
+      data,
+      reset
+    } = await fn({
+      x,
+      y,
+      initialPlacement: placement,
+      placement: statefulPlacement,
+      strategy,
+      middlewareData,
+      rects,
+      platform: platformWithDetectOverflow,
+      elements: {
+        reference,
+        floating
+      }
+    });
+    x = nextX != null ? nextX : x;
+    y = nextY != null ? nextY : y;
+    middlewareData[name] = {
+      ...middlewareData[name],
+      ...data
+    };
+    if (reset && resetCount < MAX_RESET_COUNT) {
+      resetCount++;
+      if (typeof reset === "object") {
+        if (reset.placement) {
+          statefulPlacement = reset.placement;
+        }
+        if (reset.rects) {
+          rects = reset.rects === true ? await platform2.getElementRects({
+            reference,
+            floating,
+            strategy
+          }) : reset.rects;
+        }
+        ({
+          x,
+          y
+        } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
+      }
+      i = -1;
+    }
+  }
+  return {
+    x,
+    y,
+    placement: statefulPlacement,
+    strategy,
+    middlewareData
+  };
+};
+var flip = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "flip",
+    options,
+    async fn(state) {
+      var _middlewareData$arrow, _middlewareData$flip;
+      const {
+        placement,
+        middlewareData,
+        rects,
+        initialPlacement,
+        platform: platform2,
+        elements
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = true,
+        fallbackPlacements: specifiedFallbackPlacements,
+        fallbackStrategy = "bestFit",
+        fallbackAxisSideDirection = "none",
+        flipAlignment = true,
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      if ((_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      const side = getSide(placement);
+      const initialSideAxis = getSideAxis(initialPlacement);
+      const isBasePlacement = getSide(initialPlacement) === initialPlacement;
+      const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating));
+      const fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipAlignment ? [getOppositePlacement(initialPlacement)] : getExpandedPlacements(initialPlacement));
+      const hasFallbackAxisSideDirection = fallbackAxisSideDirection !== "none";
+      if (!specifiedFallbackPlacements && hasFallbackAxisSideDirection) {
+        fallbackPlacements.push(...getOppositeAxisPlacements(initialPlacement, flipAlignment, fallbackAxisSideDirection, rtl));
+      }
+      const placements2 = [initialPlacement, ...fallbackPlacements];
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const overflows = [];
+      let overflowsData = ((_middlewareData$flip = middlewareData.flip) == null ? undefined : _middlewareData$flip.overflows) || [];
+      if (checkMainAxis) {
+        overflows.push(overflow[side]);
+      }
+      if (checkCrossAxis) {
+        const sides2 = getAlignmentSides(placement, rects, rtl);
+        overflows.push(overflow[sides2[0]], overflow[sides2[1]]);
+      }
+      overflowsData = [...overflowsData, {
+        placement,
+        overflows
+      }];
+      if (!overflows.every((side2) => side2 <= 0)) {
+        var _middlewareData$flip2, _overflowsData$filter;
+        const nextIndex = (((_middlewareData$flip2 = middlewareData.flip) == null ? undefined : _middlewareData$flip2.index) || 0) + 1;
+        const nextPlacement = placements2[nextIndex];
+        if (nextPlacement) {
+          const ignoreCrossAxisOverflow = checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
+          if (!ignoreCrossAxisOverflow || overflowsData.every((d) => getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true)) {
+            return {
+              data: {
+                index: nextIndex,
+                overflows: overflowsData
+              },
+              reset: {
+                placement: nextPlacement
+              }
+            };
+          }
+        }
+        let resetPlacement = (_overflowsData$filter = overflowsData.filter((d) => d.overflows[0] <= 0).sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null ? undefined : _overflowsData$filter.placement;
+        if (!resetPlacement) {
+          switch (fallbackStrategy) {
+            case "bestFit": {
+              var _overflowsData$filter2;
+              const placement2 = (_overflowsData$filter2 = overflowsData.filter((d) => {
+                if (hasFallbackAxisSideDirection) {
+                  const currentSideAxis = getSideAxis(d.placement);
+                  return currentSideAxis === initialSideAxis || currentSideAxis === "y";
+                }
+                return true;
+              }).map((d) => [d.placement, d.overflows.filter((overflow2) => overflow2 > 0).reduce((acc, overflow2) => acc + overflow2, 0)]).sort((a, b) => a[1] - b[1])[0]) == null ? undefined : _overflowsData$filter2[0];
+              if (placement2) {
+                resetPlacement = placement2;
+              }
+              break;
+            }
+            case "initialPlacement":
+              resetPlacement = initialPlacement;
+              break;
+          }
+        }
+        if (placement !== resetPlacement) {
+          return {
+            reset: {
+              placement: resetPlacement
+            }
+          };
+        }
+      }
+      return {};
+    }
+  };
+};
+function getSideOffsets(overflow, rect) {
+  return {
+    top: overflow.top - rect.height,
+    right: overflow.right - rect.width,
+    bottom: overflow.bottom - rect.height,
+    left: overflow.left - rect.width
+  };
+}
+function isAnySideFullyClipped(overflow) {
+  return sides.some((side) => overflow[side] >= 0);
+}
+var hide = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "hide",
+    options,
+    async fn(state) {
+      const {
+        rects,
+        platform: platform2
+      } = state;
+      const {
+        strategy = "referenceHidden",
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      switch (strategy) {
+        case "referenceHidden": {
+          const overflow = await platform2.detectOverflow(state, {
+            ...detectOverflowOptions,
+            elementContext: "reference"
+          });
+          const offsets = getSideOffsets(overflow, rects.reference);
+          return {
+            data: {
+              referenceHiddenOffsets: offsets,
+              referenceHidden: isAnySideFullyClipped(offsets)
+            }
+          };
+        }
+        case "escaped": {
+          const overflow = await platform2.detectOverflow(state, {
+            ...detectOverflowOptions,
+            altBoundary: true
+          });
+          const offsets = getSideOffsets(overflow, rects.floating);
+          return {
+            data: {
+              escapedOffsets: offsets,
+              escaped: isAnySideFullyClipped(offsets)
+            }
+          };
+        }
+        default: {
+          return {};
+        }
+      }
+    }
+  };
+};
+var originSides = /* @__PURE__ */ new Set(["left", "top"]);
+async function convertValueToCoords(state, options) {
+  const {
+    placement,
+    platform: platform2,
+    elements
+  } = state;
+  const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating));
+  const side = getSide(placement);
+  const alignment = getAlignment(placement);
+  const isVertical = getSideAxis(placement) === "y";
+  const mainAxisMulti = originSides.has(side) ? -1 : 1;
+  const crossAxisMulti = rtl && isVertical ? -1 : 1;
+  const rawValue = evaluate(options, state);
+  let {
+    mainAxis,
+    crossAxis,
+    alignmentAxis
+  } = typeof rawValue === "number" ? {
+    mainAxis: rawValue,
+    crossAxis: 0,
+    alignmentAxis: null
+  } : {
+    mainAxis: rawValue.mainAxis || 0,
+    crossAxis: rawValue.crossAxis || 0,
+    alignmentAxis: rawValue.alignmentAxis
+  };
+  if (alignment && typeof alignmentAxis === "number") {
+    crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
+  }
+  return isVertical ? {
+    x: crossAxis * crossAxisMulti,
+    y: mainAxis * mainAxisMulti
+  } : {
+    x: mainAxis * mainAxisMulti,
+    y: crossAxis * crossAxisMulti
+  };
+}
+var offset = function(options) {
+  if (options === undefined) {
+    options = 0;
+  }
+  return {
+    name: "offset",
+    options,
+    async fn(state) {
+      var _middlewareData$offse, _middlewareData$arrow;
+      const {
+        x,
+        y,
+        placement,
+        middlewareData
+      } = state;
+      const diffCoords = await convertValueToCoords(state, options);
+      if (placement === ((_middlewareData$offse = middlewareData.offset) == null ? undefined : _middlewareData$offse.placement) && (_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      return {
+        x: x + diffCoords.x,
+        y: y + diffCoords.y,
+        data: {
+          ...diffCoords,
+          placement
+        }
+      };
+    }
+  };
+};
+var shift = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "shift",
+    options,
+    async fn(state) {
+      const {
+        x,
+        y,
+        placement,
+        platform: platform2
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = false,
+        limiter = {
+          fn: (_ref) => {
+            let {
+              x: x2,
+              y: y2
+            } = _ref;
+            return {
+              x: x2,
+              y: y2
+            };
+          }
+        },
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      const coords = {
+        x,
+        y
+      };
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const crossAxis = getSideAxis(placement);
+      const mainAxis = getOppositeAxis(crossAxis);
+      let mainAxisCoord = coords[mainAxis];
+      let crossAxisCoord = coords[crossAxis];
+      const clampCoord = (axis, coord) => clamp(coord + overflow[axis === "y" ? "top" : "left"], coord, coord - overflow[axis === "y" ? "bottom" : "right"]);
+      if (checkMainAxis) {
+        mainAxisCoord = clampCoord(mainAxis, mainAxisCoord);
+      }
+      if (checkCrossAxis) {
+        crossAxisCoord = clampCoord(crossAxis, crossAxisCoord);
+      }
+      const limitedCoords = limiter.fn({
+        ...state,
+        [mainAxis]: mainAxisCoord,
+        [crossAxis]: crossAxisCoord
+      });
+      return {
+        ...limitedCoords,
+        data: {
+          x: limitedCoords.x - x,
+          y: limitedCoords.y - y,
+          enabled: {
+            [mainAxis]: checkMainAxis,
+            [crossAxis]: checkCrossAxis
+          }
+        }
+      };
+    }
+  };
+};
+var limitShift = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    options,
+    fn(state) {
+      var _rawOffset$mainAxis, _rawOffset$crossAxis;
+      const {
+        x,
+        y,
+        placement,
+        rects,
+        middlewareData
+      } = state;
+      const {
+        offset: offset2 = 0,
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = true
+      } = evaluate(options, state);
+      const coords = {
+        x,
+        y
+      };
+      const crossAxis = getSideAxis(placement);
+      const mainAxis = getOppositeAxis(crossAxis);
+      let mainAxisCoord = coords[mainAxis];
+      let crossAxisCoord = coords[crossAxis];
+      const rawOffset = evaluate(offset2, state);
+      const computedOffset = typeof rawOffset === "number" ? {
+        mainAxis: rawOffset,
+        crossAxis: 0
+      } : {
+        mainAxis: (_rawOffset$mainAxis = rawOffset.mainAxis) != null ? _rawOffset$mainAxis : 0,
+        crossAxis: (_rawOffset$crossAxis = rawOffset.crossAxis) != null ? _rawOffset$crossAxis : 0
+      };
+      if (checkMainAxis) {
+        const len = mainAxis === "y" ? "height" : "width";
+        const limitMin = rects.reference[mainAxis] - rects.floating[len] + computedOffset.mainAxis;
+        const limitMax = rects.reference[mainAxis] + rects.reference[len] - computedOffset.mainAxis;
+        if (mainAxisCoord < limitMin) {
+          mainAxisCoord = limitMin;
+        } else if (mainAxisCoord > limitMax) {
+          mainAxisCoord = limitMax;
+        }
+      }
+      if (checkCrossAxis) {
+        var _middlewareData$offse, _middlewareData$offse2;
+        const len = mainAxis === "y" ? "width" : "height";
+        const isOriginSide = originSides.has(getSide(placement));
+        const limitMin = rects.reference[crossAxis] - rects.floating[len] + (isOriginSide ? ((_middlewareData$offse = middlewareData.offset) == null ? undefined : _middlewareData$offse[crossAxis]) || 0 : 0) + (isOriginSide ? 0 : computedOffset.crossAxis);
+        const limitMax = rects.reference[crossAxis] + rects.reference[len] + (isOriginSide ? 0 : ((_middlewareData$offse2 = middlewareData.offset) == null ? undefined : _middlewareData$offse2[crossAxis]) || 0) - (isOriginSide ? computedOffset.crossAxis : 0);
+        if (crossAxisCoord < limitMin) {
+          crossAxisCoord = limitMin;
+        } else if (crossAxisCoord > limitMax) {
+          crossAxisCoord = limitMax;
+        }
+      }
+      return {
+        [mainAxis]: mainAxisCoord,
+        [crossAxis]: crossAxisCoord
+      };
+    }
+  };
+};
+var size = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "size",
+    options,
+    async fn(state) {
+      const {
+        placement,
+        rects,
+        platform: platform2,
+        elements
+      } = state;
+      const {
+        apply = () => {},
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const side = getSide(placement);
+      const alignment = getAlignment(placement);
+      const isYAxis = getSideAxis(placement) === "y";
+      const {
+        width,
+        height
+      } = rects.floating;
+      let heightSide;
+      let widthSide;
+      if (side === "top" || side === "bottom") {
+        heightSide = side;
+        widthSide = alignment === (await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
+      } else {
+        widthSide = side;
+        heightSide = alignment === "end" ? "top" : "bottom";
+      }
+      const maximumClippingHeight = height - overflow.top - overflow.bottom;
+      const maximumClippingWidth = width - overflow.left - overflow.right;
+      const overflowAvailableHeight = min(height - overflow[heightSide], maximumClippingHeight);
+      const overflowAvailableWidth = min(width - overflow[widthSide], maximumClippingWidth);
+      const shiftData = state.middlewareData.shift;
+      const noShift = !shiftData;
+      let availableHeight = overflowAvailableHeight;
+      let availableWidth = overflowAvailableWidth;
+      if (shiftData != null && shiftData.enabled.x) {
+        availableWidth = maximumClippingWidth;
+      }
+      if (shiftData != null && shiftData.enabled.y) {
+        availableHeight = maximumClippingHeight;
+      }
+      if (noShift && !alignment) {
+        if (isYAxis) {
+          availableWidth = width - 2 * max(overflow.left, overflow.right);
+        } else {
+          availableHeight = height - 2 * max(overflow.top, overflow.bottom);
+        }
+      }
+      await apply({
+        ...state,
+        availableWidth,
+        availableHeight
+      });
+      const nextDimensions = await platform2.getDimensions(elements.floating);
+      if (width !== nextDimensions.width || height !== nextDimensions.height) {
+        return {
+          reset: {
+            rects: true
+          }
+        };
+      }
+      return {};
+    }
+  };
+};
+
+// node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
+function getCssDimensions(element) {
+  const css = getComputedStyle2(element);
+  let width = parseFloat(css.width) || 0;
+  let height = parseFloat(css.height) || 0;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
+  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
+  if (shouldFallback) {
+    width = offsetWidth;
+    height = offsetHeight;
+  }
+  return {
+    width,
+    height,
+    $: shouldFallback
+  };
+}
+function unwrapElement(element) {
+  return !isElement(element) ? element.contextElement : element;
+}
+function getScale(element) {
+  const domElement = unwrapElement(element);
+  if (!isHTMLElement(domElement)) {
+    return createCoords(1);
+  }
+  const rect = domElement.getBoundingClientRect();
+  const {
+    width,
+    height,
+    $
+  } = getCssDimensions(domElement);
+  let x = ($ ? round(rect.width) : rect.width) / width;
+  let y = ($ ? round(rect.height) : rect.height) / height;
+  if (!x || !Number.isFinite(x)) {
+    x = 1;
+  }
+  if (!y || !Number.isFinite(y)) {
+    y = 1;
+  }
+  return {
+    x,
+    y
+  };
+}
+var noOffsets = /* @__PURE__ */ createCoords(0);
+function getVisualOffsets(element) {
+  const win = getWindow(element);
+  if (!isWebKit() || !win.visualViewport) {
+    return noOffsets;
+  }
+  return {
+    x: win.visualViewport.offsetLeft,
+    y: win.visualViewport.offsetTop
+  };
+}
+function shouldAddVisualOffsets(element, isFixed, floatingOffsetParent) {
+  if (isFixed === undefined) {
+    isFixed = false;
+  }
+  return !!floatingOffsetParent && isFixed && floatingOffsetParent === getWindow(element);
+}
+function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetParent) {
+  if (includeScale === undefined) {
+    includeScale = false;
+  }
+  if (isFixedStrategy === undefined) {
+    isFixedStrategy = false;
+  }
+  const clientRect = element.getBoundingClientRect();
+  const domElement = unwrapElement(element);
+  let scale = createCoords(1);
+  if (includeScale) {
+    if (offsetParent) {
+      if (isElement(offsetParent)) {
+        scale = getScale(offsetParent);
+      }
+    } else {
+      scale = getScale(element);
+    }
+  }
+  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
+  let x = (clientRect.left + visualOffsets.x) / scale.x;
+  let y = (clientRect.top + visualOffsets.y) / scale.y;
+  let width = clientRect.width / scale.x;
+  let height = clientRect.height / scale.y;
+  if (domElement && offsetParent) {
+    const win = getWindow(domElement);
+    const offsetWin = isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
+    let currentWin = win;
+    let currentIFrame = getFrameElement(currentWin);
+    while (currentIFrame && offsetWin !== currentWin) {
+      const iframeScale = getScale(currentIFrame);
+      const iframeRect = currentIFrame.getBoundingClientRect();
+      const css = getComputedStyle2(currentIFrame);
+      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
+      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
+      x *= iframeScale.x;
+      y *= iframeScale.y;
+      width *= iframeScale.x;
+      height *= iframeScale.y;
+      x += left;
+      y += top;
+      currentWin = getWindow(currentIFrame);
+      currentIFrame = getFrameElement(currentWin);
+    }
+  }
+  return rectToClientRect({
+    width,
+    height,
+    x,
+    y
+  });
+}
+function getWindowScrollBarX(element, rect) {
+  const leftScroll = getNodeScroll(element).scrollLeft;
+  if (!rect) {
+    return getBoundingClientRect(getDocumentElement(element)).left + leftScroll;
+  }
+  return rect.left + leftScroll;
+}
+function getHTMLOffset(documentElement, scroll) {
+  const htmlRect = documentElement.getBoundingClientRect();
+  const x = htmlRect.left + scroll.scrollLeft - getWindowScrollBarX(documentElement, htmlRect);
+  const y = htmlRect.top + scroll.scrollTop;
+  return {
+    x,
+    y
+  };
+}
+function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
+  let {
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  } = _ref;
+  const isFixed = strategy === "fixed";
+  const documentElement = getDocumentElement(offsetParent);
+  const topLayer = elements ? isTopLayer(elements.floating) : false;
+  if (offsetParent === documentElement || topLayer && isFixed) {
+    return rect;
+  }
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  let scale = createCoords(1);
+  const offsets = createCoords(0);
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent);
+      scale = getScale(offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  return {
+    width: rect.width * scale.x,
+    height: rect.height * scale.y,
+    x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
+    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
+  };
+}
+function getClientRects(element) {
+  return element.getClientRects ? Array.from(element.getClientRects()) : [];
+}
+function getDocumentRect(html) {
+  const scroll = getNodeScroll(html);
+  const body = html.ownerDocument.body;
+  const width = max(html.scrollWidth, html.clientWidth, body.scrollWidth, body.clientWidth);
+  const height = max(html.scrollHeight, html.clientHeight, body.scrollHeight, body.clientHeight);
+  let x = -scroll.scrollLeft + getWindowScrollBarX(html);
+  const y = -scroll.scrollTop;
+  if (getComputedStyle2(body).direction === "rtl") {
+    x += max(html.clientWidth, body.clientWidth) - width;
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+var SCROLLBAR_MAX = 25;
+function getViewportRect(element, strategy, rootBoundary) {
+  if (rootBoundary === undefined) {
+    rootBoundary = "viewport";
+  }
+  const isLayoutViewport = rootBoundary === "layoutViewport";
+  const win = getWindow(element);
+  const html = getDocumentElement(element);
+  const visualViewport = win.visualViewport;
+  let width = html.clientWidth;
+  let height = html.clientHeight;
+  let x = 0;
+  let y = 0;
+  if (visualViewport) {
+    const layoutRelativeClientCoords = !isWebKit() || strategy === "fixed";
+    if (isLayoutViewport) {
+      if (!layoutRelativeClientCoords) {
+        x = -visualViewport.offsetLeft;
+        y = -visualViewport.offsetTop;
+      }
+    } else {
+      width = visualViewport.width;
+      height = visualViewport.height;
+      if (layoutRelativeClientCoords) {
+        x = visualViewport.offsetLeft;
+        y = visualViewport.offsetTop;
+      }
+    }
+  }
+  const windowScrollbarX = getWindowScrollBarX(html);
+  if (windowScrollbarX <= 0) {
+    const doc = html.ownerDocument;
+    const body = doc.body;
+    const bodyStyles = getComputedStyle(body);
+    const bodyMarginInline = doc.compatMode === "CSS1Compat" ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0 : 0;
+    const reservedWidth = Math.abs(html.clientWidth - body.clientWidth - bodyMarginInline);
+    const gutter = getComputedStyle(html).scrollbarGutter === "stable both-edges" ? reservedWidth / 2 : reservedWidth;
+    if (gutter <= SCROLLBAR_MAX) {
+      width -= gutter;
+    }
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getInnerBoundingClientRect(element, strategy) {
+  const clientRect = getBoundingClientRect(element, true, strategy === "fixed");
+  const top = clientRect.top + element.clientTop;
+  const left = clientRect.left + element.clientLeft;
+  const scale = getScale(element);
+  const width = element.clientWidth * scale.x;
+  const height = element.clientHeight * scale.y;
+  const x = left * scale.x;
+  const y = top * scale.y;
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) {
+  let rect;
+  if (clippingAncestor === "viewport" || clippingAncestor === "layoutViewport") {
+    rect = getViewportRect(element, strategy, clippingAncestor);
+  } else if (clippingAncestor === "document") {
+    rect = getDocumentRect(getDocumentElement(element));
+  } else if (isElement(clippingAncestor)) {
+    rect = getInnerBoundingClientRect(clippingAncestor, strategy);
+  } else {
+    const visualOffsets = getVisualOffsets(element);
+    rect = {
+      x: clippingAncestor.x - visualOffsets.x,
+      y: clippingAncestor.y - visualOffsets.y,
+      width: clippingAncestor.width,
+      height: clippingAncestor.height
+    };
+  }
+  return rectToClientRect(rect);
+}
+function getClippingElementAncestors(element, cache) {
+  const cachedResult = cache.get(element);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  let result = getOverflowAncestors(element, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
+  let lastKeptComputedStyle = null;
+  const elementIsFixed = getComputedStyle2(element).position === "fixed";
+  let currentNode = elementIsFixed ? getParentNode(element) : element;
+  while (isElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    const computedStyle = getComputedStyle2(currentNode);
+    const currentNodeIsContaining = isContainingBlock(currentNode);
+    const lastPosition = lastKeptComputedStyle ? lastKeptComputedStyle.position : elementIsFixed ? "fixed" : "";
+    const shouldDropCurrentNode = !currentNodeIsContaining && (lastPosition === "fixed" || lastPosition === "absolute" && computedStyle.position === "static");
+    if (shouldDropCurrentNode) {
+      result = result.filter((ancestor) => ancestor !== currentNode);
+    } else {
+      lastKeptComputedStyle = computedStyle;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  cache.set(element, result);
+  return result;
+}
+function getClippingRect(_ref) {
+  let {
+    element,
+    boundary,
+    rootBoundary,
+    strategy
+  } = _ref;
+  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element) ? [] : getClippingElementAncestors(element, this._c) : [].concat(boundary);
+  const clippingAncestors = [...elementClippingAncestors, rootBoundary];
+  const firstRect = getClientRectFromClippingAncestor(element, clippingAncestors[0], strategy);
+  let top = firstRect.top;
+  let right = firstRect.right;
+  let bottom = firstRect.bottom;
+  let left = firstRect.left;
+  for (let i = 1;i < clippingAncestors.length; i++) {
+    const rect = getClientRectFromClippingAncestor(element, clippingAncestors[i], strategy);
+    top = max(rect.top, top);
+    right = min(rect.right, right);
+    bottom = min(rect.bottom, bottom);
+    left = max(rect.left, left);
+  }
+  return {
+    width: right - left,
+    height: bottom - top,
+    x: left,
+    y: top
+  };
+}
+function getDimensions(element) {
+  const {
+    width,
+    height
+  } = getCssDimensions(element);
+  return {
+    width,
+    height
+  };
+}
+function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  const documentElement = getDocumentElement(offsetParent);
+  const isFixed = strategy === "fixed";
+  const rect = getBoundingClientRect(element, true, isFixed, offsetParent);
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  const offsets = createCoords(0);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent, true, isFixed, offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  if (!isOffsetParentAnElement && documentElement) {
+    offsets.x = getWindowScrollBarX(documentElement);
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  const x = rect.left + scroll.scrollLeft - offsets.x - htmlOffset.x;
+  const y = rect.top + scroll.scrollTop - offsets.y - htmlOffset.y;
+  return {
+    x,
+    y,
+    width: rect.width,
+    height: rect.height
+  };
+}
+function isStaticPositioned(element) {
+  return getComputedStyle2(element).position === "static";
+}
+function getTrueOffsetParent(element, polyfill) {
+  if (!isHTMLElement(element) || getComputedStyle2(element).position === "fixed") {
+    return null;
+  }
+  if (polyfill) {
+    return polyfill(element);
+  }
+  let rawOffsetParent = element.offsetParent;
+  if (getDocumentElement(element) === rawOffsetParent) {
+    rawOffsetParent = rawOffsetParent.ownerDocument.body;
+  }
+  return rawOffsetParent;
+}
+function getOffsetParent(element, polyfill) {
+  const win = getWindow(element);
+  if (isTopLayer(element)) {
+    return win;
+  }
+  if (!isHTMLElement(element)) {
+    let svgOffsetParent = getParentNode(element);
+    while (svgOffsetParent && !isLastTraversableNode(svgOffsetParent)) {
+      if (isElement(svgOffsetParent) && !isStaticPositioned(svgOffsetParent)) {
+        return svgOffsetParent;
+      }
+      svgOffsetParent = getParentNode(svgOffsetParent);
+    }
+    return win;
+  }
+  let offsetParent = getTrueOffsetParent(element, polyfill);
+  while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
+    offsetParent = getTrueOffsetParent(offsetParent, polyfill);
+  }
+  if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
+    return win;
+  }
+  return offsetParent || getContainingBlock(element) || win;
+}
+var getElementRects = async function(data) {
+  const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
+  const getDimensionsFn = this.getDimensions;
+  const floatingDimensions = await getDimensionsFn(data.floating);
+  return {
+    reference: getRectRelativeToOffsetParent(data.reference, await getOffsetParentFn(data.floating), data.strategy),
+    floating: {
+      x: 0,
+      y: 0,
+      width: floatingDimensions.width,
+      height: floatingDimensions.height
+    }
+  };
+};
+function isRTL(element) {
+  return getComputedStyle2(element).direction === "rtl";
+}
+var platform2 = {
+  convertOffsetParentRelativeRectToViewportRelativeRect,
+  getDocumentElement,
+  getClippingRect,
+  getOffsetParent,
+  getElementRects,
+  getClientRects,
+  getDimensions,
+  getScale,
+  isElement,
+  isRTL
+};
+function rectsAreEqual(a, b) {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+function observeMove(element, onMove, ancestorResize) {
+  let io = null;
+  let timeoutId;
+  const root = getDocumentElement(element);
+  function cleanup() {
+    var _io;
+    clearTimeout(timeoutId);
+    (_io = io) == null || _io.disconnect();
+    io = null;
+  }
+  function refresh(skip, threshold) {
+    if (skip === undefined) {
+      skip = false;
+    }
+    if (threshold === undefined) {
+      threshold = 1;
+    }
+    cleanup();
+    const elementRectForRootMargin = element.getBoundingClientRect();
+    const {
+      left,
+      top,
+      width,
+      height
+    } = elementRectForRootMargin;
+    if (!skip) {
+      onMove();
+    }
+    if (!width || !height) {
+      return;
+    }
+    const insetTop = floor(top);
+    const insetRight = floor(root.clientWidth - (left + width));
+    const insetBottom = floor(root.clientHeight - (top + height));
+    const insetLeft = floor(left);
+    const rootMargin = -insetTop + "px " + -insetRight + "px " + -insetBottom + "px " + -insetLeft + "px";
+    const options = {
+      rootMargin,
+      threshold: max(0, min(1, threshold)) || 1
+    };
+    let isFirstUpdate = true;
+    function handleObserve(entries) {
+      const ratio = entries[0].intersectionRatio;
+      if (!rectsAreEqual(elementRectForRootMargin, element.getBoundingClientRect())) {
+        return refresh();
+      }
+      if (ratio !== threshold) {
+        if (!isFirstUpdate) {
+          return refresh();
+        }
+        if (!ratio) {
+          timeoutId = setTimeout(() => {
+            refresh(false, 0.0000001);
+          }, 1000);
+        } else {
+          refresh(false, ratio);
+        }
+      }
+      isFirstUpdate = false;
+    }
+    try {
+      io = new IntersectionObserver(handleObserve, {
+        ...options,
+        root: root.ownerDocument
+      });
+    } catch (_e) {
+      io = new IntersectionObserver(handleObserve, options);
+    }
+    io.observe(element);
+  }
+  const win = getWindow(element);
+  const handleResize = () => refresh(ancestorResize);
+  win.addEventListener("resize", handleResize);
+  refresh(true);
+  return () => {
+    win.removeEventListener("resize", handleResize);
+    cleanup();
+  };
+}
+function autoUpdate(reference, floating, update2, options) {
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    ancestorScroll = true,
+    ancestorResize = true,
+    elementResize = typeof ResizeObserver === "function",
+    layoutShift = typeof IntersectionObserver === "function",
+    animationFrame = false
+  } = options;
+  const referenceEl = unwrapElement(reference);
+  const ancestors = ancestorScroll || ancestorResize ? [...referenceEl ? getOverflowAncestors(referenceEl) : [], ...floating ? getOverflowAncestors(floating) : []] : [];
+  ancestors.forEach((ancestor) => {
+    ancestorScroll && ancestor.addEventListener("scroll", update2);
+    ancestorResize && ancestor.addEventListener("resize", update2);
+  });
+  const cleanupIo = referenceEl && layoutShift ? observeMove(referenceEl, update2, ancestorResize) : null;
+  let reobserveFrame = -1;
+  let resizeObserver = null;
+  if (elementResize) {
+    resizeObserver = new ResizeObserver((_ref) => {
+      let [firstEntry] = _ref;
+      if (firstEntry && firstEntry.target === referenceEl && resizeObserver && floating) {
+        resizeObserver.unobserve(floating);
+        cancelAnimationFrame(reobserveFrame);
+        reobserveFrame = requestAnimationFrame(() => {
+          var _resizeObserver;
+          (_resizeObserver = resizeObserver) == null || _resizeObserver.observe(floating);
+        });
+      }
+      update2();
+    });
+    if (referenceEl && !animationFrame) {
+      resizeObserver.observe(referenceEl);
+    }
+    if (floating) {
+      resizeObserver.observe(floating);
+    }
+  }
+  let frameId;
+  let prevRefRect = animationFrame ? getBoundingClientRect(reference) : null;
+  if (animationFrame) {
+    frameLoop();
+  }
+  function frameLoop() {
+    const nextRefRect = getBoundingClientRect(reference);
+    if (prevRefRect && !rectsAreEqual(prevRefRect, nextRefRect)) {
+      update2();
+    }
+    prevRefRect = nextRefRect;
+    frameId = requestAnimationFrame(frameLoop);
+  }
+  update2();
+  return () => {
+    var _resizeObserver2;
+    ancestors.forEach((ancestor) => {
+      ancestorScroll && ancestor.removeEventListener("scroll", update2);
+      ancestorResize && ancestor.removeEventListener("resize", update2);
+    });
+    cleanupIo == null || cleanupIo();
+    (_resizeObserver2 = resizeObserver) == null || _resizeObserver2.disconnect();
+    resizeObserver = null;
+    if (animationFrame) {
+      cancelAnimationFrame(frameId);
+    }
+  };
+}
+var offset2 = offset;
+var shift2 = shift;
+var flip2 = flip;
+var size2 = size;
+var hide2 = hide;
+var limitShift2 = limitShift;
+var computePosition2 = (reference, floating, options) => {
+  const cache = new Map;
+  const mergedOptions = options != null ? options : {};
+  const platformWithCache = {
+    ...platform2,
+    ...mergedOptions.platform,
+    _c: cache
+  };
+  return computePosition(reference, floating, {
+    ...mergedOptions,
+    platform: platformWithCache
+  });
+};
+
+// node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs
+var React19 = __toESM(require_react(), 1);
+var import_react2 = __toESM(require_react(), 1);
+var ReactDOM2 = __toESM(require_react_dom(), 1);
+var isClient = typeof document !== "undefined";
+var noop2 = function noop3() {};
+var index = isClient ? import_react2.useLayoutEffect : noop2;
+function deepEqual(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (typeof a !== typeof b) {
+    return false;
+  }
+  if (typeof a === "function" && a.toString() === b.toString()) {
+    return true;
+  }
+  let length;
+  let i;
+  let keys;
+  if (a && b && typeof a === "object") {
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length !== b.length)
+        return false;
+      for (i = length;i-- !== 0; ) {
+        if (!deepEqual(a[i], b[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) {
+      return false;
+    }
+    for (i = length;i-- !== 0; ) {
+      if (!{}.hasOwnProperty.call(b, keys[i])) {
+        return false;
+      }
+    }
+    for (i = length;i-- !== 0; ) {
+      const key = keys[i];
+      if (key === "_owner" && a.$$typeof) {
+        continue;
+      }
+      if (!deepEqual(a[key], b[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return a !== a && b !== b;
+}
+function getDPR(element) {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+  const win = element.ownerDocument.defaultView || window;
+  return win.devicePixelRatio || 1;
+}
+function roundByDPR(element, value) {
+  const dpr = getDPR(element);
+  return Math.round(value * dpr) / dpr;
+}
+function useLatestRef(value) {
+  const ref = React19.useRef(value);
+  index(() => {
+    ref.current = value;
+  });
+  return ref;
+}
+function useFloating(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    placement = "bottom",
+    strategy = "absolute",
+    middleware = [],
+    platform: platform3,
+    elements: {
+      reference: externalReference,
+      floating: externalFloating
+    } = {},
+    transform = true,
+    whileElementsMounted,
+    open
+  } = options;
+  const [data, setData] = React19.useState({
+    x: 0,
+    y: 0,
+    strategy,
+    placement,
+    middlewareData: {},
+    isPositioned: false
+  });
+  const [latestMiddleware, setLatestMiddleware] = React19.useState(middleware);
+  if (!deepEqual(latestMiddleware, middleware)) {
+    setLatestMiddleware(middleware);
+  }
+  const [_reference, _setReference] = React19.useState(null);
+  const [_floating, _setFloating] = React19.useState(null);
+  const setReference = React19.useCallback((node) => {
+    if (node !== referenceRef.current) {
+      referenceRef.current = node;
+      _setReference(node);
+    }
+  }, []);
+  const setFloating = React19.useCallback((node) => {
+    if (node !== floatingRef.current) {
+      floatingRef.current = node;
+      _setFloating(node);
+    }
+  }, []);
+  const referenceEl = externalReference || _reference;
+  const floatingEl = externalFloating || _floating;
+  const referenceRef = React19.useRef(null);
+  const floatingRef = React19.useRef(null);
+  const dataRef = React19.useRef(data);
+  const hasWhileElementsMounted = whileElementsMounted != null;
+  const whileElementsMountedRef = useLatestRef(whileElementsMounted);
+  const platformRef = useLatestRef(platform3);
+  const openRef = useLatestRef(open);
+  const update2 = React19.useCallback(() => {
+    if (!referenceRef.current || !floatingRef.current) {
+      return;
+    }
+    const config = {
+      placement,
+      strategy,
+      middleware: latestMiddleware
+    };
+    if (platformRef.current) {
+      config.platform = platformRef.current;
+    }
+    computePosition2(referenceRef.current, floatingRef.current, config).then((data2) => {
+      const fullData = {
+        ...data2,
+        isPositioned: openRef.current !== false
+      };
+      if (isMountedRef.current && !deepEqual(dataRef.current, fullData)) {
+        dataRef.current = fullData;
+        ReactDOM2.flushSync(() => {
+          setData(fullData);
+        });
+      }
+    });
+  }, [latestMiddleware, placement, strategy, platformRef, openRef]);
+  index(() => {
+    if (open === false && dataRef.current.isPositioned) {
+      dataRef.current.isPositioned = false;
+      setData((data2) => ({
+        ...data2,
+        isPositioned: false
+      }));
+    }
+  }, [open]);
+  const isMountedRef = React19.useRef(false);
+  index(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  index(() => {
+    if (referenceEl)
+      referenceRef.current = referenceEl;
+    if (floatingEl)
+      floatingRef.current = floatingEl;
+    if (referenceEl && floatingEl) {
+      if (whileElementsMountedRef.current) {
+        return whileElementsMountedRef.current(referenceEl, floatingEl, update2);
+      }
+      update2();
+    }
+  }, [referenceEl, floatingEl, update2, whileElementsMountedRef, hasWhileElementsMounted]);
+  const refs = React19.useMemo(() => ({
+    reference: referenceRef,
+    floating: floatingRef,
+    setReference,
+    setFloating
+  }), [setReference, setFloating]);
+  const elements = React19.useMemo(() => ({
+    reference: referenceEl,
+    floating: floatingEl
+  }), [referenceEl, floatingEl]);
+  const floatingStyles = React19.useMemo(() => {
+    const initialStyles = {
+      position: strategy,
+      left: 0,
+      top: 0
+    };
+    if (!elements.floating) {
+      return initialStyles;
+    }
+    const x = roundByDPR(elements.floating, data.x);
+    const y = roundByDPR(elements.floating, data.y);
+    if (transform) {
+      return {
+        ...initialStyles,
+        transform: "translate(" + x + "px, " + y + "px)",
+        ...getDPR(elements.floating) >= 1.5 && {
+          willChange: "transform"
+        }
+      };
+    }
+    return {
+      position: strategy,
+      left: x,
+      top: y
+    };
+  }, [strategy, transform, elements.floating, data.x, data.y]);
+  return React19.useMemo(() => ({
+    ...data,
+    update: update2,
+    refs,
+    elements,
+    floatingStyles
+  }), [data, update2, refs, elements, floatingStyles]);
+}
+var offset3 = (options, deps) => {
+  const result = offset2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var shift3 = (options, deps) => {
+  const result = shift2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var limitShift3 = (options, deps) => {
+  const result = limitShift2(options);
+  return {
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var flip3 = (options, deps) => {
+  const result = flip2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var size3 = (options, deps) => {
+  const result = size2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var hide3 = (options, deps) => {
+  const result = hide2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+
+// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
+var React26 = __toESM(require_react(), 1);
+var ReactDOM4 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/useOnFirstRender.mjs
+var React20 = __toESM(require_react(), 1);
+"use client";
+function useOnFirstRender(fn) {
+  const ref = React20.useRef(true);
+  if (ref.current) {
+    ref.current = false;
+    fn();
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+var React23 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/store/createSelector.mjs
+var createSelector = (a, b, c, d, e, f, ...other) => {
+  if (other.length > 0) {
+    throw new Error("Unsupported number of selectors");
+  }
+  let selector;
+  if (a && b && c && d && e && f) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      const vd = d(state, a1, a2, a3);
+      const ve = e(state, a1, a2, a3);
+      return f(va, vb, vc, vd, ve, a1, a2, a3);
+    };
+  } else if (a && b && c && d && e) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      const vd = d(state, a1, a2, a3);
+      return e(va, vb, vc, vd, a1, a2, a3);
+    };
+  } else if (a && b && c && d) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      return d(va, vb, vc, a1, a2, a3);
+    };
+  } else if (a && b && c) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      return c(va, vb, a1, a2, a3);
+    };
+  } else if (a && b) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      return b(va, a1, a2, a3);
+    };
+  } else if (a) {
+    selector = a;
+  } else {
+    throw new Error("Missing arguments");
+  }
+  return selector;
+};
+
+// node_modules/@base-ui/utils/store/useStore.mjs
+var React21 = __toESM(require_react(), 1);
+var import_shim = __toESM(require_shim(), 1);
+var import_with_selector = __toESM(require_with_selector(), 1);
+var canUseRawUseSyncExternalStore = isReactVersionAtLeast(19);
+var useStoreImplementation = canUseRawUseSyncExternalStore ? useStoreFast : useStoreLegacy;
+function useStore(store, selector, a1, a2, a3) {
+  return useStoreImplementation(store, selector, a1, a2, a3);
+}
+function useStoreR19(store, selector, a1, a2, a3) {
+  const getSelection = React21.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
+  return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
+}
+register({
+  before(instance) {
+    instance.syncIndex = 0;
+    if (!instance.didInitialize) {
+      instance.syncTick = 1;
+      instance.syncHooks = [];
+      instance.didChangeStore = true;
+      instance.getSnapshot = () => {
+        let didChange2 = false;
+        for (let i = 0;i < instance.syncHooks.length; i += 1) {
+          const hook = instance.syncHooks[i];
+          const value = hook.selector(hook.store.state, hook.a1, hook.a2, hook.a3);
+          if (!Object.is(hook.value, value)) {
+            didChange2 = true;
+            hook.value = value;
+          }
+        }
+        if (didChange2) {
+          instance.syncTick += 1;
+        }
+        return instance.syncTick;
+      };
+    }
+  },
+  after(instance) {
+    if (instance.syncHooks.length > 0) {
+      if (instance.didChangeStore) {
+        instance.didChangeStore = false;
+        instance.subscribe = (onStoreChange) => {
+          const stores = new Set;
+          for (const hook of instance.syncHooks) {
+            stores.add(hook.store);
+          }
+          const unsubscribes = [];
+          for (const store of stores) {
+            unsubscribes.push(store.subscribe(onStoreChange));
+          }
+          return () => {
+            for (const unsubscribe of unsubscribes) {
+              unsubscribe();
+            }
+          };
+        };
+      }
+      import_shim.useSyncExternalStore(instance.subscribe, instance.getSnapshot, instance.getSnapshot);
+    }
+  }
+});
+function useStoreFast(store, selector, a1, a2, a3) {
+  const instance = getInstance();
+  if (!instance) {
+    return useStoreR19(store, selector, a1, a2, a3);
+  }
+  const index2 = instance.syncIndex;
+  instance.syncIndex += 1;
+  let hook;
+  if (!instance.didInitialize) {
+    hook = {
+      store,
+      selector,
+      a1,
+      a2,
+      a3,
+      value: selector(store.getSnapshot(), a1, a2, a3)
+    };
+    instance.syncHooks.push(hook);
+  } else {
+    hook = instance.syncHooks[index2];
+    if (hook.store !== store || hook.selector !== selector || !Object.is(hook.a1, a1) || !Object.is(hook.a2, a2) || !Object.is(hook.a3, a3)) {
+      if (hook.store !== store) {
+        instance.didChangeStore = true;
+      }
+      hook.store = store;
+      hook.selector = selector;
+      hook.a1 = a1;
+      hook.a2 = a2;
+      hook.a3 = a3;
+      hook.value = selector(store.getSnapshot(), a1, a2, a3);
+    }
+  }
+  return hook.value;
+}
+function useStoreLegacy(store, selector, a1, a2, a3) {
+  return import_with_selector.useSyncExternalStoreWithSelector(store.subscribe, store.getSnapshot, store.getSnapshot, (state) => selector(state, a1, a2, a3));
+}
+
+// node_modules/@base-ui/utils/store/Store.mjs
+class Store {
+  constructor(state) {
+    this.state = state;
+    this.listeners = new Set;
+    this.updateTick = 0;
+  }
+  subscribe = (fn) => {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  };
+  getSnapshot = () => {
+    return this.state;
+  };
+  setState(newState) {
+    if (this.state === newState) {
+      return;
+    }
+    this.state = newState;
+    this.updateTick += 1;
+    const currentTick = this.updateTick;
+    for (const listener of this.listeners) {
+      if (currentTick !== this.updateTick) {
+        return;
+      }
+      listener(newState);
+    }
+  }
+  update(changes) {
+    for (const key in changes) {
+      if (!Object.is(this.state[key], changes[key])) {
+        this.setState({
+          ...this.state,
+          ...changes
+        });
+        return;
+      }
+    }
+  }
+  set(key, value) {
+    if (!Object.is(this.state[key], value)) {
+      this.setState({
+        ...this.state,
+        [key]: value
+      });
+    }
+  }
+  notifyAll() {
+    const newState = {
+      ...this.state
+    };
+    this.setState(newState);
+  }
+  use(selector, a1, a2, a3) {
+    return useStore(this, selector, a1, a2, a3);
+  }
+}
+
+// node_modules/@base-ui/utils/store/ReactStore.mjs
+var React22 = __toESM(require_react(), 1);
+"use client";
+
+class ReactStore extends Store {
+  constructor(state, context = {}, selectors) {
+    super(state);
+    this.context = context;
+    this.selectors = selectors;
+  }
+  useSyncedValue(key, value) {
+    React22.useDebugValue(key);
+    const store = this;
+    useIsoLayoutEffect(() => {
+      if (store.state[key] !== value) {
+        store.set(key, value);
+      }
+    }, [store, key, value]);
+  }
+  useSyncedValueWithCleanup(key, value) {
+    const store = this;
+    useIsoLayoutEffect(() => {
+      if (store.state[key] !== value) {
+        store.set(key, value);
+      }
+      return () => {
+        store.set(key, undefined);
+      };
+    }, [store, key, value]);
+  }
+  useSyncedValues(statePart) {
+    const store = this;
+    if (true) {
+      React22.useDebugValue(statePart, (p) => Object.keys(p));
+      const keys = React22.useRef(Object.keys(statePart)).current;
+      const nextKeys = Object.keys(statePart);
+      if (keys.length !== nextKeys.length || keys.some((key, index2) => key !== nextKeys[index2])) {
+        console.error("ReactStore.useSyncedValues expects the same prop keys on every render. Keys should be stable.");
+      }
+    }
+    const dependencies = Object.values(statePart);
+    useIsoLayoutEffect(() => {
+      store.update(statePart);
+    }, [store, ...dependencies]);
+  }
+  useControlledProp(key, controlled) {
+    React22.useDebugValue(key);
+    const store = this;
+    const isControlled = controlled !== undefined;
+    useIsoLayoutEffect(() => {
+      if (isControlled && !Object.is(store.state[key], controlled)) {
+        store.setState({
+          ...store.state,
+          [key]: controlled
+        });
+      }
+    }, [store, key, controlled, isControlled]);
+    if (true) {
+      const cache = this.controlledValues ??= new Map;
+      if (!cache.has(key)) {
+        cache.set(key, isControlled);
+      }
+      const previouslyControlled = cache.get(key);
+      if (previouslyControlled !== undefined && previouslyControlled !== isControlled) {
+        console.error(`A component is changing the ${isControlled ? "" : "un"}controlled state of ${key.toString()} to be ${isControlled ? "un" : ""}controlled. Elements should not switch from uncontrolled to controlled (or vice versa).`);
+      }
+    }
+  }
+  select(key, a1, a2, a3) {
+    const selector = this.selectors[key];
+    return selector(this.state, a1, a2, a3);
+  }
+  useState(key, a1, a2, a3) {
+    React22.useDebugValue(key);
+    return useStore(this, this.selectors[key], a1, a2, a3);
+  }
+  useContextCallback(key, fn) {
+    React22.useDebugValue(key);
+    const stableFunction = useStableCallback(fn ?? NOOP);
+    this.context[key] = stableFunction;
+  }
+  useStateSetter(key) {
+    const ref = React22.useRef(undefined);
+    if (ref.current === undefined) {
+      ref.current = (value) => {
+        this.set(key, value);
+      };
+    }
+    return ref.current;
+  }
+  observe(selector, listener) {
+    let selectFn;
+    if (typeof selector === "function") {
+      selectFn = selector;
+    } else {
+      selectFn = this.selectors[selector];
+    }
+    let prevValue = selectFn(this.state);
+    listener(prevValue, prevValue, this);
+    return this.subscribe((nextState) => {
+      const nextValue = selectFn(nextState);
+      if (!Object.is(prevValue, nextValue)) {
+        const oldValue = prevValue;
+        prevValue = nextValue;
+        listener(nextValue, oldValue, this);
+      }
+    });
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingRootStore.mjs
+var selectors = {
+  open: createSelector((state) => state.open),
+  transitionStatus: createSelector((state) => state.transitionStatus),
+  domReferenceElement: createSelector((state) => state.domReferenceElement),
+  referenceElement: createSelector((state) => state.positionReference ?? state.referenceElement),
+  floatingElement: createSelector((state) => state.floatingElement),
+  floatingId: createSelector((state) => state.floatingId)
+};
+
+class FloatingRootStore extends ReactStore {
+  constructor(options) {
+    const {
+      syncOnly,
+      nested,
+      onOpenChange,
+      triggerElements,
+      ...initialState
+    } = options;
+    super({
+      ...initialState,
+      positionReference: initialState.referenceElement,
+      domReferenceElement: initialState.referenceElement
+    }, {
+      onOpenChange,
+      dataRef: {
+        current: {}
+      },
+      events: createEventEmitter(),
+      nested,
+      triggerElements
+    }, selectors);
+    this.syncOnly = syncOnly;
+  }
+  syncOpenEvent = (newOpen, event) => {
+    if (!newOpen || !this.state.open || event != null && isClickLikeEvent(event)) {
+      this.context.dataRef.current.openEvent = newOpen ? event : undefined;
+    }
+  };
+  dispatchOpenChange = (newOpen, eventDetails) => {
+    this.syncOpenEvent(newOpen, eventDetails.event);
+    const details = {
+      open: newOpen,
+      reason: eventDetails.reason,
+      nativeEvent: eventDetails.event,
+      nested: this.context.nested,
+      triggerElement: eventDetails.trigger
+    };
+    this.context.events.emit("openchange", details);
+  };
+  setOpen = (newOpen, eventDetails) => {
+    if (this.syncOnly) {
+      this.context.onOpenChange?.(newOpen, eventDetails);
+      return;
+    }
+    this.dispatchOpenChange(newOpen, eventDetails);
+    this.context.onOpenChange?.(newOpen, eventDetails);
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+"use client";
+function useSyncedFloatingRootContext(options) {
+  const {
+    popupStore,
+    treatPopupAsFloatingElement = false,
+    floatingRootContext: floatingRootContextProp,
+    floatingId,
+    nested,
+    onOpenChange
+  } = options;
+  const open = popupStore.useState("open");
+  const referenceElement = popupStore.useState("activeTriggerElement");
+  const floatingElement = popupStore.useState(treatPopupAsFloatingElement ? "popupElement" : "positionerElement");
+  const triggerElements = popupStore.context.triggerElements;
+  const handleOpenChange = onOpenChange;
+  const internalStoreRef = React23.useRef(null);
+  if (floatingRootContextProp === undefined && internalStoreRef.current === null) {
+    internalStoreRef.current = new FloatingRootStore({
+      open,
+      transitionStatus: undefined,
+      referenceElement,
+      floatingElement,
+      triggerElements,
+      onOpenChange: handleOpenChange,
+      floatingId,
+      syncOnly: true,
+      nested
+    });
+  }
+  const store = floatingRootContextProp ?? internalStoreRef.current;
+  popupStore.useSyncedValue("floatingId", floatingId);
+  useIsoLayoutEffect(() => {
+    const valuesToSync = {
+      open,
+      floatingId,
+      referenceElement,
+      floatingElement
+    };
+    if (isElement(referenceElement)) {
+      valuesToSync.domReferenceElement = referenceElement;
+    }
+    if (store.state.positionReference === store.state.referenceElement) {
+      valuesToSync.positionReference = referenceElement;
+    }
+    store.update(valuesToSync);
+  }, [open, floatingId, referenceElement, floatingElement, store]);
+  store.context.onOpenChange = handleOpenChange;
+  store.context.nested = nested;
+  return store;
+}
+
+// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
+var React24 = __toESM(require_react(), 1);
+"use client";
+function useTransitionStatus(open, enableIdleState = false, deferEndingState = false) {
+  const [transitionStatus, setTransitionStatus] = React24.useState(open && enableIdleState ? "idle" : undefined);
+  const [mounted, setMounted] = React24.useState(open);
+  if (open && !mounted) {
+    setMounted(true);
+    setTransitionStatus("starting");
+  }
+  if (!open && mounted && transitionStatus !== "ending" && !deferEndingState) {
+    setTransitionStatus("ending");
+  }
+  if (!open && !mounted && transitionStatus === "ending") {
+    setTransitionStatus(undefined);
+  }
+  useIsoLayoutEffect(() => {
+    if (!open && mounted && transitionStatus !== "ending" && deferEndingState) {
+      const frame = AnimationFrame.request(() => {
+        setTransitionStatus("ending");
+      });
+      return () => {
+        AnimationFrame.cancel(frame);
+      };
+    }
+    return;
+  }, [open, mounted, transitionStatus, deferEndingState]);
+  useIsoLayoutEffect(() => {
+    if (!open || enableIdleState) {
+      return;
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus(undefined);
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open]);
+  useIsoLayoutEffect(() => {
+    if (!open || !enableIdleState) {
+      return;
+    }
+    if (open && mounted && transitionStatus !== "idle") {
+      setTransitionStatus("starting");
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus("idle");
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open, mounted, transitionStatus]);
+  return {
+    mounted,
+    setMounted,
+    transitionStatus
+  };
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+var React25 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+var ReactDOM3 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/react/internals/stateAttributesMapping.mjs
+var TransitionStatusDataAttributes = /* @__PURE__ */ function(TransitionStatusDataAttributes2) {
+  TransitionStatusDataAttributes2["startingStyle"] = "data-starting-style";
+  TransitionStatusDataAttributes2["endingStyle"] = "data-ending-style";
+  return TransitionStatusDataAttributes2;
+}({});
+var STARTING_HOOK = {
+  [TransitionStatusDataAttributes.startingStyle]: ""
+};
+var ENDING_HOOK = {
+  [TransitionStatusDataAttributes.endingStyle]: ""
+};
+var transitionStatusMapping = {
+  transitionStatus(value) {
+    if (value === "starting") {
+      return STARTING_HOOK;
+    }
+    if (value === "ending") {
+      return ENDING_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+"use client";
+function useAnimationsFinished(elementOrRef, waitForStartingStyleRemoved = false, treatAbortedAsFinished = true) {
+  const frame = useAnimationFrame();
+  return useStableCallback((fnToExecute, signal = null) => {
+    frame.cancel();
+    const element = resolveRef(elementOrRef);
+    if (element == null) {
+      return;
+    }
+    const resolvedElement = element;
+    const done = () => {
+      ReactDOM3.flushSync(fnToExecute);
+    };
+    if (typeof resolvedElement.getAnimations !== "function" || globalThis.BASE_UI_ANIMATIONS_DISABLED) {
+      fnToExecute();
+      return;
+    }
+    function exec() {
+      Promise.all(resolvedElement.getAnimations().map((animation) => animation.finished)).then(() => {
+        if (!signal?.aborted) {
+          done();
+        }
+      }).catch(() => {
+        if (treatAbortedAsFinished) {
+          if (!signal?.aborted) {
+            done();
+          }
+          return;
+        }
+        const currentAnimations = resolvedElement.getAnimations();
+        if (!signal?.aborted && currentAnimations.length > 0 && currentAnimations.some((animation) => animation.pending || animation.playState !== "finished")) {
+          exec();
+        }
+      });
+    }
+    if (waitForStartingStyleRemoved) {
+      const startingStyleAttribute = TransitionStatusDataAttributes.startingStyle;
+      if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+        frame.request(exec);
+        return;
+      }
+      const attributeObserver = new MutationObserver(() => {
+        if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+          attributeObserver.disconnect();
+          exec();
+        }
+      });
+      attributeObserver.observe(resolvedElement, {
+        attributes: true,
+        attributeFilter: [startingStyleAttribute]
+      });
+      signal?.addEventListener("abort", () => attributeObserver.disconnect(), {
+        once: true
+      });
+      return;
+    }
+    frame.request(exec);
+  });
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+"use client";
+function useOpenChangeComplete(parameters) {
+  const {
+    enabled = true,
+    open,
+    ref,
+    onComplete: onCompleteParam
+  } = parameters;
+  const onComplete = useStableCallback(onCompleteParam);
+  const runOnceAnimationsFinish = useAnimationsFinished(ref, open, false);
+  React25.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const abortController = new AbortController;
+    runOnceAnimationsFinish(onComplete, abortController.signal);
+    return () => {
+      abortController.abort();
+    };
+  }, [enabled, open, onComplete, runOnceAnimationsFinish]);
+}
+
+// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
+"use client";
+var FOCUSABLE_POPUP_PROPS = {
+  tabIndex: -1,
+  [FOCUSABLE_ATTRIBUTE]: ""
+};
+function createDefaultInitialFocus(popupRef) {
+  return (interactionType) => interactionType === "touch" ? popupRef.current : true;
+}
+function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
+  const floatingId = useId();
+  const nested = useFloatingParentNodeId() != null;
+  const internalStoreRef = React26.useRef(null);
+  if (externalStore === undefined && internalStoreRef.current === null) {
+    internalStoreRef.current = createStore(floatingId, nested);
+  }
+  const store = externalStore ?? internalStoreRef.current;
+  useSyncedFloatingRootContext({
+    popupStore: store,
+    treatPopupAsFloatingElement,
+    floatingRootContext: store.state.floatingRootContext,
+    floatingId,
+    nested,
+    onOpenChange: store.setOpen
+  });
+  return {
+    store,
+    internalStore: internalStoreRef.current
+  };
+}
+function useTriggerRegistration(id, store) {
+  const registeredElementIdRef = React26.useRef(null);
+  const registeredElementRef = React26.useRef(null);
+  return React26.useCallback((element) => {
+    if (id === undefined) {
+      return;
+    }
+    let shouldSyncTriggerCount = false;
+    if (registeredElementIdRef.current !== null) {
+      const registeredId = registeredElementIdRef.current;
+      const registeredElement = registeredElementRef.current;
+      const currentElement = store.context.triggerElements.getById(registeredId);
+      if (registeredElement && currentElement === registeredElement) {
+        store.context.triggerElements.delete(registeredId);
+        shouldSyncTriggerCount = true;
+      }
+      registeredElementIdRef.current = null;
+      registeredElementRef.current = null;
+    }
+    if (element !== null) {
+      registeredElementIdRef.current = id;
+      registeredElementRef.current = element;
+      store.context.triggerElements.add(id, element);
+      shouldSyncTriggerCount = true;
+    }
+    if (shouldSyncTriggerCount) {
+      const triggerCount = store.context.triggerElements.size;
+      if (store.select("open") && store.state.triggerCount !== triggerCount) {
+        store.set("triggerCount", triggerCount);
+      }
+    }
+  }, [store, id]);
+}
+function setPopupOpenState(state, open, trigger, preventUnmountOnClose = false) {
+  if (open) {
+    state.preventUnmountingOnClose = false;
+  } else if (preventUnmountOnClose) {
+    state.preventUnmountingOnClose = true;
+  }
+  const triggerId = trigger?.id ?? null;
+  if (triggerId || open) {
+    state.activeTriggerId = triggerId;
+    state.activeTriggerElement = trigger ?? null;
+  }
+}
+function attachPreventUnmountOnClose(eventDetails) {
+  let preventUnmountOnClose = false;
+  eventDetails.preventUnmountOnClose = () => {
+    preventUnmountOnClose = true;
+  };
+  return () => preventUnmountOnClose;
+}
+function applyPopupOpenChange(store, nextOpen, eventDetails, options = {}) {
+  const reason = eventDetails.reason;
+  const isHover = reason === exports_reason_parts.triggerHover;
+  const isFocusOpen = nextOpen && reason === exports_reason_parts.triggerFocus;
+  const isDismissClose = !nextOpen && (reason === exports_reason_parts.triggerPress || reason === exports_reason_parts.escapeKey);
+  const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
+  store.context.onOpenChange?.(nextOpen, eventDetails);
+  if (eventDetails.isCanceled) {
+    return;
+  }
+  options.onBeforeDispatch?.();
+  store.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+  const changeState = () => {
+    const updatedState = {
+      ...options.extraState,
+      open: nextOpen
+    };
+    if (isFocusOpen) {
+      updatedState.instantType = "focus";
+    } else if (isDismissClose) {
+      updatedState.instantType = "dismiss";
+    } else if (isHover) {
+      updatedState.instantType = undefined;
+    }
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
+    store.update(updatedState);
+  };
+  if (isHover) {
+    ReactDOM4.flushSync(changeState);
+  } else {
+    changeState();
+  }
+}
+function useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerId) {
+  useOnFirstRender(() => {
+    if (openProp === undefined && store.state.open === false && defaultOpen) {
+      store.state = {
+        ...store.state,
+        open: true,
+        activeTriggerId: defaultTriggerId,
+        preventUnmountingOnClose: false
+      };
+    }
+  });
+}
+function useTriggerDataForwarding(triggerId, triggerElementRef, store, stateUpdates) {
+  const isMountedByThisTrigger = store.useState("isMountedByTrigger", triggerId);
+  const baseRegisterTrigger = useTriggerRegistration(triggerId, store);
+  const registerTrigger = useStableCallback((element) => {
+    baseRegisterTrigger(element);
+    if (!element) {
+      return;
+    }
+    const open = store.select("open");
+    const activeTriggerId = store.select("activeTriggerId");
+    if (activeTriggerId === triggerId) {
+      store.update({
+        activeTriggerElement: element,
+        ...open ? stateUpdates : null
+      });
+      return;
+    }
+    if (activeTriggerId == null && open) {
+      store.update({
+        activeTriggerId: triggerId,
+        activeTriggerElement: element,
+        ...stateUpdates
+      });
+    }
+  });
+  useIsoLayoutEffect(() => {
+    if (isMountedByThisTrigger) {
+      store.update({
+        activeTriggerElement: triggerElementRef.current,
+        ...stateUpdates
+      });
+    }
+  }, [isMountedByThisTrigger, store, triggerElementRef, ...Object.values(stateUpdates)]);
+  return {
+    registerTrigger,
+    isMountedByThisTrigger
+  };
+}
+function useImplicitActiveTrigger(store, options = {}) {
+  const {
+    closeOnActiveTriggerUnmount = false
+  } = options;
+  const open = store.useState("open");
+  const reactiveTriggerCount = store.useState("triggerCount");
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      if (store.state.triggerCount !== 0) {
+        store.set("triggerCount", 0);
+      }
+      return;
+    }
+    const triggerCount = store.context.triggerElements.size;
+    const stateUpdates = {};
+    if (store.state.triggerCount !== triggerCount) {
+      stateUpdates.triggerCount = triggerCount;
+    }
+    const activeTriggerId = store.select("activeTriggerId");
+    let lostActiveTriggerId = null;
+    if (activeTriggerId) {
+      const activeTriggerElement = store.context.triggerElements.getById(activeTriggerId);
+      if (!activeTriggerElement) {
+        lostActiveTriggerId = activeTriggerId;
+      } else if (activeTriggerElement !== store.state.activeTriggerElement) {
+        stateUpdates.activeTriggerElement = activeTriggerElement;
+      }
+    }
+    if (!lostActiveTriggerId && !activeTriggerId && triggerCount === 1) {
+      const iteratorResult = store.context.triggerElements.entries().next();
+      if (!iteratorResult.done) {
+        const [implicitTriggerId, implicitTriggerElement] = iteratorResult.value;
+        stateUpdates.activeTriggerId = implicitTriggerId;
+        stateUpdates.activeTriggerElement = implicitTriggerElement;
+      }
+    }
+    if (stateUpdates.triggerCount !== undefined || stateUpdates.activeTriggerId !== undefined || stateUpdates.activeTriggerElement !== undefined) {
+      store.update(stateUpdates);
+    }
+    if (lostActiveTriggerId) {
+      if (closeOnActiveTriggerUnmount) {
+        queueMicrotask(() => {
+          if (store.select("open") && store.select("activeTriggerId") === lostActiveTriggerId && !store.context.triggerElements.getById(lostActiveTriggerId)) {
+            const eventDetails = createChangeEventDetails(exports_reason_parts.none);
+            store.setOpen(false, eventDetails);
+            if (!eventDetails.isCanceled) {
+              store.update({
+                activeTriggerId: null,
+                activeTriggerElement: null
+              });
+            }
+          }
+        });
+      }
+    }
+  }, [open, store, reactiveTriggerCount, closeOnActiveTriggerUnmount]);
+}
+function useOpenStateTransitions(open, store, onUnmount) {
+  const {
+    mounted,
+    setMounted,
+    transitionStatus
+  } = useTransitionStatus(open);
+  const preventUnmountingOnClose = store.useState("preventUnmountingOnClose");
+  const syncedPreventUnmountingOnClose = open ? false : preventUnmountingOnClose;
+  store.useSyncedValues({
+    mounted,
+    transitionStatus,
+    preventUnmountingOnClose: syncedPreventUnmountingOnClose
+  });
+  const forceUnmount = useStableCallback(() => {
+    setMounted(false);
+    store.update({
+      activeTriggerId: null,
+      activeTriggerElement: null,
+      mounted: false,
+      preventUnmountingOnClose: false
+    });
+    onUnmount?.();
+    store.context.onOpenChangeComplete?.(false);
+  });
+  useOpenChangeComplete({
+    enabled: mounted && !open && !syncedPreventUnmountingOnClose,
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (!open) {
+        forceUnmount();
+      }
+    }
+  });
+  return {
+    forceUnmount,
+    transitionStatus
+  };
+}
+function usePopupInteractionProps(store, statePart) {
+  store.useSyncedValues(statePart);
+  useIsoLayoutEffect(() => () => {
+    store.update({
+      activeTriggerProps: EMPTY_OBJECT,
+      inactiveTriggerProps: EMPTY_OBJECT,
+      popupProps: EMPTY_OBJECT
+    });
+  }, [store]);
+}
+function usePopupRootSync(store, open) {
+  useIsoLayoutEffect(() => {
+    if (!open && store.state.openMethod !== null) {
+      store.set("openMethod", null);
+    }
+  }, [open, store]);
+  useIsoLayoutEffect(() => () => {
+    if (store.state.openMethod !== null) {
+      store.set("openMethod", null);
+    }
+  }, [store]);
+}
+
+// node_modules/@base-ui/react/utils/popups/popupTriggerMap.mjs
+class PopupTriggerMap {
+  constructor() {
+    this.elementsSet = new Set;
+    this.idMap = new Map;
+  }
+  add(id, element) {
+    const existingElement = this.idMap.get(id);
+    if (existingElement === element) {
+      return;
+    }
+    if (existingElement !== undefined) {
+      this.elementsSet.delete(existingElement);
+    }
+    this.elementsSet.add(element);
+    this.idMap.set(id, element);
+    if (true) {
+      if (this.elementsSet.size !== this.idMap.size) {
+        throw new Error("Base UI: A trigger element cannot be registered under multiple IDs in PopupTriggerMap.");
+      }
+    }
+  }
+  delete(id) {
+    const element = this.idMap.get(id);
+    if (element) {
+      this.elementsSet.delete(element);
+      this.idMap.delete(id);
+    }
+  }
+  hasElement(element) {
+    return this.elementsSet.has(element);
+  }
+  hasMatchingElement(predicate) {
+    for (const element of this.elementsSet) {
+      if (predicate(element)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  getById(id) {
+    return this.idMap.get(id);
+  }
+  entries() {
+    return this.idMap.entries();
+  }
+  elements() {
+    return this.elementsSet.values();
+  }
+  get size() {
+    return this.idMap.size;
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/getEmptyRootContext.mjs
+function getEmptyRootContext() {
+  return new FloatingRootStore({
+    open: false,
+    transitionStatus: undefined,
+    floatingElement: null,
+    referenceElement: null,
+    triggerElements: new PopupTriggerMap,
+    floatingId: undefined,
+    syncOnly: false,
+    nested: false,
+    onOpenChange: undefined
+  });
+}
+
+// node_modules/@base-ui/react/utils/popups/store.mjs
+function createInitialPopupStoreState() {
+  return {
+    open: false,
+    openProp: undefined,
+    mounted: false,
+    transitionStatus: undefined,
+    floatingRootContext: getEmptyRootContext(),
+    floatingId: undefined,
+    triggerCount: 0,
+    preventUnmountingOnClose: false,
+    payload: undefined,
+    activeTriggerId: null,
+    activeTriggerElement: null,
+    triggerIdProp: undefined,
+    popupElement: null,
+    positionerElement: null,
+    activeTriggerProps: EMPTY_OBJECT,
+    inactiveTriggerProps: EMPTY_OBJECT,
+    popupProps: EMPTY_OBJECT
+  };
+}
+function createPopupFloatingRootContext(triggerElements, floatingId, nested = false) {
+  return new FloatingRootStore({
+    open: false,
+    transitionStatus: undefined,
+    floatingElement: null,
+    referenceElement: null,
+    triggerElements,
+    floatingId,
+    syncOnly: true,
+    nested,
+    onOpenChange: undefined
+  });
+}
+var activeTriggerIdSelector = createSelector((state) => state.triggerIdProp ?? state.activeTriggerId);
+var openSelector = createSelector((state) => state.openProp ?? state.open);
+var popupIdSelector = createSelector((state) => {
+  const popupId = state.popupElement?.id ?? state.floatingId;
+  return popupId || undefined;
+});
+function triggerOwnsOpenPopup(state, triggerId) {
+  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) === triggerId;
+}
+function triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) {
+  if (triggerOwnsOpenPopup(state, triggerId)) {
+    return true;
+  }
+  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) == null && state.triggerCount === 1;
+}
+var popupStoreSelectors = {
+  open: openSelector,
+  mounted: createSelector((state) => state.mounted),
+  transitionStatus: createSelector((state) => state.transitionStatus),
+  floatingRootContext: createSelector((state) => state.floatingRootContext),
+  triggerCount: createSelector((state) => state.triggerCount),
+  preventUnmountingOnClose: createSelector((state) => state.preventUnmountingOnClose),
+  payload: createSelector((state) => state.payload),
+  activeTriggerId: activeTriggerIdSelector,
+  activeTriggerElement: createSelector((state) => state.mounted ? state.activeTriggerElement : null),
+  popupId: popupIdSelector,
+  isTriggerActive: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId),
+  isOpenedByTrigger: createSelector((state, triggerId) => triggerOwnsOpenPopup(state, triggerId)),
+  isMountedByTrigger: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId && state.mounted),
+  triggerProps: createSelector((state, isActive) => isActive ? state.activeTriggerProps : state.inactiveTriggerProps),
+  triggerPopupId: createSelector((state, triggerId) => triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) ? popupIdSelector(state) : undefined),
+  popupProps: createSelector((state) => state.popupProps),
+  popupElement: createSelector((state) => state.popupElement),
+  positionerElement: createSelector((state) => state.positionerElement)
+};
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloatingRootContext.mjs
+"use client";
+function useFloatingRootContext(options) {
+  const {
+    open = false,
+    onOpenChange,
+    elements = {}
+  } = options;
+  const floatingId = useId();
+  const nested = useFloatingParentNodeId() != null;
+  if (true) {
+    const optionDomReference = elements.reference;
+    if (optionDomReference && !isElement(optionDomReference)) {
+      console.error("Cannot pass a virtual element to the `elements.reference` option,", "as it must be a real DOM element. Use `context.setPositionReference()`", "instead.");
+    }
+  }
+  const store = useRefWithInit(() => new FloatingRootStore({
+    open,
+    transitionStatus: undefined,
+    onOpenChange,
+    referenceElement: elements.reference ?? null,
+    floatingElement: elements.floating ?? null,
+    triggerElements: new PopupTriggerMap,
+    floatingId,
+    syncOnly: false,
+    nested
+  })).current;
+  useIsoLayoutEffect(() => {
+    const valuesToSync = {
+      open,
+      floatingId
+    };
+    if (elements.reference !== undefined) {
+      valuesToSync.referenceElement = elements.reference;
+      valuesToSync.domReferenceElement = isElement(elements.reference) ? elements.reference : null;
+    }
+    if (elements.floating !== undefined) {
+      valuesToSync.floatingElement = elements.floating;
+    }
+    store.update(valuesToSync);
+  }, [open, floatingId, elements.reference, elements.floating, store]);
+  store.context.onOpenChange = onOpenChange;
+  store.context.nested = nested;
+  return store;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
+"use client";
+function useFloating2(options = {}) {
+  const {
+    nodeId,
+    externalTree
+  } = options;
+  const internalStore = useFloatingRootContext(options);
+  const store = options.rootContext || internalStore;
+  const referenceElement = store.useState("referenceElement");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const open = store.useState("open");
+  const floatingId = store.useState("floatingId");
+  const [positionReference, setPositionReferenceRaw] = React27.useState(null);
+  const [localDomReference, setLocalDomReference] = React27.useState(undefined);
+  const [localFloatingElement, setLocalFloatingElement] = React27.useState(undefined);
+  const domReferenceRef = React27.useRef(null);
+  const tree = useFloatingTree(externalTree);
+  const storeElements = React27.useMemo(() => ({
+    reference: referenceElement,
+    floating: floatingElement,
+    domReference: domReferenceElement
+  }), [referenceElement, floatingElement, domReferenceElement]);
+  const position = useFloating({
+    ...options,
+    elements: {
+      ...storeElements,
+      ...positionReference && {
+        reference: positionReference
+      }
+    }
+  });
+  const localDomReferenceElement = isElement(localDomReference) ? localDomReference : null;
+  const syncedFloatingElement = localFloatingElement === undefined ? store.state.floatingElement : localFloatingElement;
+  store.useSyncedValue("referenceElement", localDomReference ?? null);
+  store.useSyncedValue("domReferenceElement", localDomReference === undefined ? domReferenceElement : localDomReferenceElement);
+  store.useSyncedValue("floatingElement", syncedFloatingElement);
+  const setPositionReference = React27.useCallback((node) => {
+    const computedPositionReference = isElement(node) ? {
+      getBoundingClientRect: () => node.getBoundingClientRect(),
+      getClientRects: () => node.getClientRects(),
+      contextElement: node
+    } : node;
+    setPositionReferenceRaw(computedPositionReference);
+    position.refs.setReference(computedPositionReference);
+  }, [position.refs]);
+  const setReference = React27.useCallback((node) => {
+    if (isElement(node) || node === null) {
+      domReferenceRef.current = node;
+      setLocalDomReference(node);
+    }
+    if (isElement(position.refs.reference.current) || position.refs.reference.current === null || node !== null && !isElement(node)) {
+      position.refs.setReference(node);
+    }
+  }, [position.refs, setLocalDomReference]);
+  const setFloating = React27.useCallback((node) => {
+    setLocalFloatingElement(node);
+    position.refs.setFloating(node);
+  }, [position.refs]);
+  const refs = React27.useMemo(() => ({
+    ...position.refs,
+    setReference,
+    setFloating,
+    setPositionReference,
+    domReference: domReferenceRef
+  }), [position.refs, setReference, setFloating, setPositionReference]);
+  const elements = React27.useMemo(() => ({
+    ...position.elements,
+    domReference: domReferenceElement
+  }), [position.elements, domReferenceElement]);
+  const context = React27.useMemo(() => ({
+    ...position,
+    dataRef: store.context.dataRef,
+    open,
+    onOpenChange: store.setOpen,
+    events: store.context.events,
+    floatingId,
+    refs,
+    elements,
+    nodeId,
+    rootStore: store
+  }), [position, refs, elements, nodeId, store, open, floatingId]);
+  useIsoLayoutEffect(() => {
+    if (domReferenceElement) {
+      domReferenceRef.current = domReferenceElement;
+    }
+  }, [domReferenceElement]);
+  useIsoLayoutEffect(() => {
+    store.context.dataRef.current.floatingContext = context;
+    const node = tree?.nodesRef.current.find((n) => n.id === nodeId);
+    if (node) {
+      node.context = context;
+    }
+  });
+  return React27.useMemo(() => ({
+    ...position,
+    context,
+    refs,
+    elements,
+    rootStore: store
+  }), [position, refs, elements, context, store]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFocus.mjs
+var React28 = __toESM(require_react(), 1);
+"use client";
+var isMacSafari = exports_parts.os.mac && exports_parts.engine.webkit;
+function useFocus(context, props = {}) {
+  const {
+    enabled = true,
+    delay
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const {
+    events,
+    dataRef
+  } = store.context;
+  const blockFocusRef = React28.useRef(false);
+  const blockedReferenceRef = React28.useRef(null);
+  const keyboardModalityRef = React28.useRef(true);
+  const timeout = useTimeout();
+  React28.useEffect(() => {
+    const domReference = store.select("domReferenceElement");
+    if (!enabled) {
+      return;
+    }
+    const win = getWindow(domReference);
+    function onBlur() {
+      const currentDomReference = store.select("domReferenceElement");
+      if (!store.select("open") && isHTMLElement(currentDomReference) && currentDomReference === activeElement(ownerDocument(currentDomReference))) {
+        blockFocusRef.current = true;
+      }
+    }
+    function onKeyDown() {
+      keyboardModalityRef.current = true;
+    }
+    function onPointerDown() {
+      keyboardModalityRef.current = false;
+    }
+    return mergeCleanups(addEventListener(win, "blur", onBlur), isMacSafari && addEventListener(win, "keydown", onKeyDown, true), isMacSafari && addEventListener(win, "pointerdown", onPointerDown, true));
+  }, [store, enabled]);
+  React28.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function onOpenChangeLocal(details) {
+      if (details.reason === exports_reason_parts.triggerPress || details.reason === exports_reason_parts.escapeKey) {
+        const referenceElement = store.select("domReferenceElement");
+        if (isElement(referenceElement)) {
+          blockedReferenceRef.current = referenceElement;
+          blockFocusRef.current = true;
+        }
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+    };
+  }, [events, enabled, store]);
+  const reference = React28.useMemo(() => {
+    function resetBlockedFocus() {
+      blockFocusRef.current = false;
+      blockedReferenceRef.current = null;
+    }
+    return {
+      onMouseLeave() {
+        resetBlockedFocus();
+      },
+      onFocus(event) {
+        const focusTarget = event.currentTarget;
+        if (blockFocusRef.current) {
+          if (blockedReferenceRef.current === focusTarget) {
+            return;
+          }
+          resetBlockedFocus();
+        }
+        const target = getTarget(event.nativeEvent);
+        if (isElement(target)) {
+          if (isMacSafari && !event.relatedTarget) {
+            if (!keyboardModalityRef.current && !isTypeableElement(target)) {
+              return;
+            }
+          } else if (!matchesFocusVisible(target)) {
+            return;
+          }
+        }
+        const movedFromOtherEnabledTrigger = isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements);
+        const {
+          nativeEvent,
+          currentTarget
+        } = event;
+        const delayValue = typeof delay === "function" ? delay() : delay;
+        if (store.select("open") && movedFromOtherEnabledTrigger || delayValue === 0 || delayValue === undefined) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent, currentTarget));
+          return;
+        }
+        timeout.start(delayValue, () => {
+          if (blockFocusRef.current) {
+            return;
+          }
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent, currentTarget));
+        });
+      },
+      onBlur(event) {
+        resetBlockedFocus();
+        const relatedTarget = event.relatedTarget;
+        const nativeEvent = event.nativeEvent;
+        const movedToFocusGuard = isElement(relatedTarget) && relatedTarget.hasAttribute(createAttribute("focus-guard")) && relatedTarget.getAttribute("data-type") === "outside";
+        timeout.start(0, () => {
+          const domReference = store.select("domReferenceElement");
+          const activeEl = activeElement(ownerDocument(domReference));
+          if (!relatedTarget && activeEl === domReference) {
+            return;
+          }
+          if (contains(dataRef.current.floatingContext?.refs.floating.current, activeEl) || contains(domReference, activeEl) || movedToFocusGuard) {
+            return;
+          }
+          const nextFocusedElement = relatedTarget ?? activeEl;
+          if (isTargetInsideEnabledTrigger(nextFocusedElement, store.context.triggerElements)) {
+            return;
+          }
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent));
+        });
+      }
+    };
+  }, [dataRef, delay, store, timeout]);
+  return React28.useMemo(() => enabled ? {
+    reference,
+    trigger: reference
+  } : {}, [enabled, reference]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
+var React29 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverInteractionSharedState.mjs
+"use client";
+class HoverInteraction {
+  constructor() {
+    this.pointerType = undefined;
+    this.interactedInside = false;
+    this.handler = undefined;
+    this.blockMouseMove = true;
+    this.performedPointerEventsMutation = false;
+    this.pointerEventsScopeElement = null;
+    this.pointerEventsReferenceElement = null;
+    this.pointerEventsFloatingElement = null;
+    this.restTimeoutPending = false;
+    this.openChangeTimeout = new Timeout;
+    this.restTimeout = new Timeout;
+    this.handleCloseOptions = undefined;
+  }
+  static create() {
+    return new HoverInteraction;
+  }
+  dispose = () => {
+    this.openChangeTimeout.clear();
+    this.restTimeout.clear();
+  };
+  disposeEffect = () => {
+    return this.dispose;
+  };
+}
+var pointerEventsMutationOwnerByScopeElement = new WeakMap;
+function clearSafePolygonPointerEventsMutation(instance) {
+  if (!instance.performedPointerEventsMutation) {
+    return;
+  }
+  const scopeElement = instance.pointerEventsScopeElement;
+  if (scopeElement && pointerEventsMutationOwnerByScopeElement.get(scopeElement) === instance) {
+    instance.pointerEventsScopeElement?.style.removeProperty("pointer-events");
+    instance.pointerEventsReferenceElement?.style.removeProperty("pointer-events");
+    instance.pointerEventsFloatingElement?.style.removeProperty("pointer-events");
+    pointerEventsMutationOwnerByScopeElement.delete(scopeElement);
+  }
+  instance.performedPointerEventsMutation = false;
+  instance.pointerEventsScopeElement = null;
+  instance.pointerEventsReferenceElement = null;
+  instance.pointerEventsFloatingElement = null;
+}
+function applySafePolygonPointerEventsMutation(instance, options) {
+  const {
+    scopeElement,
+    referenceElement,
+    floatingElement
+  } = options;
+  const existingOwner = pointerEventsMutationOwnerByScopeElement.get(scopeElement);
+  if (existingOwner && existingOwner !== instance) {
+    clearSafePolygonPointerEventsMutation(existingOwner);
+  }
+  clearSafePolygonPointerEventsMutation(instance);
+  instance.performedPointerEventsMutation = true;
+  instance.pointerEventsScopeElement = scopeElement;
+  instance.pointerEventsReferenceElement = referenceElement;
+  instance.pointerEventsFloatingElement = floatingElement;
+  pointerEventsMutationOwnerByScopeElement.set(scopeElement, instance);
+  scopeElement.style.pointerEvents = "none";
+  referenceElement.style.pointerEvents = "auto";
+  floatingElement.style.pointerEvents = "auto";
+}
+function useHoverInteractionSharedState(store) {
+  const data = store.context.dataRef.current;
+  const instance = useRefWithInit(() => data.hoverInteractionState ?? HoverInteraction.create()).current;
+  if (!data.hoverInteractionState) {
+    data.hoverInteractionState = instance;
+  }
+  useOnMount(data.hoverInteractionState.disposeEffect);
+  return data.hoverInteractionState;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
+"use client";
+function useHoverFloatingInteraction(context, parameters = {}) {
+  const {
+    enabled = true,
+    closeDelay: closeDelayProp = 0,
+    nodeId: nodeIdProp
+  } = parameters;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const {
+    dataRef
+  } = store.context;
+  const tree = useFloatingTree();
+  const parentId = useFloatingParentNodeId();
+  const instance = useHoverInteractionSharedState(store);
+  const childClosedTimeout = useTimeout();
+  const isClickLikeOpenEvent2 = useStableCallback(() => {
+    return isClickLikeOpenEvent(dataRef.current.openEvent?.type, instance.interactedInside);
+  });
+  const isHoverOpen = useStableCallback(() => {
+    return isHoverOpenEvent(dataRef.current.openEvent?.type);
+  });
+  const clearPointerEvents = useStableCallback(() => {
+    clearSafePolygonPointerEventsMutation(instance);
+  });
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      instance.pointerType = undefined;
+      instance.restTimeoutPending = false;
+      instance.interactedInside = false;
+      clearPointerEvents();
+    }
+  }, [open, instance, clearPointerEvents]);
+  React29.useEffect(() => {
+    return clearPointerEvents;
+  }, [clearPointerEvents]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (open && instance.handleCloseOptions?.blockPointerEvents && isHoverOpen() && isElement(domReferenceElement) && floatingElement) {
+      const ref = domReferenceElement;
+      const floatingEl = floatingElement;
+      const doc = ownerDocument(floatingElement);
+      const parentFloating = tree?.nodesRef.current.find((node) => node.id === parentId)?.context?.elements.floating;
+      if (parentFloating) {
+        parentFloating.style.pointerEvents = "";
+      }
+      const cachedScopeElement = instance.pointerEventsScopeElement !== floatingEl ? instance.pointerEventsScopeElement : null;
+      const parentScopeElement = parentFloating !== floatingEl ? parentFloating : null;
+      const scopeElement = instance.handleCloseOptions?.getScope?.() ?? cachedScopeElement ?? parentScopeElement ?? ref.closest("[data-rootownerid]") ?? doc.body;
+      applySafePolygonPointerEventsMutation(instance, {
+        scopeElement,
+        referenceElement: ref,
+        floatingElement: floatingEl
+      });
+      return () => {
+        clearPointerEvents();
+      };
+    }
+    return;
+  }, [enabled, open, domReferenceElement, floatingElement, instance, isHoverOpen, tree, parentId, clearPointerEvents]);
+  React29.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function hasParentChildren() {
+      return !!(tree && parentId && getNodeChildren(tree.nodesRef.current, parentId).length > 0);
+    }
+    function closeWithDelay(event) {
+      const closeDelay = getDelay(closeDelayProp, "close", instance.pointerType);
+      const close = () => {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree?.events.emit("floating.closed", event);
+      };
+      if (closeDelay) {
+        instance.openChangeTimeout.start(closeDelay, close);
+      } else {
+        instance.openChangeTimeout.clear();
+        close();
+      }
+    }
+    function handleInteractInside(event) {
+      const target = getTarget(event);
+      if (!isInteractiveElement(target)) {
+        instance.interactedInside = false;
+        return;
+      }
+      instance.interactedInside = target?.closest("[aria-haspopup]") != null;
+    }
+    function onFloatingMouseEnter() {
+      instance.openChangeTimeout.clear();
+      childClosedTimeout.clear();
+      tree?.events.off("floating.closed", onNodeClosed);
+      clearPointerEvents();
+    }
+    function onFloatingMouseLeave(event) {
+      if (hasParentChildren() && tree) {
+        tree.events.on("floating.closed", onNodeClosed);
+        return;
+      }
+      if (isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements)) {
+        return;
+      }
+      const currentNodeId = dataRef.current.floatingContext?.nodeId ?? nodeIdProp;
+      const relatedTarget = event.relatedTarget;
+      const isMovingIntoDescendantFloating = tree && currentNodeId && isElement(relatedTarget) && getNodeChildren(tree.nodesRef.current, currentNodeId, false).some((node) => contains(node.context?.elements.floating, relatedTarget));
+      if (isMovingIntoDescendantFloating) {
+        return;
+      }
+      if (instance.handler) {
+        instance.handler(event);
+        return;
+      }
+      clearPointerEvents();
+      if (isHoverOpen() && !isClickLikeOpenEvent2()) {
+        closeWithDelay(event);
+      }
+    }
+    function onNodeClosed(event) {
+      if (!tree || !parentId || hasParentChildren()) {
+        return;
+      }
+      childClosedTimeout.start(0, () => {
+        tree.events.off("floating.closed", onNodeClosed);
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree.events.emit("floating.closed", event);
+      });
+    }
+    const floating = floatingElement;
+    return mergeCleanups(floating && addEventListener(floating, "mouseenter", onFloatingMouseEnter), floating && addEventListener(floating, "mouseleave", onFloatingMouseLeave), floating && addEventListener(floating, "pointerdown", handleInteractInside, true), () => {
+      tree?.events.off("floating.closed", onNodeClosed);
+    });
+  }, [enabled, floatingElement, store, dataRef, closeDelayProp, nodeIdProp, isHoverOpen, isClickLikeOpenEvent2, clearPointerEvents, instance, tree, parentId, childClosedTimeout]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverReferenceInteraction.mjs
+var React30 = __toESM(require_react(), 1);
+var ReactDOM5 = __toESM(require_react_dom(), 1);
+"use client";
+var EMPTY_REF = {
+  current: null
+};
+function useHoverReferenceInteraction(context, props = {}) {
+  const {
+    enabled = true,
+    delay = 0,
+    handleClose = null,
+    mouseOnly = false,
+    restMs = 0,
+    move = true,
+    triggerElementRef = EMPTY_REF,
+    externalTree,
+    isActiveTrigger = true,
+    getHandleCloseContext,
+    isClosing,
+    shouldOpen: shouldOpenProp
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const {
+    dataRef,
+    events
+  } = store.context;
+  const tree = useFloatingTree(externalTree);
+  const instance = useHoverInteractionSharedState(store);
+  const isHoverCloseActiveRef = React30.useRef(false);
+  const handleCloseRef = useValueAsRef(handleClose);
+  const delayRef = useValueAsRef(delay);
+  const restMsRef = useValueAsRef(restMs);
+  const enabledRef = useValueAsRef(enabled);
+  const shouldOpenRef = useValueAsRef(shouldOpenProp);
+  const isClosingRef = useValueAsRef(isClosing);
+  const isClickLikeOpenEvent2 = useStableCallback(() => {
+    return isClickLikeOpenEvent(dataRef.current.openEvent?.type, instance.interactedInside);
+  });
+  const checkShouldOpen = useStableCallback(() => {
+    return shouldOpenRef.current?.() !== false;
+  });
+  const isOverInactiveTrigger = useStableCallback((currentDomReference, currentTarget, target) => {
+    const allTriggers = store.context.triggerElements;
+    if (allTriggers.hasElement(currentTarget)) {
+      return !currentDomReference || !contains(currentDomReference, currentTarget);
+    }
+    if (!isElement(target)) {
+      return false;
+    }
+    const targetElement = target;
+    return allTriggers.hasMatchingElement((trigger) => contains(trigger, targetElement)) && (!currentDomReference || !contains(currentDomReference, targetElement));
+  });
+  const cleanupMouseMoveHandler = useStableCallback(() => {
+    if (!instance.handler) {
+      return;
+    }
+    const doc = ownerDocument(store.select("domReferenceElement"));
+    doc.removeEventListener("mousemove", instance.handler);
+    instance.handler = undefined;
+  });
+  const clearPointerEvents = useStableCallback(() => {
+    clearSafePolygonPointerEventsMutation(instance);
+  });
+  if (isActiveTrigger) {
+    instance.handleCloseOptions = handleCloseRef.current?.__options;
+  }
+  React30.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
+  React30.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function onOpenChangeLocal(details) {
+      if (!details.open) {
+        isHoverCloseActiveRef.current = details.reason === exports_reason_parts.triggerHover;
+        cleanupMouseMoveHandler();
+        instance.openChangeTimeout.clear();
+        instance.restTimeout.clear();
+        instance.blockMouseMove = true;
+        instance.restTimeoutPending = false;
+      } else {
+        isHoverCloseActiveRef.current = false;
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+    };
+  }, [enabled, events, instance, cleanupMouseMoveHandler]);
+  React30.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function closeWithDelay(event, runElseBranch = true) {
+      const closeDelay = getDelay(delayRef.current, "close", instance.pointerType);
+      if (closeDelay) {
+        instance.openChangeTimeout.start(closeDelay, () => {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+          tree?.events.emit("floating.closed", event);
+        });
+      } else if (runElseBranch) {
+        instance.openChangeTimeout.clear();
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree?.events.emit("floating.closed", event);
+      }
+    }
+    const trigger = triggerElementRef.current ?? (isActiveTrigger ? store.select("domReferenceElement") : null);
+    if (!isElement(trigger)) {
+      return;
+    }
+    function onMouseEnter(event) {
+      instance.openChangeTimeout.clear();
+      instance.blockMouseMove = false;
+      if (mouseOnly && !isMouseLikePointerType(instance.pointerType)) {
+        return;
+      }
+      const restMsValue = getRestMs(restMsRef.current);
+      const openDelay = getDelay(delayRef.current, "open", instance.pointerType);
+      const eventTarget = getTarget(event);
+      const currentTarget = event.currentTarget ?? null;
+      const currentDomReference = store.select("domReferenceElement");
+      let triggerNode = currentTarget;
+      if (isElement(eventTarget) && !store.context.triggerElements.hasElement(eventTarget)) {
+        for (const triggerElement of store.context.triggerElements.elements()) {
+          if (contains(triggerElement, eventTarget)) {
+            triggerNode = triggerElement;
+            break;
+          }
+        }
+      }
+      if (isElement(currentTarget) && isElement(currentDomReference) && !store.context.triggerElements.hasElement(currentTarget) && contains(currentTarget, currentDomReference)) {
+        triggerNode = currentDomReference;
+      }
+      const isOverInactive = triggerNode == null ? false : isOverInactiveTrigger(currentDomReference, triggerNode, eventTarget);
+      const isOpen = store.select("open");
+      const isInClosingTransition = isClosingRef.current?.() ?? store.select("transitionStatus") === "ending";
+      const isHoverCloseTransition = !isOpen && isInClosingTransition && isHoverCloseActiveRef.current;
+      const isReenteringSameTriggerDuringCloseTransition = !isOverInactive && isElement(triggerNode) && isElement(currentDomReference) && contains(currentDomReference, triggerNode) && isHoverCloseTransition;
+      const isRestOnlyDelay = restMsValue > 0 && !openDelay;
+      const shouldOpenImmediately = isOverInactive && (isOpen || isHoverCloseTransition) || isReenteringSameTriggerDuringCloseTransition;
+      const shouldOpen = !isOpen || isOverInactive;
+      if (shouldOpenImmediately) {
+        if (checkShouldOpen()) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+        }
+        return;
+      }
+      if (isRestOnlyDelay) {
+        return;
+      }
+      if (openDelay) {
+        instance.openChangeTimeout.start(openDelay, () => {
+          if (shouldOpen && checkShouldOpen()) {
+            store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+          }
+        });
+      } else if (shouldOpen) {
+        if (checkShouldOpen()) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+        }
+      }
+    }
+    function onMouseLeave(event) {
+      if (isClickLikeOpenEvent2()) {
+        clearPointerEvents();
+        return;
+      }
+      cleanupMouseMoveHandler();
+      const domReferenceElement = store.select("domReferenceElement");
+      const doc = ownerDocument(domReferenceElement);
+      instance.restTimeout.clear();
+      instance.restTimeoutPending = false;
+      const handleCloseContextBase = dataRef.current.floatingContext ?? getHandleCloseContext?.();
+      if (isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements)) {
+        return;
+      }
+      if (handleCloseRef.current && handleCloseContextBase) {
+        if (!store.select("open")) {
+          instance.openChangeTimeout.clear();
+        }
+        const currentTrigger = triggerElementRef.current;
+        instance.handler = handleCloseRef.current({
+          ...handleCloseContextBase,
+          tree,
+          x: event.clientX,
+          y: event.clientY,
+          onClose() {
+            clearPointerEvents();
+            cleanupMouseMoveHandler();
+            if (enabledRef.current && !isClickLikeOpenEvent2() && currentTrigger === store.select("domReferenceElement")) {
+              closeWithDelay(event, true);
+            }
+          }
+        });
+        doc.addEventListener("mousemove", instance.handler);
+        instance.handler(event);
+        return;
+      }
+      const shouldClose = instance.pointerType === "touch" ? !contains(store.select("floatingElement"), event.relatedTarget) : true;
+      if (shouldClose) {
+        closeWithDelay(event);
+      }
+    }
+    if (move) {
+      return mergeCleanups(addEventListener(trigger, "mousemove", onMouseEnter, {
+        once: true
+      }), addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
+    }
+    return mergeCleanups(addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
+  }, [cleanupMouseMoveHandler, clearPointerEvents, dataRef, delayRef, store, enabled, handleCloseRef, instance, isActiveTrigger, isOverInactiveTrigger, isClickLikeOpenEvent2, mouseOnly, move, restMsRef, triggerElementRef, tree, enabledRef, getHandleCloseContext, isClosingRef, checkShouldOpen]);
+  return React30.useMemo(() => {
+    if (!enabled) {
+      return;
+    }
+    function setPointerRef(event) {
+      instance.pointerType = event.pointerType;
+    }
+    return {
+      onPointerDown: setPointerRef,
+      onPointerEnter: setPointerRef,
+      onMouseMove(event) {
+        const {
+          nativeEvent
+        } = event;
+        const trigger = event.currentTarget;
+        const currentDomReference = store.select("domReferenceElement");
+        const currentOpen = store.select("open");
+        const isOverInactive = isOverInactiveTrigger(currentDomReference, trigger, event.target);
+        if (mouseOnly && !isMouseLikePointerType(instance.pointerType)) {
+          return;
+        }
+        if (currentOpen && isOverInactive && instance.handleCloseOptions?.blockPointerEvents) {
+          const floatingElement = store.select("floatingElement");
+          if (floatingElement) {
+            const scopeElement = instance.handleCloseOptions?.getScope?.() ?? trigger.ownerDocument.body;
+            applySafePolygonPointerEventsMutation(instance, {
+              scopeElement,
+              referenceElement: trigger,
+              floatingElement
+            });
+          }
+        }
+        const restMsValue = getRestMs(restMsRef.current);
+        if (currentOpen && !isOverInactive || restMsValue === 0) {
+          return;
+        }
+        if (!isOverInactive && instance.restTimeoutPending && event.movementX ** 2 + event.movementY ** 2 < 2) {
+          return;
+        }
+        instance.restTimeout.clear();
+        function handleMouseMove() {
+          instance.restTimeoutPending = false;
+          if (isClickLikeOpenEvent2()) {
+            return;
+          }
+          const latestOpen = store.select("open");
+          if (!instance.blockMouseMove && (!latestOpen || isOverInactive) && checkShouldOpen()) {
+            store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, nativeEvent, trigger));
+          }
+        }
+        if (instance.pointerType === "touch") {
+          ReactDOM5.flushSync(() => {
+            handleMouseMove();
+          });
+        } else if (isOverInactive && currentOpen) {
+          handleMouseMove();
+        } else {
+          instance.restTimeoutPending = true;
+          instance.restTimeout.start(restMsValue, handleMouseMove);
+        }
+      }
+    };
+  }, [enabled, instance, isClickLikeOpenEvent2, isOverInactiveTrigger, mouseOnly, store, restMsRef, checkShouldOpen]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useListNavigation.mjs
+var React31 = __toESM(require_react(), 1);
+"use client";
+var ESCAPE = "Escape";
+function doSwitch(orientation, vertical, horizontal) {
+  switch (orientation) {
+    case "vertical":
+      return vertical;
+    case "horizontal":
+      return horizontal;
+    default:
+      return vertical || horizontal;
+  }
+}
+function isMainOrientationKey(key, orientation) {
+  const vertical = key === ARROW_UP || key === ARROW_DOWN;
+  const horizontal = key === ARROW_LEFT || key === ARROW_RIGHT;
+  return doSwitch(orientation, vertical, horizontal);
+}
+function isMainOrientationToEndKey(key, orientation, rtl) {
+  const vertical = key === ARROW_DOWN;
+  const horizontal = rtl ? key === ARROW_LEFT : key === ARROW_RIGHT;
+  return doSwitch(orientation, vertical, horizontal) || key === "Enter" || key === " " || key === "";
+}
+function isCrossOrientationOpenKey(key, orientation, rtl) {
+  const vertical = rtl ? key === ARROW_LEFT : key === ARROW_RIGHT;
+  const horizontal = key === ARROW_DOWN;
+  return doSwitch(orientation, vertical, horizontal);
+}
+function isCrossOrientationCloseKey(key, orientation, rtl, grid) {
+  const vertical = rtl ? key === ARROW_RIGHT : key === ARROW_LEFT;
+  const horizontal = key === ARROW_UP;
+  if (orientation === "both" || orientation === "horizontal" && grid) {
+    return key === ESCAPE;
+  }
+  return doSwitch(orientation, vertical, horizontal);
+}
+function useListNavigation(context, props) {
+  const {
+    listRef,
+    activeIndex,
+    onNavigate: onNavigateProp = () => {},
+    enabled = true,
+    selectedIndex = null,
+    allowEscape = false,
+    loopFocus = false,
+    nested = false,
+    rtl = false,
+    virtual = false,
+    focusItemOnOpen = "auto",
+    focusItemOnHover = true,
+    openOnArrowKeyDown = true,
+    disabledIndices = undefined,
+    orientation = "vertical",
+    parentOrientation,
+    id,
+    resetOnPointerLeave = true,
+    externalTree,
+    grid: navigateGrid
+  } = props;
+  const isGrid = navigateGrid != null;
+  if (true) {
+    if (allowEscape) {
+      if (!loopFocus) {
+        console.warn("`useListNavigation` looping must be enabled to allow escaping.");
+      }
+      if (!virtual) {
+        console.warn("`useListNavigation` must be virtual to allow escaping.");
+      }
+    }
+    if (orientation === "vertical" && isGrid) {
+      console.warn("In grid list navigation mode, the `orientation` should", 'be either "horizontal" or "both".');
+    }
+  }
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const dataRef = store.context.dataRef;
+  const floatingFocusElement = getFloatingFocusElement(floatingElement);
+  const typeableComboboxReference = isTypeableCombobox(domReferenceElement);
+  const floatingFocusElementRef = useValueAsRef(floatingFocusElement);
+  const parentId = useFloatingParentNodeId();
+  const tree = useFloatingTree(externalTree);
+  const focusItemOnOpenRef = React31.useRef(focusItemOnOpen);
+  const indexRef = React31.useRef(selectedIndex ?? -1);
+  const keyRef = React31.useRef(null);
+  const isPointerModalityRef = React31.useRef(true);
+  const onNavigate = useStableCallback((event) => {
+    onNavigateProp(indexRef.current === -1 ? null : indexRef.current, event);
+  });
+  const previousMountedRef = React31.useRef(!!floatingElement);
+  const previousOpenRef = React31.useRef(open);
+  const forceSyncFocusRef = React31.useRef(false);
+  const forceScrollIntoViewRef = React31.useRef(false);
+  const cancelQueuedFocusRef = React31.useRef(null);
+  const disabledIndicesRef = useValueAsRef(disabledIndices);
+  const latestOpenRef = useValueAsRef(open);
+  const selectedIndexRef = useValueAsRef(selectedIndex);
+  const resetOnPointerLeaveRef = useValueAsRef(resetOnPointerLeave);
+  const focusFrame = useAnimationFrame();
+  const waitForListPopulatedFrame = useAnimationFrame();
+  const focusItem = useStableCallback(() => {
+    function runFocus(item2) {
+      if (virtual) {
+        tree?.events.emit("virtualfocus", item2);
+      } else {
+        cancelQueuedFocusRef.current = enqueueFocus(item2, {
+          sync: forceSyncFocusRef.current,
+          preventScroll: true
+        });
+      }
+    }
+    const initialItem = listRef.current[indexRef.current];
+    const forceScrollIntoView = forceScrollIntoViewRef.current;
+    if (initialItem) {
+      runFocus(initialItem);
+    }
+    const scheduler2 = forceSyncFocusRef.current ? (callback) => callback() : (callback) => focusFrame.request(callback);
+    scheduler2(() => {
+      const waitedItem = listRef.current[indexRef.current] || initialItem;
+      if (!waitedItem) {
+        return;
+      }
+      if (!initialItem) {
+        runFocus(waitedItem);
+      }
+      const shouldScrollIntoView = item && (forceScrollIntoView || !isPointerModalityRef.current);
+      if (shouldScrollIntoView) {
+        waitedItem.scrollIntoView?.({
+          block: "nearest",
+          inline: "nearest"
+        });
+      }
+    });
+  });
+  useIsoLayoutEffect(() => {
+    dataRef.current.orientation = orientation;
+  }, [dataRef, orientation]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (open && floatingElement) {
+      indexRef.current = selectedIndex ?? -1;
+      if (focusItemOnOpenRef.current && selectedIndex != null) {
+        forceScrollIntoViewRef.current = true;
+        onNavigate();
+      }
+    } else if (previousMountedRef.current) {
+      indexRef.current = -1;
+      onNavigate();
+    }
+  }, [enabled, open, floatingElement, selectedIndex, onNavigate]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (!open) {
+      forceSyncFocusRef.current = false;
+      return;
+    }
+    if (!floatingElement) {
+      return;
+    }
+    if (activeIndex == null) {
+      forceSyncFocusRef.current = false;
+      if (selectedIndexRef.current != null) {
+        return;
+      }
+      if (previousMountedRef.current) {
+        indexRef.current = -1;
+        focusItem();
+      }
+      if ((!previousOpenRef.current || !previousMountedRef.current) && focusItemOnOpenRef.current && (keyRef.current != null || focusItemOnOpenRef.current === true && keyRef.current == null)) {
+        let runs = 0;
+        const waitForListPopulated = () => {
+          if (listRef.current[0] == null) {
+            if (runs < 2) {
+              const scheduler2 = runs ? (callback) => waitForListPopulatedFrame.request(callback) : queueMicrotask;
+              scheduler2(waitForListPopulated);
+            }
+            runs += 1;
+          } else {
+            indexRef.current = keyRef.current == null || isMainOrientationToEndKey(keyRef.current, orientation, rtl) || nested ? getMinListIndex(listRef) : getMaxListIndex(listRef);
+            keyRef.current = null;
+            onNavigate();
+          }
+        };
+        waitForListPopulated();
+      }
+    } else if (!isIndexOutOfListBounds(listRef.current, activeIndex)) {
+      indexRef.current = activeIndex;
+      focusItem();
+      forceScrollIntoViewRef.current = false;
+    }
+  }, [enabled, open, floatingElement, activeIndex, selectedIndexRef, nested, listRef, orientation, rtl, onNavigate, focusItem, waitForListPopulatedFrame]);
+  useIsoLayoutEffect(() => {
+    if (!enabled || floatingElement || !tree || virtual || !previousMountedRef.current) {
+      return;
+    }
+    const nodes = tree.nodesRef.current;
+    const parent = nodes.find((node) => node.id === parentId)?.context?.elements.floating;
+    const activeEl = activeElement(ownerDocument(domReferenceElement ?? parent ?? null));
+    const treeContainsActiveEl = nodes.some((node) => node.context && contains(node.context.elements.floating, activeEl));
+    if (parent && !treeContainsActiveEl && isPointerModalityRef.current) {
+      parent.focus({
+        preventScroll: true
+      });
+    }
+  }, [enabled, floatingElement, domReferenceElement, tree, parentId, virtual]);
+  useIsoLayoutEffect(() => {
+    previousOpenRef.current = open;
+    previousMountedRef.current = !!floatingElement;
+  });
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      keyRef.current = null;
+      focusItemOnOpenRef.current = focusItemOnOpen;
+    }
+  }, [open, focusItemOnOpen]);
+  const hasActiveIndex = activeIndex != null;
+  const syncCurrentTarget = useStableCallback((event) => {
+    if (!latestOpenRef.current) {
+      return;
+    }
+    const index2 = listRef.current.indexOf(event.currentTarget);
+    if (index2 !== -1 && (indexRef.current !== index2 || activeIndex !== index2)) {
+      indexRef.current = index2;
+      onNavigate(event);
+    }
+  });
+  const getParentOrientation = useStableCallback(() => {
+    return parentOrientation ?? tree?.nodesRef.current.find((node) => node.id === parentId)?.context?.dataRef?.current.orientation;
+  });
+  const getMinEnabledIndex = useStableCallback(() => {
+    return getMinListIndex(listRef, disabledIndicesRef.current);
+  });
+  const commonOnKeyDown = useStableCallback((event) => {
+    isPointerModalityRef.current = false;
+    forceSyncFocusRef.current = true;
+    if (event.which === 229) {
+      return;
+    }
+    if (!latestOpenRef.current && event.currentTarget === floatingFocusElementRef.current) {
+      return;
+    }
+    if (nested && isCrossOrientationCloseKey(event.key, orientation, rtl, isGrid)) {
+      if (!isMainOrientationKey(event.key, getParentOrientation())) {
+        stopEvent(event);
+      }
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent));
+      if (isHTMLElement(domReferenceElement)) {
+        if (virtual) {
+          tree?.events.emit("virtualfocus", domReferenceElement);
+        } else {
+          domReferenceElement.focus();
+        }
+      }
+      return;
+    }
+    const currentIndex = indexRef.current;
+    const minIndex = getMinListIndex(listRef, disabledIndices);
+    const maxIndex = getMaxListIndex(listRef, disabledIndices);
+    if (!typeableComboboxReference) {
+      if (event.key === "Home") {
+        stopEvent(event);
+        indexRef.current = minIndex;
+        onNavigate(event);
+      }
+      if (event.key === "End") {
+        stopEvent(event);
+        indexRef.current = maxIndex;
+        onNavigate(event);
+      }
+    }
+    if (navigateGrid != null) {
+      const index2 = navigateGrid(event, indexRef.current, listRef, orientation, loopFocus, rtl, disabledIndices, minIndex, maxIndex);
+      if (index2 != null) {
+        indexRef.current = index2;
+        onNavigate(event);
+      }
+      if (orientation === "both") {
+        return;
+      }
+    }
+    if (isMainOrientationKey(event.key, orientation)) {
+      stopEvent(event);
+      if (open && !virtual && activeElement(event.currentTarget.ownerDocument) === event.currentTarget) {
+        indexRef.current = isMainOrientationToEndKey(event.key, orientation, rtl) ? minIndex : maxIndex;
+        onNavigate(event);
+        return;
+      }
+      if (isMainOrientationToEndKey(event.key, orientation, rtl)) {
+        if (loopFocus) {
+          if (currentIndex >= maxIndex) {
+            if (allowEscape && currentIndex !== listRef.current.length) {
+              indexRef.current = -1;
+            } else {
+              forceSyncFocusRef.current = false;
+              indexRef.current = minIndex;
+            }
+          } else {
+            indexRef.current = findNonDisabledListIndex(listRef.current, {
+              startingIndex: currentIndex,
+              disabledIndices
+            });
+          }
+        } else {
+          indexRef.current = Math.min(maxIndex, findNonDisabledListIndex(listRef.current, {
+            startingIndex: currentIndex,
+            disabledIndices
+          }));
+        }
+      } else if (loopFocus) {
+        if (currentIndex <= minIndex) {
+          if (allowEscape && currentIndex !== -1) {
+            indexRef.current = listRef.current.length;
+          } else {
+            forceSyncFocusRef.current = false;
+            indexRef.current = maxIndex;
+          }
+        } else {
+          indexRef.current = findNonDisabledListIndex(listRef.current, {
+            startingIndex: currentIndex,
+            decrement: true,
+            disabledIndices
+          });
+        }
+      } else {
+        indexRef.current = Math.max(minIndex, findNonDisabledListIndex(listRef.current, {
+          startingIndex: currentIndex,
+          decrement: true,
+          disabledIndices
+        }));
+      }
+      if (isIndexOutOfListBounds(listRef.current, indexRef.current)) {
+        indexRef.current = -1;
+      }
+      onNavigate(event);
+    }
+  });
+  const item = React31.useMemo(() => {
+    const itemProps = {
+      onFocus(event) {
+        forceSyncFocusRef.current = true;
+        syncCurrentTarget(event);
+      },
+      onClick: ({
+        currentTarget
+      }) => currentTarget.focus({
+        preventScroll: true
+      }),
+      onMouseMove(event) {
+        forceSyncFocusRef.current = true;
+        forceScrollIntoViewRef.current = false;
+        if (focusItemOnHover) {
+          syncCurrentTarget(event);
+        }
+      },
+      onPointerLeave(event) {
+        if (!latestOpenRef.current || !isPointerModalityRef.current || event.pointerType === "touch") {
+          return;
+        }
+        forceSyncFocusRef.current = true;
+        const relatedTarget = event.relatedTarget;
+        if (!focusItemOnHover || listRef.current.includes(relatedTarget)) {
+          return;
+        }
+        if (!resetOnPointerLeaveRef.current) {
+          return;
+        }
+        cancelQueuedFocusRef.current?.();
+        cancelQueuedFocusRef.current = null;
+        indexRef.current = -1;
+        onNavigate(event);
+        if (!virtual) {
+          const floatingFocusEl = floatingFocusElementRef.current;
+          const activeEl = activeElement(ownerDocument(floatingFocusEl));
+          if (floatingFocusEl && contains(floatingFocusEl, activeEl)) {
+            floatingFocusEl.focus({
+              preventScroll: true
+            });
+          }
+        }
+      }
+    };
+    return itemProps;
+  }, [syncCurrentTarget, latestOpenRef, floatingFocusElementRef, focusItemOnHover, listRef, onNavigate, resetOnPointerLeaveRef, virtual]);
+  const ariaActiveDescendantProp = React31.useMemo(() => {
+    return virtual && open && hasActiveIndex && {
+      "aria-activedescendant": `${id}-${activeIndex}`
+    };
+  }, [virtual, open, hasActiveIndex, id, activeIndex]);
+  const floating = React31.useMemo(() => {
+    return {
+      "aria-orientation": orientation === "both" ? undefined : orientation,
+      ...!typeableComboboxReference ? ariaActiveDescendantProp : {},
+      onKeyDown(event) {
+        if (event.key === "Tab" && event.shiftKey && open && !virtual) {
+          const target = getTarget(event.nativeEvent);
+          if (target && !contains(floatingFocusElementRef.current, target)) {
+            return;
+          }
+          stopEvent(event);
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent));
+          if (isHTMLElement(domReferenceElement)) {
+            domReferenceElement.focus();
+          }
+          return;
+        }
+        commonOnKeyDown(event);
+      },
+      onPointerMove() {
+        isPointerModalityRef.current = true;
+      }
+    };
+  }, [ariaActiveDescendantProp, commonOnKeyDown, floatingFocusElementRef, orientation, typeableComboboxReference, store, open, virtual, domReferenceElement]);
+  const trigger = React31.useMemo(() => {
+    function openOnNavigationKeyDown(event) {
+      store.setOpen(true, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent, event.currentTarget));
+    }
+    function checkVirtualMouse(event) {
+      if (focusItemOnOpen === "auto" && isVirtualClick(event.nativeEvent)) {
+        focusItemOnOpenRef.current = !virtual;
+      }
+    }
+    function checkVirtualPointer(event) {
+      focusItemOnOpenRef.current = focusItemOnOpen;
+      if (focusItemOnOpen === "auto" && isVirtualPointerEvent(event.nativeEvent)) {
+        focusItemOnOpenRef.current = true;
+      }
+    }
+    return {
+      onKeyDown(event) {
+        const currentOpen = store.select("open");
+        isPointerModalityRef.current = false;
+        const isArrowKey = event.key.startsWith("Arrow");
+        const isParentCrossOpenKey = isCrossOrientationOpenKey(event.key, getParentOrientation(), rtl);
+        const isMainKey = isMainOrientationKey(event.key, orientation);
+        const isNavigationKey = (nested ? isParentCrossOpenKey : isMainKey) || event.key === "Enter" || event.key.trim() === "";
+        if (virtual && currentOpen) {
+          return commonOnKeyDown(event);
+        }
+        if (!currentOpen && !openOnArrowKeyDown && isArrowKey) {
+          return;
+        }
+        if (isNavigationKey) {
+          const isParentMainKey = isMainOrientationKey(event.key, getParentOrientation());
+          keyRef.current = nested && isParentMainKey ? null : event.key;
+        }
+        if (nested) {
+          if (isParentCrossOpenKey) {
+            stopEvent(event);
+            if (currentOpen) {
+              indexRef.current = getMinEnabledIndex();
+              onNavigate(event);
+            } else {
+              openOnNavigationKeyDown(event);
+            }
+          }
+          return;
+        }
+        if (isMainKey) {
+          if (selectedIndexRef.current != null) {
+            indexRef.current = selectedIndexRef.current;
+          }
+          stopEvent(event);
+          if (!currentOpen && openOnArrowKeyDown) {
+            openOnNavigationKeyDown(event);
+          } else {
+            commonOnKeyDown(event);
+          }
+          if (currentOpen) {
+            onNavigate(event);
+          }
+        }
+        return;
+      },
+      onFocus(event) {
+        if (store.select("open") && !virtual) {
+          indexRef.current = -1;
+          onNavigate(event);
+        }
+      },
+      onPointerDown: checkVirtualPointer,
+      onPointerEnter: checkVirtualPointer,
+      onMouseDown: checkVirtualMouse,
+      onClick: checkVirtualMouse
+    };
+  }, [commonOnKeyDown, focusItemOnOpen, getMinEnabledIndex, nested, onNavigate, store, openOnArrowKeyDown, orientation, getParentOrientation, rtl, selectedIndexRef, virtual]);
+  const reference = React31.useMemo(() => {
+    return {
+      ...ariaActiveDescendantProp,
+      ...trigger
+    };
+  }, [ariaActiveDescendantProp, trigger]);
+  return React31.useMemo(() => enabled ? {
+    reference,
+    floating,
+    item,
+    trigger
+  } : {}, [enabled, reference, floating, trigger, item]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useTypeahead.mjs
+var React32 = __toESM(require_react(), 1);
+"use client";
+function useTypeahead(context, props) {
+  const {
+    listRef,
+    elementsRef,
+    activeIndex,
+    onMatch: onMatchProp,
+    disabledIndices,
+    onTyping,
+    enabled = true,
+    resetMs = 750,
+    selectedIndex = null
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const timeout = useTimeout();
+  const stringRef = React32.useRef("");
+  const prevIndexRef = React32.useRef(selectedIndex ?? activeIndex ?? -1);
+  const matchIndexRef = React32.useRef(null);
+  const onKeyDown = useStableCallback((event) => {
+    function isVisible(index3) {
+      const element = elementsRef?.current[index3];
+      return !element || isElementVisible(element);
+    }
+    function isItemAvailable(index3) {
+      if (!isVisible(index3)) {
+        return false;
+      }
+      return disabledIndices == null || !isListIndexDisabled(EMPTY_ARRAY, index3, disabledIndices);
+    }
+    function getMatchingIndex(list, string, startIndex2 = 0) {
+      if (list.length === 0) {
+        return -1;
+      }
+      const normalizedStartIndex = (startIndex2 % list.length + list.length) % list.length;
+      const lowerString = string.toLowerCase();
+      for (let offset4 = 0;offset4 < list.length; offset4 += 1) {
+        const index3 = (normalizedStartIndex + offset4) % list.length;
+        const text = list[index3];
+        if (!text?.toLowerCase().startsWith(lowerString) || !isItemAvailable(index3)) {
+          continue;
+        }
+        return index3;
+      }
+      return -1;
+    }
+    const listContent = listRef.current;
+    if (stringRef.current.length > 0 && event.key === " ") {
+      stopEvent(event);
+      onTyping?.(true);
+    }
+    if (stringRef.current.length > 0 && stringRef.current[0] !== " ") {
+      if (getMatchingIndex(listContent, stringRef.current) === -1 && event.key !== " ") {
+        onTyping?.(false);
+      }
+    }
+    if (listContent == null || event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (open && event.key !== " ") {
+      stopEvent(event);
+      onTyping?.(true);
+    }
+    const isNewSession = stringRef.current === "";
+    if (isNewSession) {
+      prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
+    }
+    const allowRapidSuccessionOfFirstLetter = listContent.every((text, index3) => text && isItemAvailable(index3) ? text[0]?.toLowerCase() !== text[1]?.toLowerCase() : true);
+    if (allowRapidSuccessionOfFirstLetter && stringRef.current === event.key) {
+      stringRef.current = "";
+      prevIndexRef.current = matchIndexRef.current;
+    }
+    stringRef.current += event.key;
+    timeout.start(resetMs, () => {
+      stringRef.current = "";
+      prevIndexRef.current = matchIndexRef.current;
+      onTyping?.(false);
+    });
+    const prevIndex = isNewSession ? selectedIndex ?? activeIndex ?? -1 : prevIndexRef.current;
+    const startIndex = (prevIndex ?? 0) + 1;
+    const index2 = getMatchingIndex(listContent, stringRef.current, startIndex);
+    if (index2 !== -1) {
+      onMatchProp?.(index2);
+      matchIndexRef.current = index2;
+    } else if (event.key !== " ") {
+      stringRef.current = "";
+      onTyping?.(false);
+    }
+  });
+  const onBlur = useStableCallback((event) => {
+    const next = event.relatedTarget;
+    const currentDomReferenceElement = store.select("domReferenceElement");
+    const currentFloatingElement = store.select("floatingElement");
+    const withinComposite = contains(currentDomReferenceElement, next) || contains(currentFloatingElement, next);
+    if (withinComposite) {
+      return;
+    }
+    timeout.clear();
+    stringRef.current = "";
+    prevIndexRef.current = matchIndexRef.current;
+    onTyping?.(false);
+  });
+  useIsoLayoutEffect(() => {
+    if (!open && selectedIndex !== null) {
+      return;
+    }
+    timeout.clear();
+    matchIndexRef.current = null;
+    if (stringRef.current !== "") {
+      stringRef.current = "";
+    }
+  }, [open, selectedIndex, timeout]);
+  useIsoLayoutEffect(() => {
+    if (open && stringRef.current === "") {
+      prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
+    }
+  }, [open, selectedIndex, activeIndex]);
+  const sharedProps = React32.useMemo(() => ({
+    onKeyDown,
+    onBlur
+  }), [onKeyDown, onBlur]);
+  return React32.useMemo(() => enabled ? {
+    reference: sharedProps,
+    floating: sharedProps
+  } : {}, [enabled, sharedProps]);
+}
+// node_modules/@base-ui/react/floating-ui-react/safePolygon.mjs
+var CURSOR_SPEED_THRESHOLD = 0.1;
+var CURSOR_SPEED_THRESHOLD_SQUARED = CURSOR_SPEED_THRESHOLD * CURSOR_SPEED_THRESHOLD;
+var POLYGON_BUFFER = 0.5;
+function hasIntersectingEdge(pointX, pointY, xi, yi, xj, yj) {
+  return yi >= pointY !== yj >= pointY && pointX <= (xj - xi) * (pointY - yi) / (yj - yi) + xi;
+}
+function isPointInQuadrilateral(pointX, pointY, x1, y1, x2, y2, x3, y3, x4, y4) {
+  let isInsideValue = false;
+  if (hasIntersectingEdge(pointX, pointY, x1, y1, x2, y2)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x2, y2, x3, y3)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x3, y3, x4, y4)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x4, y4, x1, y1)) {
+    isInsideValue = !isInsideValue;
+  }
+  return isInsideValue;
+}
+function isInsideRect(pointX, pointY, rect) {
+  return pointX >= rect.x && pointX <= rect.x + rect.width && pointY >= rect.y && pointY <= rect.y + rect.height;
+}
+function isInsideAxisAlignedRect(pointX, pointY, x1, y1, x2, y2) {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  const minY = Math.min(y1, y2);
+  const maxY = Math.max(y1, y2);
+  return pointX >= minX && pointX <= maxX && pointY >= minY && pointY <= maxY;
+}
+function safePolygon(options = {}) {
+  const {
+    blockPointerEvents = false
+  } = options;
+  const timeout = new Timeout;
+  const fn = ({
+    x,
+    y,
+    placement,
+    elements,
+    onClose,
+    nodeId,
+    tree
+  }) => {
+    const side = placement?.split("-")[0];
+    let hasLanded = false;
+    let lastX = null;
+    let lastY = null;
+    let lastCursorTime = typeof performance !== "undefined" ? performance.now() : 0;
+    function isCursorMovingSlowly(nextX, nextY) {
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - lastCursorTime;
+      if (lastX === null || lastY === null || elapsedTime === 0) {
+        lastX = nextX;
+        lastY = nextY;
+        lastCursorTime = currentTime;
+        return false;
+      }
+      const deltaX = nextX - lastX;
+      const deltaY = nextY - lastY;
+      const distanceSquared = deltaX * deltaX + deltaY * deltaY;
+      const thresholdSquared = elapsedTime * elapsedTime * CURSOR_SPEED_THRESHOLD_SQUARED;
+      lastX = nextX;
+      lastY = nextY;
+      lastCursorTime = currentTime;
+      return distanceSquared < thresholdSquared;
+    }
+    function close() {
+      timeout.clear();
+      onClose();
+    }
+    return function onMouseMove(event) {
+      timeout.clear();
+      const domReference = elements.domReference;
+      const floating = elements.floating;
+      if (!domReference || !floating || side == null || x == null || y == null) {
+        return;
+      }
+      const {
+        clientX,
+        clientY
+      } = event;
+      const target = getTarget(event);
+      const isLeave = event.type === "mouseleave";
+      const isOverFloatingEl = contains(floating, target);
+      const isOverReferenceEl = contains(domReference, target);
+      if (isOverFloatingEl) {
+        hasLanded = true;
+        if (!isLeave) {
+          return;
+        }
+      }
+      if (isOverReferenceEl) {
+        hasLanded = false;
+        if (!isLeave) {
+          hasLanded = true;
+          return;
+        }
+      }
+      if (isLeave && isElement(event.relatedTarget) && contains(floating, event.relatedTarget)) {
+        return;
+      }
+      function hasOpenChildNode() {
+        return Boolean(tree && getNodeChildren(tree.nodesRef.current, nodeId).length > 0);
+      }
+      function closeIfNoOpenChild() {
+        if (!hasOpenChildNode()) {
+          close();
+        }
+      }
+      if (hasOpenChildNode()) {
+        return;
+      }
+      const refRect = domReference.getBoundingClientRect();
+      const rect = floating.getBoundingClientRect();
+      const cursorLeaveFromRight = x > rect.right - rect.width / 2;
+      const cursorLeaveFromBottom = y > rect.bottom - rect.height / 2;
+      const isFloatingWider = rect.width > refRect.width;
+      const isFloatingTaller = rect.height > refRect.height;
+      const left = (isFloatingWider ? refRect : rect).left;
+      const right = (isFloatingWider ? refRect : rect).right;
+      const top = (isFloatingTaller ? refRect : rect).top;
+      const bottom = (isFloatingTaller ? refRect : rect).bottom;
+      if (side === "top" && y >= refRect.bottom - 1 || side === "bottom" && y <= refRect.top + 1 || side === "left" && x >= refRect.right - 1 || side === "right" && x <= refRect.left + 1) {
+        closeIfNoOpenChild();
+        return;
+      }
+      let isInsideTroughRect = false;
+      switch (side) {
+        case "top":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, left, refRect.top + 1, right, rect.bottom - 1);
+          break;
+        case "bottom":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, left, rect.top + 1, right, refRect.bottom - 1);
+          break;
+        case "left":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, rect.right - 1, bottom, refRect.left + 1, top);
+          break;
+        case "right":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, refRect.right - 1, bottom, rect.left + 1, top);
+          break;
+        default:
+      }
+      if (isInsideTroughRect) {
+        return;
+      }
+      if (hasLanded && !isInsideRect(clientX, clientY, refRect)) {
+        closeIfNoOpenChild();
+        return;
+      }
+      if (!isLeave && isCursorMovingSlowly(clientX, clientY)) {
+        closeIfNoOpenChild();
+        return;
+      }
+      let isInsidePolygon = false;
+      switch (side) {
+        case "top": {
+          const cursorXOffset = isFloatingWider ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneX = isFloatingWider ? x + cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointTwoX = isFloatingWider ? x - cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointY = y + POLYGON_BUFFER + 1;
+          const commonYLeft = cursorLeaveFromRight ? rect.bottom - POLYGON_BUFFER : isFloatingWider ? rect.bottom - POLYGON_BUFFER : rect.top;
+          const commonYRight = cursorLeaveFromRight ? isFloatingWider ? rect.bottom - POLYGON_BUFFER : rect.top : rect.bottom - POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointOneX, cursorPointY, cursorPointTwoX, cursorPointY, rect.left, commonYLeft, rect.right, commonYRight);
+          break;
+        }
+        case "bottom": {
+          const cursorXOffset = isFloatingWider ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneX = isFloatingWider ? x + cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointTwoX = isFloatingWider ? x - cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointY = y - POLYGON_BUFFER;
+          const commonYLeft = cursorLeaveFromRight ? rect.top + POLYGON_BUFFER : isFloatingWider ? rect.top + POLYGON_BUFFER : rect.bottom;
+          const commonYRight = cursorLeaveFromRight ? isFloatingWider ? rect.top + POLYGON_BUFFER : rect.bottom : rect.top + POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointOneX, cursorPointY, cursorPointTwoX, cursorPointY, rect.left, commonYLeft, rect.right, commonYRight);
+          break;
+        }
+        case "left": {
+          const cursorYOffset = isFloatingTaller ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneY = isFloatingTaller ? y + cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointTwoY = isFloatingTaller ? y - cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointX = x + POLYGON_BUFFER + 1;
+          const commonXTop = cursorLeaveFromBottom ? rect.right - POLYGON_BUFFER : isFloatingTaller ? rect.right - POLYGON_BUFFER : rect.left;
+          const commonXBottom = cursorLeaveFromBottom ? isFloatingTaller ? rect.right - POLYGON_BUFFER : rect.left : rect.right - POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, commonXTop, rect.top, commonXBottom, rect.bottom, cursorPointX, cursorPointOneY, cursorPointX, cursorPointTwoY);
+          break;
+        }
+        case "right": {
+          const cursorYOffset = isFloatingTaller ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneY = isFloatingTaller ? y + cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointTwoY = isFloatingTaller ? y - cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointX = x - POLYGON_BUFFER;
+          const commonXTop = cursorLeaveFromBottom ? rect.left + POLYGON_BUFFER : isFloatingTaller ? rect.left + POLYGON_BUFFER : rect.right;
+          const commonXBottom = cursorLeaveFromBottom ? isFloatingTaller ? rect.left + POLYGON_BUFFER : rect.right : rect.left + POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointX, cursorPointOneY, cursorPointX, cursorPointTwoY, commonXTop, rect.top, commonXBottom, rect.bottom);
+          break;
+        }
+        default:
+      }
+      if (!isInsidePolygon) {
+        closeIfNoOpenChild();
+      } else if (!hasLanded) {
+        timeout.start(40, closeIfNoOpenChild);
+      }
+      return;
+    };
+  };
+  fn.__options = {
+    ...options,
+    blockPointerEvents
+  };
+  return fn;
+}
+// node_modules/@base-ui/react/tooltip/store/TooltipStore.mjs
+var React33 = __toESM(require_react(), 1);
+var selectors2 = {
+  ...popupStoreSelectors,
+  disabled: createSelector((state) => state.disabled),
+  instantType: createSelector((state) => state.instantType),
+  isInstantPhase: createSelector((state) => state.isInstantPhase),
+  trackCursorAxis: createSelector((state) => state.trackCursorAxis),
+  disableHoverablePopup: createSelector((state) => state.disableHoverablePopup),
+  lastOpenChangeReason: createSelector((state) => state.openChangeReason),
+  closeOnClick: createSelector((state) => state.closeOnClick),
+  closeDelay: createSelector((state) => state.closeDelay),
+  hasViewport: createSelector((state) => state.hasViewport)
+};
+
+class TooltipStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = {
+      ...createInitialState(),
+      ...initialState
+    };
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React33.createRef(),
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined,
+      triggerElements
+    }, selectors2);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    applyPopupOpenChange(this, nextOpen, eventDetails, {
+      extraState: {
+        openChangeReason: eventDetails.reason
+      }
+    });
+  };
+  cancelPendingOpen(event) {
+    this.state.floatingRootContext.dispatchOpenChange(false, createChangeEventDetails(exports_reason_parts.triggerPress, event));
+  }
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new TooltipStore(initialState, floatingId, nested)).store;
+    return store;
+  }
+}
+function createInitialState() {
+  return {
+    ...createInitialPopupStoreState(),
+    disabled: false,
+    instantType: undefined,
+    isInstantPhase: false,
+    trackCursorAxis: "none",
+    disableHoverablePopup: false,
+    openChangeReason: null,
+    closeOnClick: true,
+    closeDelay: 0,
+    hasViewport: false
+  };
+}
+
+// node_modules/@base-ui/react/tooltip/root/TooltipRoot.mjs
+var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var TooltipRoot = fastComponent(function TooltipRoot2(props) {
+  const {
+    disabled: disabled2 = false,
+    defaultOpen = false,
+    open: openProp,
+    disableHoverablePopup = false,
+    trackCursorAxis = "none",
+    actionsRef,
+    onOpenChange,
+    onOpenChangeComplete,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null,
+    children
+  } = props;
+  const store = TooltipStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp
+  });
+  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const openState = store.useState("open");
+  const open = !disabled2 && openState;
+  const activeTriggerId = store.useState("activeTriggerId");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  store.useSyncedValues({
+    trackCursorAxis,
+    disableHoverablePopup
+  });
+  store.useSyncedValue("disabled", disabled2);
+  useImplicitActiveTrigger(store, {
+    closeOnActiveTriggerUnmount: true
+  });
+  const {
+    forceUnmount,
+    transitionStatus
+  } = useOpenStateTransitions(open, store);
+  const isInstantPhase = store.useState("isInstantPhase");
+  const instantType = store.useState("instantType");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const previousInstantTypeRef = React34.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (openState && disabled2) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.disabled));
+    }
+  }, [openState, disabled2, store]);
+  useIsoLayoutEffect(() => {
+    if (transitionStatus === "ending" && lastOpenChangeReason === exports_reason_parts.none || transitionStatus !== "ending" && isInstantPhase) {
+      if (instantType !== "delay") {
+        previousInstantTypeRef.current = instantType;
+      }
+      store.set("instantType", "delay");
+    } else if (previousInstantTypeRef.current !== null) {
+      store.set("instantType", previousInstantTypeRef.current);
+      previousInstantTypeRef.current = null;
+    }
+  }, [transitionStatus, isInstantPhase, lastOpenChangeReason, instantType, store]);
+  useIsoLayoutEffect(() => {
+    if (open) {
+      if (activeTriggerId == null) {
+        store.set("payload", undefined);
+      }
+    }
+  }, [store, activeTriggerId, open]);
+  const handleImperativeClose = React34.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React34.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+  const shouldRenderInteractions = open || mounted || !disabled2 && trackCursorAxis !== "none";
+  return /* @__PURE__ */ import_jsx_runtime6.jsxs(TooltipRootContext.Provider, {
+    value: store,
+    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime6.jsx(TooltipInteractions, {
+      store,
+      disabled: disabled2,
+      trackCursorAxis
+    }), typeof children === "function" ? children({
+      payload
+    }) : children]
+  });
+});
+if (true)
+  TooltipRoot.displayName = "TooltipRoot";
+function TooltipInteractions({
+  store,
+  disabled: disabled2,
+  trackCursorAxis
+}) {
+  const floatingRootContext = store.useState("floatingRootContext");
+  const dismiss = useDismiss(floatingRootContext, {
+    enabled: !disabled2,
+    referencePress: () => store.select("closeOnClick")
+  });
+  const clientPoint = useClientPoint(floatingRootContext, {
+    enabled: !disabled2 && trackCursorAxis !== "none",
+    axis: trackCursorAxis === "none" ? undefined : trackCursorAxis
+  });
+  const activeTriggerProps = React34.useMemo(() => mergeProps(clientPoint.reference, dismiss.reference), [clientPoint.reference, dismiss.reference]);
+  const inactiveTriggerProps = React34.useMemo(() => mergeProps(clientPoint.trigger, dismiss.trigger), [clientPoint.trigger, dismiss.trigger]);
+  const popupProps = React34.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, clientPoint.floating, dismiss.floating), [clientPoint.floating, dismiss.floating]);
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps
+  });
+  return null;
+}
+// node_modules/@base-ui/react/tooltip/trigger/TooltipTrigger.mjs
+var React36 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/popupStateMapping.mjs
+var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
+  CommonPopupDataAttributes2["open"] = "data-open";
+  CommonPopupDataAttributes2["closed"] = "data-closed";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
+  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
+  CommonPopupDataAttributes2["side"] = "data-side";
+  CommonPopupDataAttributes2["align"] = "data-align";
+  return CommonPopupDataAttributes2;
+}({});
+var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
+  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
+  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
+  return CommonTriggerDataAttributes2;
+}({});
+var TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: ""
+};
+var PRESSABLE_TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: "",
+  [CommonTriggerDataAttributes.pressed]: ""
+};
+var POPUP_OPEN_HOOK = {
+  [CommonPopupDataAttributes.open]: ""
+};
+var POPUP_CLOSED_HOOK = {
+  [CommonPopupDataAttributes.closed]: ""
+};
+var ANCHOR_HIDDEN_HOOK = {
+  [CommonPopupDataAttributes.anchorHidden]: ""
+};
+var triggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var pressableTriggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return PRESSABLE_TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var popupStateMapping = {
+  open(value) {
+    if (value) {
+      return POPUP_OPEN_HOOK;
+    }
+    return POPUP_CLOSED_HOOK;
+  },
+  anchorHidden(value) {
+    if (value) {
+      return ANCHOR_HIDDEN_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/internals/useBaseUiId.mjs
+"use client";
+function useBaseUiId(idOverride) {
+  return useId(idOverride, "base-ui");
+}
+
+// node_modules/@base-ui/react/tooltip/provider/TooltipProviderContext.mjs
+var React35 = __toESM(require_react(), 1);
+"use client";
+var TooltipProviderContext = /* @__PURE__ */ React35.createContext(undefined);
+if (true)
+  TooltipProviderContext.displayName = "TooltipProviderContext";
+function useTooltipProviderContext() {
+  return React35.useContext(TooltipProviderContext);
+}
+
+// node_modules/@base-ui/react/tooltip/trigger/TooltipTriggerDataAttributes.mjs
+var TooltipTriggerDataAttributes = function(TooltipTriggerDataAttributes2) {
+  TooltipTriggerDataAttributes2[TooltipTriggerDataAttributes2["popupOpen"] = CommonTriggerDataAttributes.popupOpen] = "popupOpen";
+  TooltipTriggerDataAttributes2["triggerDisabled"] = "data-trigger-disabled";
+  return TooltipTriggerDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/tooltip/utils/constants.mjs
+var OPEN_DELAY = 600;
+
+// node_modules/@base-ui/react/tooltip/trigger/TooltipTrigger.mjs
+"use client";
+var TOOLTIP_TRIGGER_IDENTIFIER = "data-base-ui-tooltip-trigger";
+function getTargetElement(event) {
+  if ("composedPath" in event) {
+    const path = event.composedPath();
+    for (let i = 0;i < path.length; i += 1) {
+      const element = path[i];
+      if (isElement(element)) {
+        return element;
+      }
+    }
+  }
+  const target = event.target;
+  if (isElement(target)) {
+    return target;
+  }
+  return null;
+}
+function closestEnabledTooltipTrigger(element) {
+  let current = element;
+  while (current) {
+    if (current.hasAttribute(TOOLTIP_TRIGGER_IDENTIFIER)) {
+      return current;
+    }
+    const parentElement = current.parentElement;
+    if (parentElement) {
+      current = parentElement;
+      continue;
+    }
+    const root = current.getRootNode();
+    current = "host" in root && isElement(root.host) ? root.host : null;
+  }
+  return null;
+}
+var TooltipTrigger = fastComponentRef(function TooltipTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    handle,
+    payload,
+    disabled: disabledProp,
+    delay,
+    closeOnClick = true,
+    closeDelay,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const rootContext = useTooltipRootContext(true);
+  const store = handle?.store ?? rootContext;
+  if (!store) {
+    throw new Error("Base UI: <Tooltip.Trigger> must be either used within a <Tooltip.Root> component or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const floatingRootContext = store.useState("floatingRootContext");
+  const triggerElementRef = React36.useRef(null);
+  const delayWithDefault = delay ?? OPEN_DELAY;
+  const closeDelayWithDefault = closeDelay ?? 0;
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload,
+    closeOnClick,
+    closeDelay: closeDelayWithDefault
+  });
+  const providerContext = useTooltipProviderContext();
+  const {
+    delayRef,
+    isInstantPhase,
+    hasProvider
+  } = useDelayGroup(floatingRootContext, {
+    open: isOpenedByThisTrigger
+  });
+  const hoverInteraction = useHoverInteractionSharedState(floatingRootContext);
+  store.useSyncedValue("isInstantPhase", isInstantPhase);
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp ?? rootDisabled;
+  const disabledRef = useValueAsRef(disabled2);
+  const trackCursorAxis = store.useState("trackCursorAxis");
+  const disableHoverablePopup = store.useState("disableHoverablePopup");
+  const isNestedTriggerHoveredRef = React36.useRef(false);
+  const nestedTriggerOpenTimeout = useTimeout();
+  const pointerTypeRef = React36.useRef(undefined);
+  function getOpenDelay() {
+    const providerDelay = providerContext?.delay;
+    const groupOpenValue = typeof delayRef.current === "object" ? delayRef.current.open : undefined;
+    let computedOpenDelay = delayWithDefault;
+    if (hasProvider) {
+      if (groupOpenValue !== 0) {
+        computedOpenDelay = delay ?? providerDelay ?? delayWithDefault;
+      } else {
+        computedOpenDelay = 0;
+      }
+    }
+    return computedOpenDelay;
+  }
+  function isEnabledNestedTriggerTarget(target) {
+    const triggerEl = triggerElementRef.current;
+    if (!triggerEl || !target) {
+      return false;
+    }
+    const nearestTrigger = closestEnabledTooltipTrigger(target);
+    return nearestTrigger !== null && nearestTrigger !== triggerEl && contains(triggerEl, nearestTrigger);
+  }
+  function detectNestedTriggerHover(target) {
+    const nestedTriggerHovered = isEnabledNestedTriggerTarget(target);
+    isNestedTriggerHoveredRef.current = nestedTriggerHovered;
+    if (nestedTriggerHovered) {
+      hoverInteraction.openChangeTimeout.clear();
+      hoverInteraction.restTimeout.clear();
+      hoverInteraction.restTimeoutPending = false;
+      nestedTriggerOpenTimeout.clear();
+    }
+    return nestedTriggerHovered;
+  }
+  const hoverProps = useHoverReferenceInteraction(floatingRootContext, {
+    enabled: !disabled2,
+    mouseOnly: true,
+    move: false,
+    handleClose: !disableHoverablePopup && trackCursorAxis !== "both" ? safePolygon() : null,
+    restMs: getOpenDelay,
+    delay() {
+      const closeValue = typeof delayRef.current === "object" ? delayRef.current.close : undefined;
+      let computedCloseDelay = closeDelayWithDefault;
+      if (closeDelay == null && hasProvider) {
+        computedCloseDelay = closeValue;
+      }
+      return {
+        close: computedCloseDelay
+      };
+    },
+    triggerElementRef,
+    isActiveTrigger: isTriggerActive,
+    isClosing: () => store.select("transitionStatus") === "ending",
+    shouldOpen() {
+      return !isNestedTriggerHoveredRef.current;
+    }
+  });
+  const focusProps = useFocus(floatingRootContext, {
+    enabled: !disabled2
+  }).reference;
+  const handleNestedTriggerHover = (event) => {
+    const wasNestedTriggerHovered = isNestedTriggerHoveredRef.current;
+    const target = getTargetElement(event);
+    const nestedTriggerHovered = detectNestedTriggerHover(target);
+    const triggerEl = triggerElementRef.current;
+    const targetInsideTrigger = triggerEl && target && contains(triggerEl, target);
+    if (nestedTriggerHovered && store.select("open") && store.select("lastOpenChangeReason") === exports_reason_parts.triggerHover) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+      return;
+    }
+    if (wasNestedTriggerHovered && !nestedTriggerHovered && targetInsideTrigger && !disabledRef.current && !store.select("open") && triggerEl && isMouseLikePointerType(pointerTypeRef.current)) {
+      const open = () => {
+        if (!isNestedTriggerHoveredRef.current && !disabledRef.current && !store.select("open")) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerEl));
+        }
+      };
+      const openDelay = getOpenDelay();
+      if (openDelay === 0) {
+        nestedTriggerOpenTimeout.clear();
+        open();
+      } else {
+        nestedTriggerOpenTimeout.start(openDelay, open);
+      }
+    }
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  const shouldApplyRootTriggerProps = isMountedByThisTrigger || trackCursorAxis !== "none";
+  const state = {
+    open: isOpenedByThisTrigger
+  };
+  const element = useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, registerTrigger, triggerElementRef],
+    props: [hoverProps, focusProps, shouldApplyRootTriggerProps ? rootTriggerProps : undefined, {
+      onMouseOver(event) {
+        handleNestedTriggerHover(event.nativeEvent);
+      },
+      onFocus(event) {
+        if (isEnabledNestedTriggerTarget(getTargetElement(event.nativeEvent))) {
+          event.preventBaseUIHandler();
+        }
+      },
+      onMouseLeave() {
+        isNestedTriggerHoveredRef.current = false;
+        nestedTriggerOpenTimeout.clear();
+        pointerTypeRef.current = undefined;
+      },
+      onPointerEnter(event) {
+        pointerTypeRef.current = event.pointerType;
+      },
+      onPointerDown(event) {
+        pointerTypeRef.current = event.pointerType;
+        store.set("closeOnClick", closeOnClick);
+        if (closeOnClick && !store.select("open")) {
+          store.cancelPendingOpen(event.nativeEvent);
+        }
+      },
+      onClick(event) {
+        if (closeOnClick && !store.select("open")) {
+          store.cancelPendingOpen(event.nativeEvent);
+        }
+      },
+      id: thisTriggerId,
+      [TooltipTriggerDataAttributes.triggerDisabled]: disabled2 ? "" : undefined,
+      [TOOLTIP_TRIGGER_IDENTIFIER]: disabled2 ? undefined : ""
+    }, elementProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+  return element;
+});
+if (true)
+  TooltipTrigger.displayName = "TooltipTrigger";
+// node_modules/@base-ui/react/tooltip/portal/TooltipPortal.mjs
+var React39 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/tooltip/portal/TooltipPortalContext.mjs
+var React37 = __toESM(require_react(), 1);
+"use client";
+var TooltipPortalContext = /* @__PURE__ */ React37.createContext(undefined);
+if (true)
+  TooltipPortalContext.displayName = "TooltipPortalContext";
+function useTooltipPortalContext() {
+  const value = React37.useContext(TooltipPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Tooltip.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/utils/FloatingPortalLite.mjs
+var React38 = __toESM(require_react(), 1);
+var ReactDOM6 = __toESM(require_react_dom(), 1);
+var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FloatingPortalLite = /* @__PURE__ */ React38.forwardRef(function FloatingPortalLite2(componentProps, forwardedRef) {
+  const {
+    children,
+    container,
+    className,
+    render,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    portalNode,
+    portalSubtree
+  } = useFloatingPortalNode({
+    container,
+    ref: forwardedRef,
+    componentProps,
+    elementProps
+  });
+  if (!portalSubtree && !portalNode) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime7.jsxs(React38.Fragment, {
+    children: [portalSubtree, portalNode && /* @__PURE__ */ ReactDOM6.createPortal(children, portalNode)]
+  });
+});
+if (true)
+  FloatingPortalLite.displayName = "FloatingPortalLite";
+
+// node_modules/@base-ui/react/tooltip/portal/TooltipPortal.mjs
+var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var TooltipPortal = /* @__PURE__ */ React39.forwardRef(function TooltipPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const store = useTooltipRootContext();
+  const mounted = store.useState("mounted");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime8.jsx(TooltipPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime8.jsx(FloatingPortalLite, {
+      ref: forwardedRef,
+      ...portalProps
+    })
+  });
+});
+if (true)
+  TooltipPortal.displayName = "TooltipPortal";
+// node_modules/@base-ui/react/tooltip/positioner/TooltipPositioner.mjs
+var React43 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/tooltip/positioner/TooltipPositionerContext.mjs
+var React40 = __toESM(require_react(), 1);
+"use client";
+var TooltipPositionerContext = /* @__PURE__ */ React40.createContext(undefined);
+if (true)
+  TooltipPositionerContext.displayName = "TooltipPositionerContext";
+function useTooltipPositionerContext() {
+  const context = React40.useContext(TooltipPositionerContext);
+  if (context === undefined) {
+    throw new Error("Base UI: TooltipPositionerContext is missing. TooltipPositioner parts must be placed within <Tooltip.Positioner>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
+var React42 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/direction-context/DirectionContext.mjs
+var React41 = __toESM(require_react(), 1);
+"use client";
+var DirectionContext = /* @__PURE__ */ React41.createContext(undefined);
+if (true)
+  DirectionContext.displayName = "DirectionContext";
+function useDirection() {
+  const context = React41.useContext(DirectionContext);
+  return context?.direction ?? "ltr";
+}
+
+// node_modules/@base-ui/react/floating-ui-react/middleware/arrow.mjs
+var baseArrow = (options) => ({
+  name: "arrow",
+  options,
+  async fn(state) {
+    const {
+      x,
+      y,
+      placement,
+      rects,
+      platform: platform3,
+      elements,
+      middlewareData
+    } = state;
+    const {
+      element,
+      padding = 0,
+      offsetParent = "real"
+    } = evaluate(options, state) || {};
+    if (element == null) {
+      return {};
+    }
+    const paddingObject = getPaddingObject(padding);
+    const coords = {
+      x,
+      y
+    };
+    const axis = getAlignmentAxis(placement);
+    const length = getAxisLength(axis);
+    const arrowDimensions = await platform3.getDimensions(element);
+    const isYAxis = axis === "y";
+    const minProp = isYAxis ? "top" : "left";
+    const maxProp = isYAxis ? "bottom" : "right";
+    const clientProp = isYAxis ? "clientHeight" : "clientWidth";
+    const endDiff = rects.reference[length] + rects.reference[axis] - coords[axis] - rects.floating[length];
+    const startDiff = coords[axis] - rects.reference[axis];
+    const arrowOffsetParent = offsetParent === "real" ? await platform3.getOffsetParent?.(element) : elements.floating;
+    let clientSize = elements.floating[clientProp] || rects.floating[length];
+    if (!clientSize || !await platform3.isElement?.(arrowOffsetParent)) {
+      clientSize = elements.floating[clientProp] || rects.floating[length];
+    }
+    const centerToReference = endDiff / 2 - startDiff / 2;
+    const largestPossiblePadding = clientSize / 2 - arrowDimensions[length] / 2 - 1;
+    const minPadding = Math.min(paddingObject[minProp], largestPossiblePadding);
+    const maxPadding = Math.min(paddingObject[maxProp], largestPossiblePadding);
+    const min2 = minPadding;
+    const max2 = clientSize - arrowDimensions[length] - maxPadding;
+    const center = clientSize / 2 - arrowDimensions[length] / 2 + centerToReference;
+    const offset4 = clamp(min2, center, max2);
+    const shouldAddOffset = !middlewareData.arrow && getAlignment(placement) != null && center !== offset4 && rects.reference[length] / 2 - (center < min2 ? minPadding : maxPadding) - arrowDimensions[length] / 2 < 0;
+    const alignmentOffset = shouldAddOffset ? center < min2 ? center - min2 : center - max2 : 0;
+    return {
+      [axis]: coords[axis] + alignmentOffset,
+      data: {
+        [axis]: offset4,
+        centerOffset: center - offset4 - alignmentOffset,
+        ...shouldAddOffset && {
+          alignmentOffset
+        }
+      },
+      reset: shouldAddOffset
+    };
+  }
+});
+var arrow4 = (options, deps) => ({
+  ...baseArrow(options),
+  options: [options, deps]
+});
+
+// node_modules/@base-ui/react/utils/hideMiddleware.mjs
+var nativeHideFn = hide3().fn;
+var hide4 = {
+  name: "hide",
+  async fn(state) {
+    const {
+      width,
+      height,
+      x,
+      y
+    } = state.rects.reference;
+    const anchorHidden = width === 0 && height === 0 && x === 0 && y === 0;
+    const nativeHideResult = await nativeHideFn(state);
+    return {
+      data: {
+        referenceHidden: nativeHideResult.data?.referenceHidden || anchorHidden
+      }
+    };
+  }
+};
+
+// node_modules/@base-ui/react/utils/adaptiveOriginMiddleware.mjs
+var DEFAULT_SIDES = {
+  sideX: "left",
+  sideY: "top"
+};
+var adaptiveOrigin = {
+  name: "adaptiveOrigin",
+  async fn(state) {
+    const {
+      x: rawX,
+      y: rawY,
+      rects: {
+        floating: floatRect
+      },
+      elements: {
+        floating
+      },
+      platform: platform3,
+      strategy,
+      placement
+    } = state;
+    const win = getWindow(floating);
+    const styles = win.getComputedStyle(floating);
+    const hasTransition = styles.transitionDuration !== "0s" && styles.transitionDuration !== "";
+    if (!hasTransition) {
+      return {
+        x: rawX,
+        y: rawY,
+        data: DEFAULT_SIDES
+      };
+    }
+    const offsetParent = await platform3.getOffsetParent?.(floating);
+    let offsetDimensions = {
+      width: 0,
+      height: 0
+    };
+    if (strategy === "fixed" && win?.visualViewport) {
+      offsetDimensions = {
+        width: win.visualViewport.width,
+        height: win.visualViewport.height
+      };
+    } else if (offsetParent === win) {
+      const doc = ownerDocument(floating);
+      offsetDimensions = {
+        width: doc.documentElement.clientWidth,
+        height: doc.documentElement.clientHeight
+      };
+    } else if (await platform3.isElement?.(offsetParent)) {
+      offsetDimensions = await platform3.getDimensions(offsetParent);
+    }
+    const currentSide = getSide(placement);
+    let x = rawX;
+    let y = rawY;
+    if (currentSide === "left") {
+      x = offsetDimensions.width - (rawX + floatRect.width);
+    }
+    if (currentSide === "top") {
+      y = offsetDimensions.height - (rawY + floatRect.height);
+    }
+    const sideX = currentSide === "left" ? "right" : DEFAULT_SIDES.sideX;
+    const sideY = currentSide === "top" ? "bottom" : DEFAULT_SIDES.sideY;
+    return {
+      x,
+      y,
+      data: {
+        sideX,
+        sideY
+      }
+    };
+  }
+};
+
+// node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
+"use client";
+function getLogicalSide(sideParam, renderedSide, isRtl) {
+  const isLogicalSideParam = sideParam === "inline-start" || sideParam === "inline-end";
+  const logicalRight = isRtl ? "inline-start" : "inline-end";
+  const logicalLeft = isRtl ? "inline-end" : "inline-start";
+  return {
+    top: "top",
+    right: isLogicalSideParam ? logicalRight : "right",
+    bottom: "bottom",
+    left: isLogicalSideParam ? logicalLeft : "left"
+  }[renderedSide];
+}
+function getOffsetData(state, sideParam, isRtl) {
+  const {
+    rects,
+    placement
+  } = state;
+  const data = {
+    side: getLogicalSide(sideParam, getSide(placement), isRtl),
+    align: getAlignment(placement) || "center",
+    anchor: {
+      width: rects.reference.width,
+      height: rects.reference.height
+    },
+    positioner: {
+      width: rects.floating.width,
+      height: rects.floating.height
+    }
+  };
+  return data;
+}
+function useAnchorPositioning(params) {
+  const {
+    anchor,
+    positionMethod = "absolute",
+    side: sideParam = "bottom",
+    sideOffset = 0,
+    align = "center",
+    alignOffset = 0,
+    collisionBoundary,
+    collisionPadding: collisionPaddingParam = 5,
+    sticky = false,
+    arrowPadding = 5,
+    disableAnchorTracking = false,
+    inline: inlineMiddleware,
+    keepMounted = false,
+    floatingRootContext,
+    mounted,
+    collisionAvoidance,
+    shiftCrossAxis = false,
+    nodeId,
+    adaptiveOrigin: adaptiveOrigin2,
+    lazyFlip = false,
+    externalTree
+  } = params;
+  const [mountSide, setMountSide] = React42.useState(null);
+  if (!mounted && mountSide !== null) {
+    setMountSide(null);
+  }
+  const collisionAvoidanceSide = collisionAvoidance.side || "flip";
+  const collisionAvoidanceAlign = collisionAvoidance.align || "flip";
+  const collisionAvoidanceFallbackAxisSide = collisionAvoidance.fallbackAxisSide || "end";
+  const anchorFn = typeof anchor === "function" ? anchor : undefined;
+  const anchorFnCallback = useStableCallback(anchorFn);
+  const anchorDep = anchorFn ? anchorFnCallback : anchor;
+  const anchorValueRef = useValueAsRef(anchor);
+  const mountedRef = useValueAsRef(mounted);
+  const direction = useDirection();
+  const isRtl = direction === "rtl";
+  const side = mountSide || {
+    top: "top",
+    right: "right",
+    bottom: "bottom",
+    left: "left",
+    "inline-end": isRtl ? "left" : "right",
+    "inline-start": isRtl ? "right" : "left"
+  }[sideParam];
+  const placement = align === "center" ? side : `${side}-${align}`;
+  let collisionPadding = collisionPaddingParam;
+  const bias = 1;
+  const biasTop = sideParam === "bottom" ? bias : 0;
+  const biasBottom = sideParam === "top" ? bias : 0;
+  const biasLeft = sideParam === "right" ? bias : 0;
+  const biasRight = sideParam === "left" ? bias : 0;
+  if (typeof collisionPadding === "number") {
+    collisionPadding = {
+      top: collisionPadding + biasTop,
+      right: collisionPadding + biasRight,
+      bottom: collisionPadding + biasBottom,
+      left: collisionPadding + biasLeft
+    };
+  } else if (collisionPadding) {
+    collisionPadding = {
+      top: (collisionPadding.top || 0) + biasTop,
+      right: (collisionPadding.right || 0) + biasRight,
+      bottom: (collisionPadding.bottom || 0) + biasBottom,
+      left: (collisionPadding.left || 0) + biasLeft
+    };
+  }
+  const commonCollisionProps = {
+    boundary: collisionBoundary === "clipping-ancestors" ? "clippingAncestors" : collisionBoundary,
+    padding: collisionPadding
+  };
+  const arrowRef = React42.useRef(null);
+  const sideOffsetRef = useValueAsRef(sideOffset);
+  const alignOffsetRef = useValueAsRef(alignOffset);
+  const sideOffsetDep = typeof sideOffset !== "function" ? sideOffset : 0;
+  const alignOffsetDep = typeof alignOffset !== "function" ? alignOffset : 0;
+  const middleware = [];
+  if (inlineMiddleware) {
+    middleware.push(inlineMiddleware);
+  }
+  middleware.push(offset3((state) => {
+    const data = getOffsetData(state, sideParam, isRtl);
+    const sideAxis = typeof sideOffsetRef.current === "function" ? sideOffsetRef.current(data) : sideOffsetRef.current;
+    const alignAxis = typeof alignOffsetRef.current === "function" ? alignOffsetRef.current(data) : alignOffsetRef.current;
+    return {
+      mainAxis: sideAxis,
+      crossAxis: alignAxis,
+      alignmentAxis: alignAxis
+    };
+  }, [sideOffsetDep, alignOffsetDep, isRtl, sideParam]));
+  const shiftDisabled = collisionAvoidanceAlign === "none" && collisionAvoidanceSide !== "shift";
+  const crossAxisShiftEnabled = !shiftDisabled && (sticky || shiftCrossAxis || collisionAvoidanceSide === "shift");
+  const flipMiddleware = collisionAvoidanceSide === "none" ? null : flip3({
+    ...commonCollisionProps,
+    padding: {
+      top: collisionPadding.top + bias,
+      right: collisionPadding.right + bias,
+      bottom: collisionPadding.bottom + bias,
+      left: collisionPadding.left + bias
+    },
+    mainAxis: !shiftCrossAxis && collisionAvoidanceSide === "flip",
+    crossAxis: collisionAvoidanceAlign === "flip" ? "alignment" : false,
+    fallbackAxisSideDirection: collisionAvoidanceFallbackAxisSide
+  });
+  const shiftMiddleware = shiftDisabled ? null : shift3((data) => {
+    const html = ownerDocument(data.elements.floating).documentElement;
+    return {
+      ...commonCollisionProps,
+      rootBoundary: shiftCrossAxis ? {
+        x: 0,
+        y: 0,
+        width: html.clientWidth,
+        height: html.clientHeight
+      } : undefined,
+      mainAxis: collisionAvoidanceAlign !== "none",
+      crossAxis: crossAxisShiftEnabled,
+      limiter: sticky || shiftCrossAxis ? undefined : limitShift3((limitData) => {
+        if (!arrowRef.current) {
+          return {};
+        }
+        const {
+          width,
+          height
+        } = arrowRef.current.getBoundingClientRect();
+        const sideAxis = getSideAxis(getSide(limitData.placement));
+        const arrowSize = sideAxis === "y" ? width : height;
+        const offsetAmount = sideAxis === "y" ? collisionPadding.left + collisionPadding.right : collisionPadding.top + collisionPadding.bottom;
+        return {
+          offset: arrowSize / 2 + offsetAmount / 2
+        };
+      })
+    };
+  }, [commonCollisionProps, sticky, shiftCrossAxis, collisionPadding, collisionAvoidanceAlign]);
+  if (collisionAvoidanceSide === "shift" || collisionAvoidanceAlign === "shift" || align === "center") {
+    middleware.push(shiftMiddleware, flipMiddleware);
+  } else {
+    middleware.push(flipMiddleware, shiftMiddleware);
+  }
+  middleware.push(size3({
+    ...commonCollisionProps,
+    apply({
+      elements: {
+        floating
+      },
+      availableWidth,
+      availableHeight,
+      rects
+    }) {
+      if (!mountedRef.current) {
+        return;
+      }
+      const floatingStyle = floating.style;
+      floatingStyle.setProperty("--available-width", `${availableWidth}px`);
+      floatingStyle.setProperty("--available-height", `${availableHeight}px`);
+      const dpr = getWindow(floating).devicePixelRatio || 1;
+      const {
+        x: x2,
+        y: y2,
+        width,
+        height
+      } = rects.reference;
+      const anchorWidth = (Math.round((x2 + width) * dpr) - Math.round(x2 * dpr)) / dpr;
+      const anchorHeight = (Math.round((y2 + height) * dpr) - Math.round(y2 * dpr)) / dpr;
+      floatingStyle.setProperty("--anchor-width", `${anchorWidth}px`);
+      floatingStyle.setProperty("--anchor-height", `${anchorHeight}px`);
+    }
+  }), arrow4((state) => ({
+    element: arrowRef.current || ownerDocument(state.elements.floating).createElement("div"),
+    padding: arrowPadding,
+    offsetParent: "floating"
+  }), [arrowPadding]), {
+    name: "transformOrigin",
+    fn(state) {
+      const {
+        elements: elements2,
+        middlewareData: middlewareData2,
+        placement: renderedPlacement2,
+        rects,
+        y: y2
+      } = state;
+      const currentRenderedSide = getSide(renderedPlacement2);
+      const currentRenderedAxis = getSideAxis(currentRenderedSide);
+      const arrowEl = arrowRef.current;
+      const arrowX = middlewareData2.arrow?.x || 0;
+      const arrowY = middlewareData2.arrow?.y || 0;
+      const arrowWidth = arrowEl?.clientWidth || 0;
+      const arrowHeight = arrowEl?.clientHeight || 0;
+      const transformX = arrowX + arrowWidth / 2;
+      const transformY = arrowY + arrowHeight / 2;
+      const shiftY = Math.abs(middlewareData2.shift?.y || 0);
+      const halfAnchorHeight = rects.reference.height / 2;
+      const sideOffsetValue = typeof sideOffset === "function" ? sideOffset(getOffsetData(state, sideParam, isRtl)) : sideOffset;
+      const isOverlappingAnchor = shiftY > sideOffsetValue;
+      const adjacentTransformOrigin = {
+        top: `${transformX}px calc(100% + ${sideOffsetValue}px)`,
+        bottom: `${transformX}px ${-sideOffsetValue}px`,
+        left: `calc(100% + ${sideOffsetValue}px) ${transformY}px`,
+        right: `${-sideOffsetValue}px ${transformY}px`
+      }[currentRenderedSide];
+      const overlapTransformOrigin = `${transformX}px ${rects.reference.y + halfAnchorHeight - y2}px`;
+      elements2.floating.style.setProperty("--transform-origin", crossAxisShiftEnabled && currentRenderedAxis === "y" && isOverlappingAnchor ? overlapTransformOrigin : adjacentTransformOrigin);
+      return {};
+    }
+  }, hide4, adaptiveOrigin2);
+  useIsoLayoutEffect(() => {
+    if (!mounted && floatingRootContext) {
+      floatingRootContext.update({
+        referenceElement: null,
+        floatingElement: null,
+        domReferenceElement: null,
+        positionReference: null
+      });
+    }
+  }, [mounted, floatingRootContext]);
+  const autoUpdateOptions = React42.useMemo(() => ({
+    elementResize: !disableAnchorTracking && typeof ResizeObserver !== "undefined",
+    layoutShift: !disableAnchorTracking && typeof IntersectionObserver !== "undefined"
+  }), [disableAnchorTracking]);
+  const {
+    refs,
+    elements,
+    x,
+    y,
+    middlewareData,
+    update: update2,
+    placement: renderedPlacement,
+    context,
+    isPositioned,
+    floatingStyles: originalFloatingStyles
+  } = useFloating2({
+    rootContext: floatingRootContext,
+    open: keepMounted ? mounted : undefined,
+    placement,
+    middleware,
+    strategy: positionMethod,
+    whileElementsMounted: keepMounted ? undefined : (...args) => autoUpdate(...args, autoUpdateOptions),
+    nodeId,
+    externalTree
+  });
+  const {
+    sideX,
+    sideY
+  } = middlewareData.adaptiveOrigin || DEFAULT_SIDES;
+  const resolvedPosition = isPositioned ? positionMethod : "fixed";
+  const floatingStyles = React42.useMemo(() => {
+    const base = adaptiveOrigin2 ? {
+      position: resolvedPosition,
+      [sideX]: x,
+      [sideY]: y
+    } : {
+      position: resolvedPosition,
+      ...originalFloatingStyles
+    };
+    if (!isPositioned) {
+      base.opacity = 0;
+    }
+    return base;
+  }, [adaptiveOrigin2, resolvedPosition, sideX, x, sideY, y, originalFloatingStyles, isPositioned]);
+  const registeredPositionReferenceRef = React42.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (!mounted) {
+      return;
+    }
+    const anchorValue = anchorValueRef.current;
+    const resolvedAnchor = typeof anchorValue === "function" ? anchorValue() : anchorValue;
+    const unwrappedElement = (isRef(resolvedAnchor) ? resolvedAnchor.current : resolvedAnchor) || null;
+    const finalAnchor = unwrappedElement || null;
+    if (finalAnchor !== registeredPositionReferenceRef.current) {
+      refs.setPositionReference(finalAnchor);
+      registeredPositionReferenceRef.current = finalAnchor;
+    }
+  }, [mounted, refs, anchorDep, anchorValueRef]);
+  React42.useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+    const anchorValue = anchorValueRef.current;
+    if (typeof anchorValue === "function") {
+      return;
+    }
+    if (isRef(anchorValue) && anchorValue.current !== registeredPositionReferenceRef.current) {
+      refs.setPositionReference(anchorValue.current);
+      registeredPositionReferenceRef.current = anchorValue.current;
+    }
+  }, [mounted, refs, anchorDep, anchorValueRef]);
+  React42.useEffect(() => {
+    if (keepMounted && mounted && elements.reference && elements.floating) {
+      return autoUpdate(elements.reference, elements.floating, update2, autoUpdateOptions);
+    }
+    return;
+  }, [keepMounted, mounted, elements, update2, autoUpdateOptions]);
+  const renderedSide = getSide(renderedPlacement);
+  const logicalRenderedSide = getLogicalSide(sideParam, renderedSide, isRtl);
+  const renderedAlign = getAlignment(renderedPlacement) || "center";
+  const anchorHidden = Boolean(middlewareData.hide?.referenceHidden);
+  useIsoLayoutEffect(() => {
+    if (lazyFlip && mounted && isPositioned) {
+      setMountSide(renderedSide);
+    }
+  }, [lazyFlip, mounted, isPositioned, renderedSide]);
+  const arrowStyles = React42.useMemo(() => ({
+    position: "absolute",
+    top: middlewareData.arrow?.y,
+    left: middlewareData.arrow?.x
+  }), [middlewareData.arrow]);
+  const arrowUncentered = middlewareData.arrow?.centerOffset !== 0;
+  return React42.useMemo(() => ({
+    positionerStyles: floatingStyles,
+    arrowStyles,
+    arrowRef,
+    arrowUncentered,
+    side: logicalRenderedSide,
+    align: renderedAlign,
+    physicalSide: renderedSide,
+    anchorHidden,
+    refs,
+    context,
+    isPositioned,
+    update: update2
+  }), [floatingStyles, arrowStyles, arrowRef, arrowUncentered, logicalRenderedSide, renderedAlign, renderedSide, anchorHidden, refs, context, isPositioned, update2]);
+}
+function isRef(param) {
+  return param != null && "current" in param;
+}
+
+// node_modules/@base-ui/react/utils/getDisabledMountTransitionStyles.mjs
+function getDisabledMountTransitionStyles(transitionStatus) {
+  return transitionStatus === "starting" ? DISABLED_TRANSITIONS_STYLE : EMPTY_OBJECT;
+}
+
+// node_modules/@base-ui/react/utils/usePositioner.mjs
+"use client";
+function usePositioner(componentProps, state, {
+  styles,
+  transitionStatus,
+  props,
+  refs,
+  hidden,
+  inert = false
+}) {
+  const style = {
+    ...styles
+  };
+  if (inert) {
+    style.pointerEvents = "none";
+  }
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: refs,
+    props: [{
+      role: "presentation",
+      hidden,
+      style
+    }, getDisabledMountTransitionStyles(transitionStatus), props],
+    stateAttributesMapping: popupStateMapping
+  });
+}
+
+// node_modules/@base-ui/react/tooltip/positioner/TooltipPositioner.mjs
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var TooltipPositioner = /* @__PURE__ */ React43.forwardRef(function TooltipPositioner2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    anchor,
+    positionMethod = "absolute",
+    side = "top",
+    align = "center",
+    sideOffset = 0,
+    alignOffset = 0,
+    collisionBoundary = "clipping-ancestors",
+    collisionPadding = 5,
+    arrowPadding = 5,
+    sticky = false,
+    disableAnchorTracking = false,
+    collisionAvoidance = POPUP_COLLISION_AVOIDANCE,
+    style,
+    ...elementProps
+  } = componentProps;
+  const store = useTooltipRootContext();
+  const keepMounted = useTooltipPortalContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const trackCursorAxis = store.useState("trackCursorAxis");
+  const disableHoverablePopup = store.useState("disableHoverablePopup");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const hasViewport = store.useState("hasViewport");
+  const positioning = useAnchorPositioning({
+    anchor,
+    positionMethod,
+    floatingRootContext,
+    mounted,
+    side,
+    sideOffset,
+    align,
+    alignOffset,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    keepMounted,
+    collisionAvoidance,
+    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
+  });
+  const state = React43.useMemo(() => ({
+    open,
+    side: positioning.side,
+    align: positioning.align,
+    anchorHidden: positioning.anchorHidden,
+    instant: trackCursorAxis !== "none" ? "tracking-cursor" : instantType
+  }), [open, positioning.side, positioning.align, positioning.anchorHidden, trackCursorAxis, instantType]);
+  const element = usePositioner(componentProps, state, {
+    styles: positioning.positionerStyles,
+    transitionStatus,
+    props: elementProps,
+    refs: [forwardedRef, store.useStateSetter("positionerElement")],
+    hidden: !mounted,
+    inert: !open || trackCursorAxis === "both" || disableHoverablePopup
+  });
+  return /* @__PURE__ */ import_jsx_runtime9.jsx(TooltipPositionerContext.Provider, {
+    value: positioning,
+    children: element
+  });
+});
+if (true)
+  TooltipPositioner.displayName = "TooltipPositioner";
+// node_modules/@base-ui/react/tooltip/popup/TooltipPopup.mjs
+var React44 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var TooltipPopup = /* @__PURE__ */ React44.forwardRef(function TooltipPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const store = useTooltipRootContext();
+  const {
+    side,
+    align
+  } = useTooltipPositionerContext();
+  const open = store.useState("open");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const popupProps = store.useState("popupProps");
+  const floatingContext = store.useState("floatingRootContext");
+  const disabled2 = store.useState("disabled");
+  const closeDelay = store.useState("closeDelay");
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  useHoverFloatingInteraction(floatingContext, {
+    enabled: !disabled2,
+    closeDelay
+  });
+  const setPopupElement = store.useStateSetter("popupElement");
+  const state = {
+    open,
+    side,
+    align,
+    instant: instantType,
+    transitionStatus
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    props: [popupProps, getDisabledMountTransitionStyles(transitionStatus), elementProps],
+    stateAttributesMapping
+  });
+  return element;
+});
+if (true)
+  TooltipPopup.displayName = "TooltipPopup";
+// node_modules/@base-ui/react/tooltip/arrow/TooltipArrow.mjs
+var React45 = __toESM(require_react(), 1);
+"use client";
+var TooltipArrow = /* @__PURE__ */ React45.forwardRef(function TooltipArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const store = useTooltipRootContext();
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = useTooltipPositionerContext();
+  const open = store.useState("open");
+  const instantType = store.useState("instantType");
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered,
+    instant: instantType
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, arrowRef],
+    props: [{
+      style: arrowStyles,
+      "aria-hidden": true
+    }, elementProps],
+    stateAttributesMapping: popupStateMapping
+  });
+  return element;
+});
+if (true)
+  TooltipArrow.displayName = "TooltipArrow";
+// node_modules/@base-ui/react/tooltip/provider/TooltipProvider.mjs
+var React46 = __toESM(require_react(), 1);
+var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var TooltipProvider = function TooltipProvider2(props) {
+  const {
+    delay,
+    closeDelay,
+    timeout = 400
+  } = props;
+  const contextValue = React46.useMemo(() => ({
+    delay,
+    closeDelay
+  }), [delay, closeDelay]);
+  const delayValue = React46.useMemo(() => ({
+    open: delay,
+    close: closeDelay
+  }), [delay, closeDelay]);
+  return /* @__PURE__ */ import_jsx_runtime10.jsx(TooltipProviderContext.Provider, {
+    value: contextValue,
+    children: /* @__PURE__ */ import_jsx_runtime10.jsx(FloatingDelayGroup, {
+      delay: delayValue,
+      timeoutMs: timeout,
+      children: props.children
+    })
+  });
+};
+if (true)
+  TooltipProvider.displayName = "TooltipProvider";
+// node_modules/@base-ui/react/tooltip/viewport/TooltipViewport.mjs
+var React50 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/tooltip/viewport/TooltipViewportCssVars.mjs
+var TooltipViewportCssVars = /* @__PURE__ */ function(TooltipViewportCssVars2) {
+  TooltipViewportCssVars2["popupWidth"] = "--popup-width";
+  TooltipViewportCssVars2["popupHeight"] = "--popup-height";
+  return TooltipViewportCssVars2;
+}({});
+
+// node_modules/@base-ui/react/utils/usePopupViewport.mjs
+var React49 = __toESM(require_react(), 1);
+var ReactDOM7 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/inertValue.mjs
+function inertValue(value) {
+  if (isReactVersionAtLeast(19)) {
+    return value;
+  }
+  return value ? "true" : undefined;
+}
+
+// node_modules/@base-ui/utils/usePreviousValue.mjs
+var React47 = __toESM(require_react(), 1);
+"use client";
+function usePreviousValue(value) {
+  const [state, setState] = React47.useState({
+    current: value,
+    previous: null
+  });
+  if (value !== state.current) {
+    setState({
+      current: value,
+      previous: state.current
+    });
+  }
+  return state.previous;
+}
+
+// node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
+var React48 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/getCssDimensions.mjs
+function getCssDimensions2(element) {
+  const css = getComputedStyle2(element);
+  let width = parseFloat(css.width) || 0;
+  let height = parseFloat(css.height) || 0;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
+  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
+  if (shouldFallback) {
+    width = offsetWidth;
+    height = offsetHeight;
+  }
+  return {
+    width,
+    height
+  };
+}
+
+// node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
+"use client";
+function usePopupAutoResize(parameters) {
+  const {
+    popupElement,
+    positionerElement,
+    content,
+    mounted,
+    onMeasureLayout: onMeasureLayoutParam,
+    onMeasureLayoutComplete: onMeasureLayoutCompleteParam,
+    side,
+    direction
+  } = parameters;
+  const runOnceAnimationsFinish = useAnimationsFinished(popupElement, true, false);
+  const animationFrame = useAnimationFrame();
+  const committedDimensionsRef = React48.useRef(null);
+  const isInitialRenderRef = React48.useRef(true);
+  const restoreAnchoringStylesRef = React48.useRef(NOOP);
+  const onMeasureLayout = useStableCallback(onMeasureLayoutParam);
+  const onMeasureLayoutComplete = useStableCallback(onMeasureLayoutCompleteParam);
+  const anchoringStyles = React48.useMemo(() => {
+    let isOriginSide = side === "top";
+    let isPhysicalLeft = side === "left";
+    if (direction === "rtl") {
+      isOriginSide = isOriginSide || side === "inline-end";
+      isPhysicalLeft = isPhysicalLeft || side === "inline-end";
+    } else {
+      isOriginSide = isOriginSide || side === "inline-start";
+      isPhysicalLeft = isPhysicalLeft || side === "inline-start";
+    }
+    return isOriginSide ? {
+      position: "absolute",
+      [side === "top" ? "bottom" : "top"]: "0",
+      [isPhysicalLeft ? "right" : "left"]: "0"
+    } : EMPTY_OBJECT;
+  }, [side, direction]);
+  useIsoLayoutEffect(() => {
+    if (!mounted) {
+      restoreAnchoringStylesRef.current = NOOP;
+      isInitialRenderRef.current = true;
+      committedDimensionsRef.current = null;
+      return;
+    }
+    if (!popupElement || !positionerElement) {
+      return;
+    }
+    restoreAnchoringStylesRef.current = applyElementStyles(popupElement, anchoringStyles);
+    setPopupCssSize(popupElement, "auto");
+    const restorePopupPosition = overrideElementStyle(popupElement, "position", "static");
+    const restorePopupTransform = overrideElementStyle(popupElement, "transform", "none");
+    const restorePopupScale = overrideElementStyle(popupElement, "scale", "1");
+    const restorePositionerAvailableSize = applyElementStyles(positionerElement, {
+      "--available-width": "max-content",
+      "--available-height": "max-content"
+    });
+    function restoreMeasurementOverrides() {
+      restorePopupPosition();
+      restorePopupTransform();
+      restorePositionerAvailableSize();
+    }
+    function restoreMeasurementOverridesIncludingScale() {
+      restoreMeasurementOverrides();
+      restorePopupScale();
+    }
+    onMeasureLayout?.();
+    if (isInitialRenderRef.current || committedDimensionsRef.current === null) {
+      setPositionerCssSize(positionerElement, "max-content");
+      const dimensions = getCssDimensions2(popupElement);
+      committedDimensionsRef.current = dimensions;
+      setPositionerCssSize(positionerElement, dimensions);
+      restoreMeasurementOverridesIncludingScale();
+      onMeasureLayoutComplete?.(null, dimensions);
+      isInitialRenderRef.current = false;
+      return () => {
+        restoreAnchoringStylesRef.current();
+        restoreAnchoringStylesRef.current = NOOP;
+      };
+    }
+    setPositionerCssSize(positionerElement, "max-content");
+    const previousDimensions = committedDimensionsRef.current;
+    const newDimensions = getCssDimensions2(popupElement);
+    committedDimensionsRef.current = newDimensions;
+    setPopupCssSize(popupElement, previousDimensions);
+    restoreMeasurementOverridesIncludingScale();
+    onMeasureLayoutComplete?.(previousDimensions, newDimensions);
+    setPositionerCssSize(positionerElement, newDimensions);
+    const abortController = new AbortController;
+    animationFrame.request(() => {
+      setPopupCssSize(popupElement, newDimensions);
+      runOnceAnimationsFinish(() => {
+        popupElement.style.setProperty("--popup-width", "auto");
+        popupElement.style.setProperty("--popup-height", "auto");
+      }, abortController.signal);
+    });
+    return () => {
+      abortController.abort();
+      animationFrame.cancel();
+      restoreAnchoringStylesRef.current();
+      restoreAnchoringStylesRef.current = NOOP;
+    };
+  }, [content, popupElement, positionerElement, runOnceAnimationsFinish, animationFrame, mounted, onMeasureLayout, onMeasureLayoutComplete, anchoringStyles]);
+}
+function overrideElementStyle(element, property, value) {
+  const originalValue = element.style.getPropertyValue(property);
+  element.style.setProperty(property, value);
+  return () => {
+    element.style.setProperty(property, originalValue);
+  };
+}
+function applyElementStyles(element, styles) {
+  const restorers = [];
+  for (const [key, value] of Object.entries(styles)) {
+    restorers.push(overrideElementStyle(element, key, value));
+  }
+  return restorers.length ? () => {
+    restorers.forEach((restore) => restore());
+  } : NOOP;
+}
+function setPopupCssSize(popupElement, size4) {
+  const width = size4 === "auto" ? "auto" : `${size4.width}px`;
+  const height = size4 === "auto" ? "auto" : `${size4.height}px`;
+  popupElement.style.setProperty("--popup-width", width);
+  popupElement.style.setProperty("--popup-height", height);
+}
+function setPositionerCssSize(positionerElement, size4) {
+  const width = size4 === "max-content" ? "max-content" : `${size4.width}px`;
+  const height = size4 === "max-content" ? "max-content" : `${size4.height}px`;
+  positionerElement.style.setProperty("--positioner-width", width);
+  positionerElement.style.setProperty("--positioner-height", height);
+}
+// node_modules/@base-ui/react/utils/usePopupViewport.mjs
+var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function usePopupViewport(parameters) {
+  const {
+    store,
+    side,
+    cssVars,
+    children
+  } = parameters;
+  const direction = useDirection();
+  const activeTrigger = store.useState("activeTriggerElement");
+  const activeTriggerId = store.useState("activeTriggerId");
+  const open = store.useState("open");
+  const payload = store.useState("payload");
+  const mounted = store.useState("mounted");
+  const popupElement = store.useState("popupElement");
+  const positionerElement = store.useState("positionerElement");
+  const previousActiveTrigger = usePreviousValue(open ? activeTrigger : null);
+  const currentContentKey = usePopupContentKey(activeTriggerId, payload);
+  const capturedNodeRef = React49.useRef(null);
+  const [previousContentNode, setPreviousContentNode] = React49.useState(null);
+  const [newTriggerOffset, setNewTriggerOffset] = React49.useState(null);
+  const currentContainerRef = React49.useRef(null);
+  const previousContainerRef = React49.useRef(null);
+  const onAnimationsFinished = useAnimationsFinished(currentContainerRef, true, false);
+  const cleanupFrame = useAnimationFrame();
+  const [previousContentDimensions, setPreviousContentDimensions] = React49.useState(null);
+  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React49.useState(false);
+  useIsoLayoutEffect(() => {
+    store.set("hasViewport", true);
+    return () => {
+      store.set("hasViewport", false);
+    };
+  }, [store]);
+  const handleMeasureLayout = useStableCallback(() => {
+    currentContainerRef.current?.style.setProperty("animation", "none");
+    currentContainerRef.current?.style.setProperty("transition", "none");
+    previousContainerRef.current?.style.setProperty("display", "none");
+  });
+  const handleMeasureLayoutComplete = useStableCallback((previousDimensions) => {
+    currentContainerRef.current?.style.removeProperty("animation");
+    currentContainerRef.current?.style.removeProperty("transition");
+    previousContainerRef.current?.style.removeProperty("display");
+    if (previousDimensions) {
+      setPreviousContentDimensions(previousDimensions);
+    }
+  });
+  const lastHandledTriggerRef = React49.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (!open || !mounted) {
+      lastHandledTriggerRef.current = null;
+    }
+  }, [open, mounted]);
+  useIsoLayoutEffect(() => {
+    if (activeTrigger && previousActiveTrigger && activeTrigger !== previousActiveTrigger && lastHandledTriggerRef.current !== activeTrigger && capturedNodeRef.current) {
+      setPreviousContentNode(capturedNodeRef.current);
+      setShowStartingStyleAttribute(true);
+      const offset4 = calculateRelativePosition(previousActiveTrigger, activeTrigger);
+      setNewTriggerOffset(offset4);
+      cleanupFrame.request(() => {
+        ReactDOM7.flushSync(() => {
+          setShowStartingStyleAttribute(false);
+        });
+        onAnimationsFinished(() => {
+          setPreviousContentNode(null);
+          setPreviousContentDimensions(null);
+          capturedNodeRef.current = null;
+        });
+      });
+      lastHandledTriggerRef.current = activeTrigger;
+    }
+  }, [activeTrigger, previousActiveTrigger, previousContentNode, onAnimationsFinished, cleanupFrame]);
+  useIsoLayoutEffect(() => {
+    const source = currentContainerRef.current;
+    if (!source) {
+      return;
+    }
+    const wrapper = ownerDocument(source).createElement("div");
+    for (const child of Array.from(source.childNodes)) {
+      wrapper.appendChild(child.cloneNode(true));
+    }
+    capturedNodeRef.current = wrapper;
+  });
+  const isTransitioning = previousContentNode != null;
+  let childrenToRender;
+  if (!isTransitioning) {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime11.jsx("div", {
+      "data-current": true,
+      ref: currentContainerRef,
+      children
+    }, currentContentKey);
+  } else {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime11.jsxs(React49.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime11.jsx("div", {
+        "data-previous": true,
+        inert: inertValue(true),
+        ref: previousContainerRef,
+        style: {
+          ...previousContentDimensions ? {
+            [cssVars.popupWidth]: `${previousContentDimensions.width}px`,
+            [cssVars.popupHeight]: `${previousContentDimensions.height}px`
+          } : null,
+          position: "absolute"
+        },
+        "data-ending-style": showStartingStyleAttribute ? undefined : ""
+      }, "previous"), /* @__PURE__ */ import_jsx_runtime11.jsx("div", {
+        "data-current": true,
+        ref: currentContainerRef,
+        "data-starting-style": showStartingStyleAttribute ? "" : undefined,
+        children
+      }, currentContentKey)]
+    });
+  }
+  useIsoLayoutEffect(() => {
+    const container = previousContainerRef.current;
+    if (!container || !previousContentNode) {
+      return;
+    }
+    container.replaceChildren(...Array.from(previousContentNode.childNodes));
+  }, [previousContentNode]);
+  usePopupAutoResize({
+    popupElement,
+    positionerElement,
+    mounted,
+    content: payload,
+    onMeasureLayout: handleMeasureLayout,
+    onMeasureLayoutComplete: handleMeasureLayoutComplete,
+    side,
+    direction
+  });
+  const state = {
+    activationDirection: getActivationDirection(newTriggerOffset),
+    transitioning: isTransitioning
+  };
+  return {
+    children: childrenToRender,
+    state
+  };
+}
+function getActivationDirection(offset4) {
+  if (!offset4) {
+    return;
+  }
+  return `${getValueWithTolerance(offset4.horizontal, 5, "right", "left")} ${getValueWithTolerance(offset4.vertical, 5, "down", "up")}`;
+}
+function getValueWithTolerance(value, tolerance, positiveLabel, negativeLabel) {
+  if (value > tolerance) {
+    return positiveLabel;
+  }
+  if (value < -tolerance) {
+    return negativeLabel;
+  }
+  return "";
+}
+function calculateRelativePosition(from, to) {
+  const fromRect = from.getBoundingClientRect();
+  const toRect = to.getBoundingClientRect();
+  const fromCenter = {
+    x: fromRect.left + fromRect.width / 2,
+    y: fromRect.top + fromRect.height / 2
+  };
+  const toCenter = {
+    x: toRect.left + toRect.width / 2,
+    y: toRect.top + toRect.height / 2
+  };
+  return {
+    horizontal: toCenter.x - fromCenter.x,
+    vertical: toCenter.y - fromCenter.y
+  };
+}
+function usePopupContentKey(activeTriggerId, payload) {
+  const [contentKey, setContentKey] = React49.useState(0);
+  const previousActiveTriggerIdRef = React49.useRef(activeTriggerId);
+  const previousPayloadRef = React49.useRef(payload);
+  const pendingPayloadUpdateRef = React49.useRef(false);
+  useIsoLayoutEffect(() => {
+    const previousActiveTriggerId = previousActiveTriggerIdRef.current;
+    const previousPayload = previousPayloadRef.current;
+    const triggerIdChanged = activeTriggerId !== previousActiveTriggerId;
+    const payloadChanged = payload !== previousPayload;
+    if (triggerIdChanged) {
+      setContentKey((value) => value + 1);
+      pendingPayloadUpdateRef.current = !payloadChanged;
+    } else if (pendingPayloadUpdateRef.current && payloadChanged) {
+      setContentKey((value) => value + 1);
+      pendingPayloadUpdateRef.current = false;
+    }
+    previousActiveTriggerIdRef.current = activeTriggerId;
+    previousPayloadRef.current = payload;
+  }, [activeTriggerId, payload]);
+  return `${activeTriggerId ?? "current"}-${contentKey}`;
+}
+
+// node_modules/@base-ui/react/tooltip/viewport/TooltipViewport.mjs
+"use client";
+var stateAttributesMapping2 = {
+  activationDirection: (value) => value ? {
+    "data-activation-direction": value
+  } : null
+};
+var TooltipViewport = /* @__PURE__ */ React50.forwardRef(function TooltipViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    ...elementProps
+  } = componentProps;
+  const store = useTooltipRootContext();
+  const positioner = useTooltipPositionerContext();
+  const instantType = store.useState("instantType");
+  const {
+    children: childrenToRender,
+    state: viewportState
+  } = usePopupViewport({
+    store,
+    side: positioner.side,
+    cssVars: TooltipViewportCssVars,
+    children
+  });
+  const state = {
+    activationDirection: viewportState.activationDirection,
+    transitioning: viewportState.transitioning,
+    instant: instantType
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [elementProps, {
+      children: childrenToRender
+    }],
+    stateAttributesMapping: stateAttributesMapping2
+  });
+});
+if (true)
+  TooltipViewport.displayName = "TooltipViewport";
+// node_modules/@base-ui/react/tooltip/store/TooltipHandle.mjs
+class TooltipHandle {
+  constructor() {
+    this.store = new TooltipStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (triggerId && !triggerElement) {
+      throw new Error(`Base UI: TooltipHandle.open: No trigger found with id "${triggerId}".`);
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createTooltipHandle() {
+  return new TooltipHandle;
+}
+// node_modules/cn/dist/tables.js
+var P = 48;
+var U = (s, o = 0) => {
+  const out = new Int32Array(s.length);
+  for (let i = 0;i < s.length; i++)
+    out[i] = s.charCodeAt(i) - P - o;
+  return out;
+};
+var PS = (counts) => {
+  const out = new Int32Array(counts.length + 1);
+  for (let i = 0;i < counts.length; i++)
+    out[i + 1] = out[i] + counts[i];
+  return out;
+};
+var DZ = (s) => {
+  const out = new Int32Array(s.length);
+  let a = 0;
+  for (let i = 0;i < s.length; i++) {
+    const z = s.charCodeAt(i) - P;
+    a += z >>> 1 ^ -(z & 1);
+    out[i] = a;
+  }
+  return out;
+};
+var GROUP_COUNT = 379;
+var customValidatorNames = [];
+var edgeStart = PS(U("E050000200528200000000200015000002002182000001120000000302220200020004200120000200420001200021200301200010400162000010000220021010:2192001200220012000220012000200200200400010200040000000000400200108200110100000022010313000162002000020020012020080213000228200000000082000000000120002000120020020040101020300130001001010"));
+var labelStart = PS(U(":11111111211111119311546544411119731869:67139741568643244111111111116111415121431343415:78311132233313187211117221449443411141111151152226611131111112212518142224214215421421542142424242516171151615616347111111111197911327451111111111111111111113134714133513411111311111111111111111111112444411111342312715245411117:3"));
+var labelText = "@containerabcdefghinlmoprstunderlineviawzccentlignnimatespectuto-colsrowsaglorightnessckdrop-sisbcontrastfiltergrayscalehue-rotateinvertopacityslurrightnessaturateepia-coniclinearpositionradialsizeockurrderttom-belrstxyespacing-xyaretoursorlnt-umnsendspantartentrasteividerop-shadowurationcorationlay-xyasendillexontromlter-featuresstretchapr-xyayscaleidow-colsrowsue-rotatedentlinesetvert-beringsxyeshadoweiadingftnest-clamp-imageabein-lrstxyskx--b-coniclpositionrsizet-x-y-fromto-fromto-inearfromto-fromto-adialfromto-fromtofromtofromtofromtoblockhinlinew-screenesblockhinlinewbjectpacityrutlinederigin-offsetbelrstxyesrspective-originaceholderioghtng-offsettateundedw-xyz-belrstlreseslr-endspantartaturatecepiahizekewpace-taleroll-xyz-barmpbelrstxyesbelrstxyes-thumbrackadowrink-xyxyartrokeabextora-shadowpckingnsformitionlate-xyz-offsetill-changeoom";
+var edgeTarget = (() => {
+  const N = edgeStart.length - 1;
+  const sizes = new Int32Array(N);
+  for (let i = N - 1;i >= 0; i--) {
+    let s = 1;
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      s += sizes[c];
+      c += sizes[c];
+    }
+    sizes[i] = s;
+  }
+  const out = new Int32Array(edgeStart[N]);
+  let e = 0;
+  for (let i = 0;i < N; i++) {
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      out[e++] = c;
+      c += sizes[c];
+    }
+  }
+  return out;
+})();
+var nodeGroup = U("02000000000000900<=0?000B000000F00ŎI0J0LNPRTVX0000]_a0000000000000000000000qrs0000000yŎ00000000000Ŏ0000000Ŏ00000000000000000000000000000000000000000000000000000000000000Ê000000000000000000000Ý000000000000000000ï0000000÷0øùúûüýþÿĀāĂăĄą000000000000000000000000000000000000000000Ħ0ħĩ00000000000000000000Ļļ00000ū000000", 1);
+var vlistPat = PS(U("123333593463463635126367151576"));
+var vlistOps = U("93203242383253248325D>E?F@03263243255B:032325523853:0325B:8GA032542H<C=12727B:03253;D>E?3257D>03258432585:0325B:;0328B:032");
+var vlistRef = U("01211311455155555567811194::::::::;;;:::952888<151=52>>?51921@ABCD;;;588595;9999:9?995;9E11;FGGHGGGGHGG1GG1GG1GGGGGG999IJ;;;;999I;;;;;;1581:5;;;;;11;2;;;;;9:K555544444444444444488855555;;;;;;;;;;;;;;;;;;;;;;225?59555;;L8M?D911199995DI188");
+var vlistGroup = DZ("0202002020200202020020020020200200200200200200200002020202001003040106000200200200200200200200200200200200200200200200200200200200200200200200200200200200020020020020020020002020020200200200200200200200200200202000200202002020022020020020020020020020020020020002002002000200020002000200200200020020020002000200200200020020202002020202000200200020022000200200020020002002000200220002002000200W0Z00020020002002020002002000200g0j00020020002002000200200020020002002000200200020002000200000200200200200200020002000200002002002002002002002020020020200200200200200200200200202020020020020020020020020002002002020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020002002002002002002000200200200200200200200200200020202020002000200020002002002002000020200200");
+var nodeVlist = (() => {
+  const out = (/* @__PURE__ */ new Int32Array(318)).fill(-1);
+  const A = DZ("02422242:22222224222422224244222222242222224444224226224222426222422442462222422622222222626222462242622422622422424242422222222422222222242422222222222222222622442224222222222222224424442262222222222222222222226224222424242422224422422422222");
+  const V = DZ("0222222222222222222220222222222222222222222222142222222222222222222222222222222222Y\\222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222221422222222222222222222222222222222222222Ŀł222222222222222222");
+  for (let i = 0;i < A.length; i++)
+    out[A[i]] = V[i];
+  return out;
+})();
+var SETS = "container|break-after-all break-after-auto break-after-avoid break-after-avoid-page break-after-column break-after-left break-after-page break-after-right|break-before-all break-before-auto break-before-avoid break-before-avoid-page break-before-column break-before-left break-before-page break-before-right|break-inside-auto break-inside-avoid break-inside-avoid-column break-inside-avoid-page|box-decoration-clone box-decoration-slice|box-border box-content|contents flow-root hidden table table-caption table-cell table-column table-column-group table-footer-group table-header-group table-row table-row-group|not-sr-only sr-only|float-end float-left float-none float-right float-start|clear-both clear-end clear-left clear-none clear-right clear-start|isolate isolation-auto|overflow-auto overflow-clip overflow-hidden overflow-scroll overflow-visible|overflow-x-auto overflow-x-clip overflow-x-hidden overflow-x-scroll overflow-x-visible|overflow-y-auto overflow-y-clip overflow-y-hidden overflow-y-scroll overflow-y-visible|overscroll-auto overscroll-contain overscroll-none|overscroll-x-auto overscroll-x-contain overscroll-x-none|overscroll-y-auto overscroll-y-contain overscroll-y-none|absolute fixed relative static sticky|collapse invisible visible|justify-around justify-baseline justify-between justify-center justify-center-safe justify-end justify-end-safe justify-evenly justify-normal justify-start justify-stretch|justify-items-center justify-items-center-safe justify-items-end justify-items-end-safe justify-items-normal justify-items-start justify-items-stretch|justify-self-auto justify-self-center justify-self-center-safe justify-self-end justify-self-end-safe justify-self-start justify-self-stretch|items-baseline items-baseline-last items-center items-center-safe items-end items-end-safe items-start items-stretch|self-auto self-baseline self-baseline-last self-center self-center-safe self-end self-end-safe self-start self-stretch|place-content-around place-content-baseline place-content-between place-content-center place-content-center-safe place-content-end place-content-end-safe place-content-evenly place-content-start place-content-stretch|place-items-baseline place-items-center place-items-center-safe place-items-end place-items-end-safe place-items-start place-items-stretch|place-self-auto place-self-center place-self-center-safe place-self-end place-self-end-safe place-self-start place-self-stretch|antialiased subpixel-antialiased|italic not-italic|normal-nums|ordinal|slashed-zero|lining-nums oldstyle-nums|proportional-nums tabular-nums|diagonal-fractions stacked-fractions|no-underline overline|capitalize lowercase normal-case uppercase|truncate|whitespace-break-spaces whitespace-normal whitespace-nowrap whitespace-pre whitespace-pre-line whitespace-pre-wrap|break-all break-keep break-normal break-words|wrap-anywhere wrap-break-word wrap-normal|hyphens-auto hyphens-manual hyphens-none|mix-blend-color mix-blend-color-burn mix-blend-color-dodge mix-blend-darken mix-blend-difference mix-blend-exclusion mix-blend-hard-light mix-blend-hue mix-blend-lighten mix-blend-luminosity mix-blend-multiply mix-blend-normal mix-blend-overlay mix-blend-plus-darker mix-blend-plus-lighter mix-blend-saturation mix-blend-screen mix-blend-soft-light|table-auto table-fixed|caption-bottom caption-top|backface-hidden backface-visible|appearance-auto appearance-none|scheme-dark scheme-light scheme-light-dark scheme-normal scheme-only-dark scheme-only-light|field-sizing-content field-sizing-fixed|pointer-events-auto pointer-events-none|resize resize-none resize-x resize-y|snap-align-none snap-center snap-end snap-start|snap-always snap-normal|snap-both snap-none snap-x snap-y|snap-mandatory snap-proximity|touch-auto touch-manipulation touch-none|touch-pan-left touch-pan-right touch-pan-x|touch-pan-down touch-pan-up touch-pan-y|touch-pinch-zoom|select-all select-auto select-none select-text|forced-color-adjust-auto forced-color-adjust-none|normal size|baseline bottom middle sub super text-bottom text-top top|bounce none ping pulse spin|auto square video|auto fr max min|none|auto full px|fixed local scroll|clip-border clip-content clip-padding clip-text|origin-border origin-content origin-padding|bottom bottom-left bottom-right center left left-bottom left-top right right-bottom right-top top top-left top-right|no-repeat repeat repeat-round repeat-space repeat-x repeat-y|auto contain cover|blend-color blend-color-burn blend-color-dodge blend-darken blend-difference blend-exclusion blend-hard-light blend-hue blend-lighten blend-luminosity blend-multiply blend-normal blend-overlay blend-saturation blend-screen blend-soft-light|to-b to-bl to-br to-l to-r to-t to-tl to-tr|auto dvh fit full lh lvh max min px screen svh|dashed dotted double hidden none solid|collapse separate|px|auto|full|around baseline between center center-safe end end-safe evenly normal start stretch|alias all-scroll auto cell col-resize context-menu copy crosshair default e-resize ew-resize grab grabbing help move n-resize ne-resize nesw-resize no-drop none not-allowed ns-resize nw-resize nwse-resize pointer progress row-resize s-resize se-resize sw-resize text vertical-text w-resize wait zoom-in zoom-out|dashed dotted double solid wavy|auto from-font|reverse|initial|in in-out initial linear out|col col-reverse row row-reverse|nowrap wrap wrap-reverse|auto initial none|black bold extrabold extralight light medium normal semibold thin|condensed expanded extra-condensed extra-expanded normal semi-condensed semi-expanded ultra-condensed ultra-expanded|flow-col flow-col-dense flow-dense flow-row flow-row-dense|none subgrid|auto dvh dvw fit full lh lvh lvw max min px screen svh svw|block flex grid table|auto dvw fit full lvw max min px screen svw|loose none normal px relaxed snug tight|through|item|inside outside|decimal disc none|auto px|clip-border clip-content clip-fill clip-padding clip-stroke clip-view no-clip|add exclude intersect subtract|alpha luminance match|origin-border origin-content origin-fill origin-padding origin-stroke origin-view|type-alpha type-luminance|circle ellipse|closest-corner closest-side farthest-corner farthest-side|at-bottom at-bottom-left at-bottom-right at-center at-left at-left-bottom at-left-top at-right at-right-bottom at-right-top at-top at-top-left at-top-right|dvh fit full lh lvh max min none px screen svh|dvw fit full lvw max min none px screen svw|auto dvh dvw fit full lvh lvw max min none prose px svh svw|auto dvh dvw fit full lh lvh lvw max min none px screen svh svw|auto dvh dvw fit full lvh lvw max min none px screen svh svw|contain cover fill none scale-down|first last none|distant dramatic midrange near none normal|inset|full none|3d|auto smooth|gutter-auto gutter-both gutter-stable|auto none thin|auto dvh dvw fit full lvh lvw max min px svh svw|base|center end justify left right start|clip ellipsis|balance nowrap pretty wrap|normal tight tighter wide wider widest|cpu gpu none|3d flat|all colors none opacity shadow transform|discrete normal|full px|auto dvh dvw fit full lvh lvw max min px screen svh svw|auto contents scroll transform".split("|").map((s) => s.split(" "));
+var AA = DZ("0000000000000000000000000000000000000000000000000000000000000262242:6@200000006:240B428:4426046044222426220026642642462026224222824220022400000000\\00N222422242222222224062242222222422226264222422222222222222442804222422222222222222222222220<4<0204260002444020204224422");
+var AG = DZ("ɞ222222222222222222222222222222222222222222222222222222222222˓4222226>6ʮ22ʵʸʵʸʵ42ʲ2ʑ22>62144ɴɯɲɯɲ22ɩ42222ɠ2ɟ26622ɐɋ244ƸƵ222]d24242ǖǓƚ¼ȣ2263ȠȝȠ2222222Ǜ222222222222222222ƺƵ2ƶƭ2222222422222ƔƉ22222222222222222222144Şś22Śŗ222222222222222222222İ2ĩ68ĞěĞəŰ4Ę£¦ĕ822ČĉČ2ċ2222622");
+var AS = DZ("02222222222222222222222222222222222222222222222222222222222222222202021422222222CF2200GJ021KP222?B0WZ2Y10^2222K00N202QT2m0000120porsv22y|{:22p22222222QT2E000gSVI00000q2<40000@00000G000 00000000000000021K¢¡00¤0000000000000000000002§ª>=>U1¬222±2²2222»¾000¡¤2¥");
+var litAnchor = /* @__PURE__ */ new Int32Array(974);
+var litGroup = /* @__PURE__ */ new Int32Array(974);
+var litPool = /* @__PURE__ */ new Int32Array(974);
+var poolText = "";
+var poolOffsets = /* @__PURE__ */ new Int32Array(1008);
+{
+  const tailRef = /* @__PURE__ */ new Map;
+  let nextRef = 0;
+  let e = 0;
+  for (let i = 0;i < AA.length; i++)
+    for (const tail of SETS[AS[i]]) {
+      let r = tailRef.get(tail);
+      if (r === undefined) {
+        r = nextRef++;
+        tailRef.set(tail, r);
+        poolOffsets[r * 2] = poolText.length;
+        poolOffsets[r * 2 + 1] = tail.length;
+        poolText += tail;
+      }
+      litAnchor[e] = AA[i];
+      litGroup[e] = AG[i];
+      litPool[e] = r;
+      e++;
+    }
+}
+var adjGid = DZ("0b2N:222`>F@286¦2@H2D266226FB22B2>BD\\6N22222Z222");
+var adjStart = PS(U("1::2222232:222:22:22>222222:22:222132251111131114"));
+var adjTgt = DZ("24A;33N=C@H4A;33N=C@<2;363@QTQC¸ŴŽ2R2=18cƴÅŅÜÛŲǛȆ:ħ25=11D3A@216Er25;11B3?<438Cn9@7=<8192>2E121@9@EHE@9>2T25511<398216=V25511<398216=ƧNž2ĈÝ242L222290000f22500³222");
+var patGid = U("Ĳ");
+var patTgt = U("");
+var postfixLookupGroups = U("1");
+var orderSensitiveModifiers = "* ** after backdrop before details-content file first-letter first-line marker placeholder selection";
+var tables_generated_default = {
+  GROUP_COUNT,
+  customValidatorNames,
+  edgeStart,
+  labelStart,
+  labelText,
+  edgeTarget,
+  nodeGroup,
+  nodeVlist,
+  vlistPat,
+  vlistOps,
+  vlistRef,
+  vlistGroup,
+  litAnchor,
+  litGroup,
+  litPool,
+  poolOffsets,
+  poolText,
+  adjGid,
+  adjStart,
+  adjTgt,
+  patGid,
+  patTgt,
+  postfixLookupGroups,
+  orderSensitiveModifiers
+};
+
+// node_modules/cn/dist/engine.js
+var IS_JSC = "line" in /* @__PURE__ */ new Error;
+var EXTERNAL = -1;
+var DEAD = -1;
+var fnv = (str, s, e) => {
+  let h = 2166136261;
+  for (let p = s;p < e; p++)
+    h = Math.imul(h ^ str.charCodeAt(p), 16777619);
+  return h;
+};
+var spanHash = (str, s, e) => {
+  const len = e - s;
+  let h = Math.imul(len, 2654435761) ^ str.charCodeAt(s);
+  if (len > 3) {
+    const q = len >> 2;
+    const m = len >> 1;
+    h = Math.imul(h ^ str.charCodeAt(s + 1) << 8 ^ str.charCodeAt(s + 2) << 16 ^ str.charCodeAt(s + q), 2246822507);
+    h = Math.imul(h ^ str.charCodeAt(s + m) << 8 ^ str.charCodeAt(s + m + q) << 16 ^ str.charCodeAt(e - 3), 3266489909);
+    h ^= str.charCodeAt(e - 2) << 8 ^ str.charCodeAt(e - 1) << 16;
+    for (let p = s + 3, q2 = e - 4;p < s + 8 && p < q2; p++, q2--)
+      h = Math.imul(h ^ str.charCodeAt(p) ^ str.charCodeAt(q2) << 8, 16777619);
+  }
+  return h ^ h >>> 15 | 0;
+};
+var createEngine = (T, validatorImpls, options = {}) => {
+  const { GROUP_COUNT: GROUP_COUNT2, edgeStart: edgeStart2, labelStart: labelStart2, labelText: labelText2, edgeTarget: edgeTarget2, nodeGroup: nodeGroup2, nodeVlist: nodeVlist2, vlistPat: vlistPat2, vlistOps: vlistOps2, vlistRef: vlistRef2, vlistGroup: vlistGroup2, litAnchor: litAnchor2, litGroup: litGroup2, litPool: litPool2, poolOffsets: poolOffsets2, poolText: poolText2, adjGid: adjGid2, adjStart: adjStart2, adjTgt: adjTgt2, patGid: patGid2, patTgt: patTgt2, postfixLookupGroups: postfixLookupGroups2, customValidatorNames: customValidatorNames2, orderSensitiveModifiers: orderSensitiveModifiers2 } = T;
+  const adjRow = new Int32Array(GROUP_COUNT2).fill(-1);
+  for (let i = 0;i < adjGid2.length; i++)
+    adjRow[adjGid2[i]] = i;
+  let maxAdj = 0;
+  for (let r = 0;r + 1 < adjStart2.length; r++) {
+    const n = adjStart2[r + 1] - adjStart2[r];
+    if (n > maxAdj)
+      maxAdj = n;
+  }
+  let CLAIM_PER_TOKEN = 32;
+  while (CLAIM_PER_TOKEN < 2 * (1 + maxAdj + patGid2.length))
+    CLAIM_PER_TOKEN <<= 1;
+  const vgStart = new Int32Array(vlistRef2.length + 1);
+  for (let l = 0;l < vlistRef2.length; l++)
+    vgStart[l + 1] = vgStart[l] + vlistPat2[vlistRef2[l] + 1] - vlistPat2[vlistRef2[l]];
+  const postfixLookupSet = new Uint8Array(GROUP_COUNT2);
+  for (let i = 0;i < postfixLookupGroups2.length; i++)
+    postfixLookupSet[postfixLookupGroups2[i]] = 1;
+  const nodeCount = edgeStart2.length - 1;
+  const nodeHasLit = new Uint8Array(nodeCount);
+  let litMaxLen = 0;
+  let litNoArb = true;
+  for (let i = 0;i < litAnchor2.length; i++) {
+    nodeHasLit[litAnchor2[i]] = 1;
+    const len = poolOffsets2[litPool2[i] * 2 + 1];
+    if (len > litMaxLen)
+      litMaxLen = len;
+    const c0 = poolText2.charCodeAt(poolOffsets2[litPool2[i] * 2]);
+    if (c0 === 91 || c0 === 40)
+      litNoArb = false;
+  }
+  let LIT_SIZE = 1;
+  while (LIT_SIZE < litAnchor2.length * 2)
+    LIT_SIZE <<= 1;
+  const litTable = new Int32Array(LIT_SIZE).fill(-1);
+  for (let i = 0;i < litAnchor2.length; i++) {
+    const off = poolOffsets2[litPool2[i] * 2];
+    let idx = (fnv(poolText2, off, off + poolOffsets2[litPool2[i] * 2 + 1]) ^ Math.imul(litAnchor2[i], 2654435761) | 0) & LIT_SIZE - 1;
+    while (litTable[idx] !== -1)
+      idx = idx + 1 & LIT_SIZE - 1;
+    litTable[idx] = i;
+  }
+  const litProbe = (anchor, input, s, e) => {
+    let idx = (fnv(input, s, e) ^ Math.imul(anchor, 2654435761) | 0) & LIT_SIZE - 1;
+    const len = e - s;
+    for (;; ) {
+      const entry = litTable[idx];
+      if (entry === -1)
+        return -1;
+      if (litAnchor2[entry] === anchor && poolOffsets2[litPool2[entry] * 2 + 1] === len) {
+        const off = poolOffsets2[litPool2[entry] * 2];
+        let ok = true;
+        for (let k = 0;k < len; k++)
+          if (poolText2.charCodeAt(off + k) !== input.charCodeAt(s + k)) {
+            ok = false;
+            break;
+          }
+        if (ok)
+          return litGroup2[entry];
+      }
+      idx = idx + 1 & LIT_SIZE - 1;
+    }
+  };
+  const cacheSize = options.cacheSize ?? 8192;
+  const RAW_PREFIX = options.prefix ?? T.prefix ?? "";
+  const FULL_PREFIX = RAW_PREFIX === "" ? "" : RAW_PREFIX + ":";
+  const FPL = FULL_PREFIX.length;
+  const vCustom = (customValidatorNames2 ?? []).map((name) => {
+    const fn = validatorImpls && validatorImpls[name];
+    if (!fn)
+      throw new Error("cn: missing validator " + name);
+    return fn;
+  });
+  const lengthUnitRegex = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/;
+  const colorFunctionRegex = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/;
+  const shadowRegex = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/;
+  const imageRegex = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/;
+  let aKind = 0;
+  let aLabelS = -1;
+  let aLabelE = -1;
+  let aValS = -1;
+  let aValE = -1;
+  const isWordCode = (c) => c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c === 95;
+  const isUniWS = (c) => /\s/.test(String.fromCharCode(c));
+  const analyzeArb = (input, s, e) => {
+    aKind = 0;
+    aLabelS = -1;
+    if (e - s < 3)
+      return;
+    const c0 = input.charCodeAt(s);
+    const cl = input.charCodeAt(e - 1);
+    if (c0 === 91 && cl === 93)
+      aKind = 1;
+    else if (c0 === 40 && cl === 41)
+      aKind = 2;
+    else
+      return;
+    aValS = s + 1;
+    aValE = e - 1;
+    let p = s + 1;
+    if (isWordCode(input.charCodeAt(p))) {
+      p++;
+      while (p < e - 1) {
+        const c = input.charCodeAt(p);
+        if (!isWordCode(c) && c !== 45)
+          break;
+        p++;
+      }
+      if (p < e - 2 && input.charCodeAt(p) === 58) {
+        aLabelS = s + 1;
+        aLabelE = p;
+        aValS = p + 1;
+      }
+    }
+  };
+  const spanEq = (input, s, e, str) => {
+    if (e - s !== str.length)
+      return false;
+    for (let i = 0;i < str.length; i++)
+      if (input.charCodeAt(s + i) !== str.charCodeAt(i))
+        return false;
+    return true;
+  };
+  const fractionRegex = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/;
+  const tshirtRegex = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/;
+  const isNumStr = (v) => !!v && !Number.isNaN(Number(v));
+  const spanIsNamedContainerQuery = (input, s, e) => {
+    if (e - s < 11 || !spanEq(input, s, s + 10, "@container"))
+      return false;
+    if (input.charCodeAt(s + 10) === 47)
+      return e - s >= 12;
+    const c11 = input.charCodeAt(s + 11);
+    return c11 === 115 && e - s >= 17 && spanEq(input, s + 10, s + 16, "-size/") || c11 === 110 && e - s >= 19 && spanEq(input, s + 10, s + 18, "-normal/");
+  };
+  const VKIND = [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ];
+  const VLABELS = "length|number|number weight|family-name|position percentage|length size bg-size|image url|shadow|length|family-name|position percentage|length size bg-size|image url|shadow|number weight".split("|").map((s) => s.split(" "));
+  const VFALL = [
+    2,
+    3,
+    1,
+    0,
+    0,
+    0,
+    4,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+  ];
+  const runValidator = (op, input, s, e) => {
+    if (op >= 10) {
+      if (op >= 25)
+        return vCustom[op - 25](input.slice(s, e));
+      const i = op - 10;
+      if (aKind !== VKIND[i])
+        return false;
+      if (aLabelS >= 0) {
+        for (const L of VLABELS[i])
+          if (spanEq(input, aLabelS, aLabelE, L))
+            return true;
+        return false;
+      }
+      switch (VFALL[i]) {
+        case 0:
+          return false;
+        case 1:
+          return true;
+        case 2: {
+          const v = input.slice(aValS, aValE);
+          return lengthUnitRegex.test(v) && !colorFunctionRegex.test(v);
+        }
+        case 3:
+          return isNumStr(input.slice(aValS, aValE));
+        case 4:
+          return imageRegex.test(input.slice(aValS, aValE));
+        default:
+          return shadowRegex.test(input.slice(aValS, aValE));
+      }
+    }
+    switch (op) {
+      case 0:
+        return true;
+      case 1:
+        return aKind === 0;
+      case 2:
+        return aKind === 1;
+      case 3:
+        return aKind === 2;
+      case 4:
+        return fractionRegex.test(input.slice(s, e));
+      case 5:
+        return isNumStr(input.slice(s, e));
+      case 6: {
+        const v = input.slice(s, e);
+        return !!v && Number.isInteger(Number(v));
+      }
+      case 7:
+        return e > s && input.charCodeAt(e - 1) === 37 && isNumStr(input.slice(s, e - 1));
+      case 8:
+        return tshirtRegex.test(input.slice(s, e));
+      default:
+        return spanIsNamedContainerQuery(input, s, e);
+    }
+  };
+  const orderSensitive = new Set(typeof orderSensitiveModifiers2 === "string" ? orderSensitiveModifiers2.split(" ") : orderSensitiveModifiers2);
+  const internSpan = (map, input, s, e, imp, make) => {
+    const h = fnv(input, s, e) ^ (imp ? 2654435769 : 0) | 0;
+    let bucket = map.get(h);
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const en = bucket[b];
+          if (en.imp !== imp || en.k.length !== e - s)
+            continue;
+          for (let i = 0;i < en.k.length; i++)
+            if (en.k.charCodeAt(i) !== input.charCodeAt(s + i))
+              continue outer;
+          return en.id;
+        }
+    else
+      map.set(h, bucket = []);
+    const k = input.slice(s, e);
+    const id = make(k);
+    bucket.push({
+      k,
+      imp,
+      id
+    });
+    return id;
+  };
+  let ctxByHash = /* @__PURE__ */ new Map;
+  let ctxByCanon = /* @__PURE__ */ new Map;
+  let nextCtxId = 2;
+  const MAX_CTX = 4096;
+  const canonicalizeContext = (raw, important) => {
+    const mods = [];
+    let dB = 0, dP = 0, start = 0;
+    for (let i = 0;i < raw.length; i++) {
+      const c = raw.charCodeAt(i);
+      if (dB === 0 && dP === 0 && c === 58) {
+        mods.push(raw.slice(start, i));
+        start = i + 1;
+      } else if (c === 91)
+        dB++;
+      else if (c === 93)
+        dB--;
+      else if (c === 40)
+        dP++;
+      else if (c === 41)
+        dP--;
+    }
+    mods.push(raw.slice(start));
+    let canonical = mods[0];
+    if (mods.length > 1) {
+      const result = [];
+      let segment = [];
+      for (const mod of mods)
+        if (mod.charCodeAt(0) === 91 || orderSensitive.has(mod)) {
+          if (segment.length) {
+            result.push(...segment.sort());
+            segment = [];
+          }
+          result.push(mod);
+        } else
+          segment.push(mod);
+      if (segment.length)
+        result.push(...segment.sort());
+      canonical = result.join(":");
+    }
+    const key = important ? canonical + " !" : canonical;
+    let id = ctxByCanon.get(key);
+    if (id === undefined)
+      ctxByCanon.set(key, id = nextCtxId++);
+    return id;
+  };
+  let dynByHash = /* @__PURE__ */ new Map;
+  let nextDynId = GROUP_COUNT2;
+  const MAX_DYN = GROUP_COUNT2 + 4096;
+  const newDynId = () => nextDynId++;
+  const ID_LIMIT = 2097152;
+  const TOKEN_TABLE = 8192;
+  const memoHash = new Int32Array(TOKEN_TABLE);
+  const memoStr = new Array(TOKEN_TABLE).fill(null);
+  const memoGid = new Int32Array(TOKEN_TABLE);
+  const memoCtx = new Int32Array(TOKEN_TABLE);
+  const memoFlags = new Uint8Array(TOKEN_TABLE);
+  let memoTick = 0;
+  const memoPut = (way0, input, ts, te, h, gid, ctxId, flags) => {
+    let slot = way0;
+    if (memoStr[way0] !== null) {
+      if (memoStr[way0 | 1] === null)
+        slot = way0 | 1;
+      else if ((memoTick++ & 3) === 0)
+        slot = way0 | memoTick >> 2 & 1;
+      else
+        return;
+    }
+    memoStr[slot] = input.slice(ts, te);
+    memoHash[slot] = h;
+    memoGid[slot] = gid;
+    memoCtx[slot] = ctxId;
+    memoFlags[slot] = flags;
+  };
+  const memoReset = () => memoStr.fill(null);
+  let cap = 256;
+  let tokI32 = [
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap)
+  ];
+  let [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+  let tokFlags = new Uint8Array(cap);
+  let keep = new Uint8Array(cap);
+  const growTokens = () => {
+    cap *= 2;
+    tokI32 = tokI32.map((a) => {
+      const n = new Int32Array(cap);
+      n.set(a);
+      return n;
+    });
+    [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+    const nf = new Uint8Array(cap);
+    nf.set(tokFlags);
+    tokFlags = nf;
+    keep = new Uint8Array(cap);
+  };
+  let ckptCap = 64;
+  let ckptNode = new Int32Array(ckptCap);
+  let ckptTail = new Int32Array(ckptCap);
+  const claim0 = new Int32Array(GROUP_COUNT2);
+  let CLAIM_TABLE = 2048;
+  let claimShift = 21;
+  let claimKeys = new Float64Array(CLAIM_TABLE);
+  let claimEpochs = new Int32Array(CLAIM_TABLE);
+  let epoch = 0;
+  const claimTest = (ctx, gid) => {
+    if (ctx === 0 && gid < GROUP_COUNT2) {
+      if (claim0[gid] === epoch)
+        return 1;
+      claim0[gid] = epoch;
+      return 0;
+    }
+    const key = ctx * 2097152 + gid + 1;
+    let idx = Math.imul(key, 2654435761) >>> claimShift;
+    for (;; ) {
+      if (claimEpochs[idx] !== epoch)
+        break;
+      if (claimKeys[idx] === key)
+        return 1;
+      idx = idx + 1 & CLAIM_TABLE - 1;
+    }
+    claimKeys[idx] = key;
+    claimEpochs[idx] = epoch;
+    return 0;
+  };
+  const resolveAt = (input, bs, endPos, nodeAt, ckptAt) => {
+    if (endPos - bs >= 2 && input.charCodeAt(bs) === 91 && input.charCodeAt(endPos - 1) === 93) {
+      let colon = -1;
+      for (let p = bs + 1;p < endPos - 1; p++)
+        if (input.charCodeAt(p) === 58) {
+          colon = p;
+          break;
+        }
+      if (colon === -1 || colon === bs + 1)
+        return EXTERNAL;
+      return internSpan(dynByHash, input, bs + 1, colon, 0, newDynId);
+    }
+    if (nodeAt >= 0 && nodeGroup2[nodeAt] >= 0)
+      return nodeGroup2[nodeAt];
+    for (let k = ckptAt - 1;k >= 0; k--) {
+      const tailStart = ckptTail[k];
+      if (tailStart > endPos)
+        continue;
+      const nodeId = ckptNode[k];
+      const tlen = endPos - tailStart;
+      if (nodeHasLit[nodeId] === 1 && tlen > 0 && tlen <= litMaxLen) {
+        const c0 = input.charCodeAt(tailStart);
+        if (litNoArb === false || c0 !== 91 && c0 !== 40) {
+          const g = litProbe(nodeId, input, tailStart, endPos);
+          if (g >= 0)
+            return g;
+        }
+      }
+      const vl = nodeVlist2[nodeId];
+      if (vl < 0)
+        continue;
+      const pat = vlistRef2[vl];
+      const vs = vlistPat2[pat];
+      const ve = vlistPat2[pat + 1];
+      if (vs === ve)
+        continue;
+      analyzeArb(input, tailStart, endPos);
+      const g0 = vgStart[vl] - vs;
+      for (let v = vs;v < ve; v++)
+        if (runValidator(vlistOps2[v], input, tailStart, endPos))
+          return vlistGroup2[g0 + v];
+    }
+    return EXTERNAL;
+  };
+  const mergeClassList = (input) => {
+    const n = input.length;
+    let tokenCount = 0;
+    let totalTokenChars = 0;
+    let sawNonSpaceWS = false;
+    if (nextCtxId > MAX_CTX || ctxByHash.size > MAX_CTX) {
+      ctxByHash = /* @__PURE__ */ new Map;
+      ctxByCanon = /* @__PURE__ */ new Map;
+      nextCtxId = 2;
+      memoReset();
+    }
+    if (nextDynId > MAX_DYN) {
+      dynByHash = /* @__PURE__ */ new Map;
+      nextDynId = GROUP_COUNT2;
+      memoReset();
+    }
+    let i = 0;
+    while (i < n) {
+      let c = input.charCodeAt(i);
+      if (c === 32 || c >= 9 && c <= 13 || c >= 160 && isUniWS(c)) {
+        if (c !== 32)
+          sawNonSpaceWS = true;
+        i++;
+        continue;
+      }
+      const ts = i;
+      let th = 0;
+      while (i < n) {
+        c = input.charCodeAt(i);
+        if (c <= 32) {
+          if (c === 32)
+            break;
+          if (c >= 9 && c <= 13) {
+            sawNonSpaceWS = true;
+            break;
+          }
+        } else if (c >= 160 && isUniWS(c)) {
+          sawNonSpaceWS = true;
+          break;
+        }
+        th = Math.imul(th ^ c, 16777619);
+        i++;
+      }
+      const te = i;
+      const len = te - ts;
+      if (tokenCount === cap)
+        growTokens();
+      const t2 = tokenCount++;
+      tokStart[t2] = ts;
+      tokEnd[t2] = te;
+      totalTokenChars += len;
+      th ^= Math.imul(len, 2654435761);
+      const h = th ^ th >>> 15 | 0;
+      const way0 = h & 8190;
+      {
+        let hitAt = -1;
+        if (memoHash[way0] === h && memoStr[way0] !== null && memoStr[way0].length === len)
+          hitAt = way0;
+        else if (memoHash[way0 | 1] === h && memoStr[way0 | 1] !== null && memoStr[way0 | 1].length === len)
+          hitAt = way0 | 1;
+        if (hitAt >= 0) {
+          const s = memoStr[hitAt];
+          let ok = true;
+          for (let k = 0;k < len; k++)
+            if (s.charCodeAt(k) !== input.charCodeAt(ts + k)) {
+              ok = false;
+              break;
+            }
+          if (ok) {
+            tokGid[t2] = memoGid[hitAt];
+            tokCtx[t2] = memoCtx[hitAt];
+            tokFlags[t2] = memoFlags[hitAt];
+            continue;
+          }
+        }
+      }
+      let pts = ts;
+      if (FPL !== 0) {
+        if (te - ts <= FPL || !input.startsWith(FULL_PREFIX, ts)) {
+          tokGid[t2] = EXTERNAL;
+          memoPut(way0, input, ts, te, h, EXTERNAL, 0, 0);
+          continue;
+        }
+        pts = ts + FPL;
+      }
+      let depthB = 0, depthP = 0;
+      let lastColon = -1, lastSlash = -1;
+      for (let p = pts;p < te; p++) {
+        const pc = input.charCodeAt(p);
+        if (depthB === 0 && depthP === 0) {
+          if (pc === 58) {
+            lastColon = p;
+            continue;
+          }
+          if (pc === 47) {
+            lastSlash = p;
+            continue;
+          }
+        }
+        if (pc === 91)
+          depthB++;
+        else if (pc === 93)
+          depthB--;
+        else if (pc === 40)
+          depthP++;
+        else if (pc === 41)
+          depthP--;
+      }
+      const modStart = lastColon >= pts ? lastColon + 1 : pts;
+      let bs = modStart;
+      let be = te;
+      let important = false;
+      let prefixShift = 0;
+      if (be > bs && input.charCodeAt(be - 1) === 33) {
+        important = true;
+        be--;
+      } else if (be > bs && input.charCodeAt(bs) === 33) {
+        important = true;
+        bs++;
+        prefixShift = 1;
+      }
+      let postfixEnd = -1;
+      if (lastSlash > modStart) {
+        postfixEnd = lastSlash + prefixShift;
+        if (postfixEnd >= be)
+          postfixEnd = -1;
+      }
+      let feedStart = bs;
+      if (be - bs > 1 && input.charCodeAt(bs) === 45)
+        feedStart = bs + 1;
+      let node = 0;
+      let lp = 0;
+      let le = 0;
+      let pending = -1;
+      let ckptTop = 0;
+      if (nodeVlist2[0] >= 0 || nodeHasLit[0] === 1) {
+        ckptNode[0] = 0;
+        ckptTail[0] = feedStart;
+        ckptTop = 1;
+      }
+      let slashNode = DEAD;
+      let slashCkpt = 0;
+      for (let p = feedStart;p < be; p++) {
+        if (p === postfixEnd) {
+          slashNode = lp < le ? DEAD : node;
+          slashCkpt = ckptTop;
+        }
+        if (node !== DEAD) {
+          const cc = input.charCodeAt(p);
+          let arrived = -1;
+          if (lp < le) {
+            if (labelText2.charCodeAt(lp) === cc) {
+              lp++;
+              if (lp === le)
+                arrived = node = pending;
+            } else
+              node = DEAD;
+          } else {
+            const es = edgeStart2[node];
+            const ee = edgeStart2[node + 1];
+            let next = DEAD;
+            for (let e = es;e < ee; e++) {
+              const ls = labelStart2[e];
+              if (labelText2.charCodeAt(ls) === cc) {
+                if (labelStart2[e + 1] - ls === 1)
+                  arrived = next = edgeTarget2[e];
+                else {
+                  lp = ls + 1;
+                  le = labelStart2[e + 1];
+                  pending = edgeTarget2[e];
+                  next = node;
+                }
+                break;
+              }
+            }
+            node = next;
+          }
+          if (arrived >= 0 && (nodeVlist2[arrived] >= 0 || nodeHasLit[arrived] === 1) && p + 1 < be && input.charCodeAt(p + 1) === 45) {
+            if (ckptTop === ckptCap) {
+              ckptCap *= 2;
+              const nv = new Int32Array(ckptCap);
+              nv.set(ckptNode);
+              ckptNode = nv;
+              const nt = new Int32Array(ckptCap);
+              nt.set(ckptTail);
+              ckptTail = nt;
+            }
+            ckptNode[ckptTop] = arrived;
+            ckptTail[ckptTop] = p + 2;
+            ckptTop++;
+          }
+        }
+      }
+      if (postfixEnd === be) {
+        slashNode = lp < le ? DEAD : node;
+        slashCkpt = ckptTop;
+      }
+      const endNode = lp < le ? DEAD : node;
+      let gid;
+      let hasPostfix = false;
+      if (postfixEnd >= 0) {
+        hasPostfix = true;
+        gid = resolveAt(input, bs, postfixEnd, slashNode, slashCkpt);
+        if (gid !== EXTERNAL && gid < GROUP_COUNT2 && postfixLookupSet[gid]) {
+          const gidFull = resolveAt(input, bs, be, endNode, ckptTop);
+          if (gidFull !== EXTERNAL && gidFull !== gid) {
+            gid = gidFull;
+            hasPostfix = false;
+          }
+        } else if (gid === EXTERNAL) {
+          gid = resolveAt(input, bs, be, endNode, ckptTop);
+          hasPostfix = false;
+        }
+      } else
+        gid = resolveAt(input, bs, be, endNode, ckptTop);
+      let ctxId = 0;
+      let flags = 0;
+      if (gid === EXTERNAL)
+        tokGid[t2] = EXTERNAL;
+      else {
+        flags = hasPostfix ? 1 : 0;
+        ctxId = pts >= lastColon ? important ? 1 : 0 : internSpan(ctxByHash, input, pts, lastColon, important ? 1 : 0, (k) => canonicalizeContext(k, important));
+        tokGid[t2] = gid;
+        tokFlags[t2] = flags;
+        tokCtx[t2] = ctxId;
+      }
+      memoPut(way0, input, ts, te, h, gid, ctxId, flags);
+    }
+    if (tokenCount === 0)
+      return "";
+    if (tokenCount === 1)
+      return tokStart[0] === 0 && tokEnd[0] === n ? input : input.slice(tokStart[0], tokEnd[0]);
+    if (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+      while (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+        CLAIM_TABLE <<= 1;
+        claimShift--;
+      }
+      claimKeys = new Float64Array(CLAIM_TABLE);
+      claimEpochs = new Int32Array(CLAIM_TABLE);
+    }
+    if (nextCtxId >= ID_LIMIT || nextDynId >= ID_LIMIT)
+      throw new Error("cn: too many distinct classes in one merge");
+    epoch = epoch + 1 | 0;
+    if (epoch === 0) {
+      claim0.fill(0);
+      claimEpochs.fill(0);
+      epoch = 1;
+    }
+    let didDrop = false;
+    for (let t2 = tokenCount - 1;t2 >= 0; t2--) {
+      const gid = tokGid[t2];
+      if (gid === EXTERNAL) {
+        keep[t2] = 1;
+        continue;
+      }
+      const ctxId = tokCtx[t2];
+      if (claimTest(ctxId, gid) === 1) {
+        keep[t2] = 0;
+        didDrop = true;
+        continue;
+      }
+      keep[t2] = 1;
+      if (gid < GROUP_COUNT2) {
+        const r = adjRow[gid];
+        if (r >= 0)
+          for (let k = adjStart2[r];k < adjStart2[r + 1]; k++)
+            claimTest(ctxId, adjTgt2[k]);
+        if (tokFlags[t2] & 1) {
+          for (let k = 0;k < patGid2.length; k++)
+            if (patGid2[k] === gid)
+              claimTest(ctxId, patTgt2[k]);
+        }
+      }
+    }
+    if (!didDrop && !sawNonSpaceWS && n === totalTokenChars + tokenCount - 1)
+      return input;
+    let out = "";
+    let t = 0;
+    while (t < tokenCount) {
+      if (!keep[t]) {
+        t++;
+        continue;
+      }
+      const runStart = tokStart[t];
+      let runEnd = tokEnd[t];
+      let u = t + 1;
+      while (u < tokenCount && keep[u] && tokStart[u] === runEnd + 1 && input.charCodeAt(runEnd) === 32) {
+        runEnd = tokEnd[u];
+        u++;
+      }
+      if (out.length > 0)
+        out += " ";
+      out += input.slice(runStart, runEnd);
+      t = u;
+    }
+    return out;
+  };
+  const DOOR_SIZE = 16384;
+  const door = new Int32Array(DOOR_SIZE * 2);
+  let doorBase = 0;
+  let doorEpoch = 1;
+  let cache = Object.create(null);
+  let prevCache = Object.create(null);
+  let cacheMap = /* @__PURE__ */ new Map;
+  let prevCacheMap = /* @__PURE__ */ new Map;
+  let cacheCount = 0;
+  let doorMarks = 0;
+  const rotateDoor = () => {
+    doorBase ^= DOOR_SIZE;
+    doorEpoch = doorEpoch + 1 | 0;
+    doorMarks = 0;
+  };
+  const mergeCached = (input) => {
+    let merged = cache[input];
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCache[input];
+      if (merged !== undefined) {
+        cache[input] = merged;
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cache[input] = merged;
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCache = cache;
+        cache = Object.create(null);
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const mergeCachedMap = (input) => {
+    let merged = cacheMap.get(input);
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCacheMap.get(input);
+      if (merged !== undefined) {
+        cacheMap.set(input, merged);
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cacheMap.set(input, merged);
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCacheMap = cacheMap;
+        cacheMap = /* @__PURE__ */ new Map;
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const seenBefore = (input) => {
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    if (door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1))
+      return true;
+    door[slot] = hash ^ doorEpoch;
+    if (++doorMarks > DOOR_SIZE)
+      rotateDoor();
+    return false;
+  };
+  const mergeString = cacheSize === 0 ? mergeClassList : IS_JSC ? (input) => {
+    const merged = cacheMap.get(input);
+    return merged !== undefined ? merged : mergeCachedMap(input);
+  } : mergeCached;
+  const merge = function() {
+    return arguments.length === 1 && typeof arguments[0] === "string" ? mergeString(arguments[0]) : mergeString(twJoin.apply(null, arguments));
+  };
+  return {
+    merge,
+    mergeString,
+    seenBefore: cacheSize === 0 ? () => false : seenBefore,
+    mergeUncached: mergeClassList
+  };
+};
+var resolveValue2 = (v, clsxMode) => {
+  if (!v)
+    return "";
+  if (typeof v === "string")
+    return v;
+  let out = "";
+  if (typeof v.length === "number" && (clsxMode ? Array.isArray(v) : true)) {
+    const arr = v;
+    for (let i = 0;i < arr.length; i++) {
+      const item = arr[i];
+      if (!item)
+        continue;
+      const r = typeof item === "string" ? item : resolveValue2(item, clsxMode);
+      if (r) {
+        if (out)
+          out += " ";
+        out += r;
+      }
+    }
+    return out;
+  }
+  if (clsxMode) {
+    if (typeof v === "number")
+      return "" + v;
+    if (typeof v === "object") {
+      for (const k in v)
+        if (v[k]) {
+          if (out)
+            out += " ";
+          out += k;
+        }
+    }
+  }
+  return out;
+};
+var joinArgs = (args, clsxMode) => {
+  let s = "";
+  for (let i = 0;i < args.length; i++) {
+    const a = args[i];
+    if (!a)
+      continue;
+    const r = typeof a === "string" ? a : resolveValue2(a, clsxMode);
+    if (r) {
+      if (s)
+        s += " ";
+      s += r;
+    }
+  }
+  return s;
+};
+var twJoin = function() {
+  return joinArgs(arguments, false);
+};
+var wrapClsx = (mergeString, fresh) => {
+  const seenBefore = fresh === undefined ? () => true : fresh.seenBefore;
+  const mergeUncached = fresh === undefined ? mergeString : fresh.mergeUncached;
+  let argCache = /* @__PURE__ */ new Map;
+  let prevArgCache = /* @__PURE__ */ new Map;
+  let argCount = 0;
+  let lastHit = null;
+  const match3 = (e, v0, v1, v2) => {
+    let k = 0;
+    if (v0) {
+      if (v0 !== e.a0)
+        return false;
+      k = 1;
+    }
+    if (v1) {
+      if (v1 !== (k === 0 ? e.a0 : e.a1))
+        return false;
+      k++;
+    }
+    if (v2) {
+      if (v2 !== (k === 0 ? e.a0 : k === 1 ? e.a1 : e.a2))
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const matchN = (e, vals) => {
+    const ea = e.a;
+    let k = 0;
+    for (let i = 0;i < vals.length; i++) {
+      const v = vals[i];
+      if (!v)
+        continue;
+      if (v !== ea[k])
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const resolveArgs = (vals, probed) => {
+    const nArgs = vals.length;
+    const pred = lastHit === null ? null : lastHit.n;
+    if (!probed) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let first = "";
+    let firstIdx = -1;
+    let truthy = 0;
+    let hasResolvedValue = false;
+    for (let i = 0;i < nArgs; i++) {
+      let v = vals[i];
+      if (!v)
+        continue;
+      if (typeof v !== "string") {
+        v = vals[i] = resolveValue2(v, true);
+        if (!v)
+          continue;
+        hasResolvedValue = true;
+      }
+      if (firstIdx < 0) {
+        first = v;
+        firstIdx = i;
+      }
+      truthy++;
+    }
+    if (truthy === 0)
+      return "";
+    if (truthy === 1)
+      return mergeString(first);
+    if (hasResolvedValue) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let bucket = argCache.get(first);
+    if (bucket === undefined) {
+      bucket = prevArgCache.get(first);
+      if (bucket !== undefined)
+        argCache.set(first, bucket);
+    }
+    let hit = null;
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const e = bucket[b];
+          if (e.t !== truthy)
+            continue;
+          const ea = e.a;
+          let k = 1;
+          for (let i = firstIdx + 1;i < nArgs; i++) {
+            const v = vals[i];
+            if (v && v !== ea[k++])
+              continue outer;
+          }
+          hit = e;
+          break;
+        }
+    if (hit === null) {
+      let joined = first;
+      const a = [first];
+      for (let i = firstIdx + 1;i < nArgs; i++) {
+        const v = vals[i];
+        if (!v)
+          continue;
+        joined += " " + v;
+        a.push(v);
+      }
+      if (!seenBefore(joined))
+        return mergeUncached(joined);
+      hit = {
+        r: mergeString(joined),
+        t: a.length,
+        a0: a[0],
+        a1: a[1],
+        a2: a[2] ?? "",
+        a,
+        n: null
+      };
+      if (bucket === undefined)
+        argCache.set(first, bucket = []);
+      if (bucket.length >= 256)
+        bucket.shift();
+      bucket.push(hit);
+      if (++argCount > 1000) {
+        argCount = 0;
+        prevArgCache = argCache;
+        argCache = /* @__PURE__ */ new Map;
+      }
+    }
+    if (lastHit !== null && lastHit !== hit)
+      lastHit.n = hit;
+    lastHit = hit;
+    return hit.r;
+  };
+  const mergeSingleValue = (value) => Array.isArray(value) ? resolveArgs(value.slice(), false) : mergeString(resolveValue2(value, true));
+  return function(v0, v1, v2) {
+    const nArgs = arguments.length;
+    if ((nArgs | 1) === 3) {
+      const lh2 = lastHit;
+      if (lh2 !== null) {
+        const pred = lh2.n;
+        if (pred !== null && match3(pred, v0, v1, v2)) {
+          lastHit = pred;
+          return pred.r;
+        }
+        if (lh2 !== pred && match3(lh2, v0, v1, v2))
+          return lh2.r;
+      }
+      return resolveArgs([
+        v0,
+        v1,
+        v2
+      ], true);
+    }
+    if (nArgs === 1)
+      return typeof v0 === "string" ? mergeString(v0) : mergeSingleValue(v0);
+    const lh = lastHit;
+    if (lh !== null) {
+      const pred = lh.n;
+      if (pred !== null) {
+        const pa = pred.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== pa[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === pred.t) {
+          lastHit = pred;
+          return pred.r;
+        }
+      }
+      if (lh !== pred) {
+        const la = lh.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== la[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === lh.t)
+          return lh.r;
+      }
+    }
+    const vals = [];
+    for (let i = 0;i < nArgs; i++)
+      vals.push(arguments[i]);
+    return resolveArgs(vals, true);
+  };
+};
+
+// node_modules/cn/dist/index.js
+var instance = /* @__PURE__ */ createEngine(tables_generated_default);
+var cn = /* @__PURE__ */ wrapClsx(instance.mergeString, instance);
+var twMerge = instance.merge;
+
+// src/grapevine/surface/ui/tooltip.tsx
+var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
+function TooltipProvider3({ delay = 0, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Provider, {
+    "data-slot": "tooltip-provider",
+    delay,
+    ...props
+  }, undefined, false, undefined, this);
+}
+function Tooltip({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Root, {
+    "data-slot": "tooltip",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function TooltipTrigger3({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Trigger, {
+    "data-slot": "tooltip-trigger",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function TooltipContent({
+  className,
+  side = "top",
+  sideOffset = 4,
+  align = "center",
+  alignOffset = 0,
+  children,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Positioner, {
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      className: "isolate z-50",
+      children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Popup, {
+        "data-slot": "tooltip-content",
+        className: cn("z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props,
+        children: [
+          children,
+          /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Arrow, {
+            className: "z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
 // node_modules/lucide-react/dist/esm/createLucideIcon.mjs
-var import_react3 = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
 
 // node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
-var mergeClasses = (...classes) => classes.filter((className, index, array) => {
-  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
+var mergeClasses = (...classes) => classes.filter((className, index2, array) => {
+  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index2;
 }).join(" ").trim();
 
 // node_modules/lucide-react/dist/esm/shared/src/utils/toKebabCase.mjs
@@ -17140,7 +28242,7 @@ var toPascalCase = (string) => {
 };
 
 // node_modules/lucide-react/dist/esm/Icon.mjs
-var import_react2 = __toESM(require_react(), 1);
+var import_react4 = __toESM(require_react(), 1);
 
 // node_modules/lucide-react/dist/esm/defaultAttributes.mjs
 var defaultAttributes = {
@@ -17166,14 +28268,14 @@ var hasA11yProp = (props) => {
 };
 
 // node_modules/lucide-react/dist/esm/context.mjs
-var import_react = __toESM(require_react(), 1);
+var import_react3 = __toESM(require_react(), 1);
 "use client";
-var LucideContext = import_react.createContext({});
-var useLucideContext = () => import_react.useContext(LucideContext);
+var LucideContext = import_react3.createContext({});
+var useLucideContext = () => import_react3.useContext(LucideContext);
 
 // node_modules/lucide-react/dist/esm/Icon.mjs
 "use client";
-var Icon = import_react2.forwardRef(({ color, size, strokeWidth, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
+var Icon = import_react4.forwardRef(({ color, size: size4, strokeWidth, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
   const {
     size: contextSize = 24,
     strokeWidth: contextStrokeWidth = 2,
@@ -17181,26 +28283,26 @@ var Icon = import_react2.forwardRef(({ color, size, strokeWidth, absoluteStrokeW
     color: contextColor = "currentColor",
     className: contextClass = ""
   } = useLucideContext() ?? {};
-  const calculatedStrokeWidth = absoluteStrokeWidth ?? contextAbsoluteStrokeWidth ? Number(strokeWidth ?? contextStrokeWidth) * 24 / Number(size ?? contextSize) : strokeWidth ?? contextStrokeWidth;
-  return import_react2.createElement("svg", {
+  const calculatedStrokeWidth = absoluteStrokeWidth ?? contextAbsoluteStrokeWidth ? Number(strokeWidth ?? contextStrokeWidth) * 24 / Number(size4 ?? contextSize) : strokeWidth ?? contextStrokeWidth;
+  return import_react4.createElement("svg", {
     ref,
     ...defaultAttributes,
-    width: size ?? contextSize ?? defaultAttributes.width,
-    height: size ?? contextSize ?? defaultAttributes.height,
+    width: size4 ?? contextSize ?? defaultAttributes.width,
+    height: size4 ?? contextSize ?? defaultAttributes.height,
     stroke: color ?? contextColor,
     strokeWidth: calculatedStrokeWidth,
     className: mergeClasses("lucide", contextClass, className),
     ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
     ...rest
   }, [
-    ...iconNode.map(([tag, attrs]) => import_react2.createElement(tag, attrs)),
+    ...iconNode.map(([tag, attrs]) => import_react4.createElement(tag, attrs)),
     ...Array.isArray(children) ? children : [children]
   ]);
 });
 
 // node_modules/lucide-react/dist/esm/createLucideIcon.mjs
 var createLucideIcon = (iconName, iconNode) => {
-  const Component = import_react3.forwardRef(({ className, ...props }, ref) => import_react3.createElement(Icon, {
+  const Component = import_react5.forwardRef(({ className, ...props }, ref) => import_react5.createElement(Icon, {
     ref,
     iconNode,
     className: mergeClasses(`lucide-${toKebabCase(toPascalCase(iconName))}`, `lucide-${iconName}`, className),
@@ -17209,5262 +28311,8096 @@ var createLucideIcon = (iconName, iconNode) => {
   Component.displayName = toPascalCase(iconName);
   return Component;
 };
-
-// node_modules/lucide-react/dist/esm/icons/layers.mjs
-var __iconNode = [
-  [
-    "path",
-    {
-      d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
-      key: "zw3jo"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
-      key: "1wduqc"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
-      key: "kqbvx6"
-    }
-  ]
-];
-var Layers = createLucideIcon("layers", __iconNode);
-// node_modules/lucide-react/dist/esm/icons/loader-circle.mjs
-var __iconNode2 = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
-var LoaderCircle = createLucideIcon("loader-circle", __iconNode2);
-// node_modules/lucide-react/dist/esm/icons/lock-open.mjs
-var __iconNode3 = [
-  ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "1w4ew1" }],
-  ["path", { d: "M7 11V7a5 5 0 0 1 9.9-1", key: "1mm8w8" }]
-];
-var LockOpen = createLucideIcon("lock-open", __iconNode3);
-// node_modules/lucide-react/dist/esm/icons/pen-line.mjs
-var __iconNode4 = [
-  ["path", { d: "M13 21h8", key: "1jsn5i" }],
-  [
-    "path",
-    {
-      d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
-      key: "1a8usu"
-    }
-  ]
-];
-var PenLine = createLucideIcon("pen-line", __iconNode4);
-// node_modules/lucide-react/dist/esm/icons/send-horizontal.mjs
-var __iconNode5 = [
-  [
-    "path",
-    {
-      d: "M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z",
-      key: "117uat"
-    }
-  ],
-  ["path", { d: "M6 12h16", key: "s4cdu5" }]
-];
-var SendHorizontal = createLucideIcon("send-horizontal", __iconNode5);
-// node_modules/lucide-react/dist/esm/icons/sparkles.mjs
-var __iconNode6 = [
-  [
-    "path",
-    {
-      d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
-      key: "1s2grr"
-    }
-  ],
-  ["path", { d: "M20 2v4", key: "1rf3ol" }],
-  ["path", { d: "M22 4h-4", key: "gwowj6" }],
-  ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
-];
-var Sparkles = createLucideIcon("sparkles", __iconNode6);
-// node_modules/lucide-react/dist/esm/icons/wand-sparkles.mjs
-var __iconNode7 = [
-  [
-    "path",
-    {
-      d: "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72",
-      key: "ul74o6"
-    }
-  ],
-  ["path", { d: "m14 7 3 3", key: "1r5n42" }],
-  ["path", { d: "M5 6v4", key: "ilb8ba" }],
-  ["path", { d: "M19 14v4", key: "blhpug" }],
-  ["path", { d: "M10 2v2", key: "7u0qdc" }],
-  ["path", { d: "M7 8H3", key: "zfb6yr" }],
-  ["path", { d: "M21 16h-4", key: "1cnmox" }],
-  ["path", { d: "M11 3H9", key: "1obp7u" }]
-];
-var WandSparkles = createLucideIcon("wand-sparkles", __iconNode7);
-// node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode8 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode8);
-// node_modules/lucide-react/dist/esm/icons/chevron-down.mjs
-var __iconNode9 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-var ChevronDown = createLucideIcon("chevron-down", __iconNode9);
-// node_modules/lucide-react/dist/esm/icons/chevron-left.mjs
-var __iconNode10 = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
-var ChevronLeft = createLucideIcon("chevron-left", __iconNode10);
-// node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode11 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode11);
-// node_modules/lucide-react/dist/esm/icons/circle.mjs
-var __iconNode12 = [["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]];
-var Circle = createLucideIcon("circle", __iconNode12);
-// node_modules/lucide-react/dist/esm/icons/copy.mjs
-var __iconNode13 = [
-  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
-  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
-];
-var Copy = createLucideIcon("copy", __iconNode13);
-// node_modules/lucide-react/dist/esm/icons/eye-off.mjs
-var __iconNode14 = [
-  [
-    "path",
-    {
-      d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
-      key: "ct8e1f"
-    }
-  ],
-  ["path", { d: "M14.084 14.158a3 3 0 0 1-4.242-4.242", key: "151rxh" }],
-  [
-    "path",
-    {
-      d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
-      key: "13bj9a"
-    }
-  ],
-  ["path", { d: "m2 2 20 20", key: "1ooewy" }]
-];
-var EyeOff = createLucideIcon("eye-off", __iconNode14);
-// node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode15 = [
-  [
-    "path",
-    {
-      d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
-      key: "1nclc0"
-    }
-  ],
-  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
-];
-var Eye = createLucideIcon("eye", __iconNode15);
-// node_modules/lucide-react/dist/esm/icons/grip-vertical.mjs
-var __iconNode16 = [
-  ["circle", { cx: "9", cy: "12", r: "1", key: "1vctgf" }],
-  ["circle", { cx: "9", cy: "5", r: "1", key: "hp0tcf" }],
-  ["circle", { cx: "9", cy: "19", r: "1", key: "fkjjf6" }],
-  ["circle", { cx: "15", cy: "12", r: "1", key: "1tmaij" }],
-  ["circle", { cx: "15", cy: "5", r: "1", key: "19l28e" }],
-  ["circle", { cx: "15", cy: "19", r: "1", key: "f4zoj3" }]
-];
-var GripVertical = createLucideIcon("grip-vertical", __iconNode16);
-// node_modules/lucide-react/dist/esm/icons/group.mjs
-var __iconNode17 = [
-  ["path", { d: "M3 7V5c0-1.1.9-2 2-2h2", key: "adw53z" }],
-  ["path", { d: "M17 3h2c1.1 0 2 .9 2 2v2", key: "an4l38" }],
-  ["path", { d: "M21 17v2c0 1.1-.9 2-2 2h-2", key: "144t0e" }],
-  ["path", { d: "M7 21H5c-1.1 0-2-.9-2-2v-2", key: "rtnfgi" }],
-  ["rect", { width: "7", height: "5", x: "7", y: "7", rx: "1", key: "1eyiv7" }],
-  ["rect", { width: "7", height: "5", x: "10", y: "12", rx: "1", key: "1qlmkx" }]
-];
-var Group = createLucideIcon("group", __iconNode17);
-// node_modules/lucide-react/dist/esm/icons/heart.mjs
-var __iconNode18 = [
-  [
-    "path",
-    {
-      d: "M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5",
-      key: "mvr1a0"
-    }
-  ]
-];
-var Heart = createLucideIcon("heart", __iconNode18);
-// node_modules/lucide-react/dist/esm/icons/image-down.mjs
-var __iconNode19 = [
-  [
-    "path",
-    {
-      d: "M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21",
-      key: "9csbqa"
-    }
-  ],
-  ["path", { d: "m14 19 3 3v-5.5", key: "9ldu5r" }],
-  ["path", { d: "m17 22 3-3", key: "1nkfve" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }]
-];
-var ImageDown = createLucideIcon("image-down", __iconNode19);
-// node_modules/lucide-react/dist/esm/icons/image-plus.mjs
-var __iconNode20 = [
-  ["path", { d: "M16 5h6", key: "1vod17" }],
-  ["path", { d: "M19 2v6", key: "4bpg5p" }],
-  ["path", { d: "M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5", key: "1ue2ih" }],
-  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }]
-];
-var ImagePlus = createLucideIcon("image-plus", __iconNode20);
-// node_modules/lucide-react/dist/esm/icons/image.mjs
-var __iconNode21 = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
-  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
-];
-var Image2 = createLucideIcon("image", __iconNode21);
-// node_modules/lucide-react/dist/esm/icons/images.mjs
-var __iconNode22 = [
-  ["path", { d: "m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16", key: "9kzy35" }],
-  ["path", { d: "M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2", key: "1t0f0t" }],
-  ["circle", { cx: "13", cy: "7", r: "1", fill: "currentColor", key: "1obus6" }],
-  ["rect", { x: "8", y: "2", width: "14", height: "14", rx: "2", key: "1gvhby" }]
-];
-var Images = createLucideIcon("images", __iconNode22);
-// node_modules/lucide-react/dist/esm/icons/info.mjs
-var __iconNode23 = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "M12 16v-4", key: "1dtifu" }],
-  ["path", { d: "M12 8h.01", key: "e9boi3" }]
-];
-var Info = createLucideIcon("info", __iconNode23);
-// node_modules/lucide-react/dist/esm/icons/layout-grid.mjs
-var __iconNode24 = [
-  ["rect", { width: "7", height: "7", x: "3", y: "3", rx: "1", key: "1g98yp" }],
-  ["rect", { width: "7", height: "7", x: "14", y: "3", rx: "1", key: "6d4xhi" }],
-  ["rect", { width: "7", height: "7", x: "14", y: "14", rx: "1", key: "nxv5o0" }],
-  ["rect", { width: "7", height: "7", x: "3", y: "14", rx: "1", key: "1bb6yr" }]
-];
-var LayoutGrid = createLucideIcon("layout-grid", __iconNode24);
-// node_modules/lucide-react/dist/esm/icons/library.mjs
-var __iconNode25 = [
-  ["path", { d: "m16 6 4 14", key: "ji33uf" }],
-  ["path", { d: "M12 6v14", key: "1n7gus" }],
-  ["path", { d: "M8 8v12", key: "1gg7y9" }],
-  ["path", { d: "M4 4v16", key: "6qkkli" }]
-];
-var Library = createLucideIcon("library", __iconNode25);
-// node_modules/lucide-react/dist/esm/icons/link-2-off.mjs
-var __iconNode26 = [
-  ["path", { d: "M9 17H7A5 5 0 0 1 7 7", key: "10o201" }],
-  ["path", { d: "M15 7h2a5 5 0 0 1 4 8", key: "1d3206" }],
-  ["line", { x1: "8", x2: "12", y1: "12", y2: "12", key: "rvw6j4" }],
-  ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
-];
-var Link2Off = createLucideIcon("link-2-off", __iconNode26);
-// node_modules/lucide-react/dist/esm/icons/link-2.mjs
-var __iconNode27 = [
-  ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
-  ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
-  ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
-];
-var Link2 = createLucideIcon("link-2", __iconNode27);
-// node_modules/lucide-react/dist/esm/icons/link.mjs
-var __iconNode28 = [
-  ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
-  ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
-];
-var Link = createLucideIcon("link", __iconNode28);
-// node_modules/lucide-react/dist/esm/icons/lock.mjs
-var __iconNode29 = [
-  ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "1w4ew1" }],
-  ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "fwvmzm" }]
-];
-var Lock = createLucideIcon("lock", __iconNode29);
-// node_modules/lucide-react/dist/esm/icons/maximize.mjs
-var __iconNode30 = [
-  ["path", { d: "M8 3H5a2 2 0 0 0-2 2v3", key: "1dcmit" }],
-  ["path", { d: "M21 8V5a2 2 0 0 0-2-2h-3", key: "1e4gt3" }],
-  ["path", { d: "M3 16v3a2 2 0 0 0 2 2h3", key: "wsl5sc" }],
-  ["path", { d: "M16 21h3a2 2 0 0 0 2-2v-3", key: "18trek" }]
-];
-var Maximize = createLucideIcon("maximize", __iconNode30);
-// node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode31 = [
-  [
-    "path",
-    {
-      d: "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z",
-      key: "18887p"
-    }
-  ],
-  ["path", { d: "M7 11h10", key: "1twpyw" }],
-  ["path", { d: "M7 15h6", key: "d9of3u" }],
-  ["path", { d: "M7 7h8", key: "af5zfr" }]
-];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode31);
-// node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode32 = [
-  [
-    "path",
-    {
-      d: "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
-      key: "1n2ejm"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1",
-      key: "1qfcsi"
-    }
-  ]
-];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode32);
-// node_modules/lucide-react/dist/esm/icons/minus.mjs
-var __iconNode33 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
-var Minus = createLucideIcon("minus", __iconNode33);
-// node_modules/lucide-react/dist/esm/icons/mouse-pointer.mjs
-var __iconNode34 = [
-  ["path", { d: "M12.586 12.586 19 19", key: "ea5xo7" }],
-  [
-    "path",
-    {
-      d: "M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.999a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z",
-      key: "277e5u"
-    }
-  ]
-];
-var MousePointer = createLucideIcon("mouse-pointer", __iconNode34);
-// node_modules/lucide-react/dist/esm/icons/move-up-right.mjs
-var __iconNode35 = [
-  ["path", { d: "M13 5H19V11", key: "1n1gyv" }],
-  ["path", { d: "M19 5L5 19", key: "72u4yj" }]
-];
-var MoveUpRight = createLucideIcon("move-up-right", __iconNode35);
-// node_modules/lucide-react/dist/esm/icons/paperclip.mjs
-var __iconNode36 = [
-  [
-    "path",
-    {
-      d: "m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551",
-      key: "1miecu"
-    }
-  ]
-];
-var Paperclip = createLucideIcon("paperclip", __iconNode36);
-// node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode37 = [
-  [
-    "path",
-    {
-      d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
-      key: "1a8usu"
-    }
-  ],
-  ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
-];
-var Pencil = createLucideIcon("pencil", __iconNode37);
-// node_modules/lucide-react/dist/esm/icons/pin.mjs
-var __iconNode38 = [
-  ["path", { d: "M12 17v5", key: "bb1du9" }],
-  [
-    "path",
-    {
-      d: "M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z",
-      key: "1nkz8b"
-    }
-  ]
-];
-var Pin = createLucideIcon("pin", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode39 = [
+var __iconNode = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode39);
-// node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode40 = [
-  ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
-  ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
-];
-var Redo2 = createLucideIcon("redo-2", __iconNode40);
-// node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode41 = [
-  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
-  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
-];
-var Search = createLucideIcon("search", __iconNode41);
-// node_modules/lucide-react/dist/esm/icons/shapes.mjs
-var __iconNode42 = [
-  [
-    "path",
-    {
-      d: "M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z",
-      key: "1bo67w"
-    }
-  ],
-  ["rect", { x: "3", y: "14", width: "7", height: "7", rx: "1", key: "1bkyp8" }],
-  ["circle", { cx: "17.5", cy: "17.5", r: "3.5", key: "w3z12y" }]
-];
-var Shapes = createLucideIcon("shapes", __iconNode42);
-// node_modules/lucide-react/dist/esm/icons/square.mjs
-var __iconNode43 = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }]
-];
-var Square = createLucideIcon("square", __iconNode43);
-// node_modules/lucide-react/dist/esm/icons/terminal.mjs
-var __iconNode44 = [
-  ["path", { d: "M12 19h8", key: "baeox8" }],
-  ["path", { d: "m4 17 6-6-6-6", key: "1yngyt" }]
-];
-var Terminal = createLucideIcon("terminal", __iconNode44);
-// node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode45 = [
-  ["path", { d: "M10 11v6", key: "nco0om" }],
-  ["path", { d: "M14 11v6", key: "outv1u" }],
-  ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
-  ["path", { d: "M3 6h18", key: "d0wm0j" }],
-  ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
-];
-var Trash2 = createLucideIcon("trash-2", __iconNode45);
-// node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode46 = [
-  ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
-  ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
-];
-var Undo2 = createLucideIcon("undo-2", __iconNode46);
-// node_modules/lucide-react/dist/esm/icons/ungroup.mjs
-var __iconNode47 = [
-  ["rect", { width: "8", height: "6", x: "5", y: "4", rx: "1", key: "nzclkv" }],
-  ["rect", { width: "8", height: "6", x: "11", y: "14", rx: "1", key: "4tytwb" }]
-];
-var Ungroup = createLucideIcon("ungroup", __iconNode47);
+var Plus = createLucideIcon("plus", __iconNode);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode48 = [
+var __iconNode2 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode48);
-// node_modules/lucide-react/dist/esm/icons/zap.mjs
-var __iconNode49 = [
-  [
-    "path",
-    {
-      d: "M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",
-      key: "1xq2db"
-    }
-  ]
-];
-var Zap = createLucideIcon("zap", __iconNode49);
-// src/imago/surface/components/Canvas.tsx
-var import_react11 = __toESM(require_react(), 1);
-
-// plugins/spellbook/skills/imago/shared/types.ts
-var MARK_TOOLS = [
-  "pin",
-  "arrow",
-  "line",
-  "rect",
-  "ellipse",
-  "draw",
-  "image"
-];
-var ASPECTS = ["1:1", "3:2", "2:3", "16:9", "9:16"];
-var SIZES = ["1K", "2K"];
-var AGENT_EVENT_TYPES = Object.freeze([
-  "ready",
-  "connected",
-  "disconnected",
-  "say",
-  "proposal.send",
-  "proposal.dismiss",
-  "context.capture",
-  "marks.commit",
-  "submit",
-  "closed"
-]);
-
-// src/imago/surface/state/contextLibrary.ts
-function resolveSet(library, ids) {
-  const byId = new Map(library.map((e) => [e.id, e]));
-  return ids.map((id) => byId.get(id)).filter((e) => e !== undefined);
-}
-function entriesByKind(library, kind) {
-  return library.filter((e) => e.kind === kind);
-}
-function isLinked(ids, id) {
-  return ids.includes(id);
-}
-
-// src/imago/surface/state/derive.ts
-function variantLabel(i) {
-  return String.fromCharCode(97 + i);
-}
-function focusedVariant(s) {
-  const f = s.focus;
-  if (!f)
-    return;
-  return s.batches.find((b) => b.id === f.batchId)?.variants.find((v) => v.id === f.variantId);
-}
-function presence(s) {
-  const last = s.conversation[s.conversation.length - 1];
-  const unanswered = !!last && last.role === "agent" && last.kind === "question";
-  if (s.handoff.trim() || unanswered)
-    return "asking";
-  if (s.status.busy)
-    return "working";
-  return "idle";
-}
-
-// plugins/spellbook/skills/imago/shared/imageOptimize.ts
-var OPTIMIZE = { maxDim: 1200, quality: 0.85 };
-
-// src/imago/surface/state/fileIntake.ts
-var IMG = /^image\//;
-var IMAGO_IMAGE_DND = "application/x-imago-image";
-var IMAGO_CONTEXT_DND = "application/x-imago-context";
-function readContextDrag(dt) {
-  const raw = dt.getData(IMAGO_CONTEXT_DND);
-  if (!raw)
-    return null;
-  try {
-    const o = JSON.parse(raw);
-    if (typeof o?.id !== "string")
-      return null;
-    return { id: o.id };
-  } catch {
-    return null;
-  }
-}
-function readImagoDrag(dt) {
-  const raw = dt.getData(IMAGO_IMAGE_DND);
-  if (!raw)
-    return null;
-  try {
-    const o = JSON.parse(raw);
-    if (typeof o?.src !== "string")
-      return null;
-    return {
-      src: o.src,
-      name: String(o.name ?? "image"),
-      variantId: typeof o.variantId === "string" ? o.variantId : undefined
-    };
-  } catch {
-    return null;
-  }
-}
-async function downscaleToWebp(file) {
-  const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, OPTIMIZE.maxDim / Math.max(bmp.width, bmp.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * scale);
-  c.height = Math.round(bmp.height * scale);
-  const ctx2d = c.getContext("2d");
-  if (!ctx2d)
-    throw new Error("no 2d context");
-  ctx2d.drawImage(bmp, 0, 0, c.width, c.height);
-  const url = c.toDataURL("image/webp", OPTIMIZE.quality);
-  if (!url.startsWith("data:image/webp"))
-    throw new Error("no webp");
-  return url;
-}
-function readAsDataUrl(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader;
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-}
-async function toWebpSrc(f) {
-  try {
-    return await downscaleToWebp(f);
-  } catch {
-    return await readAsDataUrl(f);
-  }
-}
-async function processFiles(files, send) {
-  for (const f of Array.from(files ?? [])) {
-    if (!IMG.test(f.type))
-      continue;
-    try {
-      const src = await toWebpSrc(f);
-      send({ type: "ref.add", image: { src, name: f.name } });
-    } catch (err) {
-      console.error("imago: failed to process file", f.name, err);
-    }
-  }
-}
-async function importFiles(files, send) {
-  for (const f of Array.from(files ?? [])) {
-    if (!IMG.test(f.type))
-      continue;
-    try {
-      const src = await toWebpSrc(f);
-      send({ type: "image.import", image: { src, name: f.name } });
-    } catch (err) {
-      console.error("imago: failed to import file", f.name, err);
-    }
-  }
-}
-function centeredLayerBox(imgW, imgH, baseW, baseH) {
-  const scale = Math.min(0.4 * baseW / imgW, 0.4 * baseH / imgH);
-  const w = imgW * scale / baseW;
-  const h = imgH * scale / baseH;
-  return { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
-}
-async function imageSize(src) {
-  const bmp = await createImageBitmap(await (await fetch(src)).blob());
-  return { w: bmp.width, h: bmp.height };
-}
-async function addImageLayerFiles(files, send, baseW, baseH) {
-  for (const f of Array.from(files ?? [])) {
-    if (!IMG.test(f.type))
-      continue;
-    try {
-      const src = await toWebpSrc(f);
-      const box = baseW > 0 && baseH > 0 ? await imageSize(src).then((s) => centeredLayerBox(s.w, s.h, baseW, baseH)).catch(() => ({})) : {};
-      send({ type: "layer.addImage", src, name: f.name, ...box });
-    } catch (err) {
-      console.error("imago: failed to add image layer", f.name, err);
-    }
-  }
-}
-async function addImageLayerFromSrc(src, name, baseSrc, send) {
-  let box = {};
-  try {
-    const [img, base] = await Promise.all([imageSize(src), imageSize(baseSrc)]);
-    box = centeredLayerBox(img.w, img.h, base.w, base.h);
-  } catch {}
-  send({ type: "layer.addImage", src, name, ...box });
-}
-
-// src/imago/surface/components/annotations/AnnotationLayer.tsx
-var import_react7 = __toESM(require_react(), 1);
-
-// src/imago/surface/components/annotations/coords.ts
-function layerBand(layers, m) {
-  if (!m.layerId)
-    return -1;
-  return layers.findIndex((l) => l.id === m.layerId);
-}
-function byEffectiveZ(layers) {
-  return (a, b) => {
-    const ba = layerBand(layers, a);
-    const bb = layerBand(layers, b);
-    return ba !== bb ? ba - bb : (a.zOrder ?? 0) - (b.zOrder ?? 0);
-  };
-}
-function isMarkHidden(layers, m) {
-  if (!m.layerId)
-    return false;
-  return layers.find((l) => l.id === m.layerId)?.hidden === true;
-}
-function isMarkLocked(layers, m) {
-  if (!m.layerId)
-    return false;
-  return layers.find((l) => l.id === m.layerId)?.locked === true;
-}
-function isMarkSelectable(layers, m) {
-  return !isMarkHidden(layers, m) && !isMarkLocked(layers, m);
-}
-function visibleSorted(marks, layers) {
-  return marks.filter((m) => !isMarkHidden(layers, m)).sort(byEffectiveZ(layers));
-}
-function frac(e) {
-  const r = e.currentTarget.getBoundingClientRect();
-  return {
-    x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
-    y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
-  };
-}
-function bbox(d) {
-  return {
-    x: Math.min(d.x1, d.x2),
-    y: Math.min(d.y1, d.y2),
-    w: Math.abs(d.x2 - d.x1),
-    h: Math.abs(d.y2 - d.y1)
-  };
-}
-function pinBox(m, size) {
-  const w = size?.w ?? 0;
-  const h = size?.h ?? 0;
-  return { x: m.x - w / 2, y: m.y - h / 2, w, h };
-}
-function markBounds(m, pinSize) {
-  switch (m.tool) {
-    case "pin":
-      return pinBox(m, pinSize);
-    case "arrow":
-    case "line":
-      return bbox({ x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2 });
-    case "rect":
-    case "image":
-      return { x: m.x, y: m.y, w: m.w, h: m.h };
-    case "ellipse":
-      return { x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 };
-    case "draw":
-      return pointsBounds(m.points);
-  }
-}
-function boundsCenter(b) {
-  return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
-}
-function rotatePoint(p, deg, c, aspect = 1) {
-  if (!deg)
-    return p;
-  const a = deg * Math.PI / 180;
-  const cos = Math.cos(a);
-  const sin = Math.sin(a);
-  const u = p.x - c.x;
-  const v = p.y - c.y;
-  return {
-    x: c.x + u * cos - v * sin / aspect,
-    y: c.y + u * aspect * sin + v * cos
-  };
-}
-function pointsBounds(points) {
-  if (points.length === 0)
-    return { x: 0, y: 0, w: 0, h: 0 };
-  let minX = points[0].x;
-  let maxX = points[0].x;
-  let minY = points[0].y;
-  let maxY = points[0].y;
-  for (const p of points) {
-    if (p.x < minX)
-      minX = p.x;
-    if (p.x > maxX)
-      maxX = p.x;
-    if (p.y < minY)
-      minY = p.y;
-    if (p.y > maxY)
-      maxY = p.y;
-  }
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-}
-function pointToSegment(p, a, b) {
-  const vx = b.x - a.x;
-  const vy = b.y - a.y;
-  const len2 = vx * vx + vy * vy;
-  const t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * vx + (p.y - a.y) * vy) / len2)) : 0;
-  return Math.hypot(p.x - (a.x + t * vx), p.y - (a.y + t * vy));
-}
-var HIT_THRESHOLD = 0.02;
-function hitTest(p, m, threshold = HIT_THRESHOLD, pinSize, aspect = 1) {
-  if (m.rotation) {
-    const c = boundsCenter(markBounds(m, pinSize));
-    p = rotatePoint(p, -m.rotation, c, aspect);
-  }
-  switch (m.tool) {
-    case "pin": {
-      if (!pinSize || pinSize.w === 0 && pinSize.h === 0) {
-        return Math.hypot(p.x - m.x, p.y - m.y) <= threshold;
-      }
-      const b = pinBox(m, pinSize);
-      return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
-    }
-    case "arrow":
-    case "line":
-      return pointToSegment(p, { x: m.x1, y: m.y1 }, { x: m.x2, y: m.y2 }) <= threshold;
-    case "rect":
-    case "image":
-      return p.x >= m.x - threshold && p.x <= m.x + m.w + threshold && p.y >= m.y - threshold && p.y <= m.y + m.h + threshold;
-    case "ellipse": {
-      if (m.rx <= 0 || m.ry <= 0)
-        return false;
-      const dx = (p.x - m.cx) / m.rx;
-      const dy = (p.y - m.cy) / m.ry;
-      return dx * dx + dy * dy <= 1;
-    }
-    case "draw": {
-      const pts = m.points;
-      if (pts.length === 0)
-        return false;
-      if (pts.length === 1)
-        return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= threshold;
-      for (let i = 1;i < pts.length; i++) {
-        if (pointToSegment(p, pts[i - 1], pts[i]) <= threshold)
-          return true;
-      }
-      return false;
-    }
-  }
-}
-
-// src/imago/surface/components/annotations/erase.ts
-var ERASER_RADIUS = 0.025;
-function markId() {
-  return crypto.randomUUID();
-}
-function nearPath(p, eraserPath, r) {
-  const r2 = r * r;
-  for (const q of eraserPath) {
-    const dx = p.x - q.x;
-    const dy = p.y - q.y;
-    if (dx * dx + dy * dy <= r2)
-      return true;
-  }
-  return false;
-}
-function erasePolyline(points, eraserPath, r) {
-  const runs = [];
-  let cur = [];
-  for (const p of points) {
-    if (nearPath(p, eraserPath, r)) {
-      if (cur.length >= 2)
-        runs.push(cur);
-      cur = [];
-    } else {
-      cur.push(p);
-    }
-  }
-  if (cur.length >= 2)
-    runs.push(cur);
-  return runs;
-}
-function eraseMarks(marks, eraserPath, r) {
-  if (eraserPath.length === 0)
-    return marks;
-  const out = [];
-  for (const m of marks) {
-    if (m.tool !== "draw") {
-      out.push(m);
-      continue;
-    }
-    const runs = erasePolyline(m.points, eraserPath, r);
-    runs.forEach((run, i) => {
-      out.push(i === 0 ? { ...m, points: run } : { ...m, id: markId(), points: run });
-    });
-  }
-  return out;
-}
-
-// src/imago/surface/components/annotations/MarkRenderer.tsx
-var import_react4 = __toESM(require_react(), 1);
-
-// src/imago/surface/components/annotations/style.ts
-var COLORS = [
-  { name: "accent", value: "var(--color-accent)" },
-  { name: "red", value: "#ef4444" },
-  { name: "blue", value: "#3b82f6" },
-  { name: "green", value: "#22c55e" },
-  { name: "amber", value: "var(--color-attention)" },
-  { name: "white", value: "#ffffff" }
-];
-var WIDTHS = [
-  { name: "S", value: 2 },
-  { name: "M", value: 4 },
-  { name: "L", value: 8 }
-];
-var TEXT_SIZES = [
-  { name: "S", value: 14 },
-  { name: "M", value: 24 },
-  { name: "L", value: 40 }
-];
-var DEFAULT_TEXT_SIZE = 14;
-var PIN_MAX_W_FRACTION = 0.45;
-var DEFAULT_DRAW_STYLE = {
-  color: COLORS.find((c) => c.name === "amber")?.value,
-  width: WIDTHS.find((w) => w.name === "L")?.value,
-  fontSize: TEXT_SIZES.find((t) => t.name === "S")?.value
-};
-var DEFAULT_STROKE = "var(--color-attention)";
-var DEFAULT_WIDTH = 2;
-
-// src/imago/surface/components/annotations/svgMark.ts
-var CHAR_W = 0.6;
-var PIN_TEXT = "#ffffff";
-var PIN_BG_DEFAULT = "var(--color-accent)";
-function wrapLine(line, maxChars) {
-  if (line.length <= maxChars)
-    return [line];
-  const out = [];
-  let cur = "";
-  for (const word of line.split(/(\s+)/)) {
-    if (cur.length + word.length <= maxChars) {
-      cur += word;
-    } else if (word.length > maxChars) {
-      if (cur.trim())
-        out.push(cur.trimEnd());
-      let rest = word.trimStart();
-      cur = "";
-      while (rest.length > maxChars) {
-        out.push(rest.slice(0, maxChars));
-        rest = rest.slice(maxChars);
-      }
-      cur = rest;
-    } else {
-      if (cur.trim())
-        out.push(cur.trimEnd());
-      cur = word.trimStart();
-    }
-  }
-  if (cur.trim())
-    out.push(cur.trimEnd());
-  return out.length ? out : [line];
-}
-function pinLayout(m, W, H) {
-  const fontSize = m.fontSize ?? DEFAULT_TEXT_SIZE;
-  const cx = m.x * W;
-  const cy = m.y * H;
-  const maxChars = Math.max(1, Math.floor(PIN_MAX_W_FRACTION * W / (fontSize * CHAR_W)));
-  const lines = (m.label ?? "").split(`
-`).flatMap((l) => wrapLine(l, maxChars));
-  const lh = fontSize * 1.2;
-  const total = lines.length * lh;
-  const longest = Math.max(1, ...lines.map((l) => l.length));
-  const padX = fontSize * 0.45;
-  const padY = fontSize * 0.18;
-  const bgW = longest * fontSize * CHAR_W + padX * 2;
-  const bgH = total + padY * 2;
-  const baseline = cy - total / 2 + fontSize * 0.82;
-  const rx = fontSize * 0.3;
-  return { fontSize, cx, cy, lines, lh, bgW, bgH, baseline, rx };
-}
-function arrowHeadPoints(x1, y1, x2, y2, w) {
-  const ang = Math.atan2(y2 - y1, x2 - x1);
-  const ux = Math.cos(ang);
-  const uy = Math.sin(ang);
-  const len = w * 5;
-  const half = w * 2.5;
-  const bx = x2 - len * ux;
-  const by = y2 - len * uy;
-  return `${x2},${y2} ${bx - half * uy},${by + half * ux} ${bx + half * uy},${by - half * ux}`;
-}
-
-// src/imago/surface/components/annotations/MarkRenderer.tsx
-var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
-function MarkRenderer({
-  marks,
-  layers,
-  scale,
-  natW,
-  natH,
-  onMeasurePin,
-  liveOverride,
-  preserveAspectRatio = "xMidYMid meet"
-}) {
-  const display = liveOverride ? marks.map((m) => m.id === liveOverride.id ? liveOverride : m) : marks;
-  import_react4.useEffect(() => {
-    if (!onMeasurePin || natW <= 0 || natH <= 0)
-      return;
-    for (const m of visibleSorted(display, layers)) {
-      if (m.tool === "pin") {
-        const { bgW, bgH } = pinLayout(m, natW, natH);
-        onMeasurePin(m.id, { w: bgW / natW, h: bgH / natH });
-      }
-    }
-  }, [display, layers, natW, natH, onMeasurePin]);
-  if (natW <= 0 || natH <= 0)
-    return null;
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("svg", {
-    className: "absolute inset-0 w-full h-full pointer-events-none",
-    viewBox: `0 0 ${natW} ${natH}`,
-    preserveAspectRatio,
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime.jsxDEV("title", {
-        children: "annotations"
-      }, undefined, false, undefined, this),
-      visibleSorted(display, layers).map((m) => {
-        const node = markNode(m, scale, natW, natH);
-        const deg = m.rotation ?? 0;
-        if (!deg)
-          return node;
-        const b = markBounds(m);
-        const cx = (b.x + b.w / 2) * natW;
-        const cy = (b.y + b.h / 2) * natH;
-        return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("g", {
-          transform: `rotate(${deg} ${cx} ${cy})`,
-          children: node
-        }, m.id, false, undefined, this);
-      })
-    ]
-  }, undefined, true, undefined, this);
-}
-function markNode(m, scale, natW, natH) {
-  const stroke = m.color ?? DEFAULT_STROKE;
-  const sw = (m.width ?? DEFAULT_WIDTH) * scale;
-  switch (m.tool) {
-    case "image":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("image", {
-        href: m.src,
-        x: m.x * natW,
-        y: m.y * natH,
-        width: m.w * natW,
-        height: m.h * natH,
-        preserveAspectRatio: "none"
-      }, m.id, false, undefined, this);
-    case "arrow":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("g", {
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("line", {
-            x1: m.x1 * natW,
-            y1: m.y1 * natH,
-            x2: m.x2 * natW,
-            y2: m.y2 * natH,
-            stroke,
-            strokeWidth: sw,
-            vectorEffect: "non-scaling-stroke",
-            strokeLinecap: "round"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("polygon", {
-            points: arrowHeadPoints(m.x1 * natW, m.y1 * natH, m.x2 * natW, m.y2 * natH, m.width ?? DEFAULT_WIDTH),
-            fill: stroke
-          }, undefined, false, undefined, this)
-        ]
-      }, m.id, true, undefined, this);
-    case "line":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("line", {
-        x1: m.x1 * natW,
-        y1: m.y1 * natH,
-        x2: m.x2 * natW,
-        y2: m.y2 * natH,
-        stroke,
-        strokeWidth: sw,
-        vectorEffect: "non-scaling-stroke",
-        strokeLinecap: "round"
-      }, m.id, false, undefined, this);
-    case "rect":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("rect", {
-        x: m.x * natW,
-        y: m.y * natH,
-        width: m.w * natW,
-        height: m.h * natH,
-        fill: "none",
-        stroke,
-        strokeWidth: sw,
-        vectorEffect: "non-scaling-stroke"
-      }, m.id, false, undefined, this);
-    case "ellipse":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("ellipse", {
-        cx: m.cx * natW,
-        cy: m.cy * natH,
-        rx: m.rx * natW,
-        ry: m.ry * natH,
-        fill: "none",
-        stroke,
-        strokeWidth: sw,
-        vectorEffect: "non-scaling-stroke"
-      }, m.id, false, undefined, this);
-    case "draw":
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("polyline", {
-        points: m.points.map((p) => `${p.x * natW},${p.y * natH}`).join(" "),
-        fill: "none",
-        stroke,
-        strokeWidth: sw,
-        vectorEffect: "non-scaling-stroke",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, m.id, false, undefined, this);
-    case "pin": {
-      const { fontSize, cx, cy, lines, lh, bgW, bgH, baseline, rx } = pinLayout(m, natW, natH);
-      const bg = m.color ?? PIN_BG_DEFAULT;
-      let off = 0;
-      const rows = lines.map((text) => {
-        const row = { text, dy: off === 0 ? 0 : lh, key: `${m.id}@${off}` };
-        off += text.length + 1;
-        return row;
-      });
-      return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("g", {
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("rect", {
-            x: cx - bgW / 2,
-            y: cy - bgH / 2,
-            width: bgW,
-            height: bgH,
-            rx,
-            fill: bg
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("text", {
-            x: cx,
-            y: baseline,
-            fontFamily: "sans-serif",
-            fontSize,
-            fill: PIN_TEXT,
-            textAnchor: "middle",
-            children: rows.map((row) => /* @__PURE__ */ jsx_dev_runtime.jsxDEV("tspan", {
-              x: cx,
-              ...row.dy ? { dy: row.dy } : {},
-              children: row.text
-            }, row.key, false, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, m.id, true, undefined, this);
-    }
-    default:
-      return m;
-  }
-}
-
-// src/imago/surface/components/annotations/SelectionOverlay.tsx
-var import_react6 = __toESM(require_react(), 1);
-
-// src/imago/surface/components/annotations/tools/PinTool.tsx
-var import_react5 = __toESM(require_react(), 1);
-var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
-function markId2() {
-  return crypto.randomUUID();
-}
-function PinEditor({
-  x,
-  y,
-  initialLabel,
-  fontSize,
-  onSubmit,
-  onCancel
-}) {
-  const wrapRef = import_react5.useRef(null);
-  const textRef = import_react5.useRef(null);
-  const armed = import_react5.useRef(false);
-  const [value, setValue] = import_react5.useState(initialLabel);
-  const [maxW, setMaxW] = import_react5.useState(null);
-  import_react5.useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      const el = textRef.current;
-      el?.focus();
-      if (el)
-        el.setSelectionRange(el.value.length, el.value.length);
-      armed.current = true;
-    });
-    return () => cancelAnimationFrame(raf);
-  }, []);
-  import_react5.useLayoutEffect(() => {
-    const box = wrapRef.current?.offsetParent;
-    if (!box)
-      return;
-    const apply = () => setMaxW(box.clientWidth * PIN_MAX_W_FRACTION);
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(box);
-    return () => ro.disconnect();
-  }, []);
-  import_react5.useLayoutEffect(() => {
-    const el = textRef.current;
-    if (!el)
-      return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [value, fontSize, maxW]);
-  const submit = () => {
-    const label = value.trim();
-    if (!label)
-      onCancel();
-    else
-      onSubmit(label);
-  };
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
-    ref: wrapRef,
-    className: "absolute -translate-x-1/2 -translate-y-1/2 z-10",
-    style: { left: `${x * 100}%`, top: `${y * 100}%` },
-    onPointerDown: (e) => e.stopPropagation(),
-    children: /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("textarea", {
-      ref: textRef,
-      rows: 1,
-      value,
-      onChange: (e) => setValue(e.target.value),
-      onKeyDown: (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          submit();
-        } else if (e.key === "Escape") {
-          e.preventDefault();
-          onCancel();
-        }
-      },
-      onBlur: () => armed.current && submit(),
-      placeholder: "note… (⇧↵ line)",
-      style: {
-        fontSize: `${fontSize}px`,
-        minWidth: `${Math.round(Math.max(96, fontSize * 5))}px`,
-        maxWidth: maxW ? `${maxW}px` : "280px"
-      },
-      className: "block w-max resize-none overflow-hidden bg-accent text-white placeholder-white/60 px-1.5 py-0.5 rounded shadow outline-none ring-1 ring-accent-fg/40 leading-tight whitespace-pre-wrap [overflow-wrap:anywhere]"
-    }, undefined, false, undefined, this)
-  }, undefined, false, undefined, this);
-}
-var PinTool = {
-  id: "pin",
-  icon: Pin,
-  title: "Pin — label a spot",
-  cursor: "cursor-crosshair",
-  capturePointer: false,
-  onDown: (p, draft) => draft ?? { x: p.x, y: p.y, label: "" },
-  onMove: (_p, draft) => draft,
-  onUp: (_p, draft) => ({ draft }),
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d)
-      return null;
-    const fontSize = (ctx.style.fontSize ?? DEFAULT_TEXT_SIZE) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(PinEditor, {
-      x: d.x,
-      y: d.y,
-      initialLabel: d.label,
-      fontSize,
-      onSubmit: (label) => ctx.commit({ id: markId2(), tool: "pin", label, x: d.x, y: d.y }),
-      onCancel: ctx.cancel
-    }, undefined, false, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/SelectionOverlay.tsx
-var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
-var MOVE_THRESHOLD = 0.005;
-var MIN_SIZE = 0.01;
-var PAD = 0.012;
-var MIN_HL = 0.04;
-var ROT_GAP = 0.06;
-var CORNERS = new Set(["nw", "ne", "se", "sw"]);
-function translate(m, dx, dy) {
-  switch (m.tool) {
-    case "pin":
-      return { ...m, x: m.x + dx, y: m.y + dy };
-    case "arrow":
-    case "line":
-      return {
-        ...m,
-        x1: m.x1 + dx,
-        y1: m.y1 + dy,
-        x2: m.x2 + dx,
-        y2: m.y2 + dy
-      };
-    case "rect":
-    case "image":
-      return { ...m, x: m.x + dx, y: m.y + dy };
-    case "ellipse":
-      return { ...m, cx: m.cx + dx, cy: m.cy + dy };
-    case "draw":
-      return { ...m, points: m.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
-  }
-}
-function resizeBox(box, handle, dx, dy) {
-  let L = box.x;
-  let R = box.x + box.w;
-  let T = box.y;
-  let B = box.y + box.h;
-  if (handle.includes("w"))
-    L = Math.min(R - MIN_SIZE, box.x + dx);
-  if (handle.includes("e"))
-    R = Math.max(L + MIN_SIZE, box.x + box.w + dx);
-  if (handle.includes("n"))
-    T = Math.min(B - MIN_SIZE, box.y + dy);
-  if (handle.includes("s"))
-    B = Math.max(T + MIN_SIZE, box.y + box.h + dy);
-  return { x: L, y: T, w: R - L, h: B - T };
-}
-function resizeBoxAspect(box, handle, dx, dy) {
-  const { x, y, w, h } = box;
-  if (w <= 0 || h <= 0)
-    return resizeBox(box, handle, dx, dy);
-  const west = handle.includes("w");
-  const north = handle.includes("n");
-  const Dx = west ? -w : w;
-  const Dy = north ? -h : h;
-  const t = (dx * Dx + dy * Dy) / (Dx * Dx + Dy * Dy);
-  const s = Math.max(1 + t, MIN_SIZE / Math.min(w, h));
-  const nw = w * s;
-  const nh = h * s;
-  const nx = west ? x + w - nw : x;
-  const ny = north ? y + h - nh : y;
-  return { x: nx, y: ny, w: nw, h: nh };
-}
-function resizeBoxFor(box, handle, dx, dy, lock) {
-  return lock && CORNERS.has(handle) ? resizeBoxAspect(box, handle, dx, dy) : resizeBox(box, handle, dx, dy);
-}
-function resize(m, handle, dx, dy, shift) {
-  switch (m.tool) {
-    case "pin":
-      return m;
-    case "arrow":
-    case "line":
-      return handle === "p1" ? { ...m, x1: m.x1 + dx, y1: m.y1 + dy } : { ...m, x2: m.x2 + dx, y2: m.y2 + dy };
-    case "rect":
-    case "image": {
-      const lock = m.tool === "image" ? !shift : shift;
-      const b = resizeBoxFor({ x: m.x, y: m.y, w: m.w, h: m.h }, handle, dx, dy, lock);
-      return { ...m, ...b };
-    }
-    case "ellipse": {
-      const b = resizeBoxFor({ x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 }, handle, dx, dy, shift);
-      return {
-        ...m,
-        cx: b.x + b.w / 2,
-        cy: b.y + b.h / 2,
-        rx: b.w / 2,
-        ry: b.h / 2
-      };
-    }
-    case "draw": {
-      const old = markBounds(m);
-      const b = resizeBoxFor(old, handle, dx, dy, shift);
-      const sx = old.w > 0 ? b.w / old.w : 1;
-      const sy = old.h > 0 ? b.h / old.h : 1;
-      return {
-        ...m,
-        points: m.points.map((p) => ({
-          x: b.x + (p.x - old.x) * sx,
-          y: b.y + (p.y - old.y) * sy
-        }))
-      };
-    }
-  }
-}
-function normDeg(d) {
-  return ((d + 180) % 360 + 360) % 360 - 180;
-}
-function applyGesture(m, g, aspect) {
-  if (g.type === "rotate") {
-    const c = boundsCenter(markBounds(m));
-    const ang = Math.atan2(g.cur.y - c.y, (g.cur.x - c.x) * aspect) * 180 / Math.PI;
-    return { ...m, rotation: normDeg(ang + 90) };
-  }
-  let dx = g.cur.x - g.start.x;
-  let dy = g.cur.y - g.start.y;
-  if (g.type === "move")
-    return translate(m, dx, dy);
-  if (m.rotation) {
-    const d = rotatePoint({ x: dx, y: dy }, -m.rotation, { x: 0, y: 0 }, aspect);
-    dx = d.x;
-    dy = d.y;
-  }
-  return resize(m, g.handle, dx, dy, g.shift);
-}
-function clampToImage(m, pinSize) {
-  if (m.tool !== "pin" || !pinSize || pinSize.w === 0 && pinSize.h === 0)
-    return m;
-  const hw = pinSize.w / 2;
-  const hh = pinSize.h / 2;
-  return {
-    ...m,
-    x: Math.min(1 - hw, Math.max(hw, m.x)),
-    y: Math.min(1 - hh, Math.max(hh, m.y))
-  };
-}
-function geometryPatch(m) {
-  switch (m.tool) {
-    case "pin":
-      return { x: m.x, y: m.y };
-    case "arrow":
-    case "line":
-      return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2 };
-    case "rect":
-    case "image":
-      return { x: m.x, y: m.y, w: m.w, h: m.h };
-    case "ellipse":
-      return { cx: m.cx, cy: m.cy, rx: m.rx, ry: m.ry };
-    case "draw":
-      return { points: m.points };
-  }
-}
-function highlightBox(m, pinSize) {
-  const b = markBounds(m, pinSize);
-  let x = b.x - PAD;
-  let y = b.y - PAD;
-  let w = b.w + 2 * PAD;
-  let h = b.h + 2 * PAD;
-  if (w < MIN_HL) {
-    x -= (MIN_HL - w) / 2;
-    w = MIN_HL;
-  }
-  if (h < MIN_HL) {
-    y -= (MIN_HL - h) / 2;
-    h = MIN_HL;
-  }
-  return { x, y, w, h };
-}
-function resizeHandles(m) {
-  switch (m.tool) {
-    case "pin":
-      return [];
-    case "arrow":
-    case "line":
-      return [
-        { id: "p1", x: m.x1, y: m.y1, cursor: "cursor-move" },
-        { id: "p2", x: m.x2, y: m.y2, cursor: "cursor-move" }
-      ];
-    case "rect":
-    case "image": {
-      const { x, y, w, h } = m;
-      return boxHandles(x, y, w, h, true);
-    }
-    case "ellipse":
-      return boxHandles(m.cx - m.rx, m.cy - m.ry, m.rx * 2, m.ry * 2, false);
-    case "draw": {
-      const b = markBounds(m);
-      return boxHandles(b.x, b.y, b.w, b.h, true);
-    }
-  }
-}
-function boxHandles(x, y, w, h, edges) {
-  const cx = x + w / 2;
-  const cy = y + h / 2;
-  const corners = [
-    { id: "nw", x, y, cursor: "cursor-nwse-resize" },
-    { id: "ne", x: x + w, y, cursor: "cursor-nesw-resize" },
-    { id: "se", x: x + w, y: y + h, cursor: "cursor-nwse-resize" },
-    { id: "sw", x, y: y + h, cursor: "cursor-nesw-resize" }
-  ];
-  if (!edges)
-    return corners;
-  return [
-    ...corners,
-    { id: "n", x: cx, y, cursor: "cursor-ns-resize" },
-    { id: "e", x: x + w, y: cy, cursor: "cursor-ew-resize" },
-    { id: "s", x: cx, y: y + h, cursor: "cursor-ns-resize" },
-    { id: "w", x, y: cy, cursor: "cursor-ew-resize" }
-  ];
-}
-function SelectionOverlay({
-  marks,
-  layers,
-  send,
-  scale,
-  natW,
-  natH,
-  pinBounds,
-  selectedIds,
-  onSelectedIdsChange,
-  onLiveTransform,
-  liveOverride
-}) {
-  const aspect = natH > 0 ? natW / natH : 1;
-  const [gesture, setGesture] = import_react6.useState(null);
-  const [editingId, setEditingId] = import_react6.useState(null);
-  const selectedMarks = marks.filter((m) => selectedIds.includes(m.id));
-  const single = selectedIds.length === 1 ? selectedMarks[0] : undefined;
-  const held = single && liveOverride && liveOverride.id === single.id ? liveOverride : undefined;
-  const live = single && gesture ? clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id]) : held ?? single;
-  const hl = single && live ? highlightBox(live, pinBounds[live.id]) : null;
-  const liveDeg = single && live?.rotation || 0;
-  const frameCenter = single && live ? boundsCenter(markBounds(live, pinBounds[live.id])) : null;
-  const editing = editingId ? marks.find((m) => m.id === editingId) : undefined;
-  import_react6.useEffect(() => {
-    if (gesture && single)
-      onLiveTransform?.(clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id]));
-  }, [gesture, single, aspect, pinBounds, onLiveTransform]);
-  import_react6.useEffect(() => () => onLiveTransform?.(null), [onLiveTransform]);
-  function topHit(p) {
-    const cmp = byEffectiveZ(layers);
-    return [...marks].filter((m) => isMarkSelectable(layers, m)).sort((a, b) => cmp(b, a)).find((m) => hitTest(p, m, undefined, pinBounds[m.id], aspect));
-  }
-  function onPointerDown(e) {
-    if (editingId)
-      setEditingId(null);
-    const handle = e.target.dataset.handle;
-    const p = frac(e);
-    if (handle && single) {
-      e.stopPropagation();
-      const type = handle === "rotate" ? "rotate" : "resize";
-      setGesture({ type, handle, start: p, cur: p, shift: e.shiftKey });
-      e.currentTarget.setPointerCapture(e.pointerId);
-      return;
-    }
-    const hit = topHit(p);
-    if (!hit) {
-      onSelectedIdsChange([]);
-      return;
-    }
-    e.stopPropagation();
-    if (e.shiftKey || e.metaKey) {
-      onSelectedIdsChange(selectedIds.includes(hit.id) ? selectedIds.filter((id) => id !== hit.id) : [...selectedIds, hit.id]);
-      return;
-    }
-    onSelectedIdsChange([hit.id]);
-    if (hit.tool === "pin" && e.detail >= 2) {
-      setEditingId(hit.id);
-      return;
-    }
-    setGesture({ type: "move", handle: "", start: p, cur: p, shift: e.shiftKey });
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-  function onPointerMove(e) {
-    if (!gesture)
-      return;
-    setGesture({ ...gesture, cur: frac(e), shift: e.shiftKey });
-  }
-  function onPointerUp(e) {
-    if (!gesture)
-      return;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-    if (single) {
-      if (gesture.type === "rotate") {
-        const rotated = applyGesture(single, gesture, aspect);
-        send({ type: "mark.update", id: single.id, patch: { rotation: rotated.rotation ?? 0 } });
-      } else {
-        const moved = Math.hypot(gesture.cur.x - gesture.start.x, gesture.cur.y - gesture.start.y) >= MOVE_THRESHOLD;
-        if (moved) {
-          send({
-            type: "mark.update",
-            id: single.id,
-            patch: geometryPatch(clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id]))
-          });
-        }
-      }
-    }
-    setGesture(null);
-  }
-  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    className: "absolute inset-0",
-    children: [
-      selectedMarks.map((m) => {
-        const shown = single && single.id === m.id ? live ?? m : m;
-        const box = highlightBox(shown, pinBounds[shown.id]);
-        const deg = shown.rotation ?? 0;
-        return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-          className: "absolute rounded-sm border-2 border-accent pointer-events-none",
-          style: {
-            left: `${box.x * 100}%`,
-            top: `${box.y * 100}%`,
-            width: `${box.w * 100}%`,
-            height: `${box.h * 100}%`,
-            transform: deg ? `rotate(${deg}deg)` : undefined
-          }
-        }, m.id, false, undefined, this);
-      }),
-      single && live && hl && !editing && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-        className: "absolute inset-0",
-        style: liveDeg && frameCenter ? {
-          transform: `rotate(${liveDeg}deg)`,
-          transformOrigin: `${frameCenter.x * 100}% ${frameCenter.y * 100}%`
-        } : undefined,
-        children: [
-          resizeHandles(live).map((hnd) => /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            "data-handle": hnd.id,
-            className: `absolute w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent border border-edge ${hnd.cursor}`,
-            style: { left: `${hnd.x * 100}%`, top: `${hnd.y * 100}%` }
-          }, hnd.id, false, undefined, this)),
-          single.tool === "image" && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(jsx_dev_runtime3.Fragment, {
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-                className: "absolute w-px -translate-x-1/2 bg-edge pointer-events-none",
-                style: {
-                  left: `${(hl.x + hl.w / 2) * 100}%`,
-                  top: `${(hl.y - ROT_GAP) * 100}%`,
-                  height: `${ROT_GAP * 100}%`
-                }
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-                "data-handle": "rotate",
-                title: "Rotate",
-                className: "absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent border border-edge cursor-grab",
-                style: { left: `${(hl.x + hl.w / 2) * 100}%`, top: `${(hl.y - ROT_GAP) * 100}%` }
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "absolute flex items-center gap-1 -translate-x-full -translate-y-1/2",
-            style: { left: `${(hl.x + hl.w) * 100}%`, top: `${hl.y * 100}%` },
-            children: [
-              single.tool === "pin" && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(ActionButton, {
-                title: "Edit note",
-                onClick: () => setEditingId(single.id),
-                children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Pencil, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(ActionButton, {
-                title: "Delete annotation",
-                onClick: () => {
-                  send({ type: "mark.remove", id: single.id });
-                  onSelectedIdsChange([]);
-                },
-                children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(X, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      editing?.tool === "pin" && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(PinEditor, {
-        x: editing.x,
-        y: editing.y,
-        initialLabel: editing.label,
-        fontSize: (editing.fontSize ?? DEFAULT_TEXT_SIZE) * scale,
-        onSubmit: (label) => {
-          send({ type: "mark.update", id: editing.id, patch: { label } });
-          setEditingId(null);
-        },
-        onCancel: () => setEditingId(null)
-      }, editing.id, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function ActionButton({
-  title,
-  onClick,
-  children
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("button", {
-    type: "button",
-    title,
-    onPointerDown: (e) => e.stopPropagation(),
-    onClick,
-    className: "w-5 h-5 rounded-full flex items-center justify-center bg-surface border border-edge text-muted hover:text-accent-ink hover:border-accent",
-    children
-  }, undefined, false, undefined, this);
-}
-
-// src/imago/surface/components/annotations/tools/ArrowTool.tsx
-var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
-function markId3() {
-  return crypto.randomUUID();
-}
-var ArrowTool = {
-  id: "arrow",
-  icon: MoveUpRight,
-  title: "Arrow — move this → there",
-  cursor: "cursor-crosshair",
-  capturePointer: true,
-  onDown: (p) => ({ x1: p.x, y1: p.y, x2: p.x, y2: p.y }),
-  onMove: (p, draft) => draft ? { ...draft, x2: p.x, y2: p.y } : draft,
-  onUp: (_p, draft) => {
-    const d = draft;
-    if (!d)
-      return {};
-    if (Math.hypot(d.x2 - d.x1, d.y2 - d.y1) < 0.01)
-      return {};
-    const mark = {
-      id: markId3(),
-      tool: "arrow",
-      x1: d.x1,
-      y1: d.y1,
-      x2: d.x2,
-      y2: d.y2
-    };
-    return { mark };
-  },
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d)
-      return null;
-    const stroke = ctx.style.color ?? DEFAULT_STROKE;
-    const strokeWidth = (ctx.style.width ?? DEFAULT_WIDTH) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("svg", {
-      className: "absolute inset-0 w-full h-full pointer-events-none",
-      viewBox: "0 0 100 100",
-      preserveAspectRatio: "none",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("title", {
-          children: "arrow preview"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("defs", {
-          children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("marker", {
-            id: "imago-arrowhead-draft",
-            markerWidth: "6",
-            markerHeight: "6",
-            refX: "3",
-            refY: "3",
-            orient: "auto",
-            children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("path", {
-              d: "M0,0 L6,3 L0,6 Z",
-              fill: "context-stroke"
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("line", {
-          x1: d.x1 * 100,
-          y1: d.y1 * 100,
-          x2: d.x2 * 100,
-          y2: d.y2 * 100,
-          stroke,
-          strokeWidth,
-          vectorEffect: "non-scaling-stroke",
-          strokeDasharray: "4 3",
-          markerEnd: "url(#imago-arrowhead-draft)",
-          opacity: "0.7"
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/tools/DrawTool.tsx
-var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
-var MIN_SPAN = 0.005;
-function markId4() {
-  return crypto.randomUUID();
-}
-function polyPoints(points) {
-  return points.map((p) => `${p.x * 100},${p.y * 100}`).join(" ");
-}
-var DrawTool = {
-  id: "draw",
-  icon: PenLine,
-  title: "Draw — freeform sketch",
-  cursor: "cursor-crosshair",
-  capturePointer: true,
-  onDown: (p) => ({ points: [{ x: p.x, y: p.y }] }),
-  onMove: (p, draft) => draft ? { points: [...draft.points, { x: p.x, y: p.y }] } : draft,
-  onUp: (_p, draft) => {
-    const d = draft;
-    if (!d || d.points.length < 2)
-      return {};
-    const b = markBounds({ id: "", tool: "draw", points: d.points });
-    if (Math.max(b.w, b.h) < MIN_SPAN)
-      return {};
-    const mark = { id: markId4(), tool: "draw", points: d.points };
-    return { mark };
-  },
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d || d.points.length === 0)
-      return null;
-    const stroke = ctx.style.color ?? DEFAULT_STROKE;
-    const strokeWidth = (ctx.style.width ?? DEFAULT_WIDTH) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("svg", {
-      className: "absolute inset-0 w-full h-full pointer-events-none",
-      viewBox: "0 0 100 100",
-      preserveAspectRatio: "none",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("title", {
-          children: "sketch preview"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("polyline", {
-          points: polyPoints(d.points),
-          fill: "none",
-          stroke,
-          strokeWidth,
-          vectorEffect: "non-scaling-stroke",
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-          strokeDasharray: "4 3",
-          opacity: "0.7"
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/tools/EllipseTool.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
-function markId5() {
-  return crypto.randomUUID();
-}
-var EllipseTool = {
-  id: "ellipse",
-  icon: Circle,
-  title: "Ellipse — circle an area",
-  cursor: "cursor-crosshair",
-  capturePointer: true,
-  onDown: (p) => ({ x1: p.x, y1: p.y, x2: p.x, y2: p.y }),
-  onMove: (p, draft) => draft ? { ...draft, x2: p.x, y2: p.y } : draft,
-  onUp: (_p, draft) => {
-    const d = draft;
-    if (!d)
-      return {};
-    if (Math.hypot(d.x2 - d.x1, d.y2 - d.y1) < 0.01)
-      return {};
-    const b = bbox(d);
-    const mark = {
-      id: markId5(),
-      tool: "ellipse",
-      cx: b.x + b.w / 2,
-      cy: b.y + b.h / 2,
-      rx: b.w / 2,
-      ry: b.h / 2
-    };
-    return { mark };
-  },
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d)
-      return null;
-    const b = bbox(d);
-    const stroke = ctx.style.color ?? DEFAULT_STROKE;
-    const strokeWidth = (ctx.style.width ?? DEFAULT_WIDTH) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("svg", {
-      className: "absolute inset-0 w-full h-full pointer-events-none",
-      viewBox: "0 0 100 100",
-      preserveAspectRatio: "none",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("title", {
-          children: "ellipse preview"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("ellipse", {
-          cx: (b.x + b.w / 2) * 100,
-          cy: (b.y + b.h / 2) * 100,
-          rx: b.w / 2 * 100,
-          ry: b.h / 2 * 100,
-          fill: "none",
-          stroke,
-          strokeWidth,
-          strokeDasharray: "4 3",
-          vectorEffect: "non-scaling-stroke",
-          opacity: "0.7"
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/tools/LineTool.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
-function markId6() {
-  return crypto.randomUUID();
-}
-var LineTool = {
-  id: "line",
-  icon: Minus,
-  title: "Line — draw a straight line",
-  cursor: "cursor-crosshair",
-  capturePointer: true,
-  onDown: (p) => ({ x1: p.x, y1: p.y, x2: p.x, y2: p.y }),
-  onMove: (p, draft) => draft ? { ...draft, x2: p.x, y2: p.y } : draft,
-  onUp: (_p, draft) => {
-    const d = draft;
-    if (!d)
-      return {};
-    if (Math.hypot(d.x2 - d.x1, d.y2 - d.y1) < 0.01)
-      return {};
-    const mark = {
-      id: markId6(),
-      tool: "line",
-      x1: d.x1,
-      y1: d.y1,
-      x2: d.x2,
-      y2: d.y2
-    };
-    return { mark };
-  },
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d)
-      return null;
-    const stroke = ctx.style.color ?? DEFAULT_STROKE;
-    const strokeWidth = (ctx.style.width ?? DEFAULT_WIDTH) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("svg", {
-      className: "absolute inset-0 w-full h-full pointer-events-none",
-      viewBox: "0 0 100 100",
-      preserveAspectRatio: "none",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("title", {
-          children: "line preview"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("line", {
-          x1: d.x1 * 100,
-          y1: d.y1 * 100,
-          x2: d.x2 * 100,
-          y2: d.y2 * 100,
-          stroke,
-          strokeWidth,
-          vectorEffect: "non-scaling-stroke",
-          strokeDasharray: "4 3",
-          opacity: "0.7"
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/tools/RectTool.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
-function markId7() {
-  return crypto.randomUUID();
-}
-var RectTool = {
-  id: "rect",
-  icon: Square,
-  title: "Rectangle — box an area",
-  cursor: "cursor-crosshair",
-  capturePointer: true,
-  onDown: (p) => ({ x1: p.x, y1: p.y, x2: p.x, y2: p.y }),
-  onMove: (p, draft) => draft ? { ...draft, x2: p.x, y2: p.y } : draft,
-  onUp: (_p, draft) => {
-    const d = draft;
-    if (!d)
-      return {};
-    if (Math.hypot(d.x2 - d.x1, d.y2 - d.y1) < 0.01)
-      return {};
-    const b = bbox(d);
-    const mark = {
-      id: markId7(),
-      tool: "rect",
-      x: b.x,
-      y: b.y,
-      w: b.w,
-      h: b.h
-    };
-    return { mark };
-  },
-  renderDraft: (draft, ctx) => {
-    const d = draft;
-    if (!d)
-      return null;
-    const b = bbox(d);
-    const stroke = ctx.style.color ?? DEFAULT_STROKE;
-    const strokeWidth = (ctx.style.width ?? DEFAULT_WIDTH) * ctx.scale;
-    return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("svg", {
-      className: "absolute inset-0 w-full h-full pointer-events-none",
-      viewBox: "0 0 100 100",
-      preserveAspectRatio: "none",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("title", {
-          children: "rectangle preview"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("rect", {
-          x: b.x * 100,
-          y: b.y * 100,
-          width: b.w * 100,
-          height: b.h * 100,
-          fill: "none",
-          stroke,
-          strokeWidth,
-          strokeDasharray: "4 3",
-          vectorEffect: "non-scaling-stroke",
-          opacity: "0.7"
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-};
-
-// src/imago/surface/components/annotations/tools/registry.ts
-var TOOL_REGISTRY = {
-  arrow: ArrowTool,
-  line: LineTool,
-  pin: PinTool,
-  rect: RectTool,
-  ellipse: EllipseTool,
-  draw: DrawTool
-};
-var TOOL_ORDER = ["arrow", "line", "pin", "rect", "ellipse", "draw"];
-
-// src/imago/surface/components/annotations/AnnotationLayer.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
-var ERASER_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, crosshair`;
-function AnnotationLayer({
-  tool,
-  marks,
-  layers,
-  resetKey,
-  send,
-  drawStyle,
-  scale,
-  natW,
-  natH,
-  selectedIds,
-  onSelectedIdsChange,
-  activeLayerId
-}) {
-  const [draft, setDraft] = import_react7.useState(null);
-  const plugin = TOOL_REGISTRY[tool];
-  const [eraserPath, setEraserPath] = import_react7.useState(null);
-  const [pendingErase, setPendingErase] = import_react7.useState(null);
-  const [altHeld, setAltHeld] = import_react7.useState(false);
-  const eraseArmed = tool === "draw" && altHeld;
-  import_react7.useEffect(() => {
-    const sync = (e) => setAltHeld(e.altKey);
-    window.addEventListener("keydown", sync);
-    window.addEventListener("keyup", sync);
-    return () => {
-      window.removeEventListener("keydown", sync);
-      window.removeEventListener("keyup", sync);
-    };
-  }, []);
-  const [pinBounds, setPinBounds] = import_react7.useState({});
-  const onMeasurePin = import_react7.useCallback((id, size) => {
-    setPinBounds((prev) => {
-      const cur = prev[id];
-      if (cur && Math.abs(cur.w - size.w) < 0.0001 && Math.abs(cur.h - size.h) < 0.0001)
-        return prev;
-      return { ...prev, [id]: size };
-    });
-  }, []);
-  const [liveOverride, setLiveOverride] = import_react7.useState(null);
-  import_react7.useEffect(() => {
-    setLiveOverride(null);
-    setPendingErase(null);
-  }, [marks]);
-  import_react7.useEffect(() => {
-    setDraft(null);
-    setEraserPath(null);
-    setPendingErase(null);
-  }, [tool, resetKey]);
-  function commit(mark) {
-    const styled = { ...mark };
-    if (drawStyle.color)
-      styled.color = drawStyle.color;
-    if (drawStyle.width != null)
-      styled.width = drawStyle.width;
-    if (drawStyle.fontSize != null)
-      styled.fontSize = drawStyle.fontSize;
-    if (activeLayerId)
-      styled.layerId = activeLayerId;
-    send({ type: "mark.add", mark: styled });
-    setDraft(null);
-  }
-  function onPointerDown(e) {
-    if (!plugin)
-      return;
-    e.stopPropagation();
-    if (tool === "draw" && e.altKey) {
-      setEraserPath([frac(e)]);
-      e.currentTarget.setPointerCapture(e.pointerId);
-      return;
-    }
-    setDraft(plugin.onDown(frac(e), draft));
-    if (plugin.capturePointer)
-      e.currentTarget.setPointerCapture(e.pointerId);
-  }
-  function onPointerMove(e) {
-    if (eraserPath) {
-      const pt = frac(e);
-      setEraserPath((p) => p ? [...p, pt] : p);
-      return;
-    }
-    if (!plugin || draft == null)
-      return;
-    setDraft(plugin.onMove(frac(e), draft));
-  }
-  function onPointerUp(e) {
-    if (eraserPath) {
-      e.currentTarget.releasePointerCapture?.(e.pointerId);
-      const result = eraseMarks(marks, eraserPath, ERASER_RADIUS);
-      send({ type: "marks.replace", marks: result });
-      setPendingErase(result);
-      setEraserPath(null);
-      return;
-    }
-    if (!plugin || draft == null)
-      return;
-    if (plugin.capturePointer)
-      e.currentTarget.releasePointerCapture?.(e.pointerId);
-    const r = plugin.onUp(frac(e), draft);
-    if (r.mark)
-      commit(r.mark);
-    else
-      setDraft(r.draft ?? null);
-  }
-  const ctx = {
-    commit,
-    cancel: () => setDraft(null),
-    update: (d) => setDraft(d),
-    style: drawStyle,
-    scale
-  };
-  const shownMarks = eraserPath ? eraseMarks(marks, eraserPath, ERASER_RADIUS) : pendingErase ?? marks;
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    className: "absolute inset-0",
-    style: eraseArmed ? { cursor: ERASER_CURSOR } : undefined,
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MarkRenderer, {
-        marks: shownMarks,
-        layers,
-        scale,
-        natW,
-        natH,
-        onMeasurePin,
-        liveOverride
-      }, undefined, false, undefined, this),
-      plugin?.renderDraft(draft, ctx),
-      !plugin && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SelectionOverlay, {
-        marks,
-        layers,
-        send,
-        scale,
-        natW,
-        natH,
-        pinBounds,
-        selectedIds,
-        onSelectedIdsChange,
-        onLiveTransform: setLiveOverride,
-        liveOverride
-      }, resetKey, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/imago/surface/components/annotations/AnnotationToolbar.tsx
+var X = createLucideIcon("x", __iconNode2);
+// src/grapevine/surface/components/ChannelRail.tsx
 var import_react8 = __toESM(require_react(), 1);
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
-function AnnotationToolbar({
-  tool,
-  setTool,
-  hasMarks,
-  onClear,
-  activeColor,
-  activeWidth,
-  activeFontSize,
-  pinSelected,
-  onPickColor,
-  onPickWidth,
-  onPickFontSize
-}) {
-  const [open, setOpen] = import_react8.useState(null);
-  const rootRef = import_react8.useRef(null);
-  import_react8.useEffect(() => {
-    if (!open)
-      return;
-    const onDown = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target))
-        setOpen(null);
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape")
-        setOpen(null);
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  const tools = [
-    { id: "select", icon: MousePointer, title: "Select / pan" },
-    ...TOOL_ORDER.map((id) => {
-      const p = TOOL_REGISTRY[id];
-      return { id: p.id, icon: p.icon, title: p.title };
-    })
-  ];
-  const lineWidth = activeWidth ?? 2;
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-    ref: rootRef,
-    className: "absolute top-4 left-4 flex flex-col gap-1.5 p-1.5 card",
-    children: [
-      tools.map(({ id, icon: Icon2, title }) => {
-        if (id === "pin") {
-          const pinActive = tool === "pin";
-          const canSize = pinActive || pinSelected === true;
-          const highlight = pinActive || open === "pinsize";
-          return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-            className: "relative",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                type: "button",
-                title: pinActive ? "Pin — click again for text size" : pinSelected ? "Text size" : title,
-                onClick: () => {
-                  if (canSize)
-                    setOpen((o) => o === "pinsize" ? null : "pinsize");
-                  else {
-                    setTool("pin");
-                    setOpen(null);
-                  }
-                },
-                className: `relative w-9 h-9 rounded-md flex items-center justify-center border transition-colors ${highlight ? "bg-accent/25 border-accent/60 text-accent-ink" : "border-edge text-muted hover:text-white hover:border-edge-hover"}`,
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Icon2, {
-                    className: "w-4 h-4"
-                  }, undefined, false, undefined, this),
-                  canSize && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ChevronRight, {
-                    className: "absolute bottom-0.5 right-0.5 w-2.5 h-2.5 text-accent-ink"
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              open === "pinsize" && canSize && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-                className: "absolute left-full ml-2 top-0 z-30 card p-1.5 flex flex-col gap-1",
-                children: TEXT_SIZES.map((s) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                  type: "button",
-                  title: s.name,
-                  "aria-label": `${s.name} text size`,
-                  onClick: () => {
-                    onPickFontSize(s.value);
-                    setOpen(null);
-                  },
-                  className: `flex items-center justify-center min-w-[2.25rem] px-2 py-1 rounded border transition-colors ${activeFontSize === s.value ? "bg-accent/25 border-accent/60 text-accent-ink" : "border-edge text-ink hover:border-edge-hover"}`,
-                  children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-                    style: { fontSize: `${s.value}px`, lineHeight: 1 },
-                    children: "A"
-                  }, undefined, false, undefined, this)
-                }, s.name, false, undefined, this))
-              }, undefined, false, undefined, this)
-            ]
-          }, id, true, undefined, this);
-        }
-        return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-          type: "button",
-          title,
-          onClick: () => {
-            setTool(id);
-            setOpen(null);
-          },
-          className: `w-9 h-9 rounded-md flex items-center justify-center border transition-colors ${tool === id ? "bg-accent/25 border-accent/60 text-accent-ink" : "border-edge text-muted hover:text-white hover:border-edge-hover"}`,
-          children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Icon2, {
-            className: "w-4 h-4"
-          }, undefined, false, undefined, this)
-        }, id, false, undefined, this);
-      }),
-      hasMarks && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-        type: "button",
-        title: "Clear all annotations",
-        onClick: onClear,
-        className: "w-9 h-9 rounded-md flex items-center justify-center border border-edge text-muted hover:text-white hover:border-edge-hover",
-        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Trash2, {
-          className: "w-4 h-4"
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-        className: "border-t border-divider pt-1.5 flex flex-col gap-1.5",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-            className: "relative",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                type: "button",
-                title: "Color",
-                "aria-label": "Color",
-                onClick: () => setOpen((o) => o === "color" ? null : "color"),
-                className: `w-9 h-9 rounded-md flex items-center justify-center border transition-colors ${open === "color" ? "bg-accent/25 border-accent/60" : "border-edge hover:border-edge-hover"}`,
-                children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-                  className: "w-5 h-5 rounded-full border border-black/30",
-                  style: { backgroundColor: activeColor }
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              open === "color" && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-                className: "absolute left-full ml-2 top-0 z-30 card p-1.5 grid grid-cols-[repeat(3,1.5rem)] gap-1.5",
-                children: COLORS.map((c) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                  type: "button",
-                  title: c.name,
-                  "aria-label": c.name,
-                  onClick: () => {
-                    onPickColor(c.value);
-                    setOpen(null);
-                  },
-                  style: { backgroundColor: c.value },
-                  className: `w-6 h-6 rounded-full ${activeColor === c.value ? "ring-2 ring-white ring-offset-1 ring-offset-surface" : "border border-edge"}`
-                }, c.name, false, undefined, this))
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-            className: "relative",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                type: "button",
-                title: "Thickness",
-                "aria-label": "Thickness",
-                onClick: () => setOpen((o) => o === "width" ? null : "width"),
-                className: `w-9 h-9 rounded-md flex items-center justify-center border transition-colors ${open === "width" ? "bg-accent/25 border-accent/60" : "border-edge hover:border-edge-hover"}`,
-                children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-                  className: "w-5 rounded-full bg-ink",
-                  style: { height: `${lineWidth}px`, backgroundColor: activeColor }
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              open === "width" && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-                className: "absolute left-full ml-2 top-0 z-30 card p-1.5 flex flex-col gap-1",
-                children: WIDTHS.map((w) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                  type: "button",
-                  title: w.name,
-                  "aria-label": `${w.name} thickness`,
-                  onClick: () => {
-                    onPickWidth(w.value);
-                    setOpen(null);
-                  },
-                  className: `flex items-center justify-center w-12 h-6 rounded border transition-colors ${activeWidth === w.value ? "bg-accent/25 border-accent/60" : "border-edge hover:border-edge-hover"}`,
-                  children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-                    className: "w-8 rounded-full bg-ink",
-                    style: { height: `${w.value}px` }
-                  }, undefined, false, undefined, this)
-                }, w.name, false, undefined, this))
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
 
-// src/imago/surface/components/annotations/flatten.ts
-var LONG_EDGE_CAP = 1536;
-function colorResolver() {
-  const root = typeof getComputedStyle === "function" ? getComputedStyle(document.documentElement) : null;
-  return (c, fallback = "") => {
-    const v = c ?? fallback;
-    const m = v.match(/^var\((--[\w-]+)\)$/);
-    if (m && root)
-      return root.getPropertyValue(m[1]).trim() || fallback || v;
-    return v;
+// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
+var exports_index_parts2 = {};
+__export(exports_index_parts2, {
+  Backdrop: () => DialogBackdrop,
+  Close: () => DialogClose,
+  Description: () => DialogDescription,
+  Handle: () => AlertDialogHandle,
+  Popup: () => DialogPopup,
+  Portal: () => DialogPortal,
+  Root: () => AlertDialogRoot,
+  Title: () => DialogTitle,
+  Trigger: () => AlertDialogTrigger,
+  Viewport: () => DialogViewport,
+  createHandle: () => createAlertDialogHandle
+});
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var React54 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+var React51 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useScrollLock.mjs
+"use client";
+var originalHtmlStyles = {};
+var originalBodyStyles = {};
+var originalHtmlScrollBehavior = "";
+function hasInsetScrollbars(referenceElement) {
+  if (typeof document === "undefined") {
+    return false;
+  }
+  const doc = ownerDocument(referenceElement);
+  const win = getWindow(doc);
+  return win.innerWidth - doc.documentElement.clientWidth > 0;
+}
+function supportsStableScrollbarGutter(referenceElement) {
+  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
+  if (!supported || typeof document === "undefined") {
+    return false;
+  }
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const scrollContainer = isOverflowElement(html) ? html : body;
+  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
+  const originalHtmlStyleGutter = html.style.scrollbarGutter;
+  html.style.scrollbarGutter = "stable";
+  scrollContainer.style.overflowY = "scroll";
+  const before = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = "hidden";
+  const after = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
+  html.style.scrollbarGutter = originalHtmlStyleGutter;
+  return before === after;
+}
+function preventScrollOverlayScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const elementToLock = isOverflowElement(html) ? html : body;
+  const originalElementToLockStyles = {
+    overflowY: elementToLock.style.overflowY,
+    overflowX: elementToLock.style.overflowX
+  };
+  Object.assign(elementToLock.style, {
+    overflowY: "hidden",
+    overflowX: "hidden"
+  });
+  return () => {
+    Object.assign(elementToLock.style, originalElementToLockStyles);
   };
 }
-function esc(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function pinSvg(m, W, H, resolve) {
-  const { fontSize, cx, cy, lines, lh, bgW, bgH, baseline, rx } = pinLayout(m, W, H);
-  const bg = resolve(m.color, PIN_BG_DEFAULT);
-  const tspans = lines.map((l, i) => `<tspan x="${cx}"${i ? ` dy="${lh}"` : ""}>${esc(l)}</tspan>`).join("");
-  return `<rect x="${cx - bgW / 2}" y="${cy - bgH / 2}" width="${bgW}" height="${bgH}" ` + `rx="${rx}" fill="${bg}"/>` + `<text x="${cx}" y="${baseline}" font-family="sans-serif" font-size="${fontSize}" ` + `fill="${PIN_TEXT}" text-anchor="middle">${tspans}</text>`;
-}
-function markSvg(m, W, H, resolve) {
-  const stroke = resolve(m.color, DEFAULT_STROKE);
-  const sw = m.width ?? DEFAULT_WIDTH;
-  const common = `stroke="${stroke}" stroke-width="${sw}" fill="none"`;
-  switch (m.tool) {
-    case "pin":
-      return pinSvg(m, W, H, resolve);
-    case "image":
-      return `<image href="${m.src}" x="${m.x * W}" y="${m.y * H}" width="${m.w * W}" height="${m.h * H}" preserveAspectRatio="none"/>`;
-    case "arrow": {
-      const [x1, y1, x2, y2] = [m.x1 * W, m.y1 * H, m.x2 * W, m.y2 * H];
-      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${common} stroke-linecap="round"/>` + `<polygon points="${arrowHeadPoints(x1, y1, x2, y2, sw)}" fill="${stroke}"/>`;
+function preventScrollInsetScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const win = getWindow(html);
+  let scrollTop = 0;
+  let scrollLeft = 0;
+  let updateGutterOnly = false;
+  const resizeFrame = AnimationFrame.create();
+  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
+    return () => {};
+  }
+  function lockScroll() {
+    const htmlStyles = win.getComputedStyle(html);
+    const bodyStyles = win.getComputedStyle(body);
+    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
+    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
+    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
+    scrollTop = html.scrollTop;
+    scrollLeft = html.scrollLeft;
+    originalHtmlStyles = {
+      scrollbarGutter: html.style.scrollbarGutter,
+      overflowY: html.style.overflowY,
+      overflowX: html.style.overflowX
+    };
+    originalHtmlScrollBehavior = html.style.scrollBehavior;
+    originalBodyStyles = {
+      position: body.style.position,
+      height: body.style.height,
+      width: body.style.width,
+      boxSizing: body.style.boxSizing,
+      overflowY: body.style.overflowY,
+      overflowX: body.style.overflowX,
+      scrollBehavior: body.style.scrollBehavior
+    };
+    const isScrollableY = html.scrollHeight > html.clientHeight;
+    const isScrollableX = html.scrollWidth > html.clientWidth;
+    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
+    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
+    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
+    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
+    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
+    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
+    const elementToLock = isOverflowElement(html) ? html : body;
+    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
+    if (updateGutterOnly) {
+      html.style.scrollbarGutter = scrollbarGutterValue;
+      elementToLock.style.overflowY = "hidden";
+      elementToLock.style.overflowX = "hidden";
+      return;
     }
-    case "line":
-      return `<line x1="${m.x1 * W}" y1="${m.y1 * H}" x2="${m.x2 * W}" y2="${m.y2 * H}" ${common} stroke-linecap="round"/>`;
-    case "rect":
-      return `<rect x="${m.x * W}" y="${m.y * H}" width="${m.w * W}" height="${m.h * H}" ${common}/>`;
-    case "ellipse":
-      return `<ellipse cx="${m.cx * W}" cy="${m.cy * H}" rx="${m.rx * W}" ry="${m.ry * H}" ${common}/>`;
-    case "draw": {
-      const pts = m.points.map((p) => `${p.x * W},${p.y * H}`).join(" ");
-      return `<polyline points="${pts}" ${common} stroke-linecap="round" stroke-linejoin="round"/>`;
+    Object.assign(html.style, {
+      scrollbarGutter: scrollbarGutterValue,
+      overflowY: "hidden",
+      overflowX: "hidden"
+    });
+    if (isScrollableY || hasConstantOverflowY) {
+      html.style.overflowY = "scroll";
+    }
+    if (isScrollableX || hasConstantOverflowX) {
+      html.style.overflowX = "scroll";
+    }
+    Object.assign(body.style, {
+      position: "relative",
+      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
+      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      scrollBehavior: "unset"
+    });
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+    html.setAttribute("data-base-ui-scroll-locked", "");
+    html.style.scrollBehavior = "unset";
+  }
+  function cleanup() {
+    Object.assign(html.style, originalHtmlStyles);
+    Object.assign(body.style, originalBodyStyles);
+    if (!updateGutterOnly) {
+      html.scrollTop = scrollTop;
+      html.scrollLeft = scrollLeft;
+      html.removeAttribute("data-base-ui-scroll-locked");
+      html.style.scrollBehavior = originalHtmlScrollBehavior;
     }
   }
+  function handleResize() {
+    cleanup();
+    resizeFrame.request(lockScroll);
+  }
+  lockScroll();
+  const unsubscribeResize = addEventListener(win, "resize", handleResize);
+  return () => {
+    resizeFrame.cancel();
+    cleanup();
+    if (typeof win.removeEventListener === "function") {
+      unsubscribeResize();
+    }
+  };
 }
-async function flattenMarks(src, marks, natW, natH, layers = []) {
-  try {
-    if (!src)
-      return "";
-    let W = natW ?? 0;
-    let H = natH ?? 0;
-    if (W <= 0 || H <= 0) {
-      const base = await loadImage(src);
-      W = base.naturalWidth;
-      H = base.naturalHeight;
+
+class ScrollLocker {
+  lockCount = 0;
+  restore = null;
+  timeoutLock = Timeout.create();
+  timeoutUnlock = Timeout.create();
+  acquire(referenceElement) {
+    this.lockCount += 1;
+    if (this.lockCount === 1 && this.restore === null) {
+      this.timeoutLock.start(0, () => this.lock(referenceElement));
     }
-    if (W <= 0 || H <= 0)
-      return "";
-    const resolve = colorResolver();
-    const body = visibleSorted(marks, layers).map((m) => {
-      const svg2 = markSvg(m, W, H, resolve);
-      if (!m.rotation)
-        return svg2;
-      const b = markBounds(m);
-      const cx = (b.x + b.w / 2) * W;
-      const cy = (b.y + b.h / 2) * H;
-      return `<g transform="rotate(${m.rotation} ${cx} ${cy})">${svg2}</g>`;
-    }).join("");
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` + `<image href="${src}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="none"/>` + body + `</svg>`;
-    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-    try {
-      const img = await loadImage(url);
-      const scale = Math.min(1, LONG_EDGE_CAP / Math.max(W, H));
-      const outW = Math.max(1, Math.round(W * scale));
-      const outH = Math.max(1, Math.round(H * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = outW;
-      canvas.height = outH;
-      const ctx = canvas.getContext("2d");
-      if (!ctx)
-        return "";
-      ctx.drawImage(img, 0, 0, outW, outH);
-      return canvas.toDataURL("image/png");
-    } finally {
-      URL.revokeObjectURL(url);
+    return this.release;
+  }
+  release = () => {
+    this.lockCount -= 1;
+    if (this.lockCount === 0 && this.restore) {
+      this.timeoutUnlock.start(0, this.unlock);
     }
-  } catch (err) {
-    console.warn("[imago] flatten failed; falling back to raw variant", err);
-    return "";
+  };
+  unlock = () => {
+    if (this.lockCount === 0 && this.restore) {
+      this.restore?.();
+      this.restore = null;
+    }
+  };
+  lock(referenceElement) {
+    if (this.lockCount === 0 || this.restore !== null) {
+      return;
+    }
+    const doc = ownerDocument(referenceElement);
+    const html = doc.documentElement;
+    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
+    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
+      this.restore = NOOP;
+      return;
+    }
+    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
+    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
   }
 }
-function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image;
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
-  });
+var SCROLL_LOCKER = new ScrollLocker;
+function useScrollLock(enabled = true, referenceElement = null) {
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    return SCROLL_LOCKER.acquire(referenceElement);
+  }, [enabled, referenceElement]);
 }
 
-// src/imago/surface/components/LayersPanel.tsx
-var import_react9 = __toESM(require_react(), 1);
-
-// src/kit/lib/cn.ts
-function cn(...inputs) {
-  return inputs.filter(Boolean).join(" ");
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+"use client";
+function useDialogRoot(params) {
+  const {
+    store,
+    actionsRef
+  } = params;
+  const open = store.useState("open");
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store);
+  const handleImperativeClose = React51.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React51.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
 }
-
-// src/imago/surface/components/LayersPanel.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
-function LayersPanel({
-  layers,
-  marks,
-  send,
-  variantSrc,
-  selectedMarkIds,
-  onSelectionChange,
-  activeLayerId,
-  onSetActive,
-  onNewLayer
+function DialogInteractions({
+  store,
+  parentContext,
+  isDrawer
 }) {
-  const [editingId, setEditingId] = import_react9.useState(null);
-  const [draftName, setDraftName] = import_react9.useState("");
-  const [draggingId, setDraggingId] = import_react9.useState(null);
-  const [overId, setOverId] = import_react9.useState(null);
-  const realCount = layers.length;
-  const visual = [...layers].reverse();
-  const activeLayerName = activeLayerId ? layers.find((l) => l.id === activeLayerId)?.name : undefined;
-  function layerMarks(layerId) {
-    return marks.filter((m) => m.layerId === layerId);
-  }
-  function selectionIn(layerId) {
-    return selectedMarkIds.some((id) => marks.find((m) => m.id === id)?.layerId === layerId);
-  }
-  function dropFromSelection(layerId) {
-    onSelectionChange(selectedMarkIds.filter((id) => marks.find((m) => m.id === id)?.layerId !== layerId));
-  }
-  function selectLayer(layer) {
-    onSelectionChange(layerMarks(layer.id).map((m) => m.id));
-  }
-  function toggleHidden(layer) {
-    const hidden = !layer.hidden;
-    send({ type: "layer.setHidden", id: layer.id, hidden });
-    if (hidden && selectionIn(layer.id))
-      dropFromSelection(layer.id);
-  }
-  function toggleLocked(layer) {
-    const locked = !layer.locked;
-    send({ type: "layer.setLocked", id: layer.id, locked });
-    if (locked && selectionIn(layer.id))
-      dropFromSelection(layer.id);
-  }
-  function remove(layer) {
-    send({ type: "layer.remove", id: layer.id });
-    if (selectionIn(layer.id))
-      dropFromSelection(layer.id);
-  }
-  function commitRename(layer) {
-    const name = draftName.trim();
-    if (name && name !== layer.name)
-      send({ type: "layer.rename", id: layer.id, name });
-    setEditingId(null);
-  }
-  function onDropRow(visualIndex) {
-    const id = draggingId;
-    setDraggingId(null);
-    setOverId(null);
-    if (!id)
-      return;
-    const target = visual[visualIndex];
-    if (!target || target.id === id)
-      return;
-    send({ type: "layer.reorder", id, toIndex: realCount - 1 - visualIndex });
-  }
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-    className: "p-2 flex flex-col gap-0.5 text-xs",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-        className: "flex items-center gap-1",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-            type: "button",
-            onClick: onNewLayer,
-            title: "Add a new annotation layer (becomes active)",
-            className: "flex-1 flex items-center justify-center gap-1 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Plus, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this),
-              " New layer"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-            type: "button",
-            disabled: selectedMarkIds.length < 2,
-            onClick: () => send({ type: "group", markIds: selectedMarkIds }),
-            title: "Group the selected marks into one layer",
-            className: "flex-1 flex items-center justify-center gap-1 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover disabled:opacity-40 disabled:pointer-events-none",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Group, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this),
-              "Group",
-              selectedMarkIds.length >= 2 ? ` (${selectedMarkIds.length})` : ""
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("p", {
-        className: "px-1 py-1 text-faint truncate",
-        children: [
-          "New marks → ",
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-            className: "text-muted",
-            children: activeLayerName ?? "a new layer"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      realCount === 0 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("p", {
-        className: "px-2 py-3 text-faint italic text-center",
-        children: "No layers yet — drop an image onto the canvas, or group marks, to make one."
-      }, undefined, false, undefined, this),
-      visual.map((layer, j) => {
-        const imgMark = layer.kind === "image" ? marks.find((m) => m.layerId === layer.id && m.tool === "image") : undefined;
-        const thumbSrc = imgMark?.tool === "image" ? imgMark.src : undefined;
-        const isEditing = editingId === layer.id;
-        const sel = selectionIn(layer.id);
-        const count = layerMarks(layer.id).length;
-        const isActive = activeLayerId === layer.id;
-        return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-          onDragOver: (e) => {
-            if (!draggingId)
-              return;
-            e.preventDefault();
-            if (overId !== layer.id)
-              setOverId(layer.id);
-          },
-          onDragLeave: (e) => {
-            if (e.currentTarget === e.target)
-              setOverId((id) => id === layer.id ? null : id);
-          },
-          onDrop: (e) => {
-            e.preventDefault();
-            onDropRow(j);
-          },
-          className: cn("group flex items-center gap-1.5 rounded-md px-1.5 py-1 border", overId === layer.id ? "border-accent bg-accent/10" : "border-transparent", sel ? "bg-accent/10" : "hover:bg-surface-3", layer.hidden && "opacity-55"),
-          children: [
-            layer.kind === "image" ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-              className: "shrink-0 w-3.5"
-            }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-              type: "button",
-              onClick: () => onSetActive(layer.id),
-              title: isActive ? "Active — new marks land here" : "Make active",
-              className: "shrink-0 w-3.5 h-3.5 flex items-center justify-center",
-              children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-                className: `w-2 h-2 rounded-full ${isActive ? "bg-accent" : "border border-edge-strong"}`
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-              type: "button",
-              draggable: true,
-              onDragStart: () => setDraggingId(layer.id),
-              onDragEnd: () => {
-                setDraggingId(null);
-                setOverId(null);
-              },
-              title: "Drag to reorder",
-              className: "shrink-0 cursor-grab active:cursor-grabbing text-faint hover:text-muted",
-              children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(GripVertical, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-              className: "shrink-0 w-7 h-7 rounded ring-1 ring-edge overflow-hidden bg-surface-2 flex items-center justify-center text-muted",
-              children: thumbSrc ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("img", {
-                src: thumbSrc,
-                alt: "",
-                className: "w-full h-full object-cover"
-              }, undefined, false, undefined, this) : layer.kind === "sketch" ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Pencil, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this) : layer.kind === "image" ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Image2, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Shapes, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            isEditing ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("input", {
-              ref: (el) => {
-                if (el) {
-                  el.focus();
-                  el.select();
-                }
-              },
-              value: draftName,
-              onChange: (e) => setDraftName(e.target.value),
-              onKeyDown: (e) => {
-                if (e.key === "Enter")
-                  commitRename(layer);
-                else if (e.key === "Escape")
-                  setEditingId(null);
-              },
-              onBlur: () => commitRename(layer),
-              className: "flex-1 min-w-0 bg-surface border border-edge-strong rounded px-1 py-0.5 text-ink"
-            }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-              type: "button",
-              onClick: () => selectLayer(layer),
-              onDoubleClick: () => {
-                setEditingId(layer.id);
-                setDraftName(layer.name);
-              },
-              title: "Click to select its marks · double-click to rename",
-              className: "flex-1 min-w-0 text-left truncate text-ink",
-              children: layer.name
-            }, undefined, false, undefined, this),
-            count >= 2 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(RowButton, {
-              title: "Ungroup into separate layers",
-              onClick: () => send({ type: "ungroup", id: layer.id }),
-              children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Ungroup, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(RowButton, {
-              title: layer.hidden ? "Show layer" : "Hide layer",
-              active: layer.hidden,
-              onClick: () => toggleHidden(layer),
-              children: layer.hidden ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(EyeOff, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Eye, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(RowButton, {
-              title: layer.locked ? "Unlock layer" : "Lock layer",
-              active: layer.locked,
-              onClick: () => toggleLocked(layer),
-              children: layer.locked ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Lock, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(LockOpen, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(RowButton, {
-              title: "Delete layer (and its marks)",
-              onClick: () => remove(layer),
-              children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(X, {
-                className: "w-3.5 h-3.5"
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this)
-          ]
-        }, layer.id, true, undefined, this);
-      }),
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-        className: "flex items-center gap-1.5 rounded-md px-1.5 py-1 border-t border-divider mt-0.5 pt-1.5",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-            className: "shrink-0 w-3.5"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-            className: "shrink-0 w-7 h-7 rounded ring-1 ring-edge overflow-hidden bg-surface-2 flex items-center justify-center text-muted",
-            children: variantSrc ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("img", {
-              src: variantSrc,
-              alt: "",
-              className: "w-full h-full object-cover"
-            }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Image2, {
-              className: "w-3.5 h-3.5"
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-            className: "flex-1 min-w-0 truncate text-muted",
-            children: "Background"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
-            className: "shrink-0 p-1 text-faint",
-            title: "The base image is locked",
-            children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Lock, {
-              className: "w-3.5 h-3.5"
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function RowButton({
-  title,
-  active,
-  onClick,
-  children
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
-    type: "button",
-    title,
-    onClick,
-    className: `shrink-0 p-1 rounded ${active ? "text-accent-ink" : "text-faint hover:text-ink"}`,
-    children
-  }, undefined, false, undefined, this);
-}
-
-// src/imago/surface/components/LibraryPicker.tsx
-var import_react10 = __toESM(require_react(), 1);
-var import_react_dom = __toESM(require_react_dom(), 1);
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
-function LibraryPicker({
-  triggerRef,
-  inline = false,
-  library,
-  kind,
-  excludeIds,
-  onPick,
-  onClose
-}) {
-  const [query, setQuery] = import_react10.useState("");
-  const rootRef = import_react10.useRef(null);
-  const inputRef = import_react10.useRef(null);
-  const [pos, setPos] = import_react10.useState(null);
-  import_react10.useLayoutEffect(() => {
-    if (inline)
-      return;
-    function measure() {
-      const el = triggerRef?.current;
-      if (!el)
-        return;
-      const r = el.getBoundingClientRect();
-      setPos({
-        left: Math.max(8, Math.min(r.left, window.innerWidth - 296)),
-        bottom: window.innerHeight - r.top + 4
-      });
-    }
-    measure();
-    window.addEventListener("scroll", measure, { capture: true, passive: true });
-    window.addEventListener("resize", measure, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", measure, { capture: true });
-      window.removeEventListener("resize", measure);
-    };
-  }, [triggerRef, inline]);
-  import_react10.useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-  import_react10.useEffect(() => {
-    if (inline)
-      return;
-    const onDown = (e) => {
-      const target = e.target;
-      const insidePanel = rootRef.current?.contains(target) ?? false;
-      const insideTrigger = triggerRef?.current?.contains(target) ?? false;
-      if (!insidePanel && !insideTrigger)
-        onClose();
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape")
-        onClose();
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [onClose, triggerRef, inline]);
-  const byKind = entriesByKind(library, kind);
-  const excludeSet = new Set(excludeIds);
-  const filtered = byKind.filter((e) => {
-    if (excludeSet.has(e.id))
+  const open = store.useState("open");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const modal = store.useState("modal");
+  const popupElement = store.useState("popupElement");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React51.useState(0);
+  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React51.useState(0);
+  const isTopmost = ownNestedOpenDialogs === 0;
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent() {
+      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
+        return "intentional";
+      }
+      return {
+        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+        touch: "sloppy"
+      };
+    },
+    outsidePress(event) {
+      if (!store.context.outsidePressEnabledRef.current) {
+        return false;
+      }
+      if ("button" in event && event.button !== 0) {
+        return false;
+      }
+      if ("touches" in event && event.touches.length !== 1) {
+        return false;
+      }
+      const target = getTarget(event);
+      if (isTopmost && !disablePointerDismissal) {
+        if (modal) {
+          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
+        }
+        return true;
+      }
       return false;
-    if (!query.trim())
-      return true;
-    return e.name.toLowerCase().includes(query.toLowerCase());
+    },
+    escapeKey: isTopmost
   });
-  const excluded = byKind.filter((e) => excludeSet.has(e.id));
-  function pick(id) {
-    onPick(id);
-    onClose();
-  }
-  const body = /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-        className: "flex items-center gap-1.5 px-2 pt-2 pb-1",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Search, {
-            className: "w-3 h-3 text-faint shrink-0"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("input", {
-            ref: inputRef,
-            type: "text",
-            value: query,
-            onChange: (e) => setQuery(e.target.value),
-            placeholder: `Search ${kind}s…`,
-            className: "flex-1 bg-transparent text-[12px] text-ink placeholder:text-faint focus:outline-none"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-        className: "overflow-y-auto flex flex-col gap-0.5 pb-1.5 px-1.5",
-        children: [
-          filtered.length === 0 && excluded.length === 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
-            className: "text-[11px] text-faint italic px-2 py-2 text-center",
-            children: [
-              "no ",
-              kind,
-              "s to link"
-            ]
-          }, undefined, true, undefined, this),
-          filtered.length === 0 && query.trim() !== "" && excluded.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
-            className: "text-[11px] text-faint italic px-2 py-1.5 text-center",
-            children: "no matches"
-          }, undefined, false, undefined, this),
-          filtered.map((e) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
-            type: "button",
-            onClick: () => pick(e.id),
-            title: e.content || e.name,
-            className: "w-full text-left flex flex-col gap-0.5 rounded px-2 py-1 hover:bg-accent/10",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                className: "text-[12px] text-ink truncate font-medium",
-                children: e.name
-              }, undefined, false, undefined, this),
-              e.content && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                className: "text-[11px] text-faint truncate",
-                children: e.content
-              }, undefined, false, undefined, this)
-            ]
-          }, e.id, true, undefined, this)),
-          excluded.length > 0 && filtered.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-            className: "border-t border-divider my-0.5"
-          }, undefined, false, undefined, this),
-          excluded.map((e) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-            className: "flex flex-col gap-0.5 rounded px-2 py-1 opacity-40 cursor-default",
-            title: "Already linked",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                className: "text-[12px] text-ink truncate font-medium",
-                children: e.name
-              }, undefined, false, undefined, this),
-              e.content && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                className: "text-[11px] text-faint truncate",
-                children: e.content
-              }, undefined, false, undefined, this)
-            ]
-          }, e.id, true, undefined, this))
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-  if (inline) {
-    return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-      ref: rootRef,
-      className: "flex flex-col gap-0.5 max-h-72 overflow-hidden",
-      children: body
-    }, undefined, false, undefined, this);
-  }
-  if (!pos)
-    return null;
-  return import_react_dom.createPortal(/* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-    ref: rootRef,
-    style: { position: "fixed", left: pos.left, bottom: pos.bottom, width: 288, zIndex: 9999 },
-    className: "card flex flex-col gap-0.5 max-h-72 overflow-hidden shadow-xl",
-    children: body
-  }, undefined, false, undefined, this), document.body);
-}
-
-// src/imago/surface/components/Canvas.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
-function frameDims(aspect) {
-  const [w, h] = aspect.split(":").map(Number) ?? [1, 1];
-  const base = 300;
-  const s = base / Math.max(w || 1, h || 1);
-  return { w: Math.round((w || 1) * s), h: Math.round((h || 1) * s) };
-}
-var PAD2 = 24;
-var ZOOM_MIN = 5;
-var ZOOM_MAX = 800;
-var clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
-function Canvas({ state, send }) {
-  const [zoom, setZoom] = import_react11.useState(100);
-  const [tool, setTool] = import_react11.useState("select");
-  const [pan, setPan] = import_react11.useState({ x: 0, y: 0 });
-  const [panning, setPanning] = import_react11.useState(false);
-  const [nat, setNat] = import_react11.useState(null);
-  const [stageSize, setStageSize] = import_react11.useState({ w: 0, h: 0 });
-  const [asidePanel, setAsidePanel] = import_react11.useState(null);
-  const [copied, setCopied] = import_react11.useState(null);
-  const [importDragging, setImportDragging] = import_react11.useState(false);
-  const [layerDragging, setLayerDragging] = import_react11.useState(false);
-  const [drawStyle, setDrawStyle] = import_react11.useState(DEFAULT_DRAW_STYLE);
-  const [selectedMarkIds, setSelectedMarkIds] = import_react11.useState([]);
-  const [activeLayerId, setActiveLayerId] = import_react11.useState(null);
-  const pendingNewLayerRef = import_react11.useRef(null);
-  const stageRef = import_react11.useRef(null);
-  const imgRef = import_react11.useRef(null);
-  const dragRef = import_react11.useRef(null);
-  const fitPendingRef = import_react11.useRef(true);
-  const focus = state.focus;
-  const batch = focus ? state.batches.find((b) => b.id === focus.batchId) : undefined;
-  const vIndex = batch && focus ? batch.variants.findIndex((v) => v.id === focus.variantId) : -1;
-  const variant = batch && vIndex >= 0 ? batch.variants[vIndex] : undefined;
-  const variantId = variant?.id;
-  const marks = focus ? state.marksByVariant[focus.variantId] ?? [] : [];
-  const layers = focus ? state.layersByVariant[focus.variantId] ?? [] : [];
-  const activeLayer = activeLayerId && layers.find((l) => l.id === activeLayerId && l.kind !== "image") || [...layers].reverse().find((l) => l.kind !== "image") || undefined;
-  const effectiveActiveLayerId = activeLayer?.id ?? null;
-  function fitPercent() {
-    if (!nat || stageSize.w === 0)
-      return 100;
-    const availW = Math.max(0, stageSize.w - PAD2);
-    const availH = Math.max(0, stageSize.h - PAD2);
-    return clampZoom(Math.floor(Math.min(availW / nat.w, availH / nat.h) * 100));
-  }
-  import_react11.useLayoutEffect(() => {
-    setPan({ x: 0, y: 0 });
-    fitPendingRef.current = true;
-    setSelectedMarkIds([]);
-    setActiveLayerId(null);
-    pendingNewLayerRef.current = null;
-    const el = imgRef.current;
-    setNat(el?.complete && el.naturalWidth ? { w: el.naturalWidth, h: el.naturalHeight } : null);
-  }, [variantId]);
-  import_react11.useEffect(() => {
-    if (!fitPendingRef.current || !nat || stageSize.w === 0)
-      return;
-    setZoom(fitPercent());
-    setPan({ x: 0, y: 0 });
-    fitPendingRef.current = false;
+  useScrollLock(open && modal === true, popupElement);
+  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
+    setOwnNestedOpenDialogs(dialogCount);
+    setOwnNestedOpenDrawers(drawerCount);
   });
-  import_react11.useEffect(() => {
-    const el = stageRef.current;
-    if (!el)
-      return;
-    const measure = () => setStageSize({ w: el.clientWidth, h: el.clientHeight });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [variantId]);
-  import_react11.useEffect(() => {
-    const onKey = (e) => {
-      if (!focus)
-        return;
-      if (!(e.metaKey || e.ctrlKey))
-        return;
-      const el = document.activeElement;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) {
-        return;
-      }
-      const key = e.key.toLowerCase();
-      if (key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        send({ type: "undo" });
-      } else if (key === "z" && e.shiftKey || key === "y") {
-        e.preventDefault();
-        send({ type: "redo" });
+  store.useContextCallback("onNestedDialogClose", () => {
+    setOwnNestedOpenDialogs(0);
+    setOwnNestedOpenDrawers(0);
+  });
+  React51.useEffect(() => {
+    if (parentContext?.onNestedDialogOpen && open) {
+      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
+    }
+    if (parentContext?.onNestedDialogClose && !open) {
+      parentContext.onNestedDialogClose();
+    }
+    return () => {
+      if (parentContext?.onNestedDialogClose && open) {
+        parentContext.onNestedDialogClose();
       }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [focus, send]);
-  import_react11.useEffect(() => {
-    const prior = pendingNewLayerRef.current;
-    if (!prior)
-      return;
-    const fresh = layers.find((l) => !prior.has(l.id));
-    if (fresh) {
-      setActiveLayerId(fresh.id);
-      pendingNewLayerRef.current = null;
-    }
-  }, [layers]);
-  const selectedMark = tool === "select" && selectedMarkIds.length === 1 ? marks.find((m) => m.id === selectedMarkIds[0]) : undefined;
-  const activeColor = selectedMark?.color ?? drawStyle.color;
-  const activeWidth = selectedMark?.width ?? drawStyle.width;
-  const activeFontSize = (selectedMark?.tool === "pin" ? selectedMark.fontSize : undefined) ?? drawStyle.fontSize;
-  function pickColor(color) {
-    if (selectedMark)
-      send({ type: "mark.update", id: selectedMark.id, patch: { color } });
-    else
-      setDrawStyle((s) => ({ ...s, color }));
-  }
-  function pickWidth(width) {
-    if (selectedMark)
-      send({ type: "mark.update", id: selectedMark.id, patch: { width } });
-    else
-      setDrawStyle((s) => ({ ...s, width }));
-  }
-  function pickFontSize(px) {
-    if (selectedMark?.tool === "pin")
-      send({ type: "mark.update", id: selectedMark.id, patch: { fontSize: px } });
-    else
-      setDrawStyle((s) => ({ ...s, fontSize: px }));
-  }
-  function newLayer() {
-    pendingNewLayerRef.current = new Set(layers.map((l) => l.id));
-    send({ type: "layer.add", kind: "annotation" });
-  }
-  async function commitMarks() {
-    if (!focus || marks.length === 0)
-      return;
-    const counts = new Map;
-    for (const m of marks)
-      counts.set(m.tool, (counts.get(m.tool) ?? 0) + 1);
-    const parts = MARK_TOOLS.filter((t) => t !== "image" && counts.has(t)).map((t) => {
-      const n = counts.get(t) ?? 0;
-      const word = t === "draw" ? "sketch" : t;
-      const plural = word === "sketch" ? "sketches" : `${word}s`;
-      return `${n} ${n > 1 ? plural : word}`;
-    });
-    const png = variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h, layers) : "";
-    const text = parts.length ? `marked: ${parts.join(", ")}` : "composited image layers";
-    send({
-      type: "marks.commit",
-      text,
-      batchId: focus.batchId,
-      variantId: focus.variantId,
-      flattenedSrc: png || undefined
-    });
-  }
-  function onStagePointerDown(e) {
-    if (tool !== "select")
-      return;
-    if (e.target.closest("button"))
-      return;
-    dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
-    setPanning(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-  function onStagePointerMove(e) {
-    const d = dragRef.current;
-    if (!d)
-      return;
-    setPan({ x: d.px + (e.clientX - d.x), y: d.py + (e.clientY - d.y) });
-  }
-  function onStagePointerUp(e) {
-    if (!dragRef.current)
-      return;
-    dragRef.current = null;
-    setPanning(false);
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-  }
-  function onStageWheel(e) {
-    const el = stageRef.current;
-    if (!el)
-      return;
-    const rect = el.getBoundingClientRect();
-    const cx = e.clientX - rect.left - rect.width / 2;
-    const cy = e.clientY - rect.top - rect.height / 2;
-    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    const nz = clampZoom(Math.round(zoom * factor));
-    if (nz === zoom)
-      return;
-    const ratio = nz / zoom;
-    setPan({ x: cx - (cx - pan.x) * ratio, y: cy - (cy - pan.y) * ratio });
-    setZoom(nz);
-  }
-  function fitToStage() {
-    setZoom(fitPercent());
-    setPan({ x: 0, y: 0 });
-  }
-  function actualSize() {
-    setZoom(100);
-    setPan({ x: 0, y: 0 });
-  }
-  function copyText(text, key) {
-    if (!text)
-      return;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
-    });
-  }
-  import_react11.useEffect(() => {
-    const clear = () => {
-      setImportDragging(false);
-      setLayerDragging(false);
-    };
-    document.addEventListener("dragend", clear);
-    return () => document.removeEventListener("dragend", clear);
-  }, []);
-  function onCanvasDragOver(e) {
-    e.preventDefault();
-    if (!importDragging)
-      setImportDragging(true);
-  }
-  function onCanvasDragLeave(e) {
-    if (e.currentTarget === e.target)
-      setImportDragging(false);
-  }
-  function onCanvasDrop(e) {
-    e.preventDefault();
-    setImportDragging(false);
-    if (e.dataTransfer.files.length) {
-      importFiles(e.dataTransfer.files, send);
-      return;
-    }
-    const dragged = readImagoDrag(e.dataTransfer);
-    if (dragged)
-      send({ type: "image.import", image: { src: dragged.src, name: dragged.name } });
-  }
-  function onBoxDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!layerDragging)
-      setLayerDragging(true);
-  }
-  function onBoxDragLeave(e) {
-    if (e.currentTarget === e.target)
-      setLayerDragging(false);
-  }
-  function onBoxDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setLayerDragging(false);
-    if (e.dataTransfer.files.length) {
-      if (nat)
-        addImageLayerFiles(e.dataTransfer.files, send, nat.w, nat.h);
-      return;
-    }
-    const dragged = readImagoDrag(e.dataTransfer);
-    if (dragged && variant?.src)
-      addImageLayerFromSrc(dragged.src, dragged.name, variant.src, send);
-  }
-  const importHint = importDragging ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "absolute inset-0 z-20 pointer-events-none flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-accent/10",
-    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-      className: "text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow",
-      children: "drop to import as a working image"
-    }, undefined, false, undefined, this)
-  }, undefined, false, undefined, this) : null;
-  const layerHint = layerDragging ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "absolute inset-0 z-20 pointer-events-none flex items-center justify-center border-2 border-dashed border-accent bg-accent/15",
-    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-      className: "text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow",
-      children: "drop to add as a layer"
-    }, undefined, false, undefined, this)
-  }, undefined, false, undefined, this) : null;
-  if (!focus || !variant) {
-    const d = frameDims(state.aspect);
-    return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("section", {
-      className: "card relative h-full overflow-hidden workspace flex flex-col",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-          onDragOver: onCanvasDragOver,
-          onDragLeave: onCanvasDragLeave,
-          onDrop: onCanvasDrop,
-          className: "relative flex-1 min-h-0 flex flex-col items-center justify-center gap-5",
-          children: [
-            importHint,
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-              className: "rounded-lg border-2 border-dashed border-edge-strong bg-surface/40 flex flex-col items-center justify-center gap-2 text-faint",
-              style: { width: d.w, height: d.h },
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Sparkles, {
-                  className: "w-8 h-8"
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                  className: "text-xs",
-                  children: [
-                    state.aspect,
-                    " · new image"
-                  ]
-                }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-              className: "flex items-center gap-2 text-xs",
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                  className: "text-faint",
-                  children: "aspect"
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                  className: "inline-flex rounded-md border border-edge-strong overflow-hidden",
-                  children: ASPECTS.map((r) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => send({ type: "aspect.set", aspect: r }),
-                    className: `px-2 py-0.5 font-medium ${state.aspect === r ? "bg-accent text-white" : "text-muted hover:bg-surface-3"}`,
-                    children: r
-                  }, r, false, undefined, this))
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                  className: "text-faint ml-1",
-                  children: "size"
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                  className: "inline-flex rounded-md border border-edge-strong overflow-hidden",
-                  children: SIZES.map((z) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => send({ type: "size.set", size: z }),
-                    className: `px-2 py-0.5 font-medium ${state.size === z ? "bg-accent text-white" : "text-muted hover:bg-surface-3"}`,
-                    children: z
-                  }, z, false, undefined, this))
-                }, undefined, false, undefined, this)
-              ]
-            }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-              className: "text-faint text-center max-w-xs",
-              children: "start talking on the right → say what you want to make. imago handles the rest."
-            }, undefined, false, undefined, this)
-          ]
-        }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ReferenceDrawer, {
-          state,
-          send
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this);
-  }
-  const scale = zoom / 100;
-  const dispW = nat ? nat.w * scale : 0;
-  const dispH = nat ? nat.h * scale : 0;
-  const viewportReady = nat !== null && stageSize.w > 0;
-  const batchIndex = state.batches.findIndex((b) => b.id === focus.batchId);
-  const sourceLabel = (() => {
-    const sid = batch.editedFromVariantId;
-    if (!sid)
-      return "—";
-    for (let bi = 0;bi < state.batches.length; bi++) {
-      const sv = state.batches[bi].variants.findIndex((v) => v.id === sid);
-      if (sv >= 0)
-        return `Batch ${bi + 1} · variant ${variantLabel(sv)}`;
-    }
-    return sid;
-  })();
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("section", {
-    className: "card relative h-full overflow-hidden workspace flex flex-col",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "flex-1 min-h-0 flex",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            ref: stageRef,
-            onWheel: onStageWheel,
-            onPointerDown: onStagePointerDown,
-            onPointerMove: onStagePointerMove,
-            onPointerUp: onStagePointerUp,
-            onPointerLeave: onStagePointerUp,
-            onDragOver: onCanvasDragOver,
-            onDragLeave: onCanvasDragLeave,
-            onDrop: onCanvasDrop,
-            className: `relative flex-1 min-w-0 overflow-hidden flex items-center justify-center ${tool === "select" ? panning ? "cursor-grabbing" : "cursor-grab" : TOOL_REGISTRY[tool]?.cursor ?? "cursor-crosshair"}`,
-            children: [
-              importHint,
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                onDragOver: onBoxDragOver,
-                onDragLeave: onBoxDragLeave,
-                onDrop: onBoxDrop,
-                className: "relative shrink-0 select-none rounded-lg shadow-2xl ring-1 ring-edge overflow-hidden",
-                style: {
-                  width: dispW || undefined,
-                  height: dispH || undefined,
-                  transform: `translate(${pan.x}px, ${pan.y}px)`,
-                  visibility: viewportReady ? "visible" : "hidden"
-                },
-                children: [
-                  variant.src ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
-                    ref: imgRef,
-                    src: variant.src,
-                    alt: `variant ${variantLabel(vIndex)}`,
-                    draggable: false,
-                    onLoad: (e) => setNat({
-                      w: e.currentTarget.naturalWidth,
-                      h: e.currentTarget.naturalHeight
-                    }),
-                    className: "block w-full h-full object-contain"
-                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    className: "w-full h-full bg-surface-2"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(AnnotationLayer, {
-                    tool,
-                    marks,
-                    layers,
-                    resetKey: variantId ?? "",
-                    send,
-                    drawStyle,
-                    scale,
-                    natW: nat?.w ?? 0,
-                    natH: nat?.h ?? 0,
-                    selectedIds: selectedMarkIds,
-                    onSelectedIdsChange: setSelectedMarkIds,
-                    activeLayerId: effectiveActiveLayerId
-                  }, undefined, false, undefined, this),
-                  layerHint
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(AnnotationToolbar, {
-                tool,
-                setTool,
-                hasMarks: marks.length > 0,
-                onClear: () => send({ type: "marks.clear" }),
-                activeColor,
-                activeWidth,
-                activeFontSize,
-                pinSelected: selectedMark?.tool === "pin",
-                onPickColor: pickColor,
-                onPickWidth: pickWidth,
-                onPickFontSize: pickFontSize
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "absolute bottom-4 right-4 flex items-center gap-1 p-1 card",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !p-1.5 disabled:opacity-40 disabled:pointer-events-none",
-                    onClick: () => send({ type: "undo" }),
-                    disabled: !state.history.canUndo,
-                    title: "Undo (⌘Z)",
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Undo2, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !p-1.5 disabled:opacity-40 disabled:pointer-events-none",
-                    onClick: () => send({ type: "redo" }),
-                    disabled: !state.history.canRedo,
-                    title: "Redo (⌘⇧Z)",
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Redo2, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "w-px h-5 bg-divider mx-0.5"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !p-1.5",
-                    onClick: () => setZoom((z) => clampZoom(z - 25)),
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Minus, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-xs text-ink w-12 text-center tabular-nums",
-                    children: [
-                      zoom,
-                      "%"
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !p-1.5",
-                    onClick: () => setZoom((z) => clampZoom(z + 25)),
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Plus, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !p-1.5",
-                    onClick: fitToStage,
-                    title: "Fit to window",
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Maximize, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-ghost !px-1.5 !py-1 text-[10px] font-semibold tabular-nums",
-                    onClick: actualSize,
-                    title: "Actual size (100%)",
-                    children: "1:1"
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "absolute top-4 right-4 flex items-center gap-2",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    className: "text-[11px] bg-black/60 border border-edge text-ink px-2.5 py-1 rounded-full",
-                    children: [
-                      "Batch ",
-                      batchIndex + 1,
-                      " · variant ",
-                      variantLabel(vIndex),
-                      marks.length > 0 ? " · annotating" : ""
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Image details",
-                    onClick: () => setAsidePanel((p) => p === "details" ? null : "details"),
-                    className: `w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${asidePanel === "details" ? "bg-accent/25 border-accent/60 text-accent-ink" : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"}`,
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Info, {
-                      className: "w-3.5 h-3.5"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Layers",
-                    onClick: () => setAsidePanel((p) => p === "layers" ? null : "layers"),
-                    className: `w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${asidePanel === "layers" ? "bg-accent/25 border-accent/60 text-accent-ink" : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"}`,
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Layers, {
-                      className: "w-3.5 h-3.5"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              marks.length > 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 card",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-[11px] text-muted",
-                    children: [
-                      marks.length,
-                      " mark(s)"
-                    ]
-                  }, undefined, true, undefined, this),
-                  state.marksUnseen ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-primary !px-2.5 !py-1 text-[11px]",
-                    onClick: commitMarks,
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(MessagesSquare, {
-                        className: "w-3.5 h-3.5"
-                      }, undefined, false, undefined, this),
-                      " Take marks to the conversation →"
-                    ]
-                  }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-faint",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Check, {
-                        className: "w-3.5 h-3.5"
-                      }, undefined, false, undefined, this),
-                      " Shared"
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          asidePanel && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("aside", {
-            className: "w-[300px] shrink-0 border-l border-divider bg-surface flex flex-col overflow-y-auto",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-center gap-1 px-3 py-2 border-b border-divider",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => setAsidePanel("details"),
-                    className: `px-2 py-0.5 rounded font-medium ${asidePanel === "details" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"}`,
-                    children: "Details"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => setAsidePanel("layers"),
-                    className: `px-2 py-0.5 rounded font-medium ${asidePanel === "layers" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"}`,
-                    children: "Layers"
-                  }, undefined, false, undefined, this),
-                  asidePanel === "details" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: `ml-auto ${batch.kind === "edit" ? "badge-accent" : "badge-muted"}`,
-                    children: batch.kind
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Close",
-                    onClick: () => setAsidePanel(null),
-                    className: `shrink-0 text-faint hover:text-ink ${asidePanel === "layers" ? "ml-auto" : ""}`,
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(X, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              asidePanel === "layers" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(LayersPanel, {
-                layers,
-                marks,
-                send,
-                variantSrc: variant.src,
-                selectedMarkIds,
-                onSelectionChange: setSelectedMarkIds,
-                activeLayerId: effectiveActiveLayerId,
-                onSetActive: setActiveLayerId,
-                onNewLayer: newLayer
-              }, undefined, false, undefined, this),
-              asidePanel === "details" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "p-4 flex flex-col gap-4 text-xs",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-sm font-semibold text-ink-strong",
-                    children: [
-                      "Batch ",
-                      batchIndex + 1,
-                      " · variant ",
-                      variantLabel(vIndex)
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                        className: "flex items-center justify-between mb-1.5",
-                        children: [
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                            className: "text-faint uppercase tracking-wider",
-                            children: "prompt"
-                          }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                            type: "button",
-                            title: "Copy prompt",
-                            onClick: () => copyText(batch.prompt, "prompt"),
-                            disabled: !batch.prompt,
-                            className: "flex items-center gap-1 text-faint hover:text-ink disabled:opacity-40 disabled:hover:text-faint",
-                            children: copied === "prompt" ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-                              children: [
-                                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Check, {
-                                  className: "w-3 h-3"
-                                }, undefined, false, undefined, this),
-                                " copied"
-                              ]
-                            }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-                              children: [
-                                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Copy, {
-                                  className: "w-3 h-3"
-                                }, undefined, false, undefined, this),
-                                " copy"
-                              ]
-                            }, undefined, true, undefined, this)
-                          }, undefined, false, undefined, this)
-                        ]
-                      }, undefined, true, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-                        className: "text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
-                        children: batch.prompt || "—"
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dl", {
-                    className: "grid grid-cols-[auto_1fr] gap-x-4 gap-y-2",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dt", {
-                        className: "text-faint",
-                        children: "model"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dd", {
-                        className: "text-ink break-words [overflow-wrap:anywhere]",
-                        children: variant.model || "—"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dt", {
-                        className: "text-faint",
-                        children: "seed"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dd", {
-                        className: "text-ink tabular-nums",
-                        children: variant.seed ?? "—"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dt", {
-                        className: "text-faint",
-                        children: "kind"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dd", {
-                        className: "text-ink",
-                        children: batch.kind
-                      }, undefined, false, undefined, this),
-                      batch.kind === "edit" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-                        children: [
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dt", {
-                            className: "text-faint",
-                            children: "source"
-                          }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("dd", {
-                            className: "text-ink",
-                            children: sourceLabel
-                          }, undefined, false, undefined, this)
-                        ]
-                      }, undefined, true, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                        className: "flex items-center justify-between mb-1.5",
-                        children: [
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                            className: "text-faint uppercase tracking-wider",
-                            children: "analysis"
-                          }, undefined, false, undefined, this),
-                          variant.analysis && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                            type: "button",
-                            title: "Copy analysis",
-                            onClick: () => copyText(variant.analysis, "analysis"),
-                            className: "flex items-center gap-1 text-faint hover:text-ink",
-                            children: copied === "analysis" ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-                              children: [
-                                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Check, {
-                                  className: "w-3 h-3"
-                                }, undefined, false, undefined, this),
-                                " copied"
-                              ]
-                            }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-                              children: [
-                                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Copy, {
-                                  className: "w-3 h-3"
-                                }, undefined, false, undefined, this),
-                                " copy"
-                              ]
-                            }, undefined, true, undefined, this)
-                          }, undefined, false, undefined, this)
-                        ]
-                      }, undefined, true, undefined, this),
-                      variant.analysis ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-                        className: "text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
-                        children: variant.analysis
-                      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-                        className: "text-faint italic",
-                        children: "— not analyzed yet"
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ReferenceDrawer, {
-        state,
-        send
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function ReferenceDrawer({
-  state,
-  send
-}) {
-  const [refDragging, setRefDragging] = import_react11.useState(false);
-  const [ctxDragging, setCtxDragging] = import_react11.useState(false);
-  const [pickerOpen, setPickerOpen] = import_react11.useState(false);
-  const pickerTriggerRef = import_react11.useRef(null);
-  const fileInput = import_react11.useRef(null);
-  const refVariants = state.batches.flatMap((b) => b.variants).filter((v) => v.refSelected);
-  const selectedCount = refVariants.length;
-  const activeContextEntries = resolveSet(state.library, state.activeContextIds);
-  const focusedSrc = focusedVariant(state)?.src;
-  const [analysisAnchor, setAnalysisAnchor] = import_react11.useState(null);
-  const analysisRef = analysisAnchor ? refVariants.find((v) => v.id === analysisAnchor.id) : undefined;
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "shrink-0 border-t border-divider px-3 py-2",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "flex gap-4",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: `flex-1 min-w-0 rounded-md transition-colors ${refDragging ? "ring-1 ring-accent/60 bg-accent/5" : ""}`,
-            onDragOver: (e) => {
-              e.preventDefault();
-              if (!refDragging)
-                setRefDragging(true);
-            },
-            onDragLeave: (e) => {
-              if (e.currentTarget === e.target)
-                setRefDragging(false);
-            },
-            onDrop: (e) => {
-              e.preventDefault();
-              setRefDragging(false);
-              if (e.dataTransfer.files.length) {
-                processFiles(e.dataTransfer.files, send);
-                return;
-              }
-              const dragged = readImagoDrag(e.dataTransfer);
-              if (dragged?.variantId)
-                send({ type: "ref.select", id: dragged.variantId, selected: true });
-            },
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-center gap-2 text-[11px] mb-1.5",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-ink font-medium",
-                    children: "References"
-                  }, undefined, false, undefined, this),
-                  selectedCount > 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "ml-auto text-accent-ink",
-                    children: [
-                      selectedCount,
-                      " selected"
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              refVariants.length === 0 ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                type: "button",
-                onClick: () => fileInput.current?.click(),
-                className: `w-full h-[75px] rounded-md border border-dashed flex items-center justify-center gap-1.5 text-[11px] transition-colors ${refDragging ? "border-accent/60 bg-accent/10 text-accent-ink" : "border-edge-strong text-faint hover:text-ink hover:border-edge-hover"}`,
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ImagePlus, {
-                    className: "w-3.5 h-3.5"
-                  }, undefined, false, undefined, this),
-                  refDragging ? "drop to add as a reference" : "drag reference images here, or click to add"
-                ]
-              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-center gap-2 overflow-x-auto px-1 py-1",
-                children: [
-                  refVariants.map((v) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    className: "group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
-                        src: v.src,
-                        alt: v.name ?? "reference",
-                        className: "w-full h-full object-cover"
-                      }, undefined, false, undefined, this),
-                      v.analysis && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                        type: "button",
-                        title: "View the agent's read of this image",
-                        onClick: (e) => {
-                          e.stopPropagation();
-                          setAnalysisAnchor({
-                            id: v.id,
-                            rect: e.currentTarget.getBoundingClientRect()
-                          });
-                        },
-                        className: "absolute bottom-0 left-0 bg-positive text-bg rounded-tr p-0.5",
-                        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Info, {
-                          className: "w-3 h-3"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                        type: "button",
-                        title: "Remove from references (stays in your Library)",
-                        onClick: (e) => {
-                          e.stopPropagation();
-                          send({ type: "ref.remove", id: v.id });
-                        },
-                        className: "absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity",
-                        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(X, {
-                          className: "w-3 h-3"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      focusedSrc && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                        type: "button",
-                        title: "Add as a layer on the focused image",
-                        onClick: (e) => {
-                          e.stopPropagation();
-                          addImageLayerFromSrc(v.src, v.name ?? "image", focusedSrc, send);
-                        },
-                        className: "absolute bottom-0 right-0 bg-black/70 text-white rounded-tl p-0.5 hover:text-accent-ink",
-                        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Layers, {
-                          className: "w-3 h-3"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, v.id, true, undefined, this)),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Add reference images",
-                    onClick: () => fileInput.current?.click(),
-                    className: "w-[75px] h-[75px] shrink-0 rounded-md border border-dashed border-edge-strong text-faint hover:text-ink hover:border-edge-hover flex items-center justify-center transition-colors",
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Plus, {
-                      className: "w-4 h-4"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: "w-px bg-divider self-stretch"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: `flex-1 min-w-0 rounded-md transition-colors ${ctxDragging ? "ring-1 ring-accent/60 bg-accent/5" : ""}`,
-            onDragOver: (e) => {
-              if (!e.dataTransfer.types.includes("application/x-imago-context"))
-                return;
-              e.preventDefault();
-              if (!ctxDragging)
-                setCtxDragging(true);
-            },
-            onDragLeave: (e) => {
-              if (e.currentTarget === e.target)
-                setCtxDragging(false);
-            },
-            onDrop: (e) => {
-              e.preventDefault();
-              setCtxDragging(false);
-              const dragged = readContextDrag(e.dataTransfer);
-              if (dragged)
-                send({ type: "context.link", id: dragged.id, set: "active" });
-            },
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-center gap-2 text-[11px] mb-1.5",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-ink font-medium",
-                    children: "Active context"
-                  }, undefined, false, undefined, this),
-                  state.focus && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Capture style from focused image",
-                    onClick: () => send({ type: "context.capture" }),
-                    className: "flex items-center gap-0.5 text-faint hover:text-accent-ink transition-colors",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(WandSparkles, {
-                        className: "w-3 h-3"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                        children: "capture style"
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this),
-                  activeContextEntries.length > 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "ml-auto text-accent-ink",
-                    children: [
-                      activeContextEntries.length,
-                      " linked"
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-center gap-2 overflow-x-auto px-1 py-1",
-                children: [
-                  activeContextEntries.map((entry) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    title: entry.content || entry.name,
-                    className: "group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent",
-                    children: [
-                      entry.image ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
-                        src: entry.image,
-                        alt: entry.name,
-                        className: "w-full h-full object-cover"
-                      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                        className: "w-full h-full bg-surface-2 flex items-center justify-center p-1",
-                        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                          className: "text-[10px] text-ink text-center leading-tight break-words [overflow-wrap:anywhere]",
-                          children: entry.name
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      entry.image && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                        className: "absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 text-center truncate pointer-events-none",
-                        children: entry.name
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                        type: "button",
-                        title: "Remove from active context (stays in Library)",
-                        "aria-label": "Remove from active context (stays in Library)",
-                        onClick: (e) => {
-                          e.stopPropagation();
-                          send({ type: "context.unlink", id: entry.id, set: "active" });
-                        },
-                        className: "absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity",
-                        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(X, {
-                          className: "w-3 h-3"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, entry.id, true, undefined, this)),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                    className: "relative shrink-0",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                        ref: pickerTriggerRef,
-                        type: "button",
-                        title: "Link a style to active context",
-                        onClick: () => setPickerOpen((o) => !o),
-                        className: "w-[75px] h-[75px] rounded-md border border-dashed border-edge-strong text-faint hover:text-ink hover:border-edge-hover flex flex-col items-center justify-center gap-0.5 transition-colors",
-                        children: [
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Plus, {
-                            className: "w-4 h-4"
-                          }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                            className: "text-[9px]",
-                            children: "link style"
-                          }, undefined, false, undefined, this)
-                        ]
-                      }, undefined, true, undefined, this),
-                      pickerOpen && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(LibraryPicker, {
-                        triggerRef: pickerTriggerRef,
-                        library: state.library,
-                        kind: "style",
-                        excludeIds: state.activeContextIds,
-                        onPick: (id) => send({ type: "context.link", id, set: "active" }),
-                        onClose: () => setPickerOpen(false)
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("input", {
-        ref: fileInput,
-        type: "file",
-        accept: "image/*",
-        multiple: true,
-        hidden: true,
-        onChange: (e) => {
-          processFiles(e.target.files, send);
-          e.target.value = "";
-        }
-      }, undefined, false, undefined, this),
-      analysisRef && analysisAnchor && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-            type: "button",
-            "aria-label": "Close analysis",
-            onClick: () => setAnalysisAnchor(null),
-            className: "fixed inset-0 z-40 cursor-default"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: "fixed z-50 w-64 max-h-64 overflow-y-auto card p-3 shadow-xl",
-            style: {
-              left: Math.max(8, Math.min(analysisAnchor.rect.left, window.innerWidth - 264)),
-              bottom: window.innerHeight - analysisAnchor.rect.top + 8
-            },
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                className: "flex items-start gap-2 mb-1.5",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-                    className: "text-[11px] font-semibold text-ink-strong truncate",
-                    children: analysisRef.name ?? "reference"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
-                    type: "button",
-                    title: "Close",
-                    onClick: () => setAnalysisAnchor(null),
-                    className: "ml-auto shrink-0 text-faint hover:text-ink",
-                    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(X, {
-                      className: "w-3.5 h-3.5"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-                className: "text-[11px] text-muted leading-relaxed whitespace-pre-wrap",
-                children: analysisRef.analysis
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/imago/surface/components/ContextLibrary.tsx
-var import_react13 = __toESM(require_react(), 1);
-
-// src/imago/surface/components/ContentModal.tsx
-var import_react12 = __toESM(require_react(), 1);
-var import_react_dom2 = __toESM(require_react_dom(), 1);
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
-function ContentModal({
-  title,
-  initialName,
-  initialContent,
-  saveLabel = "Save",
-  onSave,
-  onClose
-}) {
-  const [name, setName] = import_react12.useState(initialName);
-  const [content, setContent] = import_react12.useState(initialContent);
-  const nameRef = import_react12.useRef(null);
-  import_react12.useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
-  import_react12.useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape")
-        onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  const canSave = name.trim().length > 0 && content.trim().length > 0;
-  const handleSave = () => {
-    if (!canSave)
-      return;
-    onSave(name.trim(), content.trim());
-  };
-  return import_react_dom2.createPortal(/* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-    className: "fixed inset-0 z-50 flex items-center justify-center",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
-        type: "button",
-        "aria-label": "Close modal",
-        onClick: onClose,
-        className: "absolute inset-0 w-full h-full bg-black/60 cursor-default",
-        style: { border: "none", padding: 0 }
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-        className: "relative z-10 card flex flex-col gap-4 p-5 w-[min(32rem,92vw)] max-w-lg",
-        onClick: (e) => e.stopPropagation(),
-        onKeyDown: (e) => e.stopPropagation(),
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h2", {
-            className: "text-sm font-semibold text-ink-strong",
-            children: title
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-            className: "flex flex-col gap-1",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("label", {
-                className: "label",
-                htmlFor: "modal-name",
-                children: "Name"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("input", {
-                id: "modal-name",
-                ref: nameRef,
-                type: "text",
-                value: name,
-                onChange: (e) => setName(e.target.value),
-                placeholder: "Entry name",
-                className: "w-full bg-surface-2 border border-edge-2 text-sm text-ink px-3 py-2 rounded-lg placeholder-faint focus:outline-none focus:border-accent/60"
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-            className: "flex flex-col gap-1",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("label", {
-                className: "label",
-                htmlFor: "modal-content",
-                children: "Content"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("textarea", {
-                id: "modal-content",
-                value: content,
-                onChange: (e) => setContent(e.target.value),
-                placeholder: "Enter content…",
-                rows: 10,
-                className: "textarea resize-y"
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-            className: "flex items-center justify-end gap-2",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
-                type: "button",
-                onClick: onClose,
-                className: "chip",
-                children: "Cancel"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
-                type: "button",
-                onClick: handleSave,
-                disabled: !canSave,
-                className: "btn-primary !px-4 !py-1.5 text-xs disabled:opacity-40 disabled:cursor-not-allowed",
-                children: saveLabel
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this), document.body);
-}
-
-// src/imago/surface/components/ContextLibrary.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
-var KIND_FILTERS = [
-  { id: "all", label: "All", Icon: LayoutGrid },
-  { id: "prompt", label: "Prompts", Icon: MessageSquareText },
-  { id: "style", label: "Styles", Icon: Sparkles }
-];
-function defaultSet(kind) {
-  if (kind === "style")
-    return "active";
-  if (kind === "prompt")
-    return "quickPrompts";
+  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    nestedOpenDialogCount: ownNestedOpenDialogs,
+    nestedOpenDrawerCount: ownNestedOpenDrawers
+  });
   return null;
 }
-function isActive(entry, activeContextIds, quickPromptIds) {
-  if (entry.kind === "style")
-    return isLinked(activeContextIds, entry.id);
-  if (entry.kind === "prompt")
-    return isLinked(quickPromptIds, entry.id);
-  return false;
-}
-function EntryCard({
-  entry,
-  activeContextIds,
-  quickPromptIds,
-  send,
-  onEdit
-}) {
-  const [deleteStep, setDeleteStep] = import_react13.useState(null);
-  const active = isActive(entry, activeContextIds, quickPromptIds);
-  const linkSet = defaultSet(entry.kind);
-  const handleLink = () => {
-    if (!linkSet)
-      return;
-    if (active) {
-      send({ type: "context.unlink", id: entry.id, set: linkSet });
-    } else {
-      send({ type: "context.link", id: entry.id, set: linkSet });
-    }
-  };
-  const handleDelete = () => {
-    if (deleteStep === "confirm") {
-      send({ type: "context.delete", id: entry.id });
-      setDeleteStep(null);
-    } else {
-      setDeleteStep("confirm");
-    }
-  };
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-    className: `rounded-md border p-2 flex flex-col gap-1 ${active ? "border-accent bg-surface-2" : "border-edge bg-surface-2"}`,
-    draggable: entry.kind === "style",
-    onDragStart: entry.kind === "style" ? (e) => e.dataTransfer.setData(IMAGO_CONTEXT_DND, JSON.stringify({ id: entry.id })) : undefined,
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex items-start gap-1 min-w-0",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-            className: "flex-1 min-w-0",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-                className: "flex items-center gap-1",
-                children: [
-                  entry.kind === "prompt" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MessageSquareText, {
-                    className: "w-3.5 h-3.5 shrink-0 text-faint"
-                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Sparkles, {
-                    className: "w-3.5 h-3.5 shrink-0 text-faint"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
-                    className: "text-xs font-medium text-ink truncate",
-                    children: entry.name
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              deleteStep === null && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("p", {
-                className: "text-[11px] text-faint truncate mt-0.5",
-                children: entry.content || "—"
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-            className: "flex items-center gap-0.5 shrink-0",
-            children: [
-              deleteStep === null && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-                type: "button",
-                title: "Edit",
-                "aria-label": "Edit",
-                onClick: () => onEdit(entry),
-                className: "p-1 rounded text-faint hover:text-ink hover:bg-surface-3",
-                children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Pencil, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              deleteStep === null && linkSet && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-                type: "button",
-                title: active ? entry.kind === "prompt" ? "Remove from quick prompts" : "Remove from active context" : entry.kind === "prompt" ? "Link to quick prompts" : "Link to active context",
-                "aria-label": active ? entry.kind === "prompt" ? "Remove from quick prompts" : "Remove from active context" : entry.kind === "prompt" ? "Link to quick prompts" : "Link to active context",
-                onClick: handleLink,
-                className: `p-1 rounded ${active ? "text-accent hover:text-ink hover:bg-surface-3" : "text-faint hover:text-ink hover:bg-surface-3"}`,
-                children: active ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Link2, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Link2Off, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              deleteStep === null && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-                type: "button",
-                title: "Delete",
-                "aria-label": "Delete",
-                onClick: () => setDeleteStep("confirm"),
-                className: "p-1 rounded text-faint hover:text-red-400 hover:bg-surface-3",
-                children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Trash2, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      entry.image && deleteStep === null && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("img", {
-        src: entry.image,
-        alt: entry.name,
-        className: "w-full rounded object-cover max-h-24"
-      }, undefined, false, undefined, this),
-      deleteStep === "confirm" && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex items-center gap-2 mt-1",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
-            className: "text-xs text-red-400 flex-1",
-            children: "Delete forever?"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-            type: "button",
-            onClick: () => setDeleteStep(null),
-            className: "text-xs px-2 py-0.5 rounded text-faint hover:text-ink hover:bg-surface-3",
-            children: "Cancel"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-            type: "button",
-            onClick: handleDelete,
-            className: "text-xs px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700",
-            children: "Delete"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function ContextLibrary({
-  state,
-  send
-}) {
-  const [kindFilter, setKindFilter] = import_react13.useState("all");
-  const [modal, setModal] = import_react13.useState(null);
-  const shown = kindFilter === "all" ? state.library : entriesByKind(state.library, kindFilter);
-  const handleSave = (name, content) => {
-    if (!modal)
-      return;
-    if (modal.mode === "new") {
-      const set = defaultSet(modal.kind);
-      send({
-        type: "context.add",
-        kind: modal.kind,
-        name,
-        content,
-        ...set ? { link: set } : {}
-      });
-    } else {
-      send({ type: "context.update", id: modal.entry.id, name, content });
-    }
-    setModal(null);
-  };
-  const addKinds = kindFilter === "all" ? ["prompt", "style"] : [kindFilter];
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("aside", {
-    className: "card flex flex-col min-h-0 h-full",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex items-center justify-between px-3 py-2 border-b border-divider",
-        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
-          className: "section-title",
-          children: "Library"
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex items-center gap-1 px-3 py-1.5 border-b border-divider",
-        children: KIND_FILTERS.map((f) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-          type: "button",
-          title: f.label,
-          "aria-label": f.label,
-          onClick: () => {
-            setKindFilter(f.id);
-          },
-          className: `p-1.5 rounded ${kindFilter === f.id ? "bg-accent text-accent-ink" : "text-faint hover:text-ink hover:bg-surface-3"}`,
-          children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(f.Icon, {
-            className: "w-4 h-4"
-          }, undefined, false, undefined, this)
-        }, f.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex-1 overflow-y-auto p-3 flex flex-col gap-3",
-        children: [
-          shown.length === 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("p", {
-            className: "text-faint italic text-center mt-10 px-4",
-            children: kindFilter === "all" ? "no entries yet — add a prompt or style below" : `no ${kindFilter}s yet`
-          }, undefined, false, undefined, this),
-          shown.map((entry) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EntryCard, {
-            entry,
-            activeContextIds: state.activeContextIds,
-            quickPromptIds: state.quickPromptIds,
-            send,
-            onEdit: (entry2) => setModal({ mode: "edit", entry: entry2 })
-          }, entry.id, false, undefined, this)),
-          addKinds.map((kind) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-              type: "button",
-              onClick: () => setModal({ mode: "new", kind }),
-              className: "w-full text-xs text-faint hover:text-ink flex items-center gap-1 py-1 px-1 rounded hover:bg-surface-3",
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Plus, {
-                  className: "w-3 h-3"
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
-                  children: [
-                    "New ",
-                    kind
-                  ]
-                }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this)
-          }, kind, false, undefined, this))
-        ]
-      }, undefined, true, undefined, this),
-      modal && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ContentModal, {
-        title: modal.mode === "new" ? `New ${modal.kind}` : `Edit ${modal.entry.kind}`,
-        initialName: modal.mode === "edit" ? modal.entry.name : "",
-        initialContent: modal.mode === "edit" ? modal.entry.content : "",
-        saveLabel: modal.mode === "new" ? "Add" : "Save",
-        onSave: handleSave,
-        onClose: () => setModal(null)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+
+// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
+var React52 = __toESM(require_react(), 1);
+"use client";
+var IsDrawerContext = /* @__PURE__ */ React52.createContext(false);
+if (true)
+  IsDrawerContext.displayName = "IsDrawerContext";
+var DialogRootContext = /* @__PURE__ */ React52.createContext(undefined);
+if (true)
+  DialogRootContext.displayName = "DialogRootContext";
+function useDialogRootContext(optional) {
+  const dialogRootContext = React52.useContext(DialogRootContext);
+  if (optional === false && dialogRootContext === undefined) {
+    throw new Error("Base UI: DialogRootContext is missing. Dialog parts must be placed within <Dialog.Root>.");
+  }
+  return dialogRootContext;
 }
 
-// src/imago/surface/components/Conversation.tsx
-var import_react14 = __toESM(require_react(), 1);
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
-function Conversation({
-  state,
-  send
-}) {
-  const [draft, setDraft] = import_react14.useState("");
-  const [dragging, setDragging] = import_react14.useState(false);
-  const fileInput = import_react14.useRef(null);
-  const focusLabel = (() => {
-    if (!state.focus)
-      return "new image";
-    const bi = state.batches.findIndex((b2) => b2.id === state.focus?.batchId);
-    const b = state.batches[bi];
-    const vi = b?.variants.findIndex((v) => v.id === state.focus?.variantId) ?? -1;
-    return bi >= 0 ? `about: Batch ${bi + 1} · ${variantLabel(vi)}` : "new image";
-  })();
-  async function submit() {
-    const t = draft.trim();
-    if (!t)
-      return;
-    setDraft("");
-    const focus = state.focus;
-    const variant = focus ? state.batches.find((b) => b.id === focus.batchId)?.variants.find((v) => v.id === focus.variantId) : undefined;
-    const focusMarks = focus ? state.marksByVariant[focus.variantId] ?? [] : [];
-    const focusLayers = focus ? state.layersByVariant[focus.variantId] ?? [] : [];
-    if (variant?.src && focusMarks.length > 0 && state.marksUnseen) {
-      const png = await flattenMarks(variant.src, focusMarks, undefined, undefined, focusLayers);
-      send({ type: "say", text: t, flattenedSrc: png || undefined });
-    } else {
-      send({ type: "say", text: t });
+// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
+var React53 = __toESM(require_react(), 1);
+var selectors3 = {
+  ...popupStoreSelectors,
+  modal: createSelector((state) => state.modal),
+  nested: createSelector((state) => state.nested),
+  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
+  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
+  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
+  openMethod: createSelector((state) => state.openMethod),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  titleElementId: createSelector((state) => state.titleElementId),
+  viewportElement: createSelector((state) => state.viewportElement),
+  role: createSelector((state) => state.role)
+};
+
+class DialogStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = createInitialState2(initialState);
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React53.createRef(),
+      backdropRef: /* @__PURE__ */ React53.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React53.createRef(),
+      outsidePressEnabledRef: {
+        current: true
+      },
+      triggerElements,
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined
+    }, selectors3);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    eventDetails.preventUnmountOnClose = () => {
+      this.set("preventUnmountingOnClose", true);
+    };
+    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
+      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
     }
-  }
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("aside", {
-    className: "card flex flex-col min-h-0 h-full",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: "flex items-center gap-2 px-4 py-2.5 border-b border-divider",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-            className: "section-title",
-            children: "Conversation"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-            className: "ml-auto text-[11px] px-2 py-0.5 rounded-full border border-edge-strong bg-surface text-ink",
-            children: focusLabel
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: "flex-1 overflow-y-auto p-4 flex flex-col gap-3",
-        children: [
-          state.conversation.length === 0 && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
-            className: "text-faint italic text-center mt-8",
-            children: "tell imago what you want to make — rough is fine. it interprets, proposes a prompt, and asks if it needs to."
-          }, undefined, false, undefined, this),
-          state.conversation.map((m) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Bubble, {
-            m,
-            state,
-            send,
-            setDraft
-          }, m.id, false, undefined, this))
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: `border-t p-3 flex flex-col gap-2 transition-colors ${dragging ? "border-accent/60 bg-accent/5" : "border-divider"}`,
-        onDragOver: (e) => {
-          e.preventDefault();
-          if (!dragging)
-            setDragging(true);
-        },
-        onDragLeave: (e) => {
-          if (e.currentTarget === e.target)
-            setDragging(false);
-        },
-        onDrop: (e) => {
-          e.preventDefault();
-          setDragging(false);
-          processFiles(e.dataTransfer.files, send);
-        },
-        children: [
-          state.pins.length > 0 && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: "flex items-center gap-1.5 flex-wrap",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-                className: "text-[11px] text-faint",
-                children: "pinned"
-              }, undefined, false, undefined, this),
-              state.pins.map((p) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-                className: "text-[11px] px-2 py-0.5 rounded-full bg-accent/15 text-accent-ink border border-accent/30 flex items-center gap-1",
-                children: [
-                  "\uD83D\uDCCC ",
-                  p.key,
-                  ": ",
-                  p.value,
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => send({ type: "pin.remove", key: p.key }),
-                    children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(X, {
-                      className: "w-3 h-3"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, p.key, true, undefined, this))
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: "flex items-center gap-1.5",
-            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(QuickPrompts, {
-              library: state.library,
-              quickPromptIds: state.quickPromptIds,
-              send,
-              onPick: setDraft
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("textarea", {
-            value: draft,
-            onChange: (e) => setDraft(e.target.value),
-            onKeyDown: (e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
-                submit();
-            },
-            rows: 3,
-            className: "textarea !resize-y min-h-[84px]",
-            placeholder: "talk to imago about this image… (rough is fine)"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("input", {
-            ref: fileInput,
-            type: "file",
-            accept: "image/*",
-            multiple: true,
-            hidden: true,
-            onChange: (e) => {
-              processFiles(e.target.files, send);
-              e.target.value = "";
-            }
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-                className: "text-[11px] text-faint flex items-center gap-1",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Terminal, {
-                    className: "w-3 h-3"
-                  }, undefined, false, undefined, this),
-                  " also in your terminal"
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-                className: "text-[11px] text-faint ml-auto",
-                children: "⌘↵"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                type: "button",
-                title: "Attach a reference image",
-                onClick: () => fileInput.current?.click(),
-                className: "btn-ghost !p-1.5",
-                children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ImagePlus, {
-                  className: "w-4 h-4"
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                type: "button",
-                className: "btn-primary !px-3 !py-1.5 text-xs",
-                onClick: submit,
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(SendHorizontal, {
-                    className: "w-4 h-4"
-                  }, undefined, false, undefined, this),
-                  " Send"
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function QuickPrompts({
-  library,
-  quickPromptIds,
-  send,
-  onPick
-}) {
-  const [open, setOpen] = import_react14.useState(false);
-  const [modal, setModal] = import_react14.useState(null);
-  const [showPicker, setShowPicker] = import_react14.useState(false);
-  const rootRef = import_react14.useRef(null);
-  function openDropdown() {
-    setOpen(true);
-    setShowPicker(false);
-  }
-  function closeDropdown() {
-    setOpen(false);
-    setShowPicker(false);
-  }
-  import_react14.useEffect(() => {
-    if (!open)
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
       return;
-    const dismiss = () => {
-      setOpen(false);
-      setShowPicker(false);
-    };
-    const onDown = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target))
-        dismiss();
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape" && !modal)
-        dismiss();
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, modal]);
-  const prompts = resolveSet(library, quickPromptIds);
-  function handleModalSave(name, content) {
-    if (!modal)
-      return;
-    if (modal.mode === "new") {
-      send({ type: "context.add", kind: "prompt", name, content, link: "quickPrompts" });
-    } else {
-      send({ type: "context.update", id: modal.entry.id, name, content });
     }
-    setModal(null);
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const updatedState = {
+      open: nextOpen
+    };
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
+    this.update(updatedState);
+  };
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
+    return store;
   }
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    ref: rootRef,
-    className: "relative",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-        type: "button",
-        onClick: () => open ? closeDropdown() : openDropdown(),
-        className: "chip flex items-center gap-1",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Zap, {
-            className: "w-3 h-3"
-          }, undefined, false, undefined, this),
-          " quick prompts ",
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ChevronDown, {
-            className: "w-3 h-3"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      open && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: "absolute bottom-full mb-1 left-0 z-30 w-72 card p-1.5 flex flex-col gap-0.5 max-h-80 overflow-y-auto",
-        children: [
-          !showPicker && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(jsx_dev_runtime16.Fragment, {
-            children: [
-              prompts.map((p) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-                className: "flex items-center gap-1 rounded hover:bg-accent/10",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => {
-                      onPick(p.content);
-                      closeDropdown();
-                    },
-                    title: p.content,
-                    className: "flex-1 min-w-0 text-left px-2 py-1 text-[12px] text-ink truncate",
-                    children: p.name
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    title: "Edit prompt",
-                    onClick: () => {
-                      setModal({ mode: "edit", entry: p });
-                      setOpen(false);
-                    },
-                    className: "shrink-0 p-1 text-faint hover:text-ink",
-                    children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Pencil, {
-                      className: "w-3 h-3"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    title: "Remove from quick prompts",
-                    onClick: () => send({ type: "context.unlink", id: p.id, set: "quickPrompts" }),
-                    className: "shrink-0 p-1 text-faint hover:text-ink",
-                    children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(X, {
-                      className: "w-3 h-3"
-                    }, undefined, false, undefined, this)
-                  }, undefined, false, undefined, this)
-                ]
-              }, p.id, true, undefined, this)),
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-                className: "flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => {
-                      setModal({ mode: "new" });
-                      setOpen(false);
-                    },
-                    className: "flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Plus, {
-                        className: "w-3 h-3"
-                      }, undefined, false, undefined, this),
-                      " New prompt"
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    onClick: () => setShowPicker((s) => !s),
-                    className: "flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink",
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Link, {
-                        className: "w-3 h-3"
-                      }, undefined, false, undefined, this),
-                      " Link from library"
-                    ]
-                  }, undefined, true, undefined, this)
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          showPicker && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(jsx_dev_runtime16.Fragment, {
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                type: "button",
-                onClick: () => setShowPicker(false),
-                className: "flex items-center gap-1 px-2 py-1 text-[12px] text-faint hover:text-ink",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ChevronLeft, {
-                    className: "w-3 h-3"
-                  }, undefined, false, undefined, this),
-                  " back to quick prompts"
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(LibraryPicker, {
-                inline: true,
-                library,
-                kind: "prompt",
-                excludeIds: quickPromptIds,
-                onPick: (id) => {
-                  send({ type: "context.link", id, set: "quickPrompts" });
-                  setShowPicker(false);
-                },
-                onClose: () => setShowPicker(false)
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      modal && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ContentModal, {
-        title: modal.mode === "new" ? "New prompt" : "Edit prompt",
-        initialName: modal.mode === "edit" ? modal.entry.name : "",
-        initialContent: modal.mode === "edit" ? modal.entry.content : "",
-        saveLabel: modal.mode === "new" ? "Add" : "Save",
-        onSave: handleModalSave,
-        onClose: () => setModal(null)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
 }
-function Bubble({
-  m,
-  state,
-  send,
-  setDraft
-}) {
-  if (m.kind === "gesture") {
-    return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-      className: "text-center text-[11px] text-faint italic py-0.5 break-words [overflow-wrap:anywhere]",
-      children: m.text
-    }, undefined, false, undefined, this);
-  }
-  if (m.role === "user") {
-    return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-      className: "flex justify-end",
-      children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: "max-w-[85%] text-sm rounded-lg rounded-br-sm px-3 py-2 bg-accent/20 border border-accent/30 text-ink break-words [overflow-wrap:anywhere]",
-        children: m.text
-      }, undefined, false, undefined, this)
-    }, undefined, false, undefined, this);
-  }
-  const asking = m.kind === "question";
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-    className: "flex gap-2",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-        className: "text-base shrink-0 mt-0.5",
-        "aria-hidden": true,
-        children: "\uD83D\uDF1B"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-        className: "flex flex-col gap-2 max-w-[88%]",
-        children: [
-          m.text && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: `text-sm rounded-lg rounded-tl-sm px-3 py-2 break-words [overflow-wrap:anywhere] ${asking ? "bg-attention/40 border border-attention/40 text-attention-ink" : "bg-surface border border-edge text-ink"}`,
-            children: m.text
-          }, undefined, false, undefined, this),
-          m.kind === "prompt" && m.proposal && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: "rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
-                className: "text-sm text-ink leading-relaxed italic",
-                children: [
-                  "“",
-                  m.proposal.prompt,
-                  "”"
-                ]
-              }, undefined, true, undefined, this),
-              m.proposal.status === "pending" ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-                className: "flex items-center gap-2 mt-2.5",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-primary !px-3 !py-1.5 text-xs",
-                    onClick: () => send({ type: "proposal.send", id: m.id }),
-                    children: [
-                      "Send ×",
-                      m.proposal.n
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                    type: "button",
-                    className: "btn-outline !px-2.5 !py-1.5 text-xs",
-                    onClick: () => {
-                      setDraft(m.proposal?.prompt ?? "");
-                      send({ type: "proposal.dismiss", id: m.id });
-                    },
-                    children: "tweak it"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
-                    className: "text-[11px] text-faint ml-auto",
-                    children: "saved with the image ↩"
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
-                className: "text-[11px] text-faint mt-1.5",
-                children: m.proposal.status
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          m.kind === "result" && (() => {
-            const b = state.batches.find((x) => x.id === m.batchId);
-            if (!b)
-              return null;
-            return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-              className: "flex gap-1.5",
-              children: b.variants.map((v, vi) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-                type: "button",
-                onClick: () => send({
-                  type: "focus.set",
-                  batchId: b.id,
-                  variantId: v.id
-                }),
-                className: "w-12 h-12 rounded-md overflow-hidden ring-1 ring-edge hover:ring-accent",
-                children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("img", {
-                  src: v.src,
-                  alt: `variant ${variantLabel(vi)}`,
-                  className: "w-full h-full object-cover"
-                }, undefined, false, undefined, this)
-              }, v.id, false, undefined, this))
-            }, undefined, false, undefined, this);
-          })(),
-          m.kind === "question" && m.options && m.options.length > 0 && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
-            className: "flex flex-wrap gap-1.5",
-            children: m.options.map((o) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
-              type: "button",
-              className: "chip",
-              onClick: () => send({ type: "say", text: o }),
-              children: o
-            }, o, false, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+function createInitialState2(initialState = {}) {
+  return {
+    ...createInitialPopupStoreState(),
+    modal: true,
+    disablePointerDismissal: false,
+    popupElement: null,
+    viewportElement: null,
+    descriptionElementId: undefined,
+    titleElementId: undefined,
+    openMethod: null,
+    nested: false,
+    nestedOpenDialogCount: 0,
+    nestedOpenDrawerCount: 0,
+    role: "dialog",
+    ...initialState
+  };
 }
 
-// src/imago/surface/components/EndedOverlay.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
-function EndedOverlay() {
-  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-    className: "fixed inset-0 bg-black/70 z-[60] flex items-center justify-center",
-    children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-      className: "card p-8 text-center max-w-sm",
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Sparkles, {
-          className: "w-8 h-8 text-accent-ink mx-auto mb-2"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-          className: "page-title mb-1",
-          children: "Session ended"
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
-          className: "text-muted",
-          children: "The imago has been handed back to the agent. You can close this tab."
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this)
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function useRenderDialogRoot(props, mode = "dialog") {
+  const {
+    children,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    disablePointerDismissal: disablePointerDismissalProp = false,
+    modal: modalProp = true,
+    actionsRef,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const isDrawer = mode === "drawer";
+  const isAlertDialog = mode === "alert-dialog";
+  const modal = isAlertDialog ? true : modalProp;
+  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
+  const role = isAlertDialog ? "alertdialog" : "dialog";
+  const parentDialogRootContext = useDialogRootContext(true);
+  const nested = Boolean(parentDialogRootContext);
+  const rootState = {
+    modal,
+    disablePointerDismissal,
+    nested,
+    role
+  };
+  const store = DialogStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    ...rootState
+  });
+  useOnFirstRender(() => {
+    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
+      open: true,
+      activeTriggerId: defaultTriggerIdProp
+    } : null;
+    if (isAlertDialog) {
+      store.update(nextState ? {
+        ...rootState,
+        ...nextState
+      } : rootState);
+    } else if (nextState) {
+      store.update(nextState);
+    }
+  });
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useSyncedValues(rootState);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  useDialogRoot({
+    store,
+    actionsRef
+  });
+  const shouldRenderInteractions = open || mounted;
+  const contextValue = React54.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime12.jsx(IsDrawerContext.Provider, {
+    value: false,
+    children: /* @__PURE__ */ import_jsx_runtime12.jsxs(DialogRootContext.Provider, {
+      value: contextValue,
+      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime12.jsx(DialogInteractions, {
+        store,
+        parentContext: parentDialogRootContext?.store.context,
+        isDrawer
+      }), typeof children === "function" ? children({
+        payload
+      }) : children]
+    })
+  });
+}
+
+// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
+"use client";
+function AlertDialogRoot(props) {
+  return useRenderDialogRoot(props, "alert-dialog");
+}
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+var React55 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping3 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var DialogBackdrop = /* @__PURE__ */ React55.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    forceRender = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    stateAttributesMapping: stateAttributesMapping3,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    enabled: forceRender || !nested
+  });
+});
+if (true)
+  DialogBackdrop.displayName = "DialogBackdrop";
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+var React59 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/use-button/useButton.mjs
+var React58 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/error.mjs
+var set2;
+if (true) {
+  set2 = new Set;
+}
+function error(...messages) {
+  if (true) {
+    const messageKey = messages.join(" ");
+    if (!set2.has(messageKey)) {
+      set2.add(messageKey);
+      console.error(`Base UI: ${messageKey}`);
+    }
+  }
+}
+
+// node_modules/@base-ui/react/internals/composite/root/CompositeRootContext.mjs
+var React56 = __toESM(require_react(), 1);
+"use client";
+var CompositeRootContext = /* @__PURE__ */ React56.createContext(undefined);
+if (true)
+  CompositeRootContext.displayName = "CompositeRootContext";
+function useCompositeRootContext(optional = false) {
+  const context = React56.useContext(CompositeRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: CompositeRootContext is missing. Composite parts must be placed within <Composite.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/utils/useFocusableWhenDisabled.mjs
+var React57 = __toESM(require_react(), 1);
+"use client";
+function useFocusableWhenDisabled(parameters) {
+  const {
+    focusableWhenDisabled,
+    disabled: disabled2,
+    composite = false,
+    tabIndex: tabIndexProp = 0,
+    isNativeButton
+  } = parameters;
+  const isFocusableComposite = composite && focusableWhenDisabled !== false;
+  const isNonFocusableComposite = composite && focusableWhenDisabled === false;
+  const props = React57.useMemo(() => {
+    const additionalProps = {
+      onKeyDown(event) {
+        if (disabled2 && focusableWhenDisabled && event.key !== "Tab") {
+          event.preventDefault();
+        }
+      }
+    };
+    if (!composite) {
+      additionalProps.tabIndex = tabIndexProp;
+      if (!isNativeButton && disabled2) {
+        additionalProps.tabIndex = focusableWhenDisabled ? tabIndexProp : -1;
+      }
+    }
+    if (isNativeButton && (focusableWhenDisabled || isFocusableComposite) || !isNativeButton && disabled2) {
+      additionalProps["aria-disabled"] = disabled2;
+    }
+    if (isNativeButton && (!focusableWhenDisabled || isNonFocusableComposite)) {
+      additionalProps.disabled = disabled2;
+    }
+    return additionalProps;
+  }, [composite, disabled2, focusableWhenDisabled, isFocusableComposite, isNonFocusableComposite, isNativeButton, tabIndexProp]);
+  return {
+    props
+  };
+}
+
+// node_modules/@base-ui/react/internals/use-button/useButton.mjs
+"use client";
+function useButton(parameters = {}) {
+  const {
+    disabled: disabled2 = false,
+    focusableWhenDisabled,
+    tabIndex = 0,
+    native: isNativeButton = true,
+    composite: compositeProp
+  } = parameters;
+  const elementRef = React58.useRef(null);
+  const compositeRootContext = useCompositeRootContext(true);
+  const isCompositeItem = compositeProp ?? compositeRootContext !== undefined;
+  const {
+    props: focusableWhenDisabledProps
+  } = useFocusableWhenDisabled({
+    focusableWhenDisabled,
+    disabled: disabled2,
+    composite: isCompositeItem,
+    tabIndex,
+    isNativeButton
+  });
+  if (true) {
+    React58.useEffect(() => {
+      if (!elementRef.current) {
+        return;
+      }
+      const isButtonTag = isButtonElement(elementRef.current);
+      if (isNativeButton) {
+        if (!isButtonTag) {
+          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+          const message = "A component that acts as a button expected a native <button> because the " + "`nativeButton` prop is true. Rendering a non-<button> removes native button " + "semantics, which can impact forms and accessibility. Use a real <button> in the " + "`render` prop, or set `nativeButton` to `false`.";
+          error(`${message}${ownerStackMessage}`);
+        }
+      } else if (isButtonTag) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        const message = "A component that acts as a button expected a non-<button> because the `nativeButton` " + "prop is false. Rendering a <button> keeps native behavior while Base UI applies " + "non-native attributes and handlers, which can add unintended extra attributes (such " + "as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set " + "`nativeButton` to `true`.";
+        error(`${message}${ownerStackMessage}`);
+      }
+    }, [isNativeButton]);
+  }
+  const updateDisabled = React58.useCallback(() => {
+    const element = elementRef.current;
+    if (!isButtonElement(element)) {
+      return;
+    }
+    if (isCompositeItem && disabled2 && focusableWhenDisabledProps.disabled === undefined && element.disabled) {
+      element.disabled = false;
+    }
+  }, [disabled2, focusableWhenDisabledProps.disabled, isCompositeItem]);
+  useIsoLayoutEffect(updateDisabled, [updateDisabled]);
+  const getButtonProps = React58.useCallback((externalProps = {}) => {
+    const {
+      onClick: externalOnClick,
+      onMouseDown: externalOnMouseDown,
+      onKeyUp: externalOnKeyUp,
+      onKeyDown: externalOnKeyDown,
+      onPointerDown: externalOnPointerDown,
+      ...otherExternalProps
+    } = externalProps;
+    return mergeProps({
+      onClick(event) {
+        if (disabled2) {
+          event.preventDefault();
+          return;
+        }
+        externalOnClick?.(event);
+      },
+      onMouseDown(event) {
+        if (!disabled2) {
+          externalOnMouseDown?.(event);
+        }
+      },
+      onKeyDown(event) {
+        if (disabled2) {
+          return;
+        }
+        makeEventPreventable(event);
+        externalOnKeyDown?.(event);
+        if (event.baseUIHandlerPrevented) {
+          return;
+        }
+        const isCurrentTarget = event.target === event.currentTarget;
+        const currentTarget = event.currentTarget;
+        const isButton = isButtonElement(currentTarget);
+        const isLink = !isNativeButton && isValidLinkElement(currentTarget);
+        const shouldClick = isCurrentTarget && (isNativeButton ? isButton : !isLink);
+        const isEnterKey = event.key === "Enter";
+        const isSpaceKey = event.key === " ";
+        const role = currentTarget.getAttribute("role");
+        const isTextNavigationRole = role?.startsWith("menuitem") || role === "option" || role === "gridcell";
+        if (isCurrentTarget && isCompositeItem && isSpaceKey) {
+          if (event.defaultPrevented && isTextNavigationRole) {
+            return;
+          }
+          event.preventDefault();
+          if (isLink || isNativeButton && isButton) {
+            currentTarget.click();
+            event.preventBaseUIHandler();
+          } else if (shouldClick) {
+            externalOnClick?.(event);
+            event.preventBaseUIHandler();
+          }
+          return;
+        }
+        if (shouldClick) {
+          if (!isNativeButton && (isSpaceKey || isEnterKey)) {
+            event.preventDefault();
+          }
+          if (!isNativeButton && isEnterKey) {
+            externalOnClick?.(event);
+          }
+        }
+      },
+      onKeyUp(event) {
+        if (disabled2) {
+          return;
+        }
+        makeEventPreventable(event);
+        externalOnKeyUp?.(event);
+        if (event.target === event.currentTarget && isNativeButton && isCompositeItem && isButtonElement(event.currentTarget) && event.key === " ") {
+          event.preventDefault();
+          return;
+        }
+        if (event.baseUIHandlerPrevented) {
+          return;
+        }
+        if (event.target === event.currentTarget && !isNativeButton && !isCompositeItem && event.key === " ") {
+          externalOnClick?.(event);
+        }
+      },
+      onPointerDown(event) {
+        if (disabled2) {
+          event.preventDefault();
+          return;
+        }
+        externalOnPointerDown?.(event);
+      }
+    }, isNativeButton ? {
+      type: "button"
+    } : {
+      role: "button"
+    }, focusableWhenDisabledProps, otherExternalProps);
+  }, [disabled2, focusableWhenDisabledProps, isCompositeItem, isNativeButton]);
+  const buttonRef = useStableCallback((element) => {
+    elementRef.current = element;
+    updateDisabled();
+  });
+  return {
+    getButtonProps,
+    buttonRef
+  };
+}
+function isButtonElement(elem) {
+  return isHTMLElement(elem) && elem.tagName === "BUTTON";
+}
+function isValidLinkElement(elem) {
+  return Boolean(elem?.tagName === "A" && elem?.href);
+}
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+"use client";
+var DialogClose = /* @__PURE__ */ React59.forwardRef(function DialogClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  function handleClick(event) {
+    if (open) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+    }
+  }
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick: handleClick
+    }, elementProps, getButtonProps]
+  });
+});
+if (true)
+  DialogClose.displayName = "DialogClose";
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+var React60 = __toESM(require_react(), 1);
+"use client";
+var DialogDescription = /* @__PURE__ */ React60.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("descriptionElementId", id);
+  return useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (true)
+  DialogDescription.displayName = "DialogDescription";
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var React62 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
+var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
+  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
+  return DialogPopupCssVars2;
+}({});
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
+var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogPopupDataAttributes2["nested"] = "data-nested";
+  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogPopupDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
+var React61 = __toESM(require_react(), 1);
+"use client";
+var DialogPortalContext = /* @__PURE__ */ React61.createContext(undefined);
+if (true)
+  DialogPortalContext.displayName = "DialogPortalContext";
+function useDialogPortalContext() {
+  const value = React61.useContext(DialogPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Dialog.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/internals/composite/composite.mjs
+var ARROW_UP2 = "ArrowUp";
+var ARROW_DOWN2 = "ArrowDown";
+var ARROW_LEFT2 = "ArrowLeft";
+var ARROW_RIGHT2 = "ArrowRight";
+var HOME = "Home";
+var END = "End";
+var HORIZONTAL_KEYS = new Set([ARROW_LEFT2, ARROW_RIGHT2]);
+var HORIZONTAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_LEFT2, ARROW_RIGHT2, HOME, END]);
+var VERTICAL_KEYS = new Set([ARROW_UP2, ARROW_DOWN2]);
+var VERTICAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_UP2, ARROW_DOWN2, HOME, END]);
+var ARROW_KEYS = new Set([...HORIZONTAL_KEYS, ...VERTICAL_KEYS]);
+var COMPOSITE_KEYS = new Set([...ARROW_KEYS, HOME, END]);
+var SHIFT = "Shift";
+var CONTROL = "Control";
+var ALT = "Alt";
+var META = "Meta";
+var MODIFIER_KEYS = new Set([SHIFT, CONTROL, ALT, META]);
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogPopupDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogPopup = /* @__PURE__ */ React62.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    finalFocus,
+    initialFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const descriptionElementId = store.useState("descriptionElementId");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const rootPopupProps = store.useState("popupProps");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const nested = store.useState("nested");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const titleElementId = store.useState("titleElementId");
+  const transitionStatus = store.useState("transitionStatus");
+  const role = store.useState("role");
+  const floatingId = floatingRootContext.useState("floatingId");
+  const popupId = elementProps.id ?? floatingId;
+  useDialogPortalContext();
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const setPopupElement = store.useStateSetter("popupElement");
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    props: [rootPopupProps, {
+      id: popupId,
+      "aria-labelledby": titleElementId ?? undefined,
+      "aria-describedby": descriptionElementId ?? undefined,
+      role,
+      ...FOCUSABLE_POPUP_PROPS,
+      hidden: !mounted,
+      onKeyDown(event) {
+        if (COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      },
+      style: {
+        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
+      }
+    }, elementProps],
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping4
+  });
+  return /* @__PURE__ */ import_jsx_runtime13.jsx(FloatingFocusManager, {
+    context: floatingRootContext,
+    openInteractionType: openMethod,
+    disabled: !mounted,
+    closeOnFocusOut: !disablePointerDismissal,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    modal: modal !== false,
+    restoreFocus: "popup",
+    children: element
+  });
+});
+if (true)
+  DialogPopup.displayName = "DialogPopup";
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var React64 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/InternalBackdrop.mjs
+var React63 = __toESM(require_react(), 1);
+var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+var InternalBackdrop = /* @__PURE__ */ React63.forwardRef(function InternalBackdrop2(props, ref) {
+  const {
+    cutout,
+    ...otherProps
+  } = props;
+  let clipPath;
+  if (cutout) {
+    const rect = cutout.getBoundingClientRect();
+    clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
+  }
+  return /* @__PURE__ */ import_jsx_runtime14.jsx("div", {
+    ref,
+    role: "presentation",
+    "data-base-ui-inert": "",
+    ...otherProps,
+    style: {
+      position: "fixed",
+      inset: 0,
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      clipPath
+    }
+  });
+});
+if (true)
+  InternalBackdrop.displayName = "InternalBackdrop";
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var DialogPortal = /* @__PURE__ */ React64.forwardRef(function DialogPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useDialogRootContext();
+  const mounted = store.useState("mounted");
+  const modal = store.useState("modal");
+  const open = store.useState("open");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime15.jsx(DialogPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime15.jsxs(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps,
+      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime15.jsx(InternalBackdrop, {
+        ref: store.context.internalBackdropRef,
+        inert: inertValue(!open)
+      }), props.children]
+    })
+  });
+});
+if (true)
+  DialogPortal.displayName = "DialogPortal";
+// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+var React65 = __toESM(require_react(), 1);
+"use client";
+var DialogTitle = /* @__PURE__ */ React65.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("titleElementId", id);
+  return useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (true)
+  DialogTitle.displayName = "DialogTitle";
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+var React69 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+var React68 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
+var React66 = __toESM(require_react(), 1);
+"use client";
+function useEnhancedClickHandler(handler) {
+  const lastClickInteractionTypeRef = React66.useRef("");
+  const handlePointerDown = React66.useCallback((event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    lastClickInteractionTypeRef.current = event.pointerType;
+    handler(event, event.pointerType);
+  }, [handler]);
+  const handleClick = React66.useCallback((event) => {
+    if (event.detail === 0) {
+      handler(event, "keyboard");
+      return;
+    }
+    if ("pointerType" in event) {
+      handler(event, event.pointerType);
+    } else {
+      handler(event, lastClickInteractionTypeRef.current);
+    }
+    lastClickInteractionTypeRef.current = "";
+  }, [handler]);
+  return {
+    onClick: handleClick,
+    onPointerDown: handlePointerDown
+  };
+}
+
+// node_modules/@base-ui/react/internals/useValueChanged.mjs
+var React67 = __toESM(require_react(), 1);
+"use client";
+function useValueChanged(value, onChange) {
+  const valueRef = React67.useRef(value);
+  const onChangeCallback = useStableCallback(onChange);
+  useIsoLayoutEffect(() => {
+    if (valueRef.current === value) {
+      return;
+    }
+    onChangeCallback(valueRef.current);
+  }, [value, onChangeCallback]);
+  useIsoLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+}
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+"use client";
+function useOpenMethodTriggerProps(open, setOpenMethod) {
+  const handleTriggerClick = useStableCallback((_, interactionType) => {
+    const isOpen = typeof open === "function" ? open() : open;
+    if (!isOpen) {
+      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
+    }
+  });
+  const {
+    onClick,
+    onPointerDown
+  } = useEnhancedClickHandler(handleTriggerClick);
+  return React68.useMemo(() => ({
+    onClick,
+    onPointerDown
+  }), [onClick, onPointerDown]);
+}
+function useOpenInteractionType(open) {
+  const [openMethod, setOpenMethod] = React68.useState(null);
+  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
+  useValueChanged(open, (previousOpen) => {
+    if (previousOpen && !open) {
+      setOpenMethod(null);
+    }
+  });
+  return React68.useMemo(() => ({
+    openMethod,
+    triggerProps
+  }), [openMethod, triggerProps]);
+}
+
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+"use client";
+var DialogTrigger = /* @__PURE__ */ React69.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    id: idProp,
+    payload,
+    handle,
+    ...elementProps
+  } = componentProps;
+  const dialogRootContext = useDialogRootContext(true);
+  const store = handle?.store ?? dialogRootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Dialog.Trigger> must be used within <Dialog.Root> or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React69.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+});
+if (true)
+  DialogTrigger.displayName = "DialogTrigger";
+
+// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
+"use client";
+var AlertDialogTrigger = DialogTrigger;
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+var React70 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
+var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogViewportDataAttributes2["nested"] = "data-nested";
+  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogViewportDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+"use client";
+var stateAttributesMapping5 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nested(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nested]: ""
+    } : null;
+  },
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogViewport = /* @__PURE__ */ React70.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    ...elementProps
+  } = componentProps;
+  const keepMounted = useDialogPortalContext();
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const transitionStatus = store.useState("transitionStatus");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const mounted = store.useState("mounted");
+  const setViewportElement = store.useStateSetter("viewportElement");
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const shouldRender = keepMounted || mounted;
+  return useRenderElement("div", componentProps, {
+    enabled: shouldRender,
+    state,
+    ref: [forwardedRef, setViewportElement],
+    stateAttributesMapping: stateAttributesMapping5,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: !open ? "none" : undefined
+      },
+      children
+    }, elementProps]
+  });
+});
+if (true)
+  DialogViewport.displayName = "DialogViewport";
+// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
+class DialogHandle {
+  constructor(store) {
+    this.store = store ?? new DialogStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (true) {
+      if (triggerId && !triggerElement) {
+        console.warn(`Base UI: DialogHandle.open: No trigger found with id "${triggerId}". The dialog will open, but the trigger will not be associated with the dialog.`);
+      }
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  openWithPayload(payload) {
+    this.store.set("payload", payload);
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createDialogHandle() {
+  return new DialogHandle;
+}
+
+// node_modules/@base-ui/react/alert-dialog/handle.mjs
+var alertDialogState = {
+  modal: true,
+  disablePointerDismissal: true,
+  role: "alertdialog"
+};
+
+class AlertDialogHandle extends DialogHandle {
+  constructor(store) {
+    const alertDialogStore = store ?? new DialogStore(alertDialogState);
+    super(alertDialogStore);
+    if (store) {
+      this.store.update(alertDialogState);
+    }
+  }
+}
+function createAlertDialogHandle() {
+  return new AlertDialogHandle;
+}
+// node_modules/@base-ui/react/button/Button.mjs
+var React71 = __toESM(require_react(), 1);
+"use client";
+var Button = /* @__PURE__ */ React71.forwardRef(function Button2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    disabled: disabled2 = false,
+    focusableWhenDisabled = false,
+    nativeButton = true,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [elementProps, getButtonProps]
+  });
+});
+if (true)
+  Button.displayName = "Button";
+// node_modules/clsx/dist/clsx.mjs
+function r(e) {
+  var t, f, n = "";
+  if (typeof e == "string" || typeof e == "number")
+    n += e;
+  else if (typeof e == "object")
+    if (Array.isArray(e)) {
+      var o = e.length;
+      for (t = 0;t < o; t++)
+        e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+    } else
+      for (f in e)
+        e[f] && (n && (n += " "), n += f);
+  return n;
+}
+function clsx2() {
+  for (var e, t, f = 0, n = "", o = arguments.length;f < o; f++)
+    (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+  return n;
+}
+
+// node_modules/class-variance-authority/dist/index.mjs
+var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
+var cx = clsx2;
+var cva = (base, config) => (props) => {
+  var _config_compoundVariants;
+  if ((config === null || config === undefined ? undefined : config.variants) == null)
+    return cx(base, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
+  const { variants, defaultVariants } = config;
+  const getVariantClassNames = Object.keys(variants).map((variant) => {
+    const variantProp = props === null || props === undefined ? undefined : props[variant];
+    const defaultVariantProp = defaultVariants === null || defaultVariants === undefined ? undefined : defaultVariants[variant];
+    if (variantProp === null)
+      return null;
+    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
+    return variants[variant][variantKey];
+  });
+  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
+    let [key, value] = param;
+    if (value === undefined) {
+      return acc;
+    }
+    acc[key] = value;
+    return acc;
+  }, {});
+  const getCompoundVariantClassNames = config === null || config === undefined ? undefined : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === undefined ? undefined : _config_compoundVariants.reduce((acc, param) => {
+    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
+    return Object.entries(compoundVariantOptions).every((param2) => {
+      let [key, value] = param2;
+      return Array.isArray(value) ? value.includes({
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key]) : {
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key] === value;
+    }) ? [
+      ...acc,
+      cvClass,
+      cvClassName
+    ] : acc;
+  }, []);
+  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
+};
+
+// src/grapevine/surface/ui/button.tsx
+var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
+var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+  variants: {
+    variant: {
+      default: "bg-primary text-primary-foreground hover:bg-primary/80",
+      outline: "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+      ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+      destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+      link: "text-primary underline-offset-4 hover:underline",
+      accent: "border-ring bg-transparent text-grape-soft hover:bg-primary/10",
+      joined: "border-leaf bg-leaf/10 text-leaf-soft hover:bg-leaf/15",
+      "destructive-ghost": "hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive"
+    },
+    size: {
+      default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+      xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+      sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+      lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+      icon: "size-8",
+      "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+      "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
+      "icon-lg": "size-9",
+      inline: "h-auto gap-1 rounded-sm border-0 px-1 py-0 text-[0.6875rem] leading-none"
+    }
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "default"
+  }
+});
+function Button3({
+  className,
+  variant = "default",
+  size: size4 = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Button, {
+    "data-slot": "button",
+    className: cn(buttonVariants({ variant, size: size4, className })),
+    ...props
   }, undefined, false, undefined, this);
 }
 
-// src/imago/surface/components/GenerationsRail.tsx
-var import_react15 = __toESM(require_react(), 1);
-var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
-var THUMB = {
-  s: "w-[60px]",
-  m: "w-[92px]",
-  l: "w-[132px]"
-};
-var THUMB_PX = { s: 60, m: 92, l: 132 };
-function GenerationsRail({
-  state,
-  send
+// src/grapevine/surface/ui/alert-dialog.tsx
+var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
+function AlertDialog({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Root, {
+    "data-slot": "alert-dialog",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogPortal({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Portal, {
+    "data-slot": "alert-dialog-portal",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogOverlay({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Backdrop, {
+    "data-slot": "alert-dialog-overlay",
+    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogContent({
+  className,
+  size: size4 = "default",
+  ...props
 }) {
-  const [size, setSize] = import_react15.useState("m");
-  const [dims, setDims] = import_react15.useState({});
-  const [filter, setFilter] = import_react15.useState("all");
-  const refsFacet = filter === "references";
-  const focusedSrc = focusedVariant(state)?.src;
-  const shown = state.batches.filter((b) => {
-    if (refsFacet)
-      return b.variants.some((v) => v.refSelected);
-    if (filter === "imported")
-      return b.kind === "import";
-    if (filter === "generated")
-      return b.kind !== "import";
-    return true;
-  });
-  const FILTERS = [
-    { id: "all", label: "All", Icon: Images },
-    { id: "generated", label: "Generated", Icon: Sparkles },
-    { id: "imported", label: "Imported", Icon: ImageDown },
-    { id: "references", label: "References", Icon: Paperclip }
-  ];
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("aside", {
-    className: "card flex flex-col min-h-0 h-full",
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogPortal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex items-center justify-between px-3 py-2 border-b border-divider",
+      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogOverlay, {}, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Popup, {
+        "data-slot": "alert-dialog-content",
+        "data-size": size4,
+        className: cn("group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function AlertDialogHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+    "data-slot": "alert-dialog-header",
+    className: cn("grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogFooter({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+    "data-slot": "alert-dialog-footer",
+    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogTitle({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Title, {
+    "data-slot": "alert-dialog-title",
+    className: cn("text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogDescription({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Description, {
+    "data-slot": "alert-dialog-description",
+    className: cn("text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogAction({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button3, {
+    "data-slot": "alert-dialog-action",
+    className: cn(className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogCancel({
+  className,
+  variant = "outline",
+  size: size4 = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(exports_index_parts2.Close, {
+    "data-slot": "alert-dialog-cancel",
+    className: cn(className),
+    render: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button3, {
+      variant,
+      size: size4
+    }, undefined, false, undefined, this),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/use-render/useRender.mjs
+function useRender(params) {
+  return useRenderElement(params.defaultTagName ?? "div", params, params);
+}
+
+// src/grapevine/surface/ui/badge.tsx
+var badgeVariants = cva("group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!", {
+  variants: {
+    variant: {
+      default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+      secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+      destructive: "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+      outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
+      ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
+      link: "text-primary underline-offset-4 hover:underline",
+      count: "bg-background px-1.5 text-[10px] text-muted-foreground",
+      "count-live": "bg-background px-1.5 text-[10px] text-leaf-soft"
+    }
+  },
+  defaultVariants: {
+    variant: "default"
+  }
+});
+function Badge({
+  className,
+  variant = "default",
+  render,
+  ...props
+}) {
+  return useRender({
+    defaultTagName: "span",
+    props: mergeProps({
+      className: cn(badgeVariants({ variant }), className)
+    }, props),
+    render,
+    state: {
+      slot: "badge",
+      variant
+    }
+  });
+}
+
+// node_modules/@base-ui/react/context-menu/index.parts.mjs
+var exports_index_parts4 = {};
+__export(exports_index_parts4, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => ContextMenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => ContextMenuTrigger
+});
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
+var React114 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRootContext.mjs
+var React72 = __toESM(require_react(), 1);
+"use client";
+var ContextMenuRootContext = /* @__PURE__ */ React72.createContext(undefined);
+if (true)
+  ContextMenuRootContext.displayName = "ContextMenuRootContext";
+function useContextMenuRootContext(optional = true) {
+  const context = React72.useContext(ContextMenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: ContextMenuRootContext is missing. ContextMenu parts must be placed within <ContextMenu.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Handle: () => MenuHandle,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => MenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => MenuTrigger,
+  Viewport: () => MenuViewport,
+  createHandle: () => createMenuHandle
+});
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+var React75 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/positioner/MenuPositionerContext.mjs
+var React73 = __toESM(require_react(), 1);
+"use client";
+var MenuPositionerContext = /* @__PURE__ */ React73.createContext(undefined);
+if (true)
+  MenuPositionerContext.displayName = "MenuPositionerContext";
+function useMenuPositionerContext(optional) {
+  const context = React73.useContext(MenuPositionerContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: MenuPositionerContext is missing. MenuPositioner parts must be placed within <Menu.Positioner>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/root/MenuRootContext.mjs
+var React74 = __toESM(require_react(), 1);
+"use client";
+var MenuRootContext = /* @__PURE__ */ React74.createContext(undefined);
+if (true)
+  MenuRootContext.displayName = "MenuRootContext";
+function useMenuRootContext(optional) {
+  const context = React74.useContext(MenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: MenuRootContext is missing. Menu parts must be placed within <Menu.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+"use client";
+var MenuArrow = /* @__PURE__ */ React75.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = useMenuPositionerContext();
+  const open = store.useState("open");
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered
+  };
+  return useRenderElement("div", componentProps, {
+    ref: [arrowRef, forwardedRef],
+    stateAttributesMapping: popupStateMapping,
+    state,
+    props: {
+      style: arrowStyles,
+      "aria-hidden": true,
+      ...elementProps
+    }
+  });
+});
+if (true)
+  MenuArrow.displayName = "MenuArrow";
+// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
+var React76 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping6 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var MenuBackdrop = /* @__PURE__ */ React76.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const contextMenuContext = useContextMenuRootContext();
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    ref: contextMenuContext?.backdropRef ? [forwardedRef, contextMenuContext.backdropRef] : forwardedRef,
+    state,
+    stateAttributesMapping: stateAttributesMapping6,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: lastOpenChangeReason === exports_reason_parts.triggerHover ? "none" : undefined,
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps]
+  });
+});
+if (true)
+  MenuBackdrop.displayName = "MenuBackdrop";
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var React83 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useControlled.mjs
+var React77 = __toESM(require_react(), 1);
+"use client";
+function useControlled({
+  controlled,
+  default: defaultProp,
+  name,
+  state = "value"
+}) {
+  const {
+    current: isControlled
+  } = React77.useRef(controlled !== undefined);
+  const [valueState, setValue] = React77.useState(defaultProp);
+  const value = isControlled ? controlled : valueState;
+  if (true) {
+    React77.useEffect(() => {
+      if (isControlled !== (controlled !== undefined)) {
+        error([`A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} ` + "element for the lifetime of the component.", "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join(`
+`));
+      }
+    }, [state, name, controlled]);
+    const {
+      current: defaultValue
+    } = React77.useRef(defaultProp);
+    React77.useEffect(() => {
+      if (!isControlled && serializeToDevModeString(defaultValue) !== serializeToDevModeString(defaultProp)) {
+        error([`A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. ` + `To suppress this warning opt to use a controlled ${name}.`].join(`
+`));
+      }
+    }, [defaultProp]);
+  }
+  const setValueIfUncontrolled = React77.useCallback((newValue) => {
+    if (!isControlled) {
+      setValue(newValue);
+    }
+  }, []);
+  return [value, setValueIfUncontrolled];
+}
+function serializeToDevModeString(input) {
+  let nextId = 0;
+  const seen = new WeakMap;
+  try {
+    const result = JSON.stringify(input, function replacer(key, value) {
+      if (key === "_owner" && this != null && typeof this === "object" && "$$typeof" in this) {
+        return;
+      }
+      if (typeof value === "bigint") {
+        return `__bigint__:${value}`;
+      }
+      if (value !== null && typeof value === "object") {
+        const id = seen.get(value);
+        if (id !== undefined) {
+          return `__object__:${id}`;
+        }
+        seen.set(value, nextId);
+        nextId += 1;
+      }
+      return value;
+    });
+    return result ?? `__top__:${typeof input}`;
+  } catch {
+    return "__unserializable__";
+  }
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemContext.mjs
+var React78 = __toESM(require_react(), 1);
+"use client";
+var MenuCheckboxItemContext = /* @__PURE__ */ React78.createContext(undefined);
+if (true)
+  MenuCheckboxItemContext.displayName = "MenuCheckboxItemContext";
+function useMenuCheckboxItemContext() {
+  const context = React78.useContext(MenuCheckboxItemContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuCheckboxItemContext is missing. MenuCheckboxItem parts must be placed within <Menu.CheckboxItem>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+var React80 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
+var React79 = __toESM(require_react(), 1);
+"use client";
+function useMenuItemCommonProps(params) {
+  const {
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  } = params;
+  const {
+    events: menuEvents
+  } = store.useState("floatingTreeRoot");
+  const open = store.useState("open");
+  const contextMenuContext = useContextMenuRootContext(true);
+  const isContextMenu = contextMenuContext !== undefined;
+  return React79.useMemo(() => ({
+    id,
+    role: "menuitem",
+    tabIndex: open && highlighted ? 0 : -1,
+    onKeyDown(event) {
+      if (event.key === " " && typingRef?.current) {
+        event.preventDefault();
+      }
+    },
+    onMouseMove(event) {
+      if (!nodeId) {
+        return;
+      }
+      menuEvents.emit("itemhover", {
+        nodeId,
+        target: event.currentTarget
+      });
+    },
+    onClick(event) {
+      if (closeOnClick) {
+        menuEvents.emit("close", {
+          domEvent: event,
+          reason: exports_reason_parts.itemPress
+        });
+      }
+    },
+    onMouseUp(event) {
+      if (contextMenuContext) {
+        const initialCursorPoint = contextMenuContext.initialCursorPointRef.current;
+        contextMenuContext.initialCursorPointRef.current = null;
+        if (isContextMenu && initialCursorPoint && Math.abs(event.clientX - initialCursorPoint.x) <= 1 && Math.abs(event.clientY - initialCursorPoint.y) <= 1) {
+          return;
+        }
+        if (isContextMenu && !exports_parts.os.mac && event.button === 2) {
+          return;
+        }
+      }
+      if (itemRef.current && store.context.allowMouseUpTriggerRef.current && (!isContextMenu || event.button === 2)) {
+        if (!itemMetadata || itemMetadata.type === "regular-item") {
+          itemRef.current.click();
+        }
+      }
+    }
+  }), [closeOnClick, highlighted, id, menuEvents, nodeId, open, store, typingRef, itemRef, contextMenuContext, isContextMenu, itemMetadata]);
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+"use client";
+var REGULAR_ITEM = {
+  type: "regular-item"
+};
+function useMenuItem(params) {
+  const {
+    closeOnClick,
+    disabled: disabledProp = false,
+    highlighted,
+    id,
+    store,
+    typingRef = store.context.typingRef,
+    nativeButton,
+    itemMetadata,
+    nodeId
+  } = params;
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled;
+  const itemRef = React80.useRef(null);
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled: true,
+    native: nativeButton,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  });
+  const getItemProps = React80.useCallback((externalProps) => {
+    return mergeProps(commonProps, {
+      onMouseEnter() {
+        if (itemMetadata.type !== "submenu-trigger") {
+          return;
+        }
+        itemMetadata.setActive();
+      }
+    }, externalProps, getButtonProps);
+  }, [commonProps, getButtonProps, itemMetadata]);
+  const mergedRef = useMergedRefs(itemRef, buttonRef);
+  return React80.useMemo(() => ({
+    getItemProps,
+    itemRef: mergedRef
+  }), [getItemProps, mergedRef]);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+var React82 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/composite/list/CompositeListContext.mjs
+var React81 = __toESM(require_react(), 1);
+"use client";
+var CompositeListContext = /* @__PURE__ */ React81.createContext({
+  register: () => {},
+  unregister: () => {},
+  subscribeMapChange: () => {
+    return () => {};
+  },
+  elementsRef: {
+    current: []
+  },
+  nextIndexRef: {
+    current: 0
+  }
+});
+if (true)
+  CompositeListContext.displayName = "CompositeListContext";
+function useCompositeListContext() {
+  return React81.useContext(CompositeListContext);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+"use client";
+var IndexGuessBehavior = /* @__PURE__ */ function(IndexGuessBehavior2) {
+  IndexGuessBehavior2[IndexGuessBehavior2["None"] = 0] = "None";
+  IndexGuessBehavior2[IndexGuessBehavior2["GuessFromOrder"] = 1] = "GuessFromOrder";
+  return IndexGuessBehavior2;
+}({});
+function useCompositeListItem(params = {}) {
+  const {
+    label,
+    metadata,
+    textRef,
+    indexGuessBehavior,
+    index: externalIndex
+  } = params;
+  const {
+    register: register2,
+    unregister,
+    subscribeMapChange,
+    elementsRef,
+    labelsRef,
+    nextIndexRef
+  } = useCompositeListContext();
+  const indexRef = React82.useRef(-1);
+  const [index3, setIndex] = React82.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
+    if (indexRef.current === -1) {
+      const newIndex = nextIndexRef.current;
+      nextIndexRef.current += 1;
+      indexRef.current = newIndex;
+    }
+    return indexRef.current;
+  } : -1));
+  const componentRef = React82.useRef(null);
+  const ref = React82.useCallback((node) => {
+    componentRef.current = node;
+    if (index3 !== -1 && node !== null) {
+      elementsRef.current[index3] = node;
+      if (labelsRef) {
+        const isLabelDefined = label !== undefined;
+        labelsRef.current[index3] = isLabelDefined ? label : textRef?.current?.textContent ?? node.textContent;
+      }
+    }
+  }, [index3, elementsRef, labelsRef, label, textRef]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    const node = componentRef.current;
+    if (node) {
+      register2(node, metadata);
+      return () => {
+        unregister(node);
+      };
+    }
+    return;
+  }, [externalIndex, register2, unregister, metadata]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    return subscribeMapChange((map) => {
+      const i = componentRef.current ? map.get(componentRef.current)?.index : null;
+      if (i != null) {
+        setIndex(i);
+      }
+    });
+  }, [externalIndex, subscribeMapChange, setIndex]);
+  return {
+    ref,
+    index: index3
+  };
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemDataAttributes.mjs
+var MenuCheckboxItemDataAttributes = /* @__PURE__ */ function(MenuCheckboxItemDataAttributes2) {
+  MenuCheckboxItemDataAttributes2["checked"] = "data-checked";
+  MenuCheckboxItemDataAttributes2["unchecked"] = "data-unchecked";
+  MenuCheckboxItemDataAttributes2["disabled"] = "data-disabled";
+  MenuCheckboxItemDataAttributes2["highlighted"] = "data-highlighted";
+  return MenuCheckboxItemDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/menu/utils/stateAttributesMapping.mjs
+var itemMapping = {
+  checked(value) {
+    if (value) {
+      return {
+        [MenuCheckboxItemDataAttributes.checked]: ""
+      };
+    }
+    return {
+      [MenuCheckboxItemDataAttributes.unchecked]: ""
+    };
+  },
+  ...transitionStatusMapping
+};
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuCheckboxItem = /* @__PURE__ */ React83.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = false,
+    checked: checkedProp,
+    defaultChecked,
+    onCheckedChange,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const [checked, setChecked] = useControlled({
+    controlled: checkedProp,
+    default: defaultChecked ?? false,
+    name: "MenuCheckboxItem",
+    state: "checked"
+  });
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = React83.useMemo(() => ({
+    disabled: disabled2,
+    highlighted,
+    checked
+  }), [disabled2, highlighted, checked]);
+  function handleClick(event) {
+    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose() {}
+    });
+    onCheckedChange?.(!checked, details);
+    if (details.isCanceled) {
+      return;
+    }
+    setChecked((currentlyChecked) => !currentlyChecked);
+  }
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [itemProps, {
+      role: "menuitemcheckbox",
+      "aria-checked": checked,
+      onClick: handleClick
+    }, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+  return /* @__PURE__ */ import_jsx_runtime16.jsx(MenuCheckboxItemContext.Provider, {
+    value: state,
+    children: element
+  });
+});
+if (true)
+  MenuCheckboxItem.displayName = "MenuCheckboxItem";
+// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
+var React84 = __toESM(require_react(), 1);
+"use client";
+var MenuCheckboxItemIndicator = /* @__PURE__ */ React84.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    keepMounted = false,
+    ...elementProps
+  } = componentProps;
+  const item = useMenuCheckboxItemContext();
+  const indicatorRef = React84.useRef(null);
+  const {
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(item.checked);
+  useOpenChangeComplete({
+    open: item.checked,
+    ref: indicatorRef,
+    onComplete() {
+      if (!item.checked) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    checked: item.checked,
+    disabled: item.disabled,
+    highlighted: item.highlighted,
+    transitionStatus
+  };
+  const element = useRenderElement("span", componentProps, {
+    state,
+    ref: [forwardedRef, indicatorRef],
+    stateAttributesMapping: itemMapping,
+    props: {
+      "aria-hidden": true,
+      ...elementProps
+    },
+    enabled: keepMounted || item.checked
+  });
+  return element;
+});
+if (true)
+  MenuCheckboxItemIndicator.displayName = "MenuCheckboxItemIndicator";
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var React86 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/group/MenuGroupContext.mjs
+var React85 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupContext = /* @__PURE__ */ React85.createContext(undefined);
+if (true)
+  MenuGroupContext.displayName = "MenuGroupContext";
+function useMenuGroupRootContext() {
+  const context = React85.useContext(MenuGroupContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuGroupContext is missing. Menu group parts must be used within <Menu.Group> or <Menu.RadioGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuGroup = /* @__PURE__ */ React86.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const [labelId, setLabelId] = React86.useState(undefined);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      role: "group",
+      "aria-labelledby": labelId,
+      ...elementProps
+    }
+  });
+  return /* @__PURE__ */ import_jsx_runtime17.jsx(MenuGroupContext.Provider, {
+    value: setLabelId,
+    children: element
+  });
+});
+if (true)
+  MenuGroup.displayName = "MenuGroup";
+// node_modules/@base-ui/react/menu/group-label/MenuGroupLabel.mjs
+var React87 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupLabel = /* @__PURE__ */ React87.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const setLabelId = useMenuGroupRootContext();
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [setLabelId, id]);
+  return useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      id,
+      role: "presentation",
+      ...elementProps
+    }
+  });
+});
+if (true)
+  MenuGroupLabel.displayName = "MenuGroupLabel";
+// node_modules/@base-ui/react/menu/item/MenuItem.mjs
+var React88 = __toESM(require_react(), 1);
+"use client";
+var MenuItem = /* @__PURE__ */ React88.forwardRef(function MenuItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = true,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = {
+    disabled: disabled2,
+    highlighted
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+});
+if (true)
+  MenuItem.displayName = "MenuItem";
+// node_modules/@base-ui/react/menu/link-item/MenuLinkItem.mjs
+var React89 = __toESM(require_react(), 1);
+"use client";
+var MenuLinkItem = /* @__PURE__ */ React89.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    closeOnClick = false,
+    style,
+    ...elementProps
+  } = componentProps;
+  const linkRef = React89.useRef(null);
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const nodeId = menuPositionerContext?.context.nodeId;
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const typingRef = store.context.typingRef;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    native: false,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef: linkRef
+  });
+  function getItemProps(externalProps) {
+    return mergeProps(commonProps, externalProps, getButtonProps);
+  }
+  const state = {
+    highlighted
+  };
+  return useRenderElement("a", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [linkRef, buttonRef, forwardedRef, listItem.ref]
+  });
+});
+if (true)
+  MenuLinkItem.displayName = "MenuLinkItem";
+// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
+var React91 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
+var React90 = __toESM(require_react(), 1);
+"use client";
+var ToolbarRootContext = /* @__PURE__ */ React90.createContext(undefined);
+if (true)
+  ToolbarRootContext.displayName = "ToolbarRootContext";
+function useToolbarRootContext(optional) {
+  const context = React90.useContext(ToolbarRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: ToolbarRootContext is missing. Toolbar parts must be placed within <Toolbar.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
+var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping7 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var MenuPopup = /* @__PURE__ */ React91.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    finalFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    side,
+    align
+  } = useMenuPositionerContext();
+  const insideToolbar = useToolbarRootContext(true) != null;
+  const open = store.useState("open");
+  const transitionStatus = store.useState("transitionStatus");
+  const popupProps = store.useState("popupProps");
+  const mounted = store.useState("mounted");
+  const instantType = store.useState("instantType");
+  const triggerElement = store.useState("activeTriggerElement");
+  const parent = store.useState("parent");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const rootId = store.useState("rootId");
+  const floatingContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const closeDelay = store.useState("closeDelay");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const hoverEnabled = store.useState("hoverEnabled");
+  const disabled2 = store.useState("disabled");
+  const openMethod = store.useState("openMethod");
+  const isContextMenu = parent.type === "context-menu";
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  React91.useEffect(() => {
+    function handleClose(event) {
+      store.setOpen(false, createChangeEventDetails(event.reason, event.domEvent));
+    }
+    floatingTreeRoot.events.on("close", handleClose);
+    return () => {
+      floatingTreeRoot.events.off("close", handleClose);
+    };
+  }, [floatingTreeRoot.events, store]);
+  useHoverFloatingInteraction(floatingContext, {
+    enabled: hoverEnabled && !disabled2 && !isContextMenu && parent.type !== "menubar",
+    closeDelay
+  });
+  const setPopupElement = React91.useCallback((element2) => {
+    store.set("popupElement", element2);
+  }, [store]);
+  const state = {
+    transitionStatus,
+    side,
+    align,
+    open,
+    nested: parent.type === "menu",
+    instant: instantType
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping7,
+    props: [popupProps, {
+      onKeyDown(event) {
+        if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      }
+    }, getDisabledMountTransitionStyles(transitionStatus), elementProps, {
+      "data-rootownerid": rootId
+    }]
+  });
+  let returnFocus = parent.type === undefined || isContextMenu;
+  if (triggerElement || parent.type === "menubar" && lastOpenChangeReason !== exports_reason_parts.outsidePress) {
+    returnFocus = true;
+  }
+  return /* @__PURE__ */ import_jsx_runtime18.jsx(FloatingFocusManager, {
+    context: floatingContext,
+    openInteractionType: openMethod,
+    modal: isContextMenu,
+    disabled: !mounted,
+    returnFocus: finalFocus === undefined ? returnFocus : finalFocus,
+    initialFocus: parent.type !== "menu",
+    restoreFocus: true,
+    externalTree: parent.type !== "menubar" ? floatingTreeRoot : undefined,
+    previousFocusableElement: activeTriggerElement,
+    nextFocusableElement: parent.type === undefined ? store.context.triggerFocusTargetRef : undefined,
+    beforeContentFocusGuardRef: parent.type === undefined ? store.context.beforeContentFocusGuardRef : undefined,
+    children: element
+  });
+});
+if (true)
+  MenuPopup.displayName = "MenuPopup";
+// node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
+var React93 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/portal/MenuPortalContext.mjs
+var React92 = __toESM(require_react(), 1);
+"use client";
+var MenuPortalContext = /* @__PURE__ */ React92.createContext(undefined);
+if (true)
+  MenuPortalContext.displayName = "MenuPortalContext";
+function useMenuPortalContext() {
+  const value = React92.useContext(MenuPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Menu.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
+var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuPortal = /* @__PURE__ */ React93.forwardRef(function MenuPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useMenuRootContext();
+  const mounted = store.useState("mounted");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime19.jsx(MenuPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime19.jsx(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps
+    })
+  });
+});
+if (true)
+  MenuPortal.displayName = "MenuPortal";
+// node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
+var React96 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/composite/list/CompositeList.mjs
+var React94 = __toESM(require_react(), 1);
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function CompositeList(props) {
+  const {
+    children,
+    elementsRef,
+    labelsRef,
+    onMapChange: onMapChangeProp
+  } = props;
+  const onMapChange = useStableCallback(onMapChangeProp);
+  const nextIndexRef = React94.useRef(0);
+  const listeners = useRefWithInit(createListeners).current;
+  const map = useRefWithInit(createMap).current;
+  const [mapTick, setMapTick] = React94.useState(0);
+  const lastTickRef = React94.useRef(mapTick);
+  const register2 = useStableCallback((node, metadata) => {
+    map.set(node, metadata ?? null);
+    lastTickRef.current += 1;
+    setMapTick(lastTickRef.current);
+  });
+  const unregister = useStableCallback((node) => {
+    map.delete(node);
+    lastTickRef.current += 1;
+    setMapTick(lastTickRef.current);
+  });
+  const sortedMap = React94.useMemo(() => {
+    disableEslintWarning(mapTick);
+    const newMap = new Map;
+    const sortedNodes = Array.from(map.keys()).filter((node) => node.isConnected).sort(sortByDocumentPosition);
+    sortedNodes.forEach((node, index3) => {
+      const metadata = map.get(node) ?? {};
+      newMap.set(node, {
+        ...metadata,
+        index: index3
+      });
+    });
+    return newMap;
+  }, [map, mapTick]);
+  useIsoLayoutEffect(() => {
+    if (typeof MutationObserver !== "function" || sortedMap.size === 0) {
+      return;
+    }
+    const mutationObserver = new MutationObserver((entries) => {
+      const diff = new Set;
+      const updateDiff = (node) => diff.has(node) ? diff.delete(node) : diff.add(node);
+      entries.forEach((entry) => {
+        entry.removedNodes.forEach(updateDiff);
+        entry.addedNodes.forEach(updateDiff);
+      });
+      if (diff.size === 0) {
+        lastTickRef.current += 1;
+        setMapTick(lastTickRef.current);
+      }
+    });
+    sortedMap.forEach((_, node) => {
+      if (node.parentElement) {
+        mutationObserver.observe(node.parentElement, {
+          childList: true
+        });
+      }
+    });
+    return () => {
+      mutationObserver.disconnect();
+    };
+  }, [sortedMap]);
+  useIsoLayoutEffect(() => {
+    const shouldUpdateLengths = lastTickRef.current === mapTick;
+    if (shouldUpdateLengths) {
+      if (elementsRef.current.length !== sortedMap.size) {
+        elementsRef.current.length = sortedMap.size;
+      }
+      if (labelsRef && labelsRef.current.length !== sortedMap.size) {
+        labelsRef.current.length = sortedMap.size;
+      }
+      nextIndexRef.current = sortedMap.size;
+    }
+    onMapChange(sortedMap);
+  }, [onMapChange, sortedMap, elementsRef, labelsRef, mapTick]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      elementsRef.current = [];
+    };
+  }, [elementsRef]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      if (labelsRef) {
+        labelsRef.current = [];
+      }
+    };
+  }, [labelsRef]);
+  const subscribeMapChange = useStableCallback((fn) => {
+    listeners.add(fn);
+    return () => {
+      listeners.delete(fn);
+    };
+  });
+  useIsoLayoutEffect(() => {
+    listeners.forEach((l) => l(sortedMap));
+  }, [listeners, sortedMap]);
+  const contextValue = React94.useMemo(() => ({
+    register: register2,
+    unregister,
+    subscribeMapChange,
+    elementsRef,
+    labelsRef,
+    nextIndexRef
+  }), [register2, unregister, subscribeMapChange, elementsRef, labelsRef, nextIndexRef]);
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(CompositeListContext.Provider, {
+    value: contextValue,
+    children
+  });
+}
+function createMap() {
+  return new Map;
+}
+function createListeners() {
+  return new Set;
+}
+function sortByDocumentPosition(a, b) {
+  const position = a.compareDocumentPosition(b);
+  if (position & Node.DOCUMENT_POSITION_FOLLOWING || position & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+    return -1;
+  }
+  if (position & Node.DOCUMENT_POSITION_PRECEDING || position & Node.DOCUMENT_POSITION_CONTAINS) {
+    return 1;
+  }
+  return 0;
+}
+function disableEslintWarning(_) {}
+
+// node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
+var React95 = __toESM(require_react(), 1);
+"use client";
+var VIEWPORT_WIDTH_TOLERANCE_PX = 20;
+function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, referenceElement) {
+  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React95.useState(false);
+  useIsoLayoutEffect(() => {
+    if (!enabled || !touchOpen || positionerElement == null) {
+      setTouchOpenShouldLockScroll(false);
+      return;
+    }
+    const viewportWidth = ownerDocument(positionerElement).documentElement.clientWidth;
+    const popupWidth = positionerElement.offsetWidth;
+    setTouchOpenShouldLockScroll(viewportWidth > 0 && popupWidth > 0 && popupWidth >= viewportWidth - VIEWPORT_WIDTH_TOLERANCE_PX);
+  }, [enabled, touchOpen, positionerElement]);
+  useScrollLock(enabled && (!touchOpen || touchOpenShouldLockScroll), referenceElement);
+}
+
+// node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuPositioner = /* @__PURE__ */ React96.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
+  const {
+    anchor: anchorProp,
+    positionMethod: positionMethodProp = "absolute",
+    className,
+    render,
+    side,
+    align: alignProp,
+    sideOffset: sideOffsetProp = 0,
+    alignOffset: alignOffsetProp = 0,
+    collisionBoundary = "clipping-ancestors",
+    collisionPadding = 5,
+    arrowPadding = 5,
+    sticky = false,
+    disableAnchorTracking = false,
+    collisionAvoidance: collisionAvoidanceProp = DROPDOWN_COLLISION_AVOIDANCE,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const keepMounted = useMenuPortalContext();
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parent = store.useState("parent");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const mounted = store.useState("mounted");
+  const open = store.useState("open");
+  const modal = store.useState("modal");
+  const openMethod = store.useState("openMethod");
+  const triggerElement = store.useState("activeTriggerElement");
+  const transitionStatus = store.useState("transitionStatus");
+  const positionerElement = store.useState("positionerElement");
+  const instantType = store.useState("instantType");
+  const hasViewport = store.useState("hasViewport");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const floatingNodeId = store.useState("floatingNodeId");
+  const floatingParentNodeId = store.useState("floatingParentNodeId");
+  const domReference = floatingRootContext.useState("domReferenceElement");
+  const previousTriggerRef = React96.useRef(null);
+  const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
+  let anchor = anchorProp;
+  let sideOffset = sideOffsetProp;
+  let alignOffset = alignOffsetProp;
+  let align = alignProp;
+  let collisionAvoidance = collisionAvoidanceProp;
+  if (parent.type === "context-menu") {
+    anchor = anchorProp ?? parent.context?.anchor;
+    align = align ?? "start";
+    if (!side && align !== "center") {
+      alignOffset = componentProps.alignOffset ?? 2;
+      sideOffset = componentProps.sideOffset ?? -5;
+    }
+  }
+  let computedSide = side;
+  let computedAlign = align;
+  if (parent.type === "menu") {
+    computedSide = computedSide ?? "inline-end";
+    computedAlign = computedAlign ?? "start";
+    collisionAvoidance = componentProps.collisionAvoidance ?? POPUP_COLLISION_AVOIDANCE;
+  } else if (parent.type === "menubar") {
+    computedSide = computedSide ?? (parent.context.orientation === "vertical" ? "inline-end" : "bottom");
+    computedAlign = computedAlign ?? "start";
+  }
+  const contextMenu = parent.type === "context-menu";
+  const positioner = useAnchorPositioning({
+    anchor,
+    floatingRootContext,
+    positionMethod: contextMenuContext ? "fixed" : positionMethodProp,
+    mounted,
+    side: computedSide,
+    sideOffset,
+    align: computedAlign,
+    alignOffset,
+    arrowPadding: contextMenu ? 0 : arrowPadding,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    nodeId: floatingNodeId,
+    keepMounted,
+    disableAnchorTracking,
+    collisionAvoidance,
+    shiftCrossAxis: contextMenu && !(("side" in collisionAvoidance) && collisionAvoidance.side === "flip"),
+    externalTree: floatingTreeRoot,
+    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
+  });
+  React96.useEffect(() => {
+    function onMenuOpenChange(details) {
+      if (details.open) {
+        if (details.parentNodeId === floatingNodeId) {
+          store.set("hoverEnabled", false);
+        }
+        if (details.nodeId !== floatingNodeId && details.parentNodeId === store.select("floatingParentNodeId")) {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+        }
+      }
+    }
+    floatingTreeRoot.events.on("menuopenchange", onMenuOpenChange);
+    return () => {
+      floatingTreeRoot.events.off("menuopenchange", onMenuOpenChange);
+    };
+  }, [store, floatingTreeRoot.events, floatingNodeId]);
+  React96.useEffect(() => {
+    if (store.select("floatingParentNodeId") == null) {
+      return;
+    }
+    function onParentClose(details) {
+      if (details.open || details.nodeId !== store.select("floatingParentNodeId")) {
+        return;
+      }
+      const reason = details.reason ?? exports_reason_parts.siblingOpen;
+      store.setOpen(false, createChangeEventDetails(reason));
+    }
+    floatingTreeRoot.events.on("menuopenchange", onParentClose);
+    return () => {
+      floatingTreeRoot.events.off("menuopenchange", onParentClose);
+    };
+  }, [floatingTreeRoot.events, store]);
+  const closeTimeout = useTimeout();
+  React96.useEffect(() => {
+    if (!open) {
+      closeTimeout.clear();
+    }
+  }, [open, closeTimeout]);
+  React96.useEffect(() => {
+    function onItemHover(event) {
+      if (!open || event.nodeId !== store.select("floatingParentNodeId")) {
+        return;
+      }
+      if (event.target && triggerElement && triggerElement !== event.target) {
+        const delay = store.select("closeDelay");
+        if (delay > 0) {
+          if (!closeTimeout.isStarted()) {
+            closeTimeout.start(delay, () => {
+              store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+            });
+          }
+        } else {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+        }
+      } else {
+        closeTimeout.clear();
+      }
+    }
+    floatingTreeRoot.events.on("itemhover", onItemHover);
+    return () => {
+      floatingTreeRoot.events.off("itemhover", onItemHover);
+    };
+  }, [floatingTreeRoot.events, open, triggerElement, store, closeTimeout]);
+  React96.useEffect(() => {
+    const eventDetails = {
+      open,
+      nodeId: floatingNodeId,
+      parentNodeId: floatingParentNodeId,
+      reason: store.select("lastOpenChangeReason")
+    };
+    floatingTreeRoot.events.emit("menuopenchange", eventDetails);
+  }, [floatingTreeRoot.events, open, store, floatingNodeId, floatingParentNodeId]);
+  useIsoLayoutEffect(() => {
+    const currentTrigger = domReference;
+    const previousTrigger = previousTriggerRef.current;
+    if (currentTrigger) {
+      previousTriggerRef.current = currentTrigger;
+    }
+    if (previousTrigger && currentTrigger && currentTrigger !== previousTrigger) {
+      store.set("instantType", undefined);
+      const abortController = new AbortController;
+      runOnceAnimationsFinish(() => {
+        store.set("instantType", "trigger-change");
+      }, abortController.signal);
+      return () => {
+        abortController.abort();
+      };
+    }
+    return;
+  }, [domReference, runOnceAnimationsFinish, store]);
+  const state = {
+    open,
+    side: positioner.side,
+    align: positioner.align,
+    anchorHidden: positioner.anchorHidden,
+    nested: parent.type === "menu",
+    instant: instantType
+  };
+  const menubarModal = parent.type === "menubar" && parent.context.modal;
+  const popupModal = modal && lastOpenChangeReason !== exports_reason_parts.triggerHover;
+  useAnchoredPopupScrollLock(open && (menubarModal || popupModal), openMethod === "touch", positionerElement, triggerElement);
+  const element = usePositioner(componentProps, state, {
+    styles: positioner.positionerStyles,
+    transitionStatus,
+    props: elementProps,
+    refs: [forwardedRef, store.useStateSetter("positionerElement")],
+    hidden: !mounted,
+    inert: !open
+  });
+  const shouldRenderBackdrop = mounted && parent.type !== "menu" && (parent.type !== "menubar" && modal && lastOpenChangeReason !== exports_reason_parts.triggerHover || parent.type === "menubar" && parent.context.modal);
+  let backdropCutout = null;
+  if (parent.type === "menubar") {
+    backdropCutout = parent.context.contentElement;
+  } else if (parent.type === undefined) {
+    backdropCutout = triggerElement;
+  }
+  return /* @__PURE__ */ import_jsx_runtime21.jsxs(MenuPositionerContext.Provider, {
+    value: positioner,
+    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime21.jsx(InternalBackdrop, {
+      ref: parent.type === "context-menu" || parent.type === "nested-context-menu" ? parent.context.internalBackdropRef : null,
+      inert: inertValue(!open),
+      cutout: backdropCutout
+    }), /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingNode, {
+      id: floatingNodeId,
+      children: /* @__PURE__ */ import_jsx_runtime21.jsx(CompositeList, {
+        elementsRef: store.context.itemDomElements,
+        labelsRef: store.context.itemLabels,
+        children: element
+      })
+    })]
+  });
+});
+if (true)
+  MenuPositioner.displayName = "MenuPositioner";
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
+var React98 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroupContext.mjs
+var React97 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioGroupContext = /* @__PURE__ */ React97.createContext(undefined);
+if (true)
+  MenuRadioGroupContext.displayName = "MenuRadioGroupContext";
+function useMenuRadioGroupContext() {
+  const context = React97.useContext(MenuRadioGroupContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuRadioGroupContext is missing. MenuRadioGroup parts must be placed within <Menu.RadioGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRadioGroup = /* @__PURE__ */ React98.memo(/* @__PURE__ */ React98.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    value: valueProp,
+    defaultValue,
+    onValueChange: onValueChangeProp,
+    disabled: disabled2 = false,
+    style,
+    "aria-labelledby": ariaLabelledByProp,
+    ...elementProps
+  } = componentProps;
+  const [labelId, setLabelId] = React98.useState(undefined);
+  const [value, setValueUnwrapped] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+    name: "MenuRadioGroup"
+  });
+  const setValue = useStableCallback((newValue, eventDetails) => {
+    onValueChangeProp?.(newValue, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    setValueUnwrapped(newValue);
+  });
+  const state = {
+    disabled: disabled2
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: {
+      role: "group",
+      "aria-labelledby": ariaLabelledByProp ?? labelId,
+      "aria-disabled": disabled2 || undefined,
+      ...elementProps
+    }
+  });
+  const context = React98.useMemo(() => ({
+    value,
+    setValue,
+    disabled: disabled2
+  }), [value, setValue, disabled2]);
+  return /* @__PURE__ */ import_jsx_runtime22.jsx(MenuGroupContext.Provider, {
+    value: setLabelId,
+    children: /* @__PURE__ */ import_jsx_runtime22.jsx(MenuRadioGroupContext.Provider, {
+      value: context,
+      children: element
+    })
+  });
+}));
+if (true)
+  MenuRadioGroup.displayName = "MenuRadioGroup";
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
+var React100 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItemContext.mjs
+var React99 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioItemContext = /* @__PURE__ */ React99.createContext(undefined);
+if (true)
+  MenuRadioItemContext.displayName = "MenuRadioItemContext";
+function useMenuRadioItemContext() {
+  const context = React99.useContext(MenuRadioItemContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuRadioItemContext is missing. MenuRadioItem parts must be placed within <Menu.RadioItem>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRadioItem = /* @__PURE__ */ React100.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabledProp = false,
+    closeOnClick = false,
+    value,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const {
+    value: selectedValue,
+    setValue: setSelectedValue,
+    disabled: groupDisabled
+  } = useMenuRadioGroupContext();
+  const disabled2 = groupDisabled || disabledProp;
+  const checked = selectedValue === value;
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = React100.useMemo(() => ({
+    disabled: disabled2,
+    highlighted,
+    checked
+  }), [disabled2, highlighted, checked]);
+  function handleClick(event) {
+    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose() {}
+    });
+    setSelectedValue(value, details);
+  }
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [itemProps, {
+      role: "menuitemradio",
+      "aria-checked": checked,
+      onClick: handleClick
+    }, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+  return /* @__PURE__ */ import_jsx_runtime23.jsx(MenuRadioItemContext.Provider, {
+    value: state,
+    children: element
+  });
+});
+if (true)
+  MenuRadioItem.displayName = "MenuRadioItem";
+// node_modules/@base-ui/react/menu/radio-item-indicator/MenuRadioItemIndicator.mjs
+var React101 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioItemIndicator = /* @__PURE__ */ React101.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    keepMounted = false,
+    ...elementProps
+  } = componentProps;
+  const item = useMenuRadioItemContext();
+  const indicatorRef = React101.useRef(null);
+  const {
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(item.checked);
+  useOpenChangeComplete({
+    open: item.checked,
+    ref: indicatorRef,
+    onComplete() {
+      if (!item.checked) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    checked: item.checked,
+    disabled: item.disabled,
+    highlighted: item.highlighted,
+    transitionStatus
+  };
+  const element = useRenderElement("span", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    ref: [forwardedRef, indicatorRef],
+    props: {
+      "aria-hidden": true,
+      ...elementProps
+    },
+    enabled: keepMounted || item.checked
+  });
+  return element;
+});
+if (true)
+  MenuRadioItemIndicator.displayName = "MenuRadioItemIndicator";
+// node_modules/@base-ui/react/menu/root/MenuRoot.mjs
+var React105 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menubar/MenubarContext.mjs
+var React102 = __toESM(require_react(), 1);
+"use client";
+var MenubarContext = /* @__PURE__ */ React102.createContext(null);
+if (true)
+  MenubarContext.displayName = "MenubarContext";
+function useMenubarContext(optional) {
+  const context = React102.useContext(MenubarContext);
+  if (context === null && !optional) {
+    throw new Error("Base UI: MenubarContext is missing. Menubar parts must be placed within <Menubar>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/store/MenuStore.mjs
+var React103 = __toESM(require_react(), 1);
+var selectors4 = {
+  ...popupStoreSelectors,
+  disabled: createSelector((state) => state.parent.type === "menubar" ? state.parent.context.disabled || state.disabled : state.disabled),
+  modal: createSelector((state) => (state.parent.type === undefined || state.parent.type === "context-menu") && (state.modal ?? true)),
+  openMethod: createSelector((state) => state.openMethod),
+  allowMouseEnter: createSelector((state) => state.allowMouseEnter),
+  highlightItemOnHover: createSelector((state) => state.highlightItemOnHover),
+  stickIfOpen: createSelector((state) => state.stickIfOpen),
+  parent: createSelector((state) => state.parent),
+  rootId: createSelector((state) => {
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("rootId");
+    }
+    return state.parent.type !== undefined ? state.parent.context.rootId : state.rootId;
+  }),
+  activeIndex: createSelector((state) => state.activeIndex),
+  isActive: createSelector((state, itemIndex) => state.activeIndex === itemIndex),
+  hoverEnabled: createSelector((state) => state.hoverEnabled),
+  instantType: createSelector((state) => state.instantType),
+  lastOpenChangeReason: createSelector((state) => state.openChangeReason),
+  floatingTreeRoot: createSelector((state) => {
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("floatingTreeRoot");
+    }
+    return state.floatingTreeRoot;
+  }),
+  floatingNodeId: createSelector((state) => state.floatingNodeId),
+  floatingParentNodeId: createSelector((state) => state.floatingParentNodeId),
+  itemProps: createSelector((state) => state.itemProps),
+  closeDelay: createSelector((state) => state.closeDelay),
+  hasViewport: createSelector((state) => state.hasViewport),
+  keyboardEventRelay: createSelector((state) => {
+    if (state.keyboardEventRelay) {
+      return state.keyboardEventRelay;
+    }
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("keyboardEventRelay");
+    }
+    return;
+  })
+};
+
+class MenuStore extends ReactStore {
+  constructor(initialState) {
+    super({
+      ...createInitialState3(),
+      ...initialState
+    }, {
+      positionerRef: /* @__PURE__ */ React103.createRef(),
+      popupRef: /* @__PURE__ */ React103.createRef(),
+      typingRef: {
+        current: false
+      },
+      itemDomElements: {
+        current: []
+      },
+      itemLabels: {
+        current: []
+      },
+      allowMouseUpTriggerRef: {
+        current: false
+      },
+      triggerFocusTargetRef: /* @__PURE__ */ React103.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React103.createRef(),
+      onOpenChangeComplete: undefined,
+      triggerElements: new PopupTriggerMap
+    }, selectors4);
+    this.unsubscribeParentListener = this.observe("parent", (parent) => {
+      this.unsubscribeParentListener?.();
+      if (parent.type === "menu") {
+        let rootId = parent.store.select("rootId");
+        let floatingTreeRoot = parent.store.select("floatingTreeRoot");
+        let keyboardEventRelay = parent.store.select("keyboardEventRelay");
+        this.unsubscribeParentListener = parent.store.subscribe(() => {
+          const nextRootId = parent.store.select("rootId");
+          const nextFloatingTreeRoot = parent.store.select("floatingTreeRoot");
+          const nextKeyboardEventRelay = parent.store.select("keyboardEventRelay");
+          if (rootId === nextRootId && floatingTreeRoot === nextFloatingTreeRoot && keyboardEventRelay === nextKeyboardEventRelay) {
+            return;
+          }
+          rootId = nextRootId;
+          floatingTreeRoot = nextFloatingTreeRoot;
+          keyboardEventRelay = nextKeyboardEventRelay;
+          this.notifyAll();
+        });
+        this.context.allowMouseUpTriggerRef = parent.store.context.allowMouseUpTriggerRef;
+        return;
+      }
+      if (parent.type !== undefined) {
+        this.context.allowMouseUpTriggerRef = parent.context.allowMouseUpTriggerRef;
+      }
+      this.unsubscribeParentListener = null;
+    });
+  }
+  setOpen(open, eventDetails) {
+    this.state.floatingRootContext.context.events.emit("setOpen", {
+      open,
+      eventDetails
+    });
+  }
+  static useStore(externalStore, initialState) {
+    const internalStore = useRefWithInit(() => {
+      return new MenuStore(initialState);
+    }).current;
+    return externalStore ?? internalStore;
+  }
+  unsubscribeParentListener = null;
+}
+function createInitialState3() {
+  return {
+    ...createInitialPopupStoreState(),
+    disabled: false,
+    modal: true,
+    openMethod: null,
+    allowMouseEnter: false,
+    highlightItemOnHover: true,
+    stickIfOpen: true,
+    parent: {
+      type: undefined
+    },
+    rootId: undefined,
+    activeIndex: null,
+    hoverEnabled: true,
+    instantType: undefined,
+    openChangeReason: null,
+    floatingTreeRoot: new FloatingTreeStore,
+    floatingNodeId: undefined,
+    floatingParentNodeId: null,
+    itemProps: EMPTY_OBJECT,
+    keyboardEventRelay: undefined,
+    closeDelay: 0,
+    hasViewport: false
+  };
+}
+
+// node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRootContext.mjs
+var React104 = __toESM(require_react(), 1);
+"use client";
+var MenuSubmenuRootContext = /* @__PURE__ */ React104.createContext(undefined);
+if (true)
+  MenuSubmenuRootContext.displayName = "MenuSubmenuRootContext";
+function useMenuSubmenuRootContext() {
+  return React104.useContext(MenuSubmenuRootContext);
+}
+
+// node_modules/@base-ui/react/menu/root/MenuRoot.mjs
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRoot = fastComponent(function MenuRoot2(props) {
+  const {
+    children,
+    open: openProp,
+    onOpenChange,
+    onOpenChangeComplete,
+    defaultOpen = false,
+    disabled: disabledProp = false,
+    modal: modalProp,
+    loopFocus = true,
+    orientation = "vertical",
+    actionsRef,
+    closeParentOnEsc = false,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null,
+    highlightItemOnHover = true
+  } = props;
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parentMenuRootContext = useMenuRootContext(true);
+  const menubarContext = useMenubarContext(true);
+  const isSubmenu = useMenuSubmenuRootContext();
+  const parentFromContext = React105.useMemo(() => {
+    if (isSubmenu && parentMenuRootContext) {
+      return {
+        type: "menu",
+        store: parentMenuRootContext.store
+      };
+    }
+    if (menubarContext) {
+      return {
+        type: "menubar",
+        context: menubarContext
+      };
+    }
+    if (contextMenuContext && !parentMenuRootContext) {
+      return {
+        type: "context-menu",
+        context: contextMenuContext
+      };
+    }
+    return {
+      type: undefined
+    };
+  }, [contextMenuContext, parentMenuRootContext, menubarContext, isSubmenu]);
+  const store = MenuStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    parent: parentFromContext
+  });
+  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const rootId = useId();
+  const floatingId = useId();
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const floatingNodeIdFromContext = useFloatingNodeId(floatingTreeRoot);
+  const floatingParentNodeIdFromContext = useFloatingParentNodeId();
+  const open = store.useState("open");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const positionerElement = store.useState("positionerElement");
+  const hoverEnabled = store.useState("hoverEnabled");
+  const disabled2 = store.useState("disabled");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const parent = store.useState("parent");
+  const activeIndex = store.useState("activeIndex");
+  const payload = store.useState("payload");
+  const floatingParentNodeId = store.useState("floatingParentNodeId");
+  const openEventRef = React105.useRef(null);
+  const allowOutsidePressDismissalRef = React105.useRef(parent.type !== "context-menu");
+  const allowOutsidePressDismissalTimeout = useTimeout();
+  const allowTouchToCloseRef = React105.useRef(true);
+  const allowTouchToCloseTimeout = useTimeout();
+  const nested = floatingParentNodeId != null;
+  if (true) {
+    if (parent.type !== undefined && modalProp !== undefined) {
+      console.warn("Base UI: The `modal` prop is not supported on nested menus. It will be ignored.");
+    }
+  }
+  const {
+    openMethod,
+    triggerProps: interactionTypeProps
+  } = useOpenInteractionType(open);
+  store.useSyncedValues({
+    disabled: disabledProp,
+    highlightItemOnHover,
+    modal: parent.type === undefined ? modalProp : undefined,
+    openMethod,
+    rootId
+  });
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store, () => {
+    store.update({
+      allowMouseEnter: false,
+      stickIfOpen: true
+    });
+  });
+  useIsoLayoutEffect(() => {
+    if (contextMenuContext && !parentMenuRootContext) {
+      store.update({
+        parent: {
+          type: "context-menu",
+          context: contextMenuContext
+        },
+        floatingNodeId: floatingNodeIdFromContext,
+        floatingParentNodeId: floatingParentNodeIdFromContext
+      });
+    } else if (parentMenuRootContext) {
+      store.update({
+        floatingNodeId: floatingNodeIdFromContext,
+        floatingParentNodeId: floatingParentNodeIdFromContext
+      });
+    }
+  }, [contextMenuContext, parentMenuRootContext, floatingNodeIdFromContext, floatingParentNodeIdFromContext, store]);
+  React105.useEffect(() => {
+    if (!open) {
+      openEventRef.current = null;
+    }
+    if (parent.type !== "context-menu") {
+      return;
+    }
+    if (!open) {
+      allowOutsidePressDismissalTimeout.clear();
+      allowOutsidePressDismissalRef.current = false;
+      return;
+    }
+    allowOutsidePressDismissalTimeout.start(500, () => {
+      allowOutsidePressDismissalRef.current = true;
+    });
+  }, [allowOutsidePressDismissalTimeout, open, parent.type]);
+  useIsoLayoutEffect(() => {
+    if (!open && !hoverEnabled) {
+      store.set("hoverEnabled", true);
+    }
+  }, [open, hoverEnabled, store]);
+  const setOpen = useStableCallback((nextOpen, eventDetails) => {
+    const reason = eventDetails.reason;
+    if (open === nextOpen && eventDetails.trigger === activeTriggerElement && lastOpenChangeReason === reason) {
+      return;
+    }
+    const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
+    if (!nextOpen && eventDetails.trigger == null) {
+      eventDetails.trigger = activeTriggerElement ?? undefined;
+    }
+    onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    store.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const nativeEvent = eventDetails.event;
+    if (nextOpen === false && nativeEvent?.type === "click" && nativeEvent.pointerType === "touch" && !allowTouchToCloseRef.current) {
+      return;
+    }
+    if (nextOpen && reason === exports_reason_parts.triggerFocus) {
+      allowTouchToCloseRef.current = false;
+      allowTouchToCloseTimeout.start(300, () => {
+        allowTouchToCloseRef.current = true;
+      });
+    } else {
+      allowTouchToCloseRef.current = true;
+      allowTouchToCloseTimeout.clear();
+    }
+    const isKeyboardClick = (reason === exports_reason_parts.triggerPress || reason === exports_reason_parts.itemPress) && nativeEvent.detail === 0 && nativeEvent?.isTrusted;
+    const isDismissClose = !nextOpen && (reason === exports_reason_parts.escapeKey || reason == null);
+    const updatedState = {
+      open: nextOpen,
+      openChangeReason: reason
+    };
+    openEventRef.current = eventDetails.event ?? null;
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
+    store.update(updatedState);
+    if (parent.type === "menubar" && (reason === exports_reason_parts.triggerFocus || reason === exports_reason_parts.focusOut || reason === exports_reason_parts.triggerHover || reason === exports_reason_parts.listNavigation || reason === exports_reason_parts.siblingOpen)) {
+      store.set("instantType", "group");
+    } else if (isKeyboardClick || isDismissClose) {
+      store.set("instantType", isKeyboardClick ? "click" : "dismiss");
+    } else {
+      store.set("instantType", undefined);
+    }
+  });
+  const floatingRootContext = useSyncedFloatingRootContext({
+    popupStore: store,
+    floatingId,
+    nested: floatingParentNodeIdFromContext != null,
+    onOpenChange: setOpen
+  });
+  const floatingEvents = floatingRootContext.context.events;
+  React105.useEffect(() => {
+    const handleSetOpenEvent = ({
+      open: nextOpen,
+      eventDetails
+    }) => setOpen(nextOpen, eventDetails);
+    floatingEvents.on("setOpen", handleSetOpenEvent);
+    return () => {
+      floatingEvents?.off("setOpen", handleSetOpenEvent);
+    };
+  }, [floatingEvents, setOpen]);
+  const handleImperativeClose = React105.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React105.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+  let ctx;
+  if (parent.type === "context-menu") {
+    ctx = parent.context;
+  }
+  React105.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
+  React105.useImperativeHandle(ctx?.actionsRef, () => ({
+    setOpen
+  }), [setOpen]);
+  const dismiss = useDismiss(floatingRootContext, {
+    enabled: !disabled2,
+    bubbles: {
+      escapeKey: closeParentOnEsc && parent.type === "menu"
+    },
+    outsidePress() {
+      if (parent.type !== "context-menu" || openEventRef.current?.type === "contextmenu") {
+        return true;
+      }
+      return allowOutsidePressDismissalRef.current;
+    },
+    externalTree: nested ? floatingTreeRoot : undefined
+  });
+  const direction = useDirection();
+  const setActiveIndex = React105.useCallback((index3) => {
+    if (store.select("activeIndex") === index3) {
+      return;
+    }
+    store.set("activeIndex", index3);
+  }, [store]);
+  const listNavigation2 = useListNavigation(floatingRootContext, {
+    enabled: !disabled2,
+    listRef: store.context.itemDomElements,
+    activeIndex,
+    nested: parent.type !== undefined,
+    loopFocus,
+    orientation,
+    parentOrientation: parent.type === "menubar" ? parent.context.orientation : undefined,
+    rtl: direction === "rtl",
+    disabledIndices: EMPTY_ARRAY,
+    onNavigate: setActiveIndex,
+    openOnArrowKeyDown: parent.type !== "context-menu",
+    externalTree: nested ? floatingTreeRoot : undefined,
+    focusItemOnHover: highlightItemOnHover
+  });
+  const onTyping = React105.useCallback((nextTyping) => {
+    store.context.typingRef.current = nextTyping;
+  }, [store]);
+  const typeahead = useTypeahead(floatingRootContext, {
+    enabled: !disabled2,
+    listRef: store.context.itemLabels,
+    elementsRef: store.context.itemDomElements,
+    activeIndex,
+    resetMs: TYPEAHEAD_RESET_MS,
+    onMatch: (index3) => {
+      if (open && index3 !== activeIndex) {
+        store.set("activeIndex", index3);
+      }
+    },
+    onTyping
+  });
+  const activeTriggerProps = React105.useMemo(() => {
+    const mergedProps = mergeProps(typeahead.reference, listNavigation2.reference, dismiss.reference, {
+      onMouseMove() {
+        store.set("allowMouseEnter", true);
+      }
+    }, interactionTypeProps);
+    mergedProps["aria-haspopup"] = "menu";
+    mergedProps["aria-expanded"] = open;
+    return mergedProps;
+  }, [store, typeahead.reference, listNavigation2.reference, dismiss.reference, interactionTypeProps, open]);
+  const inactiveTriggerProps = React105.useMemo(() => {
+    const mergedProps = mergeProps(listNavigation2.trigger, dismiss.trigger, interactionTypeProps);
+    mergedProps["aria-haspopup"] = "menu";
+    mergedProps["aria-expanded"] = false;
+    return mergedProps;
+  }, [listNavigation2.trigger, dismiss.trigger, interactionTypeProps]);
+  const popupProps = React105.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
+    id: floatingId,
+    role: "menu",
+    "aria-labelledby": activeTriggerElement?.id,
+    onMouseMove() {
+      store.set("allowMouseEnter", true);
+      if (parent.type === "menu") {
+        store.set("hoverEnabled", false);
+      }
+    },
+    onClick() {
+      if (store.select("hoverEnabled")) {
+        store.set("hoverEnabled", false);
+      }
+    },
+    onKeyDown(event) {
+      const relay = store.select("keyboardEventRelay");
+      if (relay && !event.isPropagationStopped()) {
+        relay(event);
+      }
+    }
+  }, typeahead.floating, listNavigation2.floating, dismiss.floating), [activeTriggerElement, floatingId, parent.type, store, typeahead.floating, listNavigation2.floating, dismiss.floating]);
+  const itemProps = listNavigation2.item ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    floatingRootContext,
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    itemProps
+  });
+  const context = React105.useMemo(() => ({
+    store,
+    parent: parentFromContext
+  }), [store, parentFromContext]);
+  const content = /* @__PURE__ */ import_jsx_runtime24.jsx(MenuRootContext.Provider, {
+    value: context,
+    children: typeof children === "function" ? children({
+      payload
+    }) : children
+  });
+  if (parent.type === undefined || parent.type === "context-menu") {
+    return /* @__PURE__ */ import_jsx_runtime24.jsx(FloatingTree, {
+      externalTree: floatingTreeRoot,
+      children: content
+    });
+  }
+  return content;
+});
+if (true)
+  MenuRoot.displayName = "MenuRoot";
+// node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRoot.mjs
+var React106 = __toESM(require_react(), 1);
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function MenuSubmenuRoot(props) {
+  const parentMenu = useMenuRootContext().store;
+  const contextValue = React106.useMemo(() => ({
+    parentMenu
+  }), [parentMenu]);
+  return /* @__PURE__ */ import_jsx_runtime25.jsx(MenuSubmenuRootContext.Provider, {
+    value: contextValue,
+    children: /* @__PURE__ */ import_jsx_runtime25.jsx(MenuRoot, {
+      ...props
+    })
+  });
+}
+// node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
+var React110 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/getPseudoElementBounds.mjs
+function getPseudoElementBounds(element) {
+  const elementRect = element.getBoundingClientRect();
+  const win = getWindow(element);
+  if (exports_parts.env.jsdom) {
+    return elementRect;
+  }
+  const beforeStyles = win.getComputedStyle(element, "::before");
+  const afterStyles = win.getComputedStyle(element, "::after");
+  const hasPseudoElements = beforeStyles.content !== "none" || afterStyles.content !== "none";
+  if (!hasPseudoElements) {
+    return elementRect;
+  }
+  const beforeWidth = parseFloat(beforeStyles.width) || 0;
+  const beforeHeight = parseFloat(beforeStyles.height) || 0;
+  const afterWidth = parseFloat(afterStyles.width) || 0;
+  const afterHeight = parseFloat(afterStyles.height) || 0;
+  const totalWidth = Math.max(elementRect.width, beforeWidth, afterWidth);
+  const totalHeight = Math.max(elementRect.height, beforeHeight, afterHeight);
+  const widthDiff = totalWidth - elementRect.width;
+  const heightDiff = totalHeight - elementRect.height;
+  return {
+    left: elementRect.left - widthDiff / 2,
+    right: elementRect.right + widthDiff / 2,
+    top: elementRect.top - heightDiff / 2,
+    bottom: elementRect.bottom + heightDiff / 2
+  };
+}
+
+// node_modules/@base-ui/react/internals/composite/item/useCompositeItem.mjs
+var React107 = __toESM(require_react(), 1);
+"use client";
+function useCompositeItem(params = {}) {
+  const {
+    highlightItemOnHover,
+    highlightedIndex,
+    onHighlightedIndexChange
+  } = useCompositeRootContext();
+  const {
+    ref,
+    index: index3
+  } = useCompositeListItem(params);
+  const isHighlighted = highlightedIndex === index3;
+  const itemRef = React107.useRef(null);
+  const mergedRef = useMergedRefs(ref, itemRef);
+  const compositeProps = {
+    tabIndex: isHighlighted ? 0 : -1,
+    onFocus() {
+      onHighlightedIndexChange(index3);
+    },
+    onMouseMove() {
+      const item = itemRef.current;
+      if (!highlightItemOnHover || !item) {
+        return;
+      }
+      const disabled2 = item.hasAttribute("disabled") || item.ariaDisabled === "true";
+      if (!isHighlighted && !disabled2) {
+        item.focus();
+      }
+    }
+  };
+  return {
+    compositeProps,
+    compositeRef: mergedRef,
+    index: index3
+  };
+}
+
+// node_modules/@base-ui/react/internals/composite/item/CompositeItem.mjs
+"use client";
+function CompositeItem(componentProps) {
+  const {
+    render,
+    className,
+    style,
+    state = EMPTY_OBJECT,
+    props = EMPTY_ARRAY,
+    refs = EMPTY_ARRAY,
+    metadata,
+    stateAttributesMapping: stateAttributesMapping8,
+    tag = "div",
+    ...elementProps
+  } = componentProps;
+  const {
+    compositeProps,
+    compositeRef
+  } = useCompositeItem({
+    metadata
+  });
+  return useRenderElement(tag, componentProps, {
+    state,
+    ref: [...refs, compositeRef],
+    props: [compositeProps, ...props, elementProps],
+    stateAttributesMapping: stateAttributesMapping8
+  });
+}
+
+// node_modules/@base-ui/react/menu/utils/findRootOwnerId.mjs
+function findRootOwnerId(node) {
+  if (isHTMLElement(node) && node.hasAttribute("data-rootownerid")) {
+    return node.getAttribute("data-rootownerid") ?? undefined;
+  }
+  if (isLastTraversableNode(node)) {
+    return;
+  }
+  return findRootOwnerId(getParentNode(node));
+}
+
+// node_modules/@base-ui/react/utils/popups/useTriggerFocusGuards.mjs
+var React108 = __toESM(require_react(), 1);
+var ReactDOM8 = __toESM(require_react_dom(), 1);
+"use client";
+function useTriggerFocusGuards(store, triggerElementRef) {
+  const preFocusGuardRef = React108.useRef(null);
+  function handlePreFocusGuardFocus(event) {
+    ReactDOM8.flushSync(() => {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
+    });
+    const previousTabbable = getTabbableBeforeElement(preFocusGuardRef.current);
+    previousTabbable?.focus();
+  }
+  function handleFocusTargetFocus(event) {
+    const positionerElement = store.select("positionerElement");
+    if (positionerElement && isOutsideEvent(event, positionerElement)) {
+      store.context.beforeContentFocusGuardRef.current?.focus();
+    } else {
+      ReactDOM8.flushSync(() => {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
+      });
+      let nextTabbable = getTabbableAfterElement(store.context.triggerFocusTargetRef.current || triggerElementRef.current);
+      while (nextTabbable !== null && contains(positionerElement, nextTabbable)) {
+        const prevTabbable = nextTabbable;
+        nextTabbable = getNextTabbable(nextTabbable);
+        if (nextTabbable === prevTabbable) {
+          break;
+        }
+      }
+      nextTabbable?.focus();
+    }
+  }
+  return {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  };
+}
+
+// node_modules/@base-ui/react/utils/useMixedToggleClickHandler.mjs
+var React109 = __toESM(require_react(), 1);
+"use client";
+function useMixedToggleClickHandler(params) {
+  const {
+    enabled = true,
+    mouseDownAction,
+    open
+  } = params;
+  const ignoreClickRef = React109.useRef(false);
+  return React109.useMemo(() => {
+    if (!enabled) {
+      return EMPTY_OBJECT;
+    }
+    return {
+      onMouseDown: (event) => {
+        if (mouseDownAction === "open" && !open || mouseDownAction === "close" && open) {
+          ignoreClickRef.current = true;
+          ownerDocument(event.currentTarget).addEventListener("click", () => {
+            ignoreClickRef.current = false;
+          }, {
+            once: true
+          });
+        }
+      },
+      onClick: (event) => {
+        if (ignoreClickRef.current) {
+          ignoreClickRef.current = false;
+          event.preventBaseUIHandler();
+        }
+      }
+    };
+  }, [enabled, mouseDownAction, open]);
+}
+
+// node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
+var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var BOUNDARY_OFFSET = 2;
+var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabledProp = false,
+    nativeButton = true,
+    id: idProp,
+    openOnHover: openOnHoverProp,
+    delay = 100,
+    closeDelay = 0,
+    handle,
+    payload,
+    ...elementProps
+  } = componentProps;
+  const rootContext = useMenuRootContext(true);
+  const store = handle?.store ?? rootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Menu.Trigger> must be either used within a <Menu.Root> component or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
+  const floatingRootContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React110.useRef(null);
+  const parent = useMenuParent();
+  const compositeRootContext = useCompositeRootContext(true);
+  const floatingTreeRootFromContext = useFloatingTree();
+  const floatingTreeRoot = React110.useMemo(() => {
+    return floatingTreeRootFromContext ?? new FloatingTreeStore;
+  }, [floatingTreeRootFromContext]);
+  const floatingNodeId = useFloatingNodeId(floatingTreeRoot);
+  const floatingParentNodeId = useFloatingParentNodeId();
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload,
+    closeDelay,
+    parent,
+    floatingTreeRoot,
+    floatingNodeId,
+    floatingParentNodeId,
+    keyboardEventRelay: compositeRootContext?.relayKeyboardEvent
+  });
+  const isInMenubar = parent.type === "menubar";
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled || isInMenubar && parent.context.disabled;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  React110.useEffect(() => {
+    if (!isOpenedByThisTrigger && parent.type === undefined) {
+      store.context.allowMouseUpTriggerRef.current = false;
+    }
+  }, [store, isOpenedByThisTrigger, parent.type]);
+  const triggerRef = React110.useRef(null);
+  const allowMouseUpTriggerTimeout = useTimeout();
+  const handleDocumentMouseUp = useStableCallback((mouseEvent) => {
+    if (!triggerRef.current) {
+      return;
+    }
+    allowMouseUpTriggerTimeout.clear();
+    store.context.allowMouseUpTriggerRef.current = false;
+    const mouseUpTarget = mouseEvent.target;
+    if (contains(triggerRef.current, mouseUpTarget) || contains(store.select("positionerElement"), mouseUpTarget) || mouseUpTarget === triggerRef.current) {
+      return;
+    }
+    if (mouseUpTarget != null && findRootOwnerId(mouseUpTarget) === store.select("rootId")) {
+      return;
+    }
+    const bounds = getPseudoElementBounds(triggerRef.current);
+    if (mouseEvent.clientX >= bounds.left - BOUNDARY_OFFSET && mouseEvent.clientX <= bounds.right + BOUNDARY_OFFSET && mouseEvent.clientY >= bounds.top - BOUNDARY_OFFSET && mouseEvent.clientY <= bounds.bottom + BOUNDARY_OFFSET) {
+      return;
+    }
+    floatingTreeRoot.events.emit("close", {
+      domEvent: mouseEvent,
+      reason: exports_reason_parts.cancelOpen
+    });
+  });
+  React110.useEffect(() => {
+    if (isOpenedByThisTrigger && store.select("lastOpenChangeReason") === exports_reason_parts.triggerHover) {
+      const doc = ownerDocument(triggerRef.current);
+      doc.addEventListener("mouseup", handleDocumentMouseUp, {
+        once: true
+      });
+    }
+  }, [isOpenedByThisTrigger, handleDocumentMouseUp, store]);
+  const parentMenubarHasSubmenuOpen = isInMenubar && parent.context.hasSubmenuOpen;
+  const openOnHover = openOnHoverProp ?? parentMenubarHasSubmenuOpen;
+  const hoverProps = useHoverReferenceInteraction(floatingRootContext, {
+    enabled: openOnHover && !disabled2 && parent.type !== "context-menu" && (!isInMenubar || parentMenubarHasSubmenuOpen && !isMountedByThisTrigger),
+    handleClose: safePolygon({
+      blockPointerEvents: !isInMenubar
+    }),
+    mouseOnly: true,
+    move: false,
+    restMs: parent.type === undefined ? delay : undefined,
+    delay: {
+      close: closeDelay
+    },
+    triggerElementRef,
+    externalTree: floatingTreeRoot,
+    isActiveTrigger: isTriggerActive,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const stickIfOpen = useStickIfOpen(isOpenedByThisTrigger, store.select("lastOpenChangeReason"));
+  const click = useClick(floatingRootContext, {
+    enabled: !disabled2 && parent.type !== "context-menu",
+    event: isOpenedByThisTrigger && isInMenubar ? "click" : "mousedown",
+    toggle: true,
+    ignoreMouse: false,
+    stickIfOpen: parent.type === undefined ? stickIfOpen : false
+  });
+  const focus = useFocus(floatingRootContext, {
+    enabled: !disabled2 && parentMenubarHasSubmenuOpen
+  });
+  const mixedToggleHandlers = useMixedToggleClickHandler({
+    open: isOpenedByThisTrigger,
+    enabled: isInMenubar,
+    mouseDownAction: "open"
+  });
+  const localInteractionProps = React110.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  const {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  } = useTriggerFocusGuards(store, triggerElementRef);
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const ref = [triggerRef, forwardedRef, buttonRef, registerTrigger, triggerElementRef];
+  const props = [localInteractionProps, hoverProps ?? EMPTY_OBJECT, rootTriggerProps, {
+    "aria-haspopup": "menu",
+    "aria-controls": popupId,
+    id: thisTriggerId,
+    onMouseDown: (event) => {
+      if (store.select("open")) {
+        return;
+      }
+      allowMouseUpTriggerTimeout.start(200, () => {
+        store.context.allowMouseUpTriggerRef.current = true;
+      });
+      const doc = ownerDocument(event.currentTarget);
+      doc.addEventListener("mouseup", handleDocumentMouseUp, {
+        once: true
+      });
+    }
+  }, isInMenubar ? {
+    role: "menuitem"
+  } : {}, mixedToggleHandlers, elementProps, getButtonProps];
+  const element = useRenderElement("button", componentProps, {
+    enabled: !isInMenubar,
+    stateAttributesMapping: pressableTriggerOpenStateMapping,
+    state,
+    ref,
+    props
+  });
+  if (isInMenubar) {
+    return /* @__PURE__ */ import_jsx_runtime26.jsx(CompositeItem, {
+      tag: "button",
+      render,
+      className,
+      style,
+      state,
+      refs: ref,
+      props,
+      stateAttributesMapping: pressableTriggerOpenStateMapping
+    });
+  }
+  if (isOpenedByThisTrigger) {
+    return /* @__PURE__ */ import_jsx_runtime26.jsxs(React110.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime26.jsx(FocusGuard, {
+        ref: preFocusGuardRef,
+        onFocus: handlePreFocusGuardFocus
+      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime26.jsx(React110.Fragment, {
+        children: element
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime26.jsx(FocusGuard, {
+        ref: store.context.triggerFocusTargetRef,
+        onFocus: handleFocusTargetFocus
+      }, `${thisTriggerId}-post-focus-guard`)]
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime26.jsx(React110.Fragment, {
+    children: element
+  }, thisTriggerId);
+});
+if (true)
+  MenuTrigger.displayName = "MenuTrigger";
+function useStickIfOpen(open, openReason) {
+  const stickIfOpenTimeout = useTimeout();
+  const [stickIfOpen, setStickIfOpen] = React110.useState(false);
+  useIsoLayoutEffect(() => {
+    if (open && openReason === "trigger-hover") {
+      setStickIfOpen(true);
+      stickIfOpenTimeout.start(PATIENT_CLICK_THRESHOLD, () => {
+        setStickIfOpen(false);
+      });
+    } else if (!open) {
+      stickIfOpenTimeout.clear();
+      setStickIfOpen(false);
+    }
+  }, [open, openReason, stickIfOpenTimeout]);
+  return stickIfOpen;
+}
+function useMenuParent() {
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parentContext = useMenuRootContext(true);
+  const menubarContext = useMenubarContext(true);
+  const parent = React110.useMemo(() => {
+    if (menubarContext) {
+      return {
+        type: "menubar",
+        context: menubarContext
+      };
+    }
+    if (contextMenuContext && !parentContext) {
+      return {
+        type: "context-menu",
+        context: contextMenuContext
+      };
+    }
+    return {
+      type: undefined
+    };
+  }, [contextMenuContext, parentContext, menubarContext]);
+  return parent;
+}
+// node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
+var React111 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/viewport/MenuViewportCssVars.mjs
+var MenuViewportCssVars = /* @__PURE__ */ function(MenuViewportCssVars2) {
+  MenuViewportCssVars2["popupWidth"] = "--popup-width";
+  MenuViewportCssVars2["popupHeight"] = "--popup-height";
+  return MenuViewportCssVars2;
+}({});
+
+// node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
+"use client";
+var stateAttributesMapping8 = {
+  activationDirection: (value) => value ? {
+    "data-activation-direction": value
+  } : null
+};
+var MenuViewport = /* @__PURE__ */ React111.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    side
+  } = useMenuPositionerContext();
+  const instantType = store.useState("instantType");
+  const {
+    children: childrenToRender,
+    state: viewportState
+  } = usePopupViewport({
+    store,
+    side,
+    cssVars: MenuViewportCssVars,
+    children
+  });
+  const state = {
+    activationDirection: viewportState.activationDirection,
+    transitioning: viewportState.transitioning,
+    instant: instantType
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [elementProps, {
+      children: childrenToRender
+    }],
+    stateAttributesMapping: stateAttributesMapping8
+  });
+});
+if (true)
+  MenuViewport.displayName = "MenuViewport";
+// node_modules/@base-ui/react/separator/Separator.mjs
+var React112 = __toESM(require_react(), 1);
+"use client";
+var Separator = /* @__PURE__ */ React112.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+  const {
+    className,
+    render,
+    orientation = "horizontal",
+    style,
+    ...elementProps
+  } = componentProps;
+  const state = {
+    orientation
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [{
+      role: "separator",
+      "aria-orientation": orientation
+    }, elementProps]
+  });
+  return element;
+});
+if (true)
+  Separator.displayName = "Separator";
+// node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
+var React113 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/isElementDisabled.mjs
+function isElementDisabled(element) {
+  return element == null || element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
+}
+
+// node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
+"use client";
+var MenuSubmenuTrigger = /* @__PURE__ */ React113.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    label,
+    id: idProp,
+    nativeButton = false,
+    openOnHover = true,
+    delay = 100,
+    closeDelay = 0,
+    disabled: disabledProp = false,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext();
+  const {
+    store
+  } = useMenuRootContext();
+  const thisTriggerId = useBaseUiId(idProp);
+  const open = store.useState("open");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const baseRegisterTrigger = useTriggerRegistration(thisTriggerId, store);
+  const registerTrigger = React113.useCallback((element2) => {
+    const cleanup = baseRegisterTrigger(element2);
+    if (element2 !== null && store.select("open") && store.select("activeTriggerId") == null) {
+      store.update({
+        activeTriggerId: thisTriggerId,
+        activeTriggerElement: element2,
+        closeDelay
+      });
+    }
+    return cleanup;
+  }, [baseRegisterTrigger, closeDelay, store, thisTriggerId]);
+  const triggerElementRef = React113.useRef(null);
+  const handleTriggerElementRef = React113.useCallback((el) => {
+    triggerElementRef.current = el;
+    store.set("activeTriggerElement", el);
+  }, [store]);
+  const submenuRootContext = useMenuSubmenuRootContext();
+  if (!submenuRootContext?.parentMenu) {
+    throw new Error("Base UI: <Menu.SubmenuTrigger> must be placed in <Menu.SubmenuRoot>.");
+  }
+  store.useSyncedValue("closeDelay", closeDelay);
+  const parentMenuStore = submenuRootContext.parentMenu;
+  const rootDisabled = store.useState("disabled");
+  const parentDisabled = parentMenuStore.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled || parentDisabled;
+  if (true) {
+    useIsoLayoutEffect(() => {
+      const element2 = triggerElementRef.current;
+      if (element2 && isElementDisabled(element2) && !disabled2) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        warn(`A disabled element was detected on <Menu.SubmenuTrigger>. To properly disable the trigger, use the \`disabled\` prop on the component instead of setting it on the rendered element.${ownerStackMessage}`);
+      }
+    });
+  }
+  const itemProps = parentMenuStore.useState("itemProps");
+  const highlighted = parentMenuStore.useState("isActive", listItem.index);
+  const itemMetadata = React113.useMemo(() => ({
+    type: "submenu-trigger",
+    setActive() {
+      if (parentMenuStore.select("highlightItemOnHover")) {
+        parentMenuStore.set("activeIndex", listItem.index);
+      }
+    }
+  }), [parentMenuStore, listItem.index]);
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick: false,
+    disabled: disabled2,
+    highlighted,
+    id: thisTriggerId,
+    store,
+    typingRef: parentMenuStore.context.typingRef,
+    nativeButton,
+    itemMetadata,
+    nodeId: menuPositionerContext?.context.nodeId
+  });
+  const hoverEnabled = store.useState("hoverEnabled");
+  const hoverProps = useHoverReferenceInteraction(floatingRootContext, {
+    enabled: hoverEnabled && openOnHover && !disabled2,
+    handleClose: safePolygon({
+      blockPointerEvents: true
+    }),
+    mouseOnly: true,
+    move: true,
+    restMs: delay,
+    delay: {
+      open: delay,
+      close: closeDelay
+    },
+    shouldOpen: delay > 0 ? () => parentMenuStore.select("allowMouseEnter") : undefined,
+    triggerElementRef,
+    externalTree: floatingTreeRoot,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const click = useClick(floatingRootContext, {
+    enabled: !disabled2,
+    event: "mousedown",
+    toggle: !openOnHover,
+    ignoreMouse: openOnHover,
+    stickIfOpen: false
+  });
+  const localInteractionProps = click.reference ?? EMPTY_OBJECT;
+  const rootTriggerProps = store.useState("triggerProps", true);
+  delete rootTriggerProps.id;
+  const state = {
+    disabled: disabled2,
+    highlighted,
+    open
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: triggerOpenStateMapping,
+    props: [localInteractionProps, hoverProps, rootTriggerProps, itemProps, {
+      "aria-controls": popupId,
+      tabIndex: open || highlighted ? 0 : -1,
+      onBlur() {
+        if (highlighted) {
+          parentMenuStore.set("activeIndex", null);
+        }
+      }
+    }, elementProps, getItemProps],
+    ref: [forwardedRef, listItem.ref, itemRef, registerTrigger, handleTriggerElementRef]
+  });
+  return element;
+});
+if (true)
+  MenuSubmenuTrigger.displayName = "MenuSubmenuTrigger";
+// node_modules/@base-ui/react/menu/store/MenuHandle.mjs
+class MenuHandle {
+  constructor() {
+    this.store = new MenuStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (triggerId && !triggerElement) {
+      throw new Error(`Base UI: MenuHandle.open: No trigger found with id "${triggerId}".`);
+    }
+    this.store.setOpen(true, createChangeEventDetails("imperative-action", undefined, triggerElement));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails("imperative-action", undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createMenuHandle() {
+  return new MenuHandle;
+}
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
+var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function ContextMenuRoot(props) {
+  const [anchor, setAnchor] = React114.useState({
+    getBoundingClientRect() {
+      return DOMRect.fromRect({
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0
+      });
+    }
+  });
+  const backdropRef = React114.useRef(null);
+  const internalBackdropRef = React114.useRef(null);
+  const actionsRef = React114.useRef(null);
+  const positionerRef = React114.useRef(null);
+  const allowMouseUpTriggerRef = React114.useRef(true);
+  const initialCursorPointRef = React114.useRef(null);
+  const id = useId();
+  const contextValue = React114.useMemo(() => ({
+    anchor,
+    setAnchor,
+    actionsRef,
+    backdropRef,
+    internalBackdropRef,
+    positionerRef,
+    allowMouseUpTriggerRef,
+    initialCursorPointRef,
+    rootId: id
+  }), [anchor, id]);
+  return /* @__PURE__ */ import_jsx_runtime27.jsx(ContextMenuRootContext.Provider, {
+    value: contextValue,
+    children: /* @__PURE__ */ import_jsx_runtime27.jsx(MenuRootContext.Provider, {
+      value: undefined,
+      children: /* @__PURE__ */ import_jsx_runtime27.jsx(exports_index_parts3.Root, {
+        ...props
+      })
+    })
+  });
+}
+// node_modules/@base-ui/react/context-menu/trigger/ContextMenuTrigger.mjs
+var React115 = __toESM(require_react(), 1);
+"use client";
+var LONG_PRESS_DELAY = 500;
+var ContextMenuTrigger = /* @__PURE__ */ React115.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    setAnchor,
+    actionsRef,
+    internalBackdropRef,
+    backdropRef,
+    positionerRef,
+    allowMouseUpTriggerRef,
+    initialCursorPointRef,
+    rootId
+  } = useContextMenuRootContext(false);
+  const {
+    store
+  } = useMenuRootContext(false);
+  const open = store.useState("open");
+  const disabled2 = store.useState("disabled");
+  const triggerRef = React115.useRef(null);
+  const touchPositionRef = React115.useRef(null);
+  const longPressTimeout = useTimeout();
+  const allowMouseUpTimeout = useTimeout();
+  const allowMouseUpRef = React115.useRef(false);
+  function handleLongPress(x, y, event) {
+    const isTouchEvent = event.type.startsWith("touch");
+    initialCursorPointRef.current = {
+      x,
+      y
+    };
+    setAnchor({
+      getBoundingClientRect() {
+        return DOMRect.fromRect({
+          width: isTouchEvent ? 10 : 0,
+          height: isTouchEvent ? 10 : 0,
+          x,
+          y
+        });
+      }
+    });
+    allowMouseUpRef.current = false;
+    actionsRef.current?.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerPress, event));
+    allowMouseUpTimeout.start(LONG_PRESS_DELAY, () => {
+      allowMouseUpRef.current = true;
+    });
+  }
+  function handleContextMenu(event) {
+    if (disabled2) {
+      return;
+    }
+    allowMouseUpTriggerRef.current = true;
+    stopEvent(event);
+    handleLongPress(event.clientX, event.clientY, event.nativeEvent);
+    const doc = ownerDocument(triggerRef.current);
+    addEventListener(doc, "mouseup", (mouseEvent) => {
+      allowMouseUpTriggerRef.current = false;
+      if (!allowMouseUpRef.current) {
+        return;
+      }
+      allowMouseUpTimeout.clear();
+      allowMouseUpRef.current = false;
+      const mouseUpTarget = getTarget(mouseEvent);
+      if (contains(positionerRef.current, mouseUpTarget)) {
+        return;
+      }
+      if (rootId && mouseUpTarget && findRootOwnerId(mouseUpTarget) === rootId) {
+        return;
+      }
+      actionsRef.current?.setOpen(false, createChangeEventDetails(exports_reason_parts.cancelOpen, mouseEvent));
+    }, {
+      once: true
+    });
+  }
+  function handleTouchStart(event) {
+    if (disabled2) {
+      return;
+    }
+    allowMouseUpTriggerRef.current = false;
+    if (event.touches.length === 1) {
+      event.stopPropagation();
+      const touch = event.touches[0];
+      touchPositionRef.current = {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+      longPressTimeout.start(LONG_PRESS_DELAY, () => {
+        if (touchPositionRef.current) {
+          handleLongPress(touchPositionRef.current.x, touchPositionRef.current.y, event.nativeEvent);
+        }
+      });
+    }
+  }
+  function handleTouchMove(event) {
+    if (longPressTimeout.isStarted() && touchPositionRef.current && event.touches.length === 1) {
+      const touch = event.touches[0];
+      const moveThreshold = 10;
+      const deltaX = Math.abs(touch.clientX - touchPositionRef.current.x);
+      const deltaY = Math.abs(touch.clientY - touchPositionRef.current.y);
+      if (deltaX > moveThreshold || deltaY > moveThreshold) {
+        longPressTimeout.clear();
+      }
+    }
+  }
+  function handleTouchEnd() {
+    longPressTimeout.clear();
+    touchPositionRef.current = null;
+  }
+  React115.useEffect(() => {
+    function handleDocumentContextMenu(event) {
+      if (disabled2) {
+        return;
+      }
+      const target = getTarget(event);
+      const targetElement = target;
+      if (contains(triggerRef.current, targetElement) || contains(internalBackdropRef.current, targetElement) || contains(backdropRef.current, targetElement)) {
+        event.preventDefault();
+      }
+    }
+    const doc = ownerDocument(triggerRef.current);
+    return addEventListener(doc, "contextmenu", handleDocumentContextMenu);
+  }, [backdropRef, disabled2, internalBackdropRef]);
+  const state = {
+    open
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [triggerRef, forwardedRef],
+    props: [{
+      onContextMenu: handleContextMenu,
+      onTouchStart: handleTouchStart,
+      onTouchMove: handleTouchMove,
+      onTouchEnd: handleTouchEnd,
+      onTouchCancel: handleTouchEnd,
+      style: {
+        WebkitTouchCallout: "none"
+      }
+    }, elementProps],
+    stateAttributesMapping: pressableTriggerOpenStateMapping
+  });
+  return element;
+});
+if (true)
+  ContextMenuTrigger.displayName = "ContextMenuTrigger";
+// src/grapevine/surface/ui/context-menu.tsx
+var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
+function ContextMenu({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Root, {
+    "data-slot": "context-menu",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuTrigger3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Trigger, {
+    "data-slot": "context-menu-trigger",
+    className: cn("select-none", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuContent({
+  className,
+  align = "start",
+  alignOffset = 4,
+  side = "right",
+  sideOffset = 0,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Positioner, {
+      className: "isolate z-50 outline-none",
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Popup, {
+        "data-slot": "context-menu-content",
+        className: cn("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+function ContextMenuGroup({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Group, {
+    "data-slot": "context-menu-group",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Item, {
+    "data-slot": "context-menu-item",
+    "data-inset": inset,
+    "data-variant": variant,
+    className: cn("group/context-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus:*:[svg]:text-accent-foreground data-[variant=destructive]:*:[svg]:text-destructive", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuSeparator({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts4.Separator, {
+    "data-slot": "context-menu-separator",
+    className: cn("-mx-1 my-1 h-px bg-border", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/field.tsx
+var import_react6 = __toESM(require_react(), 1);
+
+// src/grapevine/surface/ui/label.tsx
+var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+function Label({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("label", {
+    "data-slot": "label",
+    className: cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+// src/grapevine/surface/ui/separator.tsx
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+"use client";
+function Separator2({ className, orientation = "horizontal", ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Separator, {
+    "data-slot": "separator",
+    orientation,
+    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/field.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+function FieldGroup({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    "data-slot": "field-group",
+    className: cn("group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+var fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
+  variants: {
+    orientation: {
+      vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
+      horizontal: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+      responsive: "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px"
+    }
+  },
+  defaultVariants: {
+    orientation: "vertical"
+  }
+});
+function Field({
+  className,
+  orientation = "vertical",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    role: "group",
+    "data-slot": "field",
+    "data-orientation": orientation,
+    className: cn(fieldVariants({ orientation }), className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function FieldLabel({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Label, {
+    "data-slot": "field-label",
+    className: cn("group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-muted/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-ring has-[>[data-slot=field]]:has-[:focus-visible]:ring-3 has-[>[data-slot=field]]:has-[:focus-visible]:ring-ring/50 *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10", "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function FieldDescription({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+    "data-slot": "field-description",
+    className: cn("text-left text-sm leading-normal font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5", "last:mt-0 nth-last-2:-mt-1", "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function FieldError({
+  className,
+  children,
+  errors,
+  ...props
+}) {
+  const content = import_react6.useMemo(() => {
+    if (children) {
+      return children;
+    }
+    if (!errors?.length) {
+      return null;
+    }
+    const uniqueErrors = [...new Map(errors.map((error2) => [error2?.message, error2])).values()];
+    if (uniqueErrors?.length == 1) {
+      return uniqueErrors[0]?.message;
+    }
+    return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("ul", {
+      className: "ml-4 flex list-disc flex-col gap-1",
+      children: uniqueErrors.map((error2, index3) => error2?.message && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("li", {
+        children: error2.message
+      }, index3, false, undefined, this))
+    }, undefined, false, undefined, this);
+  }, [children, errors]);
+  if (!content) {
+    return null;
+  }
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    role: "alert",
+    "data-slot": "field-error",
+    className: cn("text-sm font-normal text-destructive", className),
+    ...props,
+    children: content
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/switch/index.parts.mjs
+var exports_index_parts5 = {};
+__export(exports_index_parts5, {
+  Root: () => SwitchRoot,
+  Thumb: () => SwitchThumb
+});
+
+// node_modules/@base-ui/react/switch/root/SwitchRoot.mjs
+var React123 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/switch/root/SwitchRootContext.mjs
+var React116 = __toESM(require_react(), 1);
+"use client";
+var SwitchRootContext = /* @__PURE__ */ React116.createContext(undefined);
+if (true)
+  SwitchRootContext.displayName = "SwitchRootContext";
+function useSwitchRootContext() {
+  const context = React116.useContext(SwitchRootContext);
+  if (context === undefined) {
+    throw new Error("Base UI: SwitchRootContext is missing. Switch parts must be placed within <Switch.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
+var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
+  FieldControlDataAttributes2["disabled"] = "data-disabled";
+  FieldControlDataAttributes2["valid"] = "data-valid";
+  FieldControlDataAttributes2["invalid"] = "data-invalid";
+  FieldControlDataAttributes2["touched"] = "data-touched";
+  FieldControlDataAttributes2["dirty"] = "data-dirty";
+  FieldControlDataAttributes2["filled"] = "data-filled";
+  FieldControlDataAttributes2["focused"] = "data-focused";
+  return FieldControlDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/internals/field-constants/constants.mjs
+var DEFAULT_VALIDITY_STATE = {
+  badInput: false,
+  customError: false,
+  patternMismatch: false,
+  rangeOverflow: false,
+  rangeUnderflow: false,
+  stepMismatch: false,
+  tooLong: false,
+  tooShort: false,
+  typeMismatch: false,
+  valid: null,
+  valueMissing: false
+};
+var DEFAULT_FIELD_STATE_ATTRIBUTES = {
+  valid: null,
+  touched: false,
+  dirty: false,
+  filled: false,
+  focused: false
+};
+var DEFAULT_FIELD_ROOT_STATE = {
+  disabled: false,
+  ...DEFAULT_FIELD_STATE_ATTRIBUTES
+};
+var fieldValidityMapping = {
+  valid(value) {
+    if (value === null) {
+      return null;
+    }
+    if (value) {
+      return {
+        [FieldControlDataAttributes.valid]: ""
+      };
+    }
+    return {
+      [FieldControlDataAttributes.invalid]: ""
+    };
+  }
+};
+
+// node_modules/@base-ui/react/switch/root/SwitchRootDataAttributes.mjs
+var SwitchRootDataAttributes = /* @__PURE__ */ function(SwitchRootDataAttributes2) {
+  SwitchRootDataAttributes2["checked"] = "data-checked";
+  SwitchRootDataAttributes2["unchecked"] = "data-unchecked";
+  SwitchRootDataAttributes2["disabled"] = "data-disabled";
+  SwitchRootDataAttributes2["readonly"] = "data-readonly";
+  SwitchRootDataAttributes2["required"] = "data-required";
+  SwitchRootDataAttributes2["valid"] = "data-valid";
+  SwitchRootDataAttributes2["invalid"] = "data-invalid";
+  SwitchRootDataAttributes2["touched"] = "data-touched";
+  SwitchRootDataAttributes2["dirty"] = "data-dirty";
+  SwitchRootDataAttributes2["filled"] = "data-filled";
+  SwitchRootDataAttributes2["focused"] = "data-focused";
+  return SwitchRootDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/switch/stateAttributesMapping.mjs
+var stateAttributesMapping9 = {
+  ...fieldValidityMapping,
+  checked(value) {
+    if (value) {
+      return {
+        [SwitchRootDataAttributes.checked]: ""
+      };
+    }
+    return {
+      [SwitchRootDataAttributes.unchecked]: ""
+    };
+  }
+};
+
+// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
+var React117 = __toESM(require_react(), 1);
+"use client";
+var DEFAULT_FIELD_ROOT_CONTEXT = {
+  invalid: undefined,
+  name: undefined,
+  validityData: {
+    state: DEFAULT_VALIDITY_STATE,
+    errors: [],
+    error: "",
+    value: "",
+    initialValue: null
+  },
+  setValidityData: NOOP,
+  disabled: undefined,
+  touched: DEFAULT_FIELD_STATE_ATTRIBUTES.touched,
+  setTouched: NOOP,
+  dirty: DEFAULT_FIELD_STATE_ATTRIBUTES.dirty,
+  setDirty: NOOP,
+  filled: DEFAULT_FIELD_STATE_ATTRIBUTES.filled,
+  setFilled: NOOP,
+  focused: DEFAULT_FIELD_STATE_ATTRIBUTES.focused,
+  setFocused: NOOP,
+  validate: () => null,
+  validationMode: "onSubmit",
+  validationDebounceTime: 0,
+  shouldValidateOnChange: () => false,
+  state: DEFAULT_FIELD_ROOT_STATE,
+  markedDirtyRef: {
+    current: false
+  },
+  registerFieldControl: NOOP,
+  validation: {
+    getValidationProps: (_disabled, props = EMPTY_OBJECT) => props,
+    inputRef: {
+      current: null
+    },
+    registerInput: NOOP,
+    commit: async () => {},
+    change: NOOP
+  }
+};
+var FieldRootContext = /* @__PURE__ */ React117.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
+if (true)
+  FieldRootContext.displayName = "FieldRootContext";
+function useFieldRootContext(optional = true) {
+  const context = React117.useContext(FieldRootContext);
+  if (context.setValidityData === NOOP && !optional) {
+    throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
+var React118 = __toESM(require_react(), 1);
+"use client";
+function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
+  const {
+    registerFieldControl
+  } = useFieldRootContext();
+  const sourceRef = React118.useRef(null);
+  if (!sourceRef.current) {
+    sourceRef.current = Symbol();
+  }
+  useIsoLayoutEffect(() => {
+    const source = sourceRef.current;
+    if (!source || !enabled) {
+      return;
+    }
+    const registration = {
+      controlRef,
+      getValue: getFormValueOverride,
+      id,
+      name,
+      value
+    };
+    registerFieldControl(source, registration);
+    return () => {
+      registerFieldControl(source, undefined);
+    };
+  }, [controlRef, enabled, getFormValueOverride, id, name, registerFieldControl, value]);
+}
+
+// node_modules/@base-ui/react/internals/form-context/FormContext.mjs
+var React119 = __toESM(require_react(), 1);
+"use client";
+var FormContext = /* @__PURE__ */ React119.createContext({
+  formRef: {
+    current: {
+      fields: new Map
+    }
+  },
+  errors: {},
+  clearErrors: NOOP,
+  validationMode: "onSubmit",
+  submitAttemptedRef: {
+    current: false
+  }
+});
+if (true)
+  FormContext.displayName = "FormContext";
+function useFormContext() {
+  return React119.useContext(FormContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
+var React120 = __toESM(require_react(), 1);
+"use client";
+var LabelableContext = /* @__PURE__ */ React120.createContext({
+  controlId: undefined,
+  registerControlId: NOOP,
+  labelId: undefined,
+  setLabelId: NOOP,
+  messageIds: [],
+  setMessageIds: NOOP,
+  getDescriptionProps: (externalProps) => externalProps
+});
+if (true)
+  LabelableContext.displayName = "LabelableContext";
+function useLabelableContext() {
+  return React120.useContext(LabelableContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useAriaLabelledBy.mjs
+var React121 = __toESM(require_react(), 1);
+"use client";
+function useAriaLabelledBy(explicitAriaLabelledBy, labelId, labelSourceRef, enableFallback = true, labelSourceId) {
+  const [fallbackAriaLabelledBy, setFallbackAriaLabelledBy] = React121.useState();
+  const generatedLabelId = useBaseUiId(labelSourceId ? `${labelSourceId}-label` : undefined);
+  const ariaLabelledBy = explicitAriaLabelledBy ?? labelId ?? fallbackAriaLabelledBy;
+  useIsoLayoutEffect(() => {
+    const nextAriaLabelledBy = explicitAriaLabelledBy || labelId || !enableFallback ? undefined : getAriaLabelledBy(labelSourceRef.current, generatedLabelId);
+    if (fallbackAriaLabelledBy !== nextAriaLabelledBy) {
+      setFallbackAriaLabelledBy(nextAriaLabelledBy);
+    }
+  });
+  return ariaLabelledBy;
+}
+function getAriaLabelledBy(labelSource, generatedLabelId) {
+  const label = findAssociatedLabel(labelSource);
+  if (!label) {
+    return;
+  }
+  if (!label.id && generatedLabelId) {
+    label.id = generatedLabelId;
+  }
+  return label.id || undefined;
+}
+function findAssociatedLabel(labelSource) {
+  if (!labelSource) {
+    return;
+  }
+  const parent = labelSource.parentElement;
+  if (parent && parent.tagName === "LABEL") {
+    return parent;
+  }
+  const controlId = labelSource.id;
+  if (controlId) {
+    const nextSibling = labelSource.nextElementSibling;
+    if (nextSibling && nextSibling.htmlFor === controlId) {
+      return nextSibling;
+    }
+  }
+  const labels = labelSource.labels;
+  return labels && labels[0];
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
+var React122 = __toESM(require_react(), 1);
+"use client";
+function useLabelableId(params = {}) {
+  const {
+    id,
+    implicit = false,
+    controlRef
+  } = params;
+  const {
+    controlId,
+    registerControlId
+  } = useLabelableContext();
+  const defaultId = useBaseUiId(id);
+  const controlIdForEffect = implicit ? controlId : undefined;
+  const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
+  const hasRegisteredRef = React122.useRef(false);
+  const hadExplicitIdRef = React122.useRef(id != null);
+  const unregisterControlId = useStableCallback(() => {
+    if (!hasRegisteredRef.current || registerControlId === NOOP) {
+      return;
+    }
+    hasRegisteredRef.current = false;
+    registerControlId(controlSourceRef.current, undefined);
+  });
+  useIsoLayoutEffect(() => {
+    if (registerControlId === NOOP) {
+      return;
+    }
+    let nextId;
+    if (implicit) {
+      const elem = controlRef?.current;
+      if (isElement(elem) && elem.closest("label") != null) {
+        nextId = id ?? null;
+      } else {
+        nextId = controlIdForEffect ?? defaultId;
+      }
+    } else if (id != null) {
+      hadExplicitIdRef.current = true;
+      nextId = id;
+    } else if (hadExplicitIdRef.current) {
+      nextId = defaultId;
+    } else {
+      unregisterControlId();
+      return;
+    }
+    if (nextId === undefined) {
+      unregisterControlId();
+      return;
+    }
+    hasRegisteredRef.current = true;
+    registerControlId(controlSourceRef.current, nextId);
+    return;
+  }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
+  React122.useEffect(() => {
+    return unregisterControlId;
+  }, [unregisterControlId]);
+  return controlId ?? defaultId;
+}
+
+// node_modules/@base-ui/react/switch/root/SwitchRoot.mjs
+var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var SwitchRoot = /* @__PURE__ */ React123.forwardRef(function SwitchRoot2(componentProps, forwardedRef) {
+  const {
+    checked: checkedProp,
+    className,
+    defaultChecked,
+    "aria-labelledby": ariaLabelledByProp,
+    form,
+    id: idProp,
+    inputRef: externalInputRef,
+    name: nameProp,
+    nativeButton = false,
+    onCheckedChange,
+    readOnly = false,
+    required = false,
+    disabled: disabledProp = false,
+    render,
+    uncheckedValue,
+    value,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    clearErrors
+  } = useFormContext();
+  const {
+    state: fieldState,
+    setTouched,
+    setDirty,
+    validityData,
+    setFilled,
+    setFocused,
+    validationMode,
+    disabled: fieldDisabled,
+    name: fieldName,
+    validation
+  } = useFieldRootContext();
+  const {
+    labelId
+  } = useLabelableContext();
+  const disabled2 = fieldDisabled || disabledProp;
+  const name = fieldName ?? nameProp;
+  const inputRef = React123.useRef(null);
+  const handleInputRef = useMergedRefs(inputRef, externalInputRef, validation.inputRef);
+  const switchRef = React123.useRef(null);
+  const id = useBaseUiId();
+  const controlId = useLabelableId({
+    id: idProp,
+    implicit: false,
+    controlRef: switchRef
+  });
+  const hiddenInputId = nativeButton ? undefined : controlId;
+  const [checked, setCheckedState] = useControlled({
+    controlled: checkedProp,
+    default: Boolean(defaultChecked),
+    name: "Switch",
+    state: "checked"
+  });
+  useRegisterFieldControl(switchRef, id, checked, undefined, !disabled2, nameProp);
+  useIsoLayoutEffect(() => {
+    if (inputRef.current) {
+      setFilled(inputRef.current.checked);
+    }
+  }, [inputRef, setFilled]);
+  useValueChanged(checked, () => {
+    clearErrors(name);
+    setDirty(checked !== validityData.initialValue);
+    setFilled(checked);
+    validation.change(checked);
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const ariaLabelledBy = useAriaLabelledBy(ariaLabelledByProp, labelId, inputRef, !nativeButton, hiddenInputId);
+  const rootProps = {
+    id: nativeButton ? controlId : id,
+    role: "switch",
+    "aria-checked": checked,
+    "aria-readonly": readOnly || undefined,
+    "aria-required": required || undefined,
+    "aria-labelledby": ariaLabelledBy,
+    onFocus() {
+      if (!disabled2) {
+        setFocused(true);
+      }
+    },
+    onBlur() {
+      const element2 = inputRef.current;
+      if (!element2 || disabled2) {
+        return;
+      }
+      setTouched(true);
+      setFocused(false);
+      if (validationMode === "onBlur") {
+        validation.commit(element2.checked);
+      }
+    },
+    onClick(event) {
+      if (readOnly || disabled2) {
+        return;
+      }
+      event.preventDefault();
+      const input = inputRef.current;
+      if (!input) {
+        return;
+      }
+      input.dispatchEvent(new (getWindow(input)).PointerEvent("click", {
+        bubbles: true,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey
+      }));
+    }
+  };
+  const inputProps = mergeProps({
+    checked,
+    disabled: disabled2,
+    form,
+    id: hiddenInputId,
+    name,
+    required,
+    style: name ? visuallyHiddenInput : visuallyHidden,
+    tabIndex: -1,
+    type: "checkbox",
+    "aria-hidden": true,
+    ref: handleInputRef,
+    onChange(event) {
+      if (event.nativeEvent.defaultPrevented) {
+        return;
+      }
+      if (readOnly) {
+        event.preventDefault();
+        return;
+      }
+      const nextChecked = event.currentTarget.checked;
+      const eventDetails = createChangeEventDetails(exports_reason_parts.none, event.nativeEvent);
+      onCheckedChange?.(nextChecked, eventDetails);
+      if (eventDetails.isCanceled) {
+        return;
+      }
+      setCheckedState(nextChecked);
+    },
+    onFocus() {
+      switchRef.current?.focus();
+    }
+  }, (props) => validation.getValidationProps(disabled2, props), value !== undefined ? {
+    value
+  } : EMPTY_OBJECT);
+  const state = React123.useMemo(() => ({
+    ...fieldState,
+    checked,
+    disabled: disabled2,
+    readOnly,
+    required
+  }), [fieldState, checked, disabled2, readOnly, required]);
+  const element = useRenderElement("span", componentProps, {
+    state,
+    ref: [forwardedRef, switchRef, buttonRef],
+    props: [rootProps, elementProps, getButtonProps, (props) => validation.getValidationProps(disabled2, props)],
+    stateAttributesMapping: stateAttributesMapping9
+  });
+  return /* @__PURE__ */ import_jsx_runtime28.jsxs(SwitchRootContext.Provider, {
+    value: state,
+    children: [element, !checked && name && uncheckedValue !== undefined && /* @__PURE__ */ import_jsx_runtime28.jsx("input", {
+      type: "hidden",
+      form,
+      name,
+      value: uncheckedValue,
+      disabled: disabled2
+    }), /* @__PURE__ */ import_jsx_runtime28.jsx("input", {
+      ...inputProps,
+      suppressHydrationWarning: true
+    })]
+  });
+});
+if (true)
+  SwitchRoot.displayName = "SwitchRoot";
+// node_modules/@base-ui/react/switch/thumb/SwitchThumb.mjs
+var React124 = __toESM(require_react(), 1);
+"use client";
+var SwitchThumb = /* @__PURE__ */ React124.forwardRef(function SwitchThumb2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const state = useSwitchRootContext();
+  return useRenderElement("span", componentProps, {
+    state,
+    ref: forwardedRef,
+    stateAttributesMapping: stateAttributesMapping9,
+    props: elementProps
+  });
+});
+if (true)
+  SwitchThumb.displayName = "SwitchThumb";
+// src/grapevine/surface/ui/switch.tsx
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
+"use client";
+function Switch({
+  className,
+  size: size4 = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(exports_index_parts5.Root, {
+    "data-slot": "switch",
+    "data-size": size4,
+    className: cn("peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50", className),
+    ...props,
+    children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(exports_index_parts5.Thumb, {
+      "data-slot": "switch-thumb",
+      className: "pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-unchecked:bg-foreground"
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/state/channel.ts
+function channelFromHash(hash) {
+  return decodeURIComponent((hash || "#lobby").slice(1)) || "lobby";
+}
+function channelHref(name) {
+  return `#${encodeURIComponent(name)}`;
+}
+function pageTitle(channel) {
+  return `grapevine · ${channel}`;
+}
+
+// src/grapevine/surface/state/feed.ts
+var emptyFeed = () => ({ messages: [], byId: new Map, highest: 0 });
+function appendMessage(feed, m) {
+  const byId = new Map(feed.byId);
+  if (typeof m.id === "number")
+    byId.set(m.id, m);
+  const highest = typeof m.id === "number" && m.id > feed.highest ? m.id : feed.highest;
+  const next = { messages: [...feed.messages, m], byId, highest };
+  return m.kind === "topic" ? { feed: next, topic: m.text } : { feed: next };
+}
+function nearBottom(scrollTop, clientHeight, scrollHeight) {
+  return scrollTop + clientHeight + 80 >= scrollHeight;
+}
+function hashHue(s) {
+  let h = 0;
+  for (let i = 0;i < s.length; i++)
+    h = h * 31 + s.charCodeAt(i) | 0;
+  return Math.abs(h) % 360;
+}
+function aliasColor(alias) {
+  return `hsl(${hashHue(alias || "")} 70% 70%)`;
+}
+function snippet(t) {
+  return t.length > 80 ? `${t.slice(0, 80)}…` : t;
+}
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+function isChannelNote(m) {
+  return m.kind === "status" && m.event !== undefined && m.disposition === undefined;
+}
+function fromLabel(m) {
+  if (m.kind === "topic")
+    return `${m.from} set topic`;
+  if (isChannelNote(m))
+    return `${m.from} ${m.event} the channel`;
+  return m.from;
+}
+function subLabel(a, alias, humans) {
+  if (a === alias)
+    return `${a} (you)`;
+  if (humans.includes(a))
+    return `${a} (human)`;
+  return a;
+}
+function mergeChannels(seen, list, firstPoll) {
+  const nextSeen = new Set(seen);
+  const rows = list.map((c) => {
+    const isNew = !firstPoll && !seen.has(c.name);
+    nextSeen.add(c.name);
+    return { name: c.name, subscribers: c.subscribers ?? 0, archived: !!c.archived, isNew };
+  });
+  return { rows, seen: nextSeen };
+}
+function isChannelArchived(rows, channel) {
+  return rows.find((c) => c.name === channel)?.archived ?? false;
+}
+function closeConfirmText(name) {
+  return `Close channel "${name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`;
+}
+
+// src/grapevine/surface/state/lifecycle.ts
+var SHOW_ARCHIVED_KEY = "grapevine:show-archived";
+function loadShowArchived(kv) {
+  return kv.getItem(SHOW_ARCHIVED_KEY) === "1";
+}
+function saveShowArchived(kv, on) {
+  if (on)
+    kv.setItem(SHOW_ARCHIVED_KEY, "1");
+  else
+    kv.removeItem(SHOW_ARCHIVED_KEY);
+}
+function visibleChannels(rows, current, showArchived) {
+  if (showArchived)
+    return rows;
+  return rows.filter((c) => !c.archived || c.name === current);
+}
+function hiddenArchivedCount(rows, current, showArchived) {
+  return rows.length - visibleChannels(rows, current, showArchived).length;
+}
+function createOutcome(status, body) {
+  if (status >= 200 && status < 300)
+    return { kind: "created" };
+  if (status === 409 && body?.error === "archived")
+    return { kind: "archived" };
+  const message = typeof body?.error === "string" ? body.error : `HTTP ${status}`;
+  return { kind: "error", message };
+}
+function signedBody(from) {
+  if (!from)
+    return {};
+  return {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ from })
+  };
+}
+function createArchivedText(name) {
+  return `“${name}” exists but is archived. Unarchive it instead?`;
+}
+function topicFrom(mode, alias, identityAlias) {
+  if (mode === "join" && alias.trim())
+    return alias.trim();
+  const d = identityAlias?.trim();
+  return d ? d : null;
+}
+function topicEditState(archived, from) {
+  if (archived)
+    return { disabled: true, reason: "archived — read-only" };
+  if (!from)
+    return {
+      disabled: true,
+      reason: "join the channel (or set a default alias) to edit the topic"
+    };
+  return { disabled: false };
+}
+var INTENT_KEY = "grapevine:intent";
+function parkIntent(kv, channel, intent) {
+  kv.setItem(INTENT_KEY, JSON.stringify({ channel, intent }));
+}
+function takeIntent(kv, channel) {
+  const raw = kv.getItem(INTENT_KEY);
+  if (!raw)
+    return null;
+  kv.removeItem(INTENT_KEY);
+  try {
+    const j = JSON.parse(raw);
+    return j.channel === channel && j.intent === "edit-topic" ? "edit-topic" : null;
+  } catch {
+    return null;
+  }
+}
+function shouldCancelEdit(editing, disabled2) {
+  return editing && disabled2;
+}
+function createTopicHint(existed, signer) {
+  const who = signer ?? "system";
+  return existed ? `Set as ${who}, if this channel has no topic yet. Use Edit topic to replace one.` : `Set as ${who}.`;
+}
+function archiveLabel(archived) {
+  return archived ? "Unarchive" : "Archive";
+}
+
+// src/grapevine/surface/components/CreateChannelDialog.tsx
+var import_react7 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/index.parts.mjs
+var exports_index_parts6 = {};
+__export(exports_index_parts6, {
+  Backdrop: () => DialogBackdrop,
+  Close: () => DialogClose,
+  Description: () => DialogDescription,
+  Handle: () => DialogHandle,
+  Popup: () => DialogPopup,
+  Portal: () => DialogPortal,
+  Root: () => DialogRoot,
+  Title: () => DialogTitle,
+  Trigger: () => DialogTrigger,
+  Viewport: () => DialogViewport,
+  createHandle: () => createDialogHandle
+});
+
+// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
+var React125 = __toESM(require_react(), 1);
+"use client";
+function DialogRoot(props) {
+  const mode = React125.useContext(IsDrawerContext) ? "drawer" : "dialog";
+  return useRenderDialogRoot(props, mode);
+}
+// src/grapevine/surface/ui/dialog.tsx
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+function Dialog({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Root, {
+    "data-slot": "dialog",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogPortal3({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Portal, {
+    "data-slot": "dialog-portal",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogClose3({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Close, {
+    "data-slot": "dialog-close",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogOverlay({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Backdrop, {
+    "data-slot": "dialog-overlay",
+    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(DialogPortal3, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(DialogOverlay, {}, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Popup, {
+        "data-slot": "dialog-content",
+        className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-            className: "section-title",
-            children: "Library"
+          children,
+          showCloseButton && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Close, {
+            "data-slot": "dialog-close",
+            render: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+              variant: "ghost",
+              className: "absolute top-2 right-2",
+              size: "icon-sm"
+            }, undefined, false, undefined, this),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                className: "sr-only",
+                children: "Close"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function DialogHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+    "data-slot": "dialog-header",
+    className: cn("flex flex-col gap-2", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogFooter({
+  className,
+  showCloseButton = false,
+  children,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+    "data-slot": "dialog-footer",
+    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
+    ...props,
+    children: [
+      children,
+      showCloseButton && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Close, {
+        render: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+          variant: "outline"
+        }, undefined, false, undefined, this),
+        children: "Close"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function DialogTitle3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Title, {
+    "data-slot": "dialog-title",
+    className: cn("text-base leading-none font-medium", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogDescription3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts6.Description, {
+    "data-slot": "dialog-description",
+    className: cn("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/input/Input.mjs
+var React139 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/index.parts.mjs
+var exports_index_parts7 = {};
+__export(exports_index_parts7, {
+  Control: () => FieldControl,
+  Description: () => FieldDescription2,
+  Error: () => FieldError2,
+  Item: () => FieldItem,
+  Label: () => FieldLabel2,
+  Root: () => FieldRoot,
+  Validity: () => FieldValidity
+});
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var React130 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
+var React126 = __toESM(require_react(), 1);
+"use client";
+var FieldsetRootContext = /* @__PURE__ */ React126.createContext(undefined);
+if (true)
+  FieldsetRootContext.displayName = "FieldsetRootContext";
+function useFieldsetRootContext(optional = false) {
+  const context = React126.useContext(FieldsetRootContext);
+  if (!context && !optional) {
+    throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
+var React127 = __toESM(require_react(), 1);
+var import_jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var LabelableProvider = function LabelableProvider2(props) {
+  const defaultId = useBaseUiId();
+  const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
+  const [controlId, setControlIdState] = React127.useState(initialControlId);
+  const [labelId, setLabelId] = React127.useState(props.labelId);
+  const [messageIds, setMessageIds] = React127.useState([]);
+  const registrationsRef = useRefWithInit(() => new Map);
+  const {
+    messageIds: parentMessageIds
+  } = useLabelableContext();
+  const registerControlId = useStableCallback((source, nextId) => {
+    const registrations = registrationsRef.current;
+    if (nextId === undefined) {
+      registrations.delete(source);
+      return;
+    }
+    registrations.set(source, nextId);
+    setControlIdState((prev) => {
+      if (registrations.size === 0) {
+        return;
+      }
+      let nextControlId;
+      for (const id of registrations.values()) {
+        if (prev !== undefined && id === prev) {
+          return prev;
+        }
+        if (nextControlId === undefined) {
+          nextControlId = id;
+        }
+      }
+      return nextControlId;
+    });
+  });
+  const getDescriptionProps = React127.useCallback((externalProps) => {
+    const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
+    ids.push(...parentMessageIds, ...messageIds);
+    return {
+      ...externalProps,
+      "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
+    };
+  }, [parentMessageIds, messageIds]);
+  const contextValue = React127.useMemo(() => ({
+    controlId,
+    registerControlId,
+    labelId,
+    setLabelId,
+    messageIds,
+    setMessageIds,
+    getDescriptionProps
+  }), [controlId, registerControlId, labelId, setLabelId, messageIds, setMessageIds, getDescriptionProps]);
+  return /* @__PURE__ */ import_jsx_runtime29.jsx(LabelableContext.Provider, {
+    value: contextValue,
+    children: props.children
+  });
+};
+if (true)
+  LabelableProvider.displayName = "LabelableProvider";
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+var React128 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
+function getCombinedFieldValidityData(validityData, invalid) {
+  return {
+    ...validityData,
+    state: {
+      ...validityData.state,
+      valid: !invalid && validityData.state.valid
+    }
+  };
+}
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+"use client";
+var validityKeys = Object.keys(DEFAULT_VALIDITY_STATE);
+function isOnlyValueMissing(state) {
+  if (!state || state.valid || !state.valueMissing) {
+    return false;
+  }
+  let onlyValueMissing = false;
+  for (const key of validityKeys) {
+    if (key === "valid") {
+      continue;
+    }
+    if (key === "valueMissing") {
+      onlyValueMissing = state[key];
+    } else if (state[key]) {
+      onlyValueMissing = false;
+    }
+  }
+  return onlyValueMissing;
+}
+function findRepresentativeInput(inputs) {
+  let fallback = null;
+  for (const input of inputs) {
+    if (input.disabled) {
+      continue;
+    }
+    if (!input.validity.valid) {
+      return input;
+    }
+    fallback ??= input;
+  }
+  return fallback;
+}
+function clearCustomValidity(element, inputs) {
+  let didClearElement = false;
+  for (const input of inputs) {
+    input.setCustomValidity("");
+    didClearElement ||= input === element;
+  }
+  if (!didClearElement) {
+    element.setCustomValidity("");
+  }
+}
+function useFieldValidation(params) {
+  const {
+    formRef
+  } = useFormContext();
+  const {
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  } = params;
+  const {
+    controlId,
+    getDescriptionProps
+  } = useLabelableContext();
+  const timeout = useTimeout();
+  const inputRef = React128.useRef(null);
+  const registeredInputs = useRefWithInit(() => new Set).current;
+  const validationCommitIdRef = React128.useRef(0);
+  const registerInput = React128.useCallback((element) => {
+    if (!element) {
+      return;
+    }
+    registeredInputs.add(element);
+    return () => {
+      registeredInputs.delete(element);
+    };
+  }, [registeredInputs]);
+  const commit = useStableCallback(async (value, revalidate = false) => {
+    const element = findRepresentativeInput(registeredInputs) ?? inputRef.current;
+    if (!element) {
+      return;
+    }
+    validationCommitIdRef.current += 1;
+    const validationCommitId = validationCommitIdRef.current;
+    function updateRegisteredFieldValidity(nextValidityData2, externalInvalid = invalid) {
+      const fieldId = getRegisteredFieldId() ?? controlId;
+      if (fieldId == null) {
+        return;
+      }
+      const currentFieldData = formRef.current.fields.get(fieldId);
+      if (!currentFieldData) {
+        return;
+      }
+      const validityDataWithFormErrors = getCombinedFieldValidityData(nextValidityData2, externalInvalid);
+      formRef.current.fields.set(fieldId, {
+        ...currentFieldData,
+        validityData: validityDataWithFormErrors
+      });
+    }
+    if (revalidate) {
+      if (state.valid !== false) {
+        return;
+      }
+      const currentNativeValidity = element.validity;
+      if (!currentNativeValidity.valueMissing) {
+        const nextValidityData2 = {
+          value,
+          state: {
+            ...DEFAULT_VALIDITY_STATE,
+            valid: true
+          },
+          error: "",
+          errors: [],
+          initialValue: validityData.initialValue
+        };
+        clearCustomValidity(element, registeredInputs);
+        updateRegisteredFieldValidity(nextValidityData2, false);
+        setValidityData(nextValidityData2);
+        return;
+      }
+      const currentNativeValidityObject = validityKeys.reduce((acc, key) => {
+        acc[key] = currentNativeValidity[key];
+        return acc;
+      }, {});
+      if (!currentNativeValidityObject.valid && !isOnlyValueMissing(currentNativeValidityObject)) {
+        return;
+      }
+    }
+    function getState(el) {
+      const computedState = validityKeys.reduce((acc, key) => {
+        acc[key] = el.validity[key];
+        return acc;
+      }, {});
+      let hasOnlyValueMissingError = false;
+      for (const key of validityKeys) {
+        if (key === "valid") {
+          continue;
+        }
+        if (key === "valueMissing" && computedState[key]) {
+          hasOnlyValueMissingError = true;
+        } else if (computedState[key]) {
+          return computedState;
+        }
+      }
+      if (hasOnlyValueMissingError && !markedDirtyRef.current) {
+        computedState.valid = true;
+        computedState.valueMissing = false;
+      }
+      return computedState;
+    }
+    timeout.clear();
+    let result = null;
+    let validationErrors = [];
+    const nextState = getState(element);
+    let defaultValidationMessage;
+    const isValidatingOnChange = shouldValidateOnChange();
+    if (element.validationMessage && !isValidatingOnChange) {
+      defaultValidationMessage = element.validationMessage;
+      validationErrors = [element.validationMessage];
+    } else {
+      const formValues = Array.from(formRef.current.fields.values()).reduce((acc, field) => {
+        if (field.name) {
+          acc[field.name] = field.getValue();
+        }
+        return acc;
+      }, {});
+      const resultOrPromise = validate(value, formValues);
+      if (typeof resultOrPromise === "object" && resultOrPromise !== null && "then" in resultOrPromise) {
+        result = await resultOrPromise;
+        if (validationCommitId !== validationCommitIdRef.current) {
+          return;
+        }
+      } else {
+        result = resultOrPromise;
+      }
+      if (result !== null) {
+        nextState.valid = false;
+        nextState.customError = true;
+        if (Array.isArray(result)) {
+          validationErrors = result;
+          element.setCustomValidity(result.join(`
+`));
+        } else if (result) {
+          validationErrors = [result];
+          element.setCustomValidity(result);
+        }
+      } else if (isValidatingOnChange) {
+        clearCustomValidity(element, registeredInputs);
+        nextState.customError = false;
+        if (element.validationMessage) {
+          defaultValidationMessage = element.validationMessage;
+          validationErrors = [element.validationMessage];
+        } else if (element.validity.valid && !nextState.valid) {
+          nextState.valid = true;
+        }
+      }
+    }
+    const nextValidityData = {
+      value,
+      state: nextState,
+      error: defaultValidationMessage ?? (Array.isArray(result) ? result[0] : result ?? ""),
+      errors: validationErrors,
+      initialValue: validityData.initialValue
+    };
+    updateRegisteredFieldValidity(nextValidityData);
+    setValidityData(nextValidityData);
+  });
+  const change = useStableCallback((value) => {
+    timeout.clear();
+    const validateOnChange = shouldValidateOnChange();
+    if (validateOnChange && value !== "" && validationDebounceTime) {
+      validationCommitIdRef.current += 1;
+      timeout.start(validationDebounceTime, () => {
+        commit(value);
+      });
+    } else {
+      commit(value, !validateOnChange);
+    }
+  });
+  const getValidationProps = React128.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
+    "aria-invalid": true
+  } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
+  return React128.useMemo(() => ({
+    getValidationProps,
+    inputRef,
+    registerInput,
+    commit,
+    change
+  }), [getValidationProps, registerInput, commit, change]);
+}
+
+// node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
+var React129 = __toESM(require_react(), 1);
+"use client";
+function useFieldControlRegistration(params) {
+  const {
+    commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  } = params;
+  const {
+    formRef
+  } = useFormContext();
+  const activeFieldControlSourceRef = React129.useRef(null);
+  const registrationRef = React129.useRef(null);
+  const fallbackControlRef = React129.useRef(null);
+  const getValueForForm = useStableCallback(() => {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    if (registration.getValue) {
+      return registration.getValue();
+    }
+    return registration.value;
+  });
+  function getRegistrationValue(registration) {
+    return registration.value === undefined ? getValueForForm() : registration.value;
+  }
+  const validate = useStableCallback(() => {
+    const registration = registrationRef.current;
+    markedDirtyRef.current = true;
+    if (!registration) {
+      commit(validityData.value);
+      return;
+    }
+    commit(getRegistrationValue(registration));
+  });
+  function refreshRegistration() {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }
+  function deleteRegistration(id = registrationRef.current?.id) {
+    if (id) {
+      formRef.current.fields.delete(id);
+    }
+  }
+  function syncInitialValue() {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    const initialValue = getRegistrationValue(registration);
+    if (validityData.initialValue === null && initialValue !== null) {
+      setValidityData((prev) => ({
+        ...prev,
+        initialValue
+      }));
+    }
+  }
+  useIsoLayoutEffect(() => {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    setRegisteredFieldName(name ? undefined : registration.name);
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }, [formRef, getValueForForm, invalid, name, setRegisteredFieldName, validate, validityData]);
+  useIsoLayoutEffect(() => {
+    const fields = formRef.current.fields;
+    return () => {
+      const id = registrationRef.current?.id;
+      if (id) {
+        fields.delete(id);
+      }
+    };
+  }, [formRef]);
+  const register2 = useStableCallback((source, registration) => {
+    if (!registration) {
+      if (activeFieldControlSourceRef.current === source) {
+        activeFieldControlSourceRef.current = null;
+        deleteRegistration();
+        registrationRef.current = null;
+        setRegisteredFieldName(undefined);
+        setRegisteredFieldId(undefined);
+      }
+      return;
+    }
+    const previousId = registrationRef.current?.id;
+    activeFieldControlSourceRef.current = source;
+    registrationRef.current = registration;
+    if (!name) {
+      setRegisteredFieldName(registration.name);
+    }
+    setRegisteredFieldId(registration.id);
+    if (previousId && previousId !== registration.id) {
+      deleteRegistration(previousId);
+    }
+    syncInitialValue();
+    refreshRegistration();
+  });
+  return [validate, register2];
+}
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var import_jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldRootInner = /* @__PURE__ */ React130.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
+  const {
+    errors,
+    validationMode: formValidationMode,
+    submitAttemptedRef
+  } = useFormContext();
+  const {
+    render,
+    className,
+    validate: validateProp,
+    validationDebounceTime = 0,
+    validationMode = formValidationMode,
+    name,
+    disabled: disabledProp = false,
+    invalid: invalidProp,
+    dirty: dirtyProp,
+    touched: touchedProp,
+    actionsRef,
+    style,
+    ...elementProps
+  } = componentProps;
+  const disabledFieldset = useFieldsetRootContext(true)?.disabled;
+  const validate = useStableCallback(validateProp || (() => null));
+  const disabled2 = disabledFieldset || disabledProp;
+  const [touchedState, setTouchedUnwrapped] = React130.useState(false);
+  const [dirtyState, setDirtyUnwrapped] = React130.useState(false);
+  const [filled, setFilled] = React130.useState(false);
+  const [focused, setFocused] = React130.useState(false);
+  const dirty = dirtyProp ?? dirtyState;
+  const touched = touchedProp ?? touchedState;
+  const markedDirtyRef = React130.useRef(dirty);
+  const registeredFieldIdRef = React130.useRef(undefined);
+  const [registeredFieldName, setRegisteredFieldName] = React130.useState();
+  const effectiveName = name ?? registeredFieldName;
+  useIsoLayoutEffect(() => {
+    if (dirtyProp !== undefined) {
+      markedDirtyRef.current = dirtyProp;
+    }
+  }, [dirtyProp]);
+  const getRegisteredFieldId = React130.useCallback(() => registeredFieldIdRef.current, []);
+  const setRegisteredFieldId = React130.useCallback((id) => {
+    registeredFieldIdRef.current = id;
+  }, []);
+  const setDirty = useStableCallback((value) => {
+    if (dirtyProp !== undefined) {
+      return;
+    }
+    if (value) {
+      markedDirtyRef.current = true;
+    }
+    setDirtyUnwrapped(value);
+  });
+  const setTouched = useStableCallback((value) => {
+    if (touchedProp !== undefined) {
+      return;
+    }
+    setTouchedUnwrapped(value);
+  });
+  const shouldValidateOnChange = useStableCallback(() => validationMode === "onChange" || validationMode === "onSubmit" && submitAttemptedRef.current);
+  const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const invalid = invalidProp === true || hasFormError;
+  const [validityData, setValidityData] = React130.useState({
+    state: DEFAULT_VALIDITY_STATE,
+    error: "",
+    errors: [],
+    value: null,
+    initialValue: null
+  });
+  const valid = disabled2 ? null : !invalid && validityData.state.valid;
+  const state = React130.useMemo(() => ({
+    disabled: disabled2,
+    touched,
+    dirty,
+    valid,
+    filled,
+    focused
+  }), [disabled2, touched, dirty, valid, filled, focused]);
+  const validation = useFieldValidation({
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  });
+  const [validateFieldControl, registerFieldControl] = useFieldControlRegistration({
+    commit: validation.commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  });
+  React130.useImperativeHandle(actionsRef, () => ({
+    validate: validateFieldControl
+  }), [validateFieldControl]);
+  const contextValue = React130.useMemo(() => ({
+    invalid,
+    name: effectiveName,
+    validityData,
+    setValidityData,
+    disabled: disabled2,
+    touched,
+    setTouched,
+    dirty,
+    setDirty,
+    filled,
+    setFilled,
+    focused,
+    setFocused,
+    validate,
+    validationMode,
+    validationDebounceTime,
+    shouldValidateOnChange,
+    state,
+    markedDirtyRef,
+    registerFieldControl,
+    validation
+  }), [invalid, effectiveName, validityData, disabled2, touched, setTouched, dirty, setDirty, filled, setFilled, focused, setFocused, validate, validationMode, validationDebounceTime, shouldValidateOnChange, state, registerFieldControl, validation]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime30.jsx(FieldRootContext.Provider, {
+    value: contextValue,
+    children: element
+  });
+});
+if (true)
+  FieldRootInner.displayName = "FieldRootInner";
+var FieldRoot = /* @__PURE__ */ React130.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime30.jsx(LabelableProvider, {
+    children: /* @__PURE__ */ import_jsx_runtime30.jsx(FieldRootInner, {
+      ...componentProps,
+      ref: forwardedRef
+    })
+  });
+});
+if (true)
+  FieldRoot.displayName = "FieldRoot";
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+var React132 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
+"use client";
+function useRegisteredLabelId(idProp, setLabelId) {
+  const id = useBaseUiId(idProp);
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [id, setLabelId]);
+  return id;
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabel.mjs
+"use client";
+function useLabel(params = {}) {
+  const {
+    id: idProp,
+    fallbackControlId,
+    native = false,
+    setLabelId: setLabelIdProp,
+    focusControl: focusControlProp
+  } = params;
+  const {
+    controlId: contextControlId,
+    setLabelId: setContextLabelId
+  } = useLabelableContext();
+  const syncLabelId = useStableCallback((nextLabelId) => {
+    setContextLabelId(nextLabelId);
+    setLabelIdProp?.(nextLabelId);
+  });
+  const id = useRegisteredLabelId(idProp, syncLabelId);
+  const resolvedControlId = contextControlId ?? fallbackControlId;
+  function focusControl(event) {
+    if (focusControlProp) {
+      focusControlProp(event, resolvedControlId);
+      return;
+    }
+    if (!resolvedControlId) {
+      return;
+    }
+    const controlElement = ownerDocument(event.currentTarget).getElementById(resolvedControlId);
+    if (isHTMLElement(controlElement)) {
+      focusElementWithVisible(controlElement);
+    }
+  }
+  function handleInteraction(event) {
+    const target = getTarget(event.nativeEvent);
+    if (target?.closest("button,input,select,textarea")) {
+      return;
+    }
+    if (!event.defaultPrevented && event.detail > 1) {
+      event.preventDefault();
+    }
+    if (native) {
+      return;
+    }
+    focusControl(event);
+  }
+  return native ? {
+    id,
+    htmlFor: resolvedControlId ?? undefined,
+    onMouseDown: handleInteraction
+  } : {
+    id,
+    onClick: handleInteraction,
+    onPointerDown(event) {
+      event.preventDefault();
+    }
+  };
+}
+function focusElementWithVisible(element) {
+  element.focus({
+    focusVisible: true
+  });
+}
+
+// node_modules/@base-ui/react/field/item/FieldItemContext.mjs
+var React131 = __toESM(require_react(), 1);
+"use client";
+var FieldItemContext = /* @__PURE__ */ React131.createContext({
+  disabled: false
+});
+if (true)
+  FieldItemContext.displayName = "FieldItemContext";
+function useFieldItemContext() {
+  const context = React131.useContext(FieldItemContext);
+  return context;
+}
+
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+"use client";
+var FieldLabel2 = /* @__PURE__ */ React132.forwardRef(function FieldLabel3(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    nativeLabel = true,
+    ...elementProps
+  } = componentProps;
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    labelId
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  const labelRef = React132.useRef(null);
+  const labelProps = useLabel({
+    id: labelId ?? idProp,
+    native: nativeLabel
+  });
+  if (true) {
+    React132.useEffect(() => {
+      if (!labelRef.current) {
+        return;
+      }
+      const isLabelTag = labelRef.current.tagName === "LABEL";
+      if (nativeLabel) {
+        if (!isLabelTag) {
+          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+          const message = "<Field.Label> expected a <label> element because the `nativeLabel` prop is true. " + "Rendering a non-<label> disables native label association, so `htmlFor` will not " + "work. Use a real <label> in the `render` prop, or set `nativeLabel` to `false`.";
+          error(`${message}${ownerStackMessage}`);
+        }
+      } else if (isLabelTag) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        const message = "<Field.Label> expected a non-<label> element because the `nativeLabel` prop is false. " + "Rendering a <label> assumes native label behavior while Base UI treats it as " + "non-native, which can cause unexpected pointer behavior. Use a non-<label> in the " + "`render` prop, or set `nativeLabel` to `true`.";
+        error(`${message}${ownerStackMessage}`);
+      }
+    }, [nativeLabel]);
+  }
+  const element = useRenderElement("label", componentProps, {
+    ref: [forwardedRef, labelRef],
+    state,
+    props: [labelProps, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldLabel2.displayName = "FieldLabel";
+// node_modules/@base-ui/react/field/error/FieldError.mjs
+var React133 = __toESM(require_react(), 1);
+var import_jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping10 = {
+  ...fieldValidityMapping,
+  ...transitionStatusMapping
+};
+var FieldError2 = /* @__PURE__ */ React133.forwardRef(function FieldError3(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    match,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const {
+    validityData,
+    state: fieldState,
+    name
+  } = useFieldRootContext(false);
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const {
+    errors
+  } = useFormContext();
+  const formError = name && Object.hasOwn(errors, name) ? errors[name] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const hasSpecificMatch = typeof match === "string";
+  let rendered = false;
+  if (match === true) {
+    rendered = true;
+  } else if (fieldState.disabled) {
+    rendered = false;
+  } else if (hasSpecificMatch) {
+    rendered = Boolean(validityData.state[match]);
+  } else {
+    rendered = hasFormError || validityData.state.valid === false;
+  }
+  const {
+    mounted,
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(rendered);
+  useIsoLayoutEffect(() => {
+    if (!rendered || !id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [rendered, id, setMessageIds]);
+  const errorRef = React133.useRef(null);
+  const [lastRenderedMessage, setLastRenderedMessage] = React133.useState(null);
+  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React133.useState(null);
+  let error2 = validityData.error;
+  if (!hasSpecificMatch && hasFormError) {
+    error2 = formError;
+  } else if (validityData.errors.length > 1) {
+    error2 = validityData.errors;
+  }
+  let errorMessage = error2 ?? "";
+  if (Array.isArray(error2)) {
+    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime31.jsx("ul", {
+      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime31.jsx("li", {
+        children: message
+      }, message))
+    }) : error2[0] ?? "";
+  }
+  const errorKey = Array.isArray(error2) ? JSON.stringify(error2) : error2;
+  if (rendered && errorKey !== lastRenderedMessageKey) {
+    setLastRenderedMessageKey(errorKey);
+    setLastRenderedMessage(errorMessage);
+  }
+  useOpenChangeComplete({
+    open: rendered,
+    ref: errorRef,
+    onComplete() {
+      if (!rendered) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    ...fieldState,
+    transitionStatus
+  };
+  const element = useRenderElement("div", componentProps, {
+    ref: [forwardedRef, errorRef],
+    state,
+    props: [{
+      id,
+      children: rendered ? errorMessage : lastRenderedMessage
+    }, elementProps],
+    stateAttributesMapping: stateAttributesMapping10,
+    enabled: mounted
+  });
+  if (!mounted) {
+    return null;
+  }
+  return element;
+});
+if (true)
+  FieldError2.displayName = "FieldError";
+// node_modules/@base-ui/react/field/description/FieldDescription.mjs
+var React134 = __toESM(require_react(), 1);
+"use client";
+var FieldDescription2 = /* @__PURE__ */ React134.forwardRef(function FieldDescription3(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  useIsoLayoutEffect(() => {
+    if (!id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [id, setMessageIds]);
+  const element = useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: [{
+      id
+    }, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldDescription2.displayName = "FieldDescription";
+// node_modules/@base-ui/react/field/control/FieldControl.mjs
+var React135 = __toESM(require_react(), 1);
+"use client";
+var FieldControl = /* @__PURE__ */ React135.forwardRef(function FieldControl2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    name: nameProp,
+    value: valueProp,
+    disabled: disabledProp = false,
+    onValueChange,
+    defaultValue,
+    autoFocus = false,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    name: fieldName,
+    disabled: fieldDisabled,
+    setTouched,
+    setDirty,
+    validityData,
+    setFocused,
+    setFilled,
+    validationMode,
+    validation
+  } = useFieldRootContext();
+  const {
+    clearErrors
+  } = useFormContext();
+  const disabled2 = fieldDisabled || disabledProp;
+  const name = fieldName ?? nameProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const {
+    labelId
+  } = useLabelableContext();
+  const id = useLabelableId({
+    id: idProp
+  });
+  useIsoLayoutEffect(() => {
+    const hasExternalValue = valueProp != null;
+    if (validation.inputRef.current?.value || hasExternalValue && valueProp !== "") {
+      setFilled(true);
+    } else if (hasExternalValue && valueProp === "") {
+      setFilled(false);
+    }
+  }, [validation.inputRef, setFilled, valueProp]);
+  const inputRef = React135.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
+      setFocused(true);
+    }
+  }, [autoFocus, setFocused]);
+  const [valueUnwrapped] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+    name: "FieldControl",
+    state: "value"
+  });
+  const isControlled = valueProp !== undefined;
+  const value = isControlled ? valueUnwrapped : undefined;
+  const getValueFromInput = useStableCallback(() => validation.inputRef.current?.value);
+  useRegisterFieldControl(validation.inputRef, id, value, getValueFromInput, !disabled2, nameProp);
+  const element = useRenderElement("input", componentProps, {
+    ref: [forwardedRef, inputRef],
+    state,
+    props: [{
+      id,
+      disabled: disabled2,
+      name,
+      ref: validation.inputRef,
+      "aria-labelledby": labelId,
+      autoFocus,
+      ...isControlled ? {
+        value
+      } : {
+        defaultValue
+      },
+      onChange(event) {
+        const inputValue = event.currentTarget.value;
+        onValueChange?.(inputValue, createChangeEventDetails(exports_reason_parts.none, event.nativeEvent));
+        setDirty(inputValue !== validityData.initialValue);
+        setFilled(inputValue !== "");
+        if (!event.nativeEvent.defaultPrevented) {
+          clearErrors(name);
+          validation.change(inputValue);
+        }
+      },
+      onFocus() {
+        setFocused(true);
+      },
+      onBlur(event) {
+        setTouched(true);
+        setFocused(false);
+        if (validationMode === "onBlur") {
+          validation.commit(event.currentTarget.value);
+        }
+      },
+      onKeyDown(event) {
+        if (event.currentTarget.tagName === "INPUT" && event.key === "Enter") {
+          setTouched(true);
+          validation.commit(event.currentTarget.value);
+        }
+      }
+    }, elementProps, (props) => validation.getValidationProps(disabled2, props)],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldControl.displayName = "FieldControl";
+// node_modules/@base-ui/react/field/validity/FieldValidity.mjs
+var React136 = __toESM(require_react(), 1);
+var import_jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldValidity = function FieldValidity2(props) {
+  const {
+    children
+  } = props;
+  const {
+    validityData,
+    invalid
+  } = useFieldRootContext(false);
+  const combinedFieldValidityData = React136.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
+  const isInvalid = combinedFieldValidityData.state.valid === false;
+  const {
+    transitionStatus
+  } = useTransitionStatus(isInvalid);
+  const fieldValidityState = React136.useMemo(() => {
+    return {
+      ...combinedFieldValidityData,
+      validity: combinedFieldValidityData.state,
+      transitionStatus
+    };
+  }, [combinedFieldValidityData, transitionStatus]);
+  return /* @__PURE__ */ import_jsx_runtime32.jsx(React136.Fragment, {
+    children: children(fieldValidityState)
+  });
+};
+if (true)
+  FieldValidity.displayName = "FieldValidity";
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var React138 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
+var React137 = __toESM(require_react(), 1);
+"use client";
+var CheckboxGroupContext = /* @__PURE__ */ React137.createContext(undefined);
+if (true)
+  CheckboxGroupContext.displayName = "CheckboxGroupContext";
+function useCheckboxGroupContext(optional = true) {
+  const context = React137.useContext(CheckboxGroupContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var import_jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldItem = /* @__PURE__ */ React138.forwardRef(function FieldItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabledProp = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    disabled: rootDisabled
+  } = useFieldRootContext(false);
+  const disabled2 = rootDisabled || disabledProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const checkboxGroupContext = useCheckboxGroupContext();
+  const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
+  const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
+  const fieldItemContext = React138.useMemo(() => ({
+    disabled: disabled2
+  }), [disabled2]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime33.jsx(LabelableProvider, {
+    controlId,
+    children: /* @__PURE__ */ import_jsx_runtime33.jsx(FieldItemContext.Provider, {
+      value: fieldItemContext,
+      children: element
+    })
+  });
+});
+if (true)
+  FieldItem.displayName = "FieldItem";
+// node_modules/@base-ui/react/input/Input.mjs
+var import_jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var Input = /* @__PURE__ */ React139.forwardRef(function Input2(props, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime34.jsx(exports_index_parts7.Control, {
+    ref: forwardedRef,
+    ...props
+  });
+});
+if (true)
+  Input.displayName = "Input";
+// src/grapevine/surface/ui/input.tsx
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+function Input3({ className, type, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Input, {
+    type,
+    "data-slot": "input",
+    className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/components/CreateChannelDialog.tsx
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+function CreateChannelDialog({
+  open,
+  onOpenChange,
+  onCreate,
+  onUnarchive,
+  finalFocus,
+  signer,
+  existingNames
+}) {
+  const [name, setName] = import_react7.useState("");
+  const [topic, setTopic] = import_react7.useState("");
+  const [busy, setBusy] = import_react7.useState(false);
+  const [outcome, setOutcome] = import_react7.useState(null);
+  const nameId = import_react7.useId();
+  const topicId = import_react7.useId();
+  const nameRef = import_react7.useRef(null);
+  const reset = () => {
+    setName("");
+    setTopic("");
+    setBusy(false);
+    setOutcome(null);
+  };
+  const change = (o) => {
+    if (!o)
+      reset();
+    onOpenChange(o);
+  };
+  const submit = async () => {
+    const n = name.trim();
+    if (!n || busy)
+      return;
+    setBusy(true);
+    const r2 = await onCreate(n, topic);
+    setOutcome(r2);
+    setBusy(false);
+    if (r2.kind === "created")
+      change(false);
+  };
+  const archived = outcome?.kind === "archived";
+  const error2 = outcome?.kind === "error" ? outcome.message : null;
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Dialog, {
+    open,
+    onOpenChange: change,
+    children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogContent, {
+      finalFocus,
+      children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("form", {
+        className: "contents",
+        onSubmit: (e) => {
+          e.preventDefault();
+          submit();
+        },
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogHeader, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogTitle3, {
+                children: "New channel"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogDescription3, {
+                children: "Creates the channel, or opens it if it already exists."
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldGroup, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+                "data-invalid": error2 ? true : undefined,
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel, {
+                    htmlFor: nameId,
+                    children: "Name"
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Input3, {
+                    id: nameId,
+                    ref: nameRef,
+                    autoFocus: true,
+                    value: name,
+                    placeholder: "design-review",
+                    "aria-invalid": error2 ? true : undefined,
+                    onChange: (e) => {
+                      setName(e.target.value);
+                      setOutcome(null);
+                    }
+                  }, undefined, false, undefined, this),
+                  error2 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldError, {
+                    children: error2
+                  }, undefined, false, undefined, this),
+                  archived && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldDescription, {
+                    children: createArchivedText(name.trim())
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel, {
+                    htmlFor: topicId,
+                    children: "Topic (optional)"
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Input3, {
+                    id: topicId,
+                    value: topic,
+                    placeholder: "what this channel is for",
+                    onChange: (e) => setTopic(e.target.value)
+                  }, undefined, false, undefined, this),
+                  topic.trim() && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldDescription, {
+                    children: createTopicHint(existingNames.includes(name.trim()), signer)
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogFooter, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(DialogClose3, {
+                render: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+                  variant: "outline"
+                }, undefined, false, undefined, this),
+                children: "Cancel"
+              }, undefined, false, undefined, this),
+              archived ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+                type: "button",
+                disabled: busy,
+                onClick: async () => {
+                  setBusy(true);
+                  const r2 = await onUnarchive(name.trim());
+                  setBusy(false);
+                  if (r2.ok)
+                    change(false);
+                  else {
+                    setOutcome({ kind: "error", message: r2.message });
+                    requestAnimationFrame(() => nameRef.current?.focus());
+                  }
+                },
+                children: "Unarchive instead"
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+                type: "submit",
+                disabled: !name.trim() || busy,
+                children: "Create"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/components/ChannelRail.tsx
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+function openMenuOnShiftF10(e) {
+  if (e.key !== "F10" || !e.shiftKey)
+    return;
+  e.preventDefault();
+  const r2 = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.dispatchEvent(new MouseEvent("contextmenu", {
+    bubbles: true,
+    cancelable: true,
+    clientX: r2.left + 24,
+    clientY: r2.top + r2.height / 2
+  }));
+}
+function ChannelRail({
+  channels,
+  hiddenCount,
+  showArchived,
+  onShowArchived,
+  current,
+  onClose,
+  onArchive,
+  onUnarchive,
+  onEditTopic,
+  onCreate,
+  onUnarchiveAndGo,
+  signer
+}) {
+  const [pending, setPending] = import_react8.useState(null);
+  const [creating, setCreating] = import_react8.useState(false);
+  const switchId = import_react8.useId();
+  const plusRef = import_react8.useRef(null);
+  const linkRefs = import_react8.useRef(new Map);
+  const switchRef = import_react8.useRef(null);
+  const refocus = (name) => {
+    requestAnimationFrame(() => linkRefs.current.get(name)?.focus());
+  };
+  const linkRef = (name) => (el) => {
+    if (el) {
+      linkRefs.current.set(name, el);
+      return;
+    }
+    const gone = linkRefs.current.get(name);
+    linkRefs.current.delete(name);
+    if (gone && document.activeElement === gone)
+      switchRef.current?.focus();
+  };
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("aside", {
+    className: "overflow-y-auto border-r border-edge bg-surface px-[18px] py-4",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: "mb-2 flex items-center justify-between gap-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("h2", {
+            className: "m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
+            children: "Channels"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-            className: "inline-flex rounded-md border border-edge-strong overflow-hidden",
-            children: ["s", "m", "l"].map((z) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-              type: "button",
-              onClick: () => setSize(z),
-              className: `px-2 py-0.5 text-xs font-medium ${size === z ? "bg-accent text-white" : "text-muted hover:bg-surface-3"}`,
-              children: z.toUpperCase()
-            }, z, false, undefined, this))
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "icon-xs",
+            ref: plusRef,
+            "aria-label": "New channel",
+            title: "New channel",
+            onClick: () => setCreating(true),
+            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Plus, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex items-center gap-1 px-3 py-1.5 border-b border-divider",
-        children: FILTERS.map((f) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-          type: "button",
-          title: f.label,
-          "aria-label": f.label,
-          onClick: () => setFilter(f.id),
-          className: `p-1.5 rounded ${filter === f.id ? "bg-accent text-accent-ink" : "text-faint hover:text-ink hover:bg-surface-3"}`,
-          children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(f.Icon, {
-            className: "w-4 h-4"
-          }, undefined, false, undefined, this)
-        }, f.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex-1 overflow-y-auto p-3 flex flex-col gap-4",
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Field, {
+        orientation: "horizontal",
+        className: "mb-3 items-center",
         children: [
-          state.batches.length === 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-            className: "text-faint italic text-center mt-10 px-4",
-            children: "your images appear here — say what you want to make on the right, or drop one in"
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Switch, {
+            ref: switchRef,
+            id: switchId,
+            size: "sm",
+            checked: showArchived,
+            onCheckedChange: (on) => onShowArchived(on)
           }, undefined, false, undefined, this),
-          state.batches.length > 0 && shown.length === 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-            className: "text-faint italic text-center mt-10 px-4",
-            children: "nothing in this filter"
-          }, undefined, false, undefined, this),
-          shown.map((b) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-            className: "flex flex-col gap-2 min-w-0",
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel, {
+            htmlFor: switchId,
+            className: "text-xs font-normal text-ink-dim",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                className: "flex items-center gap-2",
+              "Show archived",
+              hiddenCount > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                className: "font-mono",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: "text-xs font-medium text-ink",
-                    children: [
-                      "Batch ",
-                      state.batches.indexOf(b) + 1
-                    ]
-                  }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: b.kind === "edit" ? "badge-canon" : b.kind === "import" ? "badge-muted" : "badge-accent",
-                    children: b.kind
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: "text-faint ml-auto",
-                    children: [
-                      b.variants.length,
-                      " ",
-                      b.variants.length === 1 ? "variant" : "variants"
-                    ]
-                  }, undefined, true, undefined, this)
+                  "(",
+                  hiddenCount,
+                  " hidden)"
                 ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                className: "flex flex-wrap gap-2",
-                children: b.variants.map((v, vi) => ({ v, vi })).filter(({ v }) => !refsFacet || v.refSelected).map(({ v, vi }) => {
-                  const selected = state.focus?.variantId === v.id;
-                  const marks = state.marksByVariant[v.id] ?? [];
-                  const layers = state.layersByVariant[v.id] ?? [];
-                  const d = dims[v.id];
-                  const hasOverlay = (marks.length > 0 || layers.length > 0) && d && d.w > 0;
-                  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                    className: `group relative rounded-md overflow-hidden aspect-square shrink-0 ${THUMB[size]} ${selected ? "ring-2 ring-accent" : "ring-1 ring-edge hover:ring-edge-hover"}`,
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("ul", {
+        className: "m-0 list-none p-0",
+        children: [
+          channels.length === 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
+            className: "px-2 py-1.5 font-mono text-xs italic text-ink-dim",
+            children: "no channels yet"
+          }, undefined, false, undefined, this),
+          channels.map((c) => {
+            const active = c.name === current;
+            const editState = topicEditState(c.archived, signer);
+            return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
+              className: "p-0",
+              children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenu, {
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuTrigger3, {
+                    render: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      className: cn("group flex items-center gap-0.5 rounded-md transition-colors hover:bg-surface-raised", active && "bg-surface-raised", c.isNew && "animate-flash")
+                    }, undefined, false, undefined, this),
+                    onKeyDown: openMenuOnShiftF10,
+                    children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("a", {
+                      ref: linkRef(c.name),
+                      href: channelHref(c.name),
+                      className: cn("flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs text-ink no-underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50", active && "font-semibold text-leaf-soft"),
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: cn("min-w-0 flex-1 truncate", c.archived && "text-ink-dim"),
+                          children: c.name
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: "ml-1.5 flex shrink-0 items-center gap-1",
+                          children: [
+                            c.archived && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                              className: "text-[10px]",
+                              title: "archived — read-only",
+                              children: "\uD83D\uDD12"
+                            }, undefined, false, undefined, this),
+                            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                              variant: active ? "count-live" : "count",
+                              children: c.subscribers
+                            }, undefined, false, undefined, this)
+                          ]
+                        }, undefined, true, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this)
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuContent, {
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-                        type: "button",
-                        title: `Focus variant ${variantLabel(vi)}`,
-                        onClick: () => send({
-                          type: "focus.set",
-                          batchId: b.id,
-                          variantId: v.id
-                        }),
-                        className: "absolute inset-0",
-                        children: v.src ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("img", {
-                          src: v.src,
-                          alt: `variant ${variantLabel(vi)}`,
-                          className: "w-full h-full object-cover",
-                          draggable: true,
-                          onDragStart: (e) => {
-                            e.dataTransfer.setData(IMAGO_IMAGE_DND, JSON.stringify({
-                              src: v.src,
-                              name: `variant ${variantLabel(vi)}`,
-                              variantId: v.id
-                            }));
-                            e.dataTransfer.effectAllowed = "copy";
-                          },
-                          onLoad: (e) => {
-                            const t = e.currentTarget;
-                            setDims((prev) => prev[v.id]?.w === t.naturalWidth ? prev : { ...prev, [v.id]: { w: t.naturalWidth, h: t.naturalHeight } });
-                          }
-                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                          className: "w-full h-full bg-surface-2"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      hasOverlay && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(MarkRenderer, {
-                        marks,
-                        layers,
-                        natW: d.w,
-                        natH: d.h,
-                        scale: THUMB_PX[size] / d.w,
-                        preserveAspectRatio: "xMidYMid slice"
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                        className: "absolute top-0.5 left-0.5 text-[9px] bg-black/60 text-ink px-1 rounded pointer-events-none",
-                        children: variantLabel(vi)
-                      }, undefined, false, undefined, this),
-                      v.refSelected && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                        title: "Selected as a reference for the next generation",
-                        className: "absolute top-0.5 left-1/2 -translate-x-1/2 bg-accent text-accent-ink rounded p-0.5 flex items-center pointer-events-none",
-                        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Paperclip, {
-                          className: "w-2.5 h-2.5"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      v.liked && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Heart, {
-                        className: "absolute bottom-0.5 right-0.5 w-3 h-3 text-like fill-like pointer-events-none"
-                      }, undefined, false, undefined, this),
-                      focusedSrc && !selected && v.src && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-                        type: "button",
-                        title: "Add as a layer on the focused image",
-                        onClick: () => addImageLayerFromSrc(v.src, `variant ${variantLabel(vi)}`, focusedSrc, send),
-                        className: "absolute top-0.5 right-0.5 bg-black/70 text-ink rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:text-accent-ink",
-                        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Layers, {
-                          className: "w-3 h-3"
-                        }, undefined, false, undefined, this)
-                      }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-                        type: "button",
-                        title: "Delete from library",
-                        onClick: () => send({ type: "variant.remove", batchId: b.id, variantId: v.id }),
-                        className: "absolute bottom-0.5 left-0.5 bg-black/70 text-ink rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400",
-                        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
-                          className: "w-3 h-3"
+                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuGroup, {
+                        children: [
+                          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
+                            disabled: editState.disabled,
+                            onClick: () => onEditTopic(c.name),
+                            children: [
+                              "Edit topic",
+                              editState.disabled && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                                className: "ml-auto pl-3 text-[10px] text-muted-foreground",
+                                children: c.archived ? "read-only" : "join first"
+                              }, undefined, false, undefined, this)
+                            ]
+                          }, undefined, true, undefined, this),
+                          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
+                            onClick: () => {
+                              if (c.archived)
+                                onUnarchive(c.name);
+                              else
+                                onArchive(c.name);
+                              refocus(c.name);
+                            },
+                            children: archiveLabel(c.archived)
+                          }, undefined, false, undefined, this)
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuGroup, {
+                        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
+                          variant: "destructive",
+                          onClick: () => setPending(c.name),
+                          children: "Close channel…"
                         }, undefined, false, undefined, this)
                       }, undefined, false, undefined, this)
                     ]
-                  }, v.id, true, undefined, this);
-                })
+                  }, undefined, true, undefined, this)
+                ]
+              }, undefined, true, undefined, this)
+            }, c.name, false, undefined, this);
+          })
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CreateChannelDialog, {
+        open: creating,
+        onOpenChange: setCreating,
+        onCreate,
+        onUnarchive: onUnarchiveAndGo,
+        finalFocus: plusRef,
+        signer,
+        existingNames: channels.map((c) => c.name)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialog, {
+        open: pending !== null,
+        onOpenChange: (o) => !o && setPending(null),
+        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogContent, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogHeader, {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogTitle, {
+                  children: "Close channel"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogDescription, {
+                  children: pending && closeConfirmText(pending)
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogFooter, {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogCancel, {
+                  children: "Cancel"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogAction, {
+                  onClick: async () => {
+                    const name = pending;
+                    setPending(null);
+                    if (!name)
+                      return;
+                    await onClose(name);
+                    requestAnimationFrame(() => plusRef.current?.focus());
+                  },
+                  children: "Close channel"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/grapevine/surface/components/Composer.tsx
+var import_react9 = __toESM(require_react(), 1);
+
+// src/grapevine/surface/ui/textarea.tsx
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+function Textarea({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("textarea", {
+    "data-slot": "textarea",
+    className: cn("flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/components/Composer.tsx
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+function ArchivedNote() {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+    className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-2 text-center font-mono text-xs text-attention",
+    children: "\uD83D\uDD12 this channel is archived — read-only"
+  }, undefined, false, undefined, this);
+}
+function Composer({
+  alias,
+  replyingTo,
+  onCancelReply,
+  onSend
+}) {
+  const [draft, setDraft] = import_react9.useState("");
+  const draftId = import_react9.useId();
+  const inputRef = import_react9.useRef(null);
+  import_react9.useEffect(() => {
+    if (replyingTo)
+      inputRef.current?.focus();
+  }, [replyingTo]);
+  const submit = async () => {
+    if (await onSend(draft))
+      setDraft("");
+  };
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+    className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-1",
+    children: [
+      replyingTo && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+        className: "-mb-px flex items-center gap-1.5 rounded-t-lg border border-edge border-l-2 border-l-grape bg-surface-raised px-2.5 py-1.5 font-mono text-xs text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            className: "text-grape-soft",
+            children: "↳"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            children: "replying to"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            className: "font-mono font-semibold",
+            style: { color: aliasColor(replyingTo.from) },
+            children: replyingTo.from
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            className: "flex-1 truncate",
+            children: snippet(replyingTo.text || "")
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "icon-xs",
+            className: "ml-auto",
+            "aria-label": "Cancel reply",
+            onClick: onCancelReply,
+            children: "✕"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("form", {
+        onSubmit: (e) => {
+          e.preventDefault();
+          submit();
+        },
+        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Field, {
+          orientation: "horizontal",
+          className: "items-end",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FieldLabel, {
+              htmlFor: draftId,
+              className: "sr-only",
+              children: "Message"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Textarea, {
+              id: draftId,
+              ref: inputRef,
+              className: "max-h-40 min-h-0 flex-1 resize-none",
+              rows: 1,
+              value: draft,
+              placeholder: `message as ${alias}…`,
+              onChange: (e) => setDraft(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button3, {
+              type: "submit",
+              disabled: !draft.trim(),
+              children: "send"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/grapevine/surface/components/Header.tsx
+var import_react10 = __toESM(require_react(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+function Header({
+  channel,
+  topic,
+  editState,
+  editRequest,
+  signer,
+  onCommit
+}) {
+  const [editing, setEditing] = import_react10.useState(false);
+  const [draft, setDraft] = import_react10.useState(topic);
+  const topicId = import_react10.useId();
+  const inputRef = import_react10.useRef(null);
+  const buttonRef = import_react10.useRef(null);
+  const lastRequest = import_react10.useRef(editRequest);
+  const restoreFocus = import_react10.useRef(false);
+  const start = () => {
+    if (editState.disabled)
+      return;
+    setDraft(topic);
+    setEditing(true);
+  };
+  import_react10.useEffect(() => {
+    if (editRequest === lastRequest.current)
+      return;
+    lastRequest.current = editRequest;
+    if (editState.disabled)
+      return;
+    setDraft(topic);
+    setEditing(true);
+  }, [editRequest, editState.disabled, topic]);
+  import_react10.useEffect(() => {
+    if (editing) {
+      const id = requestAnimationFrame(() => inputRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+    if (restoreFocus.current) {
+      restoreFocus.current = false;
+      buttonRef.current?.focus();
+    }
+  }, [editing]);
+  const close = (fromKeyboard) => {
+    restoreFocus.current = fromKeyboard;
+    setEditing(false);
+  };
+  import_react10.useEffect(() => {
+    if (shouldCancelEdit(editing, editState.disabled))
+      close(true);
+  }, [editing, editState.disabled]);
+  const commit = async () => {
+    if (editState.disabled)
+      return close(true);
+    close(true);
+    await onCommit(draft.trim());
+  };
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("header", {
+    className: "flex items-center gap-4 border-b border-edge bg-surface px-6 py-4",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+        className: "text-[22px]",
+        children: "\uD83C\uDF3F"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+        className: "flex-1",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h1", {
+            className: "m-0 text-base font-semibold tracking-[0.01em]",
+            children: [
+              "grapevine",
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+                className: "mx-1.5 text-ink-dim",
+                children: "·"
               }, undefined, false, undefined, this),
-              b.tag && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                className: "text-faint italic break-words [overflow-wrap:anywhere]",
-                children: b.tag
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+                className: "text-leaf-soft",
+                children: channel
               }, undefined, false, undefined, this)
             ]
-          }, b.id, true, undefined, this))
+          }, undefined, true, undefined, this),
+          editing ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Field, {
+            className: "max-w-[560px]",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FieldLabel, {
+                htmlFor: topicId,
+                className: "sr-only",
+                children: "Topic"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Input3, {
+                id: topicId,
+                ref: inputRef,
+                value: draft,
+                placeholder: signer ? `set a topic (as ${signer})…` : "set a topic…",
+                onChange: (e) => setDraft(e.target.value),
+                onBlur: () => close(false),
+                onKeyDown: (e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    close(true);
+                  }
+                }
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this) : editState.disabled ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Tooltip, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(TooltipTrigger3, {
+                render: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+                  ref: buttonRef,
+                  type: "button",
+                  "aria-disabled": "true",
+                  "aria-label": "Edit topic",
+                  className: cn("m-0 cursor-not-allowed rounded-sm border-0 bg-transparent p-0 text-left text-[13px] text-ink-dim opacity-70 outline-none focus-visible:ring-3 focus-visible:ring-ring/50", !topic && "italic")
+                }, undefined, false, undefined, this),
+                children: topic || "no topic set"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(TooltipContent, {
+                children: editState.reason
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+            ref: buttonRef,
+            type: "button",
+            "aria-label": "Edit topic",
+            title: signer ? `Click to edit the topic (as ${signer})` : "Click to edit the topic",
+            className: cn("m-0 rounded-sm border-0 bg-transparent p-0 text-left text-[13px] text-ink-dim outline-none hover:text-ink focus-visible:ring-3 focus-visible:ring-ring/50", !topic && "italic"),
+            onClick: start,
+            children: topic || "no topic set"
+          }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/kit/ui/Dot.tsx
-var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
-function Dot({
-  tone = "bg-ink-faint",
-  pulse = false,
-  className,
-  title
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
-    "aria-hidden": true,
-    title,
-    className: cn("size-2 shrink-0 rounded-full", tone, pulse && "animate-pulse", className)
-  }, undefined, false, undefined, this);
+// src/grapevine/surface/components/IdentityBox.tsx
+var import_react11 = __toESM(require_react(), 1);
+
+// src/grapevine/surface/state/identity.ts
+var ALIAS_KEY = "grapevine:alias";
+var modeKey = (channel) => `grapevine:mode:${channel}`;
+function loadAlias(kv) {
+  return kv.getItem(ALIAS_KEY) || "";
+}
+function commitAlias(kv, raw) {
+  const alias = raw.trim();
+  if (alias)
+    kv.setItem(ALIAS_KEY, alias);
+  else
+    kv.removeItem(ALIAS_KEY);
+  return alias;
+}
+function initialMode(kv, channel, alias) {
+  return kv.getItem(modeKey(channel)) === "join" && alias ? "join" : "lurk";
+}
+function saveMode(kv, channel, mode) {
+  kv.setItem(modeKey(channel), mode);
+}
+function nextMode(mode, alias) {
+  if (mode === "lurk")
+    return alias.trim() ? "join" : null;
+  return "lurk";
+}
+function toggleLabel(mode) {
+  return mode === "join" ? "Joined — click to lurk" : "Join channel";
+}
+function toggleDisabled(mode, alias) {
+  return mode === "lurk" && !alias.trim();
+}
+function tailUrl(channel, since, mode, alias) {
+  const params = mode === "join" && alias ? `&as=${encodeURIComponent(alias)}&human=1` : "&lurk=1";
+  return `/channels/${encodeURIComponent(channel)}/tail?since=${since}${params}`;
+}
+function subscribedStatus(mode, channel, alias) {
+  return mode === "join" ? `joined ${channel} as ${alias}` : `subscribed to ${channel}`;
 }
 
-// src/imago/surface/components/Header.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
-var PRESENCE_LABEL = {
-  idle: "imago · idle",
-  working: "imago working…",
-  asking: "imago needs you"
-};
-var PRESENCE_DOT = {
-  idle: "bg-faint",
-  working: "bg-accent pulse-dot",
-  asking: "bg-attention pulse-dot"
-};
-var PRESENCE_RING = {
-  idle: "border-edge bg-surface",
-  working: "border-accent/40 bg-accent/10",
-  asking: "border-attention/40 bg-attention/10"
-};
-function Header({
-  state,
-  connectionStatus,
-  send
+// src/grapevine/surface/components/IdentityBox.tsx
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+function IdentityBox({
+  alias,
+  mode,
+  onAliasChange,
+  onToggle
 }) {
-  const p = presence(state);
-  const gens = state.batches.reduce((n, b) => n + b.variants.length, 0);
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("header", {
-    className: "px-5 py-2.5 flex items-center gap-3 border-b border-divider",
+  const [draft, setDraft] = import_react11.useState(alias);
+  const aliasId = import_react11.useId();
+  import_react11.useEffect(() => setDraft(alias), [alias]);
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+    className: "mt-5 flex flex-col gap-2",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
-        className: "text-xl",
-        "aria-hidden": true,
-        children: "\uD83D\uDF1B"
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Separator2, {
+        className: "mb-2"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
-        className: "flex-1 min-w-0",
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("h2", {
+        className: "m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
+        children: "You"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(FieldGroup, {
+        className: "gap-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
-            className: "page-title leading-tight truncate",
-            children: state.title || "imago"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
-            className: "text-faint",
-            children: "a grounded image canvas"
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Field, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(FieldLabel, {
+                htmlFor: aliasId,
+                className: "sr-only",
+                children: "Alias"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Input3, {
+                id: aliasId,
+                value: draft,
+                placeholder: "set an alias",
+                disabled: mode === "join",
+                onChange: (e) => setDraft(e.target.value),
+                onBlur: () => onAliasChange(draft),
+                onKeyDown: (e) => {
+                  if (e.key === "Enter")
+                    onAliasChange(draft);
+                }
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Field, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
+              variant: mode === "join" ? "joined" : "accent",
+              size: "sm",
+              disabled: toggleDisabled(mode, draft),
+              onClick: onToggle,
+              children: toggleLabel(mode)
+            }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
-        className: `flex items-center gap-2 px-2.5 py-1 rounded-full border ${PRESENCE_RING[p]}`,
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Dot, {
-            tone: PRESENCE_DOT[p]
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
-            className: `text-xs ${p === "asking" ? "text-attention-ink" : p === "working" ? "text-accent-ink" : "text-muted"}`,
-            children: PRESENCE_LABEL[p]
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
-        type: "button",
-        className: "btn-primary !px-3 !py-1.5 text-xs",
-        title: "New image — clear the canvas, pick a size",
-        onClick: () => send({ type: "focus.clear" }),
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ImagePlus, {
-            className: "w-3.5 h-3.5"
-          }, undefined, false, undefined, this),
-          " New"
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
-        type: "button",
-        className: "btn-ghost !p-2",
-        title: "Gallery (later)",
-        disabled: true,
-        children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(LayoutGrid, {
-          className: "w-4 h-4"
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
-        className: "text-faint tabular-nums",
-        children: [
-          state.cost || "$0.00",
-          " · ",
-          gens,
-          " ",
-          gens === 1 ? "generation" : "generations"
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Dot, {
-        tone: connectionStatus === "open" ? "bg-positive" : "bg-attention",
-        title: connectionStatus === "open" ? "connected" : connectionStatus
-      }, undefined, false, undefined, this)
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/imago/surface/components/LibrarySwitcher.tsx
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
-var PANES = [
-  { id: "images", label: "Images", Icon: Images },
-  { id: "context", label: "Context Library", Icon: Library }
-];
-function LibrarySwitcher({
-  pane,
-  onChange
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
-    className: "flex flex-col items-center gap-1 py-2",
-    children: PANES.map((p) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
-      type: "button",
-      title: p.label,
-      "aria-label": p.label,
-      onClick: () => onChange(p.id),
-      className: `p-1.5 rounded ${pane === p.id ? "bg-accent text-accent-ink" : "text-faint hover:text-ink hover:bg-surface-3"}`,
-      children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(p.Icon, {
-        className: "w-4 h-4"
-      }, undefined, false, undefined, this)
-    }, p.id, false, undefined, this))
+// src/grapevine/surface/ui/empty.tsx
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
+function Empty({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+    "data-slot": "empty",
+    className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
+    ...props
   }, undefined, false, undefined, this);
 }
-
-// src/imago/surface/components/WorkingBanner.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
-function WorkingBanner({ state, working, workingText }) {
-  if (!working && !state.status.busy) {
-    return null;
+function EmptyHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+    "data-slot": "empty-header",
+    className: cn("flex max-w-sm flex-col items-center gap-2", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+var emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"
+    }
+  },
+  defaultVariants: {
+    variant: "default"
   }
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
-    className: "px-6 py-2 flex items-center gap-2 bg-accent/10 border-b border-accent/20 text-sm text-accent-ink",
+});
+function EmptyMedia({
+  className,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+    "data-slot": "empty-icon",
+    "data-variant": variant,
+    className: cn(emptyMediaVariants({ variant, className })),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function EmptyDescription({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+    "data-slot": "empty-description",
+    className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/components/MessageRow.tsx
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
+var BODY = {
+  message: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
+  topic: "rounded-[10px] border border-dashed border-grape bg-transparent px-3.5 py-2.5 italic text-grape-soft",
+  announcement: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
+  status: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5"
+};
+var CHANNEL_NOTE = "rounded-[10px] border border-dashed border-edge bg-transparent px-3.5 py-2.5 italic text-ink-dim";
+function MessageRow({
+  m,
+  parent,
+  canReply,
+  onReply
+}) {
+  const kind = m.kind || "message";
+  const channelNote = isChannelNote(m);
+  const isReply = m.in_reply_to != null;
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+    className: cn("group my-2.5 max-w-[720px]", isReply && "ml-6", kind === "announcement" && "rounded-md border-l-[3px] border-attention bg-announce-wash px-2.5 py-1.5"),
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(LoaderCircle, {
-        className: "w-4 h-4 animate-spin"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
-        children: workingText || state.status.text || "the agent is working…"
+      isReply && parent && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+        className: "mb-1 flex max-w-full items-center gap-1.5 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            className: "text-grape-soft",
+            children: "↳"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            className: "font-semibold",
+            style: { color: aliasColor(parent.from) },
+            children: parent.from
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            className: "truncate",
+            children: snippet(parent.text)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+        className: "mb-1 flex items-baseline gap-2 text-xs",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            className: cn("font-mono font-semibold", kind === "topic" && "text-grape-soft", channelNote && "text-ink-dim"),
+            style: kind === "topic" || channelNote ? undefined : { color: aliasColor(m.from) },
+            children: [
+              fromLabel(m),
+              kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                className: "italic opacity-60",
+                children: " · announced"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            className: "font-mono text-[11px] text-ink-dim",
+            children: fmtTime(m.ts)
+          }, undefined, false, undefined, this),
+          canReply && kind !== "topic" && !channelNote && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "inline",
+            className: "opacity-0 group-hover:opacity-100",
+            onClick: () => onReply(m),
+            children: "reply"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+        className: cn("whitespace-pre-wrap break-words", channelNote ? CHANNEL_NOTE : BODY[kind] ?? BODY.message),
+        children: m.text
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/imago/surface/ImagoShell.tsx
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
-function sig(s) {
-  const vars = s.batches.reduce((n, b) => n + b.variants.length, 0);
-  return [s.batches.length, vars, s.conversation.length].join("|");
-}
-function ImagoShell({
-  state,
-  send,
-  status,
-  ended
+// src/grapevine/surface/components/MessageFeed.tsx
+var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+function MessageFeed({
+  streamRef,
+  messages,
+  msgById,
+  canReply,
+  onReply,
+  children
 }) {
-  const [pane, setPane] = import_react16.useState("images");
-  const [working, setWorking] = import_react16.useState(false);
-  const [workingText, setWorkingText] = import_react16.useState("");
-  const workingSig = import_react16.useRef("");
-  const workTimer = import_react16.useRef(null);
-  const clearWorking = import_react16.useCallback(() => {
-    setWorking(false);
-    setWorkingText("");
-    if (workTimer.current) {
-      clearTimeout(workTimer.current);
-      workTimer.current = null;
-    }
-  }, []);
-  import_react16.useEffect(() => {
-    if (working && sig(state) !== workingSig.current)
-      clearWorking();
-  }, [state, working, clearWorking]);
-  const sendW = (m) => {
-    if (m.type === "proposal.send") {
-      setWorking(true);
-      setWorkingText("generating…");
-      workingSig.current = sig(state);
-      if (workTimer.current)
-        clearTimeout(workTimer.current);
-      workTimer.current = setTimeout(clearWorking, 120000);
-    }
-    send(m);
-  };
-  if (ended)
-    return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EndedOverlay, {}, undefined, false, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-    className: "h-screen flex flex-col overflow-hidden",
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("main", {
+    ref: streamRef,
+    className: "scroll-smooth overflow-y-auto px-6 pt-4 pb-6",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Header, {
-        state,
-        connectionStatus: status,
-        send
+      messages.length === 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Empty, {
+        className: "mx-auto my-[60px] max-w-[520px] flex-none",
+        children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyHeader, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyMedia, {
+              className: "text-[40px]",
+              children: "\uD83C\uDF3F"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyDescription, {
+              children: "Waiting for messages on this channel…"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(WorkingBanner, {
-        state,
-        working,
-        workingText
+      messages.map((m, idx) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessageRow, {
+        m,
+        parent: m.in_reply_to != null ? msgById(m.in_reply_to) : undefined,
+        canReply,
+        onReply
+      }, m.id ?? idx, false, undefined, this)),
+      children
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/grapevine/surface/components/Roster.tsx
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+function Roster({
+  subscribers,
+  humans,
+  alias
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(jsx_dev_runtime20.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("h2", {
+        className: "mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
+        children: "On the line"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "flex-1 grid grid-cols-[auto_270px_1fr_360px] gap-3 p-3 min-h-0",
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("ul", {
+        className: "m-0 list-none p-0",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(LibrarySwitcher, {
-            pane,
-            onChange: setPane
+          subscribers.length === 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("li", {
+            className: "py-1 font-mono text-xs italic text-ink-dim",
+            children: "no one currently subscribed"
           }, undefined, false, undefined, this),
-          pane === "images" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(GenerationsRail, {
-            state,
-            send: sendW
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ContextLibrary, {
-            state,
-            send: sendW
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Canvas, {
-            state,
-            send: sendW
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Conversation, {
-            state,
-            send: sendW
-          }, undefined, false, undefined, this)
+          subscribers.map((a) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("li", {
+            className: "flex items-center gap-2 py-1 font-mono text-xs",
+            style: { color: aliasColor(a) },
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                className: "h-2 w-2 rounded-full bg-current"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                children: subLabel(a, alias, humans)
+              }, undefined, false, undefined, this)
+            ]
+          }, a, true, undefined, this))
         ]
       }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
-// src/imago/surface/state/useSession.ts
-var import_react17 = __toESM(require_react(), 1);
-function useSession() {
-  const [state, setState] = import_react17.useState(null);
-  const [status, setStatus] = import_react17.useState("connecting");
-  const [ended, setEnded] = import_react17.useState(false);
-  const ws = import_react17.useRef(null);
-  import_react17.useEffect(() => {
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${proto}//${location.host}/ws`;
-    let stop = false;
-    let ended2 = false;
-    const connect = () => {
-      const sock = new WebSocket(url);
-      ws.current = sock;
-      sock.onopen = () => setStatus("open");
-      sock.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.type === "state")
-          setState(msg.state);
-        else if (msg.type === "submit" || msg.type === "cancel") {
-          ended2 = true;
-          setEnded(true);
-          setStatus("closed");
-          sock.close();
-        } else if (msg.type === "message") {
-          console.info("[imago]", msg.text);
-        }
-      };
-      sock.onclose = (ev) => {
-        setStatus("closed");
-        if (!stop && !ended2 && ev.code !== 1000 && ev.code !== 1001) {
-          setTimeout(connect, 800);
-        }
-      };
-    };
-    connect();
-    return () => {
-      stop = true;
-      ws.current?.close();
-    };
-  }, []);
-  const send = import_react17.useCallback((msg) => {
-    if (ws.current?.readyState === WebSocket.OPEN)
-      ws.current.send(JSON.stringify(msg));
-  }, []);
-  return { state, send, status, ended };
+// src/grapevine/surface/components/StatusBar.tsx
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+function StatusBar({ status, disconnected }) {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+    className: "sticky bottom-0 border-t border-edge bg-surface px-3 py-2 font-mono text-[11px] text-ink-dim",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+        className: cn("mr-1.5 inline-block size-1.5 animate-pulse-dot rounded-full", disconnected ? "bg-attention" : "bg-leaf")
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+        children: status
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
 }
 
-// src/imago/surface/main.tsx
-var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
-function App() {
-  const { state, send, status, ended } = useSession();
-  if (!state)
-    return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
-      className: "p-6 text-slate-400",
-      children: "connecting…"
-    }, undefined, false, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ImagoShell, {
-    state,
-    send,
+// src/grapevine/surface/state/useGrapevine.ts
+var import_react12 = __toESM(require_react(), 1);
+function useGrapevine() {
+  const [channel] = import_react12.useState(() => channelFromHash(location.hash));
+  const [topic, setTopicState] = import_react12.useState("");
+  const [status, setStatus] = import_react12.useState("connecting…");
+  const [disconnected, setDisconnected] = import_react12.useState(false);
+  const [feed, setFeed] = import_react12.useState(emptyFeed);
+  const [subscribers, setSubscribers] = import_react12.useState([]);
+  const [humans, setHumans] = import_react12.useState([]);
+  const [channels, setChannels] = import_react12.useState([]);
+  const [channelArchived, setChannelArchived] = import_react12.useState(false);
+  const [alias, setAliasState] = import_react12.useState(() => loadAlias(localStorage));
+  const [mode, setModeState] = import_react12.useState("lurk");
+  const [replyingTo, setReplyingTo] = import_react12.useState(null);
+  const [identityAlias, setIdentityAlias] = import_react12.useState(null);
+  const [showArchived, setShowArchivedState] = import_react12.useState(() => loadShowArchived(localStorage));
+  const [topicEditRequest, setTopicEditRequest] = import_react12.useState(0);
+  const feedRef = import_react12.useRef(feed);
+  const modeRef = import_react12.useRef("lurk");
+  const aliasRef = import_react12.useRef(alias);
+  const seenRef = import_react12.useRef(new Set);
+  const firstPollRef = import_react12.useRef(true);
+  const streamRef = import_react12.useRef(null);
+  const esRef = import_react12.useRef(null);
+  const genRef = import_react12.useRef(0);
+  const stickRef = import_react12.useRef(false);
+  const setTopic = import_react12.useCallback((t) => setTopicState(t || ""), []);
+  const rendered = feed.messages.length;
+  import_react12.useLayoutEffect(() => {
+    const el = streamRef.current;
+    if (rendered > 0 && stickRef.current && el) {
+      el.scrollTop = el.scrollHeight;
+      stickRef.current = false;
+    }
+  }, [rendered]);
+  const refreshSubscribers = import_react12.useCallback(async () => {
+    try {
+      const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/subscribers`);
+      const j = await r2.json();
+      setSubscribers(j.subscribers || []);
+      setHumans(j.humans || []);
+      if (j.topic !== undefined)
+        setTopic(j.topic);
+    } catch {}
+  }, [channel, setTopic]);
+  const refreshChannels = import_react12.useCallback(async () => {
+    try {
+      const r2 = await fetch("/channels");
+      const j = await r2.json();
+      const { rows, seen } = mergeChannels(seenRef.current, j.channels || [], firstPollRef.current);
+      seenRef.current = seen;
+      firstPollRef.current = false;
+      setChannels(rows);
+      setChannelArchived(isChannelArchived(rows, channel));
+    } catch {}
+  }, [channel]);
+  const connect = import_react12.useCallback((m, a) => {
+    const myGen = ++genRef.current;
+    esRef.current?.close();
+    setDisconnected(false);
+    setStatus(`connecting to ${channel}…`);
+    const es = new EventSource(tailUrl(channel, feedRef.current.highest, m, a));
+    esRef.current = es;
+    es.addEventListener("subscribed", (ev) => {
+      if (myGen !== genRef.current)
+        return;
+      try {
+        const d = JSON.parse(ev.data);
+        if (d.topic !== undefined)
+          setTopic(d.topic);
+        setStatus(subscribedStatus(m, channel, a));
+      } catch {}
+    });
+    es.addEventListener("message", (ev) => {
+      if (myGen !== genRef.current)
+        return;
+      try {
+        const msg = JSON.parse(ev.data);
+        const el = streamRef.current;
+        stickRef.current = el ? nearBottom(el.scrollTop, el.clientHeight, el.scrollHeight) : false;
+        const r2 = appendMessage(feedRef.current, msg);
+        feedRef.current = r2.feed;
+        setFeed(r2.feed);
+        if (r2.topic !== undefined)
+          setTopic(r2.topic);
+      } catch {}
+    });
+    es.addEventListener("error", () => {
+      if (myGen !== genRef.current)
+        return;
+      setDisconnected(true);
+      setStatus("disconnected — reconnecting…");
+      es.close();
+      setTimeout(() => {
+        if (myGen === genRef.current)
+          connect(modeRef.current, aliasRef.current);
+      }, 1000);
+    });
+  }, [channel, setTopic]);
+  import_react12.useEffect(() => {
+    document.title = pageTitle(channel);
+    let cancelled = false;
+    (async () => {
+      let a = aliasRef.current;
+      let d = null;
+      try {
+        const r2 = await fetch("/identity");
+        const j = await r2.json();
+        if (j.alias)
+          d = j.alias;
+      } catch {}
+      if (!a && d)
+        a = d;
+      if (cancelled)
+        return;
+      setIdentityAlias(d);
+      aliasRef.current = a;
+      setAliasState(a);
+      const m = initialMode(localStorage, channel, a);
+      modeRef.current = m;
+      setModeState(m);
+      connect(m, a);
+      refreshSubscribers();
+      refreshChannels();
+      if (takeIntent(localStorage, channel) === "edit-topic")
+        setTopicEditRequest((n) => n + 1);
+    })();
+    const t1 = setInterval(refreshSubscribers, 3000);
+    const t2 = setInterval(refreshChannels, 3000);
+    const onHash = () => location.reload();
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      cancelled = true;
+      clearInterval(t1);
+      clearInterval(t2);
+      window.removeEventListener("hashchange", onHash);
+      genRef.current++;
+      esRef.current?.close();
+    };
+  }, [channel, connect, refreshSubscribers, refreshChannels]);
+  const setAlias = import_react12.useCallback((raw) => {
+    const a = commitAlias(localStorage, raw);
+    aliasRef.current = a;
+    setAliasState(a);
+    return a;
+  }, []);
+  const toggleMode = import_react12.useCallback(() => {
+    const n = nextMode(modeRef.current, aliasRef.current);
+    if (!n)
+      return;
+    if (n === "join")
+      setAlias(aliasRef.current);
+    modeRef.current = n;
+    setModeState(n);
+    saveMode(localStorage, channel, n);
+    connect(n, aliasRef.current);
+    refreshSubscribers();
+  }, [channel, connect, refreshSubscribers, setAlias]);
+  const closeChannel = import_react12.useCallback(async (name) => {
+    try {
+      await fetch(`/channels/${encodeURIComponent(name)}`, { method: "DELETE" });
+    } catch {}
+    seenRef.current.delete(name);
+    refreshChannels();
+    if (name === channel)
+      location.hash = "lobby";
+  }, [channel, refreshChannels]);
+  const archiveChannel = import_react12.useCallback(async (name) => {
+    try {
+      await fetch(`/channels/${encodeURIComponent(name)}/archive`, {
+        method: "POST",
+        ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias))
+      });
+    } catch {}
+    refreshChannels();
+  }, [refreshChannels, identityAlias]);
+  const unarchiveChannel = import_react12.useCallback(async (name) => {
+    let out = {
+      ok: false,
+      message: "daemon unreachable"
+    };
+    try {
+      const r2 = await fetch(`/channels/${encodeURIComponent(name)}/unarchive`, {
+        method: "POST",
+        ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias))
+      });
+      if (r2.ok)
+        out = { ok: true };
+      else {
+        const j = await r2.json().catch(() => null);
+        out = { ok: false, message: typeof j?.error === "string" ? j.error : `HTTP ${r2.status}` };
+      }
+    } catch {}
+    refreshChannels();
+    return out;
+  }, [refreshChannels, identityAlias]);
+  const createChannel = import_react12.useCallback(async (name, topic2) => {
+    const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
+    const body = { name };
+    if (topic2.trim()) {
+      body.topic = topic2.trim();
+      if (from)
+        body.from = from;
+    }
+    let outcome;
+    try {
+      const r2 = await fetch("/channels", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      outcome = createOutcome(r2.status, await r2.json().catch(() => null));
+    } catch {
+      outcome = { kind: "error", message: "daemon unreachable" };
+    }
+    if (outcome.kind === "created") {
+      if (name === channel)
+        refreshChannels();
+      else
+        location.hash = name;
+    }
+    return outcome;
+  }, [channel, identityAlias, refreshChannels]);
+  const unarchiveAndGo = import_react12.useCallback(async (name) => {
+    const r2 = await unarchiveChannel(name);
+    if (r2.ok && name !== channel)
+      location.hash = name;
+    return r2;
+  }, [channel, unarchiveChannel]);
+  const putTopic = import_react12.useCallback(async (text) => {
+    const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
+    if (!from)
+      return false;
+    try {
+      const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/topic`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ topic: text, from })
+      });
+      return r2.ok;
+    } catch {
+      return false;
+    }
+  }, [channel, identityAlias]);
+  const editTopicFor = import_react12.useCallback((name) => {
+    if (name === channel) {
+      setTopicEditRequest((n) => n + 1);
+    } else {
+      parkIntent(localStorage, name, "edit-topic");
+      location.hash = name;
+    }
+  }, [channel]);
+  const setShowArchived = import_react12.useCallback((on) => {
+    saveShowArchived(localStorage, on);
+    setShowArchivedState(on);
+  }, []);
+  const send = import_react12.useCallback(async (draft) => {
+    const text = draft.trim();
+    if (!text || modeRef.current !== "join")
+      return false;
+    const body = {
+      from: aliasRef.current,
+      text
+    };
+    if (replyingTo)
+      body.in_reply_to = replyingTo.id;
+    try {
+      const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/messages`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (r2.ok) {
+        setReplyingTo(null);
+        return true;
+      }
+    } catch {}
+    return false;
+  }, [channel, replyingTo]);
+  return {
+    channel,
+    topic,
     status,
-    ended
-  }, undefined, false, undefined, this);
+    disconnected,
+    messages: feed.messages,
+    msgById: (id) => feed.byId.get(id),
+    subscribers,
+    humans,
+    channels,
+    channelArchived,
+    alias,
+    mode,
+    replyingTo,
+    streamRef,
+    setAlias,
+    toggleMode,
+    closeChannel,
+    send,
+    identityAlias,
+    topicFrom: topicFrom(mode, alias, identityAlias),
+    showArchived,
+    setShowArchived,
+    topicEditRequest,
+    archiveChannel,
+    unarchiveChannel,
+    createChannel,
+    unarchiveAndGo,
+    putTopic,
+    editTopicFor,
+    replyTo: (m) => setReplyingTo(m),
+    cancelReply: () => setReplyingTo(null)
+  };
 }
-var rootEl = document.getElementById("root");
-if (rootEl)
-  import_client.createRoot(rootEl).render(/* @__PURE__ */ jsx_dev_runtime24.jsxDEV(App, {}, undefined, false, undefined, this));
+
+// src/grapevine/surface/App.tsx
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+function App() {
+  const g = useGrapevine();
+  const joined = g.mode === "join";
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(TooltipProvider3, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Header, {
+        channel: g.channel,
+        topic: g.topic,
+        editState: topicEditState(g.channelArchived, g.topicFrom),
+        editRequest: g.topicEditRequest,
+        signer: g.topicFrom,
+        onCommit: g.putTopic
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+        className: "grid min-h-0 flex-1 grid-cols-[280px_1fr_220px]",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ChannelRail, {
+            channels: visibleChannels(g.channels, g.channel, g.showArchived),
+            hiddenCount: hiddenArchivedCount(g.channels, g.channel, g.showArchived),
+            showArchived: g.showArchived,
+            onShowArchived: g.setShowArchived,
+            current: g.channel,
+            onClose: g.closeChannel,
+            onArchive: g.archiveChannel,
+            onUnarchive: g.unarchiveChannel,
+            onEditTopic: g.editTopicFor,
+            onCreate: g.createChannel,
+            onUnarchiveAndGo: g.unarchiveAndGo,
+            signer: g.topicFrom
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MessageFeed, {
+            streamRef: g.streamRef,
+            messages: g.messages,
+            msgById: g.msgById,
+            canReply: joined && !g.channelArchived,
+            onReply: g.replyTo,
+            children: [
+              g.channelArchived && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ArchivedNote, {}, undefined, false, undefined, this),
+              joined && !g.channelArchived && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Composer, {
+                alias: g.alias,
+                replyingTo: g.replyingTo,
+                onCancelReply: g.cancelReply,
+                onSend: g.send
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("aside", {
+            className: "overflow-y-auto border-l border-edge bg-surface px-[18px] py-4",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Roster, {
+                subscribers: g.subscribers,
+                humans: g.humans,
+                alias: g.alias
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(IdentityBox, {
+                alias: g.alias,
+                mode: g.mode,
+                onAliasChange: g.setAlias,
+                onToggle: g.toggleMode
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(StatusBar, {
+        status: g.status,
+        disconnected: g.disconnected
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/grapevine/surface/main.tsx
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var el = document.getElementById("root");
+if (el)
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime23.jsxDEV(App, {}, undefined, false, undefined, this));
