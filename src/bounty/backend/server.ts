@@ -291,7 +291,25 @@ type AgentMsg =
 
 // The /cmd response — `applied` lets the CLI confirm a write actually took (a
 // rejected cooperative claim returns applied:false + a reason).
-type ApplyResult = { ok: true; applied?: boolean; error?: string };
+// ⛔ `kind` IS THE CONTRACT AND THE PROSE IS PRESENTATION — which is why the
+// TAXONOMY IS DECIDED HERE, at the daemon, and not re-derived by the CLI.
+//
+// The repair chapter converted bounty's cooperative refusals to `kit/wire/
+// errors.ts` (D51), and a refusal's exit code depends on WHICH refusal it is: a
+// claim on an owned task and a `block` that would close a cycle are `conflict`
+// (6); a ghost id is `not_found` (5). Only this function knows which — from the
+// CLI both arrive as `applied:false` with a sentence — so the alternative was
+// matching on that sentence, which is glamour's ECONNRESET shape (D34) and rots
+// the day anyone rewords a human-facing string.
+//
+// Absent means "this daemon build did not say", NOT `internal`: the CLI degrades
+// to `conflict`, the genus of every refusal reached through this funnel.
+type ApplyResult = {
+  ok: true;
+  applied?: boolean;
+  error?: string;
+  kind?: "usage" | "not_found" | "conflict";
+};
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -1160,6 +1178,7 @@ async function main(argv: string[]): Promise<number> {
         return {
           ok: true,
           applied: false,
+          kind: "usage",
           error: "task rejected: needs a string id, a string title, and a valid status",
         };
       }
@@ -1171,6 +1190,7 @@ async function main(argv: string[]): Promise<number> {
         return {
           ok: true,
           applied: false,
+          kind: "conflict",
           error: `task ${task.id} already exists — the board is unchanged and the existing task kept its id`,
         };
       }
@@ -1188,6 +1208,7 @@ async function main(argv: string[]): Promise<number> {
           return {
             ok: true,
             applied: false,
+            kind: "conflict",
             error: `task ${msg.id} is owned by ${existing.owner}`,
           };
         }
@@ -1226,7 +1247,7 @@ async function main(argv: string[]): Promise<number> {
       // so the CLI can tell a not-found / mis-routed update (a visible failure,
       // #62) apart from a benign no-op (both are applied:false, but only this one
       // is a real failure).
-      return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      return { ok: true, applied: false, kind: "not_found", error: `no such task ${msg.id}` };
     } else if (msg.type === "task.remove") {
       const owner = ownerOf(msg.id); // before removal
       if (applyTaskRemove(state, msg.id)) {
@@ -1236,10 +1257,11 @@ async function main(argv: string[]): Promise<number> {
       }
       // Not found (remove has no no-op path) — carry an error so a mis-routed
       // remove surfaces as a visible failure (#62), like update above.
-      return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      return { ok: true, applied: false, kind: "not_found", error: `no such task ${msg.id}` };
     } else if (msg.type === "task.block") {
       const task = state.tasks.find((t) => t.id === msg.id);
-      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      if (!task)
+        return { ok: true, applied: false, kind: "not_found", error: `no such task ${msg.id}` };
       // b10 — the SUBJECT's existence was checked one line up; the BLOCKERS'
       // was not. So `block <real> --on <typo>` was accepted at ok:true and
       // created an edge that constrains NOTHING: isBlocked and the /state
@@ -1260,6 +1282,7 @@ async function main(argv: string[]): Promise<number> {
         return {
           ok: true,
           applied: false,
+          kind: "not_found",
           error:
             `no such task${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")} — ` +
             `nothing was blocked (a blocker that does not exist would constrain nothing)`,
@@ -1270,7 +1293,12 @@ async function main(argv: string[]): Promise<number> {
       // against the current graph is sufficient.
       for (const b of msg.on) {
         if (canReach(b, msg.id)) {
-          return { ok: true, applied: false, error: `would create a cycle: ${msg.id} → ${b}` };
+          return {
+            ok: true,
+            applied: false,
+            kind: "conflict",
+            error: `would create a cycle: ${msg.id} → ${b}`,
+          };
         }
       }
       const next = Array.from(new Set([...(task.blockedBy ?? []), ...msg.on]));
@@ -1286,7 +1314,8 @@ async function main(argv: string[]): Promise<number> {
       return { ok: true, applied: true };
     } else if (msg.type === "task.unblock") {
       const task = state.tasks.find((t) => t.id === msg.id);
-      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      if (!task)
+        return { ok: true, applied: false, kind: "not_found", error: `no such task ${msg.id}` };
       const next = (task.blockedBy ?? []).filter((b) => !msg.on.includes(b));
       applyTaskUpdate(state, msg.id, { blockedBy: next });
       broadcast({ type: "task.update", id: msg.id, patch: { blockedBy: next } });
@@ -1305,7 +1334,10 @@ async function main(argv: string[]): Promise<number> {
       resolveDone({ code: 0, reason: "close" });
       return { ok: true, applied: true };
     }
-    return { ok: true, applied: false };
+    // An unrecognised command type. `usage`, not `conflict`: nothing about the
+    // board's state refused it — the caller named a verb this daemon does not
+    // have, and changing the command is the fix.
+    return { ok: true, applied: false, kind: "usage", error: "unknown command type" };
   }
 
   let server: ReturnType<typeof Bun.serve>;

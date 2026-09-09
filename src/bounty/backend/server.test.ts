@@ -2089,8 +2089,17 @@ describe("ownership scoping (Phase C E2E)", () => {
     await runCli(["add", "F", "--id", "F", "--session", session], { env });
     try {
       const rejected = await runCli(["claim", "O", "--as", "bob", "--session", session], { env });
-      expect(rejected.code).toBe(1); // visible nonzero — not a silent {ok:true}
-      expect(rejected.stderr).toContain("alice");
+      // D51 — a cooperative refusal is `conflict` (6), not `internal` (1). The
+      // task exists and someone else holds it: a precondition failed, and the
+      // spell did not break.
+      expect(rejected.code).toBe(6);
+      expect(rejected.stdout).toBe(""); // stdout carries data; a failure has none
+      const claimErr = JSON.parse(rejected.stderr) as {
+        error: { kind: string; exit_code: number; message: string };
+      };
+      expect(claimErr.error.kind).toBe("conflict");
+      expect(claimErr.error.exit_code).toBe(6);
+      expect(claimErr.error.message).toContain("alice");
 
       const ok = await runCli(["claim", "F", "--as", "bob", "--session", session], { env });
       expect(ok.code).toBe(0);
@@ -2111,14 +2120,21 @@ describe("ownership scoping (Phase C E2E)", () => {
       const badUpd = await runCli(["update", "ghost", "--status", "done", "--session", session], {
         env,
       });
-      expect(badUpd.code).toBe(1);
-      expect(badUpd.stdout).not.toContain('"ok":true');
-      expect(badUpd.stderr).toContain("ghost");
+      // D51 — a ghost id is `not_found` (5), the same number `state --session
+      // <nonexistent>` already answered (D45). One spell, one meaning per code.
+      expect(badUpd.code).toBe(5);
+      expect(badUpd.stdout).toBe("");
+      const updErr = JSON.parse(badUpd.stderr) as { error: { kind: string; message: string } };
+      expect(updErr.error.kind).toBe("not_found");
+      expect(updErr.error.message).toContain("ghost");
 
       // A not-found remove is the same visible failure.
       const badRm = await runCli(["remove", "ghost", "--session", session], { env });
-      expect(badRm.code).toBe(1);
-      expect(badRm.stdout).not.toContain('"ok":true');
+      expect(badRm.code).toBe(5);
+      expect(badRm.stdout).toBe("");
+      expect((JSON.parse(badRm.stderr) as { error: { kind: string } }).error.kind).toBe(
+        "not_found",
+      );
 
       // An EXISTING task still updates + removes with exit 0 + a success line.
       const okUpd = await runCli(["update", "real", "--status", "doing", "--session", session], {
@@ -2826,8 +2842,26 @@ describe("dependencies (Phase D)", () => {
       expect((JSON.parse(ok.stdout) as { blocked?: string }).blocked).toBe("X");
 
       const cyc = await runCli(["block", "B", "--on", "X", "--session", session], { env });
-      expect(cyc.code).toBe(1); // visible nonzero, like a rejected claim
-      expect(cyc.stderr.toLowerCase()).toContain("cycle");
+      // A cycle is a `conflict` (6) — the same family as a rejected claim, which
+      // is what "like a rejected claim" now means in a number rather than in
+      // prose. D51.
+      expect(cyc.code).toBe(6);
+      expect(cyc.stdout).toBe("");
+      const cycErr = JSON.parse(cyc.stderr) as { error: { kind: string; message: string } };
+      expect(cycErr.error.kind).toBe("conflict");
+      expect(cycErr.error.message.toLowerCase()).toContain("cycle");
+
+      // ⛔ ONE VERB, TWO KINDS — and this is why the taxonomy is decided at the
+      // DAEMON. `block` refuses a cycle as `conflict` and an unknown blocker as
+      // `not_found`; from the CLI both arrive as `applied:false` plus a
+      // sentence, so classifying here would mean matching on the sentence.
+      const ghostBlocker = await runCli(["block", "X", "--on", "nosuch", "--session", session], {
+        env,
+      });
+      expect(ghostBlocker.code).toBe(5);
+      expect((JSON.parse(ghostBlocker.stderr) as { error: { kind: string } }).error.kind).toBe(
+        "not_found",
+      );
 
       const un = await runCli(["unblock", "X", "--on", "B", "--session", session], { env });
       expect(un.code).toBe(0);
@@ -3923,7 +3957,7 @@ describe("P0b — the snapshot facts the construction rests on", () => {
 // BLAST-RADIUS GUARDS. Reporting "3 cells green" would be a coverage claim
 // three times its true size.
 describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () => {
-  test("RED PRE-FIX — duplicate --id exits non-zero and the envelope says applied:false", async () => {
+  test("RED PRE-FIX — duplicate --id is a `conflict` (6) whose envelope says applied:false", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
     const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
@@ -3940,12 +3974,22 @@ describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () =>
         ["add", "IMPOSTOR TITLE", "--id", "dup-probe", "--owner", "bob", "--session", session],
         { env },
       );
-      expect(second.code).not.toBe(0);
-      const envelope = JSON.parse(second.stdout) as { applied?: boolean; error?: string };
-      expect(envelope.applied).toBe(false);
+      // D51 — the envelope moved to STDERR and the exit code became `conflict`
+      // (6). It used to be a legacy `{ok:false,applied:false}` document on
+      // stdout beside prose on stderr, at exit 1 — the taxonomy's "the spell
+      // broke", for the refusal bounty produces most often.
+      expect(second.code).toBe(6);
+      expect(second.stdout).toBe("");
+      const envelope = JSON.parse(second.stderr) as {
+        error: { kind: string; message: string; server?: { applied?: boolean } };
+      };
+      expect(envelope.error.kind).toBe("conflict");
+      // The daemon's OWN reply, verbatim, under `error.server` (D31's field) —
+      // so `applied:false` is still readable without parsing a human line.
+      expect(envelope.error.server?.applied).toBe(false);
       // The reason is named, not merely signalled — `applied:false` alone
       // conflated an invalid shape with a taken id and told the caller neither.
-      expect(envelope.error).toContain("dup-probe");
+      expect(envelope.error.message).toContain("dup-probe");
     } finally {
       await runCli(["close", "--session", session], { env });
     }

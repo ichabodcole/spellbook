@@ -57,6 +57,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import {
   CliError,
+  type ErrKind,
   die as kitDie,
   reportCliError,
   setCurrentCommand,
@@ -536,7 +537,40 @@ function parseArgs(args: string[]): {
   }
 }
 
-type CmdResult = { ok?: boolean; applied?: boolean; error?: string };
+type CmdResult = {
+  ok?: boolean;
+  applied?: boolean;
+  error?: string;
+  // The taxonomy, decided by the DAEMON (`server.ts`'s ApplyResult) — see D51.
+  // A claim conflict and a ghost id both arrive here as `applied:false` plus a
+  // sentence, and only the daemon knows which is which; classifying by the
+  // sentence is the shape D34 filed at glamour.
+  kind?: ErrKind;
+};
+
+// ⛔ A COOPERATIVE REFUSAL IS A `conflict` OR A `not_found`, NEVER AN
+// `internal`. Until D51 every one of these paths wrote prose to stderr, put a
+// legacy `{"ok":false,…}` document on stdout and returned **1** — which the
+// taxonomy adopted at chapter 2 defines as "the spell broke". A claim the
+// daemon cooperatively declined is the one failure bounty produces most often
+// and it was coded as an internal fault.
+//
+// The kind comes off the wire. `conflict` is the DEGRADATION, not a default
+// dressed up as one: it is the genus of every refusal that reaches this funnel
+// (a precondition failed), so a daemon build that predates the `kind` field
+// answers with the right family and one wrong species rather than with a lie
+// about whose fault it is.
+//
+// The daemon's own reply rides `error.server` VERBATIM — the field D31 widened
+// for glamour — so a caller still gets `applied:false` and the daemon's own
+// sentence without parsing prose out of a human line.
+function refuseFromDaemon(res: CmdResult, fallback: string): never {
+  // `return` rather than a bare call: `die` is aliased through a `const`, and
+  // TypeScript only treats a never-returning call as terminating when the
+  // callee is a declaration or an annotated const. Returning it keeps this
+  // function's own `never` honest at the sites that rely on it.
+  return die(res.error ?? fallback, res.kind ?? "conflict", { server: res });
+}
 
 // The caller's identity, stamped onto the event `by` so a scoped tail can
 // filter + suppress self-echo. --as wins, else $BOUNTY_AS, else undefined.
@@ -572,18 +606,17 @@ async function postCmd(
 // verdict) must keep its ack rather than being reported as a failure — absent is
 // not the same as false, and conflating them would turn a version skew into a
 // storm of fake errors.
-// The failure ENVELOPE carries `applied: false` on stdout, beside the non-zero
-// exit and the human line on stderr — the same two-channel shape P0b's refusal
-// uses. The exit code is what a `set -e` wrapper or a Monitor catches; the
-// envelope is what an agent parses. Reporting only on stderr would leave a
-// stdout reader with an empty payload, which is indistinguishable from a verb
-// that produced no output for a benign reason.
+// ⛔ THE FAILURE IS ONE ENVELOPE ON STDERR AND AN EMPTY STDOUT (D51). It used
+// to be two channels at once — a legacy `{ok:false, applied:false}` document on
+// stdout beside a `bounty: <msg>` line on stderr — under the argument that "an
+// empty stdout is indistinguishable from a verb that produced no output for a
+// benign reason". The taxonomy answers that argument better than the split did:
+// a caller reads the EXIT CODE to tell a refusal from a benign silence, and the
+// one document it must parse is the same shape on every failure of every verb.
+// The daemon's own reply is not lost — it rides `error.server`.
 function ackOrFail(type: unknown, res: CmdResult): number {
   if (res.applied === false) {
-    const error = res.error ?? `the daemon did not apply ${String(type)} — the board is unchanged`;
-    printJson({ ok: false, applied: false, sent: type, error });
-    process.stderr.write(`bounty: ${error}\n`);
-    return 1;
+    refuseFromDaemon(res, `the daemon did not apply ${String(type)} — the board is unchanged`);
   }
   // b8 — forward the daemon's drop report when there is one. `init` filters
   // untrusted tasks and used to say nothing, so 18 tasks in / 0 seeded answered
@@ -1277,12 +1310,10 @@ async function dispatch(argv: string[]): Promise<number> {
       // refusal means the shape was invalid or the id was taken, and both are
       // real failures. The daemon names which.
       const res = await postCmd(session, { type: "task.add", task }, { as, quiet: true });
-      if (!res.applied) {
-        const error = res.error ?? `task ${task.id} was not added`;
-        printJson({ ok: false, applied: false, id: task.id, error });
-        process.stderr.write(`bounty: ${error}\n`);
-        return 1;
-      }
+      // A duplicate `--id` is a `conflict` (6) and an invalid shape is a `usage`
+      // (2); the daemon says which. Neither is `internal`, which is what the
+      // old `return 1` claimed.
+      if (!res.applied) refuseFromDaemon(res, `task ${task.id} was not added`);
       // Present-and-null, never absent (the restoreSkipped lesson, D1.2): a
       // field that appears only when it has something to say cannot be told
       // apart from a build that does not emit it at all.
@@ -1338,8 +1369,8 @@ async function dispatch(argv: string[]): Promise<number> {
       if (res.applied) {
         printJson({ ok: true, updated: id, valuesIgnored: upIgnored.length ? upIgnored : null });
       } else if (res.error) {
-        process.stderr.write(`bounty: ${res.error}\n`);
-        return 1;
+        // A not-found / mis-routed update — `not_found` (5) from the daemon.
+        refuseFromDaemon(res, `no such task ${id}`);
       } else {
         // The no-op branch carries it too. Leaving it off here would mean the
         // field's presence depended on whether the daemon happened to change
@@ -1369,10 +1400,9 @@ async function dispatch(argv: string[]): Promise<number> {
       if (res.applied) {
         printJson({ ok: true, claimed: id, owner: as });
       } else {
-        // Visible rejection — nonzero exit so the agent can't mistake a rejected
-        // claim for ownership (the daemon returned applied:false).
-        process.stderr.write(`bounty: ${res.error ?? `could not claim ${id}`}\n`);
-        return 1;
+        // Visible rejection — an agent must not mistake a rejected claim for
+        // ownership. `conflict` (6): the task exists and someone else holds it.
+        refuseFromDaemon(res, `could not claim ${id}`);
       }
       break;
     }
@@ -1395,9 +1425,9 @@ async function dispatch(argv: string[]): Promise<number> {
       if (res.applied) {
         printJson({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on });
       } else {
-        // Visible rejection (e.g. a cycle) — nonzero exit, like a rejected claim.
-        process.stderr.write(`bounty: ${res.error ?? `could not ${verb} ${id}`}\n`);
-        return 1;
+        // A cycle is `conflict` (6); an unknown subject or blocker is
+        // `not_found` (5) — one verb, two kinds, and only the daemon knows.
+        refuseFromDaemon(res, `could not ${verb} ${id}`);
       }
       break;
     }
@@ -1410,10 +1440,7 @@ async function dispatch(argv: string[]): Promise<number> {
       if (res.applied) {
         printJson({ ok: true, removed: id });
       } else {
-        process.stderr.write(
-          `bounty: ${res.error ?? `no such task ${id} (wrong board? pass --session)`}\n`,
-        );
-        return 1;
+        refuseFromDaemon(res, `no such task ${id} (wrong board? pass --session)`);
       }
       break;
     }

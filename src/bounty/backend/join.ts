@@ -33,15 +33,33 @@
 // (written by server.ts on startup). Use --id to look up a specific session
 // (matches <tmpdir>/bounty-<id>.json), or --url to connect directly.
 //
-// Exit codes:
-//   0   clean disconnect (server closed or agent sent close)
-//   2   bad args, unresolvable discovery file, or connection refused
+// Exit codes — TWO FAMILIES, and the split is the point (D52):
+//
+//   STARTUP FAILURES speak the house contract (`src/kit/wire/errors.ts`), the
+//   same one `cli.ts` adopted at the port: ONE JSON envelope on stderr, stdout
+//   empty, and the taxonomy — 2 usage (a bad flag), 5 not_found (no discovery
+//   file, an unknown --id, nothing listening at the URL). Until D52 these were
+//   bare `error: <prose>` lines at exit 2, so the TWO caller-facing entries of
+//   ONE spell disagreed about what a failure looks like: an agent that spawns
+//   `cli.ts` and `join.ts` — which SKILL.md tells it to do — had to parse two
+//   formats to use one tool.
+//
+//   SESSION ENDINGS are NOT refusals and keep their own numbers: 0 on a clean
+//   disconnect (the server closed, or the agent sent `close`/EOF/idle-timeout),
+//   2 when the socket errored mid-session. That family belongs with the host
+//   daemon's own 0 / 124, which the taxonomy does not govern either — the
+//   ending is an OUTCOME reported by the terminal `disconnected` frame on
+//   stdout, not a refusal of the caller's command. ⚠ The named residue: an
+//   ending-by-error and a usage failure are both `2`. They are told apart by
+//   the channel — an ending always writes a `disconnected` frame to stdout and
+//   never an envelope; a startup failure is the reverse — and NOT by the code.
 
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type { Task } from "../../../plugins/spellbook/skills/bounty/shared/types";
+import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors.ts";
 
 type SessionInfo = { url: string; port: number; session_id: string; title: string };
 
@@ -165,8 +183,9 @@ async function main(argv: string[]): Promise<number> {
       allowPositionals: false,
     });
   } catch (e) {
-    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
-    return 2;
+    // A bad flag is the caller's to fix by changing the command — `usage` (2),
+    // the same number and now the same SHAPE as `cli.ts`'s bad flag.
+    die(e instanceof Error ? e.message : String(e), "usage");
   }
   const v = parsed.values;
   const timeout = parseFloat(v.timeout as string);
@@ -175,8 +194,13 @@ async function main(argv: string[]): Promise<number> {
   try {
     info = discover({ url: v.url as string | undefined, id: v.id as string | undefined });
   } catch (e) {
-    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
-    return 2;
+    // No discovery file, or an --id naming a board that has none: the named
+    // thing does not exist — `not_found` (5), matching `cli.ts`'s "no running
+    // bounty session" (D45). ⚠ A script testing `exit == 2` for "there is no
+    // board to join" must test 5.
+    die(e instanceof Error ? e.message : String(e), "not_found", {
+      hint: "pass an explicit --url or --id, or open a board first",
+    });
   }
   const wsUrl = `${info.url.replace(/^http/, "ws")}/ws`;
 
@@ -234,12 +258,20 @@ async function main(argv: string[]): Promise<number> {
   ws.addEventListener("close", () => {
     resolveDone({ code: 0, reason: "server_closed" });
   });
+  // Set once the handshake succeeds. Before that, a socket error is REPORTED BY
+  // THE ENVELOPE below and this listener must stay quiet: the contract is ONE
+  // JSON document on stderr, and a prose line printed just above it is a second
+  // document a caller has to skip past. Driven — the connect-refused path used
+  // to emit `join: ws error: …` AND the envelope. After the handshake the same
+  // error is a session ENDING, the prose is the only diagnostic there is, and
+  // the terminal `disconnected` frame on stdout is what the caller reads.
+  let opened = false;
   ws.addEventListener("error", (e: Event) => {
     const detail =
       e && typeof e === "object" && "message" in e && typeof e.message === "string"
         ? e.message
         : "unknown";
-    process.stderr.write(`join: ws error: ${detail}\n`);
+    if (opened) process.stderr.write(`join: ws error: ${detail}\n`);
     resolveDone({ code: 2, reason: "error" });
   });
 
@@ -251,9 +283,13 @@ async function main(argv: string[]): Promise<number> {
     new Promise<boolean>((r) => setTimeout(() => r(false), 3000)),
   ]);
   if (!openOk) {
-    process.stderr.write(`error: could not connect to ${wsUrl} (no host running?)\n`);
-    return 2;
+    // The discovery file resolved and nothing is listening behind it — a stale
+    // pointer, which is `not_found` (5) at `cli.ts` too and is the same fact.
+    die(`could not connect to ${wsUrl} (no host running?)`, "not_found", {
+      hint: "the board may have closed; pass an explicit --url or --id, or open a new one",
+    });
   }
+  opened = true;
 
   // Stdin → WS pump.
   (async () => {
@@ -337,7 +373,20 @@ async function main(argv: string[]): Promise<number> {
  * it has always had.
  */
 export async function run(): Promise<number> {
-  return await main(process.argv.slice(2));
+  // `join` is the verb this entry performs, and the envelope names it under
+  // `meta.command` — the field is otherwise `null` for a spell entry that has
+  // no verb argument at all.
+  setCurrentCommand("join");
+  try {
+    return await main(process.argv.slice(2));
+  } catch (e) {
+    // ⛔ RETHROW WHAT IS NOT OURS. Swallowing an unknown throw here would report
+    // a real fault as a tidy taxonomy failure and lose the stack — the rule
+    // `reportCliError` is built around, and the reason it hands back `null`.
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
 }
 
 export { discover, main };
