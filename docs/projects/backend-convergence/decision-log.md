@@ -1069,3 +1069,75 @@ question rather than a line.
 exists, and using it would keep one spell on a number the other seven measured
 their way off. _Keep `text/html` bare for byte-compatibility._ It is the wrong
 answer, stated as such in the module.
+
+## D36 · The coverage cell's gate becomes the INGREDIENTS of anchoring — because a backstop computed from the predicate it backstops is not a backstop
+
+**Decided:** implementer, 2026-09-08, Phase 2 repair chapter, out of the verify
+pass driving D27's claim.
+
+**D27 claimed its coverage cell "fails on the next unrecognised spelling without
+anyone having to think of it in advance". The claim was false, and driving it is
+what showed that.** The cell gated on `declaresAnchor`, computed as
+`ANCHOR_DIR.test(line) || ANCHOR_URL.test(line)` — **the same two regexes the
+cell exists to backstop.** A spelling neither regex reads therefore scored
+`declaresAnchor=false`, which made the file **exempt** rather than loud. The
+cell could only fire on a file whose anchor the ward already understood, which
+is the one case it was not needed for.
+
+**Five spellings were driven** — each planted in glamour's real `dist/cli.js`
+beside a `SERVER_SCRIPT` pointing at a nonexistent `dist/server.ts`, the exact
+shipped defect of Phase 2 chapter 1 — and against D27's predicate **all five
+passed 6 pass / 0 fail**:
+
+| spelling                                                                                     | why it slipped                                                                                    |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `var __fileName = Bun.fileURLToPath(import.meta.url); var SCRIPT_DIR = dirname(__fileName);` | two-step; what esbuild/Bun emit for a `__filename` shim                                           |
+| `var SCRIPT_DIR = import.meta.dirname;`                                                      | a real Bun/Node API `ANCHOR_DIR` does not name                                                    |
+| `var SCRIPT_DIR = path.posix.dirname(node_url.fileURLToPath(import.meta.url));`              | TWO qualifier segments; `QUALIFIER` allows one                                                    |
+| `var SCRIPT_DIR = dirname(fileURLToPath(new URL(import.meta.url)));`                         | an interposed `new URL(...)` inside the matched pair                                              |
+| `var SCRIPT_DIR = dirname(__filename);`                                                      | the CJS pair — found by hunting a fifth AFTER the repair, and it broke the repair's first version |
+
+**The repair: gate on the INGREDIENTS, at a level the anchor patterns cannot
+reach past.** A module cannot ask where it is without naming one of
+`import.meta.url`, `import.meta.dir`, `import.meta.dirname`, `fileURLToPath`
+(under any qualifier), `__dirname`/`__filename`, or `Bun.main`. The cell now
+requires, of every emitted `cli.js`/`server.js`:
+
+1. **every ingredient-bearing line is READ** — recognised as an anchor, or
+   yielding a pin of its own — and an unread one reds **naming the line**, which
+   is what the next agent needs in order to teach the pattern the spelling;
+2. **a file carrying any ingredient yields ≥1 pin** (D27's condition, kept).
+
+A line that merely BINDS the helper (`import { fileURLToPath } from "url";`,
+Bun's own preamble in five of six artifacts) anchors nothing and is excluded. A
+backend that legitimately anchors nothing carries no ingredient, is exempt, and
+stays exempt — asserted.
+
+**All five spellings now red on the coverage cell**, each printing
+`UNREAD ANCHOR SPELLING` with the line; the clean tree is 7 pass / 0 fail. The
+mutation is no longer only a hand-drive: a synthetic calibration cell pins all
+five plus the inert case, so the property cannot rot the way D27's did.
+
+**The declared remaining hole, said out loud:**
+`var SCRIPT_DIR = dirname(process.argv[1]);` still passes the coverage cell. It
+is deliberately not an ingredient — a CLI bundle reads `process.argv` for
+ordinary arg parsing, so naming it would red every artifact for nothing.
+Anchoring off the entry path is separately wrong in a bundle a launcher imports,
+which is B3's subject.
+
+**Not taken:**
+
+- _Add the four spellings to `ANCHOR_URL`/`ANCHOR_DIR`._ It is the obvious fix
+  and it is the same mistake a fourth time: it buys the four that were thought
+  of and leaves the fifth exempt. The fifth was found in twenty minutes.
+- _Parse the emitted JS with a real parser._ Still genuinely better, still out
+  of scope, and now with a stronger argument against urgency: the ingredient
+  gate makes the regexes' blind spots LOUD, which is the property the parser was
+  wanted for.
+- _Require a readable anchor rather than accounting for every ingredient line._
+  Weaker: a file with one readable anchor and one unread spelling beside it
+  would pass, and the `__filename` shim is exactly that shape.
+- _Report it and leave D27 standing, since the ward is green on the roster
+  today._ Rejected on the same ground D27 rejected it: five spells port against
+  this instrument next, and the whole point of the cell is the spell it has
+  never seen.

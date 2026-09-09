@@ -685,3 +685,89 @@ and it is a rule about CHECKING, not about the outcome.
    roster and commit every artifact in the same chapter.
 6. **Adopting a shared SSE server changes the first line of the stream.** Any
    test reading line 0 breaks; take the first `data:` line.
+
+## ⛔ THE REPAIR CHAPTER — a backstop computed from the same predicate it backstops is not a backstop
+
+Three items, all falsified by the verify pass, all of them things this phase had
+already written down as done.
+
+### The ward's coverage cell was the ward's own bug, one level up
+
+D27's proudest sentence was that the new coverage cell "fails on the next
+unrecognised spelling without anyone having to think of it in advance". **It
+does not, and driving it is the only reason we know.** The cell asked whether a
+file _declares an anchor_, and computed that with `ANCHOR_DIR || ANCHOR_URL` —
+**the two regexes the cell exists to backstop.** So a spelling neither regex
+reads produced `declaresAnchor=false`, and the file became **exempt** instead of
+loud. The cell could fire only on files whose anchors the ward already
+understood: the one population that did not need it.
+
+Five spellings were planted in glamour's real `dist/cli.js`, each beside a
+`SERVER_SCRIPT` resolving to a `dist/server.ts` that does not exist — the exact
+defect that shipped and the exact defect this ward was written for. Against
+D27's predicate, **all five: 6 pass / 0 fail.** Two of them are not exotic at
+all: `var SCRIPT_DIR = import.meta.dirname;` is a real Bun/Node API, and the
+two-step `__fileName` form is what esbuild and Bun emit for a `__filename` shim.
+At least one of the five remaining ports would have written one.
+
+The fix gates on the **ingredients** of location-anchoring instead —
+`import.meta.url`, `import.meta.dir`, `import.meta.dirname`, `fileURLToPath`
+under any qualifier, `__dirname`/`__filename`, `Bun.main` — because a module
+cannot ask where it is without naming one of them, and none of them is
+reachable-past by the anchor patterns. Every ingredient-bearing line must be
+READ (recognised, or yielding a pin) or the ward reds **naming the line**; a
+file carrying any ingredient must still yield at least one pin; a file carrying
+none is exempt and stays exempt. All five now red, 7 pass / 0 fail clean, and
+the mutation is a synthetic cell rather than a story about a drive.
+
+⭐ **And the fifth spelling is the part worth keeping.** The first version of
+the ingredient list named four ingredients and looked complete. Twenty minutes
+spent trying to break it produced `var SCRIPT_DIR = dirname(__filename);`, which
+names none of the four and scored `ingredients=0 anchor=no pins=0` in silence.
+**The attempt to break your own repair is not a formality; it found a hole in
+the repair to the hole.** `process.argv[1]` is the one that remains, and it is
+declared in the source rather than left to be discovered.
+
+### ⛔ THE GENERALISATION, AND THIS IS THE SECOND TIME THIS PROJECT HAS MET THE SHAPE
+
+**A backstop computed from the same predicate it backstops is not a backstop.**
+
+Phase 1b's closing finding was its sibling: _a derived population is not
+coverage_ — a ward can gain a spell automatically, examine its files, find
+nothing, and report that as finding nothing wrong. D27 built the coverage
+assertion that answers it, and built the assertion **out of the very predicate
+whose blindness was the problem**. The instrument that was supposed to see past
+the regexes could only see what the regexes could see.
+
+The shape, stated once for the five ports that follow:
+
+> When you add a check because some predicate `P` might be wrong, the new
+> check's own gate must not be `P`. If it is, the check inherits `P`'s blind
+> spot exactly, and it will be GREEN precisely in the cases it was added for —
+> which is worse than absent, because it now reads as reassurance.
+
+The test for it is mechanical and takes minutes: **name the predicate you
+distrust, then read your new check's gate and ask whether that predicate appears
+in it.** If it does, move the gate to a level the predicate cannot reach past —
+here, from _spellings of an anchor_ down to _the ingredients any anchor must
+name_. Then **drive a mutation the distrusted predicate cannot read**, and then
+**try to break your own repair.** Both steps paid here; the second paid more.
+
+### Two prose corrections of the same family
+
+- **B10 was right by accident.** "A per-spell build emits different bytes" is
+  FALSE under the pinned toolchain — a per-spell build through
+  `node_modules/.bin/bun` reproduces the committed bytes exactly. The real
+  variable is the **binary**: `bun run build` resolves the package script's
+  1.3.14, a bare `bun run src/build.ts` resolves PATH's 1.4.0. Which means the
+  stated remedy — _rebuild the whole roster_ — is precisely what an agent who
+  typed the bare command does next, and it dirties all eight spells. **A rule
+  can be obeyed, produce the right outcome, and still not protect anyone,
+  because the reason is what an agent generalises from.**
+- **B9 scoped D8's audit to the token `die(`** and therefore under-counted
+  glamour 12 → ~20 (13 `die` plus seven `throw new UsageError`). And "zero
+  inside a `try`" is literally false: `dispatch` sits inside `main`'s try,
+  `parseArgs` inside `dispatch`'s. The substantive claim survives only because
+  **both catches propagate** — which is the actual test, and is now what the
+  playbook says: not _is it inside a try_, but _does any catch on the path
+  SWALLOW_.
