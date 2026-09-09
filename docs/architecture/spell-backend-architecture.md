@@ -4,11 +4,12 @@
 **ACCUMULATING — NOT YET AUTHORITATIVE**
 
 > **Read this banner before you trust anything below.** This document is being
-> written by the backend convergence as it runs, not after it. Four of eight
-> spells have ported (astrolabe, magpie, glamour, imago, bounty — five, counting
-> the two whose CLIs already built). **Two subjects still ahead are the ones
-> most likely to change the shape described here:** grapevine, whose event bus
-> the shared spine cannot serve, and mind-mapper, the sibling half the spine was
+> written by the backend convergence as it runs, not after it. Five of eight
+> spells now build and share the spine — astrolabe, magpie, glamour, imago and
+> bounty (astrolabe's and magpie's CLIs built before the convergence; all five
+> now build their daemons too). **Two subjects still ahead are the ones most
+> likely to change the shape described here:** grapevine, whose event bus the
+> shared spine cannot serve, and mind-mapper, the sibling half the spine was
 > converged toward. The per-spell caveats table is filled in by each port as it
 > lands; the prose sections are written when the last one does.
 >
@@ -23,7 +24,7 @@ Cole, 2026-09-09: an architecture doc explaining "how we build these apps — th
 structure of the source directory, how the elements relate, and the caveats we
 found in different apps."
 
-The rulings and the defects are already recorded — `decision-log.md` (D1–D53),
+The rulings and the defects are already recorded — `decision-log.md` (D1–D54),
 the phase journals, playbook Phase B, three census investigations. **What none
 of those capture is shape that is not a defect**: that digestify has one entry
 and it is not called `cli`, that bounty's `join.ts` is a second participant
