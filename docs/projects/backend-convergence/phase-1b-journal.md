@@ -295,6 +295,32 @@ from the skill root rather than adjusted by counting `..`.
 
 ---
 
+## The brief against the tree — every disagreement, named
+
+The brief's seven measurements were the spine of this chapter and six of them
+held exactly. Recorded here because the brief's own rule is that the tree wins
+and the disagreement is a finding.
+
+| #   | the brief said                                                       | the tree said                                                                                                                                                                                                        |
+| --- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | the launcher pattern transfers verbatim                              | ✅ held. Zero prose edits across the roster                                                                                                                                                                          |
+| 2   | `SKILL_ROOT`/`DIST_DIR` survive by accident — assert it              | ✅ held, and asserted rather than reasoned                                                                                                                                                                           |
+| 3   | the dev import is the real trap; prove it on a booted dev daemon     | ✅ held. The specifier survives byte-for-byte and the anchor moves twice, exactly as described. **Both spells driven**                                                                                               |
+| 4   | magpie's `remove.py` **WILL** break                                  | ⛔ **it already had.** `cli.ts` has imported `backend.ts` since Slice 2, so `dist/cli.js` has resolved a nonexistent `dist/remove.py` since `7bb0f4a`. Not a migration cost — a shipped defect the migration exposed |
+| 5   | "three astrolabe surface files" import `state.ts`                    | **four** (`useSession`, `board`, `ProjectCard`, `QuietRow`). Small, and under-stated in the direction that matters                                                                                                   |
+| 6   | magpie is the larger subject; do astrolabe first                     | ✅ larger, and **cheaper to do second** — astrolabe's journal had already answered every structural question. D9 paid for itself                                                                                     |
+| 7   | both servers end in `process.exit(exitCode)`; not in scope to change | ✅ held, and **not changed**. The exit stayed at its pinned `E-terminal` address by putting it in the launcher (D12), so the inventory needed no edit at all                                                         |
+
+**The one thing the brief did not contain, and it is the first thing that
+breaks:** a bundled daemon has **no entry**. `import.meta.main` is false in a
+module the launcher imports, so the old `if (import.meta.main)` block is dead
+code — the daemon boots, serves nothing, exits 0, and every test fails as "never
+bound a port". It is obvious in hindsight and it is not obvious at the moment
+you move the file, because the CLI's launcher pattern (which the brief points at
+as the exemplar) already solved it and does not say so.
+
+---
+
 ## For Phase 2's playbook — what a porting spell must do
 
 1. **Enumerate every `import.meta.*` and every path-pinned non-TS sibling FIRST,
