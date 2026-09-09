@@ -1,13 +1,17 @@
 // ⛔ DOES THE DEPARTURE STILL REACH THE AGENT?
 //
 // The successor to `surface departure beacon (b4s)` in
-// plugins/spellbook/skills/digestify/scripts/review.test.ts, which text-searched
+// src/digestify/backend/review.test.ts (authored at
+// plugins/spellbook/skills/digestify/scripts/review.test.ts until the Phase 5
+// backend port relocated it), which text-searched
 // the served <script> block for `"/left"` and `engaged: dirty`. The block is
 // gone; the behaviour is not, and it is the one thing on this page whose only
 // consumer is the AGENT rather than the human — so nothing on screen would look
 // wrong if it were lost.
 //
-// What it protects, in the daemon's own words (review.ts 467-472): without the
+// What it protects, in the daemon's own words (the `POST /left` handler's own
+// comment block — named by ROUTE rather than by line, because a line number is
+// the wrong pin and the Phase 5 relocation moved every one of them): without the
 // /left beacon, "a human opened it, read it and declined", "nobody ever opened
 // it", "the tab crashed" and "they walked away" are ONE observable through a
 // pipe — all four exit 124 with an empty stdout. /left is what separates them.

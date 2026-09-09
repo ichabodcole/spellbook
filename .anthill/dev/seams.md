@@ -1112,7 +1112,7 @@ Concretely, as built in the three co-presence spells:
 
 **Why it bites:** measured with matched arms before anything was built — *"a human opened it, read it and left"* and *"nobody ever opened it"* produce **byte-identical stdout and the same exit 124**. There is no information difference for a timeout payload to name, so **b4's output half cannot be completed without this emit half**; the board encodes that as b4 blocked-on-b4s.
 
-**Proof:** `digestify/scripts/review.test.ts` — two cells, mutation-calibrated (34→36, +2; each mutation reddens **only** its own cell: a syntax error fails the parse cell, reverting the pre-b4s handler fails the beacon cell). Browser-driven both arms: `engaged:false` → `/left` alone; `engaged:true` → `/left` then `/cancel`.
+**Proof:** `src/digestify/backend/review.test.ts` (authored at `digestify/scripts/review.test.ts`; relocated by the backend convergence Phase 5 port, 2026-09-09) — two cells, mutation-calibrated (34→36, +2; each mutation reddens **only** its own cell: a syntax error fails the parse cell, reverting the pre-b4s handler fails the beacon cell). Browser-driven both arms: `engaged:false` → `/left` alone; `engaged:true` → `/left` then `/cancel`.
 
 ⚠ **HALF-PROVEN, and this stays until it is not:** the **server half is NOT BUILT**. daedalus holds `/left` + the 124 payload as b4's remainder. Until then the surface emits into a route that does not exist (harmless — `sendBeacon` is fire-and-forget), and **the `engaged:false` record-only clause is unenforced by anything except this contract.**
 

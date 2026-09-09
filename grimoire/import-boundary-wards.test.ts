@@ -271,6 +271,7 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/astrolabe/dist",
   "plugins/spellbook/skills/bounty/dist",
+  "plugins/spellbook/skills/digestify/dist",
   "plugins/spellbook/skills/glamour/dist",
   "plugins/spellbook/skills/imago/dist",
   "plugins/spellbook/skills/magpie/dist",
@@ -442,8 +443,26 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // admission was verified the same way as the others —
   // scripts/release-serve.test.ts boots a copied tracked subtree with a dist/
   // and no surface/, and its forced-dev cell dies before binding.
+  //
+  // ⚠ AND ITS ADDRESS MOVED TO THE EMITTED FILE IN PHASE 5, for the same reason
+  // astrolabe's, magpie's, glamour's and bounty's did — with one difference
+  // worth naming, because following the sibling rows LITERALLY would have got
+  // it wrong: digestify's emitted entry is `review.js`, not `server.js`. It has
+  // no `cli.ts` and no `server.ts`; `review.ts` is its whole entry set. A pin at
+  // `dist/server.js` would name a file that does not exist, `trackedSources` is
+  // `.ts`/`.tsx` only so nothing would red, and this ward would go green because
+  // it stopped looking — Contract 19, which is the exact failure this row
+  // exists to prevent (playbook Phase B, B5; D55).
+  //
+  // ⛔ AND THE FIVE `..` ARE RIGHT AT BOTH ADDRESSES, WHICH IS A COINCIDENCE OF
+  // DEPTH AND NOT A PROPERTY. `scripts/` and `dist/` are both exactly one level
+  // under the skill root. Verified rather than inherited: `resolved` below is
+  // compared against the tree, and `src/build.ts` passes `--external` for the
+  // surface-HTML glob so this ONE specifier survives into the bundle
+  // BYTE-FOR-BYTE and is resolved at runtime relative to
+  // `plugins/spellbook/skills/digestify/dist/`.
   {
-    file: "plugins/spellbook/skills/digestify/scripts/review.ts",
+    file: "plugins/spellbook/skills/digestify/dist/review.js",
     spec: "../../../../../src/digestify/surface/index.html",
     resolved: "src/digestify/surface/index.html",
   },

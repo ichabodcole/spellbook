@@ -7,7 +7,7 @@
 // JSON shape, stderr ready line).
 
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,8 +19,41 @@ import {
   parseQuestions,
 } from "./review.ts";
 
+/**
+ * ⛔ THE PROCESS SPAWNED IS THE LAUNCHER, NOT THIS DIRECTORY'S SOURCE (playbook
+ * Phase B, B6.1). The contract these end-to-end cells assert is what the
+ * PROCESS writes and exits with, and the process a caller runs is
+ * `<skill>/scripts/review.ts` → `<skill>/dist/review.js`. Spawning
+ * `src/digestify/backend/review.ts` would run a module whose whole path
+ * arithmetic is anchored at an address it does not ship at — see `run()`'s
+ * block in the source, and D57 for what that failure looks like when it is
+ * driven (a confident exit 2 blaming the operator's cwd).
+ *
+ * ⚠ AND THE SKILL ROOT IS DERIVED FROM A MARKER, NOT COUNTED. `..` counted by
+ * hand is the repair that rots, and a test whose spawn path is wrong fails as
+ * "the daemon never answered".
+ *
+ * ⚠ ONE CONSTANT, ONE JOB. bounty's port recorded the trap: a single constant
+ * used both to SPAWN a process and to READ the source with `Bun.file(...).text()`
+ * silently re-points the source scans when it is moved to the launcher, and the
+ * cells then fail as broken regexes rather than as a wrong file. Checked here —
+ * `SCRIPT` is only ever spawned; nothing in this file reads it as text, and the
+ * pure-function cells import from `./review.ts` directly.
+ */
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const SCRIPT = join(SCRIPT_DIR, "review.ts");
+
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
+}
+const SKILL_ROOT = join(repoRoot(SCRIPT_DIR), "plugins", "spellbook", "skills", "digestify");
+const SCRIPT = join(SKILL_ROOT, "scripts", "review.ts");
 
 describe("parseQuestions", () => {
   test("single question block extracted", () => {

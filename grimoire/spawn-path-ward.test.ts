@@ -487,6 +487,19 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // EMITTED location and it lands on `src/bounty`, the same directory the
       // pre-port source computed from `scripts/`.
       "plugins/spellbook/skills/bounty/dist/cli.js -> src/bounty",
+      // digestify's `DEV_SURFACE_CWD` — the FIFTH instance of this one escape,
+      // and the first that is NOT in a `cli.js`, because digestify has no
+      // `cli.ts`: `review.js` is its whole entry set. The escape is also the
+      // first that no spawner pins. Every other spell's CLI sets this directory
+      // as the daemon's cwd; digestify's entry IS the process the agent runs, so
+      // the pin exists only to be NAMED in a refusal — the daemon checks its own
+      // cwd for a bunfig that loads the Tailwind plugin and exits 2 otherwise.
+      // ⚠ AND THAT REFUSAL'S MESSAGE IS COMPUTED FROM THIS ARITHMETIC, which is
+      // why the row matters more here than elsewhere: run from the wrong anchor
+      // the daemon prints a confident, specific, WRONG directory (D57). This
+      // ward resolves the climb from the EMITTED location, which is the only
+      // address the arithmetic is true at.
+      "plugins/spellbook/skills/digestify/dist/review.js -> src/digestify",
       // glamour's `SURFACE_CWD`, the dev-mode daemon cwd Contract 5 pins. It
       // arrived here in Phase 2 — and note it arrived only once the anchor
       // pattern learned `Bun.fileURLToPath`: before that this cell was green

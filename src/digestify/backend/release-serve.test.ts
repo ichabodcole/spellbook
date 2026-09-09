@@ -38,13 +38,39 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const SKILL_SRC = join(SCRIPT_DIR, "..");
-/** Every non-test module under scripts/ ships — a glob, never a hand-kept
- *  mirror (the hand-kept form is what let a shared/ import go missing from a
- *  local-sim on an earlier port). */
-const shipping = () =>
-  readdirSync(SCRIPT_DIR).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+/**
+ * ⛔ THE SKILL ROOT IS FOUND BY MARKER, NOT BY COUNTING `..` FROM THIS FILE.
+ * Since Phase 5 this test lives at `src/digestify/backend/` and its subject
+ * lives under `plugins/spellbook/skills/digestify/`; the two are no longer
+ * siblings, and a hand-counted climb is the repair that rots.
+ */
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
+}
+const SKILL_SRC = join(repoRoot(import.meta.dir), "plugins", "spellbook", "skills", "digestify");
+
+/**
+ * ⛔ THE FIXTURE COPIES THE FILES THAT RUN, ONE PER ENTRY, AND DIGESTIFY HAS
+ * EXACTLY ONE (playbook Phase B, B6.3). This used to be a glob over
+ * `scripts/*.ts` under a comment defending the glob — "a new module is in the
+ * copied tree by construction", which was earned when the backend shipped as
+ * SOURCE and a missing sibling import could silently leave the tree.
+ *
+ * **The scar is re-homed, not deleted: that property is now true by BUNDLING.**
+ * `dist/review.js` IS the whole module graph, so there is no sibling for the
+ * copy to miss — the tree below holds the launcher and the artifact it imports,
+ * and nothing else could contribute. A glob over the new `scripts/` would copy
+ * exactly the same one file while claiming to defend against a hazard that no
+ * longer exists.
+ */
+const ENTRY_LAUNCHERS = ["review.ts"] as const;
 
 let skillRoot: string;
 let proc: Bun.Subprocess<"pipe", "pipe", "pipe">;
@@ -56,7 +82,9 @@ let mode = "";
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "digestify-release-"));
   mkdirSync(join(root, "scripts"), { recursive: true });
-  for (const f of shipping()) cpSync(join(SCRIPT_DIR, f), join(root, "scripts", f));
+  for (const f of ENTRY_LAUNCHERS) {
+    cpSync(join(SKILL_SRC, "scripts", f), join(root, "scripts", f));
+  }
   cpSync(join(SKILL_SRC, "SKILL.md"), join(root, "SKILL.md"));
   cpSync(join(SKILL_SRC, "assets"), join(root, "assets"), { recursive: true });
   cpSync(join(SKILL_SRC, "dist"), join(root, "dist"), { recursive: true });
