@@ -34,8 +34,12 @@ import {
   isBlocked,
   liveBlockerCount,
   ownersOverWip,
-} from "../shared/predicates";
-import type { BoardState, Task, TaskStatus } from "../shared/types";
+} from "../../../plugins/spellbook/skills/bounty/shared/predicates";
+import type {
+  BoardState,
+  Task,
+  TaskStatus,
+} from "../../../plugins/spellbook/skills/bounty/shared/types";
 import {
   deriveSessionId,
   findScopeRoot,
@@ -67,6 +71,25 @@ import {
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
+// ⛔ THE SPAWNED FILE IS THE LAUNCHER, NEVER THIS DIRECTORY'S SOURCE (playbook
+// Phase B, B6.1). The contract every process-level cell below asserts is what
+// the PROCESS a caller runs writes and exits with, and the process a caller
+// runs is `plugins/spellbook/skills/bounty/scripts/<entry>.ts`, which imports
+// the BUILT `../dist/<entry>.js`. Spawning `./server.ts` from here would test a
+// module that never ships in that form and would compute every one of its own
+// path pins from `src/bounty/backend/` — an address with no `dist/`, no
+// `assets/` and no `SKILL.md`, five levels from the right dev cwd.
+//
+// ⚠ AND IT IS DERIVED FROM AN EXPLICIT SKILL ROOT, NOT BY COUNTING `..` AT EACH
+// SITE. The count is the repair that rots, and a test whose spawn path is wrong
+// fails as "the daemon never answered" — which reads like flake, not like a
+// broken path.
+//
+// The SOURCE-SCANNING cells further down deliberately keep reading
+// `SCRIPT_DIR`: their subject is the authored text, not the running process.
+const SKILL_ROOT = join(SCRIPT_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "bounty");
+const LAUNCHER_DIR = join(SKILL_ROOT, "scripts");
+
 // A decoded protocol frame as observed on stdout / the WebSocket. The
 // helpers collect heterogeneous frames (ready, meta, task.*, submit, init,
 // joined, disconnected, …); fields are optional and narrowed per assertion.
@@ -85,8 +108,18 @@ type WireMsg = {
   port?: number;
   session_id?: string;
 };
-const SERVER = join(SCRIPT_DIR, "server.ts");
-const JOIN = join(SCRIPT_DIR, "join.ts");
+const SERVER = join(LAUNCHER_DIR, "server.ts");
+// ⛔ THE SOURCE ADDRESSES, HELD SEPARATELY FROM THE SPAWN ADDRESSES — and the
+// need for the split is a gap in Phase B's B6.1. B6.1 says "spawn the LAUNCHER,
+// not the source", which is right and is not the whole instruction: this file
+// used ONE constant per entry for BOTH jobs, so re-pointing it at the launcher
+// silently re-pointed the SOURCE-SCANNING cells too. They then read a 45-line
+// comment block and found none of what they pin — `G7 PRECONDITION` failed as
+// `expect(m).not.toBeNull()`, which reads like a broken regex rather than a
+// wrong file. A source scan follows the SOURCE; only a process spawn follows
+// the launcher.
+const CLI_SRC = join(SCRIPT_DIR, "cli.ts");
+const JOIN = join(LAUNCHER_DIR, "join.ts");
 
 function freshState(): BoardState {
   return { title: "T", tasks: [] };
@@ -1678,7 +1711,7 @@ describe("ownership claim guard (Phase C)", () => {
 // targets its daemon by explicit --session <id> (never the shared "latest"
 // pointer) so concurrent/stale discovery files can't cross-wire the assertions.
 
-const CLI = join(SCRIPT_DIR, "cli.ts");
+const CLI = join(LAUNCHER_DIR, "cli.ts");
 
 // A fresh per-test BOUNTY_HOME so snapshot/discovery state never leaks between
 // tests (Phase B writes snapshots here; Phase A keeps tests isolated up front).
@@ -4114,7 +4147,7 @@ describe("P0f — tail drains its terminal frame before exiting", () => {
 // names why. (Same instrument as the P0e hermeticity guard, which found five
 // spawn sites a mutation test could not reach.)
 test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", async () => {
-  const src = codeLines(await Bun.file(CLI).text());
+  const src = codeLines(await Bun.file(CLI_SRC).text());
   const m = /spawn\(process\.execPath, args, \{([\s\S]*?)\}\);/.exec(src);
   expect(m).not.toBeNull();
   const call = (m as RegExpExecArray)[1];

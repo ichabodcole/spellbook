@@ -204,7 +204,15 @@ export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
   "astrolabe/backend/server.ts",
   "magpie/backend/server.ts",
   "magpie/backend/discover.ts",
-  "bounty/scripts/server.ts",
+  // ⚠ RE-ADDRESSED IN PHASE 4. bounty's daemon SOURCE is now
+  // `src/bounty/backend/server.ts` and `scripts/server.ts` is a launcher that
+  // parses nothing. Left at the old key this exclusion would have been inert
+  // for a non-member, and the relocated daemon — which DOES parse argv — would
+  // have become caller-facing: `flag-invariant` reports its private `--port`,
+  // `--id`, `--title`, `--timeout`, `--restore` and `--no-open` as undocumented
+  // SKILL.md flags. That is glamour's loud half, and bounty has six private
+  // flags rather than two.
+  "bounty/backend/server.ts",
   "glamour/backend/server.ts",
   "imago/backend/server.ts",
   "mind-mapper/scripts/server.ts",

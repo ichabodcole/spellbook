@@ -479,6 +479,14 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     }
     expect([...escapes].sort()).toEqual([
       "plugins/spellbook/skills/astrolabe/dist/cli.js -> src/astrolabe",
+      // bounty's `SURFACE_CWD` — the FOURTH instance of this one escape, and
+      // the first that was PREDICTED IN WRITING before the spell was touched
+      // (Phase 4's brief said "`dist/` and `scripts/` sit at the same depth, so
+      // it should survive — assert it rather than reasoning about it"). This
+      // row IS that assertion: the ward resolved the five-level climb from the
+      // EMITTED location and it lands on `src/bounty`, the same directory the
+      // pre-port source computed from `scripts/`.
+      "plugins/spellbook/skills/bounty/dist/cli.js -> src/bounty",
       // glamour's `SURFACE_CWD`, the dev-mode daemon cwd Contract 5 pins. It
       // arrived here in Phase 2 — and note it arrived only once the anchor
       // pattern learned `Bun.fileURLToPath`: before that this cell was green

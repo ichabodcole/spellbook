@@ -65,7 +65,7 @@ excluded from both the heartbeat poke and the surface's "stale" card-aging cue.
 - `plugins/spellbook/skills/bounty/shared/predicates.ts` — `cardOverdue`,
   `expectedMinutes`, `isBlocked`/`liveBlockerCount`; imported by BOTH the daemon
   and the board since 2026-09-06
-- `plugins/spellbook/skills/bounty/scripts/server.ts` — `computeDuePokes`
+- `src/bounty/backend/server.ts` — `computeDuePokes`
 - `plugins/spellbook/skills/bounty/shared/types.ts` — `Task.blockedBy`
 - ~~`plugins/spellbook/skills/bounty/scripts/template.html`~~ — deleted; the
   surface is `src/bounty/surface/`

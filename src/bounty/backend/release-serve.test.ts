@@ -12,6 +12,8 @@
 // — force dev over a dist-present tree and the daemon must DIE naming
 // src/bounty/surface/index.html, before it writes a discovery file.
 //
+// EARNED BY BOUNTY (2): the ABSENT-`shared/` inversion — see the beforeAll.
+//
 // EARNED BY BOUNTY: the /assets disjointness cell. bounty is the only ported
 // spell whose daemon serves BOTH a flat dist/ at the root AND its own
 // GET /assets/<name> route out of the skill folder — the wordmark, the two
@@ -42,13 +44,18 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const TESTS_DIR = import.meta.dir;
-const SKILL_SRC = join(TESTS_DIR, "..");
-// Every non-test module under scripts/ and shared/ ships — a glob, never a
-// hand-kept mirror (the hand-kept form is what let a shared/ import go missing
-// from a local-sim on an earlier port).
-const shipping = (dir: string) =>
-  readdirSync(join(SKILL_SRC, dir)).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+const BACKEND_DIR = import.meta.dir;
+const SKILL_SRC = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "bounty");
+// ⛔ THE ENTRY SET IS DERIVED, NOT LISTED (D43) — a backend entry is
+// `src/bounty/backend/X.ts` with a launcher `<skill>/scripts/X.ts`, and bounty
+// is the spell that has THREE. Reading it here rather than writing
+// `["cli", "server", "join"]` is what stops this rig from being the hand-kept
+// mirror the header below warns about.
+const ENTRIES = readdirSync(BACKEND_DIR)
+  .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+  .map((f) => f.slice(0, -".ts".length))
+  .filter((name) => existsSync(join(SKILL_SRC, "scripts", `${name}.ts`)))
+  .sort();
 
 let skillRoot: string;
 let home: string;
@@ -59,14 +66,22 @@ let sessionId = "";
 
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "bounty-release-test-"));
-  for (const dir of ["scripts", "shared"] as const) {
-    mkdirSync(join(root, dir), { recursive: true });
-    for (const f of shipping(dir)) cpSync(join(SKILL_SRC, dir, f), join(root, dir, f));
+  // ⛔ COPY THE FILES THAT RUN, ONE PAIR PER ENTRY — not a glob over `scripts/`
+  // and `shared/` (playbook Phase B, B6.3). The glob carried a real scar ("a new
+  // module is in the copied tree BY CONSTRUCTION"), and after the port it would
+  // copy launchers whose `../dist/X.js` import has nothing to resolve to. THE
+  // SCAR IS RE-HOMED, NOT DELETED: the property is now true by BUNDLING —
+  // `dist/server.js` IS the whole module graph, so a module the daemon needs
+  // cannot be missing from this tree without the artifact itself being wrong.
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  mkdirSync(join(root, "dist"), { recursive: true });
+  for (const name of ENTRIES) {
+    cpSync(join(SKILL_SRC, "scripts", `${name}.ts`), join(root, "scripts", `${name}.ts`));
+    cpSync(join(SKILL_SRC, "dist", `${name}.js`), join(root, "dist", `${name}.js`));
   }
   // The board's own assets, which the daemon serves from OUTSIDE dist/.
   mkdirSync(join(root, "assets"), { recursive: true });
   writeFileSync(join(root, "assets", "wordmark.webp"), "not really a webp");
-  mkdirSync(join(root, "dist"), { recursive: true });
   writeFileSync(
     join(root, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./index-abc123.css"></head><body><div id="root"></div><script src="./index-abc123.js"></script></body></html>',
@@ -127,10 +142,21 @@ beforeAll(async () => {
   tmp = mkdtempSync(join(tmpdir(), "bounty-release-tmp-"));
   expect(existsSync(join(skillRoot, "surface"))).toBe(false);
   expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
-  // The seam ships. A hand-written copy list is how a shared/ import goes
-  // missing from a local-sim; assert what the glob actually brought.
-  expect(existsSync(join(skillRoot, "shared", "types.ts"))).toBe(true);
-  expect(existsSync(join(skillRoot, "shared", "predicates.ts"))).toBe(true);
+  // ⛔ INVERTED AT THE PORT, NOT DELETED (playbook Phase B, B6.4). This pair
+  // used to assert `shared/types.ts` and `shared/predicates.ts` were PRESENT in
+  // the copied tree, because the daemon imported them as siblings and a tree
+  // without them did not boot — a cell bounty earned and no unported sibling
+  // had. Bundling absorbed `shared/` into `dist/server.js`, so the cell's
+  // premise died. The inversion is STRICTLY STRONGER: the daemon boots from a
+  // tree with NO `shared/` AT ALL, which is the same property the copy list's
+  // scar was re-homed to (see `buildReleaseTree`). If a future edit reaches for
+  // an unbundled sibling, this beforeAll fails at the boot below rather than
+  // silently going back to shipping source.
+  //
+  // ⚠ `shared/` STILL SHIPS in the real plugin — the surface imports it (D10,
+  // the R7 seam), so it is a two-sided contract and stays in the skill folder.
+  // What this asserts is that the DAEMON no longer needs it on disk.
+  expect(existsSync(join(skillRoot, "shared"))).toBe(false);
   // And the page it replaced does NOT ship.
   expect(existsSync(join(skillRoot, "scripts", "template.html"))).toBe(false);
 

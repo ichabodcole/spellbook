@@ -81,8 +81,13 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // design. Nothing was hidden; there is nothing there to pin. When the other
   // five tails adopt, the same eight-row deletion repeats, and the day the kit
   // ever grows an exit is the day this walk must grow a third root.
+  // ⚠ bounty's three CLI rows and three daemon rows CHANGED ADDRESS in Phase 4
+  // chapter 1 — `bounty/scripts/*.ts` → `bounty/backend/*.ts` — and NOTHING
+  // ELSE about them changed. Families and texts are identical; the source moved
+  // and a launcher took its address. This is the relocation half of the two
+  // reds this ward produces per port (the deletion half is chapter 2).
   {
-    file: "bounty/scripts/cli.ts",
+    file: "bounty/backend/cli.ts",
     text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
@@ -111,12 +116,12 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
   // `process.exitCode`.
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
-  { file: "bounty/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
+  { file: "bounty/backend/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
-  { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
+  { file: "bounty/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -140,14 +145,14 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // (file, text) key CANNOT tell them apart. Both are pinned; this comment is
   // the only thing that distinguishes them. If one is ever removed, the ward
   // reports one `removed` and cannot say which -- go read both.
-  { file: "bounty/scripts/server.ts", text: "process.exit(1);", family: "C-signal" },
-  { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(1);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(code);", family: "C-signal" },
   // D — die(): one short stderr write, then exit. Safe ONLY while the payload
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
   // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
   // usage 2, internal 1) rather than always 2 — same one-short-write shape.
-  { file: "bounty/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  { file: "bounty/backend/cli.ts", text: "process.exit(2);", family: "D-die" },
   // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
   // CliError and main() returns the taxonomy code (usage 2, internal 1,
   // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
@@ -166,6 +171,22 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
+  // ⛔ THESE TWO DID **NOT** MOVE, AND THAT IS THE INTERESTING HALF OF BOUNTY'S
+  // CHAPTER 1. A terminal exit belongs to the process entry, and after the port
+  // the process entry IS the launcher — so `bounty/scripts/{join,server}.ts`
+  // are still exactly where the process ends, at the same address, with the
+  // same text and the same family. Six rows re-addressed and two deliberately
+  // not is what a correct relocation looks like here; a port that moved all
+  // eight would have pinned an exit that no longer exists.
+  //
+  // ⚠ AND `join.ts` IS THE ONE E-TERMINAL ROW IN THIS MAP THAT IS A KNOWN
+  // DEFECT RATHER THAN A CLEAN SHAPE. Its `main` emits the terminal
+  // `disconnected` frame on the line before it returns, so this exit can
+  // truncate the write every consumer waits for (family A's hazard, at an
+  // E-terminal site). It is kept because the one-line fix — `process.exitCode`
+  // + a natural return — was MEASURED to HANG here: the WebSocket is not
+  // guaranteed closed on every exit path, so the exit is doing double duty.
+  // Carded (#77/#78); shipping a hang to fix a truncation is a bad trade.
   { file: "bounty/scripts/join.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "bounty/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "imago/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },

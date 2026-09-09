@@ -75,8 +75,8 @@ fiction, and no consumer treats it as a validity flag.
 
 > **⭐ THE THIRD OPTION IS ALREADY IMPLEMENTED IN THIS REPO AND SHOULD BE
 > COPIED, NOT RE-DERIVED.** `bounty`'s `snapshotTaskCount()`
-> (`plugins/spellbook/skills/bounty/scripts/server.ts`) solves the identical
-> problem and its comment states the rule:
+> (`src/bounty/backend/server.ts`) solves the identical problem and its comment
+> states the rule:
 >
 > > `null` **NOT zero**: zero would mean "a snapshot exists and holds nothing",
 > > which makes a first-ever write look like a shrink from an empty board…

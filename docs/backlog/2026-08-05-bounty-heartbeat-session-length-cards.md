@@ -47,7 +47,7 @@ a discipline patch for a card-model gap.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/` — heartbeat / overrun-poke path,
-  `add`/`update --size`, `--expect`
+- `src/bounty/backend/` — heartbeat / overrun-poke path, `add`/`update --size`,
+  `--expect`
 - Context: multi-seat anthill session (typed-links), filed via finalize-session
   feedback aggregation
