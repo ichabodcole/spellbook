@@ -1171,20 +1171,41 @@ port that does not follow the playbook.
 **Decided:** implementer, 2026-09-08, Phase 3 chapter 2, on the playbook's
 instruction to adopt all eight `src/kit/wire/` modules.
 
-Imago's `die` wrote `imago: <msg>` to stderr as prose and exited **2 for every
-failure** — a missing session, an unreachable daemon, a bad flag and an internal
-fault were one number, so a caller had nothing to route on but the text. The
+Imago's `die` wrote `imago: <msg>` to stderr as prose and exited **2**. The
 kit's `die` raises a `CliError`, `main` reports ONE JSON envelope on stderr, and
 the exit code comes from the taxonomy. **Every one of imago's 21 raise sites
 changes its stderr bytes, and most change their exit code.** Driven:
 
-| invocation            | before                        | after                                                  |
-| --------------------- | ----------------------------- | ------------------------------------------------------ |
-| `info` (no session)   | `imago: no running…` · exit 2 | `kind:"not_found"` envelope + hint · exit 5            |
-| `state` (no session)  | prose · exit 2                | `kind:"not_found"` · exit 5                            |
-| `say` (no text)       | prose · exit 2                | `kind:"usage"` · exit 2                                |
-| `--nope`              | prose · exit 2                | `kind:"usage"` · exit 2                                |
-| a 400 from the daemon | prose, body discarded         | `kind:"usage"`, the daemon's body under `error.server` |
+| invocation                   | before                                      | after                                                  |
+| ---------------------------- | ------------------------------------------- | ------------------------------------------------------ |
+| `info` (no session)          | `imago: no running…` · exit 2               | `kind:"not_found"` envelope + hint · exit 5            |
+| `state` (no session)         | prose · exit 2                              | `kind:"not_found"` · exit 5                            |
+| `say` (no text)              | prose · exit 2                              | `kind:"usage"` · exit 2                                |
+| `--nope`                     | prose · exit 2                              | `kind:"usage"` · exit 2                                |
+| a 400 from the daemon        | prose, body discarded                       | `kind:"usage"`, the daemon's body under `error.server` |
+| `state` / `say`, DEAD daemon | ⛔ raw Bun `TypeError` + stack · **exit 1** | `kind:"internal"` envelope · exit 1                    |
+
+⛔ **CORRECTION, 2026-09-09 — THIS ENTRY SAID "2 FOR EVERY FAILURE" AND THAT WAS
+FALSE, falsified by driving develop's CLI rather than by re-reading it.** The
+old contract had **two shapes, not one.** `die` was one of them; the other is
+that `api()` calls `fetch` with no handler at all, so a verb that reaches the
+daemon with a **stale session pointer** never gets near `die`. Driven on
+`develop` (`e88ae5e`) with a pointer naming a closed port: `state` and `say`
+both print Bun's own source excerpt,
+`TypeError: Unable to connect. Is the computer able to access the url?`,
+`code: "ConnectionRefused"` and a two-frame async stack — and exit **1**, not 2.
+(`info` never fetches; it prints the stale pointer and exits **0**.) So the
+pre-port contract was "prose at 2 where the CLI raised deliberately, an uncaught
+runtime crash at 1 where it did not."
+
+**The claim's force survives the correction, and is if anything larger.** The
+adoption replaced a _prose-and-mostly-2_ contract with the house taxonomy, and
+the newly-named path is the one that improves most: the same invocation now
+answers **one machine-readable envelope** — `kind:"internal"`, `exit_code:1`,
+`retryable:false`, the command under `meta` — where it used to answer a stack
+trace with the daemon's source lines in it. The **exit code there is unchanged
+at 1**; what changed is that a caller can now route on it. Both halves driven
+2026-09-09 on `feat/imago-backend-port`.
 
 ⛔ **THE REASON THIS NEEDED DECIDING AT ALL, AND IT IS A FINDING ABOUT THE
 PLAYBOOK.** Phase B's B8 lists `errors` beside seven genuinely internal modules

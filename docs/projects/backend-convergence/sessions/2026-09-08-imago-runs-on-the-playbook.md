@@ -115,7 +115,15 @@ Full accounts in `phase-3-journal.md`; all seven are folded into Phase B.
 `{ id: ++eventSeq, ...msg }` — the spread AFTER the id — so any frame carrying
 its own `id` overrode the cursor. imago's `proposal.send` and `proposal.dismiss`
 frames DO carry one, so they went on the wire with a proposal's id as their
-cursor value. Driven with 1,100 such frames: every wire id is now a number.
+cursor value — and since `ev.id > since` is false for a string, they were never
+replayed at all. Driven with 1,100 such frames: every wire id is now a number.
+
+⚠ **AMENDED 2026-09-09.** Making the cursor WIN resolved the collision by
+**deleting** the proposal's identity from the frame — a two-sided contract
+(`shared/types.ts`) went false with no type error, because `emitEvent` takes
+`Record<string, unknown>`. Repaired on the same branch: the identity now rides
+as `proposalId`, and a frame-shape test guards both halves. See the Phase 3
+journal, "The repair".
 
 ## What was driven, and what was not
 

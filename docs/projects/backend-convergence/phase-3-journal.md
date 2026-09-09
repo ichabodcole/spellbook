@@ -240,12 +240,15 @@ function die(msg: string): never {
 }
 ```
 
-Prose on stderr, and **exit 2 for every failure** — a missing session, an
-unreachable daemon, a bad flag and an internal fault are one number. The kit's
-`die` throws a `CliError`, `main` reports it as **one JSON envelope** on stderr,
-and the exit code comes from the taxonomy: usage 2, internal 1, not_found 5,
-conflict 6. Every one of imago's 20 failure paths changes both its stderr bytes
-and, for most of them, its exit code.
+Prose on stderr, and **exit 2** — a missing session, a bad flag and an internal
+fault are one number. (⚠ **CORRECTED 2026-09-09:** this said "exit 2 for every
+failure" and named the unreachable daemon among them. It is false — an
+unreachable daemon never reaches `die` at all; it crashes out of an unguarded
+`fetch` at **exit 1**. See R3.) The kit's `die` throws a `CliError`, `main`
+reports it as **one JSON envelope** on stderr, and the exit code comes from the
+taxonomy: usage 2, internal 1, not_found 5, conflict 6. Every one of imago's 20
+failure paths changes both its stderr bytes and, for most of them, its exit
+code.
 
 **Why the playbook could not have noticed.** Glamour, the spell Phase B was
 written from, was **already CONFORMANT L0** before its port: it had reached the
@@ -467,7 +470,8 @@ fine" is unfalsifiable and so is "the kit was fine":
 - **No kit boundary had to be widened.** The seven checks are listed above under
   "Kit boundaries". The one most likely to have been wrong — `createEventLog`
   against a spell whose frames carry a payload `id` — was right in imago's
-  favour and fixed a live defect.
+  favour and fixed a live defect. ⚠ **AMENDED 2026-09-09: it also silently
+  deleted a field, and this bullet did not see it. See "The repair" below.**
 - **No step in B1–B7 was WRONG for imago**, as opposed to absent. B4's
   path-pinned-sibling class predicted imago's shipped spawn defect before it was
   looked for; B1's rule decided `state.test.ts`, which its filename would have
@@ -484,3 +488,68 @@ fine" is unfalsifiable and so is "the kit was fine":
 "If imago's emitted bundles produce `pins=0`, the ward is not guarding this
 port." The bundles produced **no row at all**, which is the same conclusion by a
 mechanism neither the brief nor B4 names. See G3.
+
+## The repair, 2026-09-09 — what the collision actually cost
+
+Two items, found after the port was green and verified, repaired on the same
+branch.
+
+### R1 · ⛔ A COLLISION RESOLVED IN ONE FIELD'S FAVOUR IS A FIELD SILENTLY DELETED
+
+The defect this journal celebrates finding — `{ id: ++eventSeq, ...msg }`
+spreading the payload AFTER the cursor, so `proposal.send` and
+`proposal.dismiss` went out with a proposal's id where the cursor belongs — is
+real, and worse than recorded: because `ev.id > since` is false for a string,
+**those two frames were never replayed to a resuming tail at all.**
+
+But `createEventLog` fixed it by making the cursor **win**, and the two fields
+were fighting over one name. Winning is not merging. Driven, same daemon, same
+action, one branch apart:
+
+```
+develop : {"id":"m-645f6b32","type":"proposal.send"}   ← cursor broken, proposal present
+branch  : {"id":2,"type":"proposal.send"}              ← cursor correct, proposal GONE
+repaired: {"id":2,"type":"proposal.send","proposalId":"m-645f6b32"}
+```
+
+`server.ts` still passed `id: msg.id` at both sites; nothing dropped it on the
+floor loudly. The agent that reacts to `proposal.send` lost the answer to _which
+proposal_.
+
+**The generalisation, and it is the one to carry to the four remaining ports:**
+when a shared module and a caller both want the same field name, "the module
+wins" is a complete fix for the module and a **deletion** for the caller. The
+repair is never to pick — it is to **rename** so both survive. The proposal's
+identity now rides as `proposalId`; `id` on a frame means the tail cursor and
+nothing else, at every spell.
+
+### R2 · `Record<string, unknown>` is what let a TYPED, TWO-SIDED contract go false with no type error
+
+`shared/types.ts` is shipped to the agent as the single contract, and it
+declared `"proposal.send": { id: string }` for a full branch during which the
+wire carried no such field. Nothing complained, because `emitEvent` is
+`(msg: Record<string, unknown>) => log.emit(msg)` — the one signature in the
+path that accepts anything and checks nothing. **A declaration file cannot be a
+contract if the emitter is untyped; it is a comment with syntax highlighting.**
+Tightening `emitEvent` against `AgentEventPayload` is filed, not done here — it
+is a real change to a verified branch and belongs in its own chapter.
+
+⚠ **And the reason neither of these was caught: imago had NO test asserting the
+SHAPE OF A FRAME.** Thirty-eight integration tests drove the wire and every one
+of them asserted state or the presence of an event type. One now asserts a
+`proposal.send` frame carries a **numeric** `id` AND the proposal's identity —
+which is exactly the pair of claims the two successive defects each broke one
+half of (`src/imago/backend/server.integration.test.ts`, "agent event
+contract").
+
+### R3 · D38 and B8 both asserted "exit 2 for EVERY failure", and that was false
+
+Falsified by driving `develop`, not by re-reading it: imago's `api()` calls
+`fetch` with no handler, so `state` and `say` against a **dead daemon** never
+reach `die` — they crash with a raw Bun `TypeError … ConnectionRefused`, the
+daemon's source lines quoted, at **exit 1**. The old contract had two shapes.
+Corrected in D38 and in Phase B's B8, with the claim's force kept: the adoption
+still replaced a prose-and-mostly-2 contract with the house taxonomy, and that
+path went from a stack trace to a `kind:"internal"` envelope (exit code
+unchanged at 1). **The lesson for the four remaining ports is in B8 now: do not
+characterise a spell's old failure contract from its `die`. Run the failures.**

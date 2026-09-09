@@ -1297,10 +1297,24 @@ exit codes, then adopting it re-spells every failure the spell can produce:
 
 - **glamour felt none of this** because it was already CONFORMANT L0 and had
   reached the envelope shape independently. That is why this step said nothing.
-- **imago's `die` wrote `imago: <msg>` as prose and exited 2 for EVERY failure**
-  — a missing session, a dead daemon, a bad flag and an internal fault were one
-  number. After adoption: one JSON envelope, and `not_found` exits 5. Every one
-  of its 21 raise sites changed.
+- **imago's `die` wrote `imago: <msg>` as prose and exited 2** — a missing
+  session, a bad flag and an internal fault were one number. After adoption: one
+  JSON envelope, and `not_found` exits 5. Every one of its 21 raise sites
+  changed.
+- ⛔ **AND `die` WAS ONLY HALF OF IMAGO'S OLD CONTRACT — LOOK FOR THE SECOND
+  SHAPE, WHICH IS THE PATHS THAT NEVER REACH `die` AT ALL.** This bullet used to
+  say "2 for EVERY failure"; driving `develop` falsified it. imago's `api()`
+  calls `fetch` with no handler, so `state` and `say` against a **dead daemon**
+  (a stale session pointer naming a closed port) never raise — they crash with a
+  raw Bun `TypeError: Unable to connect…`, `code: "ConnectionRefused"`, the
+  daemon's own source lines quoted, and an async stack, at **exit 1**. So the
+  delta to state is not one row: it is _prose-at-2 where the CLI raised
+  deliberately, and an uncaught runtime crash at 1 where it did not_. After
+  adoption the crash path answers a `kind:"internal"` envelope — the **exit code
+  is unchanged at 1**; the stack trace becomes something a caller can route on.
+  ⚠ **So do not characterise your spell's old contract from its `die` alone. Run
+  the failing invocations and read the actual exits** — the uncaught-`fetch`
+  shape is common to every spell whose CLI talks to a session daemon.
 - **Half the roster has no acc grade** (imago, bounty, digestify, grapevine), so
   **nothing in the gate will tell you.** D37 is right that building does not
   drag conformance in front of a spell; **B8 does.**
