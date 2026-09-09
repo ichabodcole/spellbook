@@ -195,3 +195,27 @@ must say so in those words.
 **Not taken:** _keep the exiting `die` in the kit_ — smaller diff, no audit, and
 it would have put the house's only sanctioned exit-truncation hazard inside the
 module every spell is about to inline.
+
+## D9 · Phase 1b is one branch of two gated chapters, astrolabe before magpie
+
+**Decided:** orchestrator, 2026-09-08, from measurement before the brief.
+
+The relocation and the adoption are one branch, in two chapters, and chapter 1
+must be green and demonstrated on a booted daemon before chapter 2 starts.
+Measuring the subject first turned up why: `magpie/scripts/backend.ts:63`
+resolves `remove.py` off `import.meta.dir`, which a bundle re-anchors into
+`dist/`, and both servers' dev-mode surface import is a relative specifier that
+the external flag leaves in the artifact verbatim — two runtime breakages that
+no type-check and no unit test reaches. Landed together with a rewrite, neither
+would be attributable.
+
+Astrolabe goes first on size: `server.ts` + `state.ts`, against magpie's
+`server.ts` + five modules + a `shared/` directory its surface also imports +
+six test files. The 1a journal's rule — measure the subject before writing the
+brief — is what produced this entry.
+
+**Not taken:** _two branches_ — cleanest attribution, and the adoption branch
+would then re-verify a relocation nobody had used yet; the gate inside one
+branch buys the same separation without landing a daemon that builds and shares
+nothing. _Magpie first_, on the grounds that the hard subject teaches more early
+— rejected because its lesson arrives cheaper from astrolabe's journal.
