@@ -1467,3 +1467,141 @@ corrupted pin would still have passed; printing was already tried in Phase 1b
 and D36 records what it bought. _Swap `emittedSources` to the disk outright_
 rather than unioning — it would drop a tracked-but-deleted artifact out of ward
 1a's shipping question, trading one silence for another.
+
+## D43 · A backend entry is a `src/<spell>/backend/X.ts` with a LAUNCHER — the entry set is derived, not named
+
+**Ruled:** Cole, 2026-09-09, on the Phase 4 pre-work measurement. Implemented
+the same day on `chore/entries-derive-from-launchers`, as a refactor that
+changes no artifact.
+
+`src/build.ts` had two hard-coded entries — `backendEntryFor` =
+`src/<spell>/backend/cli.ts`, `serverEntryFor` = `src/<spell>/backend/server.ts`
+— built by two near-duplicate `Bun.build` calls. Enumerating the whole roster
+before writing bounty's brief showed the assumption is wrong for **three of the
+four remaining ports, in three different ways**:
+
+| spell                                          | caller-facing entries                  | what `build.ts` did                             |
+| ---------------------------------------------- | -------------------------------------- | ----------------------------------------------- |
+| astrolabe, glamour, imago, magpie, mind-mapper | `cli.ts` + `server.ts`                 | correct                                         |
+| **bounty**                                     | `cli.ts` + `server.ts` + **`join.ts`** | **missed `join.ts`** (SKILL.md names it twice)  |
+| **digestify**                                  | **`review.ts` ONLY**                   | **built NOTHING — there is no `cli.ts`**        |
+| **grapevine**                                  | `cli.ts` + **`daemon.ts`**             | **missed the daemon — there is no `server.ts`** |
+
+**The rule: a backend entry is `src/<spell>/backend/X.ts` for which a launcher
+`plugins/spellbook/skills/<spell>/scripts/X.ts` exists.** The launcher is
+already the deployed contract — a fixed path, named in SKILL.md, enumerated by
+`grimoire/lib/entry-points.ts`, pinned by `exit-site-inventory` and
+`terminator-invariant`. So the entry set is a **fact about the tree** rather
+than a list anyone maintains: the same principle `buildableSpells()` already
+follows, and the same principle D36 and D42 (and its two siblings) came from
+violating. Non-entry modules — `reduce.ts`, `state.ts`, `heartbeat.ts`, every
+`*.server.ts`, every test — are excluded for free, with no naming convention and
+no exclusion list.
+
+It also collapses `buildBackend` and `buildServer` into one loop, which is where
+the duplication that made a third entry unthinkable came from. **The loop still
+issues one `Bun.build` PER ENTRY** — never one call with several entrypoints,
+which would hoist shared modules into a hashed chunk and rewrite the other
+entries' artifacts (Contract 18 verifies by reproduction).
+
+**`--external '*/surface/index.html'` is now passed for every entry, not only
+daemons.** D6's measurement is unchanged and was re-homed onto the merged
+function rather than deleted: without it the bundler follows a daemon's
+dev-branch `await import(".../surface/index.html")` into the surface graph and
+dies compiling `@import "tailwindcss" source(none)`; with it the ONE specifier
+survives byte-for-byte and resolves at runtime relative to `dist/`. For an entry
+that never imports the surface HTML the flag has no subject and is inert — which
+is what the acceptance criterion below measured rather than assumed.
+
+### The acceptance criterion: same bytes, different derivation
+
+**Proved, not argued.** Full roster rebuild through `bun run build`, then a
+`git diff` and `git status --porcelain` restricted to the deployed dist roots:
+**empty**. `bun run gate` 1975 pass / 0 fail unpiped, exit 0 (it rebuilds first,
+so that is the no-op proved a second time). `bun scripts/dist-check.ts` exit 0,
+all three arms, `32 tracked / 32 on disk` across 8 spells, ARM 2
+`dirty paths 0`.
+
+**The derivation prints for all eight spells:** astrolabe, glamour, imago,
+magpie `[cli, server]`; bounty, digestify, grapevine, mind-mapper `[]`. **The
+three unported spells are left EXACTLY as they are today** — they have no
+`src/<spell>/backend/` at all, so they derive no entries and remain
+not-buildable-as-backend until their port. No launcher was created for them.
+`buildableSpells()` still returns all 8 (they have surfaces), so `dist-check`'s
+and `spawn-path-ward`'s denominators are unchanged.
+
+### The pairing ward, and what the tree contradicted
+
+`grimoire/launcher-pairing-ward.test.ts` is new, because **the whole scheme now
+rests on a pairing nothing checked**. Both populations are derived and neither
+is computed from the other: the launcher side reads every shipped `scripts/*.ts`
+for a `../dist/X.js` **import specifier**; the artifact side reads the emitted
+`dist/` off the **DISK** (D42) and subtracts the surface's own reference closure
+from `index.html`. Deriving the artifact side as "`cli.js` and `server.js`"
+would have re-committed the exact hard-coding this decision removes; deriving it
+as "a hashed name is a surface chunk" is a name test in a behaviour costume.
+
+**D43 introduces a failure mode that did not exist before it, and cell C is for
+that one.** `src/<spell>/backend/X.ts` plus ANY `scripts/X.ts` makes `X` an
+entry — including an UNPORTED spell's real `scripts/cli.ts`, which is a full CLI
+and not a launcher. mind-mapper, bounty, digestify and grapevine all ship such
+files today, so all four sit one misplaced file away from a `dist/cli.js` that
+nothing imports. Driven: creating `src/mind-mapper/backend/cli.ts` reds cell C
+with _"build.ts derives entry "cli" from mind-mapper/scripts/cli.ts, but that
+file does NOT import ../dist/cli.js — the emitted artifact would be
+unreachable"_.
+
+**Calibration, both directions** (real repo unless noted; every mutation
+restored):
+
+| drive                                                                  | before | after                                                        |
+| ---------------------------------------------------------------------- | ------ | ------------------------------------------------------------ |
+| clean tree                                                             | —      | **6 pass / 0 fail**, a row for all 8 spells                  |
+| `rm astrolabe/dist/server.js` (launcher, no artifact)                  | —      | **2 fail** — cell A names the missing path, cell C the entry |
+| `mv astrolabe/scripts/server.ts` away (artifact, no launcher)          | —      | **1 fail** — cell B: _"emitted and NOTHING imports it"_      |
+| launcher re-pointed at `../dist/serverX.js`                            | —      | **3 fail** — A, B and C, C naming both directions            |
+| `src/mind-mapper/backend/cli.ts` added (half-relocated, D43's own)     | —      | **1 fail** — cell C, before anything is even built           |
+| synthetic root: paired · launcher-only · artifact-only · nothing-built | —      | the CONTROL cell, each world discriminated in one run        |
+
+### ⛔ The instrument defect the ward itself committed, and was driven out of
+
+**The first matcher took any quoted `../dist/X.js` anywhere in the file — and a
+launcher is "a comment block and two lines" (playbook B2), where the comment
+block names its own artifact.** Re-pointing astrolabe's launcher at
+`../dist/serverX.js` therefore reported BOTH specifiers, and **cell C — the arm
+written for D43's own failure mode — stayed green on the strength of a
+comment.** Anchoring the match on the `from`/`import`/`require` form is the
+repair; backticks are excluded from the delimiter set because prose quotes with
+them and `biome` never emits them for a specifier. This is playbook Gotcha 12
+("the ward reads prose") arriving for a third time, in the ward written to
+enforce a rule about reading the tree.
+
+### What the tree contradicted in the measurement table
+
+**Nothing in the entry table** — it reproduced exactly. One correction to how
+the table reads: it describes **caller-facing entries**, which for the three
+unported spells live at `scripts/X.ts` as real sources, NOT at
+`src/<spell>/backend/X.ts`. So the table is a statement about what those ports
+must produce, not about what the tree holds today, and the generalisation
+correctly builds nothing for them.
+
+**One live blind spot found and NOT repaired here, deliberately.**
+`grimoire/spawn-path-ward.test.ts`'s `isBackendArtifact` is
+`abs.endsWith("/cli.js") || abs.endsWith("/server.js")` — the same two
+hard-coded names, in the instrument that checks anchor arithmetic. It is exactly
+correct today (the derived set is `cli` + `server` for all four built spells),
+and it goes **silently blind on bounty's `join.js`, digestify's `review.js` and
+grapevine's `daemon.js`** the day those land. It is not touched in this branch
+because this branch's acceptance criterion is "changes no artifact and no other
+instrument's verdict"; **it is a required step of bounty's port**, and it is
+filed here rather than in a backlog item so the next port's brief cannot miss
+it.
+
+**Not taken:** _hard-code a third name `join.ts`_ — cheapest, and wrong twice
+over before the roll ends (digestify has no `cli.ts`, grapevine no `server.ts`).
+_A per-spell entry list in `build.ts`_ — explicit, and it is a hand-kept list,
+which is the thing that goes blind on exactly the spell that arrives next. _A
+naming convention (`*.entry.ts`)_ — derived, but it renames five spells' files
+and every SKILL.md path that spawns them. _Derive from SKILL.md's spawn lines
+instead of the launcher_ — closer to the human contract, and it makes the build
+depend on parsing prose, which is Gotcha 12's whole subject.

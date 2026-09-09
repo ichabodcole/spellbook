@@ -875,9 +875,38 @@ port is before Phase 1, because they have different done-whens below.
 > audit all held on a spell nobody had them in front of, and B4 predicted
 > imago's shipped defect before it was looked for.**
 
-**Goal:** `src/<spell>/backend/` holds the CLI and the daemon; the skill folder
-holds two launchers and a committed `dist/cli.js` + `dist/server.js`; the
-backend imports `src/kit/wire/`.
+**Goal:** `src/<spell>/backend/` holds the spell's caller-facing entries; the
+skill folder holds ONE LAUNCHER PER ENTRY and a committed `dist/<entry>.js` for
+each; the backend imports `src/kit/wire/`.
+
+⛔ **"TWO ENTRIES, `cli.ts` AND `server.ts`" IS WRONG AND THIS PHASE USED TO SAY
+IT THROUGHOUT.** Corrected 2026-09-09 (D43), from a measurement of the whole
+roster taken before bounty's port. **The entry set is PER-SPELL and DERIVED**,
+and it is two-named-`cli`-and-`server` for the five spells that happened to go
+first and for nobody else:
+
+| spell                                          | caller-facing entries                                |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| astrolabe, glamour, imago, magpie, mind-mapper | `cli.ts` + `server.ts`                               |
+| **bounty**                                     | `cli.ts` + `server.ts` + **`join.ts`**               |
+| **digestify**                                  | **`review.ts` ONLY — there is no `cli.ts`**          |
+| **grapevine**                                  | `cli.ts` + **`daemon.ts` — there is no `server.ts`** |
+
+⛔ **AN AGENT PORTING DIGESTIFY MUST NOT CONCLUDE ITS SPELL IS UNBUILDABLE
+BECAUSE THERE IS NO `cli.ts`.** Before D43 that conclusion would have been
+CORRECT — `src/build.ts` was hard-coded to `backend/{cli,server}.ts` and built
+literally nothing for digestify. It is now wrong: **a backend entry is
+`src/<spell>/backend/X.ts` for which a launcher
+`plugins/spellbook/skills/<spell>/scripts/X.ts` exists**, whatever `X` is. Read
+your spell's `scripts/` directory and its SKILL.md; that is the entry set.
+Everywhere below that says "the two launchers", "the two files", "both
+artifacts", read "one per entry" — the shapes are all per-entry, the count is
+not two.
+
+⚠ **AND THE COUNT IS WHAT `grimoire/launcher-pairing-ward.test.ts` CHECKS**, in
+both directions: a launcher importing `../dist/X.js` with no built `X.js`, and a
+built backend artifact no launcher imports. Run it as you go — it is the only
+instrument that sees a half-relocated entry.
 
 **Prerequisite, and it has a test rather than a permission behind it —
 CONDITIONAL ON THE SPELL HAVING A GRADE:** **acc conformance first.** A backend
@@ -974,7 +1003,10 @@ forwarder that touched `process.argv` would match the roster enumerator's
 arg-parsing predicate and the flag ward would then judge the spell's documented
 flags against a file that recognises none.
 
-The two launchers differ in exactly one line, and it is not a style choice:
+Launchers come in exactly two shapes — one for a CLI (anything whose stdout the
+caller parses) and one for a DAEMON — and they differ in exactly one line, which
+is not a style choice. Pick by what the entry IS, not by what it is called:
+bounty's `join.ts` is a CLI shape, grapevine's `daemon.ts` is a daemon shape.
 
 ```ts
 // scripts/cli.ts   — a CLI's stdout is a pipe the caller parses
@@ -1153,12 +1185,13 @@ Three specific moves, all earned:
    asserts arithmetic nothing executes. This makes the cell depend on a built
    `dist/`; `bun run gate` builds before it tests, and the thing worth asserting
    is the thing that ships.
-3. **A "fake release tree" fixture stops globbing and starts copying the two
-   files that run.** The glob carried a real scar ("a new module is in the
-   copied tree by construction"), and after the move it copies files whose
-   `../../../plugins/…` specifiers cannot resolve from a temp directory. **The
-   scar is re-homed, not deleted:** the property is now true by BUNDLING,
-   because `dist/server.js` IS the whole module graph.
+3. **A "fake release tree" fixture stops globbing and starts copying the files
+   that run** — one per entry, so two for most spells and three for bounty. The
+   glob carried a real scar ("a new module is in the copied tree by
+   construction"), and after the move it copies files whose `../../../plugins/…`
+   specifiers cannot resolve from a temp directory. **The scar is re-homed, not
+   deleted:** the property is now true by BUNDLING, because `dist/server.js` IS
+   the whole module graph.
 
 ⚠ **An in-process daemon suite is the awkward case.** If it imports
 `startDaemon` rather than spawning, B3's ruling arrives as
@@ -1168,16 +1201,16 @@ not what this file tests" — provided the spell's `release-serve.test.ts` spawn
 the real launcher and asserts mode there.
 
 ⭐ **imago, a FOURTH move, and it is about a cell whose SUBJECT the bundle
-absorbed.** B6.3 tells you to stop globbing and copy the two files that run. It
-does not tell you what to do with an assertion ABOUT one of the files you
-stopped copying. imago's release-serve rig asserted `shared/` was PRESENT in the
-copied tree, because the daemon imported it as a sibling and a tree without it
-did not boot — a cell imago had earned and no sibling had. Bundling absorbed
-`shared/` into `dist/server.js`, so the cell's premise died. **Invert it rather
-than delete it:** the rig now asserts the daemon boots from a tree with NO
-`shared/` at all, which is strictly stronger and is the same property the glob's
-scar was re-homed to. **Write the inversion into the file's own header**, beside
-the "which cells this spell earns" list, or the next reader sees a weakened
+absorbed.** B6.3 tells you to stop globbing and copy the files that run. It does
+not tell you what to do with an assertion ABOUT one of the files you stopped
+copying. imago's release-serve rig asserted `shared/` was PRESENT in the copied
+tree, because the daemon imported it as a sibling and a tree without it did not
+boot — a cell imago had earned and no sibling had. Bundling absorbed `shared/`
+into `dist/server.js`, so the cell's premise died. **Invert it rather than
+delete it:** the rig now asserts the daemon boots from a tree with NO `shared/`
+at all, which is strictly stronger and is the same property the glob's scar was
+re-homed to. **Write the inversion into the file's own header**, beside the
+"which cells this spell earns" list, or the next reader sees a weakened
 assertion with no account of why.
 
 ⭐ **AND CHAPTER 2 BREAKS TESTS THAT ENCODED THE OLD MODULE'S BYTES.** Not a
@@ -1444,9 +1477,13 @@ belongs in its own commit, filed rather than smuggled.
   suspect step is not a control** — stashing the work and rebuilding the same
   wrong way CONFIRMED the false finding.
 
-- **The server is its OWN `Bun.build` call**, not a second entrypoint in the
-  CLI's. One call with two entrypoints hoists shared modules into a hashed chunk
-  and rewrites `dist/cli.js`, which Contract 18 verifies by reproduction.
+- **EVERY entry is its OWN `Bun.build` call.** `src/build.ts` LOOPS over the
+  derived entries; it never passes several entrypoints to one call. One call
+  with two entrypoints hoists shared modules into a hashed chunk and rewrites
+  the other entries' artifacts, which Contract 18 verifies by reproduction.
+  (Before D43 this bullet said "the server is its own call, not a second
+  entrypoint in the CLI's" — same measurement, and the loop is what generalised
+  it past two.)
 - **A change to `src/kit/` dirties every spell that inlines it.** glamour's
   chapter 2 touched three kit modules and rebuilt SIX artifacts across THREE
   spells. Rebuild and commit them all in the same chapter. ⭐ **imago's chapter
@@ -1788,6 +1825,16 @@ inventory at
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
 
+- **2026-09-09** — ⛔ **Phase B's "two entries, `cli.ts` and `server.ts`"
+  CORRECTED, and it was wrong for THREE of the four remaining ports.** Not
+  taught by a port — taught by MEASURING the roster before writing bounty's
+  brief, which is the cheaper way to find this class. bounty has a third entry
+  (`join.ts`), digestify has `review.ts` and no `cli.ts`, grapevine has
+  `daemon.ts` and no `server.ts`. `src/build.ts` built nothing at all for
+  digestify and would have silently dropped bounty's `join.ts`. **The entry set
+  is now DERIVED from the launchers** (D43) and the phase says so at its Goal;
+  `grimoire/launcher-pairing-ward.test.ts` is the new instrument that checks the
+  pairing in both directions.
 - **2026-09-08** — ⭐ **Phase B AMENDED FROM IMAGO, the first port DRIVEN BY
   this document rather than written from one**, and the amendment is the point:
   the port existed to find where Phase B was not enough. **Seven gaps, in the
