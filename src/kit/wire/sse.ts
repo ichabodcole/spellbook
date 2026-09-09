@@ -36,17 +36,41 @@
 import type { EventLog, Frame } from "./eventLog.ts";
 
 /**
- * The live-tail registry. Each entry is one open stream's closer; `size` is
- * therefore the daemon's SSE subscriber count, and closing them all is what a
- * drain does.
+ * One open SSE stream, as the daemon can act on it: end it, or push a frame to
+ * it that did not come out of the log.
  *
- * ⛔ IT HOLDS CLOSERS, NOT CONTROLLERS. The copies held
+ * ⛔ IT IS NOT A CONTROLLER. The copies held
  * `Set<ReadableStreamDefaultController>` and closed them directly at teardown,
- * which bypasses the funnel above — the heartbeat interval for that stream was
- * cleared only because a second `Set` of timers was kept in parallel and swept
- * separately. One registry of closers collapses both and cannot drift.
+ * which bypasses the teardown funnel above — the heartbeat interval for that
+ * stream was cleared only because a second `Set` of timers was kept in parallel
+ * and swept separately. Everything here goes through the funnel, and a `send`
+ * after teardown is a no-op rather than a throw.
+ *
+ * ⚠ **`send` ARRIVED IN PHASE 2, FROM THE FIRST CONSUMER THAT WAS NOT ONE OF THE
+ * TWO THIS MODULE WAS DESIGNED AGAINST.** astrolabe and magpie announce presence
+ * over their browser WEBSOCKET, so a registry of bare closers was sufficient and
+ * the boundary looked right. glamour announces it on the AGENT's SSE tail —
+ * `{type:"connected"}` / `{type:"disconnected"}`, deliberately unlogged, so a
+ * reconnecting agent does not re-see every past connect and so the frame never
+ * advances a tail cursor. That is not a glamour quirk; it is the general shape
+ * of "tell the live subscribers something that is not part of the history", and
+ * a registry that can only END a stream cannot express it. Without this the
+ * spell would have had to keep its own parallel `Set` of controllers, which is
+ * exactly the drift this registry exists to remove.
  */
-export type SseClients = Set<() => void>;
+export type SseClient = {
+  /** End this stream, through the teardown funnel, at most once. */
+  close(): void;
+  /** Write one raw SSE chunk to this stream. No-op once torn down. */
+  send(chunk: string): void;
+};
+
+/**
+ * The live-tail registry. `size` is the daemon's SSE subscriber count — the
+ * number `shouldIdleClose` must see — and closing every entry is what a drain
+ * does.
+ */
+export type SseClients = Set<SseClient>;
 
 export interface SseOptions<T extends object> {
   /** The log to replay from and subscribe to. */
@@ -77,14 +101,17 @@ export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
   let unsubscribe: (() => void) | null = null;
   let keepalive: ReturnType<typeof setInterval> | null = null;
   let closed = false;
-  let close: () => void = () => {};
+  // The registry entry for THIS stream. Its methods are filled in by `start`,
+  // which is where the controller exists; the object identity is stable from
+  // here so `teardown` can remove exactly this entry.
+  const client: SseClient = { close: () => {}, send: () => {} };
 
   const teardown = () => {
     if (closed) return;
     closed = true;
     if (keepalive !== null) clearInterval(keepalive);
     unsubscribe?.();
-    clients?.delete(close);
+    clients?.delete(client);
     onClose?.();
   };
 
@@ -99,7 +126,7 @@ export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
           teardown();
         }
       };
-      close = () => {
+      client.close = () => {
         teardown();
         try {
           controller.close();
@@ -107,6 +134,10 @@ export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
           /* already closed by the runtime */
         }
       };
+      // ⛔ `send` GOES THROUGH `safeEnqueue`, so an out-of-band frame obeys the
+      // same closed-check and the same teardown-on-throw as a logged one. A
+      // daemon must not be able to write to a stream this module has torn down.
+      client.send = safeEnqueue;
 
       // ⛔ AN OPENING COMMENT, BEFORE ANYTHING ELSE. It flushes the response
       // headers immediately: some HTTP clients — Bun's own `fetch()` included —
@@ -122,7 +153,7 @@ export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
 
       keepalive = setInterval(() => safeEnqueue(": hb\n\n"), heartbeatMs);
       signal?.addEventListener("abort", teardown, { once: true });
-      clients?.add(close);
+      clients?.add(client);
       onOpen?.();
     },
     cancel() {

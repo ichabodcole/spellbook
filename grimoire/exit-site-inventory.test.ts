@@ -86,11 +86,18 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
-  {
-    file: "glamour/scripts/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
+  // ⭐ glamour's A-drain site is GONE, and it is the clearest thing this
+  // inventory has recorded. It moved to `backend/cli.ts` in Phase 2 chapter 1,
+  // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (C-signal,
+  // F-live) went with it for the same reason — the signal handlers and the
+  // "pinned session went away" exit are all one `return` now.
+  //
+  // ⛔ glamour's CLI has ZERO live `process.exit` sites, which is the direction
+  // this inventory exists to push and the third CLI to reach it after magpie and
+  // mind-mapper. `scripts/cli.ts` is a LAUNCHER holding `process.exitCode`.
   {
     file: "imago/scripts/cli.ts",
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
@@ -103,7 +110,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "glamour/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
@@ -155,18 +161,18 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "bounty/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "imago/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "magpie/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
-  { file: "glamour/scripts/server.ts", text: "process.exit(res.code);", family: "E-terminal" },
+  // ⚠ glamour's daemon exit STAYED IN `scripts/server.ts` across Phase 2 — the
+  // launcher is the process entry now, so this is still the site where the
+  // process ends. The TEXT changed (`res.code` → `exitCode`) because `main` now
+  // returns the code instead of the launcher reaching into the daemon's own
+  // result object; the family and the address did not.
+  { file: "glamour/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   {
     file: "mind-mapper/scripts/server.ts",
     text: "process.exit(await main(process.argv.slice(2)));",
     family: "E-terminal",
   },
   // F — live: an in-function exit with stdout pending upstream of it.
-  {
-    file: "glamour/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // pinned session went away → done",
-    family: "F-live",
-  },
   {
     file: "imago/scripts/cli.ts",
     text: "if (grounded) process.exit(0); // our pinned session went away → done",

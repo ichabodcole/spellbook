@@ -8,7 +8,7 @@ import {
   projectKey,
   saveStyle,
   setStyleArchived,
-} from "../scripts/styles.server";
+} from "./styles.server";
 
 let HOME: string;
 beforeAll(() => {

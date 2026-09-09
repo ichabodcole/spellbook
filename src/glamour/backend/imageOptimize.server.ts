@@ -1,6 +1,6 @@
 // Server/CLI-only: native Bun.Image downscale + webp. Do NOT import from browser
 // code (the browser drop path uses <canvas>). Requires Bun >= 1.3.14.
-import { OPTIMIZE } from "../shared/imageOptimize";
+import { OPTIMIZE } from "../../../plugins/spellbook/skills/glamour/shared/imageOptimize";
 
 export async function optimizeImageBuffer(
   input: Uint8Array,

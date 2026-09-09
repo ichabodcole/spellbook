@@ -70,7 +70,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   // with the filename a consumer invokes.
   "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
   "bounty/scripts/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
-  "glamour/scripts/cli.ts": "caller-facing; prompt text is a positional",
+  "glamour/backend/cli.ts": "caller-facing; prompt text is a positional",
   "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/scripts/cli.ts": "caller-facing; prompt text is a positional",
   "magpie/backend/cli.ts": "caller-facing",

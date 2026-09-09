@@ -58,9 +58,25 @@ export const EXIT_FOR: Record<ErrKind, number> = {
   conflict: 6, // a precondition failed
 };
 
-/** Extra fields a failure may carry. `hint` is prose for a human or an agent;
- *  `choices` enumerates what WOULD have been accepted. */
-export type ErrExtra = { hint?: string; choices?: string[] };
+/**
+ * Extra fields a failure may carry. `hint` is prose for a human or an agent;
+ * `choices` enumerates what WOULD have been accepted.
+ *
+ * ⚠ **`server` ARRIVED IN PHASE 2, AND IT IS A FINDING ABOUT THIS MODULE.** The
+ * contract was extracted from astrolabe and magpie, and BOTH of them front a
+ * daemon and BOTH of them throw away what the daemon said: magpie's
+ * `die("state failed (HTTP ${status})", "internal")` keeps the number and drops
+ * the body. glamour does not — its refusals carry the daemon's own JSON verbatim
+ * under `error.server`, so a caller can branch on the upstream's reason instead
+ * of on the CLI's prose about it, and `tests/cli-contract.test.ts` asserts it for
+ * 400, 404 and 409. Seven of the eight spells put a CLI in front of a daemon, so
+ * this is the general shape and the two-spell boundary was the narrow one.
+ *
+ * ⛔ IT IS THE UPSTREAM'S BODY, VERBATIM, AND NOTHING ELSE. Not a place to stash
+ * arbitrary context: the whole value of the field is that a caller can trust it
+ * is what the other side actually said.
+ */
+export type ErrExtra = { hint?: string; choices?: string[]; server?: unknown };
 
 /** The verb under execution, so an envelope can name it. Set once by `main`. */
 let currentCommand: string | null = null;
@@ -90,6 +106,8 @@ export function errorEnvelope(kind: ErrKind, message: string, extra?: ErrExtra):
       message,
       ...(extra?.hint ? { hint: extra.hint } : {}),
       ...(extra?.choices ? { choices: extra.choices } : {}),
+      // Last, so a spell that already emitted this key keeps its byte order.
+      ...(extra?.server !== undefined ? { server: extra.server } : {}),
     },
     meta: { command: currentCommand },
   })}\n`;

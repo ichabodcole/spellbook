@@ -9,7 +9,7 @@ import type {
   LibraryItem,
   SavedStyle,
   StyleSection,
-} from "../shared/types";
+} from "../../../plugins/spellbook/skills/glamour/shared/types";
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",

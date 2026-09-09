@@ -2,12 +2,39 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startDaemon } from "../scripts/server";
+import { startDaemon } from "./server";
 
 let d: Awaited<ReturnType<typeof startDaemon>>;
 let base: string;
 
 beforeAll(async () => {
+  // ⛔ THIS SUITE DRIVES THE DAEMON MODULE IN-PROCESS, AND AFTER THE RELOCATION
+  // THAT MEANS FORCING THE MODE. `server.ts` anchors `SKILL_ROOT` one level above
+  // its own file, which is only the skill root from the EMITTED `dist/`. Imported
+  // here from `src/glamour/backend/`, `SKILL_ROOT` computes to `src/glamour/`,
+  // which holds no `dist/index.html` — so `resolveMode()` answers DEV and the
+  // daemon then tries the dev surface import, whose five `..` are counted from
+  // `dist/` and therefore climb out of the repo. Measured on the first run after
+  // the move: `Cannot find module '../../../../../src/glamour/surface/index.html'`,
+  // and every cell in the file failed at `beforeAll`.
+  //
+  // That is D12's ruling arriving as a test failure: a daemon booted from its
+  // source is a WRONG daemon, so the only entry is the launcher. This suite is
+  // deliberately NOT converted to spawn it — its subject is the daemon's HTTP and
+  // reducer behaviour, thirty cells deep against one shared instance, and none of
+  // it is about surface mode. Forcing release is the honest way to say "mode is
+  // not what this file tests"; `release-serve.test.ts` spawns the real launcher
+  // and is where mode resolution, dev and release serving are asserted.
+  //
+  // ⚠ SET AND RESTORED AROUND THE BOOT, NEVER LEFT STANDING. `bun test` runs the
+  // files of a directory in ONE process, so a bare assignment here is a global
+  // that every later suite inherits — measured: `cli-open-envelope.test.ts`
+  // spawns a CLI whose whole premise is that mode is AUTO-DETECTED at a
+  // surface-free destination, and with `release` leaking in it detected release,
+  // skipped the guard, spawned a daemon and hung out its 4-second race. The
+  // suite passed alone and failed in the directory, which is the signature.
+  const priorMode = process.env.SPELLBOOK_SURFACE_MODE;
+  process.env.SPELLBOOK_SURFACE_MODE = "release";
   process.env.GLAMOUR_HOME = mkdtempSync(join(tmpdir(), "glamour-home-"));
   // The daemon writes its discovery pointer to $TMPDIR/glamour-latest.json
   // UNCONDITIONALLY at boot and unlinks it at close iff the id is its own — so
@@ -15,7 +42,12 @@ beforeAll(async () => {
   // pointer at 16 pass / 0 fail (cassandra, comms #1166). Scope TMPDIR too.
   // Fixture-side only; the pointer's home is a filed spell-wide item.
   process.env.TMPDIR = mkdtempSync(join(tmpdir(), "glamour-tmp-"));
-  d = await startDaemon({ port: 0, title: "Test", intent: "logos" });
+  try {
+    d = await startDaemon({ port: 0, title: "Test", intent: "logos" });
+  } finally {
+    if (priorMode === undefined) delete process.env.SPELLBOOK_SURFACE_MODE;
+    else process.env.SPELLBOOK_SURFACE_MODE = priorMode;
+  }
   base = `http://127.0.0.1:${d.port}`;
 });
 
@@ -432,7 +464,17 @@ test("mode rides the ready event AND the discovery file AND startDaemon's return
   const reader = (r.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  // ⛔ THE FIRST `data:` LINE, NOT THE FIRST LINE. Since the shared
+  // `kit/wire/sse.ts` landed, every house SSE stream opens with a `: connected`
+  // COMMENT — it flushes the response headers immediately, because some HTTP
+  // clients (Bun's own `fetch()` included) buffer until the first body byte and a
+  // genuinely quiet stream would otherwise leave the caller unresolved. Reading
+  // line 0 now hands `JSON.parse` a comment.
+  const frame =
+    new TextDecoder()
+      .decode(value)
+      .split("\n")
+      .find((l) => l.startsWith("data:")) ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
   expect(ready.type).toBe("ready");
   expect(["dev", "release"]).toContain(ready.mode);

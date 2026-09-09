@@ -39,12 +39,16 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const TESTS_DIR = import.meta.dir;
-const SKILL_SRC = join(TESTS_DIR, "..");
-// Every non-test module under scripts/ and shared/ ships — a glob, never a
-// hand-kept mirror.
+// ⛔ ANCHORED ON AN EXPLICIT SKILL ROOT, NEVER BY COUNTING `..`. This file used
+// to sit in the skill's own `tests/`, where `join(import.meta.dir, "..")` WAS the
+// skill root. From `src/glamour/backend/` it is `src/glamour/`, and every copy
+// below would have built a "release tree" out of the wrong directory.
+const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_SRC = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "glamour");
+// Every non-test module under shared/ ships — a glob, never a hand-kept mirror.
 const shipping = (dir: string) =>
   readdirSync(join(SKILL_SRC, dir)).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
 
@@ -55,13 +59,35 @@ let proc: Bun.Subprocess<"ignore", "pipe", "pipe">;
 let url = "";
 let sessionId = "";
 
+/**
+ * A fake DEPLOYED skill folder — the shape a marketplace clone has, and nothing
+ * else.
+ *
+ * ⛔ THE SCAR IS RE-HOMED, NOT DELETED. This function used to glob every
+ * non-test `.ts` under `scripts/` into the copy, with the property attached:
+ * "a new module is in the copied tree BY CONSTRUCTION this way", earned because
+ * mind-mapper's hand-maintained mirror shipped a broken release twice. After the
+ * relocation that glob would copy files whose `../../../plugins/…` specifiers
+ * cannot resolve from a temp directory — it would assert a tree that does not
+ * exist. The property is now true by BUNDLING instead of by globbing: the daemon
+ * is `dist/server.js`, which IS the whole module graph, so a new module is in the
+ * copied tree because it is inside the bundle. What is copied is exactly the two
+ * files that run — the launcher and the artifact it imports — plus `shared/`,
+ * which genuinely ships as source because the SURFACE imports it too (D10).
+ *
+ * ⛔ AND THE BUNDLE IS COPIED BEFORE THE SYNTHETIC SURFACE IS WRITTEN OVER IT.
+ * `dist/` here holds both halves: the daemon's real artifact and a hand-made
+ * `index.html` + chunks whose bytes the serving cells assert. Writing the
+ * synthetic files first and copying second would clobber them.
+ */
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "glamour-release-test-"));
-  for (const dir of ["scripts", "shared"] as const) {
-    mkdirSync(join(root, dir), { recursive: true });
-    for (const f of shipping(dir)) cpSync(join(SKILL_SRC, dir, f), join(root, dir, f));
-  }
+  mkdirSync(join(root, "shared"), { recursive: true });
+  for (const f of shipping("shared")) cpSync(join(SKILL_SRC, "shared", f), join(root, "shared", f));
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  cpSync(join(SKILL_SRC, "scripts", "server.ts"), join(root, "scripts", "server.ts"));
   mkdirSync(join(root, "dist"), { recursive: true });
+  cpSync(join(SKILL_SRC, "dist", "server.js"), join(root, "dist", "server.js"));
   writeFileSync(
     join(root, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
@@ -143,7 +169,17 @@ test("transport 3 of 3: the ready EVENT carries the resolved mode", async () => 
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  // ⛔ THE FIRST `data:` LINE, NOT THE FIRST LINE. Since the shared
+  // `kit/wire/sse.ts` landed, every house SSE stream opens with a `: connected`
+  // COMMENT — it flushes the response headers immediately, because some HTTP
+  // clients (Bun's own `fetch()` included) buffer until the first body byte and a
+  // genuinely quiet stream would otherwise leave the caller unresolved. Reading
+  // line 0 now hands `JSON.parse` a comment.
+  const frame =
+    new TextDecoder()
+      .decode(value)
+      .split("\n")
+      .find((l) => l.startsWith("data:")) ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode?: string };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");

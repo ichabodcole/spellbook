@@ -51,14 +51,31 @@ const distDirFor = (spell: string) => join(SKILLS_ROOT, spell, "dist");
 function emittedJs(spell: string): string[] {
   const dir = distDirFor(spell);
   if (!existsSync(dir)) return [];
-  return execFileSync("git", ["-C", REPO_ROOT, "ls-files", relative(REPO_ROOT, dir)], {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
-    .filter((f) => f.endsWith(".js"))
-    .map((f) => join(REPO_ROOT, f));
+  return (
+    execFileSync("git", ["-C", REPO_ROOT, "ls-files", relative(REPO_ROOT, dir)], {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => f.endsWith(".js"))
+      .map((f) => join(REPO_ROOT, f))
+      // ⚠ THE INDEX AND THE DISK DIVERGE DURING A PORT, and this ward used to
+      // CRASH on that rather than report it. A rebuild replaces a hashed chunk;
+      // until the result is staged, `git ls-files` still names the old chunk and
+      // `readFileSync` throws ENOENT from inside `pinnedPaths` — three cells fail
+      // with a stack trace that says nothing about paths. Playbook Gotcha 4, in a
+      // new file. A tracked-but-absent emitted file is not this ward's subject, so
+      // it is skipped; `dist-check`'s reproduction arm is what has an opinion about
+      // it, and the zero-guard below still refuses an empty population.
+      .filter((f) => existsSync(f))
+  );
 }
+
+/** The emitted files a spell's BACKEND produces — the ones whose anchor
+ *  arithmetic this ward exists to check. A surface chunk is emitted too and
+ *  pins nothing, so it must not count toward coverage. */
+const isBackendArtifact = (abs: string): boolean =>
+  abs.endsWith("/cli.js") || abs.endsWith("/server.js");
 
 type Pin = { file: string; line: number; expr: string; resolved: string };
 
@@ -70,10 +87,102 @@ const JOIN_CALL =
 // `var X = import.meta.dir` and `var X = dirname(fileURLToPath(import.meta.url))`
 // — the two ways a bundled module asks where it is. Bun's bundler renames the
 // imported helpers (`dirname2`, `join3`), hence the digit-tolerant names.
+//
+// ⛔ AND THE CALLEE MAY BE QUALIFIED. `Bun.fileURLToPath` is the same function
+// under a namespace, and glamour's CLI has always written it that way. The first
+// draft of this pattern required a BARE identifier, so glamour's `SCRIPT_DIR` was
+// never registered as an anchor, so every pin computed from it — `SERVER_SCRIPT`,
+// `SKILL_ROOT`, `DIST_DIR`, `SURFACE_CWD` — was silently dropped, and this ward
+// passed 5/0 over a `dist/cli.js` that spawned a daemon at `dist/server.ts`, a
+// path that does not exist. Measured in Phase 2, on the first spell this ward had
+// never seen: it printed EIGHT pins, none of them glamour's, and reported green.
+// **That is the ward's own failure mode — a regex that recognises the two spellings
+// it was written against and reports silence for a third.** The optional
+// `(?:[A-Za-z_$][\w$]*\d*\s*\.\s*)?` prefix is the repair; the coverage cell below
+// is the instrument that would have made it loud without anyone reading the regex.
+const QUALIFIER = String.raw`(?:[A-Za-z_$][\w$]*\d*\s*\.\s*)?`;
 const ANCHOR_DIR = /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*import\.meta\.dir\s*;/;
-const ANCHOR_URL =
-  /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*dirname\d*\(\s*fileURLToPath\d*\(\s*import\.meta\.url\s*\)\s*\)\s*;/;
+const ANCHOR_URL = new RegExp(
+  String.raw`\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*${QUALIFIER}dirname\d*\(\s*${QUALIFIER}fileURLToPath\d*\(\s*import\.meta\.url\s*\)\s*\)\s*;`,
+);
 const ASSIGNED_JOIN = /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(join\d*\(.*)$/;
+
+// ⛔ THE INGREDIENTS OF LOCATION-ANCHORING — the backstop for the two patterns
+// above, and it is deliberately NOT COMPUTED FROM THEM.
+//
+// D27 added a coverage cell whose subject was "a file that declares an anchor
+// must yield a pin", and computed "declares an anchor" with `ANCHOR_DIR ||
+// ANCHOR_URL` — **the same two regexes the cell exists to backstop.** A
+// spelling neither regex reads therefore made the file EXEMPT rather than LOUD,
+// which is the exact failure the cell was written to end. Four spellings were
+// driven against it, each leaving a `dist/cli.js` that spawns a nonexistent
+// `dist/server.ts`, and all four passed 6/0:
+//
+//   var __fileName = Bun.fileURLToPath(import.meta.url); var SCRIPT_DIR = dirname(__fileName);
+//   var SCRIPT_DIR = import.meta.dirname;
+//   var SCRIPT_DIR = path.posix.dirname(node_url.fileURLToPath(import.meta.url));
+//   var SCRIPT_DIR = dirname(fileURLToPath(new URL(import.meta.url)));
+//
+// The first is what esbuild/Bun emit for a `__filename` shim; the second is a
+// real Bun/Node API. Neither is exotic.
+//
+// **A backstop computed from the same predicate it backstops is not a
+// backstop.** So this pattern is written at a level the anchor patterns cannot
+// reach past: a module CANNOT ask where it is without naming one of
+// `import.meta.url`, `import.meta.dir`, `import.meta.dirname`, or
+// `fileURLToPath` — under any qualifier, in any arrangement. Those four are the
+// ingredients. The cell below requires that every line carrying one be READ:
+// either recognised as an anchor, or itself yielding a pin. A line that carries
+// an ingredient and is neither is a spelling this ward cannot read, and it goes
+// RED naming the line rather than passing in silence.
+//
+// ⛔ AND THE FIRST DRAFT OF THIS LIST WAS BROKEN BY ITS OWN AUTHOR, which is the
+// only reason to trust the second. A fifth spelling was hunted for immediately
+// after the four above went red, and one was found: `var SCRIPT_DIR =
+// dirname(__filename);` — the CJS pair. It names none of the four ingredients,
+// so it scored `ingredients=0 anchor=no pins=0` and the cell was silent. (The
+// escape-enumeration cell below happened to red on it, because glamour has an
+// escape that then vanished — incidental, and a spell with no escape would have
+// been fully green.) `__filename`/`__dirname` and `Bun.main` are therefore
+// ingredients too: none appears in ANY of the eight emitted artifacts today, so
+// the cost of naming them is zero and the cost of omitting them was a hole.
+// `process.argv[1]` is the known REMAINING hole and is deliberately NOT here —
+// a CLI bundle reads `process.argv` for ordinary arg parsing, so it would red
+// every artifact. Anchoring off the entry path is wrong in a bundle a launcher
+// imports anyway, and B3 is what says so.
+const ANCHOR_INGREDIENT =
+  /import\.meta\.(?:url|dir|dirname)\b|\bfileURLToPath\d*\s*\(|\b__(?:dirname|filename)\b|\bBun\.main\b/;
+// A line that merely BINDS the helper anchors nothing — `import { fileURLToPath }
+// from "url";` is Bun's own emitted preamble in five of six artifacts today. It
+// names no `import.meta.*` and calls nothing, so the ingredient pattern above
+// already misses it; this is belt-and-braces for a `require`-shaped emit.
+const HELPER_BINDING = /^\s*import\s|=\s*(?:require|__toESM|__require)\s*\(/;
+
+/** Every line of `text` that carries a location-anchoring ingredient and is
+ *  READ BY NOBODY — neither recognised as an anchor nor yielding a pin of its
+ *  own. `pinnedLines` is 1-based, as `pinnedPaths` reports. Returned as
+ *  `line:text` so the caller can name it; naming the line is the whole point,
+ *  because the next agent's repair is to teach `ANCHOR_DIR`/`ANCHOR_URL` the
+ *  spelling and it cannot do that without seeing it. */
+function unreadAnchorLines(text: string, pinnedLines: Set<number>): string[] {
+  const out: string[] = [];
+  text.split("\n").forEach((line, i) => {
+    if (!ANCHOR_INGREDIENT.test(line) || HELPER_BINDING.test(line)) return;
+    if (ANCHOR_DIR.test(line) || ANCHOR_URL.test(line)) return;
+    if (pinnedLines.has(i + 1)) return;
+    out.push(`${i + 1}:${line.trim()}`);
+  });
+  return out;
+}
+
+/** Does any line of `text` yield an anchor either pattern can READ? */
+const hasReadableAnchor = (text: string): boolean =>
+  text.split("\n").some((line) => ANCHOR_DIR.test(line) || ANCHOR_URL.test(line));
+
+/** Does `text` ask where it is at all? A backend that anchors nothing is exempt
+ *  from the coverage cell, and must stay exempt. */
+const asksWhereItIs = (text: string): boolean =>
+  text.split("\n").some((line) => ANCHOR_INGREDIENT.test(line) && !HELPER_BINDING.test(line));
 
 const literals = (args: string): string[] =>
   [...args.matchAll(/"([^"]*)"/g)].map((m) => m[1] as string);
@@ -171,6 +280,55 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(found.length).toBeGreaterThan(3);
   });
 
+  test("⛔ COVERAGE, NOT POPULATION — a backend that ASKS WHERE IT IS must be READ, not exempted", () => {
+    // ⛔ THIS CELL EXISTS BECAUSE THE WARD WENT SILENTLY BLIND ON THE FIRST
+    // SPELL IT HAD NEVER SEEN. Phase 1b's own closing finding was that a ward
+    // whose POPULATION is derived can still have ZERO COVERAGE of the thing it
+    // was written for, and that population and coverage are different
+    // measurements — "print both". Phase 2 paid for the half that was only
+    // printed: glamour arrived in the population automatically, contributed no
+    // pins because its anchor is written `Bun.fileURLToPath`, and the ward
+    // reported green over a `dist/cli.js` spawning a nonexistent
+    // `dist/server.ts`. Printing would not have caught it; ASSERTING does.
+    //
+    // ⛔ AND THE FIRST ASSERTION WAS ITSELF THE SAME BUG ONE LEVEL UP (D36). It
+    // gated on "declares an anchor", computed with `ANCHOR_DIR || ANCHOR_URL` —
+    // the two regexes it exists to backstop — so a THIRD spelling was exempt
+    // rather than loud, and four real ones were driven that proved it. The gate
+    // is now the INGREDIENTS (see `ANCHOR_INGREDIENT`), which no location-aware
+    // module can avoid naming, and the requirement is two-part:
+    //
+    //   1. every ingredient-bearing line is READ — recognised as an anchor, or
+    //      yielding a pin of its own;
+    //   2. a file that carries any ingredient yields AT LEAST ONE pin.
+    //
+    // A backend that legitimately anchors nothing carries no ingredient, is
+    // exempt, and stays exempt.
+    const unread: string[] = [];
+    const blind: string[] = [];
+    const coverage: string[] = [];
+    for (const spell of spells) {
+      for (const file of emittedJs(spell).filter(isBackendArtifact)) {
+        const rel = relative(REPO_ROOT, file);
+        const text = readFileSync(file, "utf8");
+        const pins = pinnedPaths(file);
+        const anchoring = asksWhereItIs(text);
+        for (const hit of unreadAnchorLines(text, new Set(pins.map((p) => p.line)))) {
+          unread.push(`${rel}:${hit.replace(":", "  UNREAD ANCHOR SPELLING  ")}`);
+        }
+        coverage.push(
+          `${rel}  anchors=${anchoring ? "yes" : "no "}  anchor-read=${
+            hasReadableAnchor(text) ? "yes" : "no "
+          }  pins=${pins.length}`,
+        );
+        if (anchoring && pins.length === 0) blind.push(rel);
+      }
+    }
+    console.warn(`\n  SPAWN-PATH WARD — coverage:\n    ${coverage.join("\n    ")}\n`);
+    expect(unread).toEqual([]);
+    expect(blind).toEqual([]);
+  });
+
   test("⛔ EVERY SHIPPED PIN RESOLVES — this is the cell `remove.py` would have reddened", () => {
     const missing: string[] = [];
     const inventory: string[] = [];
@@ -211,8 +369,61 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     }
     expect([...escapes].sort()).toEqual([
       "plugins/spellbook/skills/astrolabe/dist/cli.js -> src/astrolabe",
+      // glamour's `SURFACE_CWD`, the dev-mode daemon cwd Contract 5 pins. It
+      // arrived here in Phase 2 — and note it arrived only once the anchor
+      // pattern learned `Bun.fileURLToPath`: before that this cell was green
+      // because it could not see the escape at all, which is the same blindness
+      // the coverage cell above now asserts against.
+      "plugins/spellbook/skills/glamour/dist/cli.js -> src/glamour",
       "plugins/spellbook/skills/magpie/dist/cli.js -> src/magpie",
     ]);
+  });
+
+  test("⛔ CALIBRATION — an anchor spelling this ward CANNOT READ is LOUD, not exempt", () => {
+    // ⛔ THE MUTATION THAT WAS DRIVEN BY HAND, MADE PERMANENT. Each of these was
+    // planted in glamour's real `dist/cli.js` beside a `SERVER_SCRIPT` pointing
+    // at a nonexistent `dist/server.ts`; against D27's predicate all five passed
+    // 6/0, and against this one all five red. Driving is what found them; this
+    // cell is what stops the property rotting. **Add the next spelling here the
+    // day you teach the ward to read it.**
+    const spellings = [
+      // esbuild/Bun's `__filename` shim — a two-step anchor, and the likeliest
+      // of the five to arrive on its own.
+      "var __fileName = Bun.fileURLToPath(import.meta.url); var SCRIPT_DIR = dirname(__fileName);",
+      // a real Bun/Node API, and the shortest thing an author would write.
+      "var SCRIPT_DIR = import.meta.dirname;",
+      // TWO qualifier segments; `QUALIFIER` allows one.
+      "var SCRIPT_DIR = path.posix.dirname(node_url.fileURLToPath(import.meta.url));",
+      // an interposed `new URL(...)` inside the pair `ANCHOR_URL` matches.
+      "var SCRIPT_DIR = dirname(fileURLToPath(new URL(import.meta.url)));",
+      // the CJS pair — and the one that broke the FIRST version of this cell's
+      // ingredient list, found by hunting for a fifth after the four above.
+      "var SCRIPT_DIR = dirname(__filename);",
+    ];
+    const root = mkdtempSync(join(tmpdir(), "spawn-path-anchor-"));
+    mkdirSync(join(root, "dist"));
+    for (const [i, anchor] of spellings.entries()) {
+      const text = [anchor, 'var SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");', ""].join("\n");
+      const file = join(root, "dist", `cli${i}.js`);
+      writeFileSync(file, text);
+      // Unreadable, so nothing computed from it is a pin — which is precisely
+      // why D27's "declares an anchor" predicate made the file EXEMPT: no
+      // readable anchor, no pins, no complaint, over a spawn target that is not
+      // there.
+      expect(hasReadableAnchor(text)).toBe(false);
+      expect(pinnedPaths(file)).toEqual([]);
+      // …and the ingredient gate sees it anyway, and names the line.
+      expect(asksWhereItIs(text)).toBe(true);
+      expect(unreadAnchorLines(text, new Set())).toEqual([`1:${anchor}`]);
+    }
+
+    // ⭐ AND THE OTHER HALF OF THE CONTRACT: a backend that legitimately anchors
+    // NOTHING carries no ingredient, is exempt, and stays exempt. Bun's own
+    // emitted preamble binds the helper without anchoring anything, and must not
+    // count — it is present in five of the six real artifacts today.
+    const inert = ['import { fileURLToPath } from "url";', 'var X = join(A, "b");', ""].join("\n");
+    expect(asksWhereItIs(inert)).toBe(false);
+    expect(unreadAnchorLines(inert, new Set())).toEqual([]);
   });
 
   test("CALIBRATION — the mechanism reddens on a synthetic emitted file", () => {

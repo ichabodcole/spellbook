@@ -1,6 +1,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultState, type GlamourState, type LibraryItem } from "../shared/types";
+import {
+  defaultState,
+  type GlamourState,
+  type LibraryItem,
+} from "../../../plugins/spellbook/skills/glamour/shared/types";
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",

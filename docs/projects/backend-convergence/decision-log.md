@@ -783,3 +783,361 @@ they had been carried at all.
   as source and are inlined into three artifacts each; staleness is caught only
   by `dist-check` ARM 2. **Still true, still stable, still worth knowing**
   before a later phase adds more to those bundles.
+
+## D26 · glamour's `shared/` stays; the six `scripts/` modules move
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, under D10's rule
+applied to a third spell.
+
+Measured against the tree rather than assumed: **17 surface import sites**, all
+into `shared/` — 16 of `types.ts` (`App.tsx` plus ten components plus `derive`,
+`derive.test`, `fileIntake`, `useSession`) and 1 of `imageOptimize.ts`
+(`fileIntake`). Zero surface files import anything under `scripts/`. So
+`cli.ts`, `server.ts`, `reduce.ts`, `styles.server.ts`, `persist.server.ts` and
+`imageOptimize.server.ts` move to `src/glamour/backend/`; `shared/` stays where
+both halves can already reach it.
+
+**The rule also decided a test that the rule does not obviously cover.**
+`tests/imageOptimize.test.ts` imports BOTH `scripts/imageOptimize.server.ts` and
+`shared/imageOptimize.ts`, so its imports point both ways. It moved, because **a
+test follows its SUBJECT, not its imports** — the subject is the `.server.ts`.
+`tests/types.test.ts`, whose subject is `shared/types.ts`, is the one test file
+that stayed behind.
+
+**Not taken:** _move `shared/` too, giving glamour one root._ Nicer story, and
+it re-points 17 surface sites inside a chapter whose entire contract is
+"behaviour unchanged" — the same reasoning D10 already recorded for magpie's
+twelve. It is re-openable as its own change, for all three spells at once.
+
+## D27 · The spawn-path ward's ANCHOR PATTERN is widened, and a COVERAGE cell is added
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, on the brief's explicit
+instruction to report the ward's silence as a finding about the ward.
+
+The ward was **green over a real defect**: `dist/cli.js` spawning
+`dist/server.ts`, a file that does not exist. Cause, measured: `ANCHOR_URL`
+required a BARE `fileURLToPath`, glamour writes `Bun.fileURLToPath`, so
+`SCRIPT_DIR` was never registered and all four pins computed from it were
+dropped. The ward printed eight pins, none of them glamour's, and passed 5/0.
+Its "a pin that leaves the skill folder is ENUMERATED" cell was silently wrong
+at the same time and for the same reason.
+
+Three changes, and only the first is the bug fix:
+
+1. An optional member-expression qualifier before `dirname` and `fileURLToPath`.
+2. ⭐ **A COVERAGE cell.** Every emitted `cli.js`/`server.js` that DECLARES an
+   anchor must yield ≥1 pin. This is the general instrument: it fails on the
+   next unrecognised spelling without anyone having to think of it in advance.
+3. `emittedJs` skips a tracked-but-absent file instead of throwing ENOENT from
+   three cells mid-port.
+
+**⛔ The finding under the finding, and it amends Phase 1b's closing
+paragraph.** 1b ended "population and coverage are different measurements —
+**print both**", and printing is what it built. Printing is not enough: a green
+ward's console output is not read. **Coverage must be ASSERTED.** Phase 1b's own
+text is the strongest evidence for this: it correctly predicted the failure
+mode, in writing, one phase before it happened, and the instrument it prescribed
+did not stop it.
+
+**Not taken:**
+
+- _Rewrite the CLI to use a bare `fileURLToPath` so the existing pattern
+  matches._ Cheapest, and it makes the SPELL conform to the INSTRUMENT — the
+  ward would still be blind to the next spelling, and five spells are queued.
+- _Parse the emitted JS with a real parser instead of regexes._ Genuinely
+  better, and out of scope for a chapter whose contract is "behaviour
+  unchanged"; the ward's own header already declares the regex blind spots. The
+  coverage cell is what makes a future blind spot loud, which is the property a
+  parser would have bought.
+- _Report it and leave it broken_, per the brief's letter ("that is a finding
+  about the ward"). Rejected because chapter 1's premise is that the instruments
+  are honest before chapter 2 moves anything, and a knowingly blind ward is
+  worse than no ward.
+
+## D28 · `DECLARED_EMITTED_ROOTS` gets a derived completeness cell
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1.
+
+`import-boundary-wards` derives every population from the tree except this one
+hand-written array of root paths, which BOTH ward 1a and ward 1b read to decide
+which emitted files they open at all. An omission is not an over-broad
+exemption; it is **unseeing** — the spell's `dist/*.js` leaves both populations
+and both cells go green because they stopped looking. Identical in kind to
+`INTERNAL_ENTRY_POINTS`, which 1b flagged as silent-in-both-directions.
+
+glamour is added, and a new cell derives the REQUIRED set from the tree the way
+`src/build.ts` derives what to build — `src/<spell>/backend/{cli,server}.ts`
+exists ⇒ `<spell>/dist` must be declared — and fails naming any spell missing
+from the list.
+
+**Not taken:** _derive the list itself and delete the declaration._ It is the
+right end state and it changes what two wards examine inside the chapter that
+relocates a spell, which is the one chapter that must not also move an
+instrument's population. The cell delivers the safety now and leaves the
+deletion as a clean, separately-verifiable change.
+
+## D29 · glamour's daemon integration suite forces `release` rather than spawning
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, forced by D12.
+
+The suite imports `startDaemon` and drives it in-process, thirty cells deep
+against one shared instance. After the relocation `SKILL_ROOT` computes to
+`src/glamour/`, `resolveMode()` answers DEV, and the dev surface import — whose
+five `..` are counted from `dist/` — climbs out of the repo. Every cell failed
+in `beforeAll`. That is D12 arriving as an error message: **a daemon booted from
+its source is a wrong daemon.**
+
+`SPELLBOOK_SURFACE_MODE=release` around the boot says "mode is not what this
+file tests". `release-serve.test.ts` spawns the real launcher and is where mode
+resolution, dev serving and release serving are asserted — so nothing is
+unasserted, it is asserted in the suite that can see it.
+
+**⛔ And the first form of this repair was a cross-suite defect.** A bare
+assignment in `beforeAll` is process-global; `bun test` runs a directory in one
+process; `cli-open-envelope.test.ts` spawns a CLI whose premise is that mode is
+AUTO-DETECTED, detected release instead, skipped the guard and hung. It is now
+set and restored in a `try/finally`, AND the spawning suite clears the variable
+out of its child's environment — belt and braces, because the two suites are
+only coupled by a runner detail that could change.
+
+**Not taken:** _convert the suite to spawn the launcher, as magpie's did._ The
+faithful answer and it is a rewrite of 430 lines of in-process HTTP driving
+whose subject is the reducer and the routes, not the process. Magpie's suite
+already spawned a daemon per cell, so its conversion was an address change;
+glamour's would be a different test.
+
+## D30 · The surface artifact depends on WHICH SPELLS share the build process
+
+**Found:** implementer, 2026-09-08, Phase 2 chapter 1, driven. Not a decision so
+much as a measurement the roll must carry.
+
+`bun run src/build.ts glamour` and `bun run build` emit **different bytes for
+glamour's surface from identical source**, deterministically and repeatably:
+`index-mccrznc4.js` / `index-me0sn06x.css` for a subset build (glamour alone, or
+glamour + astrolabe in either order), `index-39c5b79f.js` / `index-ek8hd2gz.css`
+for the whole roster. The differences are real content — Tailwind palette values
+at a different rounding (`#b75000` vs `#bb4d00`) and a different emitted form of
+Bun's own `__commonJS`/`__copyProps` helpers.
+
+`dist-check` ARM 2 runs `bun run build` with no arguments, so **the artifact the
+house verifies is the whole-roster build** and the committed tree is
+self-consistent. What is not safe is a per-spell build during a port: it dirties
+`dist/` with no source change and every downstream instrument that compares the
+index to the disk then reports something else.
+
+⚠ **This produced a FALSE FINDING before it produced a true one.** On the first
+per-spell rebuild I recorded "glamour's committed dist is stale at HEAD" and
+verified it by stashing the work and rebuilding at HEAD — **which confirmed the
+false conclusion, because the control repeated the suspect step.** The
+whole-roster rebuild restored the committed bytes exactly. The rule is now in
+the playbook in both halves: rebuild the roster, and a control that repeats the
+suspect step is not a control.
+
+**Not taken:** _investigate and fix the non-determinism here._ It is a real
+question about `bun-plugin-tailwind`'s shared state across `Bun.build` calls in
+one process, it is house-wide rather than glamour's, and a phase that grows is a
+phase nobody can verify. Recorded for its own investigation.
+
+## D31 · `ErrExtra` gains `server` — the shared contract widens to fit glamour
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2, on the brief's
+instruction that a wrong boundary is a finding about the module.
+
+glamour's failure envelope carries `error.server` — the refusing daemon's body
+verbatim — and its contract suite asserts the round trip for HTTP 400, 404
+and 409. The kit's `ErrExtra` was `{ hint?, choices? }` because **astrolabe and
+magpie both discard the body** (magpie: `die(\`state failed (HTTP ${status})\`,
+"internal")`keeps the number and loses the reason). Seven of the eight spells front a daemon, so keeping the upstream's own words is the general shape and the two-spell boundary was the narrow one.`server`
+is emitted LAST so an already-shipping envelope's key order does not move.
+
+**⛔ The rule this is an instance of:** a module extracted from two consumers
+encodes **what those two agree on**, and agreement is not evidence of design. It
+took a third consumer to tell the difference.
+
+**Not taken:**
+
+- **Keep glamour's own `writeEnvelope` and import only `die`/`CliError`.**
+  Smallest diff, zero risk to the wire — and it leaves a fourth copy of the
+  envelope in the tree, which is the thing this project exists to end. It would
+  also have hidden the finding: nobody would have learned that the kit cannot
+  express a daemon refusal.
+- **Drop `error.server` from glamour to match the kit.** Rejected outright: it
+  is a wire-observable regression, it is asserted by three contract cells, and
+  it would be the spell bending around the module — precisely what the brief
+  forbade.
+- **A generic `details?: unknown`.** Renames a field that already ships, for
+  tidiness, and loses the one property that makes it worth having — that a
+  caller can trust it is what the other side actually said.
+
+## D32 · `SseClients` holds `{close, send}`, not a bare closer
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+glamour streams presence — `{type:"connected"}` / `{type:"disconnected"}` — to
+the AGENT's SSE tail, unlogged and with no `id`, so a reconnecting agent neither
+re-sees every past connect nor advances its cursor past one. `sse.ts`'s registry
+held bare closers, so there was no way to write to a live stream that did not go
+through the log.
+
+Astrolabe and magpie announce presence over their browser WEBSOCKET, which is
+why the boundary looked right for both. The registry entry is now
+`{ close(): void; send(chunk: string): void }`, and `send` routes through the
+same closed-check and teardown funnel as every other write — so a `send` after
+teardown is a no-op rather than a throw, and a daemon announcing presence cannot
+crash on a departed subscriber. `drainAndStop` was the only other consumer;
+neither adopting spell dereferences the elements.
+
+**Not taken:**
+
+- **Keep a parallel `Set<ReadableStreamDefaultController>` in glamour's
+  daemon.** The obvious local fix, and it re-creates VERBATIM the drift this
+  registry exists to remove — the copies kept a second set of heartbeat timers
+  beside the controllers and swept it separately, which is the defect `sse.ts`'s
+  own header describes. A second parallel set would also be invisible to
+  `subscriberCount`.
+- **Put `announce`/`emitTransient` on `EventLog` instead.** The log is where
+  fan-out lives, so it reads well — but a transient is not a `Frame<T>` (it has
+  no `id`, by design), so every listener would have to accept a union and every
+  consumer would have to discriminate. The registry is where "act on one live
+  stream" already lives.
+- **A `sseResponse` hook that hands the caller a raw `send`.** Equivalent power,
+  and the caller then has to keep its own collection of them — the parallel set
+  again, one indirection later.
+
+## D33 · glamour's tail returns an exit code, so the COMMAND TABLE carries one
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+`tailEvents` RETURNS an exit code rather than calling `process.exit` from inside
+its loop (D8's sibling ruling, and the whole of the P0f drain scar). glamour
+dispatches through a `COMMANDS` table whose `run` returned `Promise<void>`, so
+there was nowhere for that code to go. `run` is now
+`Promise<number | undefined> | number | undefined`, and dispatch reads
+`typeof code === "number" ? code : 0`.
+
+`undefined` means 0 — "the verb completed and has no opinion" — so every row but
+`tail` is untouched and only the verb that owns a code has to say so.
+
+**Not taken:** _make `cmdTail` set `process.exitCode` itself._ One line, no
+signature change, and it puts a second place the exit code is decided into a CLI
+whose entire funnel exists so there is exactly one. _Special-case `tail` in
+`dispatch` before the table walk._ It works, and it re-introduces the second
+source of truth the command table was built to remove — help, the schema, the
+arity check and the dispatcher all walk that one structure.
+
+## D34 · glamour's daemon integration suite forces release; the CONDITIONAL swallow is filed, not fixed
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2, out of D8's audit.
+
+The audit came back clean — 12 `die` sites, 25 further invocation edges, 37
+audited positions, **zero inside a `try`** — but it named one CONDITIONAL:
+`postCmd`'s ECONNRESET catch tests `message.includes("ECONNRESET")` on an
+untyped error and answers `{"ok":true,"sent":"close"}` at exit 0. Its only
+die-reachable call, `requireSession`, sits three lines ABOVE the `try`, so no
+`CliError` can enter it today.
+
+**Filed, not applied.** The one-line ward is
+`if (err instanceof CliError) throw err;` as the catch's first statement. It is
+a behaviour change in a chapter whose contract is adoption, and it is exactly
+the kind of "small obvious fix" that makes a phase unverifiable. It is written
+into the journal and the source comment so it is a decision rather than an
+oversight.
+
+**Not taken:** _apply it now, it is one line._ Rejected on the phase's own rule
+— and because the honest version of the change also wants a cell, and a cell for
+a currently-unreachable path has to mint its own reachability, which is a design
+question rather than a line.
+
+## D35 · Three wire-observable changes, named rather than smuggled
+
+**Recorded:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+1. **`text/html` → `text/html; charset=utf-8`** on the release surface — the
+   kit's content-type map, which resolved the census's one divergence toward the
+   correct copy. glamour is the third spell to inherit it.
+2. **The SSE stream opens with a `: connected` comment.** It flushes the
+   response headers so a quiet stream does not leave a `fetch()` unresolved.
+   Every house tail client drops `:` lines; what it broke was two of glamour's
+   own cells, which read LINE 0 of the stream and handed `JSON.parse` a comment.
+   Both now take the first `data:` line.
+3. **The teardown grace is 150 ms, not glamour's 50.** The number all eight
+   daemons converged on independently, and the thing that makes a `closed` frame
+   an observation rather than a hope — which matters here specifically, because
+   `closed` is the frame glamour's own `tail` ends on.
+
+**Not taken:** _preserve glamour's 50 ms by passing `graceMs`._ The option
+exists, and using it would keep one spell on a number the other seven measured
+their way off. _Keep `text/html` bare for byte-compatibility._ It is the wrong
+answer, stated as such in the module.
+
+## D36 · The coverage cell's gate becomes the INGREDIENTS of anchoring — because a backstop computed from the predicate it backstops is not a backstop
+
+**Decided:** implementer, 2026-09-08, Phase 2 repair chapter, out of the verify
+pass driving D27's claim.
+
+**D27 claimed its coverage cell "fails on the next unrecognised spelling without
+anyone having to think of it in advance". The claim was false, and driving it is
+what showed that.** The cell gated on `declaresAnchor`, computed as
+`ANCHOR_DIR.test(line) || ANCHOR_URL.test(line)` — **the same two regexes the
+cell exists to backstop.** A spelling neither regex reads therefore scored
+`declaresAnchor=false`, which made the file **exempt** rather than loud. The
+cell could only fire on a file whose anchor the ward already understood, which
+is the one case it was not needed for.
+
+**Five spellings were driven** — each planted in glamour's real `dist/cli.js`
+beside a `SERVER_SCRIPT` pointing at a nonexistent `dist/server.ts`, the exact
+shipped defect of Phase 2 chapter 1 — and against D27's predicate **all five
+passed 6 pass / 0 fail**:
+
+| spelling                                                                                     | why it slipped                                                                                    |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `var __fileName = Bun.fileURLToPath(import.meta.url); var SCRIPT_DIR = dirname(__fileName);` | two-step; what esbuild/Bun emit for a `__filename` shim                                           |
+| `var SCRIPT_DIR = import.meta.dirname;`                                                      | a real Bun/Node API `ANCHOR_DIR` does not name                                                    |
+| `var SCRIPT_DIR = path.posix.dirname(node_url.fileURLToPath(import.meta.url));`              | TWO qualifier segments; `QUALIFIER` allows one                                                    |
+| `var SCRIPT_DIR = dirname(fileURLToPath(new URL(import.meta.url)));`                         | an interposed `new URL(...)` inside the matched pair                                              |
+| `var SCRIPT_DIR = dirname(__filename);`                                                      | the CJS pair — found by hunting a fifth AFTER the repair, and it broke the repair's first version |
+
+**The repair: gate on the INGREDIENTS, at a level the anchor patterns cannot
+reach past.** A module cannot ask where it is without naming one of
+`import.meta.url`, `import.meta.dir`, `import.meta.dirname`, `fileURLToPath`
+(under any qualifier), `__dirname`/`__filename`, or `Bun.main`. The cell now
+requires, of every emitted `cli.js`/`server.js`:
+
+1. **every ingredient-bearing line is READ** — recognised as an anchor, or
+   yielding a pin of its own — and an unread one reds **naming the line**, which
+   is what the next agent needs in order to teach the pattern the spelling;
+2. **a file carrying any ingredient yields ≥1 pin** (D27's condition, kept).
+
+A line that merely BINDS the helper (`import { fileURLToPath } from "url";`,
+Bun's own preamble in five of six artifacts) anchors nothing and is excluded. A
+backend that legitimately anchors nothing carries no ingredient, is exempt, and
+stays exempt — asserted.
+
+**All five spellings now red on the coverage cell**, each printing
+`UNREAD ANCHOR SPELLING` with the line; the clean tree is 7 pass / 0 fail. The
+mutation is no longer only a hand-drive: a synthetic calibration cell pins all
+five plus the inert case, so the property cannot rot the way D27's did.
+
+**The declared remaining hole, said out loud:**
+`var SCRIPT_DIR = dirname(process.argv[1]);` still passes the coverage cell. It
+is deliberately not an ingredient — a CLI bundle reads `process.argv` for
+ordinary arg parsing, so naming it would red every artifact for nothing.
+Anchoring off the entry path is separately wrong in a bundle a launcher imports,
+which is B3's subject.
+
+**Not taken:**
+
+- _Add the four spellings to `ANCHOR_URL`/`ANCHOR_DIR`._ It is the obvious fix
+  and it is the same mistake a fourth time: it buys the four that were thought
+  of and leaves the fifth exempt. The fifth was found in twenty minutes.
+- _Parse the emitted JS with a real parser._ Still genuinely better, still out
+  of scope, and now with a stronger argument against urgency: the ingredient
+  gate makes the regexes' blind spots LOUD, which is the property the parser was
+  wanted for.
+- _Require a readable anchor rather than accounting for every ingredient line._
+  Weaker: a file with one readable anchor and one unread spelling beside it
+  would pass, and the `__filename` shim is exactly that shape.
+- _Report it and leave D27 standing, since the ward is green on the roster
+  today._ Rejected on the same ground D27 rejected it: five spells port against
+  this instrument next, and the whole point of the cell is the spell it has
+  never seen.
