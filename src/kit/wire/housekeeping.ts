@@ -147,7 +147,7 @@ export async function drainAndStop(opts: DrainOptions): Promise<void> {
   await new Promise((r) => setTimeout(r, graceMs));
 
   if (opts.clients) {
-    for (const close of [...opts.clients]) close();
+    for (const client of [...opts.clients]) client.close();
   }
   if (opts.sockets) {
     for (const ws of [...opts.sockets]) {

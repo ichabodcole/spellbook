@@ -1329,7 +1329,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // cell is about. The file that used to hold it is now a launcher with no
     // imports of its own; had the pin been left at the old address it would have
     // read `undefined` and been indistinguishable from "the escape vanished".
-    expect(at("src/glamour/backend/server.ts", 154)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
+    expect(at("src/glamour/backend/server.ts", 141)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
     expect(at("plugins/spellbook/skills/mind-mapper/scripts/propose.test.ts", 463)).toBe("type");
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

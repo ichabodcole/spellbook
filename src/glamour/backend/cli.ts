@@ -34,6 +34,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
+import {
+  CliError,
+  die,
+  type ErrKind,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
+import { TAIL_IDLE_MS } from "./heartbeat";
 import { optimizeImageDataUrl } from "./imageOptimize.server";
 
 // ⛔ EVERY PATH HERE IS RESOLVED FROM THE EMITTED LOCATION, `dist/`, NOT FROM
@@ -85,71 +94,45 @@ type Session = {
 
 // ── error envelope ───────────────────────────────────────────────────
 //
-// THROW and let main() catch and RETURN the code — never process.exit inside a
-// helper. This CLI ships large stdout payloads (`state --full`), and Bun's
-// stdout is asynchronous on a pipe, so an explicit exit truncates whatever has
-// not drained (measured at 65,536 bytes; see the drain idiom at the bottom).
-type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+// ⛔ THE CONTRACT IS NOW THE HOUSE'S ONE COPY (`src/kit/wire/errors.ts`) and
+// glamour's fourth was deleted. The taxonomy, the exit codes, the envelope's key
+// order and `die`'s throw-not-exit shape all come from there — and glamour is
+// where two of them were first written, so nothing about the wire changed. THROW
+// and let main() catch and RETURN the code, never `process.exit` inside a
+// helper: this CLI ships large stdout payloads (`state --full`), Bun's stdout is
+// asynchronous on a pipe, and an explicit exit truncates whatever has not
+// drained (measured at 65,536 bytes).
+//
+// ⚠ ONE FIELD WENT THE OTHER WAY. `error.server` — the daemon's own body,
+// verbatim — existed only here, because astrolabe's and magpie's copies keep the
+// HTTP status and discard what the daemon said. It is now part of the kit's
+// `ErrExtra`, so the shared contract got WIDER by adopting glamour rather than
+// glamour getting narrower to fit it. See that module's note on the field.
+//
+// ⛔ AND THE ADOPTION REQUIRED THE D8 REACHABILITY AUDIT, WHICH WAS PERFORMED.
+// A `die` REACHABLE from inside a `try` whose `catch` swallows is a silent
+// continue, and the site that dies can be three frames below the site that looks
+// safe. Audited by following the call graph, not by grepping: 12 `die` call
+// sites, 25 further invocation edges of the ten functions that reach one
+// transitively (`readSession`, `requireSession`, `resolveGenSrc`, `cmdOpen`,
+// `cmdInfo`, `cmdState`, `cmdTail`, `postCmd`, `dispatch`, `main`, plus fifteen
+// COMMANDS[].run closures), 37 audited positions, ZERO inside a `try`. The three
+// swallowing catches in this file (`api`'s non-JSON body, `versionInfo`'s
+// degrade-to-unknown, the tail's malformed-frame skip) have no die-reachable
+// call inside them. The one to watch is flagged at `postCmd`.
 
-const EXIT_FOR: Record<ErrKind, number> = {
-  usage: 2, // the caller can fix this by changing the command
-  internal: 1, // glamour (or its daemon transport) broke; the invocation may have been fine
-  not_found: 5, // the named thing does not exist (no session, no item)
-  conflict: 6, // a precondition failed
-};
-
-// The verb under execution, so the envelope can name it. Set once by dispatch.
-let CURRENT_COMMAND: string | null = null;
-
-export class CliError extends Error {
-  kind: ErrKind;
-  hint?: string;
-  choices?: string[];
-  server?: unknown;
-  constructor(
-    kind: ErrKind,
-    message: string,
-    extra?: { hint?: string; choices?: string[]; server?: unknown },
-  ) {
-    super(message);
-    this.kind = kind;
-    this.hint = extra?.hint;
-    this.choices = extra?.choices;
-    this.server = extra?.server;
-  }
-}
-
-// `UsageError` is the name the tests and the older call sites know; a usage
-// failure is a CliError of kind "usage".
+/** `UsageError` is the name the tests and the older call sites know; a usage
+ *  failure is a `CliError` of kind "usage". Kept as a subclass rather than
+ *  inlined because `dispatch` branches on it to distinguish a PARSE rejection
+ *  (which it reshapes with a path-scoped `choices`) from anything else, and
+ *  `instanceof` is the only honest way to ask that. */
 export class UsageError extends CliError {
   constructor(message: string, extra?: { hint?: string; choices?: string[] }) {
     super("usage", message, extra);
   }
 }
 
-function die(msg: string, kind: ErrKind = "usage", extra?: { hint?: string }): never {
-  throw new CliError(kind, msg, extra);
-}
-
-function writeEnvelope(e: CliError): number {
-  process.stderr.write(
-    `${JSON.stringify({
-      ok: false,
-      error: {
-        kind: e.kind,
-        exit_code: EXIT_FOR[e.kind],
-        // Nothing glamour raises is worth retrying unchanged.
-        retryable: false,
-        message: e.message,
-        ...(e.hint !== undefined ? { hint: e.hint } : {}),
-        ...(e.choices !== undefined ? { choices: e.choices } : {}),
-        ...(e.server !== undefined ? { server: e.server } : {}),
-      },
-      meta: { command: CURRENT_COMMAND },
-    })}\n`,
-  );
-  return EXIT_FOR[e.kind];
-}
+export { CliError };
 
 // A daemon refusal: the kind maps off the HTTP status, the daemon's own body
 // rides verbatim under error.server so a caller can branch on it.
@@ -162,16 +145,12 @@ function daemonRefused(what: string, status: number, data: unknown): never {
         : status === 409
           ? "conflict"
           : "internal";
-  throw new CliError(kind, `${what} failed (HTTP ${status})`, {
+  die(`${what} failed (HTTP ${status})`, kind, {
     ...(data !== null && data !== undefined ? { server: data } : {}),
   });
 }
 
 const NO_SESSION_HINT = { hint: "run: cli.ts open (or pass --session <id>)" };
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
@@ -636,112 +615,78 @@ async function cmdState(session?: string, full = false) {
   printJson(data);
 }
 
-async function cmdTail(session: string | undefined, sinceArg: number) {
-  let since = sinceArg;
-  let delay = 250;
-  let stopped = false;
-  // Pin the session: resolve once, then RECONNECT to the SAME session on every
-  // retry — never silently hop to a new "most recent" daemon.
+/**
+ * The event tail — ONE CALL into the house's shared SSE client
+ * (`src/kit/wire/tailEvents.ts`), where the reconnect loop, the spec-correct
+ * frame parser, the backoff, the idle watchdog and the drained exit live once
+ * for every spell.
+ *
+ * ⛔ **THIS IS WHERE CENSUS DEFECT B5 DIES BY CONSTRUCTION.** The loop this
+ * replaces set `let delay = 250` (`cli.ts:623` before the port) and then reset
+ * it to 250 on every SUCCESSFUL OPEN (`:667`) — so a daemon that accepts a
+ * connection and immediately drops it was reconnected against at a CONSTANT
+ * 250 ms, forever, with no growth: a reconnect storm that looks like a healthy
+ * retry. Three sites did grow the delay (`:642`, `:659`, `:664`) and one did
+ * not, which is precisely why a hand-written loop cannot be reasoned about from
+ * one of its branches. **It cannot be re-expressed here, because there is no
+ * loop left to put it in** — there is one backoff, it doubles on every failed
+ * attempt, and Phase 1a's second door (the reset belongs at the FIRST BYTE, not
+ * at a successful open) is closed by the same single implementation.
+ *
+ * ⛔ `resolve` RE-READS THE SESSION POINTER ON EVERY ATTEMPT, which is what
+ * glamour's own loop did and what the shared client makes structural: the daemon
+ * binds an ephemeral port, so a captured base is a tail that survives exactly one
+ * daemon.
+ *
+ * ⛔ AND IT GAINED A WATCHDOG IT DID NOT HAVE. The old loop had none: it blocked
+ * on `await reader.read()` forever, so a half-open socket after laptop sleep, a
+ * NAT rebind or a SIGKILLed daemon parked the tail in silence with no way out.
+ * `TAIL_IDLE_MS` is DERIVED from glamour's own heartbeat (`./heartbeat.ts`),
+ * never copied from a sibling — astrolabe measured what a copied number costs.
+ *
+ * The pin, the grounding anchor and the "our session went away" exit are all
+ * preserved verbatim: the FIRST resolved session is pinned for the life of the
+ * watch, the grounding line names that binding once, and a pointer that
+ * disappears AFTER we were bound ends the watch at 0 — a completed watch, not a
+ * failure. A pointer that never appeared keeps retrying, which is what `tail`'s
+ * own help promises ("waits for a session, never exits 5").
+ */
+async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
   let boundId = session;
   let grounded = false;
-  const stop = () => {
-    stopped = true;
-    process.exit(0);
-  };
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
 
-  while (!stopped) {
-    const s = readSession(boundId);
-    if (!s) {
-      if (grounded) process.exit(0); // pinned session went away → done
+  return await tailEvents<{ id?: number; type?: string }>({
+    resolve: () => {
+      // readSession dies on a CORRUPT pointer and returns null only for a
+      // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
+      // throw leaves the tail through main's funnel instead of exiting from three
+      // frames down inside a reconnect loop. It is D8's audit paying for itself:
+      // this is the one die-reachable call the shared client invokes on a schedule.
+      const s = readSession(boundId);
+      if (!s) return null;
+      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+      if (!grounded) {
+        grounded = true;
+        // grounding line — parseable in Monitor, names the binding so a wrong
+        // session/port is obvious instead of silent.
+        process.stdout.write(
+          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+        );
+      }
+      return `http://127.0.0.1:${s.port}`;
+    },
+    onUnresolved: ({ everResolved }) => {
+      if (everResolved) return "stop"; // our pinned session went away → done
       process.stderr.write("# no session yet, retrying…\n");
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!boundId) boundId = s.session_id; // pin to the first resolved session
-    if (!grounded) {
-      grounded = true;
-      // grounding line — parseable in Monitor, names the binding so a wrong
-      // session/port is obvious instead of silent.
-      process.stdout.write(
-        `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-      );
-    }
-    let res: Response;
-    try {
-      res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
-    } catch {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!res.ok) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    delay = 250;
-    if (!res.body) {
-      await sleep(delay);
-      continue;
-    }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch {
-        break;
-      }
-      if (chunk.done) break;
-      buf += dec.decode(chunk.value, { stream: true });
-      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
-        const block = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        const dataLines: string[] = [];
-        for (const line of block.split("\n")) {
-          if (line.startsWith(":")) {
-            process.stderr.write(": glamour-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        const payload = dataLines.join("\n");
-        try {
-          const ev = JSON.parse(payload) as { id?: number; type?: string };
-          if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          if (ev.type === "closed") {
-            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
-            // on this write's completion. NOT a trailing `write("", cb)` — a
-            // drain callback covers only its own write and is not a barrier
-            // (measured byte-for-byte as broken as no fix), and that is exactly
-            // the helper this write-then-exit shape invites.
-            //
-            // PER-SITE PRECONDITION, read at THIS site rather than carried over
-            // from a sibling: the exit sits inside `while (!stopped)` ->
-            // `while (true)` -> the frame loop, so `process.exitCode` + a
-            // natural return (shape D) does NOT leave the tail — it falls
-            // through and the loops go round again. The explicit `return` is
-            // what exits the loops; the callback is what drains. Both, for
-            // different reasons.
-            process.stdout.write(`${payload}\n`, () => process.exit(0));
-            stopped = true;
-            return;
-          }
-          process.stdout.write(`${payload}\n`);
-        } catch {
-          /* skip malformed frame */
-        }
-      }
-    }
-    // stream ended — session likely closed; loop will retry or exit.
-    await sleep(delay);
-  }
+      return "retry";
+    },
+    path: "/events",
+    since: sinceArg,
+    cursorOf: (ev) => ev.id,
+    terminal: (ev) => ev.type === "closed",
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": glamour-keepalive",
+  });
 }
 
 function cmdInfo(session?: string) {
@@ -786,7 +731,18 @@ type CommandSpec = {
   positionals: PositionalSpec[];
   // The one-line description help prints beside the usage.
   describe: string;
-  run: (pos: string[], flags: Flags, session: string | undefined) => Promise<void> | void;
+  // ⛔ A VERB MAY RETURN AN EXIT CODE, and exactly one does. `tail` is a WATCH:
+  // it ends when the daemon says `closed`, when its pinned session goes away, or
+  // when a signal arrives, and the shared client (`kit/wire/tailEvents.ts`)
+  // RETURNS that code rather than calling `process.exit` from inside its own
+  // loop — which is the whole of the P0f drain scar. `void` therefore has to mean
+  // "0", not "no opinion": dispatch coerces below, so every other row is
+  // unchanged and only the verb that has a code has to say so.
+  run: (
+    pos: string[],
+    flags: Flags,
+    session: string | undefined,
+  ) => Promise<number | undefined> | number | undefined;
 };
 
 const SESSION = ["session"] as const satisfies readonly Flag[];
@@ -1127,15 +1083,18 @@ async function main(argv: string[]): Promise<number> {
   try {
     return await dispatch(argv);
   } catch (e) {
-    if (e instanceof CliError) return writeEnvelope(e);
+    // The house funnel: `reportCliError` writes the envelope and hands back the
+    // taxonomy exit code, or `null` when the throw was not a CliError.
+    const reported = reportCliError(e);
+    if (reported !== null) return reported;
     const code =
       e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     const msg = e instanceof Error ? e.message : String(e);
     // A named file that is not there (--file paths) — the caller's.
-    if (code === "ENOENT") return writeEnvelope(new UsageError(msg));
+    if (code === "ENOENT") return reportCliError(new UsageError(msg)) ?? 2;
     // Everything else is glamour's own fault: one INTERNAL envelope, never a
     // stack trace — the process contract is JSON on stderr for EVERY failure.
-    return writeEnvelope(new CliError("internal", msg));
+    return reportCliError(new CliError("internal", msg)) ?? 1;
   }
 }
 
@@ -1157,7 +1116,11 @@ async function dispatch(argv: string[]): Promise<number> {
   // unknown verb — not an unknown option.
   // Name the verb BEFORE parsing, so a parser rejection's envelope still says
   // what was being run.
-  CURRENT_COMMAND = verbToken(argv);
+  // The verb, named BEFORE parsing, so a parser rejection's envelope still says
+  // what was being run. It lives in the kit now — one module owns the envelope,
+  // so it owns the field the envelope prints.
+  let currentCommand = verbToken(argv);
+  setCurrentCommand(currentCommand);
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs(argv);
@@ -1167,9 +1130,9 @@ async function dispatch(argv: string[]): Promise<number> {
     // registry: the verb's own flags when the verb is one of ours, the verb
     // roster when there is no verb yet (the root accepts no flags of its own).
     // This is what a recorded-surface census reads, path by path.
-    const spec = CURRENT_COMMAND === null ? undefined : findCommand(CURRENT_COMMAND);
+    const spec = currentCommand === null ? undefined : findCommand(currentCommand);
     if (spec !== undefined) {
-      throw new UsageError(e.message, { hint: e.hint, choices: flagsFor(spec.name) });
+      throw new UsageError(e.message, { hint: e.extra?.hint, choices: flagsFor(spec.name) });
     }
     // At the root the flags the tool accepts are the interceptors, and that is
     // the set named — the same array `schema` declares at path [], so the
@@ -1181,7 +1144,8 @@ async function dispatch(argv: string[]): Promise<number> {
   }
   const [verb, ...pos] = parsed.pos;
   const flags = parsed.flags;
-  CURRENT_COMMAND = verb ?? null;
+  currentCommand = verb ?? null;
+  setCurrentCommand(currentCommand);
 
   if (verb === undefined) {
     // Bare invocation is a usage error (acc D2), and the rejection names
@@ -1221,8 +1185,10 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   const session = typeof flags.session === "string" ? flags.session : undefined;
-  await spec.run(pos, flags, session);
-  return 0;
+  // `void` means 0 — a verb that completed and had nothing to say about the exit.
+  // A number means the verb OWNS its code, which today is `tail` and only `tail`.
+  const code = await spec.run(pos, flags, session);
+  return typeof code === "number" ? code : 0;
 }
 
 /**

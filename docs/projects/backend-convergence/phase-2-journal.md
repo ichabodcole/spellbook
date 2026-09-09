@@ -395,3 +395,293 @@ which is the state it is documented to be unusable in before the commit lands.
 6. **`process.env` in a `beforeAll` is process-global.** Set and restore it, and
    clear it out of any child you spawn whose premise is auto-detection.
 7. **Test the ARTIFACT for anything computed from `import.meta.url`.**
+
+---
+
+# Chapter 2 — glamour adopts the spine
+
+Same branch, after the chapter 1 verify pass. glamour is the **first consumer of
+these eight modules that is not one of the two they were designed against**, so
+this half of the journal is mostly about where the boundaries were drawn too
+narrowly.
+
+## ⛔ TWO BOUNDARIES WERE WRONG FOR GLAMOUR, AND BOTH WERE WIDENED RATHER THAN WORKED AROUND
+
+The brief's instruction was that a wrong boundary is a finding about the MODULE.
+Both findings have the same shape: **the module was extracted from two spells
+that happen to agree, and the thing they agree on is a coincidence rather than a
+design.**
+
+### 1 · `errors.ts` could not carry the daemon's own words
+
+glamour's failure envelope has a field the kit's did not: `error.server`, the
+refusing daemon's body **verbatim**, so a caller branches on what the other side
+actually said instead of on the CLI's prose about it. Its contract suite asserts
+the round trip for HTTP 400, 404 and 409.
+
+`ErrExtra` was `{ hint?, choices? }` — because **astrolabe and magpie both throw
+the body away.** magpie's is `die(\`state failed (HTTP ${status})\`,
+"internal")`: the number survives, the reason does not. Two spells agreeing is
+not evidence; **seven of the eight spells put a CLI in front of a daemon**, so
+keeping the upstream's body is the general shape and glamour is the only one
+that got it right.
+
+`ErrExtra` gained `server?: unknown`, emitted last so the key order of an
+already-shipping envelope does not move. Adopting glamour made the shared
+contract **wider**, not glamour narrower.
+
+⚠ And writing the cell for it turned up that **`errors.ts` had no test file at
+all** — the module that decides what every spell's failures look like was
+covered only transitively, by whichever spell adopted it next. `errors.test.ts`
+exists now.
+
+### 2 · `sse.ts`'s registry could END a stream but not SPEAK to one
+
+`SseClients` was `Set<() => void>` — bare closers. glamour needs to push
+`{type:"connected"}` / `{type:"disconnected"}` at the **agent's SSE tail**:
+deliberately unlogged, so a reconnecting agent does not re-see every past
+connect, and carrying no `id`, so it never advances a tail cursor.
+
+Astrolabe and magpie announce presence over their browser **WebSocket**, so a
+registry of closers was sufficient for both and the boundary looked right.
+
+The alternative was to keep a second, parallel
+`Set<ReadableStreamDefaultController>` inside glamour's daemon — **which is
+verbatim the drift the registry exists to remove**, and which the module's own
+header warns about (the copies kept a parallel set of heartbeat timers and swept
+it separately). So the registry entry became
+`{ close(): void; send(chunk: string): void }`, and `send` routes through the
+same closed-check and teardown funnel as every other write. `drainAndStop` was
+the only other consumer.
+
+**The generalisation:** "tell the live subscribers something that is not part of
+the history" is a normal daemon act, and a registry that can only end a stream
+cannot express it. It took a third consumer to see it.
+
+## ⭐ B5 IS DEAD BY CONSTRUCTION, AND HERE IS THE MEASUREMENT
+
+The census's B5: `cmdTail` set `let delay = 250` and reset it to 250 **on every
+successful OPEN** — three of its four sleep sites doubled the delay and the
+fourth did not, which is exactly why a hand-written reconnect loop cannot be
+judged from one of its branches.
+
+Driven against a server that accepts `/events`, answers 200, and **ends the body
+immediately** — B5's precise trigger, since the old code reset on `res.ok`
+regardless of whether a byte arrived. Fourteen-second window, the pre-port CLI
+extracted from `6af53f2` and run side by side with the shipped one:
+
+```
+OLD (6af53f2)  attempts: 51
+  gaps (ms): 252 253 252 252 253 250 253 252 252 252 253 250 253 252 252 253 251 251
+             252 253 251 252 253 252 252 252 252 251 252 253 252 253 251 253 251 252
+             251 251 250 253 252 252 252 253 252 252 253 250 252 253
+
+NEW            attempts: 6
+  gaps (ms): 252  503  1001  2002  4002
+```
+
+**Fifty-one connection attempts against one dead-ish daemon in fourteen seconds,
+at a flat quarter-second, forever.** The replacement is six, doubling, capped at
+`maxMs`. It cannot be re-expressed because **there is no loop left to put it
+in** — `tailEvents` has one backoff, and Phase 1a's second door is closed by the
+same single implementation: in the emitted `dist/cli.js` the reset sits at
+`delay = retry.initialMs` immediately after a chunk is READ, not after a
+successful open.
+
+## The censused defects glamour closed, and which module closed each
+
+| defect                                                         | closed by                                                                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **B5** — 250 ms constant-interval reconnect storm              | `tailEvents` — one backoff, no branch that resets without growing                                             |
+| **L1** — idle sweep blind to its subscribers                   | `housekeeping.shouldIdleClose`, whose `subscriberCount` is a REQUIRED argument                                |
+| **L3** — non-atomic discovery pointer                          | `discovery.writeFileAtomic` (glamour is where this was found; now it is one implementation for three spells)  |
+| **L5** — unbounded event buffer                                | `eventLog`'s replay window                                                                                    |
+| the unlink-a-successor's-pointer hazard                        | `discovery.unlinkIfMatches` — glamour hand-rolled the `session_id` comparison; it is now the shared predicate |
+| dead-client detection that rests on a `catch` that never fires | `sse.ts`'s teardown funnel plus `req.signal` — the old copy was not wired to the signal at all                |
+| a tail with **no watchdog at all**                             | `tailEvents`'s `idleMs`, DERIVED from glamour's own heartbeat                                                 |
+| the monotonic `id` losing to a payload `id`                    | `eventLog.emit` assigning after the spread                                                                    |
+| `?since=x` opening an empty, connected stream                  | `eventLog.subscribe`'s non-finite cursor rule                                                                 |
+
+**L1, driven both directions on a real daemon** (`--timeout 5`):
+
+```
+14s after boot, with a tail held:   GET /state -> 200
+ 9s after the tail was dropped:     GET /state -> 000   (idle-closed, unwatched)
+```
+
+Before this chapter the first line was a dead daemon: glamour counted its idle
+floor down while an agent held `/events` open, so a watch on a quiet session was
+killed **with its connection open**.
+
+## ⛔ `idleMs` IS DERIVED FROM GLAMOUR'S OWN HEARTBEAT — Phase 1a's rule, obeyed
+
+`src/glamour/backend/heartbeat.ts` is new, and it is the seam: before it, the
+15,000 ms heartbeat was a **literal inside `sseResponse`**, and `cli.ts` had no
+corresponding number **at all** — its tail blocked on `await reader.read()`
+forever, so a half-open socket parked it in silence with no way out.
+
+`TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS)`. Not 45,000. The number it
+currently evaluates to **is** 45,000, which is also the default
+`--start-timeout`, and the file says in as many words that the two are unrelated
+so nobody de-duplicates them later. Astrolabe measured what a copied watchdog
+costs: reconnects at +47.4 s, +92.6 s and +137.9 s against a perfectly healthy
+daemon.
+
+## The wire-observable changes, named rather than smuggled
+
+1. **`Content-Type: text/html` → `text/html; charset=utf-8`** on the release
+   surface. The kit's content-type map, which resolved the census's one
+   divergence toward the correct copy (three of eight daemons carried the
+   charset; an HTML document served without one is decoded by the browser's
+   guess). glamour is the third spell to inherit it.
+2. **The SSE stream now opens with a `: connected` comment**, which flushes the
+   response headers so a genuinely quiet stream does not leave a `fetch()`
+   unresolved. It broke two cells that read **line 0** of the stream and handed
+   `JSON.parse` a comment; both now take the first `data:` line. Every house
+   tail client already drops `:` lines.
+3. **The teardown grace is 150 ms, not glamour's 50.** The number all eight
+   daemons converged on, and the thing that turns "the daemon told you why it
+   died" into an observation. glamour's `closed` frame is what its own `tail`
+   watches for, so it is the frame the grace exists for.
+
+## What the adoption cost, in the daemon
+
+The `events` array + `eventSeq` + a `Set<ReadableStreamDefaultController>`
+became one `log` and one `SseClients`. A 34-line hand-rolled `sseResponse`
+became an eight-line mapping function. `writeAtomic` was deleted in favour of
+the kit's. The unlink-if-ours block became `unlinkIfMatches` with an `identify`
+hook. Two `setInterval`s and the whole teardown block became `startHousekeeping`
+and `drainAndStop`. `resolveMode` and the content-type map went entirely; what
+stayed is the one line that says WHICH file a URL means — deliberately, because
+two spells route that differently and a signature wide enough for both stops
+being a file server.
+
+In the CLI, the whole error contract (a 60-line block: taxonomy, exit map,
+`CliError`, `die`, `writeEnvelope`) became four imports, and a 110-line tail
+loop became a 30-line options object.
+
+## D8's audit, performed and reported
+
+⛔ **REACHABILITY, NOT CALL SITES** — the call graph, followed, not a grep.
+
+- **12 `die` call sites** in `cli.ts` (192, 199, 205, 454, 468, 516, 575, 601,
+  731, 874, 889, 900 at the pre-port addresses); **0** in
+  `imageOptimize.server.ts`.
+- **Ten functions reach a `die` transitively** — `readSession`,
+  `requireSession`, `resolveGenSrc`, `cmdOpen`, `cmdInfo`, `cmdState`,
+  `cmdTail`, `postCmd`, `dispatch`, `main` — plus **fifteen of the nineteen
+  `COMMANDS[].run` closures**.
+- **25 further invocation edges audited**, for **37 audited positions in
+  total**.
+- **ZERO sit inside a `try`.** ⭐ **No swallowing site on any die-reachable
+  path.**
+
+Three `catch` blocks in the file do swallow, and **none has a die-reachable call
+inside it**: `api`'s `res.json()` (a non-JSON body is a legitimate `null`),
+`versionInfo`'s degrade-to-`"unknown"`, and the tail's malformed-frame skip
+(which the adoption has now deleted along with the loop).
+
+**The structural reason the count came out clean is worth copying:** nine of the
+twelve dies sit **inside a `catch` or after a `try`**, never inside one.
+`readSession` and `cmdOpen` both use a "try narrowly, die in the handler" shape,
+which is exactly what D8 wants and which no rule anywhere told them to do.
+
+⚠ **One CONDITIONAL, reported because it is one refactor from being a defect.**
+`postCmd`'s ECONNRESET catch tests `message.includes("ECONNRESET")` on an
+untyped error and answers `{"ok":true,"sent":"close"}` at exit 0. Today its only
+die-reachable call (`requireSession`) is three lines ABOVE the `try`, so no
+`CliError` can enter it. If one ever became reachable inside — `api` gaining a
+`die`, or `daemonRefused` moving up — a taxonomy failure would be reported as
+success. **The one-line ward is `if (err instanceof CliError) throw err;` as the
+catch's first statement.** Not applied here: it is a behaviour change in a
+chapter whose contract is adoption, and it is filed rather than smuggled.
+
+## The two instruments that reddened, and both are the phase's best news
+
+- **`exit-site-inventory`: three REMOVED, zero added.** All three of glamour's
+  CLI exit sites — the A-drain write-then-exit, the C-signal handler, the F-live
+  "pinned session went away" — **are gone**, because `tailEvents` RETURNS an
+  exit code instead of ending the process from inside three nested loops.
+  glamour's CLI now has **zero live `process.exit` sites**, the third to reach
+  that after magpie and mind-mapper.
+- **`import-boundary-wards`'s line-number pin** moved 154 → 141 and its own
+  comment predicted it, for the fourth time. It reds on any edit ABOVE the line
+  and reports only `undefined`, which reads as "the escape vanished". **A line
+  number is the wrong pin** and this ward says so about itself.
+
+## Driven — chapter 2, both modes, through the real launcher chain
+
+**Release**, with an agent tail held and a browser WebSocket opened and closed:
+
+```
+open  → {"…","mode":"release"}
+GET / → 200  text/html; charset=utf-8  414 B    ← the charset, arriving
+GET /nope → 404
+the agent tail received, in order:
+  {"type":"grounding","session_id":"glamour-18342c11","port":55746}
+  {"id":1,"type":"ready","mode":"release"}
+  {"type":"connected"}          ← transient: no id, not in the replay log
+  {"type":"disconnected"}       ←   …through the registry's NEW `send`
+  {"id":2,"type":"closed"}      ← arrived inside the 150 ms grace
+stderr: ": glamour-keepalive"
+$TMPDIR after close: EMPTY      ← unlinkIfMatches removed the pointer
+```
+
+**Dev**, fresh home:
+
+```
+open  → {"…","mode":"dev"}      ← the dev import resolved, from dist/
+GET / → 200 text/html;charset=utf-8 724 B
+        → /_bun/asset/3e654c7a017d5cbc.css   200  42,754 B, 154 `--tw-` markers
+        → /_bun/client/index-00000000cdc03237.js  200  1,637,073 B
+```
+
+## acc, re-run from the skill directory
+
+```
+$ cd plugins/spellbook/skills/glamour
+$ bun scripts/cli.ts schema > /tmp/decl.json
+$ bunx acc check scripts/cli.ts --declaration /tmp/decl.json
+  level L0   conformant true
+  core 17 · corePassed 16 · coreFailures 0 · diagnosticFailures 0 · unverified 1
+```
+
+**CONFORMANT L0, unchanged**, run twice — once after chapter 1 and once after
+the adoption — and the config was discovered at
+`plugins/spellbook/skills/glamour/acc.config.json`, which is the point of
+running it from the skill directory. `--version` answers
+`{"name":"glamour","version": "2.2.0"}` through the launcher, so acc's identity
+probe reads the built CLI.
+
+## The gate, and the kit's blast radius
+
+Green, **unpiped**: `1962 pass / 0 fail` across 158 files.
+
+⚠ **Changing three kit modules dirtied SIX artifacts across THREE spells** —
+astrolabe's and magpie's `dist/cli.js` and `dist/server.js` as well as
+glamour's, because the kit is inlined into every bundle. All six are rebuilt and
+committed in this chapter, or Contract 18 breaks on a spell nobody touched.
+
+**And the Tailwind-prose hazard did NOT fire this time**, which is only knowable
+by looking: `git status` after a whole-roster rebuild shows six `.js` files and
+**zero `.css` or `index.html`**, so no English word added to `src/kit/` this
+chapter became a utility class in a spell I never opened. Phase 1b's rule holds
+and it is a rule about CHECKING, not about the outcome.
+
+## For the playbook — what chapter 2 adds
+
+1. **A module extracted from two consumers encodes what those two agree on**,
+   and agreement is not design. Both of glamour's boundary findings were places
+   astrolabe and magpie happened to match.
+2. **Widen the shared module; do not keep a parallel structure beside it.** A
+   second `Set` next to the shared registry is the exact drift the registry
+   exists to remove.
+3. **`idleMs` is DERIVED from that spell's own heartbeat.** Never copied. The
+   number may coincide with a sibling's; the expression must not.
+4. **Run D8's audit by following the call graph.** Report the count, the
+   transitive functions, and any CONDITIONAL swallow even when it is currently
+   unreachable.
+5. **A shared-module change dirties every spell that inlines it.** Rebuild the
+   roster and commit every artifact in the same chapter.
+6. **Adopting a shared SSE server changes the first line of the stream.** Any
+   test reading line 0 breaks; take the first `data:` line.

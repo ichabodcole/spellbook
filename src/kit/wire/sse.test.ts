@@ -92,7 +92,7 @@ describe("sseResponse", () => {
     expect(opens).toBe(1);
     expect(closes).toBe(1);
     controller.abort(); // the second path
-    for (const close of clients) close(); // and the third
+    for (const c of clients) c.close(); // and the third
     expect(closes).toBe(1);
     expect(clients.size).toBe(0);
   });
@@ -104,8 +104,33 @@ describe("sseResponse", () => {
     const reader = (res.body as ReadableStream<Uint8Array>).getReader();
     await reader.read(); // the opening comment; registers the closer
     expect(clients.size).toBe(1);
-    for (const close of clients) close();
+    for (const c of clients) c.close();
     expect((await reader.read()).done).toBe(true);
+  });
+
+  test("⛔ an out-of-band `send` reaches the live stream, is NOT logged, and dies with the stream", async () => {
+    // glamour's presence frames (Phase 2): the agent's tail is told a browser
+    // connected, the replay log is untouched, and no cursor moves. A registry of
+    // bare closers could not express this and the spell would have kept its own
+    // parallel Set of controllers — the drift this module exists to remove.
+    const log = createEventLog<{ type: string }>();
+    const clients: SseClients = new Set();
+    const res = sseResponse({ log, since: -1, heartbeatMs: 60_000, clients });
+    const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+    await reader.read(); // the opening comment; registers the client
+    for (const c of clients) c.send(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+    const chunk = new TextDecoder().decode((await reader.read()).value);
+    expect(chunk).toBe('data: {"type":"connected"}\n\n');
+    // …and it left no trace in the log: the cursor is untouched, so a
+    // reconnecting tail neither replays it nor skips past a real event.
+    expect(log.cursor()).toBe(0);
+
+    // After teardown, `send` is a no-op rather than a throw — a daemon
+    // announcing presence must not be able to crash on a departed subscriber.
+    for (const c of [...clients]) {
+      c.close();
+      expect(() => c.send("data: {}\n\n")).not.toThrow();
+    }
   });
 
   test("the heartbeat fires on its interval", async () => {

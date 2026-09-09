@@ -464,7 +464,17 @@ test("mode rides the ready event AND the discovery file AND startDaemon's return
   const reader = (r.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  // ⛔ THE FIRST `data:` LINE, NOT THE FIRST LINE. Since the shared
+  // `kit/wire/sse.ts` landed, every house SSE stream opens with a `: connected`
+  // COMMENT — it flushes the response headers immediately, because some HTTP
+  // clients (Bun's own `fetch()` included) buffer until the first body byte and a
+  // genuinely quiet stream would otherwise leave the caller unresolved. Reading
+  // line 0 now hands `JSON.parse` a comment.
+  const frame =
+    new TextDecoder()
+      .decode(value)
+      .split("\n")
+      .find((l) => l.startsWith("data:")) ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
   expect(ready.type).toBe("ready");
   expect(["dev", "release"]).toContain(ready.mode);

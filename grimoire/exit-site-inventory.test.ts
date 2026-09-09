@@ -86,15 +86,18 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
-  // ⚠ glamour's three CLI sites moved from `scripts/cli.ts` to
-  // `backend/cli.ts` in backend convergence Phase 2 — the same text, the same
-  // families, a new address. `scripts/cli.ts` is now a LAUNCHER holding
-  // `process.exitCode` and no exit at all, which is why nothing was added there.
-  {
-    file: "glamour/backend/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
+  // ⭐ glamour's A-drain site is GONE, and it is the clearest thing this
+  // inventory has recorded. It moved to `backend/cli.ts` in Phase 2 chapter 1,
+  // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (C-signal,
+  // F-live) went with it for the same reason — the signal handlers and the
+  // "pinned session went away" exit are all one `return` now.
+  //
+  // ⛔ glamour's CLI has ZERO live `process.exit` sites, which is the direction
+  // this inventory exists to push and the third CLI to reach it after magpie and
+  // mind-mapper. `scripts/cli.ts` is a LAUNCHER holding `process.exitCode`.
   {
     file: "imago/scripts/cli.ts",
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
@@ -107,7 +110,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "glamour/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
@@ -171,11 +173,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     family: "E-terminal",
   },
   // F — live: an in-function exit with stdout pending upstream of it.
-  {
-    file: "glamour/backend/cli.ts",
-    text: "if (grounded) process.exit(0); // pinned session went away → done",
-    family: "F-live",
-  },
   {
     file: "imago/scripts/cli.ts",
     text: "if (grounded) process.exit(0); // our pinned session went away → done",

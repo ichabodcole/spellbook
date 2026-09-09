@@ -102,7 +102,10 @@ describe("startHousekeeping", () => {
 describe("drainAndStop", () => {
   test("closes every tail and socket, then stops the server", async () => {
     const order: string[] = [];
-    const clients: SseClients = new Set([() => order.push("tail-a"), () => order.push("tail-b")]);
+    const clients: SseClients = new Set([
+      { close: () => order.push("tail-a"), send: () => {} },
+      { close: () => order.push("tail-b"), send: () => {} },
+    ]);
     const sockets = [{ close: () => order.push("ws") }];
     await drainAndStop({
       server: {

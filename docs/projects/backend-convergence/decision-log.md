@@ -937,3 +937,135 @@ suspect step is not a control.
 question about `bun-plugin-tailwind`'s shared state across `Bun.build` calls in
 one process, it is house-wide rather than glamour's, and a phase that grows is a
 phase nobody can verify. Recorded for its own investigation.
+
+## D31 · `ErrExtra` gains `server` — the shared contract widens to fit glamour
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2, on the brief's
+instruction that a wrong boundary is a finding about the module.
+
+glamour's failure envelope carries `error.server` — the refusing daemon's body
+verbatim — and its contract suite asserts the round trip for HTTP 400, 404
+and 409. The kit's `ErrExtra` was `{ hint?, choices? }` because **astrolabe and
+magpie both discard the body** (magpie: `die(\`state failed (HTTP ${status})\`,
+"internal")`keeps the number and loses the reason). Seven of the eight spells front a daemon, so keeping the upstream's own words is the general shape and the two-spell boundary was the narrow one.`server`
+is emitted LAST so an already-shipping envelope's key order does not move.
+
+**⛔ The rule this is an instance of:** a module extracted from two consumers
+encodes **what those two agree on**, and agreement is not evidence of design. It
+took a third consumer to tell the difference.
+
+**Not taken:**
+
+- **Keep glamour's own `writeEnvelope` and import only `die`/`CliError`.**
+  Smallest diff, zero risk to the wire — and it leaves a fourth copy of the
+  envelope in the tree, which is the thing this project exists to end. It would
+  also have hidden the finding: nobody would have learned that the kit cannot
+  express a daemon refusal.
+- **Drop `error.server` from glamour to match the kit.** Rejected outright: it
+  is a wire-observable regression, it is asserted by three contract cells, and
+  it would be the spell bending around the module — precisely what the brief
+  forbade.
+- **A generic `details?: unknown`.** Renames a field that already ships, for
+  tidiness, and loses the one property that makes it worth having — that a
+  caller can trust it is what the other side actually said.
+
+## D32 · `SseClients` holds `{close, send}`, not a bare closer
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+glamour streams presence — `{type:"connected"}` / `{type:"disconnected"}` — to
+the AGENT's SSE tail, unlogged and with no `id`, so a reconnecting agent neither
+re-sees every past connect nor advances its cursor past one. `sse.ts`'s registry
+held bare closers, so there was no way to write to a live stream that did not go
+through the log.
+
+Astrolabe and magpie announce presence over their browser WEBSOCKET, which is
+why the boundary looked right for both. The registry entry is now
+`{ close(): void; send(chunk: string): void }`, and `send` routes through the
+same closed-check and teardown funnel as every other write — so a `send` after
+teardown is a no-op rather than a throw, and a daemon announcing presence cannot
+crash on a departed subscriber. `drainAndStop` was the only other consumer;
+neither adopting spell dereferences the elements.
+
+**Not taken:**
+
+- **Keep a parallel `Set<ReadableStreamDefaultController>` in glamour's
+  daemon.** The obvious local fix, and it re-creates VERBATIM the drift this
+  registry exists to remove — the copies kept a second set of heartbeat timers
+  beside the controllers and swept it separately, which is the defect `sse.ts`'s
+  own header describes. A second parallel set would also be invisible to
+  `subscriberCount`.
+- **Put `announce`/`emitTransient` on `EventLog` instead.** The log is where
+  fan-out lives, so it reads well — but a transient is not a `Frame<T>` (it has
+  no `id`, by design), so every listener would have to accept a union and every
+  consumer would have to discriminate. The registry is where "act on one live
+  stream" already lives.
+- **A `sseResponse` hook that hands the caller a raw `send`.** Equivalent power,
+  and the caller then has to keep its own collection of them — the parallel set
+  again, one indirection later.
+
+## D33 · glamour's tail returns an exit code, so the COMMAND TABLE carries one
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+`tailEvents` RETURNS an exit code rather than calling `process.exit` from inside
+its loop (D8's sibling ruling, and the whole of the P0f drain scar). glamour
+dispatches through a `COMMANDS` table whose `run` returned `Promise<void>`, so
+there was nowhere for that code to go. `run` is now
+`Promise<number | undefined> | number | undefined`, and dispatch reads
+`typeof code === "number" ? code : 0`.
+
+`undefined` means 0 — "the verb completed and has no opinion" — so every row but
+`tail` is untouched and only the verb that owns a code has to say so.
+
+**Not taken:** _make `cmdTail` set `process.exitCode` itself._ One line, no
+signature change, and it puts a second place the exit code is decided into a CLI
+whose entire funnel exists so there is exactly one. _Special-case `tail` in
+`dispatch` before the table walk._ It works, and it re-introduces the second
+source of truth the command table was built to remove — help, the schema, the
+arity check and the dispatcher all walk that one structure.
+
+## D34 · glamour's daemon integration suite forces release; the CONDITIONAL swallow is filed, not fixed
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 2, out of D8's audit.
+
+The audit came back clean — 12 `die` sites, 25 further invocation edges, 37
+audited positions, **zero inside a `try`** — but it named one CONDITIONAL:
+`postCmd`'s ECONNRESET catch tests `message.includes("ECONNRESET")` on an
+untyped error and answers `{"ok":true,"sent":"close"}` at exit 0. Its only
+die-reachable call, `requireSession`, sits three lines ABOVE the `try`, so no
+`CliError` can enter it today.
+
+**Filed, not applied.** The one-line ward is
+`if (err instanceof CliError) throw err;` as the catch's first statement. It is
+a behaviour change in a chapter whose contract is adoption, and it is exactly
+the kind of "small obvious fix" that makes a phase unverifiable. It is written
+into the journal and the source comment so it is a decision rather than an
+oversight.
+
+**Not taken:** _apply it now, it is one line._ Rejected on the phase's own rule
+— and because the honest version of the change also wants a cell, and a cell for
+a currently-unreachable path has to mint its own reachability, which is a design
+question rather than a line.
+
+## D35 · Three wire-observable changes, named rather than smuggled
+
+**Recorded:** implementer, 2026-09-08, Phase 2 chapter 2.
+
+1. **`text/html` → `text/html; charset=utf-8`** on the release surface — the
+   kit's content-type map, which resolved the census's one divergence toward the
+   correct copy. glamour is the third spell to inherit it.
+2. **The SSE stream opens with a `: connected` comment.** It flushes the
+   response headers so a quiet stream does not leave a `fetch()` unresolved.
+   Every house tail client drops `:` lines; what it broke was two of glamour's
+   own cells, which read LINE 0 of the stream and handed `JSON.parse` a comment.
+   Both now take the first `data:` line.
+3. **The teardown grace is 150 ms, not glamour's 50.** The number all eight
+   daemons converged on independently, and the thing that makes a `closed` frame
+   an observation rather than a hope — which matters here specifically, because
+   `closed` is the frame glamour's own `tail` ends on.
+
+**Not taken:** _preserve glamour's 50 ms by passing `graceMs`._ The option
+exists, and using it would keep one spell on a number the other seven measured
+their way off. _Keep `text/html` bare for byte-compatibility._ It is the wrong
+answer, stated as such in the module.

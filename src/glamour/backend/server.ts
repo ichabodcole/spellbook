@@ -1,12 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, rmSync, unlinkSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,6 +9,12 @@ import {
   defaultState,
   type GlamourState,
 } from "../../../plugins/spellbook/skills/glamour/shared/types";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { createEventLog } from "../../kit/wire/eventLog.ts";
+import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { loadSnapshot, materializeItem, saveSnapshot } from "./persist.server";
 import {
   addItem,
@@ -60,38 +58,27 @@ const DIST_DIR = join(SKILL_ROOT, "dist");
 // directory (a built backend can put cli.js in dist/ with no surface there) —
 // else dev; the env override wins either way (Contract 1). Release: zero reads
 // of surface source or bunfig.toml — static files only.
+//
+// The predicate and the scar it carries are now `src/kit/wire/serveDist.ts`;
+// what stays here is WHICH directory glamour resolves against. Exported because
+// this spell's own suites ask it.
 export function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+  return resolveModeIn(DIST_DIR);
 }
 
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
-// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
-// (Contract 2's flat, relative-href layout). A static asset request is always a
-// bare filename, never nested: the guard is what keeps this one level deep and
-// disjoint from glamour's own GET /assets/<name> session-files route above it
-// (every /assets/ path is nested, so it is refused here and falls through).
+// Serves dist/ verbatim — entry index.html, hashed chunks by path (Contract 2's
+// flat, relative-href layout). ⛔ THE URL→FILENAME MAPPING STAYS HERE ON PURPOSE:
+// the kit decides whether a file may be read and what content type it gets, and
+// the CALLER decides which file — because two spells route this differently and a
+// signature wide enough for both stops being a file server. glamour's own
+// `GET /assets/<name>` session-files route sits ABOVE this in the fetch chain,
+// and `serveFromDist` refusing anything with a slash in it is what keeps the two
+// disjoint (every /assets/ path is nested, so it is refused here and falls
+// through).
 function serveDist(path: string): Response | null {
-  const rel = path === "/" ? "index.html" : path.slice(1);
-  if (rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  return serveFromDist(DIST_DIR, path === "/" ? "index.html" : path.slice(1));
 }
 
-const enc = new TextEncoder();
 const randHex = (n: number) =>
   Array.from(crypto.getRandomValues(new Uint8Array(n)))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -152,9 +139,15 @@ export async function startDaemon(opts: StartOpts) {
 
   // --- channels ---------------------------------------------------------------
   const sockets = new Set<import("bun").ServerWebSocket<unknown>>();
-  const events: Array<Record<string, unknown>> = [];
-  let eventSeq = 0;
-  const sseClients = new Set<ReadableStreamDefaultController>();
+  // The replay log behind `GET /events?since=<id>` — shared
+  // (`kit/wire/eventLog.ts`), so glamour inherits the bounded buffer, the
+  // monotonic id that actually WINS over a payload `id`, and the stale-watermark
+  // replay that lets a tail resuming against a restarted daemon receive anything
+  // at all. glamour stamps NO EPOCH: a session is identified by `session_id`, a
+  // restart is a different session, and a resuming tail is already talking to a
+  // different daemon by name (D19's reasoning for magpie, and it is glamour's too).
+  const log = createEventLog<Record<string, unknown>>();
+  const sseClients: SseClients = new Set();
   let lastActivity = performance.now();
   const touch = () => {
     lastActivity = performance.now();
@@ -175,31 +168,25 @@ export async function startDaemon(opts: StartOpts) {
     snapDirty = true;
     broadcast({ type: "state", state });
   };
-  const emitEvent = (msg: Record<string, unknown>) => {
-    const ev = { id: ++eventSeq, ...msg };
-    events.push(ev);
-    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
-    for (const c of sseClients) {
-      try {
-        c.enqueue(frame);
-      } catch {
-        /* gone */
-      }
-    }
-  };
+  const emitEvent = (msg: Record<string, unknown>) => log.emit(msg);
 
   // Presence is transient: stream to live SSE clients but DO NOT store it in
   // the replay log (a reconnecting agent should not re-see every past
   // connect/disconnect). No id is assigned, so it never advances a tail cursor.
+  //
+  // ⛔ THIS IS THE ONE THING THE SHARED SSE MODULE COULD NOT DO, AND IT WAS
+  // WIDENED RATHER THAN WORKED AROUND. `SseClients` held bare closers, because
+  // astrolabe and magpie announce presence over their browser WEBSOCKET and never
+  // needed to push an unlogged frame at the agent's tail. Keeping a second,
+  // parallel `Set<ReadableStreamDefaultController>` here would have re-created
+  // exactly the drift the registry exists to remove — and it is the drift that
+  // module's own header warns about, where a per-stream timer was swept from a
+  // second set and could fall out of step. So the registry entry gained `send`,
+  // which routes through the same closed-check and teardown funnel as every other
+  // write. Reported as a finding about the module, per the phase brief.
   const emitTransient = (msg: Record<string, unknown>) => {
-    const frame = enc.encode(`data: ${JSON.stringify(msg)}\n\n`);
-    for (const c of sseClients) {
-      try {
-        c.enqueue(frame);
-      } catch {
-        /* gone */
-      }
-    }
+    const frame = `data: ${JSON.stringify(msg)}\n\n`;
+    for (const c of sseClients) c.send(frame);
   };
 
   // --- session files ----------------------------------------------------------
@@ -407,39 +394,31 @@ export async function startDaemon(opts: StartOpts) {
     }
   };
 
-  // --- SSE response (replay by id + heartbeat) -------------------------------
-  const sseResponse = (url: URL): Response => {
+  // GET /events?since=<id> — replay, then stay open for live frames plus a
+  // heartbeat comment. One call into `kit/wire/sse.ts`, which is where the
+  // teardown funnel lives: `cancel()`, `req.signal` and a failed enqueue all
+  // reach it, at most once, and that funnel is what bounds the subscriber count
+  // the idle sweep reads. The old copy here relied on `try { enqueue } catch` to
+  // notice a departed client, which was MEASURED on Bun 1.3.14 not to work —
+  // enqueue on an orphaned stream buffers silently and never throws — and it was
+  // not wired to `req.signal` at all, so a client that vanished without
+  // cancelling was counted as present for the life of the daemon.
+  //
+  // ⚠ AND THE HEARTBEAT IS NO LONGER A LITERAL. It was `15000`, hard-coded here,
+  // beside a `Bun.serve` `idleTimeout: 255` and a comment explaining that the two
+  // are chained. They now come from `./heartbeat.ts`, which derives the pair — so
+  // the invariant holds for any value, not only for the two that happened to be
+  // written.
+  const eventsResponse = (req: Request, url: URL): Response => {
     touch();
-    const since = Number.parseInt(url.searchParams.get("since") ?? "-1", 10);
-    let ref: ReadableStreamDefaultController | null = null;
-    let hb: ReturnType<typeof setInterval> | null = null;
-    const stream = new ReadableStream({
-      start(controller) {
-        ref = controller;
-        for (const ev of events) {
-          if ((ev.id as number) > since)
-            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
-        }
-        sseClients.add(controller);
-        hb = setInterval(() => {
-          try {
-            controller.enqueue(enc.encode(`: hb\n\n`));
-          } catch {
-            /* gone */
-          }
-        }, 15000);
-      },
-      cancel() {
-        if (hb) clearInterval(hb);
-        if (ref) sseClients.delete(ref);
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+    return sseResponse({
+      log,
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
+      heartbeatMs: SSE_HEARTBEAT_MS,
+      clients: sseClients,
+      signal: req.signal,
+      onOpen: touch,
+      onClose: touch,
     });
   };
 
@@ -458,7 +437,7 @@ export async function startDaemon(opts: StartOpts) {
     // Found 2026-09-08 by the backend duplication recon: four spells had hit
     // this and fixed it, three had not, because the daemon spine is one design
     // implemented six times.
-    idleTimeout: 255,
+    idleTimeout: IDLE_TIMEOUT_SEC,
     development: { hmr: mode === "dev" },
     fetch(req, srv) {
       const url = new URL(req.url);
@@ -470,10 +449,10 @@ export async function startDaemon(opts: StartOpts) {
         const lean = url.searchParams.get("lean") === "1";
         return Response.json({
           state: lean ? leanState(state) : state,
-          cursor: eventSeq,
+          cursor: log.cursor(),
         });
       }
-      if (req.method === "GET" && path === "/events") return sseResponse(url);
+      if (req.method === "GET" && path === "/events") return eventsResponse(req, url);
       if (req.method === "POST" && path === "/cmd")
         return req
           .json()
@@ -561,29 +540,14 @@ export async function startDaemon(opts: StartOpts) {
     files_dir: sessionFilesDir,
     mode,
   });
-  // ⚠ ATOMIC, because cli.ts's readSession now treats unparseable content as
-  // corruption rather than absence. A bare writeFileSync is not atomic: a CLI
-  // reading while the daemon writes can observe a half-written pointer, and
-  // under the old best-effort read that surfaced as "no running glamour
-  // session". Write beside the target and rename — rename within one directory
-  // is atomic, so a reader sees either the previous pointer or the new one.
-  const writeAtomic = (target: string, text: string) => {
-    const tmp = `${target}.${process.pid}.tmp`;
-    try {
-      writeFileSync(tmp, text);
-      renameSync(tmp, target);
-    } catch {
-      try {
-        rmSync(tmp, { force: true });
-      } catch {
-        /* the temp file is already gone, or was never created */
-      }
-      throw new Error(`could not publish ${target}`);
-    }
-  };
+  // ⚠ ATOMIC, because cli.ts's readSession treats unparseable content as
+  // corruption rather than absence — and this implementation is now
+  // `kit/wire/discovery.ts`, shared with the singleton convention D3 kept alive
+  // beside this one. glamour is where the defect (L3) was found and fixed on
+  // 2026-09-07; what stayed here is WHICH files glamour writes.
   try {
-    writeAtomic(sessionFile, info);
-    writeAtomic(latestFile, info);
+    writeFileAtomic(sessionFile, info);
+    writeFileAtomic(latestFile, info);
   } catch {
     /* discovery is best-effort */
   }
@@ -595,20 +559,32 @@ export async function startDaemon(opts: StartOpts) {
   // import.meta.main below. All three carry it.
   emitEvent({ type: "ready", mode });
 
-  // --- snapshot debounce + idle timeout --------------------------------------
+  // --- snapshot debounce + idle sweep ----------------------------------------
+  //
+  // ⛔ THE SWEEP NOW SEES ITS SUBSCRIBERS — census defect L1, closed by the shared
+  // housekeeper REQUIRING a `subscriberCount` rather than by anyone remembering.
+  // The expression here read `(now - lastActivity)/1000 >= timeout` and nothing
+  // else, so an agent holding a `/events` tail on a quiet session was killed WITH
+  // ITS CONNECTION OPEN at the 30-minute floor — glamour, imago and magpie all
+  // had it. `timeout` now means "linger this long after the LAST subscriber
+  // leaves", not "maximum idle while connected".
   const saveNow = () => saveSnapshot(SNAPSHOTS_DIR, sessionId, state);
   if (restored) saveNow();
-  const snapTimer = setInterval(() => {
-    if (snapDirty) {
-      snapDirty = false;
-      saveNow();
-    }
-  }, 1000);
   const timeoutS = opts.timeoutS ?? 1800;
-  const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeoutS)
-      resolveDone({ code: 124, reason: "timeout" });
-  }, 250);
+  const stopHousekeeping = startHousekeeping({
+    subscriberCount: () => sockets.size + sseClients.size,
+    idleMs: () => performance.now() - lastActivity,
+    touch,
+    timeoutMs: timeoutS * 1000,
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    snapshot: {
+      dirty: () => snapDirty,
+      clear: () => {
+        snapDirty = false;
+      },
+      write: saveNow,
+    },
+  });
 
   let closed = false;
   // Resolves once the SSE flush + server.stop have been scheduled; callers
@@ -618,41 +594,52 @@ export async function startDaemon(opts: StartOpts) {
     resolveShutdown = r;
   });
 
+  // The session pointer is unconditionally ours; `glamour-latest.json` is NOT —
+  // a newer session may already have claimed it, and unlinking that would make
+  // the live daemon invisible to the next verb. `unlinkIfMatches`'s `identify`
+  // hook is what lets ONE shared predicate serve both this JSON pointer and
+  // astrolabe's bare pid file (`kit/wire/discovery.ts`).
+  const cleanupDiscovery = () => {
+    try {
+      unlinkSync(sessionFile);
+    } catch {
+      /* gone — fine */
+    }
+    unlinkIfMatches(latestFile, sessionId, (raw) => {
+      try {
+        const id = (JSON.parse(raw) as { session_id?: unknown }).session_id;
+        return typeof id === "string" ? id : null;
+      } catch {
+        return null;
+      }
+    });
+    try {
+      rmSync(sessionFilesDir, { recursive: true, force: true });
+    } catch {
+      /* already gone */
+    }
+  };
+
+  // ⛔ STAYS SYNCHRONOUS AND IDEMPOTENT, because `done.then(() => close())` and
+  // the suites' `afterAll(() => d.close())` both call it as a statement. The
+  // DRAIN is what became async: `drainAndStop` waits its grace period, closes
+  // every registered tail through the funnel, closes the sockets, then RACES
+  // `server.stop(true)` — because that call awaits its connections and one wedged
+  // peer is enough to park teardown forever (a 23-minute hang shipped once).
+  //
+  // ⚠ THE GRACE PERIOD IS 150 ms, NOT GLAMOUR'S OLD 50, and that is a deliberate
+  // wire-observable change rather than an oversight: 150 is the number all eight
+  // daemons converged on independently, and it is what turns "the daemon told you
+  // why it died" from a hope into an observation. glamour's `closed` frame is the
+  // one the CLI's tail watches for.
   const close = () => {
     if (closed) return;
     closed = true;
-    clearInterval(snapTimer);
-    clearInterval(idleTimer);
+    stopHousekeeping();
     saveNow();
-    try {
-      unlinkSync(sessionFile);
-    } catch {}
-    try {
-      const raw = readFileSync(latestFile, "utf8");
-      const parsed = JSON.parse(raw) as { session_id?: string };
-      if (parsed.session_id === sessionId) unlinkSync(latestFile);
-    } catch {
-      /* best-effort */
-    }
-    try {
-      rmSync(sessionFilesDir, { recursive: true, force: true });
-    } catch {}
+    cleanupDiscovery();
     emitEvent({ type: "closed" });
-    // Close each SSE controller so Bun flushes the queued frame to the client
-    // before tearing down the TCP connections.
-    for (const c of sseClients) {
-      try {
-        c.close();
-      } catch {
-        /* already closed */
-      }
-    }
-    sseClients.clear();
-    // Give Bun a tick to drain the final SSE frames, then stop the server.
-    setTimeout(() => {
-      server.stop(true);
-      resolveShutdown();
-    }, 50);
+    void drainAndStop({ server, clients: sseClients, sockets }).then(resolveShutdown);
   };
   done.then(() => close());
 
