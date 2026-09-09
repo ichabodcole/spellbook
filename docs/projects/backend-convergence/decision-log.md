@@ -2250,3 +2250,128 @@ agent told to look for silence, meeting a confident exit 2 about its cwd, will
 conclude B3 does not apply and go fix its cwd. _Record it only in the pre-work
 doc_ — the misdirection happens at the step, so the correction belongs at the
 step, with the pre-work doc holding the transcript.
+
+## D58 · digestify's failures adopt the envelope; its OUTCOMES keep their numbers — and three codes move
+
+**Decided:** implementer, 2026-09-09, Phase 5 chapter 2, driven at all eight
+sites.
+
+digestify had **no `die` and no error class**, which is not the same as having
+no error contract. It raised by `process.stderr.write("error: …"); return 2;` at
+**eight** sites — counted by following the returns, because a grep for `die(`
+finds nothing and reports "no error contract to change" for a spell whose exit
+codes SKILL.md publishes in a table with a per-code sentence for the agent.
+
+**The two populations, ruled separately, which is D52 arriving at the spell it
+was written for.**
+
+| population           | codes         | channel                                        | ruling                                       |
+| -------------------- | ------------- | ---------------------------------------------- | -------------------------------------------- |
+| **failures**         | 1 · 2 · 5 · 6 | ONE JSON envelope on **stderr**, stdout empty  | **adopt `errors.ts`** — kind, envelope, code |
+| **session outcomes** | 0 · 124 · 130 | an observation line on **stdout**, no envelope | **outside the taxonomy, numbers unchanged**  |
+
+A timeout and a closed tab are not refusals of a caller's command: they are what
+happened to the review, they are RETURNED from `main` and never raised, and
+SKILL.md gives the agent a different sentence to say to the human for each.
+Adopting the taxonomy over them would re-spell the two states this spell exists
+to distinguish. ⚠ **The channel is the discriminator, not the number** — the
+same named residue `join.ts` carries.
+
+**What moved, driven through the real launcher:**
+
+| invocation                       | before          | after                                   |
+| -------------------------------- | --------------- | --------------------------------------- |
+| a bad flag                       | 2 · prose       | **2** `usage`, enveloped                |
+| a bad `--theme`                  | 2 · prose       | **2** `usage` + `choices` as DATA       |
+| a malformed `::: question` fence | 2 · prose       | **2** `usage`                           |
+| nothing to review                | 2 · prose       | **2** `usage` + `hint`                  |
+| `--reference` at a missing path  | 2 · prose       | **5** `not_found`                       |
+| dev boot from the wrong cwd      | 2 · 10 lines    | **2** `usage`, all ten lines in `hint`  |
+| dev boot with no surface source  | 2 · prose       | **5** `not_found`                       |
+| the server could not bind        | 2 · a JSON line | **6** `conflict`, and that line is GONE |
+
+The `{"event":"bind_error"}` line is deleted rather than kept beside the
+envelope: "ONE JSON document on stderr" is the contract and a second JSON line
+above it is a second document — `join.ts`'s repair, for the same reason.
+
+**And the ruling has a destination outside the code, which Phase B does not
+say.** `5` and `6` are new caller-visible numbers, so **SKILL.md's exit table
+carries them**, with the two populations named and the envelope shown. Nothing
+in the gate would have reported it (digestify has no acc grade, D37), and
+nothing in Phase B names SKILL.md as the place a code change lands.
+
+**Not taken:** _force every kind to `usage` so all failures stay at 2_ — that
+adopts the envelope's shape and discards its content; `kind` is the contract,
+and calling a missing file a usage error is a lie an agent routes on. _Convert
+124/130 as well, for uniformity_ — refused for D52's reason and one more: they
+are the spell's whole product. _Leave the two dev refusals as prose because
+their diagnostics are multi-line_ — `hint` exists for exactly that, and a spell
+that keeps one prose path keeps the two-formats problem for its caller.
+
+## D59 · `--timeout 0` used to mean "immediately" and now means "never" — the kit gave something back
+
+**Decided:** implementer, 2026-09-09, Phase 5 chapter 2, driven both sides.
+
+`shouldIdleClose` carries astrolabe's `timeoutMs <= 0` guard — the
+standing-observatory default, where a `>= 0` comparison would close the daemon
+on its first tick. digestify's own watcher was
+`(now - heartbeatAt)/1000 >= timeout`, so **`--timeout 0` ended the review 124
+on the first 50 ms tick**: a review nobody could ever read. Adopting the module
+changes that one input to mean **never time out**; `/submit` and `/cancel` still
+end the session, and the cell that pins it ends the session through `/cancel`
+rather than waiting for a timeout that will never come.
+
+**This is bounty's third category — RECEIVED, not GAINED or DE-DUPLICATED — and
+it is the one nobody looks for**, because the whole phase is written as though
+the kit is the destination. Framed as "adopt and gain", a behaviour change lands
+unnamed.
+
+**Not taken:** _preserve the old meaning by passing `timeout * 1000 || -1`_ — it
+keeps a value nobody wants (a review that dies before it renders) and puts a
+second idle policy back into a spell that just adopted the house's. _Reject
+`--timeout 0` as a usage error_ — a new refusal is a bigger caller-visible
+change than a new meaning, and "never" is the useful reading of zero.
+
+## D60 · Phase B's first single-entry consumer — six places it was still not enough
+
+**Recorded:** implementer, 2026-09-09, at the end of Phase 5.
+
+Phase B was rewritten the day before this port to dispatch on four properties
+instead of on the names `cli`/`server` (D55), and digestify is its first
+consumer. **The rewrite held**: B3's arithmetic ruling, B5's derived pin
+destination, B7's zero-row discipline and B8's no-subject table each produced
+the right answer, and D57's warning stopped the anchor being diagnosed from its
+own error message. Six gaps remain, each hit before it was solved, and all six
+are amended in ONE pass:
+
+1. **B6 tells a moved test to re-derive from an explicit `SKILL_ROOT` and never
+   says the skill root is now in ANOTHER TREE.** No count of `..` reaches it.
+   The house form already existed in this spell's own `dev-styled.test.ts` — a
+   `.anthill/config.json` marker walk, under a comment recording that a
+   hand-counted climb died at spawn when a non-author placed the file.
+2. **B4's "do not stage artifacts as a ward workaround" and B10's "`dist-check`
+   exit 0" read as a contradiction**, and the reconciliation lives only in D42's
+   prose. `dist-check` ARM 1b FAILS on a first-emit artifact until it is staged,
+   because ARM 1b's question IS shipping. Stage it for the COMMIT; never to make
+   a ward green.
+3. **B10's checklist says "driven on a booted daemon", and for a single-shot
+   spell a boot proves nothing.** Digestify exists for a human to read a page
+   and submit once; a daemon nobody submits to exercises neither the
+   substitution nor the exit.
+4. **B8's `housekeeping` row rules on `shouldIdleClose` and `drainAndStop` and
+   never mentions `startHousekeeping`**, which is what an "adopt the module"
+   reading takes. It owns the PAIR of standing timers; a one-timer spell needs a
+   ruling, not a silence.
+5. **B8 never names SKILL.md as the destination of an error-contract ruling.**
+   It says correctly that nothing in the gate will tell you; the thing that
+   tells the CALLER is the spell's published exit table, and three spells have
+   now changed codes without a step naming it.
+6. **B8 tells the port to DRIVE the defence the kit does not carry, and stops
+   there.** A drive does not survive the session. Where the kit deletes a
+   defence the spell keeps, the kept defence needs a CELL — digestify's is
+   `GET /index.html` must not answer the unsubstituted document.
+
+**Not taken:** _file the six as backlog items_ — the reader who needs them is
+the next porting agent inside the step, which is where imago's and bounty's
+went. _Amend as each was hit_ — six commits into a document two other ports are
+reading; one pass, at the end, with the port's evidence behind it.
