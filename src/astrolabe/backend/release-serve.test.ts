@@ -18,25 +18,41 @@
 // was the only thing stopping dist/ from being byte-reproducible). So this is
 // no longer an unported cell awaiting a port. There is nothing to port.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-// Every non-test engine module ships — a glob, not a hand-maintained mirror
-// (mind-mapper's mirror shipped a broken release twice before it was globbed;
-// a new module is in the copied tree by construction this way).
-const SOURCE_FILES = readdirSync(SCRIPT_DIR).filter(
-  (f) => f.endsWith(".ts") && !f.endsWith(".test.ts"),
+const BACKEND_DIR = import.meta.dir;
+const SKILL_ROOT = join(
+  BACKEND_DIR,
+  "..",
+  "..",
+  "..",
+  "plugins",
+  "spellbook",
+  "skills",
+  "astrolabe",
 );
+
+// ⛔ THE COPIED TREE IS BUILT FROM THE ARTIFACT NOW, NOT FROM SOURCE FILES.
+// Before Phase 1b this copied `readdirSync(SCRIPT_DIR)` — every non-test `.ts`
+// beside the daemon — into `<root>/scripts/`, with the comment "every non-test
+// engine module ships … a new module is in the copied tree by construction this
+// way." That scar is re-homed rather than deleted: the reason it existed was
+// that mind-mapper's HAND-MAINTAINED mirror shipped a broken release twice.
+//
+// The glob is no longer the way to honour it, because the daemon's modules are
+// no longer files that ship. `dist/server.js` is ONE file containing the whole
+// module graph, so "a new module is in the copied tree by construction" is now
+// true by BUNDLING rather than by globbing — and copying source `.ts` here
+// would copy files whose `../../../plugins/…` imports cannot resolve from a
+// temp directory, i.e. it would test something that does not exist.
+//
+// What ships, and therefore what is copied: the built daemon and its launcher.
+const ARTIFACT_FILES: { from: string; to: string }[] = [
+  { from: join(SKILL_ROOT, "dist", "server.js"), to: join("dist", "server.js") },
+  { from: join(SKILL_ROOT, "scripts", "server.ts"), to: join("scripts", "server.ts") },
+];
 
 // Read the daemon's one-line stdout handshake, which carries the resolved mode.
 async function readReadyLine(
@@ -66,13 +82,16 @@ async function readReadyLine(
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "astrolabe-release-test-"));
   mkdirSync(join(root, "scripts"), { recursive: true });
-  for (const file of SOURCE_FILES) {
-    cpSync(join(SCRIPT_DIR, file), join(root, "scripts", file));
+  mkdirSync(join(root, "dist"), { recursive: true });
+  for (const { from, to } of ARTIFACT_FILES) {
+    // A missing artifact must FAIL LOUDLY here. `cpSync` of an absent source
+    // throws, which is what we want: the alternative is a tree that boots into
+    // a confusing "daemon did not print ready line" ten seconds later.
+    cpSync(from, join(root, to));
   }
   // The dist/ a real build.ts produces — flat, hashed chunk names, relative
   // hrefs, UNHASHED entry (Contract 2's shape). Content is fake; the SHAPE is
   // what release-mode serving actually reads.
-  mkdirSync(join(root, "dist"), { recursive: true });
   writeFileSync(
     join(root, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
@@ -119,7 +138,17 @@ test("the ready EVENT carries the resolved mode, not just the stdout handshake",
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  // ⚠ THE FIRST LINE IS A COMMENT, NOT A FRAME, SINCE PHASE 1b CHAPTER 2. The
+  // shared `sseResponse` opens with `: connected` so the response headers flush
+  // immediately — Bun's own `fetch()` buffers until the first body byte, so a
+  // quiet stream would otherwise leave this very call unresolved. Every house
+  // tail client already drops `:` lines; this cell read the first LINE and had
+  // to learn the same rule.
+  const frame =
+    new TextDecoder()
+      .decode(value)
+      .split("\n")
+      .find((l) => l.startsWith("data: ")) ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");

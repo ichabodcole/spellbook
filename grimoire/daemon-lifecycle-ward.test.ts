@@ -38,14 +38,30 @@ function read(rel: string): string {
   return readFileSync(join(SKILLS, rel), "utf8");
 }
 
-/** Every backend file that calls `Bun.serve`, as `spell -> source`. */
+/** Every backend file that calls `Bun.serve`, ACROSS BOTH ROOTS.
+ *
+ *  ⛔ THE SECOND ROOT IS NOT OPTIONAL, and this ward proved it the loud way.
+ *  Phase 1b moved astrolabe's and magpie's DAEMON SOURCE to
+ *  `src/<spell>/backend/server.ts` and left a launcher at the old address. A
+ *  scan of `skills/` alone went 7 -> 5 and the population zero-guard below
+ *  reddened — which is the ward working (seams Contract 19: the pin is what
+ *  converts a silent shrink into a loud failure). The repair is to EXTEND THE
+ *  WALK, never to lower the floor: `clis()` below already had both roots for
+ *  exactly this reason, one function away. */
 function daemons(): { spell: string; file: string; text: string }[] {
   const out: { spell: string; file: string; text: string }[] = [];
   for (const rel of new Glob("*/scripts/*.ts").scanSync(SKILLS)) {
     if (rel.endsWith(".test.ts")) continue;
     const text = read(rel);
     if (!text.includes("Bun.serve(")) continue;
-    out.push({ spell: rel.split("/")[0], file: rel, text });
+    out.push({ spell: rel.split("/")[0], file: `skills/${rel}`, text });
+  }
+  const srcRoot = join(import.meta.dir, "..", "src");
+  for (const rel of new Glob("*/backend/*.ts").scanSync(srcRoot)) {
+    if (rel.endsWith(".test.ts")) continue;
+    const text = readFileSync(join(srcRoot, rel), "utf8");
+    if (!text.includes("Bun.serve(")) continue;
+    out.push({ spell: rel.split("/")[0], file: `src/${rel}`, text });
   }
   return out.sort((a, b) => a.file.localeCompare(b.file));
 }

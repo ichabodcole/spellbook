@@ -3,8 +3,8 @@
 // on intent. No subprocess / no rembg — fast and deterministic.
 
 import { expect, test } from "bun:test";
-import { type AlphaPolicy, shouldRemove } from "../scripts/backend";
-import { ELEMENT_TYPES } from "../shared/types";
+import { ELEMENT_TYPES } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { type AlphaPolicy, shouldRemove } from "./backend";
 
 // The 9 element types from the taxonomy, plus the policy axis.
 const TYPES = ELEMENT_TYPES; // wordmark, tagline, icon, illustration, sticker, palette, typography, screenshot, other

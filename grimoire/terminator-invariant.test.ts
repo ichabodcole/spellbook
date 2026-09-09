@@ -74,7 +74,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/scripts/cli.ts": "caller-facing; prompt text is a positional",
   "magpie/backend/cli.ts": "caller-facing",
-  "magpie/scripts/discover.ts": "internal (sibling-spawned argv), hazard still structural",
+  "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/scripts/cli.ts": "caller-facing; send bodies are prose positionals",
 };
 

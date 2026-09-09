@@ -250,6 +250,41 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
   return out.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
 }
 
+const DECLARED_EMITTED_ROOTS: string[] = [
+  "plugins/spellbook/skills/astrolabe/dist",
+  "plugins/spellbook/skills/magpie/dist",
+];
+
+/** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
+ *  → `[""]` trap — an empty var would otherwise declare a root matching every
+ *  file, which is the widest possible exemption arriving by accident. */
+const EMITTED_ROOTS: string[] = process.env.WARD_EMITTED_ROOTS
+  ? process.env.WARD_EMITTED_ROOTS.split(",")
+      .map((r) => r.trim())
+      .filter(Boolean)
+  : DECLARED_EMITTED_ROOTS;
+
+/**
+ * Tracked emitted files under the declared roots.
+ *
+ * ⛔ HOISTED ABOVE WARD 1a IN PHASE 1b, AND THE MOVE IS THE POINT. This started
+ * life as ward 1b's private helper. Ward 1a needs it now for the same reason 1b
+ * did: when a daemon ships BUILT, the file that carries its relative specifiers
+ * to the destination is `dist/server.js`, and `trackedSources` is `.ts`/`.tsx`
+ * only — so the escape would have left 1a's population entirely and the ward
+ * would have gone green because it stopped looking. Both wards read the same
+ * root list, which is what stops the two populations drifting apart.
+ */
+function emittedSources(roots: readonly string[]): string[] {
+  if (roots.length === 0) return [];
+  return roots.flatMap((root) =>
+    execFileSync("git", ["-C", REPO_ROOT, "ls-files", root], { encoding: "utf8" })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f)),
+  );
+}
+
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
 // ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. EIGHT entries, the same site in eight
@@ -288,8 +323,17 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 // (compare the triple, report the line) is proposed and NOT applied here — it
 // changes what this ward asserts, and that is the canon seat's call.
 const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
+  // ⛔ astrolabe AND magpie ARE PINNED AT THE EMITTED BUNDLE, NOT AT A SOURCE
+  // FILE — Phase 1b, and it is the strongest form this pin has ever had. Their
+  // daemon source moved to `src/<spell>/backend/server.ts` and the specifier
+  // now resolves from `plugins/spellbook/skills/<spell>/dist/`, where the
+  // bundle actually runs. `dist/` sits at the same depth as the `scripts/` it
+  // replaced, so the five `..` are unchanged — but that is a COINCIDENCE OF
+  // DEPTH that nothing else in the tree guarantees, and `resolved` below is the
+  // only automated thing that checks it. Read from the source file the same
+  // string climbs out of the repo entirely.
   {
-    file: "plugins/spellbook/skills/astrolabe/scripts/server.ts",
+    file: "plugins/spellbook/skills/astrolabe/dist/server.js",
     spec: "../../../../../src/astrolabe/surface/index.html",
     resolved: "src/astrolabe/surface/index.html",
   },
@@ -351,7 +395,7 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     resolved: "src/imago/surface/index.html",
   },
   {
-    file: "plugins/spellbook/skills/magpie/scripts/server.ts",
+    file: "plugins/spellbook/skills/magpie/dist/server.js",
     spec: "../../../../../src/magpie/surface/index.html",
     resolved: "src/magpie/surface/index.html",
   },
@@ -363,7 +407,16 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
 ];
 
 describe("R6 ward 1a — the published artifact resolves no relative path outside itself", () => {
-  const files = trackedSources(PLUGIN_ROOT);
+  // ⛔ THE POPULATION FOLLOWS THE SPECIFIER TO WHERE IT EXECUTES (Contract 19).
+  // Phase 1b built astrolabe's and magpie's daemons: their dev-mode
+  // `import(".../surface/index.html")` is no longer in a tracked `.ts` under
+  // `plugins/`, it is in `dist/server.js`, verbatim, because `src/build.ts`
+  // marks that one specifier `external`. `trackedSources` is `.ts`/`.tsx` only,
+  // so without `emittedSources` here BOTH pins would simply have been deleted
+  // as "no longer present" and this ward would have stopped watching the exact
+  // line the phase's brief calls the trap. The escape did not go away — it
+  // moved into the artifact, which is where it always mattered.
+  const files = [...trackedSources(PLUGIN_ROOT), ...emittedSources(EMITTED_ROOTS)];
 
   test("the sweep actually ran (zero-guard: a dead walk and a clean walk look identical)", () => {
     // ⛔ THIS GUARD NO LONGER COUNTS ANYTHING, AND THAT IS THE POINT.
@@ -521,24 +574,41 @@ const BUILTIN_EXACT = ["bun"] as const;
  * When the emission lands, ONE line here turns the exemption on for exactly the
  * root it names.
  */
-const DECLARED_EMITTED_ROOTS: string[] = [
-  "plugins/spellbook/skills/astrolabe/dist",
-  "plugins/spellbook/skills/magpie/dist",
-];
-
-/** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
- *  → `[""]` trap — an empty var would otherwise declare a root matching every
- *  file, which is the widest possible exemption arriving by accident. */
-const EMITTED_ROOTS: string[] = process.env.WARD_EMITTED_ROOTS
-  ? process.env.WARD_EMITTED_ROOTS.split(",")
-      .map((r) => r.trim())
-      .filter(Boolean)
-  : DECLARED_EMITTED_ROOTS;
-
-/** Node/Bun builtins, DERIVED from the runtime rather than hand-listed — a
- *  hand-kept copy of this set is exactly the drift `gate-blind-set` records
- *  having shipped once. These are the bare names a bundler leaves behind. */
-const BARE_BUILTINS = new Set(builtinModules);
+/**
+ * Node/Bun builtins, DERIVED from the runtime rather than hand-listed — a
+ * hand-kept copy of this set is exactly the drift `gate-blind-set` records
+ * having shipped once. These are the bare names a bundler leaves behind.
+ *
+ * ⛔ **MINUS THE NAMES THE OTHER TWO EXEMPTIONS ALREADY GOVERN, AND THAT
+ * SUBTRACTION IS THE WHOLE POINT OF THIS BLOCK (D16).** Under Bun,
+ * `builtinModules` has 76 entries and **`"bun"` is one of them** (so are
+ * `bun:ffi`, `bun:jsc`, `bun:sqlite`, `bun:test`). Taken whole, this set
+ * therefore exempts a bare `import … from "bun"` inside any declared emitted
+ * root **regardless of `BUILTIN_EXACT`** — which makes the differential cell
+ * below (the one that re-runs the ward with `BUILTIN_EXACT` emptied and asserts
+ * the difference) structurally blind in exactly the file class the emission
+ * created. MEASURED on the chapter 1 verify pass: five ward mutations, four went
+ * red, and `import { serve as __s } from "bun"` planted in
+ * `astrolabe/dist/server.js` stayed **green, 18 pass / 0 fail**.
+ *
+ * ⚠ The blindness was not a deployment hazard — `bun` IS the runtime — it is the
+ * **"population changed during a relocation"** shape: these daemons' sources
+ * were hand-authored `.ts` where a runtime `bun` import was visible to the
+ * differential, and after Phase 1b their artifact sits inside an exemption that
+ * swallowed it. Closed BEFORE `src/kit/` enters these same bundles, because
+ * anything the kit drags in that resolves to a name in `builtinModules` would
+ * inherit the same silence.
+ *
+ * **Overlapping exemptions cannot be differentiated.** Each of this ward's three
+ * exemptions now covers a disjoint set of names, so removing any one of them
+ * changes the verdict on the names it owns — which is the property every cell
+ * below relies on.
+ */
+const BARE_BUILTINS = new Set(
+  builtinModules.filter(
+    (m) => !BUILTIN_PREFIXES.some((p) => m.startsWith(p)) && !BUILTIN_EXACT.some((e) => e === m),
+  ),
+);
 
 /**
  * The ward's predicate, as a FACTORY over its two exemptions, so a cell can
@@ -580,16 +650,6 @@ const onShippedExecutionPath = (file: string): boolean =>
  * the population extends into the declared emitted roots, AND the bare-builtin
  * exemption applies there.
  */
-function emittedSources(roots: readonly string[]): string[] {
-  if (roots.length === 0) return [];
-  return roots.flatMap((root) =>
-    execFileSync("git", ["-C", REPO_ROOT, "ls-files", root], { encoding: "utf8" })
-      .trim()
-      .split("\n")
-      .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f)),
-  );
-}
-
 describe("R6 ward 1b — the shipped execution path carries no dependencies", () => {
   const files = [
     ...trackedSources(PLUGIN_ROOT).filter(onShippedExecutionPath),
@@ -700,6 +760,20 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // 4. The prefix match is on a PATH SEGMENT, not a string prefix — a sibling
     // directory whose name merely starts with the root must not inherit it.
     expect(probe("path", `${emitted}-notmine/cli.ts`)).toBe(false);
+
+    // 5. ⛔ THE EXEMPTIONS ARE DISJOINT (D16). `bun` inside an emitted root is
+    // exempt via `BUILTIN_EXACT` and via NOTHING ELSE — so emptying that list
+    // reddens it HERE, in a synthetic population, and not only on whatever the
+    // roster happens to contain today. This is the clause that would have gone
+    // red for the verifier's fifth mutation; before the subtraction above,
+    // `BARE_BUILTINS` held `"bun"` and this expectation was `true`, which is why
+    // planting a runtime `bun` import in `dist/server.js` cost the suite nothing.
+    expect(probe("bun", `${emitted}/server.js`)).toBe(true);
+    expect(makeIsBuiltin([], [emitted])("bun", `${emitted}/server.js`)).toBe(false);
+
+    // …and the `bun:` PREFIX exemption is the one that owns `bun:sqlite`, in an
+    // emitted root as everywhere else. Removing `BUILTIN_EXACT` must not touch it.
+    expect(makeIsBuiltin([], [emitted])("bun:sqlite", `${emitted}/server.js`)).toBe(true);
   });
 
   test("the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it", () => {
@@ -717,7 +791,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // was the clause that the cell must EVALUATE the exemption, not describe it.
     expect(violationsUnder(BUILTIN)).toEqual([]);
 
-    // Without `bun`, the same ward reddens on FIVE files.
+    // Without `bun`, the same ward reddens on THREE files (FIVE before Phase 1b).
     // ⚠ R6 says four, and R6 is not wrong — it is COUNTING A NARROWER
     // CONSTRUCT. Its four carry `import type { ServerWebSocket } from "bun"`.
     // The fifth, glamour, writes the same dependency as a TYPE QUERY —
@@ -726,13 +800,33 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // governs on the same terms. Re-derived here, never quoted: the number the
     // ruling carries and the number this cell asserts came from two different
     // frames, and this is the wider one.
+    //
+    // ⚠ THREE SINCE PHASE 1b, AND THE DEPARTURES ARE NOT A WEAKENING. astrolabe's
+    // and magpie's rows were their `server.ts` files; both daemons' SOURCE moved
+    // to `src/<spell>/backend/` and each one's `import type { ServerWebSocket }
+    // from "bun"` is TYPE-ONLY, so the bundler erases it and `dist/server.js`
+    // carries no `bun` import to violate. The dependency did not become exempt;
+    // it stopped existing in anything that ships. Re-derived by running the
+    // mutation, not by deleting the rows that failed.
+    //
+    // ⛔ THE SECOND HALF OF THAT SENTENCE USED TO SAY "which IS in this ward's
+    // population, via `emittedSources`" — offered as the guarantee, and it was
+    // ASSERTED, NOT VERIFIED. Being in the population is necessary and was not
+    // sufficient: `BARE_BUILTINS` held `"bun"`, so this cell could not have seen
+    // a runtime `bun` import in `dist/server.js` if one appeared, and the
+    // verifier's mutation proved exactly that (green, 18/0). The subtraction at
+    // `BARE_BUILTINS` is what makes the claim true; the clause is kept, with the
+    // record of what it was worth before.
+    //
+    // ⛔ AND THE COUNT IS NOW A FLOOR THAT ONLY FALLS. Every spell that ports its
+    // daemon into the build erases another of these, so a future reader finding
+    // ONE here has not found a ward that stopped working — read the population,
+    // not the number.
     const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
     expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
-      "plugins/spellbook/skills/astrolabe/scripts/server.ts",
       "plugins/spellbook/skills/bounty/scripts/server.ts",
       "plugins/spellbook/skills/glamour/scripts/server.ts",
       "plugins/spellbook/skills/imago/scripts/server.ts",
-      "plugins/spellbook/skills/magpie/scripts/server.ts",
     ]);
   });
 });
@@ -1089,9 +1183,24 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // distinguishable (`imago` re-exports `../surface/state/types` twice, once
     // as `export type` and once as a value; so does `magpie`), so the identity
     // survives dropping the line without collapsing.
+    //
+    // ⛔ THE POPULATION SPANS BOTH ROOTS (Phase 1b). astrolabe's re-export was
+    // `astrolabe/scripts/server.ts -> ./state.ts`; the daemon moved to
+    // `src/astrolabe/backend/` and the row would otherwise have been struck as
+    // "gone" — a SEVENTH construct silently leaving the cell that exists
+    // because someone once claimed there were zero. It did not go; it moved,
+    // and its specifier changed shape in a way worth seeing (D10: `state.ts` is
+    // two-sided and stayed in the deployed folder, so the re-export now reaches
+    // back into `plugins/` instead of sitting beside its importer).
     const found: { file: string; spec: string; erased: boolean }[] = [];
     const context: string[] = [];
-    for (const file of trackedSources(PLUGIN_ROOT)) {
+    const backendSrc = execFileSync("git", ["-C", REPO_ROOT, "ls-files", "src"], {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => /^src\/[^/]+\/backend\/.*\.ts$/.test(f) && !f.endsWith(".test.ts"));
+    for (const file of [...trackedSources(PLUGIN_ROOT), ...backendSrc]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const lines = source.split("\n");
       for (const ref of scanSpecifiers(source)) {
@@ -1127,13 +1236,29 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // that showed only `../shared/` here would be hiding the distinction the
     // sort exists to make.
     expect(found.sort((a, b) => key(a).localeCompare(key(b)))).toEqual([
-      { file: "astrolabe/scripts/server.ts", spec: "./state.ts", erased: true },
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: false },
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: true },
-      { file: "magpie/scripts/backend.ts", spec: "../shared/alpha", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: true },
-      { file: "magpie/scripts/server.ts", spec: "./reduce", erased: false },
+      {
+        file: "src/astrolabe/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts",
+        erased: true,
+      },
+      {
+        file: "src/magpie/backend/backend.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/alpha",
+        erased: false,
+      },
+      {
+        file: "src/magpie/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/types",
+        erased: false,
+      },
+      {
+        file: "src/magpie/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/types",
+        erased: true,
+      },
+      { file: "src/magpie/backend/server.ts", spec: "./reduce", erased: false },
     ]);
   });
 

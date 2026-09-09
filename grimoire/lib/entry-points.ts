@@ -185,13 +185,20 @@ export function globEntryPointsForComparison(): string[] {
  * only completeness claim available for an exclusion set.
  */
 export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
-  "astrolabe/scripts/server.ts",
+  // ⛔ RELOCATED BY PHASE 1b: astrolabe's and magpie's DAEMONS now build, so
+  // their source sits under the second root and a LAUNCHER holds the old
+  // address. The launcher parses nothing, so it is not in this population at
+  // all — the entry point moved, and this set moved with it. Keying these at
+  // `<spell>/scripts/server.ts` after the move would have been an exclusion for
+  // a file that is no longer a member: silently inert, and it would have
+  // published each daemon's private argv as a caller-facing interface.
+  "astrolabe/backend/server.ts",
+  "magpie/backend/server.ts",
+  "magpie/backend/discover.ts",
   "bounty/scripts/server.ts",
   "glamour/scripts/server.ts",
   "imago/scripts/server.ts",
-  "magpie/scripts/server.ts",
   "mind-mapper/scripts/server.ts",
-  "magpie/scripts/discover.ts",
 ]);
 
 export const isCallerFacing = (rel: string) => !INTERNAL_ENTRY_POINTS.has(rel);

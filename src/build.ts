@@ -17,7 +17,8 @@
 // 3) — this script only ever touches the surface" while `buildBackend()` sat 75
 // lines below it emitting `dist/cli.js`. It described the file before Slice 2
 // and nothing re-read it after. **This script builds BOTH:** a spell's surface
-// always, and its backend when `src/<spell>/backend/cli.ts` exists. Under
+// always, and its backend when `src/<spell>/backend/cli.ts` exists — and, since
+// Phase 1b, its DAEMON when `src/<spell>/backend/server.ts` exists. Under
 // Contract 3 as amended 2026-09-04, a backend builds when it imports from
 // outside its own deployed skill folder; source remains the default for a
 // backend that shares nothing.
@@ -50,12 +51,18 @@ const SRC_DIR = import.meta.dir;
 const REPO_ROOT = join(SRC_DIR, "..");
 const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
+/** The one specifier a daemon build leaves unresolved. Named once so the flag,
+ *  the source comment and any future consumer cannot drift apart. */
+const SURFACE_HTML_EXTERNAL = "*/surface/index.html";
+
 const entryFor = (spell: string) => join(SRC_DIR, spell, "surface", "index.html");
 const backendEntryFor = (spell: string) => join(SRC_DIR, spell, "backend", "cli.ts");
+const serverEntryFor = (spell: string) => join(SRC_DIR, spell, "backend", "server.ts");
 const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
 
 const hasSurface = (spell: string) => existsSync(entryFor(spell));
 const hasBackend = (spell: string) => existsSync(backendEntryFor(spell));
+const hasServer = (spell: string) => existsSync(serverEntryFor(spell));
 
 /** A spell is buildable iff `src/<spell>/surface/index.html` exists. Derived
  *  from the tree rather than from a hand-kept list, so relocating a spell is
@@ -67,7 +74,9 @@ const hasBackend = (spell: string) => existsSync(backendEntryFor(spell));
  *  Anything assuming a spell has both is wrong about three of the four. */
 function buildableSpells(): string[] {
   return readdirSync(SRC_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name)))
+    .filter(
+      (e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name) || hasServer(e.name)),
+    )
     .map((e) => e.name)
     .sort();
 }
@@ -91,8 +100,30 @@ function buildableSpells(): string[] {
  * 60,000 emitted. Contract 4's "source-free by construction" was redefined in
  * the same ruling to mean no source FILES.
  *
- * CLIs ONLY. A server does bundle, but drags the entire surface graph into the
- * backend artifact; that is unruled and out of scope. Do not add server.ts.
+ * ⚠ CORRECTED 2026-09-08 (Phase 1b, D6). This block read "CLIs ONLY. A server
+ * does bundle, but drags the entire surface graph into the backend artifact;
+ * that is unruled and out of scope. Do not add server.ts."
+ *
+ * THE MEASUREMENT IT RECORDS IS STILL TRUE AND IS THE REASON `buildServer`
+ * BELOW EXISTS SEPARATELY. A daemon's dev branch does
+ * `await import(".../surface/index.html")`, and with no `external` the bundler
+ * follows it, resolves the whole .tsx + Tailwind graph, and fails compiling
+ * `@import "tailwindcss" source(none)`. What changed is not the fact but the
+ * remedy: D6 measured `--external` on the surface-HTML glob (spelled once, at
+ * `SURFACE_HTML_EXTERNAL` above — a `*` then a slash then `surface/index.html`;
+ * ⛔ IT CANNOT BE WRITTEN LITERALLY INSIDE A BLOCK COMMENT, because those two
+ * characters CLOSE one. This build failed exactly that way once, which is
+ * principles.md #2 live inside the file that introduces the flag), which leaves that
+ * one specifier in the artifact verbatim, and the import is dead code in a
+ * release artifact anyway (the daemon's own source says so, for its own
+ * reasons). So a server DOES build, with exactly one flag, and D2's "the whole
+ * backend builds" is reachable.
+ *
+ * ⛔ STILL CLIs ONLY *HERE*. `buildServer` is a second Bun.build call rather
+ * than a second entrypoint in this one, and that is deliberate: one call with
+ * two entrypoints hoists whatever the two share into a hashed common chunk,
+ * which would rewrite `dist/cli.js` — a byte change in an artifact this phase
+ * did not touch, and Contract 18 verifies by reproduction.
  */
 async function buildBackend(spell: string): Promise<number> {
   const outdir = outDirFor(spell);
@@ -121,6 +152,49 @@ async function buildBackend(spell: string): Promise<number> {
   // name - the build log stops naming what it built for exactly the spell this
   // slice introduced.
   process.stdout.write(`${spell}: built backend ${result.outputs.length} file(s) -> ${outdir}\n`);
+  return 0;
+}
+
+/**
+ * Build one spell's DAEMON into `dist/server.js` (Phase 1b chapter 1, under
+ * decision D6 / D2 — "the whole backend builds, not just the CLI entry").
+ *
+ * ⛔ THE `external` IS THE WHOLE REASON THIS IS POSSIBLE, AND IT IS NOT A
+ * TIDINESS FLAG. Without it the bundler follows the daemon's dev-mode
+ * `await import("…/surface/index.html")` into the surface graph and dies on
+ * the stylesheet. With it, that ONE specifier survives into `dist/server.js`
+ * BYTE-FOR-BYTE — which means the specifier written in the source is resolved
+ * at runtime relative to `dist/`, NOT relative to the source file. See the
+ * block above that specifier in each `src/<spell>/backend/server.ts`; getting
+ * it wrong is silent in release mode, which never executes the line.
+ *
+ * The pattern is safe because the import sits behind `mode === "dev"` and a
+ * published artifact resolves to release by `dist/index.html`'s presence.
+ *
+ * Emits `server.js` (the entry naming is load-bearing: `scripts/server.ts`, the
+ * launcher the CLI spawns, imports that literal path).
+ */
+async function buildServer(spell: string): Promise<number> {
+  const outdir = outDirFor(spell);
+  const result = await Bun.build({
+    entrypoints: [serverEntryFor(spell)],
+    outdir,
+    target: "bun",
+    sourcemap: "inline",
+    external: [SURFACE_HTML_EXTERNAL],
+    naming: { entry: "[dir]/[name].[ext]", chunk: "[dir]/[name]-[hash].[ext]" },
+  });
+
+  if (!result.success) {
+    for (const log of result.logs) process.stderr.write(`${log}\n`);
+    process.stderr.write(`${spell}: server build failed\n`);
+    return 1;
+  }
+
+  for (const artifact of result.outputs) {
+    process.stdout.write(`${artifact.path.replace(`${outdir}/`, "")} (server ${artifact.kind})\n`);
+  }
+  process.stdout.write(`${spell}: built server ${result.outputs.length} file(s) -> ${outdir}\n`);
   return 0;
 }
 
@@ -170,13 +244,14 @@ async function buildSurface(spell: string): Promise<number> {
  * and the CLI simply disappears. Clean once, then build each aspect present.
  */
 async function buildSpell(spell: string): Promise<number> {
-  if (!hasSurface(spell) && !hasBackend(spell)) {
+  if (!hasSurface(spell) && !hasBackend(spell) && !hasServer(spell)) {
     // Name what was looked for AND what would have worked - an unknown spell
     // is the one failure this script can fully explain.
     process.stderr.write(
       `build: nothing to build for "${spell}"\n` +
         `       looked for ${entryFor(spell)}\n` +
         `       and ${backendEntryFor(spell)}\n` +
+        `       and ${serverEntryFor(spell)}\n` +
         `       buildable spells: ${buildableSpells().join(", ") || "(none)"}\n`,
     );
     return 1;
@@ -185,6 +260,7 @@ async function buildSpell(spell: string): Promise<number> {
   let code = 0;
   if (hasSurface(spell)) code = (await buildSurface(spell)) || code;
   if (hasBackend(spell)) code = (await buildBackend(spell)) || code;
+  if (hasServer(spell)) code = (await buildServer(spell)) || code;
   return code;
 }
 
@@ -208,4 +284,4 @@ if (import.meta.main) {
   process.exit(await main(process.argv.slice(2)));
 }
 
-export { buildableSpells, buildBackend, buildSpell, buildSurface, main };
+export { buildableSpells, buildBackend, buildServer, buildSpell, buildSurface, main };

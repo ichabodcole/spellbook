@@ -41,6 +41,7 @@ import { parseArgs } from "node:util";
 import { printJson } from "../../kit/lib/printJson";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
 import { tailEvents } from "../../kit/wire/tailEvents";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ "..", "scripts" — NOT a sibling lookup. This file is AUTHORED here and
@@ -77,34 +78,14 @@ const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
 // The watchdog aborts a connection that has said nothing for `TAIL_IDLE_MS`;
 // the only thing keeping a quiet connection alive is the daemon's `: hb`
 // comment. So the two numbers are ONE invariant — watchdog > heartbeat, with
-// room for missed beats — and a hard-coded 45s satisfied it only at the
-// daemon's DEFAULT heartbeat.
+// room for missed beats.
 //
-// Measured: `ASTROLABE_HEARTBEAT_MS` is env-tunable and clamped only to half
-// the idle timeout, a ceiling of 127.5s at defaults, so any value above 45,000
-// put the tail in a permanent abort/reconnect cycle — reconnects at +47.4s,
-// +92.6s and +137.9s against a healthy but slow-beating daemon. It was harmless
-// only because `PRESENCE_DEBOUNCE_MS` happened to absorb the churn, which is a
-// third constant with no relationship to either.
-//
-// ⚠ THE TWO EXPRESSIONS BELOW MIRROR `scripts/server.ts:135-142` BY HAND, and
-// that is duplication with its eyes open: the CLI cannot import the daemon
-// (that would drag the whole server graph into `dist/cli.js`). It is exactly
-// the shape Phase 1b's shared spine should collapse into one exported
-// constant. Until then, an edit there is an edit here.
-const IDLE_TIMEOUT_SEC = Math.max(
-  1,
-  Math.min(255, Number.parseInt(process.env.ASTROLABE_IDLE_TIMEOUT ?? "255", 10) || 255),
-);
-const SSE_HEARTBEAT_MS = Math.min(
-  Number.parseInt(process.env.ASTROLABE_HEARTBEAT_MS ?? "10000", 10) || 10000,
-  Math.max(500, Math.floor((IDLE_TIMEOUT_SEC * 1000) / 2)),
-);
-// Three missed beats. ⚠ IT MUST STAY WELL ABOVE THE HEARTBEAT: holding the
-// connection open IS `join`'s presence signal, so every watchdog fire flaps a
-// card in a human's view. It still wants a watchdog — a wedged half-open socket
-// shows a card as permanently present, which is the worse lie.
-const TAIL_IDLE_MS = SSE_HEARTBEAT_MS * 3;
+// ⛔ IT USED TO BE MIRRORED HERE BY HAND. Two expressions copied out of the
+// daemon under a comment saying "an edit there is an edit here", because the
+// CLI could not import the daemon without dragging the whole server graph into
+// `dist/cli.js`. Phase 1b's shared spine is that import: `./heartbeat.ts` is a
+// leaf-shaped module with no daemon in it, both halves import it, and the
+// mirror is gone rather than annotated.
 
 // Failures leave stdout empty and put ONE JSON envelope on stderr — the same
 // machine shape as the data path, so a piped caller parses the error instead of
@@ -255,7 +236,7 @@ async function streamEvents(opts: {
   scopeId?: string;
   self?: string;
 }): Promise<number> {
-  type Ev = { id?: number; type?: string; by?: string; projectId?: string };
+  type Ev = { id?: number; epoch?: string; type?: string; by?: string; projectId?: string };
 
   const inScope = (ev: Ev) => {
     if (!opts.scopeId) return true;
@@ -274,6 +255,17 @@ async function streamEvents(opts: {
     }),
     accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
     terminal: (ev) => ev.type === "closed",
+    // ⛔ THE RESTART GAP. Astrolabe is a singleton that `cli.ts` respawns, and
+    // its event ids restart at 1 — so a `join` that has been running for hours
+    // resumes at `since=<a large number>` against a daemon whose whole log is
+    // smaller than that. The daemon half (`kit/wire/eventLog.ts`) replays whole
+    // when the cursor is beyond its own; this half is what stops the tail then
+    // re-requesting the stale cursor on every subsequent reconnect. The line is
+    // SYNTHESIZED — it is not a bus event, carries no `id`, and never advances
+    // the cursor — which is the same separation mind-mapper's `epoch.changed`
+    // makes and `mind-mapper/scripts/tail.test.ts` pins.
+    epochOf: (ev) => ev.epoch,
+    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     idleMs: TAIL_IDLE_MS,
     onComment: () => ": astrolabe-keepalive",
   });

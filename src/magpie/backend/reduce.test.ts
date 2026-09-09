@@ -7,6 +7,11 @@
 
 import { expect, test } from "bun:test";
 import {
+  defaultState,
+  type Element,
+  type MagpieState,
+} from "../../../plugins/spellbook/skills/magpie/shared/types";
+import {
   addElement,
   addVersion,
   advancePhase,
@@ -22,8 +27,7 @@ import {
   setSource,
   setStatus,
   updateElement,
-} from "../scripts/reduce";
-import { defaultState, type Element, type MagpieState } from "../shared/types";
+} from "./reduce";
 
 function el(id: string, status: Element["status"] = "proposed"): Element {
   return { id, name: id, type: "icon", bbox: [0, 0, 10, 10], status };

@@ -3,14 +3,38 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { shouldIdleClose, validateProject } from "./server.ts";
+import { validateProject } from "./server.ts";
 
 // Daemon coverage (folded in from the t3 verification harness). The cli↔daemon
 // integration over the real verbs lands in t4/t8; this exercises the daemon's
 // HTTP surface directly via subprocess.
 
-const SERVER = join(dirname(fileURLToPath(import.meta.url)), "server.ts");
-const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
+const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(
+  BACKEND_DIR,
+  "..",
+  "..",
+  "..",
+  "plugins",
+  "spellbook",
+  "skills",
+  "astrolabe",
+);
+
+// ⛔ THE LAUNCHER, NEVER `./server.ts`. Phase 1b moved the daemon SOURCE here
+// and left the executable entry at `<skill>/scripts/server.ts`, which imports
+// the built `../dist/server.js`. Spawning the source instead would be a daemon
+// with NO entry block at all (`run()` is exported and nothing calls it) — it
+// would exit 0 immediately and every cell below would fail as "never bound a
+// port", which reads like flake rather than like a wrong path. It would also
+// anchor SKILL_ROOT at `src/astrolabe/`, so `dist/` would be missing and the
+// daemon would silently pick DEV mode.
+//
+// This makes the suite depend on a BUILT `dist/server.js`. That is the point,
+// and it matches `<skill>/scripts/cli.test.ts`: the gate builds before it tests,
+// and the thing worth asserting is the thing that ships.
+const SERVER = join(SKILL_ROOT, "scripts", "server.ts");
+const CLI = join(BACKEND_DIR, "cli.ts");
 
 function spawnDaemon(home: string, extraEnv: Record<string, string> = {}) {
   return Bun.spawn(["bun", SERVER, "--no-open", "--port", "0"], {
@@ -37,6 +61,36 @@ const post = (base: string, body: unknown) =>
 const getState = (base: string) => fetch(`${base}/state`).then((r) => r.json());
 const cardOf = (s: { state: { projects: Array<{ id: string }> } }, id: string) =>
   s.state.projects.find((p) => p.id === id);
+
+describe("the relocation's path arithmetic — asserted, not reasoned about", () => {
+  // Phase 1b brief, measurement 2: "SKILL_ROOT/DIST_DIR survive the move by
+  // accident, and you must confirm it rather than trust this line. Assert it in
+  // a test; do not reason about it."
+  //
+  // The daemon computes SKILL_ROOT = join(import.meta.dir, "..") and
+  // DIST_DIR = join(SKILL_ROOT, "dist"). `import.meta.dir` in the BUNDLE is the
+  // emitted file's directory, and the emitted file is `<skill>/dist/server.js`.
+  // `dist/` sits at the same depth as the `scripts/` it replaced, so both
+  // constants land where they always did. This cell is what makes that a fact
+  // rather than a comment.
+  test("the built daemon lives at <skill>/dist/server.js, one level under the skill root", () => {
+    const emitted = join(SKILL_ROOT, "dist", "server.js");
+    expect(existsSync(emitted)).toBe(true);
+    // SKILL_ROOT as the daemon derives it, from the emitted file's directory.
+    expect(join(dirname(emitted), "..")).toBe(join(SKILL_ROOT, "dist", ".."));
+    expect(existsSync(join(dirname(emitted), "..", "SKILL.md"))).toBe(true);
+    // DIST_DIR as the daemon derives it — back down into the directory it is in.
+    expect(existsSync(join(dirname(emitted), "..", "dist", "index.html"))).toBe(true);
+  });
+
+  test("the launcher spawned by cli.ts exists at the path cli.ts spells", () => {
+    // `cli.ts` spawns join(SCRIPT_DIR, "..", "scripts", "server.ts") from
+    // `dist/`. If the launcher were ever deleted in favour of pointing the CLI
+    // straight at the bundle, this is the cell that says so.
+    expect(existsSync(SERVER)).toBe(true);
+    expect(readFileSync(SERVER, "utf8")).toContain('from "../dist/server.js"');
+  });
+});
 
 describe("pure helpers", () => {
   test("validateProject keeps a well-formed project, drops malformed", () => {
@@ -66,12 +120,12 @@ describe("pure helpers", () => {
     });
   });
 
-  test("shouldIdleClose only fires with a positive timeout and no subscribers", () => {
-    expect(shouldIdleClose(0, 10_000, 0)).toBe(false); // timeout 0 = standing
-    expect(shouldIdleClose(1, 10_000, 5_000)).toBe(false); // a subscriber is present
-    expect(shouldIdleClose(0, 4_000, 5_000)).toBe(false); // not idle long enough
-    expect(shouldIdleClose(0, 6_000, 5_000)).toBe(true);
-  });
+  // `shouldIdleClose` moved to `src/kit/wire/housekeeping.ts` in Phase 1b
+  // chapter 2 and its cells moved with it — including the two this file never
+  // had, because the shared predicate now also carries magpie's case (L1: an
+  // agent tailing a quiet board must not be idle-closed under its own
+  // connection). The daemon no longer owns the decision, so asserting it here
+  // would be asserting a re-export.
 });
 
 describe("daemon — commands + projection", () => {

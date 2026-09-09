@@ -195,3 +195,591 @@ must say so in those words.
 **Not taken:** _keep the exiting `die` in the kit_ — smaller diff, no audit, and
 it would have put the house's only sanctioned exit-truncation hazard inside the
 module every spell is about to inline.
+
+## D9 · Phase 1b is one branch of two gated chapters, astrolabe before magpie
+
+**Decided:** orchestrator, 2026-09-08, from measurement before the brief.
+
+The relocation and the adoption are one branch, in two chapters, and chapter 1
+must be green and demonstrated on a booted daemon before chapter 2 starts.
+Measuring the subject first turned up why: `magpie/scripts/backend.ts:63`
+resolves `remove.py` off `import.meta.dir`, which a bundle re-anchors into
+`dist/`, and both servers' dev-mode surface import is a relative specifier that
+the external flag leaves in the artifact verbatim — two runtime breakages that
+no type-check and no unit test reaches. Landed together with a rewrite, neither
+would be attributable.
+
+Astrolabe goes first on size: `server.ts` + `state.ts`, against magpie's
+`server.ts` + five modules + a `shared/` directory its surface also imports +
+six test files. The 1a journal's rule — measure the subject before writing the
+brief — is what produced this entry.
+
+**Not taken:** _two branches_ — cleanest attribution, and the adoption branch
+would then re-verify a relocation nobody had used yet; the gate inside one
+branch buys the same separation without landing a daemon that builds and shares
+nothing. _Magpie first_, on the grounds that the hard subject teaches more early
+— rejected because its lesson arrives cheaper from astrolabe's journal.
+
+## D10 · What moves with a server: the surface-import test
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1, under the brief's
+explicit deferral ("what counts as a sibling is yours to decide from the
+imports").
+
+**The rule, stated once:** a module moves to `src/<spell>/backend/` **iff
+nothing under `src/<spell>/surface/` imports it.** A module both halves import
+is a **two-sided contract** and stays in the deployed skill folder, where both
+halves can already reach it and where it needs no build of its own.
+
+Measured against the tree rather than assumed:
+
+| module                                                                            | surface importers                                        | verdict             |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------- |
+| `astrolabe/scripts/state.ts`                                                      | **4** (`useSession`, `board`, `ProjectCard`, `QuietRow`) | **stays**           |
+| `astrolabe/scripts/server.ts`                                                     | 0                                                        | moves               |
+| `magpie/shared/{types,alpha,versions}.ts`                                         | **12 files**                                             | **stays**           |
+| `magpie/scripts/{server,backend,discover,persist.server,reduce,source.server}.ts` | 0                                                        | move                |
+| `magpie/scripts/remove.py`                                                        | n/a — not TypeScript, not bundled                        | **stays** (see D13) |
+
+⚠ **The brief said "roughly three" astrolabe surface files import `state.ts`. It
+is four.** Small, and the direction of the error is the one that matters: the
+count that would have been re-pointed was under-stated.
+
+**Two things the rule gets right that a size-based or a "backend-only" reading
+would not.** It reproduces magpie's own prose — `server.ts`'s header already
+says the contract "sits in the spell's own `shared/` rather than in either
+side's tree" **because it is two-sided** — so the rule is the tree's existing
+reasoning made checkable rather than a new preference. And it is symmetric:
+astrolabe has no `shared/` directory, but `state.ts` is the same object under a
+different name, and the rule finds it without anyone having to notice the
+analogy.
+
+**What it costs, named.** The moved daemons now import their two-sided modules
+by a `../../../plugins/spellbook/skills/<spell>/…` specifier, which is ugly and
+reaches back into the deployed folder. That is not a new shape:
+`src/magpie/ backend/cli.ts` has done exactly this since Slice 2, the bundler
+inlines it, and Contract 3's criterion is satisfied because the **artifact**
+carries no such import.
+
+**Not taken:**
+
+- **Move everything, including `state.ts` and `shared/`.** One root per spell, a
+  much nicer story. Rejected on cost and on blast radius: it re-points 16
+  surface import sites, four `import-boundary-wards` pins and two spells' test
+  suites **inside a chapter whose entire contract is "behaviour unchanged"** —
+  and a diff mixing a relocation with a surface-wide re-point is the thing D9
+  gated the chapters to prevent. It also makes the surface build reach across
+  into `src/<spell>/backend/`, which is a direction no ward currently has an
+  opinion about. **Re-open it in a later phase, as its own change.**
+- **Move only `server.ts`.** Smallest possible diff. Rejected because it leaves
+  `magpie/backend/cli.ts` — already built — importing `backend.ts`,
+  `discover.ts` and `reduce.ts` out of `scripts/` while `server.ts` imports them
+  from `src/`, i.e. **two roots for one module set**, and it strands the
+  `import.meta.dir` hazard (D13) in a file nobody was looking at.
+- **A size or "is it daemon-only" judgement per module.** Rejected as
+  unfalsifiable: "daemon-only" is exactly the claim the surface importers
+  disprove, and a judgement call produces a different answer next phase.
+
+## D11 · The dev-mode surface specifier is written for the ARTIFACT, and the ward pin follows it there
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1. This is the brief's
+measurement 3, resolved.
+
+`src/build.ts` passes `external` for the surface-HTML glob, so
+`await import("../../../../../src/<spell>/surface/index.html")` survives into
+`dist/server.js` **byte-for-byte** (verified in the emitted file, both spells).
+The consequence is a genuine oddity and it is now written down in three places
+(the source, the build, the ward): **the five `..` are counted from
+`plugins/spellbook/skills/<spell>/dist/`, not from `src/<spell>/backend/`.**
+Read as an ordinary relative import of the file it is written in, it climbs out
+of the repo.
+
+It happens to be the _same_ string as before the move, because `dist/` sits at
+the same depth as the `scripts/` it replaced. **That is a coincidence of depth,
+not a property**, which is why it is asserted rather than trusted.
+
+**And the ward moved with it.** `grimoire/import-boundary-wards.test.ts` ward 1a
+pinned these two escapes at `<spell>/scripts/server.ts` and resolves each
+specifier against its importer — the one automated check that the path is right.
+`trackedSources` is `.ts`/`.tsx` only, so after the move both pins would have
+been **deleted as "no longer present"** and the ward would have gone green
+because it stopped looking (Contract 19, exactly). Instead ward 1a's population
+now extends into the declared emitted roots — reusing `emittedSources`, which
+ward 1b already had, hoisted above both — and the two pins are re-declared at
+`…/dist/server.js`. **The check is stronger than the one it replaces:** it now
+verifies the specifier at the address where it actually executes.
+
+**Not taken:**
+
+- **Write the specifier relative to the source (`../surface/index.html`) and let
+  the bundler rewrite it.** It cannot: `external` means unresolved, which is the
+  whole reason the daemon builds at all. Rewriting would require dropping the
+  external, which is what D6 measured as impossible.
+- **Compute the path at runtime from `import.meta.dir`.** A dynamic import with
+  a non-literal specifier is invisible to the scanner (`import-boundary-wards`
+  names this blind spot by construction) — it would trade a checkable oddity for
+  an uncheckable one.
+- **Delete the two ward pins and note the loss.** Honest, and it silently
+  removes the only instrument that can catch a wrong path, on the one line the
+  brief says nothing in CI can see.
+
+## D12 · The relocated daemon has ONE entry, and it is the launcher
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1.
+
+`src/<spell>/backend/server.ts` exports `run()` and has **no
+`if (import.meta.main)` block**. `plugins/…/<spell>/scripts/server.ts` — the
+path `cli.ts` spawns, and the path the roster and the wards name — imports
+`../dist/server.js` and holds the terminal `process.exit(exitCode)`.
+
+Two consequences, both deliberate:
+
+- **`exit-site-inventory`'s pinned rows do not move.**
+  `astrolabe/scripts/ server.ts` and `magpie/scripts/server.ts`, text
+  `process.exit(exitCode);`, family **E-terminal** — the same file, the same
+  text, still the site where the process ends. The brief's measurement 7 said a
+  daemon's terminal exit is a different case from D8's `die` and is not in scope
+  to change; keeping it at its pinned address is the cheapest way to mean that.
+- **A daemon cannot be booted from its source, and that is correct.** Its
+  `SKILL_ROOT`/`DIST_DIR` are anchored one level above `import.meta.dir`, which
+  is only true from `dist/`. Run from `src/<spell>/backend/` it would compute
+  `SKILL_ROOT = src/<spell>/`, find no `dist/index.html`, silently choose DEV
+  mode, and then fail the dev import from the wrong anchor. Offering that entry
+  would be offering a wrong daemon.
+
+**Not taken:** _mirror `cli.ts`, which keeps BOTH an `import.meta.main` block
+and an exported `run()`._ Consistent with the sibling, and it is why the option
+was considered at all. Rejected because the CLI's dual entry is **safe** (its
+ancestor paths are correct from either location and its tests use it), while the
+daemon's is **wrong from one of the two** — and it would add a second
+`process.exit(exitCode)` row to the inventory for an entry nothing should call.
+
+## D13 · A non-TypeScript sibling is resolved up-and-back-down, like every other path in a built backend
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1 — and it is a **bug
+fix, not a migration cost**. See the journal: the defect was already shipped.
+
+`magpie/backend/backend.ts` resolves `remove.py` as
+`join(import.meta.dir, "..", "scripts", "remove.py")`. `remove.py` stays in
+`plugins/spellbook/skills/magpie/scripts/`: it is a runtime asset the deployed
+skill executes with `python3`, it is not bundled and must not be, and
+`grimoire/gate-honesty.test.ts` declares it as 145 blind lines at that exact
+path.
+
+**Not taken:**
+
+- **Move `remove.py` into `dist/`** so `import.meta.dir` keeps working. It would
+  make the bug's own workaround the design: `dist/` is rm'd and regenerated by
+  every build, so a hand-copied asset there is a file the build deletes.
+- **Copy `remove.py` into `dist/` as a build step.** A second copy of a shipped
+  file, plus a staleness question `dist-check` cannot answer (it verifies by
+  reproduction, and a copy reproduces whether or not it is right).
+- **Resolve it off `SKILL_ROOT`.** Equivalent in effect; rejected only because
+  `backend.ts` has no `SKILL_ROOT` and adding one puts a second definition of
+  the skill root in a spell that already has two.
+
+## D14 · The daemons' tests re-anchor on an explicit skill root, and they test the ARTIFACT
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1, forced by D12.
+
+Both spells' daemon suites spawned `./server.ts` (or `../scripts/server.ts`) and
+pinned a `cwd` by counting `..` from wherever the test file happened to sit.
+After the move those counts are wrong, and — because D12 gives the daemon one
+entry — the source is not runnable at all. Every such path is now derived from
+an explicit `SKILL_ROOT`, and every daemon spawn goes through the **launcher**.
+
+**The consequence, stated because it changes what a green means:** these suites
+now depend on a built `dist/server.js`. `bun run gate` is
+`build && check && test`, so the artifact is always fresh when they run, and the
+thing being asserted is the thing that ships (Contract 18's spirit, one level
+down). `astrolabe/scripts/cli.test.ts` already worked this way for the CLI.
+
+`release-serve.test.ts` changed the most: it built its fake release tree by
+globbing every non-test `.ts` beside the daemon, under a scar earned when
+mind-mapper's hand-maintained mirror shipped a broken release twice. That glob
+now copies files whose `../../../plugins/…` specifiers cannot resolve from a
+temp directory. **The scar is re-homed:** the property it protects — a new
+module is in the copied tree by construction — is now true by BUNDLING rather
+than by globbing, because `dist/server.js` is the whole module graph.
+
+**Not taken:**
+
+- **Keep an `import.meta.main` block so the source stays spawnable.** Rejected
+  under D12: it offers an entry that computes the wrong `SKILL_ROOT`.
+- **Adjust the `..` counts in place.** The cheapest edit and the one that rots:
+  the next relocation moves them again, silently, and a test whose spawn path is
+  wrong fails as "the daemon never answered".
+- **Copy the daemon SOURCE into the fake release tree and run it there.**
+  Rejected because it would assert a tree that does not exist — nothing ships
+  `src/`, which is the whole point of Contract 4.
+
+## D15 · The spawn-path ward is a chapter 2 deliverable
+
+**Ruled:** Cole, 2026-09-08, on the orchestrator's offer to fold it in here or
+defer it to Phase 2's playbook: _"fold it into chapter 2."_
+
+Chapter 1 produced two defects of one class — magpie's `remove.py` resolved off
+`import.meta.dir` (dead for eight days in the SHIPPED plugin, since the CLI
+build at `7bb0f4a`, answering `ok:true` at exit 0 the whole time) and a bundled
+daemon with no entry, because `import.meta.main` is false in a module the
+launcher imports. Both are the same defect: **bundling changes what a module
+knows about its own location, and every symptom is quiet and exit-zero.**
+
+**The finding is an instrument gap, not a sequencing win.** The magpie bug
+predates this phase and survived its own branch's verify pass. Nothing in this
+repo tests a path that is SPAWNED rather than imported: the gate type-checks,
+the wards text-scan, the unit tests import, and a `join(import.meta.dir, …)`
+pointing at empty air passes all three. Only running the verb finds it.
+
+So chapter 2 grows one deliverable: **a ward that enumerates every path-pinned
+non-bundled sibling reachable from a BUILT backend — Python files, assets, spawn
+targets — and asserts each resolves from the EMITTED location.** It is the
+natural companion to the shared spine: five spells are queued behind this, each
+with its own `import.meta` assumptions, and the same three instruments will stay
+green through every one of them.
+
+**Not taken:** _a Phase 2 playbook item_ — keeps chapter 2 at its scoped size,
+and the brief's own warning is that a phase which grows is a phase nobody can
+verify; rejected because a playbook line is a thing an author must remember,
+which is exactly what failed here, and because the five remaining spells all
+port before that playbook is written.
+
+## D16 · Chapter 2's FIRST commit is ward 1b's emitted-root exemption
+
+**Decided:** orchestrator, 2026-09-08, on the chapter 1 verify pass.
+
+The verifier calibrated five mutations against the wards this chapter widened.
+Four went red. The fifth — `import { serve as __s } from "bun"` inside
+`dist/server.js` — stayed **green, 18 pass / 0 fail**.
+
+`makeIsBuiltin(exact, emittedRoots)` falls through to
+`emitted && BARE_BUILTINS.has(spec)`, and under Bun `node:module`'s
+`builtinModules` **contains `"bun"`** (76 entries, including `bun:ffi`,
+`bun:jsc`, `bun:sqlite`, `bun:test`). So inside a declared emitted root, `bun`
+is exempt via `BARE_BUILTINS` regardless of `BUILTIN_EXACT`, and the
+`withoutBun` differential cell — the cell this branch just edited from five
+names to three — is structurally blind there.
+
+**The 5→3 comment reads as verified and is asserted.** Its first half is true
+and the verifier confirmed it: both bundles carry only `fs/os/path/util/url`
+plus the one external surface specifier. Its second half — that `dist/server.js`
+being in the population is the guarantee — does not carry the weight it is
+given, because that cell could not see a `bun` value import if one appeared. Net
+against `develop`: these daemons were hand-authored `.ts` inside ward 1b's
+population, where a runtime `bun` import was visible to the differential; their
+source is now outside that population and their artifact sits inside an
+exemption that swallows `bun`.
+
+Not a deployment hazard — `bun` is the runtime. It is the **"population changed
+during a relocation"** shape, which is the exact failure this project exists to
+end, and it must be closed **before** chapter 2 starts putting `src/kit/`
+modules into these same bundles: anything the kit drags in that resolves to a
+name in Bun's `builtinModules` would be exempt inside `dist/` and invisible to
+both cells. Fixing it after the kit's surface area lands means fixing it against
+a population that already grew.
+
+So chapter 2 opens with it, before any shared module is adopted, and the fix is
+calibrated the way the verifier calibrated the others: mutate, see red, restore.
+
+**Not taken:** _a chapter 1 addendum_ — arguably where it belongs, since this
+branch caused it; rejected because chapter 1 is verified and closed, and
+reopening a verified chapter to edit a ward is how a clean verdict goes stale.
+_Write it down honestly and move on_, which the verifier offered as the
+alternative — rejected because the next five spells all relocate into that same
+exemption.
+
+## D17 · The daemon-side spine is six modules in `src/kit/wire/`, and what it refused is part of the ruling
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, under the brief's
+presumption that `src/kit/wire/` is the home and the burden is on the
+implementer to argue otherwise. It was not argued otherwise: D7's test — "the
+modules that define what a caller observes" — covers every one of these.
+`sseResponse` decides what a tail client receives; `resolveMode` decides which
+of two surfaces a caller is served; `shouldIdleClose` decides whether a held
+connection survives. None of them is a utility.
+
+| module            | exports                                                  |
+| ----------------- | -------------------------------------------------------- |
+| `serveDist.ts`    | `resolveMode` · `contentTypeFor` · `serveFromDist`       |
+| `eventLog.ts`     | `createEventLog`                                         |
+| `sse.ts`          | `sseResponse` · `SseClients`                             |
+| `housekeeping.ts` | `shouldIdleClose` · `startHousekeeping` · `drainAndStop` |
+| `discovery.ts`    | `writeFileAtomic` · `unlinkIfMatches`                    |
+| `heartbeat.ts`    | `idleTimeoutSec` · `heartbeatMs` · `tailIdleMs`          |
+
+**Checked against these two spells rather than against the census's counts, as
+the brief demanded.** Every module above is used by BOTH servers. Two things the
+census listed did not come: `emitTransient` (glamour's, and neither of these two
+has presence frames in its replay log) and the discovery WRITER (D3 — the two
+conventions stay, only the primitives are shared).
+
+**Three refusals, each of which is a decision:**
+
+- **The URL-to-filename mapping stays in each router.** `serveFromDist` takes a
+  filename, not a request path. The census marked two of the eight `serveDist`
+  divergences DELIBERATE and both live in that half — digestify substitutes into
+  the entry document in memory, grapevine serves its surface at `/watch`. A
+  signature wide enough for those stops being a file server and becomes a
+  router, and the two spells it would serve are not the two adopting.
+- **Bounty's shutdown watchdog did not come.** It is the corpus's only
+  unconditional-termination guarantee and it belongs to bounty's SIGNAL path,
+  where nothing bounds what teardown waits on. Neither adopting daemon registers
+  a signal handler, and their teardown is bounded by `drainAndStop`'s own two
+  numbers. Importing it would have put the house's only unconditional
+  `process.exit` inside a module every spell is about to bundle, one phase after
+  D8 took exactly that hazard out of `die`. The reasoning is written into
+  `drainAndStop`'s header so the spell that DOES have a signal path adds it as
+  an option rather than re-deriving it.
+- **`printJson` did not move into `wire/`.** D7 named it as debt and the brief
+  offered this phase the chance to pay it. This phase's diff already spans two
+  daemons, two CLIs, six new modules and two wards; adding eight prose
+  re-pointings to that is how a phase stops being verifiable. **Still debt, and
+  the sentence about it is unchanged.**
+
+**Not taken:**
+
+- **`src/kit/daemon/`**, a directory named for the audience. Rejected for the
+  reason D7 rejected `src/kit/cli/`: audience is the residual category that put
+  a backend-only emitter beside a surface-only helper in `lib/`. It is also
+  already wrong — `heartbeat.ts` is imported by both halves, so a daemon-scoped
+  directory would have a CLI's constant in it on day one.
+- **One `daemon.ts` module rather than six.** Fewer files, one import line.
+  Rejected because the six have genuinely different audiences: a spell adopting
+  the tail client needs `heartbeat.ts` and none of the rest, and a spell with no
+  SSE at all still wants `writeFileAtomic`. A single module makes every adopter
+  take all of it.
+- **Keeping `shouldIdleClose` exported from each server** so its existing cells
+  did not move. Rejected: it would have asserted a re-export, and the shared
+  predicate now carries a case (magpie's) that astrolabe's copy never had.
+
+## D18 · The heartbeat crosses the seam through a per-spell leaf module, not through the kit alone
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2. This is the brief's
+first named deliverable and the shape it takes was not given.
+
+The kit holds the DERIVATIONS (`idleTimeoutSec`, `heartbeatMs`'s clamp to half
+the idle timeout, `tailIdleMs`'s three missed beats) and no spell's numbers.
+Each spell holds its VALUES in `src/<spell>/backend/heartbeat.ts` — a
+leaf-shaped module that imports the kit and nothing else — and both the daemon
+and the CLI import that.
+
+**Why a per-spell file at all.** The values differ and the env names differ
+(astrolabe tunes `ASTROLABE_HEARTBEAT_MS`; magpie tunes nothing). Putting the
+derivations in the kit and calling them from both halves would have left the env
+name and the fallback hand-mirrored in two files — the same duplication one
+level down, and harder to see.
+
+**Why it is not exported from `server.ts`.** That is the thing that could not
+happen: a CLI importing the daemon drags the whole server graph into
+`dist/cli.js`, which is why both files carried a comment asking the next author
+to remember instead. The new module is the seam BECAUSE it is a leaf.
+
+**Not taken:** _an env var read by both halves_ — no new module, and it makes
+the invariant a runtime coincidence rather than a derivation, with nothing to
+fail when one half is launched without it. _Constants in the kit, one pair per
+spell_ — the kit would then know the roster, which is exactly the coupling that
+makes a kit stop being adoptable.
+
+## D19 · Astrolabe gets the epoch; the STALE-WATERMARK REPLAY is what makes it reachable
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, after driving it.
+
+**The brief's model of this deliverable was incomplete, and the tree said so.**
+It reads: the client already carries `epochOf`/`onEpochChange`, so "give the
+daemon an epoch and the gap closes with no client change". Measured: it does
+not. The client detects an epoch change on a frame it RECEIVES, and the bug is
+that no frame is received — a tail resuming at `since=4` against a restarted
+daemon whose `ready` is id 1 gets nothing, because every copy filters
+`id > since`. The tail sits connected and silent until the new daemon has
+emitted as many events as the old one did.
+
+So the repair is two-sided and the daemon side is the load-bearing half:
+`createEventLog.subscribe` treats `since > cursor` as a cursor from a PRIOR
+PROCESS and replays whole. The epoch is what stops the tail then re-requesting
+that stale cursor on every subsequent reconnect.
+
+**Driven, fail-first, on two live daemons** (journal has the transcript): the
+chapter-1 bundle answers `/events?since=4` with ZERO bytes over three seconds
+while holding a `ready` it will happily serve at `since=0`; the chapter-2 daemon
+answers the same request with the `ready`. Under a real `tail`, a hard `kill -9`
+and a respawn produced `{"type":"epoch.changed",…}` followed by the new daemon's
+`ready`.
+
+**Magpie deliberately has NO epoch**, though the module offers one for free. A
+magpie session is identified by `session_id` and a restart is a different
+session, so a resuming tail is already talking to a different daemon by name;
+and "epoch for the other daemons" is out of this phase's scope. Free-riding it
+in because the module made it cheap is how a scoped phase stops being one.
+
+**Not taken:** _emit an epoch frame at connect_ instead of the replay rule. It
+would deliver the epoch, but the client resets its cursor to 0 without
+reconnecting, so the events between 1 and the stale watermark are lost for that
+connection — a worse failure than the silence, because it looks like it worked.
+_Have the client send `since=0` on every reconnect_ — no daemon change, and it
+re-replays the whole window on every network blip.
+
+## D20 · Two wire-observable changes, named rather than smuggled
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2. A convergence that
+changes what a caller sees must say which bytes moved.
+
+1. **`.html` is served as `text/html; charset=utf-8`.** The census found this to
+   be the ONLY divergence in the content-type table across all eight daemons —
+   three had it, five did not, graded `stale` with zero design content. Kept
+   because it is correct: a document served with no charset is decoded by the
+   browser's guess. One test cell asserted `text/html` by `toContain`, so
+   nothing needed changing; the change is real all the same.
+2. **The SSE stream opens with a `: connected` comment.** mind-mapper's, and it
+   flushes the response headers — some clients, Bun's own `fetch()` included,
+   buffer until the first body byte, so a genuinely quiet stream leaves the
+   caller's `fetch()` unresolved. **It broke a cell**, and the cell was reading
+   the first LINE of the stream rather than the first FRAME; every house tail
+   client already drops `:` lines. The cell now reads like the clients do.
+
+**Not taken:** _keep `text/html` bare and keep the stream silent until the first
+frame_, i.e. converge on the majority rather than on the better copy. Rejected
+under the brief's own instruction — convergence is toward the best sibling, not
+a merge of equals — and because the majority here is a count, not an argument.
+
+## D21 · The spawn-path ward's boundary is the PLUGIN, and what it cannot assert is enumerated
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, executing D15.
+
+The ward resolves anchor arithmetic (`join(import.meta.dir, …)` and every named
+anchor derived from it) in the EMITTED `.js`, then asserts the file is there.
+Population from `src/build.ts`'s own `buildableSpells()`, per D15's ⛔.
+
+**The tree corrected the first draft twice.**
+
+- The boundary was `plugins/…/skills/<spell>/`. The scanner immediately found a
+  pin one level ABOVE it that both CLIs make — `.claude-plugin/plugin.json`,
+  read for the version they report — which a skill-scoped boundary would have
+  exempted while it is a shipped sibling by every criterion the ward has.
+  Contract 3's boundary is the plugin, so the ward's is too.
+- A pin that leaves the plugin cannot be asserted from this repo at all:
+  `SURFACE_CWD` is `src/<spell>/`, which exists HERE and does not exist at the
+  destination. Asserting it would assert the opposite of Contract 4. Those are
+  **enumerated and pinned as a set** rather than filtered away, so a new escape
+  is loud — ward 1a's discipline applied to a path instead of to a specifier.
+
+**What it cannot see is in its own header**, not in this log: concatenated
+paths, paths through a non-anchor variable, and paths assembled across a
+function boundary. It is the instrument for the ANCHOR-ARITHMETIC class, which
+is the class bundling breaks and the class both of chapter 1's defects were in.
+
+**Not taken:** _assert every pin, inside the plugin or not_ — it would have gone
+red on `SURFACE_CWD` in any tree that ships without `src/`, i.e. it would have
+been a ward that fails at the destination it exists to protect. _Parse the
+bundle with a real AST_ — strictly better and it is a different project; the
+regex evaluator is calibrated on a synthetic tree in-cell AND was driven against
+the real artifact by re-breaking `remove.py`, which is the standard this repo
+applies to its own scanners. _Scan the SOURCE instead of the artifact_ — it
+would have been green on `remove.py` for eight days, because in the source the
+path was correct and it was BUNDLING that moved the anchor.
+
+## D22 · `grow`/`shrink` join the kit-prose ward, and the way they were found is the finding
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2 — the ward's own
+prescribed repair, taken.
+
+A sentence in a new kit module ("five daemons GROW an array for the life of the
+process") emitted `.grow { flex-grow: 1 }` into the stylesheets of four
+unrelated spells — bounty, digestify, grapevine and imago. `kit-prose-ward`
+stayed green because `grow` was not in `BARE_UTILITIES`. **What caught it was
+`dist-check`'s reproduction arm**, i.e. downstream, by luck of the artifact
+being committed — which is verbatim the failure the ward's own header warns
+about and says it exists to prevent.
+
+The list's header says it is not claimed exhaustive and that the repair is to
+add the word. Added, with the account. A second pre-existing `grow` was standing
+in `src/kit/wire/tailEvents.test.ts` from Phase 1a and is reworded.
+
+**Not taken:** _derive the vocabulary instead of listing it_ — considered and
+rejected in the ward's own header for a reason that still holds (the dangerous
+word is the one no surface uses). _Reword only, and leave the list_ — it would
+have left the next author to rediscover the same word through a committed
+artifact.
+
+## D23 · The restart gap is NARROWED, not closed — and `>=` is the wrong fix
+
+**Found:** chapter 2 verify pass, 2026-09-08, driven. **Amends D19, which reads
+as "closed" and is stronger than the code.**
+
+`subscribe` replays whole only when `since > seq` **strictly**. So the case that
+stays open is equality, and equality is the ordinary state of a quiet standing
+observatory:
+
+- daemon 1 boots, emits `ready` (id 1); a tail attaches, cursor is now **1**
+- `kill -9`, respawn; the new daemon's cursor is also **1**
+- the tail reconnects at `since=1`; `1 > 1` is false, so `ready` is filtered and
+  the tail sits **connected and silent** — verbatim the symptom D19 exists to
+  close. Probed directly: `GET /events?since=1` → 15 bytes (`: connected\n\n`);
+  `?since=0` → the `ready`.
+
+It self-heals on the first real event (that frame carries the new epoch →
+`epoch.changed` → cursor reset), and `develop` was silent after **every**
+restart, so this is a partial fix and not a regression. It is recorded because
+D19 claims more than it delivers and a future reader would trust it.
+
+⛔ **The obvious one-line repair is wrong and must not be applied.** Changing
+`since > seq` to `since >= seq` closes this case by breaking the common one: a
+HEALTHY tail reconnecting at the tip sends `since == seq` every time, and would
+then be handed the entire buffer again on every reconnect — duplicating every
+event the caller has already seen. The verifier proposed it as one option and
+deliberately did not apply it; measuring the reconnect path is what shows why.
+
+**The correct close is epoch-aware, not cursor-aware**: the client sends the
+epoch it last saw, and the daemon replays whole whenever that epoch is absent or
+does not match its own. The client already tracks the epoch (`epochOf` /
+`onEpochChange`, Phase 1a); what is missing is the query parameter and the
+daemon-side comparison. **It is deliberately not done here** — it is a change to
+the shared client that all seven spells inherit, arriving after this phase's
+verification, and the other daemons do not stamp an epoch yet. **It is the first
+input to the phase that gives them one**, where it can be designed against all
+seven rather than retrofitted to one.
+
+**Not taken:** _apply `>=` and land_ — closes the reported case and opens a
+worse one. _Hold the branch until the epoch parameter is designed_ — the branch
+is strictly better than `develop` on this axis today, and holding a verified
+merge for an improvement is how a good landing goes stale.
+
+## D24 · Two out-of-range inputs change meaning, and are accepted as such
+
+**Found:** chapter 2 verify pass, 2026-09-08. **D20 named two wire changes;
+these are a third and fourth, both outside the documented range.**
+
+- **`magpie --timeout 0`.** Develop: `(now - last)/1000 >= 0` is true on the
+  first tick, so the daemon closes immediately. Branch: `shouldIdleClose`
+  returns false for `timeoutMs <= 0`, so it **never** idle-closes.
+- **`ASTROLABE_IDLE_TIMEOUT=-5`.** Develop clamps to 1 s; `intOr` now rejects
+  non-positives, so it falls back to the 255 s default.
+
+Both are accepted rather than restored. The old behaviours were accidental
+consequences of an arithmetic comparison, not intended semantics — "close the
+daemon instantly" is not a plausible reading of `--timeout 0`, and a 1-second
+clamp is not a plausible reading of a negative timeout. Defaults are 1800 s and
+255 s, so nothing in documented use moves.
+
+**Not taken:** _restore develop's arithmetic exactly_ — the strictest reading of
+"behaviour unchanged", and it would have put a `<= 0` special case back into a
+shared module every spell is about to adopt, to preserve two behaviours no
+caller wants. Changing shared code after the verify pass to reproduce an
+accident is the worse trade.
+
+## D25 · A3's carried items, discharged explicitly
+
+**Closed:** orchestrator, 2026-09-08. The brief said "carry them; do not fix
+them silently"; the verifier correctly reported that nothing recorded whether
+they had been carried at all.
+
+- **Stale addresses** in `grimoire/import-boundary-wards.test.ts` (now `:123`,
+  `:691`, `:1210`) still cite `magpie/scripts/backend.ts` and `.../discover.ts`,
+  which moved in chapter 1. **Left as prose drift, filed here**; they are
+  comments, not pins, and the pins themselves are green.
+- **`ARTIFACT_FILES` narrowness** — the `release-serve` guarantee covers the
+  module graph, not the asset graph. **Discharged by the spawn-path ward**,
+  which is now the honest home for it.
+- **D10's two-sided duplication** — `state.ts` and `magpie/shared/types.ts` ship
+  as source and are inlined into three artifacts each; staleness is caught only
+  by `dist-check` ARM 2. **Still true, still stable, still worth knowing**
+  before a later phase adds more to those bundles.

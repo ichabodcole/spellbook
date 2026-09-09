@@ -37,20 +37,21 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
+import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
+import { printJson } from "../../kit/lib/printJson";
+import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
 import {
   type AlphaPolicy,
   isMediaForgeModel,
   mediaForgeBackend,
   rembgBackend,
   shouldRemove,
-} from "../../../plugins/spellbook/skills/magpie/scripts/backend";
-import { DiscoverError, discover } from "../../../plugins/spellbook/skills/magpie/scripts/discover";
-import { newId } from "../../../plugins/spellbook/skills/magpie/scripts/reduce";
-import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
-import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
-import { printJson } from "../../kit/lib/printJson";
-import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+} from "./backend";
+import { DiscoverError, discover } from "./discover";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
+import { newId } from "./reduce";
 
 // Swallow EPIPE (a downstream `head`/Monitor closing our stdout shouldn't crash).
 process.stdout.on("error", (e: NodeJS.ErrnoException) => {
@@ -102,16 +103,13 @@ const PLUGIN_VERSION = readPluginVersion();
 // ⛔ THE WATCHDOG IS DERIVED FROM THE DAEMON'S HEARTBEAT, NOT CHOSEN. The only
 // thing keeping a quiet SSE connection alive is the daemon's `: hb` comment, so
 // the two numbers are one invariant: the watchdog must clear several missed
-// beats or a healthy-but-idle tail reconnects forever. magpie's daemon
-// heartbeats on a LITERAL 15,000 ms with no env override
-// (`plugins/spellbook/skills/magpie/scripts/server.ts`, inside `sseResponse`),
-// so three missed beats is 45s.
+// beats or a healthy-but-idle tail reconnects forever.
 //
-// ⚠ Mirrored by hand: the CLI cannot import the daemon without dragging the
-// whole server graph into `dist/cli.js`. An edit there is an edit here, and
-// Phase 1b's shared spine is where the pair should become one constant.
-const SSE_HEARTBEAT_MS = 15_000;
-const TAIL_IDLE_MS = SSE_HEARTBEAT_MS * 3;
+// ⛔ IT USED TO BE A SECOND LITERAL 15,000 HERE, mirrored by hand under a
+// comment naming the daemon file and the function the first one lived in,
+// because the CLI cannot import the daemon without dragging the whole server
+// graph into `dist/cli.js`. `./heartbeat.ts` is that import: a leaf-shaped
+// module with no daemon in it, which BOTH halves now read.
 
 // Without a watchdog, `await reader.read()` parks forever on a half-open socket
 // after laptop sleep, a NAT rebind or a SIGKILLed daemon — and the tail looks
