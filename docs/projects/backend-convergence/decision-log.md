@@ -219,3 +219,161 @@ would then re-verify a relocation nobody had used yet; the gate inside one
 branch buys the same separation without landing a daemon that builds and shares
 nothing. _Magpie first_, on the grounds that the hard subject teaches more early
 — rejected because its lesson arrives cheaper from astrolabe's journal.
+
+## D10 · What moves with a server: the surface-import test
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1, under the brief's
+explicit deferral ("what counts as a sibling is yours to decide from the
+imports").
+
+**The rule, stated once:** a module moves to `src/<spell>/backend/` **iff
+nothing under `src/<spell>/surface/` imports it.** A module both halves import
+is a **two-sided contract** and stays in the deployed skill folder, where both
+halves can already reach it and where it needs no build of its own.
+
+Measured against the tree rather than assumed:
+
+| module                                                                            | surface importers                                        | verdict             |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------- |
+| `astrolabe/scripts/state.ts`                                                      | **4** (`useSession`, `board`, `ProjectCard`, `QuietRow`) | **stays**           |
+| `astrolabe/scripts/server.ts`                                                     | 0                                                        | moves               |
+| `magpie/shared/{types,alpha,versions}.ts`                                         | **12 files**                                             | **stays**           |
+| `magpie/scripts/{server,backend,discover,persist.server,reduce,source.server}.ts` | 0                                                        | move                |
+| `magpie/scripts/remove.py`                                                        | n/a — not TypeScript, not bundled                        | **stays** (see D13) |
+
+⚠ **The brief said "roughly three" astrolabe surface files import `state.ts`. It
+is four.** Small, and the direction of the error is the one that matters: the
+count that would have been re-pointed was under-stated.
+
+**Two things the rule gets right that a size-based or a "backend-only" reading
+would not.** It reproduces magpie's own prose — `server.ts`'s header already
+says the contract "sits in the spell's own `shared/` rather than in either
+side's tree" **because it is two-sided** — so the rule is the tree's existing
+reasoning made checkable rather than a new preference. And it is symmetric:
+astrolabe has no `shared/` directory, but `state.ts` is the same object under a
+different name, and the rule finds it without anyone having to notice the
+analogy.
+
+**What it costs, named.** The moved daemons now import their two-sided modules
+by a `../../../plugins/spellbook/skills/<spell>/…` specifier, which is ugly and
+reaches back into the deployed folder. That is not a new shape:
+`src/magpie/ backend/cli.ts` has done exactly this since Slice 2, the bundler
+inlines it, and Contract 3's criterion is satisfied because the **artifact**
+carries no such import.
+
+**Not taken:**
+
+- **Move everything, including `state.ts` and `shared/`.** One root per spell, a
+  much nicer story. Rejected on cost and on blast radius: it re-points 16
+  surface import sites, four `import-boundary-wards` pins and two spells' test
+  suites **inside a chapter whose entire contract is "behaviour unchanged"** —
+  and a diff mixing a relocation with a surface-wide re-point is the thing D9
+  gated the chapters to prevent. It also makes the surface build reach across
+  into `src/<spell>/backend/`, which is a direction no ward currently has an
+  opinion about. **Re-open it in a later phase, as its own change.**
+- **Move only `server.ts`.** Smallest possible diff. Rejected because it leaves
+  `magpie/backend/cli.ts` — already built — importing `backend.ts`,
+  `discover.ts` and `reduce.ts` out of `scripts/` while `server.ts` imports them
+  from `src/`, i.e. **two roots for one module set**, and it strands the
+  `import.meta.dir` hazard (D13) in a file nobody was looking at.
+- **A size or "is it daemon-only" judgement per module.** Rejected as
+  unfalsifiable: "daemon-only" is exactly the claim the surface importers
+  disprove, and a judgement call produces a different answer next phase.
+
+## D11 · The dev-mode surface specifier is written for the ARTIFACT, and the ward pin follows it there
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1. This is the brief's
+measurement 3, resolved.
+
+`src/build.ts` passes `external` for the surface-HTML glob, so
+`await import("../../../../../src/<spell>/surface/index.html")` survives into
+`dist/server.js` **byte-for-byte** (verified in the emitted file, both spells).
+The consequence is a genuine oddity and it is now written down in three places
+(the source, the build, the ward): **the five `..` are counted from
+`plugins/spellbook/skills/<spell>/dist/`, not from `src/<spell>/backend/`.**
+Read as an ordinary relative import of the file it is written in, it climbs out
+of the repo.
+
+It happens to be the _same_ string as before the move, because `dist/` sits at
+the same depth as the `scripts/` it replaced. **That is a coincidence of depth,
+not a property**, which is why it is asserted rather than trusted.
+
+**And the ward moved with it.** `grimoire/import-boundary-wards.test.ts` ward 1a
+pinned these two escapes at `<spell>/scripts/server.ts` and resolves each
+specifier against its importer — the one automated check that the path is right.
+`trackedSources` is `.ts`/`.tsx` only, so after the move both pins would have
+been **deleted as "no longer present"** and the ward would have gone green
+because it stopped looking (Contract 19, exactly). Instead ward 1a's population
+now extends into the declared emitted roots — reusing `emittedSources`, which
+ward 1b already had, hoisted above both — and the two pins are re-declared at
+`…/dist/server.js`. **The check is stronger than the one it replaces:** it now
+verifies the specifier at the address where it actually executes.
+
+**Not taken:**
+
+- **Write the specifier relative to the source (`../surface/index.html`) and let
+  the bundler rewrite it.** It cannot: `external` means unresolved, which is the
+  whole reason the daemon builds at all. Rewriting would require dropping the
+  external, which is what D6 measured as impossible.
+- **Compute the path at runtime from `import.meta.dir`.** A dynamic import with
+  a non-literal specifier is invisible to the scanner (`import-boundary-wards`
+  names this blind spot by construction) — it would trade a checkable oddity for
+  an uncheckable one.
+- **Delete the two ward pins and note the loss.** Honest, and it silently
+  removes the only instrument that can catch a wrong path, on the one line the
+  brief says nothing in CI can see.
+
+## D12 · The relocated daemon has ONE entry, and it is the launcher
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1.
+
+`src/<spell>/backend/server.ts` exports `run()` and has **no
+`if (import.meta.main)` block**. `plugins/…/<spell>/scripts/server.ts` — the
+path `cli.ts` spawns, and the path the roster and the wards name — imports
+`../dist/server.js` and holds the terminal `process.exit(exitCode)`.
+
+Two consequences, both deliberate:
+
+- **`exit-site-inventory`'s pinned rows do not move.**
+  `astrolabe/scripts/ server.ts` and `magpie/scripts/server.ts`, text
+  `process.exit(exitCode);`, family **E-terminal** — the same file, the same
+  text, still the site where the process ends. The brief's measurement 7 said a
+  daemon's terminal exit is a different case from D8's `die` and is not in scope
+  to change; keeping it at its pinned address is the cheapest way to mean that.
+- **A daemon cannot be booted from its source, and that is correct.** Its
+  `SKILL_ROOT`/`DIST_DIR` are anchored one level above `import.meta.dir`, which
+  is only true from `dist/`. Run from `src/<spell>/backend/` it would compute
+  `SKILL_ROOT = src/<spell>/`, find no `dist/index.html`, silently choose DEV
+  mode, and then fail the dev import from the wrong anchor. Offering that entry
+  would be offering a wrong daemon.
+
+**Not taken:** _mirror `cli.ts`, which keeps BOTH an `import.meta.main` block
+and an exported `run()`._ Consistent with the sibling, and it is why the option
+was considered at all. Rejected because the CLI's dual entry is **safe** (its
+ancestor paths are correct from either location and its tests use it), while the
+daemon's is **wrong from one of the two** — and it would add a second
+`process.exit(exitCode)` row to the inventory for an entry nothing should call.
+
+## D13 · A non-TypeScript sibling is resolved up-and-back-down, like every other path in a built backend
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1 — and it is a **bug
+fix, not a migration cost**. See the journal: the defect was already shipped.
+
+`magpie/backend/backend.ts` resolves `remove.py` as
+`join(import.meta.dir, "..", "scripts", "remove.py")`. `remove.py` stays in
+`plugins/spellbook/skills/magpie/scripts/`: it is a runtime asset the deployed
+skill executes with `python3`, it is not bundled and must not be, and
+`grimoire/gate-honesty.test.ts` declares it as 145 blind lines at that exact
+path.
+
+**Not taken:**
+
+- **Move `remove.py` into `dist/`** so `import.meta.dir` keeps working. It would
+  make the bug's own workaround the design: `dist/` is rm'd and regenerated by
+  every build, so a hand-copied asset there is a file the build deletes.
+- **Copy `remove.py` into `dist/` as a build step.** A second copy of a shipped
+  file, plus a staleness question `dist-check` cannot answer (it verifies by
+  reproduction, and a copy reproduces whether or not it is right).
+- **Resolve it off `SKILL_ROOT`.** Equivalent in effect; rejected only because
+  `backend.ts` has no `SKILL_ROOT` and adding one puts a second definition of
+  the skill root in a spell that already has two.
