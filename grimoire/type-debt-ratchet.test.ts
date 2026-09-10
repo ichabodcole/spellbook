@@ -162,6 +162,65 @@ import { join } from "node:path";
 // `tsc | grep` run that had already said ZERO was stale, and it was THIS cell's
 // arithmetic (547 against a declared 543) that surfaced the loss. A fix can be
 // lost as silently as it can be faked.
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 2, `src/digestify/backend` 8 -> 0, total
+// 543 -> 535. Six errors were in test files and TWO were in shipped code, and
+// here is the account this ward's own FELL sentence demands, route by route:
+//
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback`. Two reads
+//     are named `must(v, "<invariant>")` throws (LOCAL to
+//     `src/digestify/backend/review.test.ts` — `grimoire/lib/must.ts` is test
+//     INFRASTRUCTURE and `src/` does not import from `grimoire/`, so the copy
+//     follows the `scripts/instruments/*` precedent of T11); two are named
+//     `instanceof` / branch guards; one is an explicit named terminal branch in
+//     SHIPPED code; one is a `.filter()` type predicate over an UNCHANGED
+//     runtime clause; one was not a type error at all (see below).
+//   • ⛔ NO FILE WAS DELETED, AND THE `never` WAS NOT DEAD CODE.
+//     `review.ts:852` read `departure.engaged` off a value `tsc` had narrowed
+//     to `never`, which normally means the branch cannot be taken. Here it
+//     meant the COMPILER'S OWN BLIND SPOT: `departure` is a `let` written only
+//     from inside `Bun.serve`'s `fetch` closure, and TypeScript's control-flow
+//     analysis does not model a closure's writes when the read is in the
+//     enclosing function. DRIVEN through the built launcher, all four arms
+//     live: `never-opened` (124), `opened-then-silent` (124), `read-then-left`
+//     (124) and `engaged-then-left` (130, `departure.engaged:true` on stdout).
+//     The feature is shipped and working. See T21.
+//   • ⭐ AND THE ARM `tsc` POINTED AT WAS THE ONE ARM NO TEST DROVE. Three
+//     end-to-end cells covered the other three; `engaged-then-left` had none.
+//     Five cells were ADDED (review.test.ts 43 -> 48 cells, 0 lost), each
+//     mutation-calibrated to redden only its own arm.
+//   • ⚠ ONE READ CROSSED A FUNCTION BOUNDARY, WHICH IS A ROUTE THIS SENTENCE
+//     NOW NAMES BECAUSE PHASE 2 TOOK IT. `classifyDeparture(pageServed,
+//     departure)` lowers the count by moving the read into a parameter, and
+//     that is exactly how a genuinely-absent value would be laundered too. It
+//     is honest HERE because the absence was the compiler's error and the
+//     four-arm behaviour is pinned by drives at both ends. It would not be
+//     honest anywhere the absence is real.
+//   • ⛔ AND `pageServed` IS THE SILENT TWIN — the same closure blindness with
+//     NO diagnostic at all. The compiler held the literal type `false` at the
+//     read (probed), so by its model `observed` was ALWAYS `"never-opened"`.
+//     Nothing reddens, because a wrong belief about a boolean is not a type
+//     error. Fixing the audible half with a cast would have left it. The
+//     parameter boundary fixes both.
+//   • NO DE-DUPLICATION HID AN INDEXED READ BEHIND A PARAMETER (D64). The
+//     four-way duplicate `parsePortFromSessionId` (digestify, imago, magpie,
+//     bounty — byte-identical, same defect in all four) was deliberately NOT
+//     promoted to `src/kit/`: that is the D64 move, and it is filed as a
+//     backlog item rather than folded into a type commit.
+//   • NO FILE WAS ADDED, so `filesInTree` does not move — unlike Phase 1.
+//
+// AND THE FALLS WERE VERIFIED BY MUTATION, NOT BY THE COUNT: nine drives,
+// including the whitelist cell that closed digestify's served-source exposure
+// (the kit made to serve `/index.html` again -> RED at 200; `linkedChunks()`
+// forced empty -> THREE cells red; the returned set proven BYTE-IDENTICAL
+// before and after the type predicate). `phase-2-journal.md` records them all.
+//
+// ⚠ AND A HAZARD PHASE 1 COULD NOT HAVE FOUND, BECAUSE ITS SUBJECTS WERE NOT
+// BUILT ENTRIES: a mutation drive against a BUILT entry is SILENTLY VACUOUS
+// unless `bun run build` runs between the mutation and the test. One drive here
+// passed green against a mutated source because the cell spawns the LAUNCHER,
+// which reads `dist/`. Contract 18 governs committing the artifact; nothing
+// warned that CALIBRATION reads it too.
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -177,7 +236,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/bounty/backend": 125,
   "src/bounty/surface": 3,
   "src/digestify": 0,
-  "src/digestify/backend": 8,
+  "src/digestify/backend": 0,
   "src/digestify/surface": 0,
   "src/glamour": 0,
   "src/glamour/backend": 49,
@@ -201,7 +260,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 543;
+const DECLARED_TOTAL = 535;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
@@ -319,7 +378,7 @@ function movements(areas: AreaRow[], declared: Record<string, number>): string[]
       );
     } else if (delta < 0) {
       out.push(
-        `FELL — area "${area}" ${was} -> ${row.errors} (${delta}). Good news, and THE BASELINE IS NOW STALE: lower it to ${row.errors}. ⛔ First establish that ${-delta} error(s) were FIXED and not silenced — an \`arr[i]!\`, an \`as any\`, a \`@ts-expect-error\`, a deleted file, or a de-duplication that hid an indexed read behind a parameter (D64) all lower this number with nothing fixed.`,
+        `FELL — area "${area}" ${was} -> ${row.errors} (${delta}). Good news, and THE BASELINE IS NOW STALE: lower it to ${row.errors}, AND WRITE THE ACCOUNT IN THE COMMENT BLOCK ABOVE \`DECLARED_BASELINE\` — a "RE-DECLARED <date>" paragraph answering this sentence route by route, beside the integer you are about to edit. ⛔ First establish that ${-delta} error(s) were FIXED and not silenced. Every one of these lowers the number with nothing fixed: an \`arr[i]!\`, an \`as any\`, a \`@ts-expect-error\`, a deleted file, a de-duplication that hid an indexed read behind a parameter (D64), a \`.filter()\` TYPE PREDICATE (\`(x): x is T =>\`) added without the runtime clause that makes it true, or a value moved ACROSS A FUNCTION BOUNDARY into a non-optional parameter — an extracted helper launders a genuinely-absent value exactly as well as it launders a false narrowing.`,
       );
     }
   }
@@ -355,6 +414,7 @@ describe("type debt ratchet", () => {
             .map(([k, n]) => `${k}x${n}`)
             .join(" · ")}`,
           "  A green from this ward means the debt is WHERE IT WAS DECLARED, never that the repo type-checks.",
+          `  ⚠ AND IT SAYS NOTHING ABOUT THE FILE COUNTS ABOVE. \`filesExamined\` and \`filesInTree\` are asserted equal TO EACH OTHER, so a file ADDED while fixing moves both and closes the pair silently (\`grimoire/lib/must.ts\` took grimoire 20 -> 21 and the repo 544 -> 545 in Phase 1, with nothing red). That is correct — a file count is not debt — but do not read this green as evidence that the population is unchanged.`,
           "",
         ].join("\n"),
       );

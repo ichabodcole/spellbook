@@ -1017,3 +1017,290 @@ plausible and wrong.
   three CLIs with an `ensureDaemon` are the population worth a sweep. Doing it
   here would put an unmeasured 20-file edit inside a branch whose whole claim is
   that each change was driven.
+
+---
+
+## T21 · ⭐ THE `never` WAS NOT DEAD CODE — IT WAS THE COMPILER'S BLIND SPOT, AND `pageServed` IS ITS SILENT TWIN
+
+**Decided:** implementer, 2026-09-10, Phase 2, on the brief's instruction to
+start at `review.ts:852` and establish what the value actually is before
+changing it.
+
+`src/digestify/backend/review.ts:852` reported
+`TS2339: Property 'engaged' does not exist on type 'never'`. `never` normally
+means **the branch cannot be taken**, so the brief's hypothesis was that the
+departure-observation feature might be **dead** — a behaviour finding rather
+than an annotation problem. **It is not dead. The compiler was describing
+itself.**
+
+### The mechanism, established with a minimal repro rather than inferred
+
+`departure` is a `let` declared `Departure | null = null` in `runReview` and
+assigned **only from inside `Bun.serve`'s `fetch` closure** (`POST /left`, two
+sites). TypeScript's control-flow analysis **does not model a closure's writes
+when the READ is in the enclosing function**, so at the read site it still held
+`null` from the initialiser and `departure !== null` left `never`. The repro
+carries both halves in one file:
+
+| reference site                | result                                |
+| ----------------------------- | ------------------------------------- |
+| in the **enclosing** function | `TS2339 … on type 'never'`            |
+| in a **nested** function      | **clean** — declared type is restored |
+
+A `never` from this cause is indistinguishable, at the error text, from a
+`never` that means dead code. **Only the repro separates them.**
+
+### ⭐ The refutation is the running daemon, not the argument
+
+Driven through the built launcher
+(`plugins/spellbook/skills/digestify/scripts/review.ts` → `dist/review.js`), all
+four arms:
+
+| arm                   | exit    | `observed`              | `departure`                           |
+| --------------------- | ------- | ----------------------- | ------------------------------------- |
+| never-opened          | 124     | `never-opened`          | `null`                                |
+| opened-then-silent    | 124     | `opened-then-silent`    | `null`                                |
+| read-then-left        | 124     | `read-then-left`        | `{engaged:false,elapsedMs:11,…}`      |
+| **engaged-then-left** | **130** | **`engaged-then-left`** | **`{engaged:true,elapsedMs:4242,…}`** |
+
+**The property TypeScript said does not exist is read, and its value reaches
+stdout.** `docs/projects/digestify-conversion/behaviour-inventory.md` S13 had
+already recorded the same observable from a browser drive; the drive above was
+run anyway, because a document is not a measurement.
+
+### ⛔ AND `pageServed` IS THE SAME BLINDNESS WITH NO DIAGNOSTIC AT ALL
+
+`pageServed` is a `let` initialised to `false` and written only in the `GET /`
+handler. Probed with `const t: never = pageServed` at the read site: **"Type
+'false' is not assignable to type 'never'"** — the compiler holds the literal
+type `false`. **By its model `observed` is ALWAYS `"never-opened"` and the other
+three arms are unreachable.** Nothing reddens, because a wrong belief about a
+boolean is not a type error.
+
+⛔ **This is the entry's most important line.** Had `852` been fixed with a `!`
+or an `as Departure`, the audible half would have gone quiet and the inaudible
+half would have stayed — and the fix would have looked complete. **The `never`
+was the audible half of a two-variable problem.** Both are true at the same
+three drives above, where `pageServed` is `true`.
+
+### The fix: one parameter boundary, on the idiom this file already uses
+
+```ts
+export function classifyDeparture(
+  pageServed: boolean,
+  departure: Departure | null
+):
+  | "never-opened"
+  | "opened-then-silent"
+  | "engaged-then-left"
+  | "read-then-left";
+```
+
+`shouldIdleClose` (`src/kit/wire/housekeeping.ts`), imported by this same file,
+is the precedent: clock-free, fs-free, pure, and testable without a daemon.
+Inside the function `pageServed` is a `boolean` and `departure` is
+`Departure | null` **because a caller said so**, so neither false narrowing can
+form. The `Departure` type moved to module scope to make that possible.
+
+⚠ **AND THE MOVE IS ITSELF A SILENCING ROUTE, WHICH IS WHY IT IS NOW IN THE FELL
+SENTENCE.** Moving a read across a function boundary into a non-optional
+parameter lowers the error count **exactly as well for a genuinely-absent value
+as for a false narrowing**. It is honest here because the absence was the
+compiler's error and the four-arm behaviour is pinned by drives at both ends. It
+would not be honest anywhere the absence is real. R3 names `arr[i]!` and
+`?? fallback`; T11 added `if (!x) continue`; **this is the fourth.**
+
+### ⚠ The arm the compiler pointed at was the one arm no test drove
+
+`review.test.ts`'s `b4 — a departure is observable through a pipe` covers
+`never-opened`, `opened-then-silent` and `read-then-left` end to end.
+**`engaged-then-left` had no cell.** Five unit cells now pin all four arms plus
+a stale beacon; three mutations (arms swapped · `pageServed` gate dropped ·
+`opened-then-silent` folded into `never-opened`) each redden **only** their own
+arms.
+
+**Not taken:**
+
+- _`departure!.engaged`._ Silences the audible half, leaves the silent twin, and
+  asserts to the compiler an invariant that is true for a reason no reader can
+  find.
+- _`let departure = null as Departure | null`._ The standard workaround. It
+  defeats the narrowing and teaches nothing; the cast would sit at the
+  declaration, forty lines from the read, and `pageServed` would still be wrong.
+- _Delete the feature._ The hypothesis the brief asked to test, and the drives
+  refuse it.
+- _Leave it and declare a residue of 1._ The error is real (the read does not
+  type-check) even though the diagnosis is not; a residue would record a defect
+  in the code where the defect is in the analysis.
+
+---
+
+## T22 · THE SHIPPED-CODE IDIOM IS A NAMED BRANCH, NOT A THROW — AND `must` DELIBERATELY DID NOT GO INTO `src/kit/`
+
+**Decided:** implementer, 2026-09-10, Phase 2, on the brief's instruction to
+decide an idiom for shipped code and record it.
+
+Phase 1's answer was `grimoire/lib/must.ts` — throw naming the invariant (T11).
+⛔ **It does not transfer, for two independent reasons.**
+
+1. **Structural.** `grimoire/` is test INFRASTRUCTURE and `src/` does not import
+   from it. `src/kit/` is the only shared home a spell may import, and the
+   import-boundary ward's Ward 2 makes it a **leaf**.
+2. ⛔ **Substantive, and this is the one that decided it. A ward that crashes
+   gets repaired within the hour; a daemon that crashes is an outage.** T11's
+   whole case for a throw is that a ward reporting a verdict computed from
+   `undefined` is _"a wrong answer delivered with the same confidence as a right
+   one."_ A shipped daemon has a third option a ward does not: **it can have
+   already published an answer for the shape.**
+
+### The worked example, and why it is the pathfinder's real output
+
+`review.ts:238`, `parsePortFromSessionId`:
+
+```ts
+const m = sid.match(PORT_SUFFIX_RE); // /-p(\d{2,5})$/
+if (!m) return null;
+const digits = m[1]; // string | undefined
+if (digits === undefined) return null; // ← the decision
+const port = parseInt(digits, 10);
+return port >= 1 && port <= 65535 ? port : null;
+```
+
+**The absence is IMPOSSIBLE** — one alternative, one mandatory group, so a match
+always sets it (Phase 1's "regex MANDATORY group" shape, nine sites there, none
+reachable). By T11's rule that would be a `must()`. **It is a branch instead,
+because this function already publishes `null` for "that is not a port" at two
+other returns**, and the session-id port is a _recovery hint_: the port is
+re-bound if it parses and freely chosen if it does not. A throw here would kill
+a review because a caller passed a strange `--session-id`.
+
+⭐ **And it is behaviourally free, which is what makes it safe rather than
+merely defensible:** `parseInt(undefined)` is `NaN`, `NaN >= 1` is false, so the
+range check **already returned `null` on this input**. Nothing moves. The branch
+is the one line that says which answer that is, for the day the regex gains an
+alternation.
+
+⚠ **The D64 objection, answered.** T11 forbids `if (!x) continue` because in an
+instrument a skipped element **left the denominator**. There is no denominator
+here: this is a total function returning `number | null`, and the impossible
+input takes the answer its own contract gives it. **The D64 defect is a count
+that shrinks silently, not a branch that exists.**
+
+### The rule, stated for Phases 3 and 4 to copy
+
+| where                                                        | absence impossible                                                 | absence real          |
+| ------------------------------------------------------------ | ------------------------------------------------------------------ | --------------------- |
+| a **ward / instrument**                                      | `must(v, "<invariant>")` — throw (T11)                             | explicit named branch |
+| **shipped code**, function publishes an answer for the shape | **that answer**, with the invariant stated in a comment            | that answer           |
+| **shipped code**, no such answer exists                      | a named throw — and ask first whether the function should have one | explicit named branch |
+| a **test file** under `src/`                                 | a **LOCAL** `must()` copy                                          | explicit named branch |
+
+⛔ **`must` was NOT added to `src/kit/`.** Adding a throw helper to the leaf
+every spell imports would make the throw the default answer for exactly the
+population where it is least appropriate, on the evidence of **one site that did
+not need it**. `src/digestify/backend/review.test.ts` carries a four-line local
+copy instead, on T11's own `scripts/instruments/*` precedent.
+
+⚠ **AND THE SITE IS FOUR-WAY DUPLICATED.** `parsePortFromSessionId` is
+byte-identical in `src/digestify/backend/review.ts`,
+`src/imago/backend/server.ts:111`, `src/magpie/backend/server.ts:117` and
+`src/bounty/backend/server.ts:326` — **the same error at all four, waiting in
+Phases 3 and 4.** ⛔ **Promoting it to `src/kit/` was deliberately NOT done
+here: that is the D64 move** (a de-duplication that hides an indexed read behind
+a parameter, lowering four counts at once with nothing established). Filed as a
+backlog item, not folded into a type commit.
+
+**Not taken:**
+
+- _Put `must()` in `src/kit/wire/` and use it at 238._ Argued above.
+- _`m[1]!`._ R3's first dishonest option.
+- _`parseInt(m[1] ?? "", 10)`._ R3's second. Invents a value (`NaN` by another
+  route) and reads as though the empty string were a meaningful port string.
+- _Promote the four-way duplicate now._ D64.
+
+---
+
+## T23 · ⛔ A MUTATION DRIVE AGAINST A BUILT ENTRY IS SILENTLY VACUOUS WITHOUT A REBUILD — PHASE 1 COULD NOT HAVE FOUND THIS
+
+**Decided:** implementer, 2026-09-10, Phase 2, found by a drive that came back
+green when it should have been red.
+
+Drive 7 suppressed the error envelope in `src/digestify/backend/review.ts`
+(`reportCliError(e, { write: () => {} })`) and ran the cell that asserts one
+JSON line on stderr. **It passed.** The mutation was correct and the cell is
+correct; the drive was measuring nothing, because **the cell spawns the
+LAUNCHER**, which imports `dist/review.js` (`review.test.ts`'s own header says
+so, at length, for a different reason — playbook Phase B, B6.1). Re-run with
+`bun run build` between the mutation and the test: **red.**
+
+⛔ **A drive that comes back green is normally evidence. Here it was the absence
+of a subject** — the same shape as `dist-roster-ward`'s vacuity (T18) and D64's
+shrinking denominator, arriving in the CALIBRATION rather than in the ward.
+
+⚠ **Phase 1 could not have found it.** Its subjects were `grimoire/` and
+`scripts/`, which are run directly and have no `dist/`. **Phase 2 is the first
+phase whose subject is a built entry, and every remaining phase's is too** —
+astrolabe, magpie, glamour, bounty, imago and grapevine all ship a built
+backend. Contract 18 governs **committing** the artifact; nothing anywhere
+warned that **calibration reads it too**.
+
+**The rule:** if the cell you are driving spawns a launcher, `bun run build` is
+part of the mutation, and part of the revert. Drive 6, whose cell imports
+`parseQuestions` from `./review.ts` directly, needed no rebuild — **so the two
+kinds of cell live in the same file and behave differently under mutation.**
+
+---
+
+## T24 · PHASE 1's THREE FALL-PATH CORRECTIONS WERE RECORDED AND NOT APPLIED; PHASE 2 APPLIED TWO AND ADDED TWO ROUTES
+
+**Decided:** implementer, 2026-09-10, Phase 2, as the fall path's second user —
+which is the only role that can test T15's claim.
+
+T15 named three things to correct "in Phase 2's interest". **None had been
+applied**; the FELL sentence Phase 2 received was byte-identical to the one
+Phase 1 quoted. That is the predicted failure of a correction recorded in a
+journal rather than in the instrument, and it is why two of the three are now in
+the code:
+
+1. ✅ **Applied — the FELL sentence now names where the account goes.** It said
+   _"lower it to 0"_ and asked for an establishment with no destination. Every
+   incentive at that moment points at editing one integer. It now says _"lower
+   it to 0, AND WRITE THE ACCOUNT IN THE COMMENT BLOCK ABOVE
+   `DECLARED_BASELINE`"_.
+2. ✅ **Applied — the census's warning block now says a green means nothing
+   about the FILE COUNTS.** `filesExamined` and `filesInTree` are asserted equal
+   to each other, so a file added while fixing moves both and closes the pair
+   silently (Phase 1's `must.ts`: grimoire 20 → 21, repo 544 → 545, nothing
+   red). Phase 2 added no file, so `545 of 545` is unchanged — but the
+   inheritance is now in the ward.
+3. ⚠ **NOT applied, and it is a process rule with no code home** — _"a grep is
+   not a second opinion, it is a second predicate"_ (T1). Left in the journals.
+
+### ⭐ And two silencing routes the FELL sentence did not name, both taken here
+
+The list was `arr[i]!` · `as any` · `@ts-expect-error` · a deleted file · a D64
+de-duplication. Phase 2 lowered eight errors and **two of its fixes are outside
+that list**:
+
+- **A `.filter()` TYPE PREDICATE** — `(ref): ref is string =>`. It lowers the
+  count by asserting to the compiler. It is honest at
+  `release-serve.test.ts:212` **only because the runtime clause `ref &&` was
+  already there and was left untouched** (set proven byte-identical). Added
+  without that clause it is `!` with extra steps.
+- **A VALUE MOVED ACROSS A FUNCTION BOUNDARY** into a non-optional parameter —
+  T21's `classifyDeparture`. An extracted helper launders a genuinely-absent
+  value exactly as well as it launders a false narrowing.
+
+Both are now in the FELL sentence, and the FELL path was re-driven after the
+edit (the amended message printed; the two cells still fail in the right
+direction) and again after the lowering (13 pass / 0 fail). The **ROSE**
+direction was calibrated against the LOWERED pin — one deliberate error appended
+to `review.ts` printed `ROSE — area "src/digestify/backend" 0 -> 1 (+1)` — so
+the new zero convicts.
+
+**Not taken:**
+
+- _Report the three corrections and leave the instrument alone._ What Phase 1
+  did, and the reason Phase 2 met the same sentence.
+- _Apply #3 as well._ There is no code that can hold "prefer the census over a
+  grep"; the honest place is the journal, where it now appears twice.
