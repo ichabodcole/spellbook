@@ -57,12 +57,65 @@ Then confirm that exact set appears in each listing above.
 
 (Run `inscribe` for the authoring ritual itself; these are the wards around it.)
 
+> ### ⛔ THE STRUCTURE IS NOT A CHECKBOX — IT IS A PLAYBOOK, AND THIS BOX POINTED AT THE PRE-BUILD WORLD UNTIL 2026-09-10.
+>
+> This checkbox used to read _"Spell folder under
+> `plugins/spellbook/skills/<name>/` is self-contained (`SKILL.md` +
+> `scripts/` + `assets/`)"_ — no `src/<spell>/`, no launcher, no `dist/`, no
+> build. **All eight spells now build**; an agent following the old wording
+> would author a source-shipped spell, which is a ninth port on a roster whose
+> port population closed 2026-09-09.
+>
+> ⛔ **Read
+> [`docs/playbooks/scaffolding-a-spell-playbook.md`](../../../docs/playbooks/scaffolding-a-spell-playbook.md)
+> BEFORE the first file.** It carries the layout, the launcher's two shapes and
+> the property that decides between them, which kit modules a spell of each
+> shape needs, the error contract, the two discovery conventions, and the twelve
+> instrument pins a new spell must join. The reasoning is there; the boxes below
+> are the wards.
+
 - [ ] Name reserved in `grimoire/trigger-registry.md` at coalescence (the
       naming/solidification step — not before prototyping; check collisions +
       reserved namespaces)
-- [ ] Spell folder under `plugins/spellbook/skills/<name>/` is self-contained
-      (`SKILL.md` + `scripts/` + `assets/`; conjurations ship a daemon, cantrips
-      don't)
+- [ ] **Authored source at `src/<name>/{backend,surface}/`**, with a two-line
+      `src/<name>/build.ts` delegator and a `bunfig.toml` — **not** inside the
+      plugin subtree (seams Contract 4). 8/8 spells have exactly this shape.
+- [ ] **A launcher at `plugins/spellbook/skills/<name>/scripts/<entry>.ts` for
+      every backend entry** — three code lines, no logic, no `import.meta.main`,
+      `run()` with no arguments. ⛔ **The launcher is the build's own entry
+      predicate**: without it `bun run build` emits nothing for that entry and
+      exits 0. Its shape (natural return vs terminal exit) is decided by _does
+      `main()` return while the process must keep living?_ — **drive it, don't
+      read it.**
+- [ ] **`.gitignore` carries the spell's two un-ignore lines**
+      (`!plugins/spellbook/skills/<name>/dist` and `…/dist/**`). ⛔ **The only
+      hand-kept list for the artifact, and forgetting it fails SILENTLY at exit
+      0** — `git add` skips the directory and the spell ships with no `dist/`.
+- [ ] **The CLI imports `src/kit/wire/errors.ts`** (8/8 do) and **every `usage`
+      rejection with an enumerable accepted set carries `choices`**, not just
+      `hint` — register **A1**: `choices` is absent from three shipped spells.
+      The exit-code table is published in the spell's `SKILL.md` with the
+      envelope; no ward reads it.
+- [ ] **One of the two discovery conventions is chosen and named** —
+      session-JSON (4 spells) or singleton `daemon.port`/`daemon.pid` (3) —
+      through `src/kit/wire/discovery.ts`'s two primitives. A single-shot spell
+      writes none and **says so** (digestify).
+- [ ] **`bun run build`** (the only sanctioned build), then
+      **`bun scripts/dist-check.ts`** unpiped → `0`, and **confirm the spell
+      appears by name in the roster it prints**. Exit `3` is NO VERDICT, not a
+      pass. A not-yet-buildable spell is absent from three instruments at once.
+- [ ] **The pinned instruments name the spell.** Expect reds and edit the pins
+      deliberately: `roster-drift`, `flag-invariant`
+      (`SPELLS_WITHOUT_SKILL_MD`), `dist-roster-ward`, `launcher-pairing-ward`,
+      `gate-honesty` (`DECLARED_BLIND`), `type-debt-ratchet`
+      (`DECLARED_BASELINE` + total), `exit-site-inventory` (a terminal-exit
+      launcher is a pinned `E-terminal` row), `daemon-lifecycle-ward` (**five
+      pins**), `import-boundary-wards` (`PINNED_DYNAMIC_ESCAPES`),
+      `kit-styling-ward` (`KIT_CONSUMERS`), `terminator-invariant`
+      (`HAZARD_APPLIES`), `grimoire/lib/entry-points.ts`
+      (`INTERNAL_ENTRY_POINTS`).
+- [ ] **`package.json`'s `workspaces` array** updated if the spell carries its
+      own `package.json` — **nothing wards this one.**
 - [ ] Feedback touchpoint present in the spell's `SKILL.md` (agent friction +
       human-surface feedback), routed to GitHub issues against this repo
 - [ ] Added to the spell table in `plugins/spellbook/skills/README.md`

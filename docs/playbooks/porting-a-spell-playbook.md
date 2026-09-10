@@ -26,10 +26,13 @@ stays rather than being tidied away.
 
 ⛔ **What a closed population changes about what this document IS.** It is no
 longer a schedule for either half. The next reader is either **scaffolding a NEW
-spell** — for which the material is here but the shape is wrong, and register
-item F1 is the document that should exist — or **maintaining the spine**. Read
-the ⭐ blocks as a record of how each step was wrong for somebody, not as a
-queue: eight backend ports, and no step survived all eight unamended
+spell** — for which the material is here but the shape is wrong, and
+**[the scaffolding playbook](./scaffolding-a-spell-playbook.md) now exists**
+(register F1, written 2026-09-10; it inverts this document's Phase B from
+archaeology into a specification, and it is **not yet validated by a subject**)
+— or **maintaining the spine**. Read the ⭐ blocks as a record of how each step
+was wrong for somebody, not as a queue: eight backend ports, and no step
+survived all eight unamended
 
 ---
 
