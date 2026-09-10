@@ -29,13 +29,59 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-const SCRIPTS_DIR = import.meta.dir;
-const SKILL_SRC = join(SCRIPTS_DIR, "..");
-// Every non-test module under scripts/ ships — a glob, never a hand-kept mirror.
-const shipping = () =>
+/**
+ * ⛔ THE SKILL ROOT IS FOUND BY A MARKER, NEVER BY COUNTING `..` (playbook B6).
+ * This file now lives at `src/grapevine/backend/` and its SUBJECT lives at
+ * `plugins/spellbook/skills/grapevine/` — different trees, so no number of `..`
+ * reaches it and "re-derive from an explicit root" needs the root written down.
+ * The walk is `src/grapevine/dev-styled.test.ts`'s, under a comment recording
+ * why: a sibling spell's copy counted `..`, a non-author placed the file at a
+ * different depth, and BOTH arms died at spawn — which reads as a broken daemon,
+ * not as a wrong path. A marker fails LOUDLY and by name; a wrong `..` never does.
+ */
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
+}
+
+const REPO_ROOT = repoRoot(import.meta.dir);
+const SKILL_SRC = join(REPO_ROOT, "plugins", "spellbook", "skills", "grapevine");
+const SCRIPTS_DIR = join(SKILL_SRC, "scripts");
+const DIST_SRC = join(SKILL_SRC, "dist");
+
+/**
+ * ⛔ THE FAKE RELEASE TREE COPIES THE FILES THAT RUN, AND AFTER THE PORT THAT IS
+ * TWO FILES PER ENTRY, NOT ONE (playbook B6.3). The process a caller runs is
+ * `scripts/<entry>.ts` — a launcher — and the launcher imports
+ * `../dist/<entry>.js`. Copying only the launchers builds a tree that dies at
+ * its own import; copying only the artifacts builds a tree with no entry.
+ *
+ * ⚠ AND THE GLOB'S OLD SCAR IS RE-HOMED RATHER THAN DELETED. It read "a new
+ * module under scripts/ is in the copied tree by construction", which was the
+ * argument for globbing. That property is now true BY BUNDLING: `dist/cli.js`
+ * and `dist/daemon.js` ARE the whole module graph, so a new backend module
+ * arrives inside them and there is nothing left to forget to copy. The glob
+ * survives over `scripts/` only because the launcher set is still derived.
+ */
+const launchers = () =>
   readdirSync(SCRIPTS_DIR).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+const artifacts = () => readdirSync(DIST_SRC).filter((f) => /^(cli|daemon)\.js$/.test(f));
+
+/** Copy the launchers and their artifacts into `<root>/scripts` + `<root>/dist`. */
+function copyEntries(root: string): void {
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  for (const f of launchers()) cpSync(join(SCRIPTS_DIR, f), join(root, "scripts", f));
+  mkdirSync(join(root, "dist"), { recursive: true });
+  for (const f of artifacts()) cpSync(join(DIST_SRC, f), join(root, "dist", f));
+}
 
 let skillRoot: string;
 let home: string;
@@ -45,9 +91,7 @@ let bootLine = "";
 
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "grapevine-release-test-"));
-  mkdirSync(join(root, "scripts"), { recursive: true });
-  for (const f of shipping()) cpSync(join(SCRIPTS_DIR, f), join(root, "scripts", f));
-  mkdirSync(join(root, "dist"), { recursive: true });
+  copyEntries(root);
   writeFileSync(
     join(root, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
@@ -183,8 +227,11 @@ test("forced RELEASE over a tree with no dist/: /watch fails LOUD naming the mis
   // correctly fall to dev and die at the import instead.
   const bare = mkdtempSync(join(tmpdir(), "grapevine-release-nodist-"));
   const bareHome = mkdtempSync(join(tmpdir(), "grapevine-release-nodist-home-"));
-  mkdirSync(join(bare, "scripts"), { recursive: true });
-  for (const f of shipping()) cpSync(join(SCRIPTS_DIR, f), join(bare, "scripts", f));
+  copyEntries(bare);
+  // ⚠ `copyEntries` also brings the ARTIFACTS, which this arm needs (the
+  // launcher imports one) — but it must leave no `dist/index.html`, or the tree
+  // stops being the no-surface case the cell is about. Asserted, not assumed.
+  expect(existsSync(join(bare, "dist", "index.html"))).toBe(false);
   const bareProc = Bun.spawn([process.execPath, "run", join(bare, "scripts", "daemon.ts")], {
     cwd: bare,
     env: { ...process.env, GRAPEVINE_HOME: bareHome, SPELLBOOK_SURFACE_MODE: "release" },
@@ -209,7 +256,14 @@ test("forced RELEASE over a tree with no dist/: /watch fails LOUD naming the mis
 });
 
 test("the CLI's daemonCwd() picks the skill root in release and src/grapevine in dev", async () => {
-  const { daemonCwd } = await import("./cli.ts");
+  // ⛔ THE ARTIFACT, NOT THE SOURCE (playbook B6.2). `daemonCwd()` is computed
+  // from `import.meta.url`, so imported from `src/grapevine/backend/cli.ts` it
+  // answers `src/grapevine/` — a directory with no SKILL.md and no dist/ — and
+  // the cell would assert arithmetic nothing executes. `bun run gate` builds
+  // before it tests, so the built artifact is the thing to read.
+  const { daemonCwd } = (await import(join(DIST_SRC, "cli.js"))) as {
+    daemonCwd: () => string;
+  };
   const prev = process.env.SPELLBOOK_SURFACE_MODE;
   try {
     process.env.SPELLBOOK_SURFACE_MODE = "release";

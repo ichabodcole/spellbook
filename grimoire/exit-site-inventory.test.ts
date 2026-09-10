@@ -138,10 +138,19 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(0);", family: "C-signal" },
+  // ⛔ RE-ADDRESSED BY PHASE 6 CHAPTER 1, NOT CHANGED. grapevine's backend now
+  // builds, so its sources sit under the second root and LAUNCHERS hold the old
+  // addresses. Families and texts are identical either side of the move — that
+  // is chapter 1's whole contract — and the launchers add no row: BOTH of
+  // grapevine's are `process.exitCode` + a natural return, which is the one
+  // thing about this spell that differs from the five daemons above (D69 — its
+  // `main()` returns while the process must keep living, so a terminal exit at
+  // the launcher would kill a live server; there is no E-terminal row for
+  // grapevine and there must not be one).
+  { file: "grapevine/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(code),", family: "C-signal" },
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(0);", family: "C-signal" },
   // bounty/server.ts, RE-READ at 2cc513d after the funnel (t-1b9424ab). The two
   // hardcoded signal exits (143/130) are GONE -- routed into the teardown. What
   // remains are three exits that are correct BY CONSTRUCTION, each read at its
@@ -193,7 +202,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // requireDaemon die became a thrown CliError that main() returns as an exit
   // code — zero live process.exit sites remain in that CLI, which is the
   // direction this inventory exists to push.
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
+  { file: "grapevine/backend/cli.ts", text: "process.exit(code);", family: "D-die" },
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   // ⛔ THESE TWO DID **NOT** MOVE, AND THAT IS THE INTERESTING HALF OF BOUNTY'S

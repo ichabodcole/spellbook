@@ -506,6 +506,16 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // because it could not see the escape at all, which is the same blindness
       // the coverage cell above now asserts against.
       "plugins/spellbook/skills/glamour/dist/cli.js -> src/glamour",
+      // grapevine's `SURFACE_CWD` — the SIXTH instance of this one Contract 5
+      // dev-cwd pin, arriving in Phase 6 with the same bare `fileURLToPath`
+      // spelling the pattern has always read. Six instances across six spells is
+      // what makes it a house shape rather than a spell's quirk: every CLI that
+      // fronts a bundling daemon has to name the directory whose bunfig.toml
+      // loads the Tailwind plugin, and that directory is outside the plugin.
+      // ⚠ The five `..` are resolved here from the EMITTED location, which is the
+      // only address the arithmetic is true at — and the port did not change the
+      // expression, because `dist/` and `scripts/` sit at the same depth.
+      "plugins/spellbook/skills/grapevine/dist/cli.js -> src/grapevine",
       // imago's `SURFACE_CWD` — the same Contract 5 dev-mode cwd pin, arriving
       // in Phase 3 for the same reason and with the same bare anchor spelling
       // the pattern has always read. It is the third instance of this one

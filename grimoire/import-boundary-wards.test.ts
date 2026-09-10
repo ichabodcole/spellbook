@@ -273,6 +273,7 @@ const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/bounty/dist",
   "plugins/spellbook/skills/digestify/dist",
   "plugins/spellbook/skills/glamour/dist",
+  "plugins/spellbook/skills/grapevine/dist",
   "plugins/spellbook/skills/imago/dist",
   "plugins/spellbook/skills/magpie/dist",
 ];
@@ -481,10 +482,25 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // whose site is a `daemon.ts`, not a `server.ts`: the rewrite-then-relocate
   // pathfinder. Pinned by the agent that wrote the specifier after running
   // existsSync on the resolved path; the admission was verified the same way
-  // as the others (scripts/release-serve.test.ts boots a copied tree with a
-  // dist/ and no surface/, and its forced-dev cell dies at exactly this import).
+  // as the others (release-serve.test.ts boots a copied tree with a dist/ and
+  // no surface/, and its forced-dev cell dies at exactly this import).
+  //
+  // ⛔ RE-POINTED AT THE ARTIFACT BY PHASE 6 CHAPTER 1 (playbook B5). The
+  // specifier is `--external` in `src/build.ts`, so it survives into
+  // `dist/daemon.js` BYTE-FOR-BYTE and is resolved at runtime relative to
+  // `dist/`, not relative to the `.ts` it is written in. Left pointing at the
+  // old `scripts/daemon.ts`, this row would have been DELETED as "no longer
+  // present" — `trackedSources` is `.ts`/`.tsx` only — and the ward would have
+  // gone green because it stopped looking (Contract 19, exactly).
+  // ⚠ The string is IDENTICAL either side of the move, because `dist/` sits at
+  // the same depth as the `scripts/` it replaced. That is a coincidence of
+  // depth, not a property, which is why it is asserted here rather than trusted:
+  // nothing else would red, since the specifier is never resolved at build time.
+  //
+  // ⛔ AND grapevine's IS THE ROSTER'S ONLY `src/`-NAMING SPECIFIER — the one
+  // reason this admission list still has a member at all.
   {
-    file: "plugins/spellbook/skills/grapevine/scripts/daemon.ts",
+    file: "plugins/spellbook/skills/grapevine/dist/daemon.js",
     spec: "../../../../../src/grapevine/surface/index.html",
     resolved: "src/grapevine/surface/index.html",
   },

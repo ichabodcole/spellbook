@@ -7,11 +7,64 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+// ⚠ SOURCE, DELIBERATELY, AND ONLY FOR THESE TWO. `looksShellRisky` and
+// `probeVersion` are pure — neither computes a path from its own location — so
+// importing the source asserts the same function the artifact carries. Anything
+// that DOES read `import.meta.url` must be read out of the artifact instead
+// (playbook B6.2); `release-serve.test.ts` does that for `daemonCwd`.
 import { looksShellRisky, probeVersion } from "./cli.ts";
 
+/**
+ * ⛔ THE SKILL ROOT IS FOUND BY A MARKER, NEVER BY COUNTING `..` (playbook B6).
+ * This suite now lives at `src/grapevine/backend/` and the process it spawns
+ * lives at `plugins/spellbook/skills/grapevine/scripts/` — different trees, so
+ * no number of `..` reaches it. A marker fails LOUDLY and by name when it fails
+ * at all; a wrong `..` fails as "the daemon never answered".
+ */
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
+}
+
 const HOME = mkdtempSync(join(tmpdir(), "grapevine-test-"));
-const CLI = join(import.meta.dir, "cli.ts");
+/**
+ * ⛔ THE LAUNCHER, NOT THE SOURCE (playbook B6.1). The contract this suite
+ * asserts is what the PROCESS writes and exits with, and the process a caller
+ * runs is `scripts/cli.ts` → `dist/cli.js`. It is also the path the CLI's own
+ * runnable hints compose from their argument vector, which is why the
+ * "run what stderr told you" cell below can execute one verbatim.
+ *
+ * ⚠ ONE CONSTANT, ONE JOB. bounty's suite used its `CLI` to spawn a process AND
+ * to read the source with `Bun.file(CLI).text()`; re-pointing it at the launcher
+ * re-pointed the source scans, which then read a comment block and failed as a
+ * broken regex. This suite reads no source through this constant — checked at
+ * the port — and must not start.
+ */
+const CLI = join(
+  repoRoot(import.meta.dir),
+  "plugins",
+  "spellbook",
+  "skills",
+  "grapevine",
+  "scripts",
+  "cli.ts",
+);
+/**
+ * ⛔ THE DAEMON LAUNCHER, FOR THE TWO CELLS THAT SPAWN A DAEMON DIRECTLY. They
+ * read `join(import.meta.dir, "daemon.ts")` before the port, which after it is
+ * `src/grapevine/backend/daemon.ts` — a module with no `import.meta.main` block
+ * (playbook B3), so the spawn would boot nothing, exit 0, and the two cells
+ * would fail as "no such daemon on this machine": a wrong-file defect wearing a
+ * missing-feature symptom. Both were RED at the move and both are fixed here.
+ */
+const DAEMON = join(dirname(CLI), "daemon.ts");
 
 // Track every long-lived child process we spawn (tails, the wait helper,
 // etc.) so afterAll can SIGTERM them even if `bunRun(["stop"])` fails or
@@ -1662,7 +1715,7 @@ describe("grapevine cli", () => {
   test("doctor labels other daemons with status + reapable (V1.9)", async () => {
     await bunRun(["start"]);
     const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan2-"));
-    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+    const op = spawn(process.execPath, [DAEMON], {
       env: { ...process.env, GRAPEVINE_HOME: orphanHome },
       stdio: ["ignore", "ignore", "ignore"],
       detached: true,
@@ -1888,7 +1941,7 @@ describe("grapevine cli", () => {
     // Spawn an orphan: a daemon under a DIFFERENT, throwaway home dir, then delete
     // that home's port file so nothing recognizes it.
     const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan-"));
-    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+    const op = spawn(process.execPath, [DAEMON], {
       env: { ...process.env, GRAPEVINE_HOME: orphanHome },
       stdio: ["ignore", "ignore", "ignore"],
       detached: true,
