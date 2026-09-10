@@ -46,8 +46,13 @@ in `grimoire/house-style.md`.
   magpie, mind-mapper). digestify was the last hand-written page and it was
   rewritten on 2026-09-07; there is no CDN surface left anywhere in the tree
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
-- **Build Tools:** none at the spell level (Bun runs source directly); heavy
-  surfaces use a Bun bundler step inside their own setup
+- **Build Tools:** ⛔ **`bun run build` at the spell level, for all eight** —
+  each spell has its own `src/<spell>/build.ts`, and both halves are built: the
+  surface bundle and, since the backend convergence (2026-09-08→09), the backend
+  entries too. The emitted `dist/` is **committed** (Contract 4), and a spell's
+  deployed `scripts/*.ts` are launchers rather than source. _"None at the spell
+  level — Bun runs source directly" was true of every spell once and is now true
+  of none;_ `dist-check` and `dist-roster-ward` are what hold this honest
 - **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
   (`.md`), Husky + lint-staged pre-commit, release-please for versioning
 - **Current version:** spellbook **2.2.0**
@@ -168,16 +173,21 @@ _Five, as of the 2026-08-10 sweep
   and a committed `dist/` that shipped in v2.2.0 — the real release cut the
   proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
   landed (`house-style.md` now opens `## The build` with a per-spell port
-  queue), and astrolabe was **migrated** rather than dropped. **Seven spells
-  build** — astrolabe, bounty, glamour, grapevine, imago, magpie, mind-mapper —
-  two of them with built backends, via `spell-kit`; glamour joined 2026-09-03
-  (`cae26f8`), grapevine 2026-09-05 (the first REWRITTEN surface, not a
-  relocated one — `docs/projects/grapevine-conversion/`), bounty 2026-09-06 (the
-  second rewrite, and the first to run the registry INSIDE the rewrite instead
-  of vendoring first — `docs/projects/bounty-conversion/`). _Do not hand-keep
-  this roster: `buildableSpells()` in `src/build.ts` counts it,
-  `dist-roster-ward` prints it, and house-style now points there rather than
-  naming spells. This line has gone stale twice._
+  queue), and astrolabe was **migrated** rather than dropped. **EIGHT spells
+  build** — every spell in the roster — **and as of 2026-09-09 every one of them
+  builds its BACKEND too** (backend convergence, 2026-09-08→09: astrolabe and
+  magpie had built CLIs before it; glamour, imago, bounty, digestify, grapevine
+  and mind-mapper ported in that order). ⛔ **This line has now gone stale three
+  times, twice in the same direction — undercounting — so do not hand-keep it:**
+  `buildableSpells()` in `src/build.ts` counts it and `dist-roster-ward` prints
+  it. Via `spell-kit`; glamour joined 2026-09-03 (`cae26f8`), grapevine
+  2026-09-05 (the first REWRITTEN surface, not a relocated one —
+  `docs/projects/grapevine-conversion/`), bounty 2026-09-06 (the second rewrite,
+  and the first to run the registry INSIDE the rewrite instead of vendoring
+  first — `docs/projects/bounty-conversion/`). _Do not hand-keep this roster:
+  `buildableSpells()` in `src/build.ts` counts it, `dist-roster-ward` prints it,
+  and house-style now points there rather than naming spells. This line has gone
+  stale twice._
 
   _Reconciled 2026-09-03 @ `cae26f8` — "Four spells build": **FALSIFIED** by the
   glamour port; corrected to five and pointed at `buildableSpells()`. "two of

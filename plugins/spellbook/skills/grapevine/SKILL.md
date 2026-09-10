@@ -17,8 +17,10 @@ Two (or more) agents on the same machine talk to each other over a named
 channel. Messages live as append-only JSONL; live fan-out via SSE. No
 authentication, localhost only.
 
-> 🌿 **V2.2 — the lifecycle routes stopped lying.** Three refusals that an agent
-> could not previously observe:
+> 🌿 **V2.2 — the lifecycle routes stopped lying.** **Six** lifecycle changes an
+> agent could not previously observe — two of them refusals (a read verb 404s;
+> `topic` refuses an archived channel), the rest things the wire now says out
+> loud:
 >
 > - **A read verb no longer creates a channel.** `pull`, `read`, `wait`,
 >   `triage` and `topic <name>` (no text) **404** on a channel that does not
