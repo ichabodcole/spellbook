@@ -97,7 +97,10 @@ carefully written prose in the repo; §5 (the two discovery conventions) is D3
 plus `kit/wire/discovery.ts`; §6 (the contracts) is Contracts 3, 4, 5, 18 and 19
 in `house-style.md`; §7 (the instruments) is `grimoire/` plus D42 and its three
 siblings, with register **C4**, **C8**, **C10** and **C11** as the four levels
-of one instrument defect; §8 is the caveats table below, already written.
+of one instrument defect — **C8 and C10 closed 2026-09-10 (`826294a2`, D98) and
+C4 narrowed by it, so §7 must now tell the repair as well as the defect, and
+must not imply all four are open**; §8 is the caveats table below, already
+written.
 
 ⛔ **Two sections need ORIGINAL WRITING and have no source to assemble from.**
 §1 ("what a spell is — a skill folder an agent spawns, plus a surface a human

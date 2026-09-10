@@ -4703,3 +4703,208 @@ sitting rather than an investigation:
 - _Route them to `docs/backlog/`._ They are not work items; they are questions
   about shape, and the register is now a house-level living document (D92) which
   is the correct home for exactly that.
+
+## D98 · The spawn-path ward FOLLOWS the shared dist family to its CALL SITE — the pin is where the anchor is supplied, not where the `join` is written
+
+**Decided:** implementer, 2026-09-10,
+`fix/spawn-path-ward-sees-the-shared-family`. Closes register rows **C8** and
+**C10**.
+
+### The defect, restated from the measurement rather than from the row
+
+`grimoire/spawn-path-ward.test.ts` exists to answer one question — _does this
+artifact's `dist/` resolution work from where it ships?_ — and it had stopped
+being able to answer it for the one family every dist-serving spell now shares.
+The convergence moved every `dist/` read into `resolveMode` and `serveFromDist`,
+so the emitted arithmetic reads `join(distDir, "index.html")` with `distDir` a
+**parameter**, and `JOIN_CALL` registers a pin only for an anchor it has
+resolved. Measured on the tree at the branch point:
+
+| artifact                                                 | `pins` | of which name `dist/`                                                        |
+| -------------------------------------------------------- | ------ | ---------------------------------------------------------------------------- |
+| grapevine `dist/daemon.js`                               | 4      | **1** — `daemon.js:501`, interpolated into a `details:` 500-body: decorative |
+| digestify `dist/review.js`                               | 5      | **1** — `review.js:395`, a REAL read (the in-memory entry substitution)      |
+| bounty, imago `dist/server.js`                           | 3      | **0**                                                                        |
+| astrolabe, glamour, magpie, mind-mapper `dist/server.js` | 2      | **0**                                                                        |
+
+**8 emitted backend artifacts, 4 in-kit `join(distDir, …)` reads in each — 32
+reads, not one of them in a coverage row.** Six of the eight artifacts named
+`dist/` nowhere at all; grapevine's one mention was decorative, so **deleting a
+single line of error prose left the daemon's whole `dist/` resolution invisible,
+at 9 pass / 0 fail** (driven; table below). Only digestify's read survived the
+convergence in a form the ward could see, and it survived by accident — it is
+the one adopter that reads the entry document itself rather than through
+`serveFromDist`.
+
+### The shape chosen — FOLLOW THE FLOW
+
+**An anchored variable passed to a kit resolver IS the resolution being
+exercised, so the CALL SITE becomes the pin.** `resolveMode(DIST_DIR)` and
+`serveFromDist(DIST_DIR, rel)` each yield a pin per literal the kit reads under
+`distDir`, resolved from the emitted file's own directory exactly as
+`JOIN_CALL`'s pins are. The parameter exclusion stays — `join(distDir, rel)` is
+a router, and that judgement was right about the argument and wrong about the
+call.
+
+Three derivations, none hand-kept, and each of the three is a place the old
+version would have gone silently blind:
+
+1. **The family, from the kit's own source.** Every
+   `export function F(distDir: …)` in `src/kit/wire/serveDist.ts` — an exported
+   reader whose first parameter IS the dist directory, which admits
+   `resolveMode` and `serveFromDist` and refuses `contentTypeFor` **by the rule
+   rather than by a list**. A hand-kept `["resolveMode", "serveFromDist"]` is
+   the same defect D43 and D44 each removed once already.
+2. **The reads, from the same module.** Every `join(distDir, "<name>")` in it —
+   today `index.html`, twice (`resolveMode`'s probe and the whitelist's entry
+   read). The literals are attributed to the MODULE, not per function, because
+   `serveFromDist` reads the entry through the non-exported `surfaceWhitelist`;
+   a per-function attribution needs a call-graph walk inside the kit to say what
+   the module-level answer already says.
+3. **The REQUIREMENT, from the SOURCE tree.** See below — it is the whole reason
+   this is a backstop and not a restatement.
+
+### ⛔ D27, twice, and both gates are on a different tree from the thing measured
+
+**D27's defect is a gate computed from the predicate the check exists to
+backstop.** This repair had two places to re-commit it and refuses both.
+
+- **Which artifacts must show a family pin** is derived from
+  `src/<spell>/backend/*.ts` importing a family function (aliases resolved —
+  five of the eight write `resolveMode as resolveModeIn`). It is emphatically
+  **not** "does the emitted text contain a family call": that is the predicate
+  being measured, and a bundler change, a rename, or a de-duplication that moved
+  the read out of the pattern's reach would make the artifact **exempt rather
+  than loud** — which is C4's counting half exactly, a coverage number going
+  DOWN being indistinguishable from a successful de-duplication. Driven: routing
+  `DIST_DIR` through `distOf()` so the pattern sees nothing at all reds the ward
+  **naming grapevine**, where the old ward was 9/0 green.
+- **Whether the family pin's target must EXIST** is gated on `hasSurface(spell)`
+  — newly exported from `src/build.ts` — which reads
+  `src/<spell>/surface/index.html`. The obvious gate is "does `dist/index.html`
+  exist", and that is the _same predicate `resolveMode` uses_ to answer
+  dev-vs-release: it would assert the file exists if the file exists. The
+  source-tree question ("does this spell ship a surface at all?") is a different
+  question on a different tree, so a spell with surface source whose artifact
+  computes the wrong address goes RED, and a future backend-only daemon is
+  **enumerated rather than falsely reddened**.
+
+### ⛔ D42 — three new rows, none of them a silence
+
+- A family call site whose dist argument the ward cannot resolve is a
+  **finding** (`UNRESOLVED DIST ARGUMENT`, naming the line), never a skip. That
+  is the case C8 records, so it must be loud.
+- An adopter with nothing emitted on disk gets
+  `NOTHING EMITTED ON DISK — NOT LOOKED AT`, and the row says whose question it
+  is (`dist-check` / launcher-pairing).
+- A spell with surface source absent gets
+  `NO SURFACE SOURCE — enumerated, NOT asserted`, so "not checked" and "checked
+  and fine" are not spelled the same way.
+
+### C10 closes as a side effect, and it is the same class one cell over
+
+C10: the coverage cell's population header printed
+`across 8 spell(s): … mind-mapper …` while mind-mapper contributed **zero rows**
+— its `dist/` was surface-only, so `isBackendArtifact` matched nothing — over a
+live flat-sibling spawn defect, and **the header line is what made the absence
+look like presence.** A coverage row is now `{spell, text}` rather than a
+string, a spell whose `dist/` holds no backend artifact gets a row saying which
+absence it is, and the accounting is asserted **against `spells`** — the
+disk-derived population the header prints. Driven by taking digestify's
+`review.js` off the disk: the old ward named digestify in its header and
+produced nothing; the new one prints
+`digestify — dist/ holds NO BACKEND ARTIFACT (surface-only emit) — NOT LOOKED AT by this cell`
+and the family cell reds naming the spell.
+
+### Calibration, both directions, every drive on the REAL tree unless noted
+
+"OLD" is `develop`'s ward run against the same mutated tree. Every mutation was
+restored (`git checkout --`) and the tree re-verified clean.
+
+| drive                                                                                     | OLD ward                                                                          | NEW ward                                                                                                 |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| clean tree                                                                                | 9 pass / 0 fail                                                                   | **12 pass / 0 fail**                                                                                     |
+| **2 ·** delete grapevine's decorative `details:` line                                     | 9/0 — `daemon.js pins=4→3`, **no `dist/`-naming pin left anywhere in the daemon** | 12/0 — `literal=3 family=2`, `ASSERTED — 2/2 resolve`; coverage does NOT vanish                          |
+| **1a ·** …and then point `DIST_DIR` at `join(SKILL_ROOT, "diist")`                        | **9 pass / 0 fail — GREEN**                                                       | **1 fail**, naming `daemon.js:170` and `:174` → `…/grapevine/diist/index.html`                           |
+| **1b ·** break the anchor `DIST_DIR` derives from (`import.meta.dirname`, a D36 spelling) | 1 fail (`UNREAD ANCHOR SPELLING`)                                                 | **2 fail** — that, plus two `UNRESOLVED DIST ARGUMENT` lines named                                       |
+| **3 ·** false-positive probe: a CORRECT resolution, renamed (`DIST_DIR`→`DISTDIR2`)       | 9/0                                                                               | **12/0 green** — it follows the anchor, not the name                                                     |
+| **5 ·** the D27 probe: hide the read from the pattern (`resolveMode(distOf())`)           | **9 pass / 0 fail — GREEN**                                                       | **1 fail** — "src/grapevine/backend imports […] and NO emitted backend artifact yields a family pin"     |
+| **6 ·** C10: digestify's `review.js` off the disk                                         | named in the header, **no coverage row**                                          | explicit `NOT LOOKED AT` row + the family cell reds naming digestify                                     |
+| **4a ·** historical: the `REMOVE_PY` shape re-broken in `magpie/dist/cli.js`              | 1 fail                                                                            | **1 fail**, same cell, same named path                                                                   |
+| **4b ·** historical: all five D36 unreadable-anchor spellings                             | in-cell, green                                                                    | in-cell, green (cell unchanged)                                                                          |
+| **4c ·** historical: the `join.js`/`review.js`/`daemon.js` derived-split names            | in-cell, green                                                                    | in-cell, green (cell unchanged)                                                                          |
+| synthetic: correct / wrong-address / unreadable-anchor / no-family-call, one temp `dist/` | —                                                                                 | the new CALIBRATION cell — four worlds, four different answers                                           |
+| synthetic: the family DERIVATION against a module this cell wrote                         | —                                                                                 | the new derivation cell — `contentTypeFor` refused by the rule, a non-exported helper's read still found |
+
+**Coverage, before → after** (`pins` per emitted backend artifact; `literal` is
+the old number, unchanged):
+
+| artifact                     | before | after                |
+| ---------------------------- | ------ | -------------------- |
+| astrolabe `dist/server.js`   | 2      | **4** (2 + 2 family) |
+| bounty `dist/server.js`      | 3      | **5** (3 + 2)        |
+| digestify `dist/review.js`   | 5      | **7** (5 + 2)        |
+| glamour `dist/server.js`     | 2      | **4** (2 + 2)        |
+| grapevine `dist/daemon.js`   | 4      | **6** (4 + 2)        |
+| imago `dist/server.js`       | 3      | **5** (3 + 2)        |
+| magpie `dist/server.js`      | 2      | **4** (2 + 2)        |
+| mind-mapper `dist/server.js` | 2      | **4** (2 + 2)        |
+
+Sixteen call sites, two per artifact, **eight spells at `family-pins=2` and
+`ASSERTED — 2/2 resolve`**. The `cli.js` artifacts are unchanged: none calls the
+family (each pins `join(DIST_DIR, "index.html")` literally, which was always
+covered).
+
+**Acceptance, as measured:** `bun run build` a git no-op across all eight dist
+roots; gate **2022 pass / 0 fail** unpiped, exit 0 — the spawn-path ward itself
+9 → **12 cells**; `bun scripts/dist-check.ts` exit 0, three arms, 40 tracked /
+40 on disk, ARM 2 dirty paths 0.
+
+### What the ward still CANNOT see, said out loud
+
+- **The 32 in-kit reads are still not pins, by design.** What is asserted is the
+  call site's anchor arithmetic; the `join` inside `resolveMode` is the kit's,
+  and `src/kit/wire/serveDist.test.ts` is what has an opinion about it.
+- **`serveFromDist`'s `rel` is still a router.** The ward asserts the entry
+  document resolves; which hashed chunk a request may name is the whitelist's
+  question and each adopter's `release-serve.test.ts`'s.
+- **A directory pin is still not asserted** — C4's first half, untouched:
+  `join(SKILL_ROOT, "dist")` and digestify's `join(SKILL_ROOT, "assets")` both
+  name directories, and `isShippedFile` requires an extension.
+- **A path built by concatenation, or across a function boundary the family
+  patterns do not name, is still invisible.** Drive 5 is the honest statement of
+  this: the ward could not follow `distOf()`; what saved it was the source-side
+  requirement reddening. **The scan's reach did not grow — its silence became
+  loud.**
+- **`process.argv[1]` remains the declared hole (C1).**
+
+### Not taken
+
+- **Assert the behaviour instead — boot each built backend in release mode and
+  confirm it resolves its own `dist/index.html`.** Stronger in principle, and
+  **this repo already has it, eight times**: every adopter ships a
+  `backend/release-serve.test.ts` that boots the real emitted artifact and
+  fetches the entry document. What those cells boot is a **COPIED** tree
+  (cassandra's Seam D recipe: a `dist/` with no `surface/` and no
+  `bunfig.toml`), which proves the RELATIVE arithmetic and deliberately says
+  nothing about the shipped address — the ward's whole subject. So a boot-drive
+  here would have duplicated eight existing instruments to answer a ninth
+  question neither shape reaches, and it would have made a 180-second gate
+  slower for it. The residue — boot from the actual emitted location — is a
+  separate, heavier thing and is not filed as a defect, because the scan now
+  covers the address and the release-serve cells cover the behaviour.
+- **Have the kit expose the resolved entry path as a module-level constant the
+  ward can anchor on** (C8's own suggested repair). It moves a runtime shape to
+  satisfy an instrument, and it cannot work: the kit is called with a `distDir`
+  per adopter and per test temp tree, so there is no module-level constant to
+  expose without making the kit stateful.
+- **Teach `JOIN_CALL` to treat any unresolved identifier as an anchor.** Reds
+  every artifact, which is C1's own reasoning for excluding `process.argv`.
+- **Add `distDir` to `ANCHOR_INGREDIENT`.** The ingredient list is a claim about
+  what a module cannot avoid naming when it asks where it is; `distDir` is a
+  parameter name in one kit module, and putting it there would red every
+  artifact that correctly bundles the kit.
+- **Wait for a next port.** There is no next port — D44's condition expired at
+  mind-mapper, which is why this branch exists at all.
+- **Close C9 and C11 too.** Different instrument and a different defect — see
+  the register rows.
