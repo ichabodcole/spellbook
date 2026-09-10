@@ -67,6 +67,11 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { heartbeatMs, idleTimeoutSec } from "../../kit/wire/heartbeat.ts";
+import { drainAndStop } from "../../kit/wire/housekeeping.ts";
+import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd to
@@ -77,38 +82,62 @@ const DIST_DIR = join(SKILL_ROOT, "dist");
 
 // release iff dist/index.html exists at the skill root — the FILE, never the
 // directory (a built backend can put cli.js in dist/ with no surface there) —
-// else dev; the env override wins either way (Contract 1). Release: zero reads
-// of surface source or bunfig.toml — static files only. Same shape as
-// glamour's server.ts. Exported for tests.
+// else dev; the env override wins either way (Contract 1). DE-DUPLICATED into
+// `src/kit/wire/serveDist.ts` at Phase 6 chapter 2: the census measured this
+// function byte-identical in all eight daemons, and grapevine's copy was one of
+// the eight. Kept exported at this name because the tests read it.
 export function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+  return resolveModeIn(DIST_DIR);
 }
 const MODE = resolveMode();
 
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
+/**
+ * The SSE keepalive, CLAMPED TO HALF the server's idle timeout by the kit's
+ * derivation rather than by a comment.
+ *
+ * ⛔ THE THREE NUMBERS ARE ONE INVARIANT: `idleTimeout > heartbeat` or Bun
+ * closes a held SSE connection before the keepalive that was supposed to
+ * preserve it ever fires; `tail watchdog > heartbeat` or a healthy-but-quiet
+ * tail reconnects forever. Grapevine held the first of those in PROSE — `255`
+ * and `3000` were two literals ten lines apart in this file — and did not hold
+ * the second at all, because its tail had no watchdog. `heartbeatMs` makes the
+ * first true for any configured pair; `./heartbeat.ts`'s `TAIL_IDLE_MS` makes
+ * the second true for the CLI, from the same value.
+ *
+ * ⚠ Both halves of the pair are env-readable through the kit's parser, which is
+ * why they are computed here rather than re-exported: an operator who raises the
+ * beat cannot push it past half the idle timeout even by trying.
+ */
+const IDLE_SEC = idleTimeoutSec(process.env.GRAPEVINE_IDLE_TIMEOUT_SEC, IDLE_TIMEOUT_SEC);
+const HEARTBEAT_MS = heartbeatMs(process.env.GRAPEVINE_HEARTBEAT_MS, IDLE_SEC, SSE_HEARTBEAT_MS);
 
-// Serves one file from dist/ verbatim — the unhashed entry index.html, and the
-// hashed index-*.js / index-*.css it links RELATIVELY (`./index-<hash>.js`),
-// which from /watch resolve to bare filenames at the root (Contract 2's flat
-// layout). The guard keeps this one level deep: a nested or `..` path is
-// refused, so it can never reach outside dist/ and never shadows a JSON route.
+/**
+ * Serve one file out of `dist/` — RECEIVED, not de-duplicated.
+ *
+ * ⛔ **THE ROUTER IS OURS; WHETHER THE FILE MAY BE READ IS THE KIT'S** — and the
+ * kit's answer is now strictly stronger than the one this spell had. Grapevine's
+ * local copy was the pre-whitelist kit function verbatim (empty / `..` / nested
+ * + `existsSync`), with no by-name refusal anywhere, because grapevine
+ * substitutes nothing: `/watch` serves the committed `dist/index.html` unaltered
+ * and `/` is a JSON status route. It had no defence to KEEP.
+ *
+ * ⛔ **AND THIS PHASE IS WHAT MADE THAT LOAD-BEARING** (D61, D65). Chapter 1 put
+ * `dist/cli.js` and `dist/daemon.js` into the directory this daemon serves.
+ * Measured on the chapter-1 tree, through the real launcher: `GET /daemon.js`
+ * answered **200, 146,330 bytes**, and `GET /cli.js` **200, 251,310 bytes** —
+ * this spell's whole implementation, embedded sourcemap and complete original
+ * TypeScript included, to any local caller. `serveFromDist` serves only what the
+ * built `index.html` TRANSITIVELY LINKS, so both now 404 by construction rather
+ * than by anyone remembering to name them — a whitelist refuses the neighbour it
+ * was never told about, which is the whole reason D61 ruled against a second
+ * blacklist entry. Celled at both ends in `release-serve.test.ts`.
+ *
+ * The router half stays here because it is genuinely grapevine's: the entry is
+ * served at **`/watch`**, not at `/`, and the hashed chunks it links relatively
+ * arrive as bare filenames at the root (Contract 2's flat layout).
+ */
 function serveDist(rel: string): Response | null {
-  if (!rel || rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "content-type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  return serveFromDist(DIST_DIR, rel);
 }
 
 // Read our plugin version from the same plugin.json the CLI reads. Daemon
@@ -1314,7 +1343,7 @@ async function handle(req: Request): Promise<Response> {
             ch.subscribers.delete(key);
           };
 
-          // Heartbeat every 3s — both a keep-alive signal and a liveness
+          // Heartbeat every SSE_HEARTBEAT_MS (3s) — both a keep-alive signal and a liveness
           // probe. If the write fails, the client has dropped, so we
           // unregister the subscriber so `who` doesn't show ghosts.
           // SSE comments (`:`) are ignored by the spec parser.
@@ -1324,7 +1353,7 @@ async function handle(req: Request): Promise<Response> {
             } catch {
               cleanup();
             }
-          }, 3000);
+          }, HEARTBEAT_MS);
 
           // Hold a reference so cancel() can clean up.
           controller.__cleanup = cleanup;
@@ -1359,8 +1388,15 @@ async function handle(req: Request): Promise<Response> {
 let server: ReturnType<typeof Bun.serve> | null = null;
 let STARTED_AT = Date.now();
 
-// True iff the file exists and its trimmed content equals `expected`. Used so a
-// stale daemon never deletes lifecycle files a newer daemon now owns.
+// True iff the file exists and its trimmed content equals `expected`.
+//
+// ⛔ DE-DUPLICATED INTO `src/kit/wire/discovery.ts` AT PHASE 6 CHAPTER 2, and the
+// kit's `unlinkIfMatches` is the read AND the unlink in one call — which is the
+// only way this predicate was ever used. The reason it exists is the kit's
+// reason verbatim: a daemon that unlinks its lifecycle files unconditionally at
+// exit deletes the pointer a SUCCESSOR has already written, the successor can no
+// longer be found, and the next CLI verb spawns a third daemon. Kept exported at
+// this name because `cli.test.ts` reads it; it now delegates.
 export function fileHasValue(path: string, expected: string): boolean {
   try {
     return existsSync(path) && readFileSync(path, "utf-8").trim() === expected;
@@ -1369,18 +1405,40 @@ export function fileHasValue(path: string, expected: string): boolean {
   }
 }
 
-function shutdown(code: number) {
+async function shutdown(code: number) {
+  // ⛔ `unlinkIfMatches`, NOT an unconditional unlink — see `fileHasValue`.
   try {
-    if (server && fileHasValue(PORT_FILE, String(server.port))) unlinkSync(PORT_FILE);
-    if (fileHasValue(PID_FILE, String(process.pid))) unlinkSync(PID_FILE);
+    if (server) unlinkIfMatches(PORT_FILE, String(server.port));
+    unlinkIfMatches(PID_FILE, String(process.pid));
   } catch {}
   if (server) {
-    Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]).finally(() =>
-      process.exit(code),
-    );
-  } else {
-    process.exit(code);
+    // ⛔ `drainAndStop` IS ADOPTED FOR ITS STOP AND NOTHING ELSE, AND THE EMPTY
+    // ARGUMENT IS THE RULING (playbook B8's REJECT-STRUCTURAL row, SPLIT per
+    // export). Its server-stop half IS grapevine's, byte for byte: this was
+    // `Promise.race([server.stop(true), new Promise(r => setTimeout(r, 200))])`,
+    // which is `stopMs: 200` exactly — a DE-DUPLICATION, and the one export of
+    // `housekeeping` that has an expressible value here.
+    //
+    // ⛔ `clients` IS DELIBERATELY NOT PASSED, AND IT CANNOT BE. The kit closes
+    // every registered client by calling `client.close()`; grapevine's
+    // subscriber records are `{ alias, human, lurk, send }` and carry **no
+    // `close`** — the per-stream teardown is a closure stashed on the
+    // ReadableStream's controller, reachable only from `cancel()`. There is
+    // nothing to hand it, and widening `SseClient` to admit that would re-emit
+    // six artifacts across five spells (D68). The stop closes the sockets, which
+    // fires each stream's `cancel` and each subscriber's own cleanup.
+    //
+    // ⚠ `graceMs: 0`, DELIBERATELY, and this is the one place the adoption
+    // could have changed behaviour without saying so. The kit's default is 150
+    // ms, and it is not politeness — it exists so a `closed` frame emitted just
+    // before the stop is actually SEEN. Grapevine emits no farewell frame at
+    // daemon shutdown (its only close broadcast is on `DELETE /channels/:name`,
+    // a different verb), and its `DELETE /` already schedules this teardown 10 ms
+    // AFTER the response is returned, so its flush window sits at the route.
+    // A second 150 ms here would be added latency with nothing to flush.
+    await drainAndStop({ server, graceMs: 0, stopMs: 200 });
   }
+  process.exit(code);
 }
 
 async function main() {
@@ -1439,9 +1497,12 @@ async function main() {
     hostname: "127.0.0.1",
     port: 0, // OS-assigned
     // SSE streams are long-lived and silent client→server. Default 10s
-    // idleTimeout closes them prematurely; set to 255 (Bun's max — 0 isn't
-    // honored on all paths). Our own 3s heartbeat keeps clients aware.
-    idleTimeout: 255,
+    // idleTimeout closes them prematurely; ask for Bun's maximum (0 is NOT
+    // "disabled" — it is the default). The number and the beat that depends on
+    // it now live together in `./heartbeat.ts`, which BOTH halves of the spell
+    // import; the invariant `heartbeat <= idleTimeout / 2` is asserted below
+    // rather than written in prose, which is how it used to be held.
+    idleTimeout: IDLE_SEC,
     // dev: the HTMLBundle at /watch (Bun serves its assets itself). release:
     // no routes — handle() serves dist/. Bun's Routes type ties the value's
     // type to the literal object shape, so the mode-ternary union is cast.
@@ -1450,8 +1511,15 @@ async function main() {
     fetch: handle,
   });
 
-  Bun.write(PORT_FILE, String(server.port));
-  Bun.write(PID_FILE, String(process.pid));
+  // ⛔ ATOMIC AND SYNCHRONOUS, WHICH `Bun.write` IS NEITHER — RECEIVED from
+  // `src/kit/wire/discovery.ts` at Phase 6 chapter 2. These two lines were
+  // `Bun.write(...)`, whose promise nobody awaited, so the `listening` line
+  // below could be printed — and a CLI polling for the port file could read it —
+  // before or during the write. `writeFileAtomic` writes a pid-suffixed temp and
+  // renames, so a reader sees the whole value or no file at all, and two daemons
+  // racing to publish cannot clobber each other's intermediate.
+  writeFileAtomic(PORT_FILE, String(server.port));
+  writeFileAtomic(PID_FILE, String(process.pid));
   STARTED_AT = Date.now();
   console.error(
     `grapevine daemon listening on http://127.0.0.1:${server.port} (pid ${process.pid}, mode ${MODE})`,

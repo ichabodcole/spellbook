@@ -31,6 +31,41 @@
  * ⚠ Known hole, accepted and inherited: Bun's own `fetch()` reader `.cancel()`
  * closes nothing client-side and the server cannot see it. Real clients close
  * the socket.
+ *
+ * ── ⛔ GRAPEVINE DOES NOT ADOPT THIS, AND THE REFUSAL IS PART OF THE RULING ──
+ *
+ * REJECT-STRUCTURAL, ruled at grapevine's port (Phase 6, 2026-09-09; D68).
+ * Grapevine HAS an SSE registry and it is the busiest thing in the spell; the
+ * two types simply cannot be constructed from each other:
+ *
+ *   this module  `SseClients = Set<SseClient>` where `SseClient = {close, send}`
+ *                — a registry of ANONYMOUS closers, and `size` is the only thing
+ *                any adopting daemon reads off it.
+ *   grapevine    `Map<symbol, {alias, human, lurk, send}>`, per channel.
+ *
+ * **The readers that make them incompatible, counted rather than asserted: SIX
+ * routes read the subscriber METADATA** — `GET /presence`,
+ * `GET /channels/:name/subscribers`, the roll/clear broadcast, the archive
+ * live-guard, the watch-presence registration, and the tail's own registration.
+ * `alias` is a name a human sees in a roster, `human` tells an agent it is
+ * talking to a person, and `lurk` excludes a connection from every presence
+ * count. There is no way to put any of that into a set of closers. Adopting this
+ * module would not be dead code; it would be a rewrite of what grapevine IS.
+ *
+ * ⚠ And grapevine's records carry no `close` at all — the per-stream teardown is
+ * a closure stashed on the ReadableStream controller, reachable only from
+ * `cancel()` — which is also why `housekeeping`'s `drainAndStop` is adopted
+ * there with its `clients` argument deliberately empty.
+ *
+ * **The widening NOT done, with its cost:** admitting an alias-bearing record
+ * would change the type five other daemons compile against and re-emit SIX
+ * artifacts across FIVE spells, each owed a drive. It would also re-create the
+ * thing this registry exists to stop, and this file's own boundary paragraph
+ * says how: a signature wide enough to absorb every caller's shape stops being a
+ * registry and becomes a union. The census converged copies into one module by
+ * finding what they SHARED; a module widened to fit the one spell that shares
+ * nothing is those copies again with a union type over the top. The spell keeps
+ * its own, and a widening remains a separate, argued decision.
  */
 
 import type { EventLog, Frame } from "./eventLog.ts";

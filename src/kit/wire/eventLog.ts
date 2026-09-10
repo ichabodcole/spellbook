@@ -31,6 +31,43 @@
  * and replays whole. `mind-mapper/scripts/tail.test.ts`'s epoch cell is the
  * executable spec of the client half and shows the reconnect still carrying the
  * stale cursor — detection happens on what is RECEIVED.
+ *
+ * ── ⛔ GRAPEVINE DOES NOT ADOPT THIS, AND THE REFUSAL IS PART OF THE RULING ──
+ *
+ * REJECT-STRUCTURAL, ruled at grapevine's port (Phase 6, 2026-09-09; D68). Not
+ * "no subject" — grapevine HAS an event bus and it is the busiest thing in the
+ * spell — but the two shapes cannot be constructed from each other:
+ *
+ *   this module  one process-wide array capped at REPLAY_BUFFER_SIZE, with one
+ *                monotonic `seq`, and the header three paragraphs up says in as
+ *                many words that it is a REPLAY window for reconnects within one
+ *                daemon's lifetime, NOT a durable log.
+ *   grapevine    N durable append-only `.jsonl` files, one per named channel,
+ *                each with its own `next_id`, replayed from disk by
+ *                `readBacklog`, surviving restart, `roll`, archive and clear.
+ *
+ * **The reader that makes them incompatible, as a measurement rather than an
+ * assertion:** grapevine's `loadChannel()` derives `next_id` as a HIGH-WATER
+ * MARK over every parseable line of the channel's file on boot. There is no
+ * array to be that mark of, and no cap that would not silently discard history
+ * a caller can still ask for by id. It is the thing this module's own header
+ * says it is deliberately not.
+ *
+ * **The widening NOT done, with its cost:** admitting a per-channel durable
+ * store would change `createEventLog`'s storage and its `subscribe` contract for
+ * five other daemons, re-emitting SIX artifacts across FIVE spells, each owed a
+ * drive — paid by ports that are already finished and by agents not in the room.
+ * A widening remains available as its own argued decision with its own
+ * blast-radius count; it is never a step inside a port.
+ *
+ * ⚠ AND THE `epoch` ABOVE IS THE SHARPEST HALF OF WHY (D70). Grapevine's ids are
+ * RECOVERED across a restart, so the condition paragraph 2 describes — ids
+ * starting again at 1 — cannot occur there, and stamping one anyway is not
+ * inert: `tailEvents`'s `onEpochChange` sets the cursor to 0, and grapevine's
+ * tail route answers `since=0` with the WHOLE channel log off disk, into an
+ * agent's pipe, on every `roll`. The epoch's client-side action is "your cursor
+ * is worthless, start over", and that is safe only where starting over costs a
+ * bounded in-memory replay window.
  */
 
 /** The default replay window, inherited from mind-mapper's measured cap. */

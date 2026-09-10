@@ -26,6 +26,7 @@ import {
   mkdtempSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -179,6 +180,58 @@ test("the hashed assets resolve at the ROOT (index.html links them relatively fr
 
 test("an unknown static path 404s (not a silent fallthrough)", async () => {
   expect((await fetch(`${url}/nope.js`)).status).toBe(404);
+});
+
+/**
+ * ⛔ THE PORT MOVED THE IMPLEMENTATION INTO THE DIRECTORY THE DAEMON SERVES, AND
+ * THIS PAIR OF CELLS IS THE FENCE (D61, D65, D67).
+ *
+ * Before Phase 6, `dist/` held a surface and nothing else. Chapter 1 put
+ * `dist/cli.js` and `dist/daemon.js` in it, and grapevine's local `serveDist`
+ * was the PRE-WHITELIST kit function verbatim — empty / `..` / nested +
+ * `existsSync` — so it answered both. **Measured on the chapter-1 tree, through
+ * the real launcher: `GET /daemon.js` → 200, 146,330 bytes; `GET /cli.js` →
+ * 200, 251,310 bytes**, `text/javascript`, byte-identical to the committed
+ * artifacts, embedded sourcemaps with the complete original TypeScript included.
+ * Chapter 2 adopts `serveFromDist`, whose served set is DERIVED from what the
+ * built `index.html` transitively links, so both 404 by construction.
+ *
+ * ⛔ BOTH ENDS, OR THE CELL PASSES OVER NOTHING. A status check alone is green
+ * on a tree where the artifact was never copied in — which is exactly the tree
+ * this rig used to build. The artifact is asserted ON DISK first, and its size
+ * asserted non-trivial, so "refused" cannot be spelled the same way as "absent".
+ */
+test("⛔ the backend artifacts are ON DISK in the served dist/ — the precondition, or the refusal below is vacuous", () => {
+  for (const name of ["cli.js", "daemon.js"]) {
+    const file = join(skillRoot, "dist", name);
+    expect(existsSync(file)).toBe(true);
+    // A stub would satisfy `existsSync`; the thing being refused is a bundle.
+    expect(statSync(file).size).toBeGreaterThan(50_000);
+  }
+});
+
+test("⛔ and the route REFUSES them — a whitelist derived from the surface, not a blacklist of names", async () => {
+  for (const name of ["cli.js", "daemon.js"]) {
+    const res = await fetch(`${url}/${name}`);
+    expect(res.status).toBe(404);
+    // Not merely a non-200: the body must not be the bundle. A 404 page that
+    // happens to contain the file is the failure a status check cannot see.
+    expect(await res.text()).not.toContain("grapevine daemon listening");
+  }
+  // ⚠ AND THE NEIGHBOUR NOBODY NAMED. A blacklist refuses the file it was told
+  // about and serves everything beside it; the whitelist admits only what the
+  // entry document links, so a file the build has never emitted is refused for
+  // the same reason and with no second entry to keep in sync.
+  expect((await fetch(`${url}/unlisted-neighbour.js`)).status).toBe(404);
+  // …and the surface it exists to serve is still answering, both halves.
+  expect((await fetch(`${url}/watch`)).status).toBe(200);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});
+
+test("the refusal is EXACT, so it is case-insensitive by construction (APFS is not)", async () => {
+  for (const variant of ["/CHUNK-ABC123.JS", "/Chunk-Abc123.js", "/cLi.Js"]) {
+    expect((await fetch(`${url}${variant}`)).status).toBe(404);
+  }
 });
 
 test("the nesting guard REFUSES a nested dist file that would otherwise resolve", async () => {

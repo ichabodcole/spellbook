@@ -28,6 +28,15 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
+import {
+  type ErrExtra,
+  type ErrKind,
+  die as raise,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors.ts";
+import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
@@ -304,9 +313,52 @@ function resolveTailMax(flag: unknown): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function die(msg: string, code = 2): never {
-  process.stderr.write(`grapevine: ${msg}\n`);
-  process.exit(code);
+/**
+ * Raise a taxonomy failure — `src/kit/wire/errors.ts`'s `die`, under this
+ * spell's own name so 46 call sites did not each have to be re-spelled.
+ *
+ * ⛔ **IT THROWS. IT DOES NOT EXIT, AND THAT IS A CALLER-VISIBLE CHANGE**
+ * (Phase 6 chapter 2; the delta is driven and recorded in the journal). This
+ * function was `process.stderr.write(\`grapevine: ${msg}\n\`); process.exit(code)`
+ * — PROSE at exit 2 for every failure grapevine could produce, with two sites
+ * passing 1. After the adoption it is ONE JSON envelope on stderr and the
+ * acc taxonomy's codes: usage 2, internal 1, not_found 5, conflict 6. An agent
+ * routes on `kind` and on the exit code; `message` is presentation and rewording
+ * it must never break a caller, which it did the moment anyone matched prose.
+ *
+ * ⛔ **AND THE ENUMERATIONS MOVED FROM PROSE INTO `choices`.** grapevine's
+ * rejections were shaped for acc's flag-set extractors — `recognized flags: --a
+ * --b`, with a comment recording that a qualifier between the noun and the colon
+ * "reads as prose, not a set". Wrapped in JSON that marker becomes a substring of
+ * an escaped string, so it does not stay in prose: every enumeration is now a
+ * `choices` array, which is what glamour (CONFORMANT L0) publishes and what the
+ * envelope has a field for. The runnable recovery — `try: bun …/cli.ts open x` —
+ * moved into `hint` for the same reason, and a caller now reads a field instead
+ * of splitting a sentence.
+ *
+ * ⚠ `die` is REACHABLE from inside a `try` whose `catch` swallows, and that is
+ * now a silent continue rather than an exit. Audited by call graph at the
+ * adoption (playbook B9); the count is in the journal.
+ */
+function die(msg: string, kind: ErrKind = "usage", extra?: ErrExtra): never {
+  raise(msg, kind, extra);
+}
+
+/**
+ * The taxonomy `kind` for an HTTP status the daemon answered with.
+ *
+ * ⛔ ONE MAPPING, NOT A JUDGEMENT PER SITE. Twenty of grapevine's raise sites
+ * are "the daemon said no"; before the adoption every one of them collapsed to
+ * exit 2, so a missing channel, a live-session refusal and a broken daemon were
+ * one number to an agent. The daemon already distinguishes them by status —
+ * 404 for a channel that does not exist, 409 for archived / live / already-open
+ * — so the mapping is a re-reading of what was on the wire, not a new opinion.
+ */
+function kindForStatus(status: number): ErrKind {
+  if (status === 404) return "not_found";
+  if (status === 409) return "conflict";
+  if (status >= 400 && status < 500) return "usage";
+  return "internal";
 }
 
 async function readDaemonPort(): Promise<number | null> {
@@ -357,7 +409,10 @@ async function ensureDaemon(): Promise<number> {
   let port = await readDaemonPort();
   if (port) return port;
   if (holdActive())
-    die("daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`");
+    die(
+      "daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`",
+      "conflict",
+    );
   // Check the cwd EXISTS before spawning: the daemon's stdio is ignored, so a
   // dev-mode daemon dying at its surface import would otherwise surface only as
   // "failed to start within 3s" — and node reports a missing cwd as ENOENT on
@@ -370,6 +425,7 @@ async function ensureDaemon(): Promise<number> {
         "must run from src/grapevine/ to bundle the watch surface, which a source-free install " +
         "does not have. Either the shipped dist/ is missing (reinstall the spell) or you are in " +
         "a checkout without src/grapevine/.",
+      "internal",
     );
   }
   // Spawn detached so the daemon survives this CLI process exit.
@@ -387,7 +443,12 @@ async function ensureDaemon(): Promise<number> {
     port = await readDaemonPort();
     if (port) return port;
   }
-  die("daemon failed to start within 3s");
+  die("daemon failed to start within 3s", "internal", {
+    hint:
+      "three unrelated causes report this one sentence: the daemon's launcher shape, " +
+      "a wrong spawn path, and a dev-mode daemon dying at its surface import. " +
+      "Run the daemon launcher alone to tell them apart.",
+  });
 }
 
 // Generic over the expected success body. `data` may be null if the response
@@ -433,11 +494,25 @@ function invocationPrefix(): string {
 // reads as something to paste — and pasting it gets `command not found`,
 // because nothing installs a `grapevine` binary. Ruling 2 asked that a refusal
 // name the next act; a recovery that fails when you run it does not.
-function apiError(data: { error?: string; hint?: string } | null, status: number): string {
+function dieApi(data: { error?: string; hint?: string } | null, status: number): never {
   const msg = data?.error ?? `HTTP ${status}`;
-  if (!data?.hint) return msg;
   const prefix = invocationPrefix();
-  return prefix ? `${msg} — try: ${prefix} ${data.hint}` : `${msg} — try the \`${data.hint}\` verb`;
+  // ⛔ THE RECOVERY IS A FIELD NOW, NOT A SENTENCE. It used to be appended to the
+  // message as `— try: <cmd>`, which a caller had to recover by splitting on
+  // "try: " (one of grapevine's own cells did exactly that, and ran what it
+  // found). `hint` is where the envelope carries it, so the same cell now reads
+  // a field and runs it — the property is unchanged and the parse is not a parse.
+  const hint = data?.hint
+    ? prefix
+      ? `try: ${prefix} ${data.hint}`
+      : `try the \`${data.hint}\` verb`
+    : undefined;
+  die(msg, kindForStatus(status), {
+    ...(hint ? { hint } : {}),
+    // The upstream's body VERBATIM, so a caller can branch on what the daemon
+    // actually said rather than on this CLI's prose about it.
+    ...(data !== null ? { server: data } : {}),
+  });
 }
 
 // Existence probe for the read verbs that answer from the LOG FILE rather than
@@ -450,7 +525,7 @@ async function requireChannel(port: number, name: string): Promise<void> {
     "GET",
     `/channels/${name}/topic`,
   );
-  if (status >= 400) die(apiError(data, status));
+  if (status >= 400) dieApi(data, status);
 }
 
 async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
@@ -461,7 +536,7 @@ async function cmdOpen(name: string, opts: { topic?: string; from?: string; fres
   if (opts.from !== undefined) body.from = opts.from;
   if (opts.fresh) body.fresh = true;
   const { status, data } = await api<OpenResponse>(port, "POST", "/channels", body);
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, channel: data });
 }
 
@@ -473,7 +548,7 @@ async function cmdTopic(name: string, text: string | undefined, from: string | u
     // missing channel answers that question by being missing. No ensure: the
     // ensure was what resurrected a closed channel from a read verb.
     const { status, data } = await api<TopicResponse>(port, "GET", `/channels/${name}/topic`);
-    if (status >= 400) die(apiError(data, status));
+    if (status >= 400) dieApi(data, status);
     printJson({ ok: true, channel: name, topic: data?.topic });
     return;
   }
@@ -483,12 +558,12 @@ async function cmdTopic(name: string, text: string | undefined, from: string | u
   // today the 409 that answers for an archived name was thrown away and the PUT
   // that followed landed: `archive x; topic x "t"` returned ok:true, exit 0.
   const ensure = await api<{ error?: string; hint?: string }>(port, "POST", "/channels", { name });
-  if (ensure.status >= 400) die(apiError(ensure.data, ensure.status));
+  if (ensure.status >= 400) dieApi(ensure.data, ensure.status);
   const { status, data } = await api<TopicResponse>(port, "PUT", `/channels/${name}/topic`, {
     topic: text,
     from: from ?? "system",
   });
-  if (status >= 400) die(apiError(data, status));
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, channel: name, topic: data?.topic, id: data?.id });
 }
 
@@ -516,7 +591,7 @@ async function cmdSend(
   };
   if (opts.inReplyTo !== undefined) body.in_reply_to = opts.inReplyTo;
   const { status, data } = await api<SendReceipt>(port, "POST", `/channels/${name}/messages`, body);
-  if (status >= 400 || !data) die(apiError(data, status));
+  if (status >= 400 || !data) dieApi(data, status);
   // Target echo on stderr — confirms WHERE the message landed so a misrouted
   // reply (right prompt, wrong channel) is caught the instant it happens (F9).
   // On stderr so it never pollutes the stdout JSON receipt, and it fires even
@@ -558,7 +633,7 @@ async function cmdAnnounce(
   const body: { from: string; text: string; channels?: string[] } = { from, text };
   if (channels?.length) body.channels = channels;
   const { status, data } = await api<AnnounceReceipt>(port, "POST", "/announce", body);
-  if (status >= 400 || !data) die(apiError(data, status));
+  if (status >= 400 || !data) dieApi(data, status);
   process.stderr.write(
     `# announced → ${data.channels.length} channel(s) · ${data.total_recipients} recipient(s)\n`,
   );
@@ -601,7 +676,7 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
     "GET",
     `/channels/${name}/messages?since=${since}`,
   );
-  if (status >= 400) die(apiError(data, status));
+  if (status >= 400) dieApi(data, status);
   const rawMsgs = data?.messages ?? [];
   const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
   const disp = foldDispositions(name);
@@ -628,9 +703,9 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
     "GET",
     `/channels/${name}/messages?since=${id - 1}`,
   );
-  if (status >= 400) die(apiError(data, status));
+  if (status >= 400) dieApi(data, status);
   const msg = (data?.messages ?? []).find((m) => m.id === id);
-  if (!msg) die(`message ${id} not found in ${name}`, 1);
+  if (!msg) die(`message ${id} not found in ${name}`, "not_found");
   const dispMap = foldDispositions(name);
   const d = dispMap.get(id);
   const annotatedMsg = d ? { ...msg, disposition: d.disposition, reopens: d.reopens } : msg;
@@ -665,7 +740,7 @@ async function cmdWait(name: string, since: number, timeoutS: number, alias: str
   try {
     data = (await res.json()) as WaitResponse;
   } catch {}
-  if (!res.ok) die(apiError(data, res.status));
+  if (!res.ok) dieApi(data, res.status);
   printJson({
     ok: true,
     messages: data?.messages ?? [],
@@ -686,7 +761,7 @@ async function cmdWho(name: string) {
     "GET",
     `/channels/${name}/subscribers`,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, ...data });
 }
 
@@ -699,7 +774,7 @@ async function cmdWhoAll() {
     return;
   }
   const { status, data } = await api<PresenceResponse>(port, "GET", "/presence");
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, ...data });
 }
 
@@ -724,6 +799,47 @@ async function cmdAlias(name: string | undefined) {
   printJson({ ok: true, alias: trimmed || null });
 }
 
+/**
+ * The standing tail — `src/kit/wire/tailEvents.ts`, adopted at Phase 6 chapter 2.
+ *
+ * ⛔ WHAT THIS REPLACED, AND WHAT IT BOUGHT. This verb was 220 lines of
+ * hand-written reconnect loop: three nested loops (reconnect / read / frame
+ * drain), its own SSE splitter, its own backoff, and a `process.exit(0)` in a
+ * signal handler seven lines in. The shared client is the same design, once, and
+ * three things arrive with it that grapevine did not have:
+ *
+ *   1. **AN IDLE WATCHDOG — grapevine had NONE.** `await reader.read()` was
+ *      unbounded, so a half-open socket after laptop sleep, a NAT rebind or a
+ *      SIGKILLed daemon parked the tail FOREVER, and a parked tail is
+ *      indistinguishable from a quiet channel. `TAIL_IDLE_MS` is three of THIS
+ *      spell's 3 s beats (`./heartbeat.ts`), never a copied 45,000.
+ *   2. **A SPEC-CORRECT FRAME PARSER.** The hand-written one did
+ *      `line.slice(5).trim()`, which strips ALL whitespace rather than the one
+ *      leading space the spec removes — it would corrupt a message body whose
+ *      first line is indented. Nothing in the roster emits one today; the parse
+ *      is right anyway now.
+ *   3. **A SIGNAL PATH THAT DRAINS.** The old handler was
+ *      `stopped = true; process.exit(0)` — the P0f defect exactly, applied to
+ *      the terminal frame in five spells and NOT to the signal handler twelve
+ *      lines above it. Ctrl-C on a tail piped into a reader discarded undrained
+ *      stdout. The client RETURNS an exit code; `main` assigns it and returns
+ *      naturally, and the runtime drains.
+ *
+ * ⛔ NO `epochOf` / `onEpochChange`, AND THAT IS A RULING, NOT AN OMISSION
+ * (D70). Grapevine's ids are RECOVERED across a restart — `loadChannel()`
+ * derives `next_id` as a high-water mark over the durable `.jsonl` — so a
+ * reconnecting cursor is still valid and the condition an epoch detects cannot
+ * occur here. Wiring one would be a REGRESSION with a measured mechanism:
+ * `onEpochChange` sets `cursor = 0`, and this daemon answers `since=0` with
+ * `readBacklog(name, 0)` — the whole channel log off disk, into an agent's pipe,
+ * on every `grapevine roll`.
+ *
+ * ⚠ `resolve` CALLS `ensureDaemon`, WHICH CAN RAISE — deliberately, and the kit
+ * documents the property this depends on: its outer block is a `try`/`finally`
+ * with NO `catch`, so a `CliError` from three frames down propagates into
+ * `main` instead of being read as a dropped connection and retried forever.
+ * Checked at the adoption rather than assumed (playbook B9 step 5).
+ */
 async function cmdTail(
   name: string,
   opts: {
@@ -735,7 +851,7 @@ async function cmdTail(
     lurk?: boolean;
     max?: number;
   },
-) {
+): Promise<number> {
   if (!name)
     die(
       "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]",
@@ -743,207 +859,162 @@ async function cmdTail(
   // --lurk receives messages but registers no presence — an invisible observer.
   // It overrides identity flags (a lurker has no name to show).
   const myAlias = opts.lurk ? undefined : opts.as;
-
-  // Clean exit on signals so the SSE stream doesn't leak.
-  let stopped = false;
-  const cleanup = () => {
-    stopped = true;
-    process.exit(0);
-  };
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
-
-  let highestSeen = opts.fromStart ? 0 : (opts.since ?? -1);
-  let reconnectDelay = 250;
+  const since = opts.fromStart ? 0 : (opts.since ?? -1);
   // Emit the grounding line only on the first subscribe, never on reconnects
-  // (a reconnect resumes from highestSeen — there's no unseen history then).
+  // (a reconnect resumes from the cursor — there is no unseen history then).
   let grounded = false;
 
-  while (!stopped) {
-    const port = await ensureDaemon();
-    // ⚠ NO ensure call. A fresh `tail name` still works without an explicit
-    // open — GET …/tail creates the channel itself — and that is the ONLY way
-    // the subscribed event's `created` flag can ever be true: an ensure sent
-    // first creates the channel, so the subscribe that follows always reports
-    // `created:false` and the mistyped-name signal never fires.
-    const asParam = myAlias ? `&as=${encodeURIComponent(myAlias)}` : "";
-    const humanParam = opts.human && !opts.lurk ? "&human=1" : "";
-    const lurkParam = opts.lurk ? "&lurk=1" : "";
-    // #68 — `--last N` only rides the FIRST connection (while we've seen nothing
-    // yet, highestSeen < 0). Once any message lands, highestSeen advances and a
-    // reconnect resumes from it via `since` — never re-backfilling the window.
-    const lastParam = opts.last !== undefined && highestSeen < 0 ? `&last=${opts.last}` : "";
-    const url = `http://127.0.0.1:${port}/channels/${name}/tail?since=${highestSeen}${lastParam}${asParam}${humanParam}${lurkParam}`;
+  return await tailEvents<TailPayload>({
+    // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT AND NEVER CAPTURED. A tail outlives
+    // the daemon it started against — `roll` and `restart` both replace it — and
+    // `ensureDaemon` re-reads the port file and respawns, so a reconnect after a
+    // roll lands on the NEW daemon rather than spinning against a dead port.
+    resolve: async () => `http://127.0.0.1:${await ensureDaemon()}`,
+    path: `/channels/${name}/tail`,
+    since,
+    // ⚠ NO ensure call before the subscribe. A fresh `tail name` still works
+    // without an explicit open — GET …/tail creates the channel itself — and
+    // that is the ONLY way the subscribed event's `created` flag can ever be
+    // true: an ensure sent first creates the channel, so the subscribe that
+    // follows always reports `created:false` and the mistyped-name signal never
+    // fires.
+    query: (cursor, firstConnect) => {
+      const q: Record<string, string> = { since: String(cursor) };
+      // #68 — `--last N` rides the FIRST connection only. Once any message
+      // lands the cursor advances and a reconnect resumes from it via `since`,
+      // never re-backfilling the window. `firstConnect` is the kit's parameter
+      // for exactly this; the hand-written loop spelled it `highestSeen < 0`,
+      // which was the same test by accident of the sentinel.
+      if (opts.last !== undefined && firstConnect) q.last = String(opts.last);
+      if (myAlias) q.as = myAlias;
+      if (opts.human && !opts.lurk) q.human = "1";
+      if (opts.lurk) q.lurk = "1";
+      return q;
+    },
+    cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+    accept: (ev, frame) => {
+      // The subscribed marker is not a message; `render` answers it.
+      if (frame.event === "subscribed") return true;
+      // Drop DISPOSITION frames — they are metadata about another message. A
+      // lifecycle frame (archive/unarchive) passes through: an agent tailing a
+      // channel could not previously see either party retire it, and found out
+      // when its next send was rejected.
+      if (isDispositionFrame(ev)) return false;
+      // Suppress self-echo: when --as is set, drop messages we sent ourselves.
+      // The sender already got the receipt as the POST response, so re-emitting
+      // it on tail is pure noise.
+      if (myAlias && ev.from === myAlias) return false;
+      return true;
+    },
+    render: (payload, frame) => {
+      if (frame.event === "subscribed") return renderSubscribed(payload);
+      // #67 — front-load a recovery pointer on EVERY message frame, so the read
+      // coordinates survive a downstream notification clip. Monitor truncates at
+      // its OWN cap (below our hint threshold, and one we cannot observe here); a
+      // message it clips would otherwise lose its trailing `id` and become
+      // unrecoverable — the reader is left inferring the id. Every frame
+      // therefore carries a FRONT-loaded `read <channel> <id>`, either as the
+      // richer `truncation_hint` (genuinely-long messages — the "+N chars,
+      // you're definitely missing content" alarm) or as the compact `full`
+      // pointer. Serializing it before the long `.text` is what makes it survive
+      // the clip (F17).
+      const readRef = `read ${name} ${payload.id}`;
+      if (
+        typeof payload.text === "string" &&
+        payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
+      ) {
+        const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
+        // Cap the INLINE body when --max is set (the full message stays on disk
+        // → `read`); without --max, emit the full text (today's default).
+        const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
+        return JSON.stringify({ truncation_hint, ...payload, text });
+      }
+      return JSON.stringify({ full: readRef, ...payload });
+    },
+    // Daemon liveness heartbeat (`: hb <ts>`). Surface a recognizable sentinel
+    // on stderr so a `2>&1` consumer can tell "idle" from "wedged" (F6). Kept
+    // off stdout — the JSONL stream stays pure.
+    onComment: (text) => (text.trimStart().startsWith("hb") ? ": grapevine-keepalive" : null),
+    onMalformed: (_frame, e) => `# bad sse data: ${e instanceof Error ? e.message : String(e)}`,
+    // The four lines the hand-written loop wrote, preserved verbatim — a tail
+    // that reconnects in silence is indistinguishable from one that is working.
+    onDisconnect: (info) => {
+      switch (info.cause) {
+        case "connect-failed":
+          return `# connect failed: ${info.error instanceof Error ? info.error.message : String(info.error)}, retrying…`;
+        case "http":
+        case "no-body":
+          return `# tail HTTP ${info.status}, retrying…`;
+        case "stream-error":
+          return `# stream dropped: ${info.error instanceof Error ? info.error.message : String(info.error)}, reconnecting…`;
+        case "stream-end":
+          return "# stream closed, reconnecting…";
+      }
+    },
+    idleMs: TAIL_IDLE_MS,
+  });
 
-    let res: Response;
-    try {
-      res = await fetch(url);
-    } catch (e) {
+  /** The `subscribed` marker: stderr context, plus a structured grounding line
+   *  on stdout the FIRST time only. */
+  function renderSubscribed(payload: TailPayload): string | null {
+    process.stderr.write(`# subscribed to ${payload.channel} (since=${payload.since})\n`);
+    if (payload.topic) process.stderr.write(`# topic: ${payload.topic}\n`);
+    if (payload.created)
       process.stderr.write(
-        `# connect failed: ${e instanceof Error ? e.message : String(e)}, retrying…\n`,
+        `# created ${payload.channel} — this tail brought it into being (check the name)\n`,
       );
-      await new Promise((r) => setTimeout(r, reconnectDelay));
-      reconnectDelay = Math.min(reconnectDelay * 2, 5000);
-      continue;
-    }
-    if (!res.ok || !res.body) {
-      process.stderr.write(`# tail HTTP ${res.status}, retrying…\n`);
-      await new Promise((r) => setTimeout(r, reconnectDelay));
-      reconnectDelay = Math.min(reconnectDelay * 2, 5000);
-      continue;
-    }
-    reconnectDelay = 250; // reset on a successful open
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch (e) {
-        process.stderr.write(
-          `# stream dropped: ${e instanceof Error ? e.message : String(e)}, reconnecting…\n`,
-        );
-        break;
-      }
-      if (chunk.done) {
-        process.stderr.write(`# stream closed, reconnecting…\n`);
-        break;
-      }
-      buffer += decoder.decode(chunk.value, { stream: true });
-      // Drain complete SSE frames (separated by a blank line). Re-read the
-      // separator index each pass so `continue` statements below don't skip
-      // the buffer advance (which a hoisted-once assignment would).
-      for (let sep = buffer.indexOf("\n\n"); sep >= 0; sep = buffer.indexOf("\n\n")) {
-        const block = buffer.slice(0, sep);
-        buffer = buffer.slice(sep + 2);
-        const lines = block.split("\n");
-        let eventName = "message";
-        const dataLines: string[] = [];
-        for (const line of lines) {
-          if (line.startsWith(":")) {
-            // Daemon liveness heartbeat (`: hb <ts>`). Surface a recognizable
-            // sentinel on stderr so a `2>&1` consumer can tell "idle" from
-            // "wedged" (F6). Kept off stdout — the JSONL stream stays pure.
-            if (line.startsWith(": hb")) process.stderr.write(": grapevine-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("event:")) eventName = line.slice(6).trim();
-          else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        try {
-          const payload = JSON.parse(dataLines.join("\n")) as TailPayload;
-          if (eventName === "subscribed") {
-            process.stderr.write(`# subscribed to ${payload.channel} (since=${payload.since})\n`);
-            if (payload.topic) process.stderr.write(`# topic: ${payload.topic}\n`);
-            if (payload.created)
-              process.stderr.write(
-                `# created ${payload.channel} — this tail brought it into being (check the name)\n`,
-              );
-            if (payload.archived)
-              process.stderr.write(
-                `# ${payload.channel} is archived — read-only; a send will be rejected\n`,
-              );
-            // Structured grounding on stdout (F3/F7) — under the default
-            // Wiring-B Monitor, stdout surfaces as notifications, so a fresh
-            // subscriber actually sees the topic + that earlier history exists.
-            // Gated: only when there's something to ground (unseen history or a
-            // topic), and only on the first subscribe (not reconnects).
-            if (!grounded) {
-              grounded = true;
-              const latest = typeof payload.latest_id === "number" ? payload.latest_id : 0;
-              const earlier = highestSeen < 0 ? latest : Math.max(0, Math.min(highestSeen, latest));
-              // `created` and `archived` join the gate on purpose. A channel
-              // this subscribe just made has no topic and no history, so the
-              // old condition (`earlier > 0 || topic`) is exactly the case that
-              // emits NOTHING; and an ARCHIVED channel's grounding line was
-              // indistinguishable from a healthy one's, so a late joiner still
-              // learned the channel was retired only when its send bounced.
-              //
-              // ⚠ The hints ACCUMULATE into a list rather than assigning to one
-              // field. They used to be three assignments to `grounding.hint`,
-              // ordered so the most important won — which is a hint that can
-              // silently lose to another hint, the failure mode this whole
-              // branch is about, sitting in the fix for it. A list cannot
-              // overwrite: an archived channel WITH history now says both.
-              const hints: string[] = [];
-              if (earlier > 0)
-                hints.push(
-                  `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`,
-                );
-              if (payload.created)
-                hints.push(
-                  `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`,
-                );
-              if (payload.archived)
-                hints.push(
-                  `${payload.channel} is archived — read-only; a send will be rejected until someone unarchives it`,
-                );
-              if (earlier > 0 || payload.topic || payload.created || payload.archived) {
-                const grounding: Record<string, unknown> = {
-                  kind: "grounding",
-                  channel: payload.channel,
-                  joined_at: highestSeen < 0 ? latest : Math.min(highestSeen, latest),
-                  earlier,
-                };
-                if (payload.topic) grounding.topic = payload.topic;
-                if (payload.created) grounding.created = true;
-                if (payload.archived) grounding.archived = true;
-                if (hints.length) grounding.hint = hints.join(" · ");
-                process.stdout.write(`${JSON.stringify(grounding)}\n`);
-              }
-            }
-            continue;
-          }
-          if (typeof payload.id === "number" && payload.id > highestSeen) {
-            highestSeen = payload.id;
-          }
-          // Drop DISPOSITION frames — they are metadata about another message.
-          // A lifecycle frame (archive/unarchive) passes through: an agent
-          // tailing a channel could not previously see either party retire it,
-          // and found out when its next send was rejected.
-          if (isDispositionFrame(payload)) continue;
-          // Suppress self-echo: when --as is set, drop messages we sent
-          // ourselves. The sender already got the receipt as the POST
-          // response, so re-emitting it on tail is pure noise.
-          if (myAlias && payload.from === myAlias) continue;
-          // #67 — front-load a recovery pointer on EVERY message frame, so the
-          // read coordinates survive a downstream notification clip. Monitor
-          // truncates at its OWN cap (below our hint threshold, and one we can't
-          // observe here); a message it clips would otherwise lose its trailing
-          // `id` and become unrecoverable — the reader is left inferring the id.
-          // Every frame therefore carries a FRONT-loaded `read <channel> <id>`,
-          // either as the richer `truncation_hint` (genuinely-long messages —
-          // the "+N chars, you're definitely missing content" alarm) or as the
-          // compact `full` pointer (everything else). Serializing it before the
-          // long `.text` is what makes it survive the clip (F17).
-          const readRef = `read ${name} ${payload.id}`;
-          if (
-            typeof payload.text === "string" &&
-            payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
-          ) {
-            const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
-            // Cap the INLINE body when --max is set (the full message stays on
-            // disk → `read`); without --max, emit the full text (today's default).
-            const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
-            process.stdout.write(`${JSON.stringify({ truncation_hint, ...payload, text })}\n`);
-          } else {
-            process.stdout.write(`${JSON.stringify({ full: readRef, ...payload })}\n`);
-          }
-        } catch (e) {
-          process.stderr.write(`# bad sse data: ${e instanceof Error ? e.message : String(e)}\n`);
-        }
-      }
-    }
-    // Brief pause before reconnect; resume from highestSeen so no messages
-    // are lost across reconnects.
-    if (!stopped) await new Promise((r) => setTimeout(r, 200));
+    if (payload.archived)
+      process.stderr.write(
+        `# ${payload.channel} is archived — read-only; a send will be rejected\n`,
+      );
+    // Structured grounding on stdout (F3/F7) — under the default Wiring-B
+    // Monitor, stdout surfaces as notifications, so a fresh subscriber actually
+    // sees the topic + that earlier history exists. Gated: only when there's
+    // something to ground (unseen history or a topic), and only on the first
+    // subscribe (not reconnects).
+    if (grounded) return null;
+    grounded = true;
+    const latest = typeof payload.latest_id === "number" ? payload.latest_id : 0;
+    const earlier = since < 0 ? latest : Math.max(0, Math.min(since, latest));
+    // `created` and `archived` join the gate on purpose. A channel this
+    // subscribe just made has no topic and no history, so the old condition
+    // (`earlier > 0 || topic`) is exactly the case that emits NOTHING; and an
+    // ARCHIVED channel's grounding line was indistinguishable from a healthy
+    // one's, so a late joiner still learned the channel was retired only when
+    // its send bounced.
+    //
+    // ⚠ The hints ACCUMULATE into a list rather than assigning to one field.
+    // They used to be three assignments to `grounding.hint`, ordered so the most
+    // important won — which is a hint that can silently lose to another hint,
+    // the failure mode this whole branch is about, sitting in the fix for it. A
+    // list cannot overwrite: an archived channel WITH history now says both.
+    const hints: string[] = [];
+    if (earlier > 0)
+      hints.push(
+        `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`,
+      );
+    if (payload.created)
+      hints.push(
+        `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`,
+      );
+    if (payload.archived)
+      hints.push(
+        `${payload.channel} is archived — read-only; a send will be rejected until someone unarchives it`,
+      );
+    if (!(earlier > 0 || payload.topic || payload.created || payload.archived)) return null;
+    const grounding: Record<string, unknown> = {
+      kind: "grounding",
+      channel: payload.channel,
+      joined_at: since < 0 ? latest : Math.min(since, latest),
+      earlier,
+    };
+    if (payload.topic) grounding.topic = payload.topic;
+    if (payload.created) grounding.created = true;
+    if (payload.archived) grounding.archived = true;
+    if (hints.length) grounding.hint = hints.join(" · ");
+    return JSON.stringify(grounding);
   }
 }
-
 function foldDispositions(name: string) {
   const map = new Map<
     number,
@@ -1103,7 +1174,7 @@ async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean;
     try {
       re = new RegExp(pattern, "i");
     } catch (e) {
-      die(`invalid regex: ${e instanceof Error ? e.message : String(e)}`);
+      die(`invalid regex: ${e instanceof Error ? e.message : String(e)}`, "usage");
     }
     matcher = (text) => re.test(text);
   }
@@ -1128,9 +1199,9 @@ async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean;
 async function cmdClose(name: string) {
   if (!name) die("usage: grapevine close <name>");
   const port = await readDaemonPort();
-  if (!port) die("no daemon running");
+  if (!port) die("no daemon running", "not_found");
   const { status, data } = await api<StatusResponse>(port, "DELETE", `/channels/${name}`);
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true });
 }
 
@@ -1148,9 +1219,10 @@ async function cmdReset(name: string, opts: { force?: boolean }) {
   if (status === 409 && data?.error === "live") {
     die(
       `channel has ${data.subscribers} live subscriber(s) — refusing to clear a live session. Re-run with --force to clear anyway (the log is snapshotted first).`,
+      "conflict",
     );
   }
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, ...data });
 }
 
@@ -1170,7 +1242,7 @@ async function cmdMark(
   const body: Record<string, unknown> = { from, target: id, disposition };
   if (opts.note !== undefined) body.note = opts.note;
   const { status, data } = await api<Message>(port, "POST", `/channels/${name}/status`, body);
-  if (status >= 400 || !data) die((data as { error?: string })?.error ?? `HTTP ${status}`);
+  if (status >= 400 || !data) dieApi(data as { error?: string; hint?: string } | null, status);
   printJson(data);
 }
 
@@ -1187,7 +1259,7 @@ async function cmdArchive(name: string, unarchive: boolean, from?: string) {
     `/channels/${name}/${verb}`,
     from ? { from } : undefined,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) dieApi(data, status);
   printJson({ ok: true, ...data });
 }
 
@@ -1266,6 +1338,7 @@ async function cmdRestart(opts: { force?: boolean }) {
     die(
       `restart: ${total} active subscriber(s) across ${channels.length} channel(s) — ${where}. ` +
         "A restart would force them all to reconnect. Re-run with --force (or --yes) to proceed anyway.",
+      "conflict",
     );
   }
   // Capture the pid we're replacing, for the receipt.
@@ -1358,6 +1431,7 @@ async function cmdRoll(opts: { force?: boolean }) {
     const where = channels.map((c) => `${c.name} (${c.connections})`).join(", ");
     die(
       `roll: ${total} active subscriber(s) — ${where}. They'll auto-reconnect across the roll. Re-run with --force to proceed.`,
+      "conflict",
     );
   }
   let previousPid: number | null = null;
@@ -1781,7 +1855,23 @@ const CLI_OPTIONS = {
   yes: { type: "boolean" },
 } as const;
 
-class UsageError extends Error {}
+/**
+ * A parse-stage rejection, carrying the enumeration it wants to publish.
+ *
+ * ⛔ THE `extra` IS WHY THIS CLASS SURVIVED THE `errors.ts` ADOPTION. The
+ * rejection has to NAME its valid set — that is the whole reason grapevine's
+ * parser errors were shaped the way they were — and the throw happens two frames
+ * below the place that knows the set. `choices` is where the house envelope
+ * carries an enumeration, so the class holds it until `runCommand` raises.
+ */
+class UsageError extends Error {
+  readonly extra?: ErrExtra;
+  constructor(message: string, extra?: ErrExtra) {
+    super(message);
+    this.name = "UsageError";
+    this.extra = extra;
+  }
+}
 
 type FlagName = keyof typeof CLI_OPTIONS;
 type Flags = Record<string, string | boolean>;
@@ -1814,7 +1904,19 @@ type CommandSpec = {
   aliases?: string[];
   flags: FlagName[];
   positionals: PositionalSpec[];
-  run: (positional: string[], flags: Flags) => Promise<void> | void;
+  /**
+   * ⚠ MAY RETURN AN EXIT CODE, AND EXACTLY ONE VERB DOES. `tail` runs the shared
+   * client (`src/kit/wire/tailEvents.ts`), which RETURNS a code rather than
+   * ending the process from inside three nested loops — so the code has to reach
+   * `main`, and this is the seam it crosses. Anything that is not a number means
+   * 0, which is what the other twenty-odd verbs return.
+   *
+   * ⚠ Typed `unknown` rather than a union with `void`: a union is what a reader
+   * would write first, and every `async` verb that ends without a `return` is
+   * `Promise<void>`, which is NOT assignable to `Promise<number | undefined>`.
+   * The widening happens at the one place that reads the value, below.
+   */
+  run: (positional: string[], flags: Flags) => unknown;
 };
 
 // A declared value flag that carries a number must REJECT a non-number as a
@@ -1841,7 +1943,7 @@ async function resolveBody(
   if (flags["body-file"]) {
     const path = flags["body-file"] as string;
     const file = Bun.file(path);
-    if (!(await file.exists())) die(`${verb}: --body-file not found: ${path}`);
+    if (!(await file.exists())) die(`${verb}: --body-file not found: ${path}`, "not_found");
     return { text: (await file.text()).replace(/\n$/, ""), fromInline: false };
   }
   if (flags.stdin || (inline.length === 0 && !process.stdin.isTTY)) {
@@ -2015,7 +2117,7 @@ const COMMANDS: CommandSpec[] = [
     flags: ["since", "from-start", "last", "human", "lurk", "max"],
     positionals: [{ name: "name", required: true }],
     run: async (positional, flags) => {
-      await cmdTail(positional[0], {
+      return await cmdTail(positional[0], {
         since: flags.since !== undefined ? numericFlag("tail", "since", flags.since, 0) : undefined,
         fromStart: !!flags["from-start"],
         last: flags.last !== undefined ? numericFlag("tail", "last", flags.last, 0) : undefined,
@@ -2188,7 +2290,8 @@ const COMMANDS: CommandSpec[] = [
       // ask this side what it is holding. The value was already in memory; only
       // the question was missing.
       // JSON by default, matching every data command; --human for prose.
-      if (PLUGIN_VERSION === null) die("version unavailable — could not read plugin.json", 1);
+      if (PLUGIN_VERSION === null)
+        die("version unavailable — could not read plugin.json", "internal");
       if (flags.human === true) process.stdout.write(`grapevine v${PLUGIN_VERSION}\n`);
       else printJson({ name: "grapevine", version: PLUGIN_VERSION });
     },
@@ -2312,13 +2415,21 @@ function parseFlags(
     // the colon ("recognized flags for send:") reads as prose, not a set.
     const bodyHint =
       spec.name === "send" || spec.name === "announce"
-        ? `\n  for a message body containing dashes, use --stdin or --body-file, ` +
-          `or put it after a bare --`
+        ? "for a message body containing dashes, use --stdin or --body-file, " +
+          "or put it after a bare --"
         : "";
-    throw new UsageError(
-      `${spec.name}: ${detail}\n` +
-        `  recognized flags: ${accepted.map((k) => `--${k}`).join(" ")}${bodyHint}`,
-    );
+    throw new UsageError(`${spec.name}: ${detail}`, {
+      // ⛔ THE SET IS `choices` NOW, NOT A PROSE MARKER. It used to be a second
+      // line reading `recognized flags: --a --b`, spelled with the colon
+      // straight after the noun because that is the marker shape a flag-set
+      // extractor matches. Inside a JSON envelope a prose marker is a substring
+      // of an escaped string, so it does not survive as prose — and it does not
+      // need to: `choices` is the envelope's field for exactly this, it is what
+      // glamour publishes at CONFORMANT L0, and an array cannot be truncated by
+      // a reader that stops at the first token which is not a `--long` flag.
+      choices: accepted.map((k) => `--${k}`),
+      ...(bodyHint ? { hint: bodyHint } : {}),
+    });
   }
 }
 
@@ -2377,9 +2488,18 @@ Env:
 `);
 }
 
-async function main(argv: string[]): Promise<number> {
+/**
+ * The verb router. Every rejection here RAISES; nothing writes its own prose.
+ *
+ * ⛔ THIS FUNCTION USED TO BE `main`, AND ITS FOUR REJECTIONS USED TO BE
+ * `process.stderr.write(...); return 2` — a SECOND error contract beside `die`,
+ * with its own wording, its own markers and no `kind` on the wire. A grep for
+ * `die(` would have reported "the error contract is 46 sites"; it was 46 plus
+ * these, and these are the ones an agent meets first (playbook B8: look for the
+ * RAISE, not for the helper). They now raise the same envelope as the rest.
+ */
+async function dispatch(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
-  // Usage failures return 2 rather than exiting, so the runtime drains stdout.
 
   // BARE INVOCATION IS A USAGE ERROR — exit 2, usage pointer on stderr — not a
   // help request at exit 0. grapevine's callers are agents: a bare call is an
@@ -2388,12 +2508,10 @@ async function main(argv: string[]): Promise<number> {
   // nothing. `help` / `--help` remain one token away at exit 0 (acc D2 —
   // conformed for that reason, not because the rule said so).
   if (cmd === undefined) {
-    process.stderr.write(
-      `grapevine: expected a command\n` +
-        `  commands: ${commandTokens().join(" ")}\n` +
-        `  run \`grapevine help\` (or --help) for usage\n`,
-    );
-    return 2;
+    die("expected a command", "usage", {
+      choices: commandTokens(),
+      hint: "run `grapevine help` (or --help) for usage",
+    });
   }
 
   // ROOT FLAG ROUTING. A leading --token used to be consumed as the COMMAND
@@ -2405,17 +2523,18 @@ async function main(argv: string[]): Promise<number> {
   if (cmd.startsWith("-")) {
     const interceptor = ROOT_INTERCEPTORS.find((i) => i.name === cmd);
     if (!interceptor) {
-      process.stderr.write(
-        `grapevine: unknown flag at the root: ${cmd}\n` +
-          // Long flags first: flag-set extractors (acc's measured) read the
-          // list left-to-right and stop at the first token that is not a
-          // `--long` flag, so a short alias mid-list truncates what they see.
-          `  recognized flags: ${[...ROOT_INTERCEPTORS.map((i) => i.name)]
-            .sort((a, b) => Number(b.startsWith("--")) - Number(a.startsWith("--")))
-            .join(" ")}\n` +
-          `  commands (each takes its own flags): ${commandTokens().join(" ")}\n`,
-      );
-      return 2;
+      // ⚠ THE SORT SURVIVES THE MOVE INTO `choices`, AND IT IS NOT DECORATION.
+      // Long flags first, because a flag-set extractor reads the list
+      // left-to-right and stops at the first token that is not a `--long` flag,
+      // so a short alias mid-list truncates what it sees. An array is not
+      // vulnerable to that — but the order is free and the property is real for
+      // any consumer that flattens it back to a line.
+      die(`unknown flag at the root: ${cmd}`, "usage", {
+        choices: [...ROOT_INTERCEPTORS.map((i) => i.name)].sort(
+          (a, b) => Number(b.startsWith("--")) - Number(a.startsWith("--")),
+        ),
+        hint: `commands (each takes its own flags): ${commandTokens().join(" ")}`,
+      });
     }
     return await runCommand(findCommand(interceptor.runs) as CommandSpec, rest);
   }
@@ -2426,10 +2545,7 @@ async function main(argv: string[]): Promise<number> {
     // unknown-flag rejection does — the parser's own account of what it
     // accepts, produced by the parser (acc STANDARD.md, "the cheapest version
     // of checked").
-    process.stderr.write(
-      `grapevine: unknown command: ${cmd}\n  commands: ${commandTokens().join(" ")}\n`,
-    );
-    return 2;
+    die(`unknown command: ${cmd}`, "usage", { choices: commandTokens() });
   }
   return await runCommand(spec, rest);
 }
@@ -2441,8 +2557,7 @@ async function runCommand(spec: CommandSpec, rest: string[]): Promise<number> {
     ({ positional, flags } = parseFlags(rest, spec));
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`grapevine: ${e.message}\n`);
-    return 2;
+    die(e.message, "usage", e.extra);
   }
   // Arity, enforced FROM THE DECLARED SHAPE — the registry's positional spec is
   // what `schema` publishes, so enforcing it here is what keeps the declaration
@@ -2453,28 +2568,52 @@ async function runCommand(spec: CommandSpec, rest: string[]): Promise<number> {
   const variadic = spec.positionals.some((p) => p.variadic);
   if (positional.length < required) {
     const missing = spec.positionals[positional.length];
-    process.stderr.write(
-      `grapevine: ${spec.name}: missing required <${missing?.name ?? "argument"}>\n` +
-        `  expects: ${spec.name} ${spec.positionals
-          .map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`))
-          .join(" ")}\n`,
-    );
-    return 2;
+    die(`${spec.name}: missing required <${missing?.name ?? "argument"}>`, "usage", {
+      hint: `expects: ${spec.name} ${spec.positionals
+        .map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`))
+        .join(" ")}`,
+    });
   }
   if (!variadic && positional.length > spec.positionals.length) {
-    process.stderr.write(
-      `grapevine: ${spec.name}: unexpected argument ${JSON.stringify(
-        positional[spec.positionals.length],
-      )}\n` +
-        `  expects: ${spec.name} ${
+    die(
+      `${spec.name}: unexpected argument ${JSON.stringify(positional[spec.positionals.length])}`,
+      "usage",
+      {
+        hint: `expects: ${spec.name} ${
           spec.positionals.map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`)).join(" ") ||
           "(no arguments)"
-        }\n`,
+        }`,
+      },
     );
-    return 2;
   }
-  await spec.run(positional, flags);
-  return 0;
+  const outcome = await spec.run(positional, flags);
+  return typeof outcome === "number" ? outcome : 0;
+}
+
+/**
+ * The one place this CLI can end, and the one place a `CliError` becomes an
+ * exit code.
+ *
+ * ⛔ ADDED AT PHASE 6 CHAPTER 2, AND IT IS WHAT MAKES `die` SAFE TO THROW.
+ * `reportCliError` writes the envelope and hands back the taxonomy code; a
+ * throw it does NOT recognise is re-thrown, because swallowing an unknown one
+ * here would report an internal fault as a tidy taxonomy failure and lose the
+ * stack that says what actually broke.
+ *
+ * ⚠ AND `setCurrentCommand` IS NOT DECORATION — it is the `meta.command` field
+ * of every envelope this CLI emits, which is how a caller routing on `kind`
+ * knows WHICH verb produced it. Set from the raw token so an unknown verb still
+ * names itself in its own rejection.
+ */
+async function main(argv: string[]): Promise<number> {
+  setCurrentCommand(argv[0] ?? null);
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code !== null) return code;
+    throw e;
+  }
 }
 
 // ⛔ NO `import.meta.main` BLOCK, AND ITS ABSENCE IS THE STEP (playbook B3).
