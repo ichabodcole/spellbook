@@ -37,6 +37,7 @@ import { parseArgs as nodeParseArgs } from "node:util";
 import {
   CliError,
   die,
+  type ErrExtra,
   type ErrKind,
   reportCliError,
   setCurrentCommand,
@@ -261,7 +262,65 @@ const CLI_OPTIONS = {
   "no-open": { type: "boolean" },
 } as const;
 
-class UsageError extends Error {}
+/**
+ * ── THE ACCEPTED SETS, DECLARED ONCE (register A1) ──────────────────────────
+ *
+ * `choices` is *what WOULD have been accepted*, and it is only worth emitting
+ * while it is the ACTUAL set. `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS`,
+ * the object `parseArgs` hands `node:util`; `VERBS` is bound to the dispatch
+ * switch by `cli.test.ts`, because a case label is not a value.
+ */
+export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
+/** The dispatched verbs, in the switch's own order. */
+export const VERBS: readonly string[] = [
+  "open",
+  "tail",
+  "state",
+  "say",
+  "propose",
+  "ask",
+  "batch",
+  "focus",
+  "select",
+  "analyze",
+  "context",
+  "status",
+  "cost",
+  "handoff",
+  "close",
+  "info",
+  "sessions",
+  "help",
+];
+
+/** The flag-shaped spellings of `help`, which the switch also answers. */
+export const VERB_ALIASES: readonly string[] = ["--help", "-h"];
+
+/** What the root actually accepts as a first token. */
+export const VERB_CHOICES: readonly string[] = [...VERBS, ...VERB_ALIASES];
+
+/**
+ * `context <kind>`'s and `--link`'s accepted values — the two ENUMERATED types
+ * in this CLI. Hoisted out of `case "context"` so the rejection and the check
+ * read one array (they were two copies: a `VALID_*` const for the test and the
+ * same members re-typed into the message's prose).
+ */
+export const VALID_CONTEXT_KINDS = ["prompt", "style", "skill", "context"] as const;
+export const VALID_CONTEXT_LINKS = ["active", "quickPrompts"] as const;
+
+class UsageError extends Error {
+  // ⛔ REGISTER A1 — THE ROSTER RIDES `choices`, NOT THE SENTENCE. The
+  // recognised-flag set used to be built into this class's MESSAGE, so the one
+  // set an agent routes on was reachable only by parsing prose.
+  readonly extra?: ErrExtra;
+  constructor(message: string, extra?: ErrExtra) {
+    super(message);
+    this.extra = extra;
+  }
+}
 
 export function parseArgs(args: string[]): {
   pos: string[];
@@ -277,12 +336,16 @@ export function parseArgs(args: string[]): {
     return { pos: positionals, flags: values as Record<string, string | boolean> };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
+    // ⛔ THE SET MOVED, IT WAS NOT COPIED — emitting it twice, once as data and
+    // once inside the message, is how one copy rots (A1's rule). And `choices`
+    // only for an UNKNOWN OPTION: node's other parse rejections mean a
+    // recognised flag got a value from an open set, and the flag roster would
+    // point at the half that was right. Routed on the error CODE, not prose.
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+      `${detail}\n` + `  for free text containing dashes, use --stdin, or put it after a bare --`,
+      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" ? { choices: [...RECOGNIZED_FLAGS] } : undefined,
     );
   }
 }
@@ -520,10 +583,9 @@ async function dispatch(argv: string[]): Promise<number> {
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
     // The parser's own error class, converted at the boundary into the house
-    // envelope. `UsageError` stays because it carries the recognised-flag list
-    // that `parseArgs` builds; what changed is that the message no longer goes
-    // out as bare prose.
-    die(e.message, "usage");
+    // envelope. `UsageError` stays because it carries the recognised-flag set
+    // that `parseArgs` builds — as `choices` now, not as prose in the message.
+    die(e.message, "usage", e.extra);
   }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
@@ -605,23 +667,29 @@ async function dispatch(argv: string[]): Promise<number> {
       break;
     }
     case "context": {
-      const VALID_KINDS = ["prompt", "style", "skill", "context"] as const;
-      type ContextKind = (typeof VALID_KINDS)[number];
-      const VALID_LINKS = ["active", "quickPrompts"] as const;
+      type ContextKind = (typeof VALID_CONTEXT_KINDS)[number];
       const [kindArg, ...nameWords] = pos;
-      if (!kindArg || !VALID_KINDS.includes(kindArg as ContextKind)) {
+      if (!kindArg || !VALID_CONTEXT_KINDS.includes(kindArg as ContextKind)) {
+        // ⛔ AN ENUMERATED POSITIONAL — the one class of positional that DOES
+        // qualify for `choices`, because its accepted set is closed and in
+        // hand. A free-text positional (a name, a prompt) has no such set and
+        // gets none; see the ward's header for why that line is drawn here.
         die(
-          `usage: context <kind> <name...> [--content "<text>"] [--image <path|url>] [--link active|quickPrompts] [--tags a,b,c]\n` +
-            `  kind must be one of: ${VALID_KINDS.join(", ")}`,
+          `usage: context <kind> <name...> [--content "<text>"] [--image <path|url>] [--link active|quickPrompts] [--tags a,b,c]`,
+          "usage",
+          { hint: "kind is the first positional", choices: [...VALID_CONTEXT_KINDS] },
         );
       }
       if (!nameWords.length)
         die("usage: context <kind> <name...> — at least one name word required");
       if (
         typeof flags.link === "string" &&
-        !VALID_LINKS.includes(flags.link as (typeof VALID_LINKS)[number])
+        !VALID_CONTEXT_LINKS.includes(flags.link as (typeof VALID_CONTEXT_LINKS)[number])
       ) {
-        die(`--link must be one of: ${VALID_LINKS.join(", ")}`);
+        // The set was already a const HERE and still went out as `join(", ")`
+        // inside the sentence — the exact shape A1 names: told the human, never
+        // the agent. Same array, now as data.
+        die(`invalid --link '${flags.link}'`, "usage", { choices: [...VALID_CONTEXT_LINKS] });
       }
       const ctxMsg: Record<string, unknown> = {
         type: "context.add",
@@ -673,7 +741,10 @@ async function dispatch(argv: string[]): Promise<number> {
       process.stdout.write(`${HELP}\n`);
       break;
     default:
-      die(`unknown verb "${verb}" — run: cli.ts help`);
+      die(`unknown verb "${verb}"`, "usage", {
+        hint: "run: cli.ts help",
+        choices: [...VERB_CHOICES],
+      });
   }
   return 0;
 }

@@ -22,6 +22,7 @@ import type { Bbox } from "../../../plugins/spellbook/skills/magpie/shared/types
 export {
   ALPHA_AUTO_TYPES,
   ALPHA_FORBIDDEN_TYPES,
+  ALPHA_POLICIES,
   type AlphaPolicy,
   shouldRemove,
 } from "../../../plugins/spellbook/skills/magpie/shared/alpha";

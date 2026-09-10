@@ -513,7 +513,15 @@ test("activity posts a casting-loop state; a bad state exits 2 with usage", asyn
 
   const bad = await runCli("activity", "pondering");
   expect(bad.code).toBe(2);
-  expect(bad.stderr).toContain("received|thinking|idle");
+  // ⛔ ASSERTED ON `choices`, NOT ON PROSE (register A1). This cell used to
+  // match the string "received|thinking|idle" inside the message — which is
+  // precisely what `src/kit/wire/errors.ts` forbids a CALLER from doing
+  // ("rewording a message must never break a caller, which it does the moment
+  // anyone matches on prose"), and the test was that caller. The set moved into
+  // `choices` and the assertion moved with it; the message is free again.
+  const doc = JSON.parse(bad.stderr) as { error: { kind: string; choices?: string[] } };
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.choices).toEqual(["received", "thinking", "idle"]);
 });
 
 test("an unrecognized flag exits 2 with a usage envelope, not a stack-trace crash", async () => {

@@ -5,7 +5,20 @@
 // about element TYPES (which live in the UI), NOT models (which never do).
 import type { ElementType } from "./types";
 
-export type AlphaPolicy = "auto" | "all" | "none";
+/**
+ * The alpha policies, AS AN ARRAY FIRST — and the type derived from it.
+ *
+ * ⛔ THE ORDER OF THESE TWO LINES IS THE POINT (register A1). The union used to
+ * be the declaration and `cli.ts` re-typed its members twice: once as an inline
+ * literal for the membership check and once as the string `auto|all|none`
+ * inside the rejection's message. Three copies of one closed set, and the only
+ * machine-readable one — the rejection's `choices` — did not exist.
+ *
+ * With the array as the source, `choices: [...ALPHA_POLICIES]` cannot drift
+ * from the type, and adding a policy is one edit. Do not re-spell the union.
+ */
+export const ALPHA_POLICIES = ["auto", "all", "none"] as const;
+export type AlphaPolicy = (typeof ALPHA_POLICIES)[number];
 
 // rembg reliably produces usable alpha for these (under `auto`).
 export const ALPHA_AUTO_TYPES: ReadonlySet<ElementType> = new Set([

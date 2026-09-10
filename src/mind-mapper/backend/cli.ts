@@ -280,8 +280,8 @@ const usageError = (message: string, extra?: { hint?: string; choices?: string[]
  * ENVELOPE (which did converge) is the whole of the repair: same bytes on
  * stderr, same exit 2, and the triage stays where the spell can see it.
  */
-function reportUsage(message: string): number {
-  process.stderr.write(errorEnvelope("usage", message));
+function reportUsage(message: string, extra?: { hint?: string; choices?: string[] }): number {
+  process.stderr.write(errorEnvelope("usage", message, extra));
   return EXIT_FOR.usage;
 }
 
@@ -458,6 +458,12 @@ type VerbPath = keyof typeof VERB_SPEC;
 // spec row, so the two can not drift apart.
 export const VERB_ALIASES: Record<string, VerbPath> = { message: "read" };
 
+/**
+ * `activity <state>`'s accepted values — the one ENUMERATED POSITIONAL in this
+ * CLI, and the one closed set that was not already published as `choices`.
+ */
+export const ACTIVITY_STATES = ["received", "thinking", "idle"] as const;
+
 // The advertised verb roster, DERIVED: top-level tokens of the spec paths.
 export const VERBS = [...new Set(Object.keys(VERB_SPEC).map((p) => p.split(" ")[0] as string))];
 
@@ -589,7 +595,25 @@ async function main(argv: string[]): Promise<number> {
       e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     const msg = e instanceof Error ? e.message : String(e);
     // A stray/unknown flag (node:util strict) is the CALLER's to fix.
-    if (code.startsWith("ERR_PARSE_ARGS")) return reportUsage(msg);
+    //
+    // ⛔ REGISTER A1 — AND THIS IS THE ONE FUNNEL THAT WAS STILL SILENT. Every
+    // rejection mind-mapper raises ITSELF already carries `choices`
+    // (`parseVerbArgs`'s stray-flag cell, the sub-command gates, the verb
+    // roster); node's OWN parse rejection arrives here instead, and answered
+    // the caller with node's sentence and nothing to route on. The set is in
+    // hand: `parseVerbArgs` set the resolved path as the current command before
+    // it called the parser, so `flagsFor` names exactly what THIS verb accepts.
+    //
+    // ⚠ ONLY for an UNKNOWN OPTION, and only while the path is known. Node's
+    // other `ERR_PARSE_ARGS_*` codes mean a recognised flag was given a bad
+    // value — an open set — and the roster would name the half that was right.
+    if (code.startsWith("ERR_PARSE_ARGS")) {
+      const path = getCurrentCommand();
+      const known = path !== null && Object.hasOwn(VERB_SPEC, path);
+      return code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" && known
+        ? reportUsage(msg, { choices: flagsFor(path as VerbPath) })
+        : reportUsage(msg);
+    }
     // A body that failed to parse (stdin/--body-file JSON) — also the caller's.
     if (e instanceof SyntaxError) return reportUsage(`invalid JSON: ${msg}`);
     // A named file that is not there (--file/--doc-edit paths) — the caller's.
@@ -1643,16 +1667,31 @@ async function dispatch(argv: string[]): Promise<number> {
       process.stdout.write(`${await passOrThrow(res)}\n`);
       return 0;
     }
-    throw usageError(
-      "usage: cli.ts job <create|update <id>|claim <id> --owner <who>|release <id>|subtask <id> ...|list|delete <id>>\n",
-    );
+    // ⛔ THE SUB-COMMAND DRIFT GUARD, AND IT REACHES (register A1). The gate at
+    // the top of this block admits every `subsOf("job")` member, so this line
+    // fires exactly when a `VERB_SPEC` path has no handler below — the drift
+    // case — and it used to answer with the roster spelled as an ALTERNATION
+    // inside its own sentence. Same set, as data: it is the one accepted set in
+    // this file that was still prose after the ratify/zone/lens conversions.
+    throw usageError(`job: no handler for sub-command "${rest[0]}"`, {
+      hint: "run: cli.ts help",
+      choices: subsOf("job"),
+    });
   }
 
   if (verb === "activity") {
     const parsed = parseVerbArgs("activity", rest);
     const state = parsed.positionals[0];
-    if (state !== "received" && state !== "thinking" && state !== "idle") {
-      throw usageError("usage: cli.ts activity <received|thinking|idle> [--message <id>]");
+    if (!ACTIVITY_STATES.includes(state as (typeof ACTIVITY_STATES)[number])) {
+      // ⛔ ONE ARRAY, CHECKED AND PUBLISHED (A1). The members were a three-way
+      // `!==` chain for the check and the string `<received|thinking|idle>` for
+      // the message — two copies of one closed set, and the machine-readable
+      // one did not exist. This is the LAST enumerated value in this file that
+      // was still prose-only; every other rejection here already had `choices`.
+      throw usageError("usage: cli.ts activity <state> [--message <id>]", {
+        hint: "state is the first positional",
+        choices: [...ACTIVITY_STATES],
+      });
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";

@@ -57,6 +57,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import {
   CliError,
+  type ErrExtra,
   type ErrKind,
   die as kitDie,
   reportCliError,
@@ -501,11 +502,83 @@ const CLI_OPTIONS = {
   "stdin-tasks": { type: "boolean" },
 } as const;
 
+/**
+ * ── THE ACCEPTED SETS, DECLARED ONCE (register A1) ──────────────────────────
+ *
+ * `choices` is *what WOULD have been accepted*, so it is only worth emitting
+ * while it is the ACTUAL set. Both sets below are read by the code that does
+ * the accepting: `RECOGNIZED_FLAGS` off `CLI_OPTIONS`, which `parseArgs`
+ * passes to `node:util`; `VERBS` bound to the dispatch switch by
+ * `cli.test.ts`, because a case label is not a value and nothing in the type
+ * system ties a declaration to a switch.
+ */
+export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
+/** The dispatched verbs, in the switch's own order. */
+export const VERBS: readonly string[] = [
+  "open",
+  "tail",
+  "state",
+  "add",
+  "update",
+  "claim",
+  "block",
+  "unblock",
+  "remove",
+  "message",
+  "init",
+  "close",
+  "info",
+  "sessions",
+  "list",
+  "help",
+];
+
+/**
+ * The flag-shaped spellings of `help`, which the switch also answers. They are
+ * in `choices` for mind-mapper's reason: a roster built from the verbs alone
+ * understates the accepted set by exactly the aliases, and acc compares
+ * advertised against recorded.
+ */
+export const VERB_ALIASES: readonly string[] = ["--help", "-h"];
+
+/** What the root actually accepts as a first token. */
+export const VERB_CHOICES: readonly string[] = [...VERBS, ...VERB_ALIASES];
+
+/**
+ * The flags that CONTRIBUTE to an `update` patch — the set whose emptiness is
+ * the refusal at the bottom of `case "update"`. Derived nowhere else: the
+ * refusal used to re-type it inside its own sentence, and that list had
+ * already been measured wrong once (it omitted `--size`/`--expect`).
+ */
+export const UPDATE_PATCH_FLAGS: readonly string[] = [
+  "--status",
+  "--title",
+  "--notes",
+  "--owner",
+  "--tag",
+  "--size",
+  "--expect",
+  "--stdin",
+];
+
 // A usage failure is THROWN rather than exiting, so `main` can return 2 and let
 // the runtime drain stdout — `die()` is process.exit, which is the defect this
 // sprint's sibling lanes exist to remove. Same reason the #80.1 refusal does
 // not route through die() either.
-class UsageError extends Error {}
+class UsageError extends Error {
+  // ⛔ REGISTER A1 — THE ROSTER RIDES `choices`, NOT THE SENTENCE. This class
+  // used to carry the recognized-flag set inside its MESSAGE, which meant the
+  // one set an agent needs to route on was reachable only by parsing prose.
+  // Carrying `ErrExtra` lets `dispatch` hand it to `die` unchanged.
+  readonly extra?: ErrExtra;
+  constructor(message: string, extra?: ErrExtra) {
+    super(message);
+    this.extra = extra;
+  }
+}
 
 function parseArgs(args: string[]): {
   pos: string[];
@@ -527,12 +600,17 @@ function parseArgs(args: string[]): {
     // because the most likely victim is free prose containing a dash-dash word
     // (`add write the --draft section`), which TODAY truncates silently.
     const detail = e instanceof Error ? e.message : String(e);
+    // ⛔ THE SET MOVED, IT WAS NOT COPIED. `choices` is now the ONLY place the
+    // recognized flags appear on a rejection — emitting them twice, once as
+    // data and once inside the message, is how one copy rots (A1's rule).
+    // ⚠ `choices` ONLY FOR AN UNKNOWN OPTION: node's other parse rejections
+    // (a recognised flag given a bad value) are not a closed-set failure, and
+    // answering one with the flag roster names the thing that was right.
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+      `${detail}\n` + `  for free text containing dashes, use --stdin, or put it after a bare --`,
+      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" ? { choices: [...RECOGNIZED_FLAGS] } : undefined,
     );
   }
 }
@@ -1243,7 +1321,7 @@ async function dispatch(argv: string[]): Promise<number> {
     // at the same exit code. This catch PROPAGATES (B9): it rethrows anything
     // that is not a `UsageError`, and raises for the one that is.
     if (!(e instanceof UsageError)) throw e;
-    die(e.message, "usage");
+    die(e.message, "usage", e.extra);
   }
   const session = resolveSession(flags);
   const as = resolveAs(flags);
@@ -1355,9 +1433,17 @@ async function dispatch(argv: string[]): Promise<number> {
         const why = upIgnored.length
           ? ` — ${upIgnored.map((i) => `--${i.flag} ${JSON.stringify(i.value)} was ignored (${i.reason})`).join("; ")}`
           : "";
-        die(
-          `update: nothing to change (give --status/--title/--notes/--owner/--tag/--size/--expect/--stdin)${why}`,
-        );
+        // ⛔ THE FLAG LIST IS `choices` NOW, NOT PROSE INSIDE THE MESSAGE.
+        // This is the site the rule was written for: the old sentence carried
+        // the set as text, and the FIRST version of that text was measured
+        // WRONG (it omitted `--size`/`--expect`, both of which do populate a
+        // patch). A set typed into a sentence has no reader that can check it.
+        // `why` stays in the message — it is the per-flag reason a value was
+        // dropped, which is prose about THIS invocation, not the accepted set.
+        die(`update: nothing to change${why}`, "usage", {
+          hint: `give one of ${UPDATE_PATCH_FLAGS.join(" ")}`,
+          choices: [...UPDATE_PATCH_FLAGS],
+        });
       }
       // Surface the daemon's outcome (like claim/block), distinguishing the two
       // kinds of applied:false: WITH an error = not-found / rejected (e.g. the
@@ -1551,7 +1637,10 @@ async function dispatch(argv: string[]): Promise<number> {
       process.stdout.write(`${HELP}\n`);
       break;
     default:
-      die(`unknown verb "${verb}" — run: cli.ts help`);
+      die(`unknown verb "${verb}"`, "usage", {
+        hint: "run: cli.ts help",
+        choices: [...VERB_CHOICES],
+      });
   }
   return 0;
 }
