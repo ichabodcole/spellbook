@@ -173,7 +173,9 @@ domain"** — and it is read as **"nothing happened."**
   ```
   MATCHER — the assertion        LANGUAGE — the value on its way to it
     ✅ toBeNull · toEqual(null)    ✅ "k" in o · Object.hasOwn · === null
-       toStrictEqual · "k" in o    ⛔ ??   ||   !x   ?.     (all erase it)
+       toStrictEqual · "k" in o    ⛔ ??   ||   !x        (all erase it)
+                                  ⛔ ?. in a VALUE position
+                                     (see the precision below)
     ⛔ not.toBeNull · toBeFalsy
        toBeUndefined · toBeDefined
   ```
@@ -181,6 +183,39 @@ domain"** — and it is read as **"nothing happened."**
   ⛔ **`toBeDefined()` PASSES on `null` — measured.** It reads as _"assert this
   is populated"_ and is satisfied by present-and-null: the erasure in the
   **other** direction, and the most common matcher of the family in this repo.
+
+  ⭐ **PRECISION — `?.` ERASES IN A VALUE POSITION AND ERASES NOTHING IN A
+  BOOLEAN GUARD.** The table above forbids it flatly, and flatly is wrong:
+
+  ```
+  VALUE position   const v = o.f?.x        null -> undefined, absent -> undefined   ⛔ ERASED
+                   const v = o.f && o.f.x  null -> null,      absent -> undefined   ✅ preserved
+
+  BOOLEAN guard    if (!line?.startsWith("|")) break;   both branches mean "stop"   ✅ no erasure
+  ```
+
+  **Why the precision is not pedantry: the repo's LINTER REQUIRES the erasing
+  form, at error severity.** `biome`'s `useOptionalChain` fires on
+  `o.f && o.f.x` — a value position — and `biome.json` is bare
+  `"rules": {"recommended": true}` with no override, so **writing the
+  canon-compliant idiom FAILS `bun run check`.**
+
+  ⛔ **So this file and the gate disagree, and only one of them can stop a
+  commit.** A rule that is enforced beats a rule that is written; nobody chose
+  this, it is what `recommended` happened to contain. **Being wrong about the
+  easy case (guards) is how the hard case (value positions) gets dismissed as
+  pedantry** — which is why the flat ban had to go rather than be reinforced.
+
+  ⚠ **Do NOT read this as "widen the gate's coverage."** Measured the same
+  night: `bounty/scripts/template.html:951` carries the canon-compliant `&&`
+  form on this very field class, and it survives **only because the file is
+  outside the gate's reach entirely.** Widening coverage of a rule set that
+  disagrees with this canon propagates the disagreement faster than it finds
+  anything.
+
+  **Whether shipped code already carries a gate-manufactured erasure is
+  UNVERIFIED** — the exemption is deliberately not written until that is
+  measured, because an exemption must name the harm it was written for.
 
   ⭐ **The observation that outranks the allow-list: `JSON.stringify` PRESERVES
   the distinction** (`{"f":null}` vs `{}`). **Every seat who caught this caught
@@ -206,6 +241,61 @@ domain"** — and it is read as **"nothing happened."**
 
 - **Repeal when:** never — a null whose domain is unstated is unreadable by
   construction.
+
+---
+
+## The failure-side explanation
+
+Everything above governs the channel where **nothing went wrong**. This section
+governs the other one, and it exists because the omission was load-bearing: two
+lanes independently needed to check _"did this failure say why?"_ and neither
+could, because the contract never said what the field is called.
+
+> **A failure carries its explanation in `error`. The explanation set is
+> FAILURE-SIDE ONLY — `outcome` is NOT a member.**
+
+**Stating what the set EXCLUDES is not tidiness; the inclusive-only reading is
+measured to invert.** A predicate built as _"an explanation present ⟺ a non-zero
+exit"_, with the explanation set read as _"the fields that explain"_, convicts
+this:
+
+```
+astrolabe attention <live> --question probe   (repeat, at HEAD)
+  exit=0  {"ok":true,"applied":false,"outcome":"already-raised"}
+```
+
+That is the `#85` fix working exactly as this contract's own two shapes require
+— **convicted by a check written to enforce this contract**, because `outcome`
+had drifted into the explanation set. A rule that dispatches someone to break
+working code arrives wearing a red that looks like diligence. _(Measured by
+cassandra, sprint 05; the pre-fix world driven in a detached worktree rather
+than read off a commit message.)_
+
+- **Boundary check — "NO ENVELOPE" IS A THIRD STATE, and a check that knows only
+  two will be wrong about it.** A `die()`-style rejection writes prose to
+  **stderr** and exits non-zero with **zero bytes on stdout**. That is neither
+  _carries an explanation_ nor _carries none_: there is nothing to parse. A
+  consumer that `JSON.parse`s stdout either throws (a red for the wrong reason)
+  or catches-and-skips (a row that looks checked and is decoration). **Name the
+  third state explicitly or do not check this rule.** _Measured: astrolabe's
+  founding row for `#85` has no envelope at all — 15 `die(` sites, three probed,
+  all `exit=2` with `stdoutBytes=0`._
+- **Boundary check — THE TWO CLAUSES ARE INDEPENDENT AND ONLY ONE IS RATIFIED
+  HERE.** _"A zero exit does not carry a failure explanation"_ is ratified: it
+  is specific, and it convicts a real defect (a benign no-op emitting `error` at
+  exit 0). _"A non-zero exit carries one"_ is **NOT ratified** — on the current
+  tree it ranges over every rejection site in a spell and turns one spell red
+  fifteen times. Whether stderr-prose rejections are wrong for an agent-facing
+  tool is a **live question, deliberately unruled**, and adopting the
+  biconditional would answer it silently.
+- **Boundary check — RATIFYING A SPELLING IS NOT ADOPTING IT.** No emitted
+  envelope changes because this section landed. Where a shipped spell spells it
+  otherwise — `digestify`'s timeout/cancel envelope carries `reason`, not
+  `error` — that is a **recorded divergence to be carded, never a silent
+  conversion.** The wire belongs to whoever owns the spell.
+- **Repeal when:** the failure channel is itself enumerated by something that
+  fails when a new shape appears — at which point the spelling is enforced
+  rather than agreed, and this section is redundant.
 
 ---
 

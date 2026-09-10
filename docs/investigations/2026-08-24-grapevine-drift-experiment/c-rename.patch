@@ -1,0 +1,11 @@
+--- /Users/colereed/Projects/Spellbook/plugins/spellbook/skills/grapevine/scripts/cli.ts	2026-08-24 18:45:48
++++ /private/tmp/claude-501/-Users-colereed-Projects-Spellbook/4f1a3e53-b48c-42cb-a010-566f351c46eb/scratchpad/drift/skills/c-rename/scripts/cli.ts	2026-08-24 18:53:12
+@@ -2001,7 +2001,7 @@
+     },
+   },
+   {
+-    name: "schema",
++    name: "describe",
+     flags: [],
+     positionals: [],
+     run: () => {

@@ -272,17 +272,66 @@ Stdout JSON on successful submit:
 
 ## Exit Code Contract
 
-| Code | Meaning                                      | What to do                                                                                                                                                |
-| ---- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Submitted                                    | Parse stdout JSON, continue conversation                                                                                                                  |
-| 2    | Bad input                                    | stderr explains; fix the markdown and retry                                                                                                               |
-| 124  | Timeout                                      | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.) |
-| 130  | User closed the tab _after typing something_ | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                    |
+**There are TWO populations here and they are read differently.** `0`, `124` and
+`130` are **session outcomes** — what happened to the review — and each writes a
+line to **stdout**. `1`, `2`, `5` and `6` are **failures**: the review never
+started, and stdout is left empty.
+
+⚠ **`2`, `5` and `6` each write exactly one JSON envelope to stderr. `1` does
+NOT, and that is deliberate.** `1` is the code for a throw nothing classified —
+it ends the process with a **raw Bun stack** on stderr, which is the thing worth
+having when the spell broke in a way it did not anticipate. Reporting it as a
+tidy envelope would mean losing that stack, so an agent parsing stderr as JSON
+must be ready for `1` to be prose. Driven: `--file <a directory>` exits `1` with
+`EISDIR`; `--file` naming a file it cannot read exits `1` with `EACCES`. Both
+are stack, not envelope.
+
+| Code | Population | Meaning                                                                                                                                                                                                          | What to do                                                                                                                                                                                                                                                                                          |
+| ---- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | outcome    | Submitted                                                                                                                                                                                                        | Parse stdout JSON, continue conversation                                                                                                                                                                                                                                                            |
+| 124  | outcome    | Timeout                                                                                                                                                                                                          | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.)                                                                                                                                           |
+| 130  | outcome    | User closed the tab _after typing something_                                                                                                                                                                     | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                                                                                                                                                              |
+| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review                                                                                                                    | stderr's envelope explains; fix the command or the markdown and retry. An invalid `--theme` also lists `choices`.                                                                                                                                                                                   |
+| 5    | failure    | `not_found` — the named thing does not exist. TWO sites: `--file`/`--reference` names a path that is not there, **and** a forced dev boot (`SPELLBOOK_SURFACE_MODE=dev`) that cannot find the surface source     | Check the path. Do not retry unchanged.                                                                                                                                                                                                                                                             |
+| 6    | failure    | `conflict` — the review server could not start. **Not only a busy port:** a malformed `--port` (`--port notanumber` → `port=NaN`) and an unresolvable `--host` reach the bind and come back as this same refusal | Usually a relaunch onto the port in a session id while the old daemon still holds it (see **Session Recovery**) — retry without `--id`, or wait. **Read the envelope's `hint`**: it carries `host=… port=…` and the bind's own words, which is what separates a busy port from a flag you mistyped. |
+| 1    | failure    | `internal` — the spell broke. **No envelope** — an unclassified throw, ending with its stack                                                                                                                     | Not the invocation's fault _in the usual sense_ (an unreadable `--file` lands here too). Report it; the stack is on stderr, and it is a stack, not JSON.                                                                                                                                            |
+
+**The failure envelope** is the house shape, so an agent routes on `kind` and
+never on prose:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "kind": "not_found",
+    "exit_code": 5,
+    "retryable": false,
+    "message": "file not found: /tmp/nope.md"
+  },
+  "meta": { "command": "review" }
+}
+```
+
+⚠ **`5` and `6` are new as of 2026-09-09** (backend convergence Phase 5, D58).
+They were both `2` before, alongside bare `error: <prose>` on stderr. `2` still
+means `usage` and still means the same thing it always did; what changed is that
+the two failures a caller repairs DIFFERENTLY stopped sharing its number. The
+outcome codes were deliberately left alone.
 
 **Note on 130 vs. 124:** the page only fires the `/cancel` beacon if the user
 has typed into a textarea or saved a comment. Closing or refreshing a clean page
 without interacting is intentionally treated as "still thinking", not a cancel —
 those abandons hit the `--timeout` and exit `124` instead of `130`.
+
+**A departing tab can only cancel its own session.** The `/cancel` beacon names
+the session the page was served with, and the daemon ignores one that names a
+different session. This matters because recovery re-binds the port encoded in
+the session id (see **Session Recovery**), so the user's _old_ tab is still
+pointed at the same origin: before 2026-09-08, closing that stale tab after a
+relaunch beaconed `/cancel` into the daemon that replaced it, and the restored
+review exited `130` the moment the user tidied up the tab it was restored from.
+The departure is still recorded on `/left`, flagged stale — "a tab from an
+earlier session of this review closed" is a true and useful fact.
 
 ## Flags
 
@@ -292,7 +341,15 @@ those abandons hit the `--timeout` and exit `124` instead of `130`.
   first, agent content appended).
 - `--title TEXT` — page/tab title (default `"Document Review"`)
 - `--theme NAME` — visual theme: `digestify` (default), `cthulhu`, `classic`
-- `--timeout SECONDS` — failsafe timeout (default `1800` / 30 min)
+- `--timeout SECONDS` — failsafe **idle** timeout (default `1800` / 30 min). ⚠
+  **`0` or any negative value means NEVER** — the review then only ends on
+  submit or cancel, and a caller with no human at the other end waits forever.
+  This changed on 2026-09-09: `--timeout 0` used to close on the first tick.
+  (Pass a negative through `=`: `--timeout=-1`. `--timeout -1` with a space is
+  rejected as ambiguous, exit `2`.) ⚠ **A non-numeric value is not rejected** —
+  `--timeout abc` parses to `NaN`, which compares false against every threshold
+  and therefore also means NEVER, with no diagnostic. Filed, not fixed; pass a
+  number.
 - `--no-open` — don't auto-open the browser; useful in headless / SSH setups
 - `--port N` — bind specific port (default: random free port)
 - `--host HOST` — bind host (default `127.0.0.1`)
@@ -327,6 +384,9 @@ Mechanics, for context:
 - Drafts persist for 7 days then auto-prune on next page load.
 - Restore needs the same browser, no cleared site data, and the encoded port to
   still be bindable. Best-effort: an emergency hatch, not a guarantee.
+- Re-binding the port is what makes restore work, and it is also why the user's
+  stale tab keeps talking to the new daemon. Beacons carry a session id so the
+  daemon can tell them apart; see the note on `130` vs `124` above.
 
 If port rebinding fails (rare — process holding the port), the relaunch errors
 clearly and you can tell the user the draft isn't recoverable this time.

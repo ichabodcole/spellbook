@@ -33,15 +33,38 @@ meaning to summon anything, is a bug.
 
 ## Reserved spells
 
-| Name        | Kind        | Conjures                                                                      | Status  |
-| ----------- | ----------- | ----------------------------------------------------------------------------- | ------- |
-| `digestify` | cantrip     | One-shot reading/review surface, inline questions                             | shipped |
-| `grapevine` | conjuration | Agent-to-agent channel daemon                                                 | shipped |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done)                             | shipped |
-| `magpie`    | conjuration | Extract individual assets from a composite image → PNG files                  | shipped |
-| `glamour`   | conjuration | Compose a visual style from influences → re-castable spec + images            | shipped |
-| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent    | shipped |
-| `astrolabe` | conjuration | Cross-project observatory — live status of many projects, presence, needs-you | shipped |
+| Name          | Kind        | Conjures                                                                      | Status         |
+| ------------- | ----------- | ----------------------------------------------------------------------------- | -------------- |
+| `digestify`   | cantrip     | One-shot reading/review surface, inline questions                             | shipped        |
+| `grapevine`   | conjuration | Agent-to-agent channel daemon                                                 | shipped        |
+| `bounty`      | conjuration | Live duplex Kanban board (todo→doing→review→done)                             | shipped        |
+| `magpie`      | conjuration | Extract individual assets from a composite image → PNG files                  | shipped        |
+| `glamour`     | conjuration | Compose a visual style from influences → re-castable spec + images            | shipped        |
+| `imago`       | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent    | shipped        |
+| `astrolabe`   | conjuration | Cross-project observatory — live status of many projects, presence, needs-you | shipped        |
+| `mind-mapper` | conjuration | Spike a thought into a traceable map — nodes, edges, provenance               | **in testing** |
+
+> **⚠ `mind-mapper` is RESERVED AND NOT RELEASED — and it is absent from the
+> other listings ON PURPOSE. Do not "fix" that.**
+>
+> It has **no `SKILL.md`**, so nothing can invoke it; its 59 tracked files ship
+> with the plugin only because the marketplace clones the whole
+> `plugins/spellbook` subtree. It is a first-class citizen **mechanically** —
+> `src/build.ts` builds it, `scripts/dist-check.ts` counts it in the buildable
+> roster, and its `dist/` is committed — while being deliberately invisible
+> **editorially**.
+>
+> **So the `ward` skill's drift check will not match on this name**, and that is
+> expected rather than drift. This row exists to say so: a check that is
+> permanently red for a reason everyone is supposed to remember gets mentally
+> excepted, and a real roster drift then hides inside the exception. Adding
+> `mind-mapper` to `marketplace.json`'s tags or to either README would advertise
+> a spell a user cannot cast.
+>
+> **Release it by giving it a `SKILL.md` and running the `inscribe` wards** — at
+> which point the status here becomes `shipped` and the other listings genuinely
+> do need it. _(Recorded 2026-09-01, at Cole's ruling: "it is intended for now,
+> as mind-mapper is still undergoing a bit of testing.")_
 
 ## Retired names (renamed away — don't reuse)
 

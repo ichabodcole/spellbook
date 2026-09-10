@@ -1,7 +1,17 @@
 # Project Summary
 
-**Last Updated:** 2026-06-29 **Project Status:** Active Development (hardening +
-coherence toward a public release)
+**Last Updated:** 2026-06-29 · **"Current Direction" refreshed 2026-08-10** ·
+**Project Status:** Active Development (hardening + coherence toward a public
+release)
+
+> ⚠ **Partially refreshed, and the boundary matters.** The 2026-08-10 sweep
+> rewrote **"Current Direction"** only, because archiving four projects
+> invalidated it. **Everything above that section is still a 2026-06-29
+> snapshot** and is known stale in at least one respect: it reports the plugin
+> at **v1.14.0**, and the current release is **v2.2.0**. Treat the "Recent
+> Work", "Recent Sessions", and "Notable" sections as historical rather than
+> current until a full refresh runs. Naming the boundary here rather than
+> silently leaving it — a summary that lies is worse than one that stays silent.
 
 ## Overview
 
@@ -13,7 +23,7 @@ locally by [Bun](https://bun.sh), and auth/API access live at the MCP layer so
 the client stays thin. Each spell ships as a self-contained skill — zip one
 folder and it runs anywhere `bun` is on PATH.
 
-The project is two things at once. It's a **product** — six shipped spells
+The project is two things at once. It's a **product** — seven shipped spells
 spanning agent↔human and agent↔agent collaboration — and a **methodology lab**:
 an unusually developed craft system (the _grimoire_) for growing and pruning
 agent surfaces well. The guiding idea is **co-presence**: a spell is a board
@@ -31,19 +41,26 @@ in `grimoire/house-style.md`.
 - **Primary Language:** TypeScript (two spells — magpie and imago — also use
   Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
-- **UI:** React 19 + Tailwind 4 for rich surfaces (glamour, imago, magpie);
-  Alpine.js over CDN for light surfaces (bounty, digestify, grapevine watch)
+- **UI:** React 19 + Tailwind 4 on the house token layer, for **every** surface
+  in the roster (astrolabe, bounty, digestify, glamour, grapevine watch, imago,
+  magpie, mind-mapper). digestify was the last hand-written page and it was
+  rewritten on 2026-09-07; there is no CDN surface left anywhere in the tree
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
-- **Build Tools:** none at the spell level (Bun runs source directly); heavy
-  surfaces use a Bun bundler step inside their own setup
+- **Build Tools:** ⛔ **`bun run build` at the spell level, for all eight** —
+  each spell has its own `src/<spell>/build.ts`, and both halves are built: the
+  surface bundle and, since the backend convergence (2026-09-08→09), the backend
+  entries too. The emitted `dist/` is **committed** (Contract 4), and a spell's
+  deployed `scripts/*.ts` are launchers rather than source. _"None at the spell
+  level — Bun runs source directly" was true of every spell once and is now true
+  of none;_ `dist-check` and `dist-roster-ward` are what hold this honest
 - **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
   (`.md`), Husky + lint-staged pre-commit, release-please for versioning
-- **Current version:** spellbook **1.14.0**
+- **Current version:** spellbook **2.2.0**
 
 ## Project Structure
 
 ```
-plugins/spellbook/skills/   the six spells (+ READMEs); each self-contained
+plugins/spellbook/skills/   the seven declared spells + mind-mapper (WIP, undeclared)
 grimoire/                   the craft: house-style, decay-ledger, trigger-registry,
                             fresh-agent/, scenarios/
 docs/                       manifesto, projects/, backlog/, fragments/, reports/
@@ -64,12 +81,24 @@ Two kinds: a **cantrip** casts and resolves (no standing state); a
 
 | Spell       | Kind        | What it does                                                                            | Surface        |
 | ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
-| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
-| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | Alpine watch   |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
+| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | React (built)  |
+| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | React (built)  |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | React (built)  |
 | `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
 | `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
 | `magpie`    | conjuration | Extracts individual assets from a composite image; phased Intake→Slice→Remove→Export    | React + Alpine |
+| `astrolabe` | conjuration | Cross-project observatory — a higher-level board for projects in flight                 | React          |
+
+> ⛔ **`mind-mapper` IS DELIBERATELY NOT IN THIS TABLE — ruled by Cole
+> 2026-08-10.** It is a **work in progress**: no `SKILL.md`, and absent from all
+> four synced listings and the trigger registry **on purpose**, because a spell
+> that has not coalesced should not claim a roster slot.
+>
+> ⚠ **This row existed for one day and it was mine.** I added it on 2026-08-10
+> while "correcting" the roster count from six to eight — astrolabe was a real
+> correction, **mind-mapper was a claim I minted**, and for a day this file was
+> the only document in the repo asserting it was a spell. Removed on the ruling.
+> _See [the sweep report](./reports/2026-08-10-project-status-sweep.md)._
 
 > **New since last summary:** `magpie` graduated from a CLI-only **cantrip**
 > into a full **conjuration** — a multi-phase daemon (`cli.ts` + `server.ts` +
@@ -123,29 +152,84 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
 
 **Active Projects** (`docs/projects/`):
 
-- `magpie-rebuild` — in progress (heaviest current track): CLI → phased
-  daemon+React studio
-- `imago` — in progress (mature, ongoing canvas/layer work)
-- `spellbook-coherence` — in progress (~75%): align migrated spells to
-  production standards (remaining: `tsc --noEmit` gate + bounty feedback
-  touchpoint)
-- `spellbook-rebrand` — in progress (~50%): naming front closed (tuskboard →
-  bounty); visual/mascot cohesion deferred
-- `spell-architecture-maturity` — backlog: canonicalize the grapevine-style
-  (HTTP+CLI+Monitor) daemon pattern as the reference scaffold
-- `digestify-image-viewer` — backlog
+_Five, as of the 2026-08-10 sweep
+([report](./reports/2026-08-10-project-status-sweep.md)) — down from ten._
+
+- `spell-hardening` — **in progress.** Sprints 01–04 shipped; part 1 of its
+  two-part end condition (drain the defect population) is met. **Sprint 05, "the
+  gate"**, is the remainder: an outcome-envelope conformance gate, the
+  bidirectional rule↔check link, and gating the prose rules at all.
+- `mind-mapper` — **in progress.** R3–R12 merged; `feature/mind-mapper-round13`
+  is built, gated and cold-driven, **held pending testing**. Then F3 (status
+  channel, render-only) and F1 (frames + pin nodes, needs a dagre-vs-ELK call).
+- `spellbook-coherence` — **in progress, 1 of 4 deliverables.** _The long-
+  standing "~75%, blocked on the typecheck gate" reading was wrong in both
+  numbers:_ the gate was never started rather than blocked (`typescript` is in
+  `peerDependencies` only; `check` is `biome check` alone), and only magpie's
+  thin Bun wrapper is actually complete.
+- `spell-surface-pipeline` — **hypothesis validated, on `mind-mapper` rather
+  than the astrolabe the plan names.** Mode resolution
+  (`mind-mapper/scripts/server.ts:95`), source relocated to `src/mind-mapper/`,
+  and a committed `dist/` that shipped in v2.2.0 — the real release cut the
+  proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
+  landed (`house-style.md` now opens `## The build` with a per-spell port
+  queue), and astrolabe was **migrated** rather than dropped. **EIGHT spells
+  build** — every spell in the roster — **and as of 2026-09-09 every one of them
+  builds its BACKEND too** (backend convergence, 2026-09-08→09: astrolabe and
+  magpie had built CLIs before it; glamour, imago, bounty, digestify, grapevine
+  and mind-mapper ported in that order). ⛔ **This line has now gone stale three
+  times, twice in the same direction — undercounting — so do not hand-keep it:**
+  `buildableSpells()` in `src/build.ts` counts it and `dist-roster-ward` prints
+  it. Via `spell-kit`; glamour joined 2026-09-03 (`cae26f8`), grapevine
+  2026-09-05 (the first REWRITTEN surface, not a relocated one —
+  `docs/projects/grapevine-conversion/`), bounty 2026-09-06 (the second rewrite,
+  and the first to run the registry INSIDE the rewrite instead of vendoring
+  first — `docs/projects/bounty-conversion/`). _Do not hand-keep this roster:
+  `buildableSpells()` in `src/build.ts` counts it, `dist-roster-ward` prints it,
+  and house-style now points there rather than naming spells. This line has gone
+  stale twice._
+
+  _Reconciled 2026-09-03 @ `cae26f8` — "Four spells build": **FALSIFIED** by the
+  glamour port; corrected to five and pointed at `buildableSpells()`. "two of
+  them with built backends": **HELD** (astrolabe, magpie — glamour's backend
+  ships as source; Phase 3 dropped and re-affirmed post-acc). "spell-surface-
+  pipeline closed 2026-09-01": **HELD**. "Two deliberate surface tiers (glamour,
+  imago, magpie / bounty, digestify, grapevine)": **HELD** at the time, and
+  **FALSIFIED since** — grapevine (2026-09-05), bounty (2026-09-06) and
+  digestify (2026-09-07) all crossed. **There is now ONE tier**, which is what a
+  countdown looks like when it reaches zero. Found by the docs-of-record sweep,
+  which ranges over docs NO SEAT OWNS — the same reason this bullet went stale
+  before._
+
+  _(This bullet told readers the build did not exist for two days after Seam C
+  killed that claim, in the repo's front-door summary. Found by a non-author
+  audit of a project being archived, not by anyone who did the work.)_ ⚠
+  `plan.md` is wrong about **which spell**, not whether — prefer
+  `.anthill/dev/seams.md` (Contracts 1, 2, 4), which the build amended and the
+  plan did not.
+
+- `spellbook-rebrand` — **naming closed, visual open.** Five mechanical asset
+  fixes sit behind three aesthetic decisions; doing them first means doing them
+  twice. Exception: **#11** (the wordmark still renders "Tuskboard") is scoped
+  to the current palette and is independently actionable.
 
 Grapevine feature ideas now live as individual items in `docs/backlog/`
 (`grapevine-*`) rather than a bespoke project; the `grapevine-backlog` living
 doc was archived 2026-06-28.
 
-**Recently archived:** `grapevine-backlog` (2026-06-28 — retired into
-`docs/backlog/`); `glamour-v2` (shipped — cut over to main glamour),
-`image-style-spell` (superseded by glamour-v2), `grapevine-announce`,
-`grapevine-channel-lifecycle`, `grapevine-disposition`,
-`grapevine-operator-roll-safety` (all shipped/merged), `media-forge-cli-gaps`
-(feedback loop closed) (2026-06-27 doc-status pass). Earlier:
-`bounty-agent-usable`, `grapevine-v1.7`, `spellbook-extraction`.
+**Recently archived (2026-08-10 sweep):** `cross-project-observatory` (shipped
+as astrolabe, `5dfa9a8`), `imago` (three plans at 100%, 111 tests),
+`magpie-rebuild` (all seven phases, 76 tests), `spell-architecture-maturity`
+(superseded — its rule landed in `house-style.md:188–225` via `7719c34`).
+`digestify-image-viewer` was **misfiled** and moved to
+`docs/backlog/2026-06-02-digestify-image-viewer.md`.
+
+**Earlier:** `grapevine-backlog` (2026-06-28 — retired into `docs/backlog/`);
+`glamour-v2` (shipped — cut over to main glamour), `image-style-spell`
+(superseded by glamour-v2), `grapevine-announce`, `grapevine-channel-lifecycle`,
+`grapevine-disposition`, `grapevine-operator-roll-safety` (all shipped/merged),
+`media-forge-cli-gaps` (feedback loop closed) (2026-06-27 doc-status pass).
+Earlier: `bounty-agent-usable`, `grapevine-v1.7`, `spellbook-extraction`.
 
 **Trajectory:** the spells exist and work; the near-term arc is **hardening and
 coherence toward a public release** — rebuilding/maturing individual spells
@@ -189,9 +273,13 @@ aesthetic/naming pass.
   the traditional app's input→service→output pipeline.
 - **Cantrip↔conjuration is a live spectrum, not a fixed label** — magpie just
   crossed it, gaining a daemon and a surface as its job grew multi-phase.
-- **Two deliberate surface tiers:** React studios (glamour, imago, magpie) for
-  rich canvases; Alpine-CDN (bounty, digestify, grapevine watch) for
-  boards/reviews.
+- **One surface tier, as of 2026-09-07:** every spell in the roster ships a
+  built React surface on the house token layer, with its primitives from the
+  shadcn registry. _The "two tiers" reading was always a description of where
+  the roster had got to, never a design — it was closer to a countdown than a
+  taxonomy, and the countdown has finished. digestify was the last, and it is
+  the one that exercised the token layer's **mode override**: three themes over
+  one set of names, which no earlier port had used._
 - **The grimoire is the real moat** — a self-pruning craft system most projects
   lack; rules survive only by reinforcement.
 - **The manifesto is canonical in Operator**, mirrored here; edit it there and

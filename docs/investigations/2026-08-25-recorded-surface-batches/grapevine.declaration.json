@@ -1,0 +1,880 @@
+{
+  "formatVersion": "0",
+  "provenance": "emitted",
+  "selfDescription": {
+    "args": ["schema"]
+  },
+  "commands": [
+    {
+      "path": [],
+      "args": [
+        {
+          "name": "--help",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "-h",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--version",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "-V",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "command",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["open"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--topic",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--fresh",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["topic"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "text",
+          "required": false,
+          "variadic": true
+        }
+      ]
+    },
+    {
+      "path": ["list"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["send"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--body-file",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--in-reply-to",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--quiet",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--stdin",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--verbose",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "text",
+          "required": false,
+          "variadic": true
+        }
+      ]
+    },
+    {
+      "path": ["announce"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--body-file",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--channels",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--quiet",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--stdin",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "text",
+          "required": false,
+          "variadic": true
+        }
+      ]
+    },
+    {
+      "path": ["pull"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--since",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--status",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["triage"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--human",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["read"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--text",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["wait"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--since",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--timeout",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["who"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--all",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": false
+        }
+      ]
+    },
+    {
+      "path": ["alias"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": false
+        }
+      ]
+    },
+    {
+      "path": ["tail"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--last",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--max",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--since",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from-start",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--human",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--lurk",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["grep"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--literal",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "pattern",
+          "required": true,
+          "variadic": true
+        }
+      ]
+    },
+    {
+      "path": ["close"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["reset"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["mark"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--note",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "id",
+          "required": true
+        },
+        {
+          "name": "disposition",
+          "required": true,
+          "variadic": true
+        }
+      ]
+    },
+    {
+      "path": ["reopen"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--note",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["archive"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["unarchive"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "path": ["start"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["up"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["restart"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--yes",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["roll"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--yes",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["stop"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--hold",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["watch"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": [
+        {
+          "name": "name",
+          "required": false
+        }
+      ]
+    },
+    {
+      "path": ["reap"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--dry-run",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["prune"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--dry-run",
+          "type": "boolean",
+          "status": "valid"
+        },
+        {
+          "name": "--force",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["info"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["doctor"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["version"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--human",
+          "type": "boolean",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["schema"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["help"],
+      "args": [
+        {
+          "name": "--as",
+          "type": "string",
+          "status": "valid"
+        },
+        {
+          "name": "--from",
+          "type": "string",
+          "status": "valid"
+        }
+      ],
+      "positionals": []
+    }
+  ]
+}

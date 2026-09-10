@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Substituted by the daemon at serve time, on the BUILT file, in memory
+         (review.ts 434). ⚠ That replace is NOT global — only the first
+         occurrence is substituted, so this token must appear exactly once in
+         this file and in the dist/index.html built from it. -->
+    <title>__TITLE__</title>
+    
+  <link rel="stylesheet" crossorigin href="./index-ty4gdnpw.css"><script type="module" crossorigin src="./index-dfcfc4w0.js"></script></head>
+  <!-- data-theme is set from the payload on boot (App.tsx); the attribute here
+       is the pre-boot default and matches the default theme, so a cold open
+       does not flash a different palette. -->
+  <body data-theme="digestify">
+    <div id="root" class="contents"></div>
+    <!-- The whole review, substituted at serve time. It is a data island, not a
+         module: the browser does not execute it and the bundler leaves it
+         alone. -->
+    <script id="payload" type="application/json">
+      __PAYLOAD__
+    </script>
+    
+  </body>
+</html>

@@ -1,0 +1,681 @@
+#!/usr/bin/env bun
+
+// astrolabe CLI — thin, stateless wrapper around the standing observatory
+// daemon's HTTP surface (server.ts). The agent drives the board through these
+// verbs; `join`/`tail` stream events as JSONL for Monitor to wrap.
+//
+// Discovery + lifecycle: a SINGLETON daemon per $ASTROLABE_HOME. The first verb
+// that needs it auto-spawns it (detached, survives this CLI); it's found via
+// $ASTROLABE_HOME/daemon.{port,pid}.
+//
+//   bun cli.ts open [--no-open] [--timeout S]    # ensure the daemon is up + open the board
+//   bun cli.ts add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]
+//   bun cli.ts remove <id>                       # unregister a project (durable)
+//   bun cli.ts join <id> [--as <name>] [--since N]   # scoped /events tail — ACTIVATES the card + receives pokes (wrap with Monitor)
+//   bun cli.ts status <id> <summary...> [--phase ..] [--stdin]   # replace the current status
+//   bun cli.ts attention <id> [--clear] [--question ...]         # raise / clear the human gate
+//   bun cli.ts poke <id>                         # request a fresh status from the project's agent
+//   bun cli.ts state                             # read-back: project cards
+//   bun cli.ts tail [--since N] [--as <name>]    # unscoped event tail → JSONL (no presence)
+//   bun cli.ts list | close | info | help
+//
+// `join` is the listening loop a project's agent runs: holding the scoped
+// `/events?project=<id>` tail open is what marks the card active (per the daemon
+// contract — presence IS the live connection), and the same tail delivers pokes.
+//
+// Identity: --as / --from (or $ASTROLABE_AS) stamps the event `by` and drives
+// self-echo suppression. --stdin reads free text (description/summary) from
+// stdin (bypasses shell quoting). Discipline: structured JSON on stdout (one
+// line); liveness, echoes and keepalives on stderr; failures put ONE JSON error
+// envelope on stderr with stdout left empty — never merge streams. Exit 2 on
+// bad args, a bare invocation, OR a rejected command (dedupe / unknown id);
+// 0 on success; 1 on internal faults (daemon failed to start); a tail exits 0
+// on the daemon's `closed` frame.
+
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+import { printJson } from "../../kit/lib/printJson";
+import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+// ⛔ "..", "scripts" — NOT a sibling lookup. This file is AUTHORED here and
+// EXECUTES as `../dist/cli.js` (Contract 4's built-backend amendment), and
+// `dist/` sits at the SAME DEPTH as `scripts/`, so every ANCESTOR-relative
+// path in this file (SKILL_ROOT, DIST_DIR, SURFACE_CWD, plugin.json) is
+// unchanged by the move. A SIBLING-relative one is not: `join(SCRIPT_DIR,
+// "server.ts")` resolved to `dist/server.ts` and the daemon would never
+// spawn. Going up and back down is correct from BOTH locations.
+const SERVER_SCRIPT = join(SCRIPT_DIR, "..", "scripts", "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// dev: the daemon serves a Bun-bundled React surface, and Bun reads bunfig.toml
+// (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be
+// src/astrolabe/ (seams Contract 5 cwd-pin) — launched anywhere else the dev
+// bundler cannot compile the stylesheet (measured on glamour: the page 500s
+// with no stylesheet link; astrolabe's own failure shape is unmeasured). release: dist/ is
+// pre-built and static — no bunfig read, so this path need not exist at all (a
+// source-free marketplace clone has no top-level src/), and pinning cwd there
+// anyway would break the spawn.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "astrolabe");
+
+function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
+const ASTROLABE_HOME = process.env.ASTROLABE_HOME ?? join(homedir(), ".astrolabe");
+const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
+
+// ── the tail watchdog, DERIVED FROM THE DAEMON'S OWN HEARTBEAT ──────────────
+//
+// ⛔ A CONSTANT HERE WOULD BE A CONSTANT DECOUPLED FROM THE THING IT WATCHES.
+// The watchdog aborts a connection that has said nothing for `TAIL_IDLE_MS`;
+// the only thing keeping a quiet connection alive is the daemon's `: hb`
+// comment. So the two numbers are ONE invariant — watchdog > heartbeat, with
+// room for missed beats.
+//
+// ⛔ IT USED TO BE MIRRORED HERE BY HAND. Two expressions copied out of the
+// daemon under a comment saying "an edit there is an edit here", because the
+// CLI could not import the daemon without dragging the whole server graph into
+// `dist/cli.js`. Phase 1b's shared spine is that import: `./heartbeat.ts` is a
+// leaf-shaped module with no daemon in it, both halves import it, and the
+// mirror is gone rather than annotated.
+
+// Failures leave stdout empty and put ONE JSON envelope on stderr — the same
+// machine shape as the data path, so a piped caller parses the error instead of
+// scraping prose. THE ENVELOPE, THE TAXONOMY AND THE EXIT CODES ARE NOW SHARED
+// (`src/kit/wire/errors.ts`); astrolabe's fourth, minimal copy is gone. Two
+// things changed and both are additive: the envelope gains `exit_code`,
+// `retryable` and `meta.command`, and `die` THROWS a CliError that `main`
+// reports, rather than exiting from wherever it was called. `kind` and
+// `message` — the two fields anything can be keying on — are untouched.
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// id + avatar are DERIVED by the daemon (state.ts) from the project name, so the
+// cli passes id/avatar through only when the caller gave them explicitly — one
+// source of truth, no slug/avatar mirror to drift.
+
+function resolveAs(flags: Record<string, string | boolean>): string | undefined {
+  const v = flags.as ?? flags.from;
+  if (typeof v === "string" && v.trim()) return v.trim();
+  const env = process.env.ASTROLABE_AS;
+  return env?.trim() ? env.trim() : undefined;
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of Bun.stdin.stream()) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8").trim();
+}
+
+// ── daemon discovery + HTTP ──────────────────────────────────────────
+
+async function readPort(): Promise<number | null> {
+  try {
+    const p = Number.parseInt((await Bun.file(PORT_FILE).text()).trim(), 10);
+    return p > 0 ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+async function isUp(port: number): Promise<boolean> {
+  try {
+    return (await fetch(`http://127.0.0.1:${port}/state`)).ok;
+  } catch {
+    return false;
+  }
+}
+
+// Find the running daemon, or auto-spawn one (detached so it outlives this CLI —
+// node:child_process, not Bun.spawn, which can't detach a surviving daemon).
+async function ensureDaemon(): Promise<{ base: string; port: number }> {
+  const existing = await readPort();
+  if (existing && (await isUp(existing))) {
+    return { base: `http://127.0.0.1:${existing}`, port: existing };
+  }
+  const proc = spawn(process.execPath, ["run", SERVER_SCRIPT, "--no-open"], {
+    detached: true,
+    stdio: ["ignore", "ignore", "ignore"],
+    env: process.env,
+    // Contract 5 — see daemonCwd(). A wrong cwd skips bunfig.toml's Tailwind
+    // plugin; on glamour that fails the page outright (500). Assert the invariant,
+    // not the status: the utility never reaches the browser when cwd is wrong.
+    cwd: daemonCwd(),
+  });
+  proc.unref();
+  // The daemon BINDS fast and answers /state as soon as it's listening (the
+  // cold Tailwind+React bundle is lazy, on the first GET "/"), so this handshake
+  // usually returns quickly. The wide deadline covers a cold machine where
+  // module load + first serve runs slow (glamour uses the same ~45s budget).
+  const deadline = Date.now() + 45000;
+  while (Date.now() < deadline) {
+    await sleep(80);
+    const p = await readPort();
+    if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
+  }
+  die("astrolabe daemon failed to start within 45s", "internal");
+}
+
+// A read-only verb requires a live daemon but must not spawn one (nothing to
+// observe yet) — so `state`/`list`/`info` on a cold machine report cleanly.
+async function runningBase(): Promise<string | null> {
+  const p = await readPort();
+  return p ? `http://127.0.0.1:${p}` : null;
+}
+
+async function postCmd(base: string, body: Record<string, unknown>) {
+  const res = await fetch(`${base}/cmd`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return (await res.json()) as { ok: boolean; applied: boolean; error?: string; outcome?: string };
+}
+
+// Apply a /cmd, surface a rejection on stderr + non-zero exit (exit-code
+// contract), and echo the structured result on stdout on success.
+async function cmd(base: string, body: Record<string, unknown>) {
+  const r = await postCmd(base, body);
+  // b2/#85 — DISTINGUISH THE TWO KINDS OF applied:false. WITH an error = a real
+  // rejection (unknown project, duplicate) -> visible, non-zero, unchanged.
+  // WITHOUT an error = a benign no-op: the state was already what was asked for,
+  // the project exists, the daemon is right, and nothing is wrong. That used to
+  // exit 2 with "command 'attention' was not applied", so re-issuing an
+  // already-applied command was a hard failure — while bounty treats the
+  // identical payload as ordinary success.
+  //
+  // This is bounty's discipline (cli.ts `task.update`), ported rather than
+  // re-derived. It reports the daemon's `outcome` noun instead of bounty's
+  // `noop: true` boolean, per the outcome contract's "enumerated, never a
+  // boolean" — the noun says WHICH state made the work unnecessary.
+  if (!r.applied && r.error) die(r.error);
+  printJson(r);
+}
+
+function openBrowser(url: string): void {
+  const opener =
+    process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+  try {
+    spawn(opener, [url], { detached: true, stdio: "ignore" }).unref();
+  } catch {
+    /* best-effort */
+  }
+}
+
+// SSE reader: stream the event log as JSONL on stdout, resumable + reconnecting
+// — one call into the house's shared tail client (`src/kit/wire/tailEvents.ts`),
+// which is where the loop, the frame parser, the backoff, the idle watchdog and
+// the drained exit now live, ONCE, for every spell.
+//
+// `scopeId` (set by `join`) filters to this project's frames + lifecycle; an
+// unscoped tail passes everything. Self-echo (frames the caller's own --as
+// caused) is suppressed. `:` keepalives ride stderr; returns 0 on `closed`.
+//
+// ⛔ `resolve` IS `runningBase`, RE-READ ON EVERY ATTEMPT — this is the B1 fix
+// and the reason astrolabe went first. astrolabe binds an EPHEMERAL port, and
+// this function used to take a captured `base: string`, so after any daemon
+// restart `join` reconnected to a dead port forever and streamed nothing while
+// looking perfectly alive. It cannot: the callback re-reads
+// `$ASTROLABE_HOME/daemon.port` before every connect. Driven in `cli.test.ts`.
+//
+// It deliberately does NOT spawn. `join`/`tail` still call `ensureDaemon()`
+// once up front (a tail with no daemon at all is worth reporting); a daemon
+// that dies MID-watch is a wait, not a respawn, because a second astrolabe
+// spawned from inside a reconnect loop is a worse outcome than a watch that
+// resumes when the human reopens the board.
+async function streamEvents(opts: {
+  since: number;
+  project?: string;
+  scopeId?: string;
+  self?: string;
+}): Promise<number> {
+  type Ev = { id?: number; epoch?: string; type?: string; by?: string; projectId?: string };
+
+  const inScope = (ev: Ev) => {
+    if (!opts.scopeId) return true;
+    if (ev.type === "ready" || ev.type === "closed") return true;
+    return ev.projectId === opts.scopeId;
+  };
+
+  return await tailEvents<Ev>({
+    resolve: runningBase,
+    path: "/events",
+    since: opts.since,
+    cursorOf: (ev) => ev.id,
+    query: (cursor) => ({
+      since: String(cursor),
+      ...(opts.project ? { project: opts.project } : {}),
+    }),
+    accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
+    terminal: (ev) => ev.type === "closed",
+    // ⛔ THE RESTART GAP. Astrolabe is a singleton that `cli.ts` respawns, and
+    // its event ids restart at 1 — so a `join` that has been running for hours
+    // resumes at `since=<a large number>` against a daemon whose whole log is
+    // smaller than that. The daemon half (`kit/wire/eventLog.ts`) replays whole
+    // when the cursor is beyond its own; this half is what stops the tail then
+    // re-requesting the stale cursor on every subsequent reconnect. The line is
+    // SYNTHESIZED — it is not a bus event, carries no `id`, and never advances
+    // the cursor — which is the same separation mind-mapper's `epoch.changed`
+    // makes and `src/mind-mapper/backend/tail.test.ts` pins.
+    epochOf: (ev) => ev.epoch,
+    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": astrolabe-keepalive",
+  });
+}
+
+// ── verbs ────────────────────────────────────────────────────────────
+
+async function cmdOpen(flags: Record<string, string | boolean>) {
+  const { port } = await ensureDaemon();
+  if (!flags["no-open"]) openBrowser(`http://127.0.0.1:${port}`);
+  printJson({ ok: true, url: `http://127.0.0.1:${port}`, port });
+}
+
+async function cmdAdd(pos: string[], flags: Record<string, string | boolean>) {
+  const name = pos.join(" ").trim();
+  if (!name) die("usage: add <name> --path <p> [--description ..] [--avatar ..] [--id ..]");
+  const path = typeof flags.path === "string" ? flags.path.trim() : "";
+  if (!path) die("add requires --path <p>");
+  const description = flags.stdin
+    ? await readStdin()
+    : typeof flags.description === "string"
+      ? flags.description
+      : undefined;
+  // id + avatar are optional — the daemon derives both from the name when omitted.
+  const avatar = typeof flags.avatar === "string" ? flags.avatar : undefined;
+  const id = typeof flags.id === "string" && flags.id.trim() ? flags.id.trim() : undefined;
+  const { base } = await ensureDaemon();
+  await cmd(base, {
+    type: "project.add",
+    project: { id, name, path, description, avatar },
+    as: resolveAs(flags),
+  });
+}
+
+async function cmdRemove(pos: string[], flags: Record<string, string | boolean>) {
+  const id = pos[0];
+  if (!id) die("usage: remove <id>");
+  const { base } = await ensureDaemon();
+  await cmd(base, { type: "project.remove", id, as: resolveAs(flags) });
+}
+
+async function cmdStatus(pos: string[], flags: Record<string, string | boolean>) {
+  const id = pos[0];
+  if (!id) die("usage: status <id> <summary...> [--phase ..] [--stdin]");
+  const summary = flags.stdin ? await readStdin() : pos.slice(1).join(" ").trim();
+  if (!summary) die("status requires a summary (positional or --stdin)");
+  const phase = typeof flags.phase === "string" ? flags.phase : undefined;
+  const { base } = await ensureDaemon();
+  await cmd(base, { type: "status", id, summary, phase, as: resolveAs(flags) });
+}
+
+async function cmdAttention(pos: string[], flags: Record<string, string | boolean>) {
+  const id = pos[0];
+  if (!id) die("usage: attention <id> [--clear] [--question ...]");
+  const raised = flags.clear !== true;
+  const question =
+    typeof flags.question === "string"
+      ? flags.question
+      : pos.slice(1).join(" ").trim() || undefined;
+  const { base } = await ensureDaemon();
+  await cmd(base, { type: "attention", id, raised, question, as: resolveAs(flags) });
+}
+
+async function cmdPoke(pos: string[], flags: Record<string, string | boolean>) {
+  const id = pos[0];
+  if (!id) die("usage: poke <id>");
+  const { base } = await ensureDaemon();
+  await cmd(base, { type: "poke", id, as: resolveAs(flags) });
+}
+
+async function cmdState() {
+  const base = await runningBase();
+  if (!base || !(await isUp(Number.parseInt(base.split(":").pop() as string, 10)))) {
+    printJson({ ok: true, running: false, state: { title: "Observatory", projects: [] } });
+    return;
+  }
+  const res = await fetch(`${base}/state`);
+  if (!res.ok) die(`state failed (HTTP ${res.status})`);
+  printJson(await res.json());
+}
+
+async function cmdList() {
+  const base = await runningBase();
+  // Guard with isUp() before fetching (mirrors cmdState): a STALE daemon.port
+  // from a crashed daemon would otherwise throw ECONNREFUSED here instead of the
+  // clean running:false path.
+  if (!base || !(await isUp(Number.parseInt(base.split(":").pop() as string, 10)))) {
+    printJson({ ok: true, running: false, projects: [] });
+    return;
+  }
+  const { state } = (await (await fetch(`${base}/state`)).json()) as {
+    state: { projects: Array<Record<string, unknown>> };
+  };
+  printJson({
+    ok: true,
+    running: true,
+    projects: state.projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      zone: p.zone,
+      connected: p.connected,
+    })),
+  });
+}
+
+async function cmdClose(flags: Record<string, string | boolean>) {
+  const base = await runningBase();
+  if (!base) {
+    printJson({ ok: true, applied: false, error: "no daemon running" });
+    return;
+  }
+  printJson(await postCmd(base, { type: "close", as: resolveAs(flags) }));
+}
+
+async function cmdInfo() {
+  const port = await readPort();
+  if (port && (await isUp(port))) {
+    printJson({ ok: true, running: true, url: `http://127.0.0.1:${port}`, port });
+  } else {
+    printJson({ ok: true, running: false });
+  }
+}
+
+/**
+ * ── THE THREE ACCEPTED SETS, DECLARED ONCE (register A1) ────────────────────
+ *
+ * `choices` is the machine-routable half of the house error contract
+ * (`src/kit/wire/errors.ts`) — *what WOULD have been accepted* — and its whole
+ * value is that it is the ACTUAL set. So each set below is the one the parser
+ * and the dispatcher themselves read; a rejection cannot name a roster the CLI
+ * does not run, because there is no second copy to drift.
+ *
+ * ⛔ `CLI_OPTIONS` IS LIFTED OUT OF THE `parseArgs` CALL FOR EXACTLY THIS
+ * REASON. Inline, the recognized-flag set existed only inside the invocation
+ * that consumed it, so a rejection could only re-type it as prose — which is
+ * how bounty and imago both ended up with a hand-kept flag list inside a
+ * message string.
+ *
+ * ⚠ `VERBS` IS THE ONE DECLARATION HERE, and it is bound to the switch by a
+ * cell in `cli.test.ts` rather than by the type system — see its own comment.
+ */
+const CLI_OPTIONS = {
+  as: { type: "string" },
+  from: { type: "string" },
+  path: { type: "string" },
+  description: { type: "string" },
+  avatar: { type: "string" },
+  id: { type: "string" },
+  phase: { type: "string" },
+  question: { type: "string" },
+  since: { type: "string" },
+  timeout: { type: "string" },
+  clear: { type: "boolean", default: false },
+  stdin: { type: "boolean", default: false },
+  "no-open": { type: "boolean", default: false },
+} as const;
+
+/** Every flag the root parser recognises, as the caller would type it. */
+export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
+/**
+ * The dispatched verbs, in the switch's own order.
+ *
+ * ⚠ A DECLARATION, NOT A DERIVATION — the `switch (verb)` is the behaviour and
+ * nothing in the type system ties them together. `cli.test.ts` does: it parses
+ * this file's case labels and asserts set equality, magpie's binding cell
+ * ported rather than re-derived. Without that cell this is a hand-kept list
+ * wearing a derivation's clothes.
+ *
+ * ⛔ AND IT IS A BARE ARRAY ON PURPOSE, not magpie's `VERB_SPEC` verb->flags
+ * table. astrolabe parses ONE flag map at the root and does not scope flags per
+ * verb, so a per-verb flag list here would be documentary — a second, unchecked
+ * copy of the help text. It also tripped a real instrument: a string literal
+ * `"from"` inside an EXPORTED object literal is read as a re-export by
+ * `grimoire/lib/import-graph.ts`'s `STATIC_RE` (`export ... from "…"`, with no
+ * `;` or paren in between to stop it), and `import-boundary-wards` failed with
+ * a phantom `src/astrolabe/backend/cli.ts -> ", "` row. The pin caught it
+ * loudly, which is that ward working; the finding is recorded in the register.
+ */
+export const VERBS: readonly string[] = [
+  "open",
+  "add",
+  "remove",
+  "status",
+  "attention",
+  "poke",
+  "state",
+  "list",
+  "close",
+  "info",
+  "join",
+  "tail",
+];
+
+/**
+ * Tokens the root answers BEFORE the switch — `help` and `version` are not
+ * dispatched verbs, so a `choices` built from the switch alone would understate the
+ * accepted set by exactly these (mind-mapper's alias finding, same shape).
+ */
+export const ROOT_TOKENS: readonly string[] = ["help", "version"];
+
+/** What the root actually accepts as a first token. */
+export const VERB_CHOICES: readonly string[] = [...VERBS, ...ROOT_TOKENS];
+
+const HELP = `astrolabe — a standing observatory board for projects in flight.
+
+  open [--no-open]
+      ensure the daemon is up + open the board in the browser
+  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]
+      register a project (dedupe-guarded; id + avatar derived from the name when omitted).
+      the response echoes the derived id — you need it for join/status/attention/remove.
+  remove <id>
+      unregister a project
+  join <id> [--as <name>] [--since N]
+      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.
+  status <id> <summary...> [--phase ..] [--stdin]
+      replace a project's current status
+  attention <id> [--clear] [--question ...]
+      raise / clear the needs-you gate (--question attaches the prompt)
+  poke <id>
+      request a fresh status from the project's agent
+  state
+      read-back: project cards (each carries a derived zone: attention | active | quiet)
+  tail [--since N] [--as <name>]
+      unscoped event tail as JSONL (no presence)
+  list | close | info | help | --version
+
+  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.
+  --stdin reads a description/summary from stdin (shell-quoting-safe).
+  Output: every command prints JSON on stdout by default, one line per answer;
+  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).
+  There is no prose mode to switch out of.`;
+
+// The plugin manifest is the one version source; the CLI reads it rather than
+// mirroring the number. Layout-dependent, so absence degrades to "unknown".
+async function versionInfo(): Promise<{ name: string; version: string }> {
+  try {
+    const pkg = await Bun.file(join(SCRIPT_DIR, "../../../.claude-plugin/plugin.json")).json();
+    if (typeof pkg?.version === "string") return { name: "astrolabe", version: pkg.version };
+  } catch {}
+  return { name: "astrolabe", version: "unknown" };
+}
+
+/**
+ * The failure funnel. `die` THROWS a CliError now (the house's one error
+ * contract, `src/kit/wire/errors.ts`) instead of exiting from wherever it was
+ * called, so this is the ONE place a failure becomes an exit code — and the
+ * process still ends the one way the house sanctions, `process.exitCode` plus a
+ * natural return, which is what drains stdout on a pipe.
+ *
+ * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
+ * a tidy taxonomy failure would lose the stack that says what actually broke.
+ */
+async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
+}
+
+async function dispatch(argv: string[]): Promise<number> {
+  const verb = argv[0];
+  setCurrentCommand(verb ?? null);
+  // A bare invocation requested nothing — that is a usage error, not a help
+  // request. help stays reachable by name (and --help/-h) on stdout at exit 0.
+  if (verb === undefined)
+    die("no verb given", "usage", { hint: "run: cli.ts help", choices: [...VERB_CHOICES] });
+  if (verb === "help" || verb === "--help" || verb === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  // Root token, deliberately NOT a flag: dispatched alongside help in the verb
+  // switch, so no per-verb parser is expected to accept it below the root.
+  if (verb === "--version" || verb === "-V" || verb === "version") {
+    printJson(await versionInfo());
+    return 0;
+  }
+  let parsed: ReturnType<typeof parseArgs>;
+  try {
+    parsed = parseArgs({
+      args: argv.slice(1),
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+  } catch (e) {
+    // ⛔ `choices` ONLY WHEN THE REJECTED TOKEN CAME FROM A CLOSED SET. An
+    // unknown option is that case and the set is `CLI_OPTIONS`; node's other
+    // parse rejections are not — `ERR_PARSE_ARGS_INVALID_OPTION_VALUE` means a
+    // recognised flag was given a value from an open set, and answering it with
+    // the flag roster would tell the caller to fix the thing that was right.
+    // Routed on node's own error CODE rather than on its prose, which is the
+    // same cut the taxonomy makes: `kind` is contract, `message` is
+    // presentation.
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+    die(
+      e instanceof Error ? e.message : String(e),
+      "usage",
+      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
+        ? { hint: "run: cli.ts help", choices: [...RECOGNIZED_FLAGS] }
+        : undefined,
+    );
+  }
+  const flags = parsed.values as Record<string, string | boolean>;
+  const pos = parsed.positionals as string[];
+  const since = typeof flags.since === "string" ? Number.parseInt(flags.since, 10) : -1;
+
+  switch (verb) {
+    case "open":
+      await cmdOpen(flags);
+      return 0;
+    case "add":
+      await cmdAdd(pos, flags);
+      return 0;
+    case "remove":
+      await cmdRemove(pos, flags);
+      return 0;
+    case "status":
+      await cmdStatus(pos, flags);
+      return 0;
+    case "attention":
+      await cmdAttention(pos, flags);
+      return 0;
+    case "poke":
+      await cmdPoke(pos, flags);
+      return 0;
+    case "state":
+      await cmdState();
+      return 0;
+    case "list":
+      await cmdList();
+      return 0;
+    case "close":
+      await cmdClose(flags);
+      return 0;
+    case "info":
+      await cmdInfo();
+      return 0;
+    case "join": {
+      const id = pos[0];
+      if (!id) die("usage: join <id> [--as <name>] [--since N]");
+      const { base } = await ensureDaemon();
+      // Confirm the project exists before holding the watch (a typo'd id would
+      // otherwise bind no presence and silently stream nothing useful).
+      const { state } = (await (await fetch(`${base}/state`)).json()) as {
+        state: { projects: Array<{ id: string }> };
+      };
+      if (!state.projects.some((p) => p.id === id))
+        // ⭐ THE SET IS ALREADY IN HAND, WHICH IS WHY THIS SITE QUALIFIES AND
+        // the same rejection relayed from the daemon (`cmd()`) does not: the
+        // snapshot was fetched one line above to make this very check, so
+        // naming the registered ids costs nothing and needs no second call.
+        // An EMPTY board answers `choices: []` — "nothing would have been
+        // accepted" — which is a true answer and not the same as no field.
+        die(`unknown project '${id}'`, "usage", {
+          hint: "run: cli.ts add <name> --path <p> to register it",
+          choices: state.projects.map((p) => p.id),
+        });
+      return await streamEvents({ since, project: id, scopeId: id, self: resolveAs(flags) });
+    }
+    case "tail": {
+      // ensureDaemon for the START of the watch only; the tail re-resolves the
+      // daemon on every reconnect (see streamEvents), so `base` is not carried.
+      await ensureDaemon();
+      return await streamEvents({ since, self: resolveAs(flags) });
+    }
+    default:
+      die(`unknown verb '${verb}'`, "usage", {
+        hint: "run: cli.ts help",
+        choices: [...VERB_CHOICES],
+      });
+  }
+}
+
+if (import.meta.main) {
+  // `process.exitCode` + a natural return, NEVER `process.exit(code)`: Bun's
+  // stdout is ASYNCHRONOUS on a pipe (synchronous on a TTY or file), so an
+  // explicit exit discards whatever has not drained — measured at exactly
+  // 65,536 bytes. The payload is complete and only the write is lost, so the
+  // caller gets well-formed-looking JSON that stops mid-string. Reproduced,
+  // fixed and gated in bounty first (P0, #77/#78); same shape, same reason.
+  // Do not tidy this back into an explicit exit.
+  process.exitCode = await main(process.argv.slice(2));
+}
+
+// Exported so the shipped launcher (plugins/.../scripts/cli.ts) can invoke the
+// BUNDLED copy of this module. The import.meta.main block above still runs this
+// file directly during development; the two entry routes are exclusive, because
+// import.meta.main is false for an imported module.
+export { main };
+
+/**
+ * The SHIPPED ENTRY POINT, called by `plugins/spellbook/skills/astrolabe/scripts/cli.ts`
+ * after the bundle is imported.
+ *
+ * ⛔ IT TAKES NO ARGUMENTS, AND THAT IS THE POINT. argv belongs to whichever file
+ * PARSES it, and that is this one. An earlier launcher read
+ * `process.argv.slice(2)` itself and passed it in — which made the launcher match
+ * `grimoire/lib/entry-points.ts`'s PARSES_ARGS predicate (`process.argv`), so the
+ * roster counted a 3-line forwarder as an arg-parsing entry point and then
+ * reported the spell's documented flags as UNRESOLVED against a file that
+ * recognises none. Keeping argv on this side makes the enumerator's answer true
+ * instead of making its regex looser.
+ */
+export async function run(): Promise<number> {
+  return await main(process.argv.slice(2));
+}

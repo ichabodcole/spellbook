@@ -68,15 +68,35 @@ const FILTERS = [
   "pairing: INJECTIVE — each ledger row is consumed by at most one rule",
 ];
 
+// ⛔ R3, MADE LOCAL: READ THE POSSIBLY-UNDEFINED, AND DIE NAMING THE INVARIANT.
+// `x!` and `?? fallback` both make the type error vanish and only one of those
+// is honest. In a WARD `?? fallback` is the worse one and `if (!x) continue` is
+// worse still: a skipped element lowers a DENOMINATOR with nothing said, which
+// is D64's defect exactly — a coverage count going down is not a failure, so
+// nothing reds and a shipped number is quietly false. This instrument reports
+// SETS rather than a total precisely to defeat that class; a silent skip would
+// re-open it from the inside.
+//
+// ⚠ Duplicated per instrument on purpose: every file under
+// `scripts/instruments/` imports node builtins and nothing else, so each stays
+// runnable and copyable on its own.
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 function rules(): string[] {
   const src = readFileSync(join(CANON, "house-style.md"), "utf8");
-  return [...src.matchAll(/^### (.+)$/gm)].map((m) => m[1].trim());
+  // One alternative, one MANDATORY group: a match always sets it.
+  return [...src.matchAll(/^### (.+)$/gm)].map((m) =>
+    must(m[1], "`^### (.+)$` matched without its title group").trim(),
+  );
 }
 
 function ledgerRows(): string[] {
   const src = readFileSync(join(CANON, "decay-ledger.md"), "utf8");
   return [...src.matchAll(/^\|\s*([^|]+?)\s*\|/gm)]
-    .map((m) => m[1].trim())
+    .map((m) => must(m[1], "first-column matcher matched without its cell group").trim())
     .filter((r) => r && !/^-+$/.test(r) && !/^Rule\b/.test(r));
 }
 
@@ -115,14 +135,22 @@ for (const { r } of ranked) {
     .filter((p) => !p.used)
     .map((p) => ({ p, ov: rt.filter((t) => p.t.has(t)).length }))
     .sort((a, b) => b.ov - a.ov);
-  if (!scored.length || scored[0].ov === 0) {
+  // ⚠ AN EMPTY `scored` IS A REAL TERMINAL CASE, NOT A MISSING INVARIANT: the
+  // pairing is INJECTIVE, so once every ledger row is consumed there is nothing
+  // left to score. `unmatched.push(r)` is how that gets RECORDED rather than
+  // skipped — which is why this arm keeps its explicit `undefined` branch
+  // instead of a `must()`. Both readings of the type error are live in this one
+  // statement, and telling them apart is the whole of R3.
+  const best = scored[0];
+  if (best === undefined || best.ov === 0) {
     unmatched.push(r);
     continue;
   }
-  if (scored[1] && scored[0].ov === scored[1].ov) {
-    ambiguous.push(`${r}  ->  «${scored[0].p.w}» vs «${scored[1].p.w}»`);
+  const runnerUp = scored[1];
+  if (runnerUp && best.ov === runnerUp.ov) {
+    ambiguous.push(`${r}  ->  «${best.p.w}» vs «${runnerUp.p.w}»`);
   }
-  scored[0].p.used = true;
+  best.p.used = true;
 }
 const orphanRows = pool.filter((p) => !p.used).map((p) => p.w);
 

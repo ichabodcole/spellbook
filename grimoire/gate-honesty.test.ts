@@ -1,0 +1,587 @@
+// GATE HONESTY WARD — s5-P. `bun run check` prints "Checked N files" and says
+// NOTHING about the shipped, hand-authored files it structurally cannot read.
+// That is not coverage; it is a gate that cannot state what it cannot see. A hard
+// JS syntax error injected into a shipped surface passes BOTH arms green
+// (circe, spellbook comms #978).
+//
+// This ward does NOT close the blind set — closing it is a FIX and was ruled out
+// of sprint 05 twice, once against its own author's proposal. It makes the blind
+// set IMPOSSIBLE TO NOT NOTICE: printed on every suite run, and pinned so that a
+// change to it fails until someone re-declares it.
+//
+// ⛔ IT CONSUMES circe's `scripts/instruments/gate-blind-set.ts` BY INVOKING IT,
+// and deliberately does not re-implement its predicate. A second predicate for
+// one fact is free to drift from the first, and then neither side is wrong. That
+// instrument owns the question ("of the SHIPPED, HAND-AUTHORED files under
+// plugins/spellbook/skills/, which can `bun run check` not read AT ALL?"); this
+// ward owns only whether the answer has moved without anyone saying so.
+//
+// ⛔ WHICH GATE THIS ACTUALLY RUNS UNDER — correcting a landed commit subject
+// FORWARD, because rewording it would rebase shas the project's own docs cite —
+// MEASURED at 11 of this branch's 37 commits (`git rev-list <base>..HEAD`, each
+// sha grepped across tracked *.md/*.ts), NOT the "eight" this comment first
+// claimed. That eight was inherited from a channel message and repeated here
+// without being run; the true number is higher, so the conclusion is
+// strengthened, not weakened. Recorded rather than quietly swapped, because the
+// same wrong figure is now immutable in `25f07b2`'s commit message. `ababf0b`'s subject says "`bun run check` now says what it cannot see."
+// IT DOES NOT:
+//
+//     bun run check   is biome alone  ->  "Checked 356 files", SILENT about the 16
+//     bun test        runs this ward  ->  the blind set is printed here, and only here
+//
+// So the honest statement is: the SUITE says what the LINT GATE cannot see. A
+// seat who runs only `bun run check` still gets a green that is silent about
+// 4,166 lines. **On a branch whose thesis is that an instrument must not report
+// what it did not earn, that subject line claimed a delivery that did not
+// happen** — found by a cold reader given the tree and nothing else.
+//
+// ⛔ WHAT THIS WARD CANNOT SEE:
+//   1. It inherits EVERY blind spot of the instrument it calls, including its
+//      question. "Which files are UNGATED" is a different question with a
+//      different correct answer, and this ward is silent about it.
+//   2. It checks the SET and the PER-FILE LINE COUNTS, not the CONTENT. A blind
+//      file can be rewritten wholesale without this failing, as long as its line
+//      count holds.
+//   3. It cannot tell a blind file that is FINE from one that is broken. Nothing
+//      here reads a single line of them; that is the point of calling them blind.
+//   4. THE `lines` UNIT IS `wc -l` (newline count), per the instrument. It was
+//      `split("\n").length` until 2026-08-10 — one higher per file, 4182 vs 4166
+//      over this set — and THIS WARD IS WHAT CAUGHT THE CHANGE: the re-declare
+//      cell went red within minutes, naming all 16 files and the direction. That
+//      is the cell working, not a defect; the declaration below is the
+//      re-declaration it demanded.
+
+import { describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+// ⛔ THE DECLARED BLIND SET — pinned DEBT, not an exemption. Every entry is a
+// shipped, hand-authored file that `bun run check` does not read at all.
+// Re-declare deliberately when it changes; do not "fix" a failure by pasting the
+// new numbers in without asking which direction it moved and why.
+//
+// A file LEAVING this set is good news (it became gateable). A file ENTERING it
+// is new unreadable surface shipping to consumers. Both fail this cell, on
+// purpose — the point is that neither happens silently.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR R5's SECOND ROOT — 16 files / 4,166 lines →
+// 19 / 4,442. The three additions are NOT new blindness and the direction is the
+// opposite of what an entering file usually means: `src/mind-mapper/`'s
+// stylesheet, entry HTML and bunfig were ALREADY blind and already shipped-from
+// when mind-mapper relocated under Contract 4. They left the report silently,
+// and the total went DOWN, which reads as progress. This declaration is the
+// RECOVERY of a loss that already happened — written by hand, per the rule
+// above, not pasted from the instrument's new output.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 1a's RELOCATION — PATHS ONLY, and the
+// total is the check. astrolabe's `surface/` + `bunfig.toml` moved to
+// `src/astrolabe/` under Contract 4, so its three entries change path and
+// nothing else: `surface/styles.css` 93, `surface/index.html` 35,
+// `bunfig.toml` 2, now rooted at `src/astrolabe/`. The set stays at 19 files /
+// 4,442 lines — a relocation between the instrument's two roots is a no-op for
+// this ward, and if the total had moved, something OTHER than the relocation
+// moved with it. Nothing entered and nothing left.
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 1c's RELOCATION — PATHS ONLY, second
+// instance of the same no-op. imago's `surface/` + `bunfig.toml` moved to
+// `src/imago/` under Contract 4, so its three entries change path and nothing
+// else: `surface/styles.css` 151, `surface/index.html` 13, `bunfig.toml` 2, now
+// rooted at `src/imago/`. The set stays at 19 files / 4,442 lines, for the same
+// reason astrolabe's move did: both paths are inside this instrument's two
+// roots, so a relocation between them moves no file in or out. If the total had
+// changed, something OTHER than the relocation moved with it.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 6's RELOCATION — PATHS ONLY, THIRD
+// instance of the same no-op. magpie's `surface/` + `bunfig.toml` moved to
+// `src/magpie/` under Contract 4: `surface/styles.css` 175,
+// `surface/index.html` 13, `bunfig.toml` 2, now rooted at `src/magpie/`. The
+// set stays at 19 files / 4,442 lines. RE-DERIVED, NOT ASSUMED: this
+// relocation ALSO deleted two files (`surface/state/imageOptimize{,.server}.ts`,
+// zero importers repo-wide) and landed a surface build into magpie's `dist/`,
+// and the total held anyway — the deletions were `.ts` (gated, never blind) and
+// `dist/` is GENERATED, so neither touches this population. A total that holds
+// through a relocation PLUS a deletion PLUS a new artifact is the pin working,
+// not the pin sleeping.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4 — AND THIS ONE GENUINELY MOVED, 19/4,442
+// -> 20/4,540. Unlike the three relocations above (which were path-only no-ops)
+// this is real growth, and it is ACCOUNTED FOR RATHER THAN ACCEPTED:
+//     +68  src/kit/theme/base.css — a NEW hand-authored stylesheet; CSS is a
+//          file class `bun run check` cannot read at all, so every line of the
+//          kit's token layer is blind by construction.
+//     +15  src/mind-mapper/surface/styles.css  220 -> 235
+//     +15  src/imago/surface/styles.css        151 -> 166
+//          both from PROSE I added: the kit @import note and the `@source not`
+//          block explaining why a build must never scan its own output.
+// 4,442 + 68 + 15 + 15 = 4,540 exactly, with nothing left over. The arithmetic
+// closing is the point — a total that moved and cannot be decomposed means
+// something ELSE moved too, and this pin exists to make that impossible to miss.
+//
+// ⚠ AND THE COST IS REAL, NOT BOOKKEEPING. 30 of these 98 lines are comments,
+// and they buy documentation for a mechanism nothing else records — at the
+// price of living where no linter, type checker or parser will ever read them.
+// Sprint 01 declined a helpful bunfig comment for exactly this reason, because
+// there the movement bought nothing. Here it does. Stated so the next person
+// can disagree with the trade rather than discover it.
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4b — 20/4,540 -> 20/4,582. MEMBERSHIP DID
+// NOT MOVE (same 20 files, no arrivals, no departures); five existing entries
+// grew, all of them stylesheets, all of them PROSE. The change under it is one
+// directive per spell — `@import "tailwindcss"` gaining `source(none)` — which
+// scoped each spell's content scan to its own surface and cut the four shipped
+// stylesheets from 605,785 bytes to ~196 KB with zero classes lost.
+//     +11  src/astrolabe/surface/styles.css       93 -> 104
+//     +11  src/magpie/surface/styles.css         175 -> 186
+//     +16  src/kit/theme/base.css                 68 -> 84
+//      +3  src/mind-mapper/surface/styles.css    235 -> 238
+//      +1  src/imago/surface/styles.css          166 -> 167
+// 4,540 + 11 + 11 + 16 + 3 + 1 = 4,582 exactly, with nothing left over.
+//
+// ⚠ imago's +1 and mind-mapper's +3 are SMALL FOR A REASON, and the reason is
+// worth reading rather than rounding off: both files LOST a 12-line
+// `@source not ".../dist"` block in the same edit that gained the new one, so
+// their totals net out while astrolabe's and magpie's — which never had that
+// block — grow by the full amount. A near-zero delta on two files and +11 on
+// two others is what a substitution looks like, not what a no-op looks like.
+// The removed guard was measured LIVE before it was deleted and measured DEAD
+// after; grimoire/spell-css-scope-ward.test.ts carries the reproduction.
+//
+// ⛔ RE-DECLARED 2026-09-01 — 20/4,582 -> 20/4,611. MEMBERSHIP DID NOT MOVE
+// (same 20 files); ONE existing entry grew, and all of it is PROSE:
+//     +29  src/kit/theme/base.css                 84 -> 113
+// 4,582 + 29 = 4,611 exactly, with nothing left over.
+//
+// ⚠ AND THE PIN IS THE ONLY THING THAT NOTICED THE EDIT, WHICH IS THE POINT —
+// AND ALSO A TRAP THIS RE-DECLARATION EXISTS TO NAME. That file carried a ⛔
+// warning asserting `.css` prose is a Tailwind content source; it is not, and
+// the correction is what grew it. While benching that, a probe planted in
+// base.css reded THIS cell — and it looked like a class guard. It is not: this
+// cell counts LINES, so it fires identically on a blank line and stays green on
+// a class name added to an existing line. Verified both directions. A red here
+// licenses "the blind set moved", never "the blind file is wrong".
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE REWRITE, ARRIVALS — 20/4,624 ->
+// 23/4,723. ⚠ The 4,624 is the OBJECT's own sum at the previous pin, not the
+// 4,611 the paragraph above ends on. `git log -p` on this object: glamour's
+// relocation (`cae26f8`) re-pathed its three ALREADY-BLIND entries from the
+// plugin folder to `src/glamour/` and its `styles.css` grew 12 -> 25 with the
+// `source(none)` prose — 4,611 + 13 = 4,624 — and that commit re-declared the
+// object without a paragraph. Start every reconciliation from the object's
+// own sum, and read the log before trusting the last paragraph's total.
+// Three files ENTER, and this is the expected shape of a rewrite's first
+// commit, not new blindness on the roster: the React surface for grapevine's
+// watch page arrives under `src/grapevine/` with the blind trio every built
+// spell carries —
+//     +74  src/grapevine/surface/styles.css   (L0 import, L1 aliases, L2 theme)
+//     +23  src/grapevine/surface/index.html
+//      +2  src/grapevine/bunfig.toml
+// 4,624 + 74 + 23 + 2 = 4,723 exactly, with nothing left over. `watch.html`
+// (1,000) is STILL HERE at this commit: the daemon does not serve the new
+// surface until the next chapter, and that commit re-declares its departure.
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE REWRITE, DEPARTURE — 23/4,723 ->
+// 22/3,723. ONE file LEAVES, and it is the good direction: the daemon now
+// serves the built surface, so `watch.html` is deleted —
+//   -1,000  plugins/spellbook/skills/grapevine/scripts/watch.html
+// 4,723 - 1,000 = 3,723 exactly, with nothing left over. Its 1,000 lines of
+// Alpine + hand-rolled CSS did not become gateable by moving; they became
+// ~900 lines of .tsx/.ts under src/grapevine/surface/ that `bun run check`
+// reads and `bun test` exercises (state/*.test.ts), plus the 99 blind lines
+// declared above. Net for the roster: the blind set is 21.6% smaller than it
+// was this morning, and grapevine's own share of it fell from 1,000 to 99.
+//
+// ⛔ RE-DECLARED 2026-09-05 AFTER THE VERIFY PASS — 22/3,723 -> 22/3,724.
+// MEMBERSHIP DID NOT MOVE; one entry grew, and all of it is PROSE:
+//      +1  src/grapevine/surface/index.html   23 -> 24
+// the pre-boot background literal's comment now names the token it mirrors
+// (`--color-bg`) — the verifier's item 4. 3,723 + 1 = 3,724 exactly.
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE SHADCN SETUP — 22/3,724 ->
+// 22/3,758. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +34  src/grapevine/surface/styles.css   74 -> 108
+// the L1 alias block grew from the eight names the hand-rolled primitives
+// consumed to the sixteen the registry set consumes, plus a `:root` pair for
+// the two raw `var()`s a recipe reaches for, the pinned `dark` variant, and
+// the button docs' pointer base rule. 3,724 + 34 = 3,758 exactly. ⚠ The new
+// ROOT `bunfig.toml` (the workspace's hoisted-linker pin) is NOT here and
+// that is correct: the instrument roots its walk at the skills dir and
+// `src/`, so a repo-root file is outside its population, unlike the per-spell
+// bunfigs, which are inside it.
+//
+// ⛔ RE-DECLARED 2026-09-06 FOR THE UX BRANCH'S MENU-HOVER FIX — 22/3,758 ->
+// 22/3,760. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +2   src/grapevine/surface/styles.css   108 -> 110
+// a two-line comment on the `--color-accent` alias (why it must differ from
+// `--color-popover`, or a hovered menu item is invisible). 3,758 + 2 = 3,760
+// exactly.
+//
+// ⛔ RE-DECLARED 2026-09-06 FOR BOUNTY'S SURFACE — 22/3,760 -> 25/3,938.
+// MEMBERSHIP MOVED BY THREE, all of them arrivals from the bounty rewrite:
+//     +144  src/bounty/surface/styles.css   (new)
+//     +32   src/bounty/surface/index.html   (new)
+//     +2    src/bounty/bunfig.toml          (new)
+// 3,760 + 178 = 3,938 exactly, summed FROM THE OBJECT BELOW rather than from
+// the paragraph above it. bounty ships the roster's largest surface sheet
+// because on this board colour IS the status vocabulary: the old page's 27
+// `:root` properties became 34 tokens (four status families of three, plus two
+// washes) on top of the same L1 alias block and the same three pins — dark,
+// the raw-var aliases, the pointer — that grapevine carries.
+//
+// ⛔ RE-DECLARED A THIRD TIME, SAME DAY, FOR THE VERIFY PASS'S FIX — 24/2,935
+// -> 24/2,949. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +14  src/bounty/surface/styles.css   144 -> 158
+// a `.board-ended` rule and its comment. The session-end state went back onto
+// <body>, where the old page had it, because the registry dialogs portal to
+// document.body and a class on a wrapper inside #root cannot reach them. It is
+// a hand-written rule rather than two utilities for a reason that belongs in
+// this ward's own subject matter: the class is applied from script to an
+// element this surface does not render, so there is no markup for Tailwind's
+// scanner to read — spelled only in a JS string array, it emitted NEITHER rule
+// and the fix shipped inert. 2,935 + 14 = 2,949 exactly, from the object's sum.
+//
+// ⛔ RE-DECLARED AGAIN, SAME DAY, FOR THE DAEMON COMMIT — 25/3,938 -> 24/2,935.
+// MEMBERSHIP SHRANK BY ONE, and it is the largest departure this ward has ever
+// recorded:
+//     -1003  plugins/spellbook/skills/bounty/scripts/template.html  (deleted)
+// The Alpine page is gone; the daemon serves the built dist/. 3,938 - 1,003 =
+// 2,935 exactly, summed from the object below.
+//
+// ⚠ WHAT THIS NUMBER DOES AND DOES NOT MEAN. The gate can now READ bounty's
+// board — it is .tsx and .ts, linted and type-checked — where before it could
+// read none of it. But 178 of those 1,003 lines did not leave the blind set,
+// they MOVED into it as styles.css, index.html and bunfig.toml, and the
+// remaining 825 became code the gate still cannot prove renders anything. The
+// honest reading is "1,003 lines of unreadable board became 178 lines of
+// unreadable configuration", not "the board is now covered".
+//
+// ⛔ RE-DECLARED 2026-09-07 FOR DIGESTIFY — THE LAST SPELL IN THE POPULATION.
+// 24/2,949 -> 26/1,975. MEMBERSHIP MOVED BY TWO, and it is the only
+// re-declaration this ward has ever recorded where the blind set SHRANK while
+// gaining files:
+//     -1505  plugins/spellbook/skills/digestify/scripts/template.html (deleted)
+//     +503   src/digestify/surface/styles.css   (new)
+//     +26    src/digestify/surface/index.html   (new)
+//     +2     src/digestify/bunfig.toml          (new)
+// 2,949 - 1,505 + 531 = 1,975 exactly, summed FROM THE OBJECT BELOW rather than
+// from the paragraph above it.
+//
+// ⚠ 503 LINES IS THE ROSTER'S LARGEST SURFACE SHEET BY A FACTOR OF THREE
+// (bounty, the previous holder, is 158) AND THE NUMBER IS HONEST RATHER THAN
+// SLOPPY. Digestify is the only spell with THREE themes, and the palette is
+// only half of what a theme is here: 42 custom properties declared once and
+// redeclared twice on the same names (the L3 mode override the kit stylesheet
+// documents and no spell had exercised), plus cthulhu's page texture, which is
+// an EIGHTEEN-gradient fixed starfield carried across verbatim because it is
+// data. The three theme blocks alone are ~250 lines. The rest is the rendered
+// document: `marked` emits bare `<h1>`, `<pre>`, `<code>`, `<blockquote>` and
+// `<a>` with no class attribute, and nothing may add one (that HTML is a
+// sanitiser's output, and rewriting it would be a second sink), so a descendant
+// selector is the ONLY way to style the document and a utility cannot reach it.
+//
+// ⛔ RE-DECLARED AGAIN, SAME DAY, FOR THE VERIFY PASS'S BREAKPOINT FIX —
+// 26/1,975 -> 26/1,987. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +12  src/digestify/surface/styles.css   503 -> 515
+// a `--breakpoint-narrow` declaration and the comment that has to sit with it.
+// The page has ONE media query, `@media (max-width: 640px)`, and Tailwind's
+// scale has nothing on that boundary: `md` is 768px (the port shipped `max-md:`
+// and moved every responsive rule 128px — measured firing at 700 where the old
+// page did nothing) and `max-sm:` compiles to `width < 40rem`, which is 639px
+// and wrong at the one width the rule is about. 40.0625rem is 641px, so
+// `max-narrow:` is `max-width: 640px` exactly. 1,975 + 12 = 1,987, from the
+// object's own sum.
+//
+// ⚠ AND WHAT THE NUMBER MEANS, WHICH IS NOT WHAT IT LOOKS LIKE. The gate can
+// now READ digestify's review page — it is .tsx and .ts, linted and
+// type-checked — where before it could read NONE of it. 1,505 lines of
+// unreadable page became 531 lines of unreadable configuration and 1,100-odd
+// lines of code the gate parses. That is the largest single reduction in this
+// ward's history, and it closes the population: every spell in the roster now
+// builds, and no hand-written HTML surface remains anywhere in the tree.
+const DECLARED_BLIND: Record<string, number> = {
+  "src/digestify/surface/styles.css": 515,
+  "src/digestify/surface/index.html": 26,
+  "src/digestify/bunfig.toml": 2,
+  "src/bounty/surface/styles.css": 158,
+  "src/bounty/surface/index.html": 32,
+  "src/bounty/bunfig.toml": 2,
+  "src/mind-mapper/surface/styles.css": 238,
+  "src/magpie/surface/styles.css": 186,
+  "src/imago/surface/styles.css": 167,
+  "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
+  "src/kit/theme/base.css": 113,
+  "src/astrolabe/surface/styles.css": 104,
+  "src/astrolabe/surface/index.html": 35,
+  "src/mind-mapper/surface/index.html": 52,
+  "src/glamour/surface/index.html": 13,
+  "src/imago/surface/index.html": 13,
+  "src/magpie/surface/index.html": 13,
+  "src/glamour/surface/styles.css": 25,
+  "src/grapevine/surface/styles.css": 110,
+  "src/grapevine/surface/index.html": 24,
+  "src/grapevine/bunfig.toml": 2,
+  "src/mind-mapper/bunfig.toml": 4,
+  "src/astrolabe/bunfig.toml": 2,
+  "src/glamour/bunfig.toml": 2,
+  "src/imago/bunfig.toml": 2,
+  "src/magpie/bunfig.toml": 2,
+};
+
+type BlindReport = {
+  roots: string[];
+  tracked: number;
+  handAuthored: number;
+  gated: number;
+  docs: number;
+  blind: number;
+  blindLines: number;
+  files: { file: string; lines: number }[];
+};
+
+/** The roots this ward is ABOUT. Named here so the report cell can assert that
+ *  the instrument measured them, rather than measuring whatever it was pointed at. */
+const REAL_ROOTS = ["plugins/spellbook/skills", "src"];
+
+async function deriveBlindSet(): Promise<BlindReport> {
+  // ⛔ THE ROOT OVERRIDES ARE STRIPPED, AND THAT IS A DEFECT FIX, NOT HYGIENE.
+  // `SKILLS_DIR` / `SRC_DIR` are calibration hooks, and a test process inherits
+  // the ambient environment — so a seat with either exported in their shell
+  // STEERED THIS WARD'S POPULATION. Measured before the fix: with both pointed
+  // at a two-file throwaway repo, this ward printed
+  //     "reads 2 of 2 hand-authored files … BLIND to 0 files / 0 lines"
+  // and the report cell PASSED. Its `> 0` guards cannot tell a 352-file world
+  // from a 2-file one, and only the pin noticed. That is a green this ward did
+  // not earn, in the file whose entire subject is a gate reporting what it has
+  // not earned. The calibration route is unaffected — it uses `deriveIn`, which
+  // sets the hooks deliberately.
+  const { SKILLS_DIR: _s, SRC_DIR: _r, ...cleanEnv } = process.env;
+  const proc = Bun.spawn(["bun", "scripts/instruments/gate-blind-set.ts"], {
+    env: cleanEnv,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  // "no envelope" is a THIRD state (outcome-contract, the failure-side section):
+  // a non-zero exit here may carry its explanation on stderr with nothing on
+  // stdout, so name that case rather than letting JSON.parse throw for the wrong
+  // reason.
+  if (code !== 0 || out.trim() === "") {
+    throw new Error(
+      `gate-blind-set did not produce a report (exit ${code}, ${out.length} stdout bytes): ${err.slice(0, 400)}`,
+    );
+  }
+  return JSON.parse(out) as BlindReport;
+}
+
+describe("gate honesty ward", () => {
+  test("STATES WHAT `bun run check` CANNOT SEE (clause i)", async () => {
+    const r = await deriveBlindSet();
+    console.warn(
+      [
+        "",
+        `  GATE HONESTY — \`bun run check\` reads ${r.gated} of ${r.handAuthored} hand-authored files across two roots (skills + src).`,
+        `  ⛔ BLIND to ${r.blind} files / ${r.blindLines} lines — not linted, not type-checked, not parsed.`,
+        `     largest: ${r.files
+          .slice(0, 3)
+          .map((f) => `${f.file.replace("plugins/spellbook/skills/", "")} (${f.lines})`)
+          .join(" · ")}`,
+        "  A green from the gate is a green over the readable subset, never over the roster.",
+        "",
+      ].join("\n"),
+    );
+    // Zero-guard on the POPULATION, not on the finding: an instrument that
+    // enumerated nothing would report a blind set of 0 and read as perfect
+    // coverage.
+    expect(r.handAuthored).toBeGreaterThan(0);
+    expect(r.gated).toBeGreaterThan(0);
+    // ⛔ AND A GUARD ON WHICH WORLD WAS MEASURED. `> 0` cannot distinguish this
+    // repo from a two-file fixture; the roots can. Asserting them is what makes
+    // a steered population impossible to not notice.
+    expect(r.roots).toEqual(REAL_ROOTS);
+  });
+
+  test("the blind set has not moved without being re-declared", async () => {
+    const r = await deriveBlindSet();
+    const derived = Object.fromEntries(r.files.map((f) => [f.file, f.lines]));
+    // Compared as a whole object so the failure names WHICH file and WHICH
+    // direction, rather than reporting that two counts differ.
+    expect(derived).toEqual(DECLARED_BLIND);
+  });
+
+  test("the declaration is not empty — the zero-guard on the pin itself", () => {
+    // A pin that silently emptied would make every future blind file invisible
+    // AND make this ward pass. Guarding the finding's own denominator.
+    expect(Object.keys(DECLARED_BLIND).length).toBeGreaterThan(0);
+  });
+});
+
+// ── CALIBRATION ──────────────────────────────────────────────────────────────
+// Proves the ward's answer is DERIVED FROM THE WORLD rather than echoed from its
+// own declaration — the failure where a pin and a "check" agree because the check
+// never looked.
+//
+// ⛔ THE FIXTURE MUST BE ITS OWN GIT REPO, and that is not fastidiousness.
+// `gate-blind-set` enumerates with `git ls-files`, so its documented
+// `SKILLS_DIR=/some/fixture` hook CANNOT reach an out-of-repo fixture — git exits
+// 128 ("outside repository") and the instrument dies before printing. A fixture
+// inside this repo is no better: `ls-files` lists TRACKED paths, so an uncommitted
+// fixture is invisible too. Minting a throwaway repo is the only route that
+// exercises the real enumerator. (Reported to its owner; not worked around in the
+// instrument, which is not mine.)
+//
+// Mutations never touch the shared tree: a seat mutating to calibrate is
+// indistinguishable, to every other seat, from a broken tree, and this sprint
+// needs dozens of such windows.
+//
+// ⚠ The fixture is minted under the OS temp dir and removed in `finally`. A
+// mkdtemp'd dir cannot COLLIDE and is never REMOVED unless someone removes it —
+// one predicate, two harms, and the exemption was written for the first. (951
+// leaked dirs from that exact gap are on record in this repo.)
+describe("gate honesty ward — calibration", () => {
+  const INSTRUMENT = join(process.cwd(), "scripts/instruments/gate-blind-set.ts");
+  const BIOME = join(process.cwd(), "biome.json");
+
+  // ⛔ THE FIXTURE MINTS BOTH ROOTS, AND THAT IS NOT TIDINESS (R5).
+  // The instrument enumerates each root with `git -C <root> ls-files` and does
+  // not catch a missing directory — a fixture with only root 1 makes it exit
+  // non-zero with an empty stdout, which arrives here as `fixture derive failed`
+  // and turns BOTH calibration arms red for a reason that has nothing to do with
+  // what they test.
+  //
+  // ⛔ AND THE OTHER WAY OUT IS WORSE: making root 2 optional under the test
+  // hook would ship root 2 UNCALIBRATED — a guard exempted from the only thing
+  // that proves it works. That is verbatim the "check that cannot fail in the
+  // failing case" the instrument's own header records having shipped once, in
+  // this same file's subject matter. Both roots are minted, and both roots get a
+  // mutation arm.
+  function mintFixture(): string {
+    const dir = mkdtempSync(join(tmpdir(), "gate-honesty-cal-"));
+    mkdirSync(join(dir, "skills", "spell", "scripts"), { recursive: true });
+    writeFileSync(join(dir, "skills", "spell", "scripts", "cli.ts"), "export const a = 1;\n");
+    // Root 2 — the `src/` analogue. A DIFFERENT shape from root 1 on purpose
+    // (a surface dir, not a scripts dir), so an arm that plants here cannot be
+    // satisfied by root 1's tree by accident.
+    mkdirSync(join(dir, "buildsrc", "spell", "surface"), { recursive: true });
+    writeFileSync(join(dir, "buildsrc", "spell", "surface", "main.ts"), "export const b = 2;\n");
+    return dir;
+  }
+
+  function commitAll(dir: string): void {
+    const git = (args: string[]) =>
+      Bun.spawnSync(["git", ...args], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+    git(["init", "-q"]);
+    git(["add", "-A"]);
+    git(["-c", "user.email=cal@local", "-c", "user.name=cal", "commit", "-qm", "fixture"]);
+  }
+
+  function deriveIn(dir: string): BlindReport {
+    const proc = Bun.spawnSync(["bun", INSTRUMENT], {
+      cwd: dir,
+      // BOTH root hooks are overridden. Leaving SRC_DIR at its default would
+      // point root 2 at a `src/` that does not exist in the fixture — the
+      // failure mintFixture's comment describes.
+      env: { ...process.env, SKILLS_DIR: "skills", SRC_DIR: "buildsrc", BIOME_CONFIG: BIOME },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const out = proc.stdout.toString();
+    if (proc.exitCode !== 0 || out.trim() === "") {
+      throw new Error(
+        `fixture derive failed (exit ${proc.exitCode}): ${proc.stderr.toString().slice(0, 300)}`,
+      );
+    }
+    return JSON.parse(out) as BlindReport;
+  }
+
+  test("MUTATION — ROOT 1: a new unreadable file in the world is detected, and the control arm is empty", () => {
+    const dir = mintFixture();
+    try {
+      commitAll(dir);
+      // CONTROL ARM. Without it, the mutation arm proves only that the instrument
+      // returns something — not that it DISCRIMINATES.
+      const before = deriveIn(dir);
+      expect({ blind: before.blind, blindLines: before.blindLines }).toEqual({
+        blind: 0,
+        blindLines: 0,
+      });
+
+      writeFileSync(
+        join(dir, "skills", "spell", "scripts", "surface.html"),
+        "<p>1</p>\n<p>2</p>\n",
+      );
+      commitAll(dir);
+      const after = deriveIn(dir);
+
+      // 2 for a two-line file — `wc -l` semantics. Pinned to the INSTRUMENT's
+      // convention rather than a second one of this ward's own: two conventions
+      // for one number is the drift this ward exists to prevent.
+      expect({ blind: after.blind, blindLines: after.blindLines }).toEqual({
+        blind: 1,
+        blindLines: 2,
+      });
+      expect(after.files.map((f) => f.file)).toEqual(["skills/spell/scripts/surface.html"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // ⛔ THE SECOND ARM IS THE POINT OF R5, NOT A COPY OF THE FIRST. The defect it
+  // exists to catch is an instrument that enumerates root 1 and merely CLAIMS
+  // root 2 — which is what the report looked like for the whole time
+  // `src/mind-mapper/`'s 276 blind lines were missing from it. Arm 1 passing is
+  // no evidence at all about root 2: the two roots share no code path below
+  // `trackedIn`, and the union hides a root that contributes nothing.
+  //
+  // It plants a `.css` where arm 1 plants an `.html`, so a scanner that somehow
+  // matched only the first arm's extension cannot pass this one by accident.
+  test("MUTATION — ROOT 2: a blind file planted in the SECOND root is detected, and the control arm is empty", () => {
+    const dir = mintFixture();
+    try {
+      commitAll(dir);
+      const before = deriveIn(dir);
+      // The control also proves root 2 is REACHED, not just tolerated: its
+      // gated `main.ts` is in the denominator before anything is planted.
+      expect({ blind: before.blind, blindLines: before.blindLines, gated: before.gated }).toEqual({
+        blind: 0,
+        blindLines: 0,
+        gated: 2,
+      });
+
+      writeFileSync(
+        join(dir, "buildsrc", "spell", "surface", "styles.css"),
+        ":root {\n  --a: 1;\n}\n",
+      );
+      commitAll(dir);
+      const after = deriveIn(dir);
+
+      expect({ blind: after.blind, blindLines: after.blindLines }).toEqual({
+        blind: 1,
+        blindLines: 3,
+      });
+      // Named by its ROOT-2 path. A merged report that dropped the root prefix
+      // would pass the scalar assertions above and be wrong here.
+      expect(after.files.map((f) => f.file)).toEqual(["buildsrc/spell/surface/styles.css"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("MUTATION — a second GATED file is not counted as blind (the false-positive direction)", () => {
+    const dir = mintFixture();
+    try {
+      writeFileSync(join(dir, "skills", "spell", "scripts", "more.ts"), "export const b = 2;\n");
+      commitAll(dir);
+      // A ward that called EVERYTHING blind would pass the arm above and be
+      // useless.
+      const r = deriveIn(dir);
+      // gated 3, not 2: root 1's `cli.ts` + the planted `more.ts` + ROOT 2's
+      // `main.ts`. The scalars are sums across roots (R5), and this number is
+      // the cheapest place that fact is asserted rather than described.
+      expect({ blind: r.blind, gated: r.gated }).toEqual({ blind: 0, gated: 3 });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -21,11 +21,14 @@ excluded from both the heartbeat poke and the surface's "stale" card-aging cue.
   in `computeDuePokes` (`continue`, no poke) and `cardOverdue` (return `null`,
   no stale cue). `cardOverdue`'s signature gains the task list (blocked-ness
   needs sibling statuses).
-- **`template.html` Alpine mirror** — the hand-copied `cardOverdue` gets the
-  same skip. The surface already receives each card's derived `blocked` flag, so
-  the mirror is a one-line `if (card.blocked) return null`. Keep this in
-  lockstep with the server helper (no test guards that drift — see `grimoire`
-  surface-mirror discipline).
+- ~~**`template.html` Alpine mirror** — the hand-copied `cardOverdue` gets the
+  same skip. Keep this in lockstep with the server helper (no test guards that
+  drift).~~ **Struck 2026-09-06 by the bounty conversion: THERE IS NO MIRROR.**
+  `cardOverdue` now lives once, at
+  `plugins/spellbook/skills/bounty/shared/predicates.ts`, and the React surface
+  imports it — the blocked-skip is a single edit to a single function that
+  `scripts/server.test.ts` already guards. This bullet was the whole cost of the
+  lockstep, written down at the time it was being paid.
 - **`SKILL.md` workflow nudge** (the load-bearing addition): blocked-skip only
   bites if waits are actually modeled as block edges. maestro confirmed the
   team's real lockstep waits were **informal** (never `bounty block`), so add:
@@ -59,13 +62,16 @@ excluded from both the heartbeat poke and the surface's "stale" card-aging cue.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/server.ts` — `computeDuePokes`
-  (~L106–135), `cardOverdue` (~L145–152), `expectedMinutes` (~L97–101),
-  `Task.blockedBy` (~L76)
-- `plugins/spellbook/skills/bounty/scripts/template.html` — the Alpine
-  `cardOverdue` mirror
+- `plugins/spellbook/skills/bounty/shared/predicates.ts` — `cardOverdue`,
+  `expectedMinutes`, `isBlocked`/`liveBlockerCount`; imported by BOTH the daemon
+  and the board since 2026-09-06
+- `src/bounty/backend/server.ts` — `computeDuePokes`
+- `plugins/spellbook/skills/bounty/shared/types.ts` — `Task.blockedBy`
+- ~~`plugins/spellbook/skills/bounty/scripts/template.html`~~ — deleted; the
+  surface is `src/bounty/surface/`
 - `plugins/spellbook/skills/bounty/SKILL.md` — heartbeat / sizing guidance
 - GitHub issue: #40. Design review: `bounty-heartbeat-design` grapevine channel
   (maestro, dream-flute team).
-- Memory: `bounty-surface-lockstep-mirror` (the server-helper ⇄ Alpine-mirror
-  drift risk this touches).
+- Memory: `bounty-surface-lockstep-mirror` — **the hazard this item recorded is
+  now closed**; the conversion deleted the mirror rather than guarding it
+  (`docs/projects/bounty-conversion/`).

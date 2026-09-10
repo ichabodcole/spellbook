@@ -49,69 +49,122 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { backendSources, readEntryPoint } from "./lib/entry-points";
 
 const REPO_ROOT =
   process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
-/** The pinned texts quote real source lines that contain a template
- *  placeholder. Writing `$`+`{payload}` keeps the digraph out of this file, so
- *  biome's noTemplateCurlyInString (a rule aimed at someone who MEANT to
- *  interpolate) does not fire on data that is deliberately literal. A blanket
- *  suppression would silence the rule everywhere in this file, including on a
- *  future genuine mistake; this does not. */
-const PH = `${"$"}{payload}`;
+/* ⚠ `const PH = `${"$"}{payload}`` STOOD HERE AND IS GONE WITH ITS LAST READER.
+ * It existed so a pinned text could quote a real source line containing a
+ * template placeholder without putting the digraph in this file — biome's
+ * noTemplateCurlyInString is aimed at someone who MEANT to interpolate, and a
+ * blanket suppression would have silenced the rule on a future genuine mistake
+ * too. Every A-drain row that quoted such a line has now left the inventory
+ * (magpie, mind-mapper, glamour, imago, bounty), because the write-then-exit
+ * shape has nowhere to live once a CLI adopts `src/kit/wire/tailEvents.ts`.
+ *
+ * ⛔ THE HELPER COMES BACK THE DAY A PINNED TEXT NEEDS IT, NOT BEFORE — an
+ * unused constant kept "just in case" is what `noUnusedVariables` reds on, and
+ * the gate treats that warning as fatal. Reinstate the four lines above with
+ * the row that needs them. */
 
 type Family = "A-drain" | "B-noemit" | "C-signal" | "D-die" | "E-terminal" | "F-live";
 
 /** The pinned inventory: relative path -> normalised source line -> family. */
 const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // A — remediated: the exit is the callback of the write it drains (sprint 02).
-  {
-    file: "astrolabe/scripts/cli.ts",
-    text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
-  {
-    file: "bounty/scripts/cli.ts",
-    text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
-  {
-    file: "glamour/scripts/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
-  {
-    file: "imago/scripts/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
-  {
-    file: "magpie/scripts/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
+  // astrolabe/backend/cli.ts AND magpie/backend/cli.ts LEFT THIS FAMILY on the
+  // backend-convergence Phase 1a branch, along with their B/C/D/F siblings
+  // below. Both tails are now one call into `src/kit/wire/tailEvents.ts`, which
+  // RETURNS an exit code instead of exiting, and both `die`s are one call into
+  // `src/kit/wire/errors.ts`, which THROWS. astrolabe has zero live exit sites
+  // left; magpie keeps exactly one (its module-level EPIPE guard, F-live).
+  //
+  // ⛔ AND THAT MEANS THIS WARD NO LONGER SEES WHERE THOSE TWO SPELLS END. The
+  // shared client is under `src/kit/`, which this inventory does not walk, and
+  // it contains no `process.exit(` at all — by construction, which is the whole
+  // design. Nothing was hidden; there is nothing there to pin. When the other
+  // five tails adopt, the same eight-row deletion repeats, and the day the kit
+  // ever grows an exit is the day this walk must grow a third root.
+  // ⭐ bounty's A-drain site is GONE, and it is the THIRD time this inventory has
+  // recorded that sentence. It moved to `backend/cli.ts` in Phase 4 chapter 1
+  // (three CLI rows and three daemon rows re-addressed, families and texts
+  // unchanged), then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (B-noemit,
+  // C-signal) went with it for the same reason — the `closed` branch and both
+  // signal handlers are one `return` now.
+  //
+  // ⛔ BOUNTY'S CLI NOW HAS ZERO LIVE `process.exit` SITES — the FIFTH CLI to
+  // reach that, after magpie, mind-mapper, glamour and imago, and the direction
+  // this inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
+  // `process.exitCode`.
+  //
+  // ⚠ AND IT IS THE FIRST CLI WHOSE A-DRAIN SITE WAS NOT A ONE-LINER TO REMOVE.
+  // The comment at that site recorded a PER-SITE PRECONDITION — the exit sat
+  // three loops deep, so `process.exitCode` + a natural return does not return
+  // from a tail; it falls through and the loop goes round again, which is the
+  // 23-minute hang in a new place. Adopting the shared client is what made the
+  // deletion safe: the loops belong to the client and the exit belongs to
+  // `main`. Deleting the exit WITHOUT the adoption would have shipped the hang.
+  // ⭐ glamour's A-drain site is GONE, and it is the clearest thing this
+  // inventory has recorded. It moved to `backend/cli.ts` in Phase 2 chapter 1,
+  // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (C-signal,
+  // F-live) went with it for the same reason — the signal handlers and the
+  // "pinned session went away" exit are all one `return` now.
+  //
+  // ⛔ glamour's CLI has ZERO live `process.exit` sites, which is the direction
+  // this inventory exists to push and the third CLI to reach it after magpie and
+  // mind-mapper. `scripts/cli.ts` is a LAUNCHER holding `process.exitCode`.
+  // ⭐ imago's A-drain site is GONE, and it is the second time this inventory has
+  // recorded that sentence. It moved to `backend/cli.ts` in Phase 3 chapter 1,
+  // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (C-signal,
+  // F-live) went with it for the same reason.
+  //
+  // ⛔ IMAGO'S CLI NOW HAS ZERO LIVE `process.exit` SITES — the FOURTH CLI to
+  // reach that, after magpie, mind-mapper and glamour, and the direction this
+  // inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
+  // `process.exitCode`.
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
-  { file: "astrolabe/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
-  { file: "bounty/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
-  {
-    file: "astrolabe/scripts/cli.ts",
-    text: "const stop = () => process.exit(0);",
-    family: "C-signal",
-  },
-  { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "glamour/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "magpie/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(0);", family: "C-signal" },
+  // ⛔ RE-ADDRESSED BY PHASE 6 CHAPTER 1, NOT CHANGED. grapevine's backend now
+  // builds, so its sources sit under the second root and LAUNCHERS hold the old
+  // addresses. Families and texts are identical either side of the move — that
+  // is chapter 1's whole contract — and the launchers add no row: BOTH of
+  // grapevine's are `process.exitCode` + a natural return, which is the one
+  // thing about this spell that differs from the five daemons above (D69 — its
+  // `main()` returns while the process must keep living, so a terminal exit at
+  // the launcher would kill a live server; there is no E-terminal row for
+  // grapevine and there must not be one).
+  // ⭐ grapevine's CLI A-DRAIN/C-SIGNAL SITE IS GONE, and it is the third time
+  // this inventory has recorded that sentence. `cmdTail` held
+  // `stopped = true; process.exit(0)` in a SIGINT/SIGTERM handler seven lines
+  // into a 220-line hand-written reconnect loop — the P0f shape exactly, and the
+  // half five spells did not fix when they fixed the terminal frame. Phase 6
+  // chapter 2 adopted `src/kit/wire/tailEvents.ts`, whose client RETURNS an exit
+  // code instead of ending the process from inside three nested loops, so the
+  // site has nowhere to live.
+  //
+  // ⛔ AND ONE OF grapevine's DAEMON ROWS WENT WITH IT, FOR A DIFFERENT REASON.
+  // `process.exit(code),` — the trailing comma is the tell — sat inside
+  // `Promise.race([server.stop(true), 200ms]).finally(…)`. That race IS
+  // `src/kit/wire/housekeeping.ts`'s `drainAndStop`, so adopting it left ONE
+  // terminal exit after an awaited drain instead of two spellings of the same
+  // ending. The two rows below are what remains: the awaited teardown, and the
+  // already-running branch that exits before anything is bound.
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(0);", family: "C-signal" },
   // bounty/server.ts, RE-READ at 2cc513d after the funnel (t-1b9424ab). The two
   // hardcoded signal exits (143/130) are GONE -- routed into the teardown. What
   // remains are three exits that are correct BY CONSTRUCTION, each read at its
@@ -127,59 +180,106 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   //   :860  the shutdown WATCHDOG -- force-exits if the teardown does not
   //         finish. It exists so termination is guaranteed by construction
   //         rather than by the teardown being correct.
-  // NOTE: :673 and :860 are BYTE-IDENTICAL ("process.exit(code);"), so the
-  // (file, text) key CANNOT tell them apart. Both are pinned; this comment is
-  // the only thing that distinguishes them. If one is ever removed, the ward
-  // reports one `removed` and cannot say which -- go read both.
-  { file: "bounty/scripts/server.ts", text: "process.exit(1);", family: "C-signal" },
-  { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
+  // NOTE: :673 and :860 USED TO BE BYTE-IDENTICAL ("process.exit(code);"), so
+  // the (file, text) key could not tell them apart and this comment was the
+  // only thing that did. THE AMBIGUITY IS GONE as a side effect of D53: the
+  // watchdog moved into `resolveDone`, where the code it exits with is the
+  // RESOLVING code, so it now reads `process.exit(v.code);` and the two sites
+  // have distinct keys. The distinction was worth having and was bought by a
+  // change made for another reason -- recorded so nobody "tidies" the two
+  // spellings back into one.
+  { file: "bounty/backend/server.ts", text: "process.exit(1);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(v.code);", family: "C-signal" },
   // D — die(): one short stderr write, then exit. Safe ONLY while the payload
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
-  { file: "astrolabe/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "bounty/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "glamour/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "magpie/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "mind-mapper/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
+  // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
+  // usage 2, internal 1) rather than always 2 — same one-short-write shape.
+  //
+  // bounty/backend/cli.ts left this family in Phase 4 chapter 2, by adopting the
+  // SAME module (`src/kit/wire/errors.ts`) glamour, imago and magpie did — and
+  // ⚠ for bounty that was a CALLER-VISIBLE change, because its die() emitted
+  // PROSE and exit 2 for every failure it could produce. Driven across seven
+  // failing invocations before and after; see D45 and the Phase 4 journal.
+  // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
+  // CliError and main() returns the taxonomy code (usage 2, internal 1,
+  // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
+  // imago left it the same way in Phase 3 chapter 2, by adopting the SAME
+  // module (`src/kit/wire/errors.ts`) rather than by reaching the shape
+  // independently — ⚠ and for imago that was a caller-visible change, because
+  // its die() emitted PROSE and exit 2 for every failure. See D38.
+  // magpie's die() left this family too: it now THROWS a CliError from
+  // `src/kit/wire/errors.ts` and `main` returns the taxonomy code — the same
+  // move glamour and mind-mapper made at their acc L0 passes, and the direction
+  // this inventory exists to push.
+  // mind-mapper/backend/cli.ts left this family entirely (acc L0 lane B): its
+  // requireDaemon die became a thrown CliError that main() returns as an exit
+  // code — zero live process.exit sites remain in that CLI, which is the
+  // direction this inventory exists to push.
+  // ⛔ grapevine/backend/cli.ts LEFT THIS FAMILY in Phase 6 chapter 2, by
+  // adopting the SAME module (`src/kit/wire/errors.ts`) glamour, imago, magpie
+  // and bounty did — ⚠ and for grapevine that was a CALLER-VISIBLE change, at
+  // 38 raise sites: its die() emitted PROSE and exit 2 for every failure (two
+  // internal faults at 1), and a SECOND contract lived beside it in four
+  // `process.stderr.write(...); return 2` rejections the parser owned. Driven
+  // before and after; see D72 and the Phase 6 journal. **grapevine's CLI now has
+  // ZERO live `process.exit` sites — the SIXTH CLI to reach that**, after
+  // magpie, mind-mapper, glamour, imago and bounty.
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
+  // ⛔ THESE TWO DID **NOT** MOVE, AND THAT IS THE INTERESTING HALF OF BOUNTY'S
+  // CHAPTER 1. A terminal exit belongs to the process entry, and after the port
+  // the process entry IS the launcher — so `bounty/scripts/{join,server}.ts`
+  // are still exactly where the process ends, at the same address, with the
+  // same text and the same family. Six rows re-addressed and two deliberately
+  // not is what a correct relocation looks like here; a port that moved all
+  // eight would have pinned an exit that no longer exists.
+  //
+  // ⚠ AND `join.ts` IS THE ONE E-TERMINAL ROW IN THIS MAP THAT IS A KNOWN
+  // DEFECT RATHER THAN A CLEAN SHAPE. Its `main` emits the terminal
+  // `disconnected` frame on the line before it returns, so this exit can
+  // truncate the write every consumer waits for (family A's hazard, at an
+  // E-terminal site). It is kept because the one-line fix — `process.exitCode`
+  // + a natural return — was MEASURED to HANG here: the WebSocket is not
+  // guaranteed closed on every exit path, so the exit is doing double duty.
+  // Carded (#77/#78); shipping a hang to fix a truncation is a bad trade.
   { file: "bounty/scripts/join.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "bounty/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "imago/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "magpie/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
-  { file: "glamour/scripts/server.ts", text: "process.exit(res.code);", family: "E-terminal" },
-  {
-    file: "mind-mapper/scripts/server.ts",
-    text: "process.exit(await main(process.argv.slice(2)));",
-    family: "E-terminal",
-  },
+  // ⚠ glamour's daemon exit STAYED IN `scripts/server.ts` across Phase 2 — the
+  // launcher is the process entry now, so this is still the site where the
+  // process ends. The TEXT changed (`res.code` → `exitCode`) because `main` now
+  // returns the code instead of the launcher reaching into the daemon's own
+  // result object; the family and the address did not.
+  { file: "glamour/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
+  // ⚠ mind-mapper's daemon exit STAYED at `scripts/server.ts` across Phase 7 —
+  // the launcher is the process entry now, so this is still the site where the
+  // process ends, at the same address and in the same family. The TEXT changed
+  // because `main` moved to `src/mind-mapper/backend/server.ts` and the launcher
+  // calls its exported `run()` instead of holding the argument-vector slice
+  // itself: a forwarder that read argv would match the arg-parsing predicate in
+  // `grimoire/lib/entry-points.ts` and this launcher — not the daemon — would
+  // become the spell's pinned internal entry point. It is the LAST of the eight
+  // spells to make this move, which closes this map's relocation population.
+  { file: "mind-mapper/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   // F — live: an in-function exit with stdout pending upstream of it.
+  // (imago's F-live site left with the rest — `tailEvents`'s `onUnresolved`
+  //  returns "stop" and the tail RETURNS 0 instead of exiting from inside the
+  //  reconnect loop. Same completed-watch semantics, no exit.)
   {
-    file: "glamour/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // pinned session went away → done",
-    family: "F-live",
-  },
-  {
-    file: "imago/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // our pinned session went away → done",
-    family: "F-live",
-  },
-  {
-    file: "magpie/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // our pinned session went away → done",
-    family: "F-live",
-  },
-  {
-    file: "magpie/scripts/cli.ts",
+    file: "magpie/backend/cli.ts",
     text: 'if (e.code === "EPIPE") process.exit(0);',
     family: "F-live",
   },
 ];
 
 /** Walk for non-test .ts — by BEHAVIOUR (recursive), never a fixed depth or a
- *  per-spell layout guess. Five spells keep code in scripts/, three in tests/;
+ *  per-spell layout guess. ⚠ THIS DOCSTRING USED TO READ "Five spells keep code
+ *  in scripts/, three in tests/" — a layout census that expired at mind-mapper's
+ *  port, the last of the eight. EVERY spell's backend now lives under
+ *  `src/<spell>/backend/` and `scripts/` holds launchers only, so the recursion
+ *  is what keeps this walk right rather than what keeps it general;
  *  a hand-written glob is a silent filter (house-style, the 63-vs-37 scar). */
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -197,12 +297,34 @@ function isCommentLine(line: string): boolean {
   return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*");
 }
 
+/**
+ * The inventory's population, across BOTH roots.
+ *
+ * ⛔ THE SECOND ROOT IS `src/<spell>/backend/`, AND IT IS NOT OPTIONAL. Slice 2
+ * moved two spells' CLI SOURCE out of `<spell>/scripts/` and left a launcher at
+ * that address. Every exit site in those CLIs would otherwise leave this
+ * inventory silently — and this map is the whole record of where the drained-exit
+ * discipline is and is not applied.
+ *
+ * ⛔ AND IT MUST NOT COUNT THE EMITTED BUNDLE. `walk` skips `dist/`, so the
+ * inlined copy of each exit site in `dist/cli.js` is not a second row. Counting
+ * both would double every site and make the map unmaintainable by construction —
+ * the pin would have to be edited on every rebuild.
+ *
+ * `backendSources` and `readEntryPoint` come from the shared enumerator so the
+ * second root has ONE definition, not one per ward.
+ */
 function enumerate(): Array<{ file: string; text: string }> {
   const found: Array<{ file: string; text: string }> = [];
-  for (const abs of walk(SKILLS)) {
-    const rel = abs.slice(SKILLS.length + 1);
-    const lines = readFileSync(abs, "utf8").split("\n");
-    for (const line of lines) {
+  const sources: Array<{ rel: string; text: string }> = [
+    ...walk(SKILLS).map((abs) => ({
+      rel: abs.slice(SKILLS.length + 1),
+      text: readFileSync(abs, "utf8"),
+    })),
+    ...backendSources().map((rel) => ({ rel, text: readEntryPoint(rel) })),
+  ];
+  for (const { rel, text } of sources) {
+    for (const line of text.split("\n")) {
       if (!line.includes("process.exit(")) continue;
       if (isCommentLine(line)) continue;
       found.push({ file: rel, text: line.trim().replace(/\s+/g, " ") });
@@ -215,8 +337,11 @@ const key = (s: { file: string; text: string }) => `${s.file}\t${s.text}`;
 
 describe("P0f — the exit-site inventory is pinned", () => {
   test("the sweep actually ran (zero-guard: a dead sweep and a clean sweep look identical)", () => {
-    const files = walk(SKILLS);
+    const files = [...walk(SKILLS), ...backendSources()];
     expect(files.length).toBeGreaterThan(20);
+    // The second root contributed — a zero here means Slice 2's relocated CLIs
+    // left the inventory and nothing said so.
+    expect(backendSources().length).toBeGreaterThan(0);
     expect(enumerate().length).toBeGreaterThan(0);
   });
 

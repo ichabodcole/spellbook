@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { Element, ElementVersion } from "../surface/state/types";
-import { chosenVersion, versionUrl } from "../surface/state/versions";
+import type { Element, ElementVersion } from "../shared/types";
+import { chosenVersion, versionUrl } from "../shared/versions";
 
 function v(id: string, model: string, rev = 0): ElementVersion {
   return { id, model, path: `/tmp/files/${model}.png`, rev };

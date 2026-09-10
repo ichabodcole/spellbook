@@ -1,7 +1,25 @@
-@import "tailwindcss";
-/* Tailwind only emits utilities it finds as literal text — keep the @source
-   glob so classes referenced from .ts (not just .tsx) survive. */
-@source "./**/*.{ts,tsx}";
+@import "tailwindcss" source(none);
+/* L0 shared tokens (src/kit/theme/base.css). Imported BEFORE this surface's own
+   @theme, so every token below OVERRIDES the kit default — mind-mapper keeps
+   all of its own values and inherits nothing but the vocabulary. */
+@import "../../kit/theme/base.css";
+/* ⛔ `source(none)` ON THE `@import "tailwindcss"` LINE IS LOAD-BEARING. It
+   turns OFF Tailwind's automatic content detection, which roots at the PROCESS
+   CWD — the repo root under `bun run build` — and therefore compiled THIS
+   spell's stylesheet out of EVERY spell's text, plus the committed dist/ trees
+   that .gitignore un-ignores.
+   The @source below is now this surface's ONLY content source: a utility is
+   emitted iff it appears as literal text under it, or an @import-ed stylesheet
+   contributes it through that sheet's own @source. The measured numbers, the
+   reason the old `@source not ".../dist"` line is gone, and the routes that run
+   each claim red live in grimoire/spell-css-scope-ward.test.ts. */
+/* A bare directory source, NOT an extension-scoped ts/tsx glob — index.html and the
+   vendored ui/ components have to be scanned too. src/kit/ is NOT reached from
+   here; it arrives through the kit stylesheet imported above, which carries its
+   own `@source "../"`. Importing a kit COMPONENT is not enough: under
+   source(none) Bun's Tailwind plugin discards the module graph outright. */
+@source "./";
+
 
 /* Semantic tokens (house convention: no raw palette in markup). Names follow
    the imago/glamour taxonomy; tier/provenance tokens are this surface's own

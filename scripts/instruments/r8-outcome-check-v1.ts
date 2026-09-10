@@ -17,9 +17,27 @@
 //   never by filename. Printed, and asserted non-zero, before any verdict.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-const SKILLS = "/Users/colereed/Projects/Spellbook/plugins/spellbook/skills";
+// ⛔ THE ROOT: AN ENV OVERRIDE WITH A DERIVED DEFAULT, AND IT USED TO BE A
+// HARDCODED ABSOLUTE PATH TO ONE MACHINE'S CHECKOUT — pointed, moreover, at
+// `plugins/spellbook/skills`, which the backend convergence emptied of
+// dispatchers. Every one of the three r8 copies therefore exited 1 with
+// `ZERO-DENOMINATOR — verdict withheld` (type-debt Phase 1, T10): live,
+// self-calibrating logic aimed at a tree that had moved out from under it, and
+// unrunnable on any other machine besides.
+//
+// The default is DERIVED from this file's own location, so the instrument runs
+// wherever the checkout is; `R8_ROOT` is the house override idiom
+// (`gate-blind-set.ts` takes `ROOT_DIR`, `type-debt-census.ts`
+// `TYPE_DEBT_ROOT`, `canon-ledger-ward.ts` `CANON_DIR`) and is what points it
+// at the OLD tree, or at a fixture, without editing a specimen.
+//
+// ⚠ AND THE REPORT IS BYTE-IDENTICAL TO THE PRE-CHANGE FILE RUN AGAINST THE
+// SAME ROOT — verified for all three copies before and after `biome --write`,
+// which is `c4d669eb`'s own discipline for touching these files. The only thing
+// that changed is which tree the instrument can find.
+const ROOT = resolve(process.env.R8_ROOT ?? join(import.meta.dir, "..", "..", "src"));
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -41,6 +59,25 @@ const CAPTURE = /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?([A-Za-
 const ESCAPE_FNS =
   "emitEvent|emit|broadcast\\w*|reply|respond|Response|JSON\\.stringify|send\\w*|push\\w*";
 
+// ⛔ R3, MADE LOCAL: READ THE POSSIBLY-UNDEFINED, AND DIE NAMING THE INVARIANT.
+// `x!` and `?? fallback` both make the type error vanish and only one of those
+// is honest. In an INSTRUMENT `?? fallback` is the worse one, and
+// `if (!x) continue` is worse still: a skipped element lowers a DENOMINATOR
+// with nothing said, which is D64's defect exactly — a coverage count going
+// down is not a failure, so nothing reds and a shipped number is quietly false.
+// An instrument that crashes gets repaired; one that counts less ships a lie.
+//
+// ⚠ THIS HELPER IS DUPLICATED PER INSTRUMENT ON PURPOSE. Every file under
+// `scripts/instruments/` imports node builtins and nothing else — each is
+// runnable and copyable on its own — and the three r8 files are CALIBRATED
+// SPECIMENS whose independence is their evidentiary value (c4d669eb verified
+// each byte-identical to its own baseline). A shared module would let one edit
+// move all three specimens at once, silently.
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 type Hit = {
   file: string;
   verb: string;
@@ -50,7 +87,7 @@ type Hit = {
   reason: string;
 };
 
-const files = walk(SKILLS);
+const files = walk(ROOT);
 const dispatchFiles: string[] = [];
 const hits: Hit[] = [];
 let branchCount = 0;
@@ -60,19 +97,34 @@ for (const f of files) {
   BRANCH.lastIndex = 0;
   const marks: { verb: string; start: number }[] = [];
   for (const m of src.matchAll(BRANCH))
-    marks.push({ verb: m[1] ?? m[2], start: m.index + m[0].length });
+    marks.push({
+      // BRANCH is two alternatives with ONE capture group each, so a match
+      // always sets exactly one of them. ASSERTED rather than assumed: if a
+      // third alternative is ever added without a group, this dies here rather
+      // than pushing a `verb` of `undefined` into every report row.
+      verb: must(m[1] ?? m[2], "BRANCH matched with neither capture group set"),
+      start: m.index + m[0].length,
+    });
   if (marks.length < 3) continue; // a dispatcher has several branches; 1-2 is an ordinary conditional
   dispatchFiles.push(f);
 
   for (let i = 0; i < marks.length; i++) {
+    const mark = must(marks[i], `marks[${i}] absent inside 0..${marks.length}`);
+    // ⚠ `marks[i + 1]` IS legitimately absent on the LAST branch, and that `??`
+    // STAYS: it is the terminal case the 4000-char cap exists for — a real
+    // alternative, not a silenced invariant. Telling the two apart is the whole
+    // of R3.
     const body = src.slice(
-      marks[i].start,
-      marks[i + 1]?.start ?? Math.min(src.length, marks[i].start + 4000),
+      mark.start,
+      marks[i + 1]?.start ?? Math.min(src.length, mark.start + 4000),
     );
     branchCount++;
     CAPTURE.lastIndex = 0;
     for (const c of body.matchAll(CAPTURE)) {
-      const [, local, callee] = c;
+      // CAPTURE is ONE alternative with two MANDATORY groups: a match sets
+      // both. Read loudly rather than destructured and hoped for.
+      const local = must(c[1], "CAPTURE matched without its `local` group");
+      const callee = must(c[2], "CAPTURE matched without its `callee` group");
       // Does the captured local reach anything outbound, or get returned?
       const esc = new RegExp(`(?:${ESCAPE_FNS})\\s*\\([^;]{0,300}?\\b${local}\\b`, "s");
       const ret = new RegExp(`return[^;]{0,200}?\\b${local}\\b`, "s");
@@ -80,8 +132,8 @@ for (const f of files) {
       const escapes = esc.test(body) || ret.test(body);
       // objField alone is weak evidence; recorded but not treated as escape.
       hits.push({
-        file: f.replace(`${SKILLS}/`, ""),
-        verb: marks[i].verb,
+        file: f.replace(`${ROOT}/`, ""),
+        verb: mark.verb,
         local,
         callee,
         escapes,
@@ -112,7 +164,7 @@ if (dispatchFiles.length === 0 || branchCount === 0) {
   process.exit(1);
 }
 console.log("\ndispatch files:");
-for (const f of dispatchFiles) console.log(`  ${f.replace(`${SKILLS}/`, "")}`);
+for (const f of dispatchFiles) console.log(`  ${f.replace(`${ROOT}/`, "")}`);
 
 const dropped = hits.filter((h) => !h.escapes);
 console.log(

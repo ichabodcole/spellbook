@@ -3,7 +3,7 @@
 // as the context menu.
 
 import type * as React from "react";
-import { cn } from "../lib/utils";
+import { cn } from "../../../kit/lib/cn";
 
 function Badge({ className, ...props }: React.ComponentProps<"span">) {
   return (

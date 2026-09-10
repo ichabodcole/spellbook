@@ -358,20 +358,163 @@ unchanged**, which is why the scar stays._
 
 ---
 
-## The build (there isn't one)
+## The build
 
-### Self-contained, no build step. Bun runs `.ts` natively.
+### Spells port to the build. The rest are queued, at two different distances.
 
-<!-- rule-id: self-contained-no-build -->
+<!-- rule-id: spells-are-porting-to-the-build -->
 
-Zip one folder and it runs anywhere `bun` is on PATH. Protocol types at the top
-of the file; assets load CDN libs inline.
+`bun run build` (`src/build.ts`) bundles a spell's surface from
+`src/<spell>/surface/` into `plugins/spellbook/skills/<spell>/dist/`, which is
+**committed**. **The spells that build are the ones `bun scripts/dist-check.ts`
+counts** (`buildableSpells()` in `src/build.ts`) — ask it, do not copy its
+answer here. Two of them (astrolabe, magpie) also ship a **built backend** at
+`dist/cli.js` behind a 37-line launcher. **That is no longer an enumerated
+permission — it is a criterion firing:** a backend that imports from outside its
+own deployed skill folder must build, because a skill installs as one folder and
+an import reaching out of it fails on the consumer's machine. Both of them
+import `src/kit/lib/printJson`; the other five backends import nothing shared
+and so still ship as source. (Contract 3, amended 2026-09-04 by Cole's ruling.)
 
-- **Boundary check:** a heavy UI framework _may_ take a `bun build` step inside
-  the spell's own setup — but the moment it feels like erecting a building,
-  stop.
-- **Repeal when:** the runtime makes a build step free (then it's no longer a
-  cost to weigh).
+**The direction is that everything ports** — and as of 2026-09-04 it covers
+**backends too, not just surfaces**, and it is a **plan rather than a
+tendency**: _"I plan to move pretty much every app to a build. Maybe not all at
+the same time, but that is the plan."_ (Cole, 2026-09-04). **Every spell gets a
+build; the open question is order, not whether.**
+
+> ⚠ **That quote is ATTRIBUTION, not house canon.** Cole said _app_, and the
+> broader cross-project plan is **stated and deliberately unrecorded** — ruled
+> 2026-09-05: Spellbook scope is enough for now. The rule this page states is
+> spell-scoped; do not promote the quote into a house-wide standard on the
+> strength of appearing here. See
+> `docs/backlog/2026-09-05-a-ratified-manifesto-correction-never-reached-the-manifesto.md`.
+> A new spell may start without one while it is genuinely small, and Contract
+> 3's criterion ends that exemption automatically — it is a staging concession,
+> not a category.
+
+**Direction is still not permission**, though — the queue below governed _when_
+a spell ported. **The queue is now EMPTY, and this section is a record rather
+than a schedule.**
+
+| spell    | surface today | distance |
+| -------- | ------------- | -------- |
+| _(none)_ | —             | —        |
+
+**Every spell in the roster builds.** digestify left the queue on 2026-09-07
+(`docs/projects/digestify-conversion/`), the third and last rewrite: 1,505 lines
+of hand-written HTML with three CDN runtime dependencies became a React surface
+with its primitives from the shadcn registry, taken INSIDE the rewrite rather
+than vendored first. bounty went on 2026-09-06 and grapevine — the pathfinder —
+on 2026-09-05. **A spell with no `surface/` is not yet a port subject**; the
+porting playbook's Applicability says the same thing from its side, and it now
+governs nobody.
+
+> **⏳ DIGESTIFY'S TRIGGER FIRED, AND NOT THE WAY IT WAS WRITTEN.** The
+> condition was "digestify ports when it becomes dynamic enough to want a
+> build", owned by Cole and checked when that work started. What actually
+> happened is that the two ports either side of it turned a conditional into an
+> obvious last step: with grapevine and bounty on the built layer, digestify was
+> the only spell whose surface the gate could not read at all, and Cole ruled
+> the port directly (2026-09-06, behaviour-faithful + restyled, all three themes
+> tokenized). **A named trigger with an owner did its job even though the named
+> occasion never arrived** — because it made the question re-askable, which is
+> the whole difference between a trigger and a comment.
+
+> **⛔ THIS RULE'S OWN REPEAL CONDITION HAS NOW FIRED.** It reads: _"Repeal
+> when: the last spell ports. Then this rule becomes 'spells build.'"_ The last
+> spell has ported. The successor sentence is therefore live — **spells build**
+> — and the porting DIRECTION this rule exists to state no longer has anyone to
+> point at. Left standing rather than deleted here for one reason and one only:
+> the next spell to be inscribed is the subject it will govern, and deleting it
+> the same week it was satisfied would hand that spell's author no rule at all.
+> **Rewriting it from a direction into a default is a canon decision and belongs
+> to the grooming pass, not to the port that satisfied it.** The judgment, and
+> what the trigger bought even though its named occasion never arrived, are in
+> [that scenario](scenarios/2026-09-07-a-repeal-condition-fired-and-the-rule-stayed.md).
+
+**What a built spell must satisfy** — the contracts, not this page, are
+authoritative:
+
+- the deployed folder is **source-free by FILES** (Contracts 4, 20)
+- `dist/` is verified by **reproduction**, never regenerated in CI (Contract 18)
+  — reproduction now holds from a clean _or_ a dirty `dist/`
+- release gates on `dist/index.html` existing (Contract 1)
+- a built surface's Tailwind scan is **scoped to its own surface**, and the kit
+  is adopted by importing its **stylesheet**, not by importing a component
+  (Contract 21) — **a porting spell must add `source(none)` or it re-opens the
+  cross-spell leak**
+
+- **Boundary check:** the dev loop is the cost. If a change to a built spell
+  needs a rebuild to see, that is the tax — weigh it before porting the next.
+- **Repeal when:** the last spell ports. Then this rule becomes "spells build."
+
+> **⚠ THIS SECTION READ "The build (there isn't one)" UNTIL 2026-08-31, THROUGH
+> THREE SPRINTS THAT BUILT THINGS.** v2.2.0 shipped a build; the page went on
+> denying it. Nothing failed — canon has no gate — and the cost landed on every
+> fresh agent who read the tree through a description that contradicted it.
+>
+> **The old rule carried a repeal condition and it had FIRED:** _"repeal when
+> the runtime makes a build step free."_ Bun's HTML imports and
+> `bun-plugin-tailwind` did approximately that. **A repeal condition nobody is
+> scheduled to re-read is a comment, not a trigger** — the same shape as an
+> untested backup. The digestify trigger above names an owner and an occasion
+> for exactly this reason.
+
+### A spell's primitives come from the shadcn registry; a variant extends the recipe, never fights it.
+
+<!-- rule-id: registry-primitives-variant-extends-recipe -->
+
+A spell with a React surface takes its primitives from the shadcn registry
+through the CLI (`bunx --bun shadcn@latest add …` from the spell's
+`components.json`), `base` flavour on `@base-ui/react`. The registry owns every
+file under `surface/ui/`: no provenance header, no hand-written look-alike, no
+comment about where it came from — the next `add --overwrite` rewrites the file,
+and a header that survives only until then is a lie waiting to happen. Where the
+spell's look disagrees with a recipe, **add a variant inside the recipe's `cva`
+config** (two lines, one comment) and use it — never a parallel lookup, never a
+stack of overriding utilities at the call site, and never a copy of the file
+under another name. The spell's tokens do the rest: the L1 alias block in
+`styles.css` maps every registry name the installed set consumes
+(`--color-primary`, `--color-muted-foreground`, …) onto the spell's own tokens,
+each a `var()`, never a value — so a recipe changes shape, size and weight, and
+the palette stays the spell's.
+
+- **Boundary check:** `bunx --bun shadcn@latest info` from the spell folder
+  lists every file under `surface/ui/` as installed and nothing else lives
+  there; `git diff` of a re-`add` shows only the variant lines. If a `className`
+  at a call site sets a colour, a font or a radius the recipe also sets, that is
+  a variant that has not been written yet. If a spell's `styles.css` carries a
+  registry name as a literal colour, the alias rule has been broken.
+- **Repeal when:** the kit ships the primitives itself (the kit extraction
+  project), at which point this rule moves to the kit and spells stop holding a
+  `surface/ui/` at all.
+
+### The surface dep cap: `@base-ui/react`, `lucide-react`, `cn`, `class-variance-authority` — and nothing else without a ruling.
+
+<!-- rule-id: surface-dep-cap -->
+
+Four runtime dependencies are open to a spell's surface: the two the adoption
+card allowed (`@base-ui/react`, `lucide-react`), which stay declared **at the
+root** because every React spell shares them, and the two the registry's recipes
+import (`cn` — shadcn's own package, a compiled clsx + tailwind-merge with no
+dependencies of its own — and `class-variance-authority`), which are declared
+**in the spell's own manifest** (`src/<spell>/package.json`, a Bun workspace
+member) so the CLI's install lands where the CLI runs. `clsx` and
+`tailwind-merge` are **not** in the cap — `cn` replaces both, and `clsx` arrives
+only transitively under cva. `src/kit/lib/cn.ts` (the dependency-free,
+non-merging `cn`) stays as it is for the spells that use it; a spell on the
+registry uses the registry's `cn` throughout, one semantics per spell.
+
+- **Boundary check:** `src/<spell>/package.json` declares nothing outside the
+  four; the root `package.json` gained no surface dependency for this spell; a
+  registry file that imports something else (`tw-animate-css`, a `radix-ui`
+  slot) is a signal to look at the recipe's flavour, not to add the package.
+  _(Measured 2026-09-05 on shadcn 4.21: `add` does not install
+  `class-variance-authority` — only `init` does — so it is added by hand,
+  once.)_
+- **Repeal when:** a component the house needs cannot be built on these four and
+  a ruling names the fifth. Record the ruling here, with the name, before
+  `bun add`.
 
 ### Honor the exit-code contract.
 
@@ -393,8 +536,8 @@ about a set it never looked at. **Tests are the live instance — five spells ke
 them in `scripts/`, three (`glamour`, `imago`, `magpie`) in `tests/`:**
 
 ```
-find plugins/spellbook/skills -name "*.test.ts"      ✅ 63
-ls   plugins/spellbook/skills/*/scripts/*.test.ts    ❌ 37 — blind to three whole spells
+find plugins/spellbook/skills -name "*.test.ts"      ✅ 57
+ls   plugins/spellbook/skills/*/scripts/*.test.ts    ❌ 39 — blind to three whole spells
 ```
 
 The same shape bites lexically as well as structurally. Measured across one

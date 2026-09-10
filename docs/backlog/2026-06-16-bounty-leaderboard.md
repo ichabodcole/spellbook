@@ -32,4 +32,5 @@ layer over data we'd already be capturing.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/{server.ts,template.html}`
+- `src/bounty/backend/server.ts` (the surface half is now `src/bounty/surface/`;
+  `template.html` was deleted at the rewrite)

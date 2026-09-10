@@ -1,0 +1,11 @@
+--- /Users/colereed/Projects/Spellbook/plugins/spellbook/skills/grapevine/scripts/cli.ts	2026-08-24 18:45:48
++++ /private/tmp/claude-501/-Users-colereed-Projects-Spellbook/4f1a3e53-b48c-42cb-a010-566f351c46eb/scratchpad/drift/skills/a-omit/scripts/cli.ts	2026-08-24 18:53:12
+@@ -2064,7 +2064,7 @@
+       // `path: []` IS the root. Its grammar: one required token selecting a
+       // command, or an interceptor flag the root answers itself.
+       path: [],
+-      args: ROOT_INTERCEPTORS.map((i) => ({
++      args: ROOT_INTERCEPTORS.filter((i) => i.name !== "--version").map((i) => ({
+         name: i.name,
+         type: "boolean" as const,
+         status: "valid",

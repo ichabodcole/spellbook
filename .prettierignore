@@ -25,3 +25,6 @@ CHANGELOG.md
 bun.lock
 
 .git/
+
+# Copied in verbatim from the acc kit by `bunx skills add`; keep byte-identical to the pin
+.claude/skills/acc/

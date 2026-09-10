@@ -198,3 +198,17 @@ SOURCE GONE?             then probe — and NORMALIZE WHITESPACE first, or a
 ⚠ **Why every one of us reached for the weak form:** *"assert on its content"* pattern-matches to
 *"grep for a phrase."* **The instruction was right and its most available reading was lossy** —
 which is this file's own entry above, operating on the sentence that tells you how to obey it.
+
+---
+
+## A false reassurance about an INSTRUMENT is worse than a false claim about the code — it stops the next person looking
+
+_Earned across sprint 05 (2026-08-10, four instances, three artifact classes) and held out of this file by its own no-mid-session rule; promoted 2026-08-27 on sprint 05's deadline ("next session or not at all"), after the fifth instance arrived from the opposite direction._
+
+**The scars.** Sprint 05: four false instrument-reassurances in one night — a self-check that could not fail (`accountedFor`), advertised hardest by its author; a calibration run against an unmutated file (byte-identical output to a blind cell); a "MISSING" probe report during a recovery that was the probe's own line-basis lying; a stale warning that talked a seat out of the check that worked. 2026-08-27: the inverse costume — an author's six honest mutation demonstrations, all green, all real, reassured everyone the cells were calibrated; the non-author's first mutation outside that frame convicted a cell vacuous for 6 of 29 verbs. **The demos were true and the reassurance was false, and nothing about the demos could show it.**
+
+**Why it outranks a false code claim:** a wrong claim about code is caught by the next measurement — the instruments are all still pointed at it. A wrong claim about an instrument re-aims or retires the very thing that would have caught it, so the defect class it covered goes dark, and it goes dark looking measured.
+
+**How to apply it:** treat "the check is fine" as a claim requiring a frame the checker did not choose — a non-author's mutation, a fixture route that can actually fail, a diff of the mutation before trusting its green. When someone reports an instrument healthy, ask what ran that could have said otherwise, and who chose it.
+
+_Checked against this file's first entry ("knowing a failure mode does not immunise you") for subsumption: not subsumed — that one is about self-assessment of coverage; this one is about the downstream cost asymmetry of instrument claims specifically, and it binds hardest on the VERIFIER's reports, which the first entry does not address._
