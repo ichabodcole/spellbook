@@ -242,9 +242,10 @@ test("INVENTORY: every file in dist/ is either a linked chunk or a deliberate re
 });
 
 // ⛔ THE CELL THE KIT ADOPTION EARNED, AND THE ONE THING `serveFromDist` COULD
-// HAVE BROKEN SILENTLY. `src/kit/wire/serveDist.ts` guards empty / `..` /
-// nested and NOTHING ELSE — the refusal of the entry document is digestify's
-// own, and a verbatim adoption would have deleted it and left this route
+// HAVE BROKEN SILENTLY. `src/kit/wire/serveDist.ts` now owns the whitelist —
+// and its set INCLUDES `index.html`, because for every other spell that IS the
+// surface. The refusal of the entry document is digestify's own for that exact
+// reason, and a verbatim adoption would have deleted it and left this route
 // answering the committed `dist/index.html` UNSUBSTITUTED: a page that renders
 // with no questions in it, at HTTP 200, with nothing red anywhere. Driven
 // rather than read, and driven at BOTH ends — the route must refuse, and `/`

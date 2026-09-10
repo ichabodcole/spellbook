@@ -119,64 +119,56 @@ const DEV_SURFACE_ROUTE = "/__surface";
  *    all resolved to the same inode, so all four served the committed,
  *    UNSUBSTITUTED entry document at 200, placeholders and all.
  *
- * So the question is inverted. `serveFromDist` still decides whether a file may
- * be READ — its guards are empty / `..` / nested only — and the CALLER still
- * decides WHICH file; this caller now decides from a set of names the surface
- * is KNOWN to need rather than from a list of names it must not have. The
- * refusal is case-insensitive **by construction**: membership is an exact match
- * against the emitted name, so every case variant of every name — whitelisted
- * or not — falls through to 404 without a lowercase pass anywhere.
+ * So the question is inverted: the serve decides from a set of names the
+ * surface is KNOWN to need rather than from a list of names it must not have.
+ * The refusal is case-insensitive **by construction** — membership is an exact
+ * match against the emitted name, so every case variant of every name,
+ * whitelisted or not, falls through to 404 without a lower-case pass anywhere.
+ *
+ * ⛔ **AND THAT DERIVATION IS THE KIT'S NOW (2026-09-09).** The same leak was
+ * then measured on all five of the other adopters — eleven backend bundles
+ * across astrolabe, bounty, glamour, imago and magpie — so the whitelist moved
+ * into `src/kit/wire/serveDist.ts`, where it was one edit for five spells.
+ * `serveFromDist` performs the membership test itself; what is left below is
+ * the single line digestify does not share. See it for why.
  *
  * The house caller — `path === "/" ? "index.html" : path.slice(1)` — remains
  * exactly what this spell must never write: `/` here returns
  * `substitute(source)`, the built HTML with the review payload injected in
- * memory, and the entry document is not in the whitelist because the whitelist
- * is what the entry document LINKS, never the entry itself.
+ * memory.
  *
  * ⚠ The nesting guard is the KIT's still, and it is what keeps this serve clear
  * of the review's own `/assets/<name>` route (all nested, all refused here).
  * Same rule, one owner.
  */
 
-/** `src`/`href` values in the built entry document, `./`-prefixed or bare.
- *  Anything with a slash in it (a CDN URL, a nested path) is dropped below. */
-const ENTRY_REF_RE = /(?:src|href)\s*=\s*"(?:\.\/)?([^"]+)"/g;
-
 /**
- * The names `dist/index.html` links — read once, on the first asset request, in
- * release mode only.
+ * ⛔ **THE DERIVATION COLLAPSED INTO THE KIT; THE ENTRY REFUSAL DID NOT.** This
+ * function used to carry its own `ENTRY_REF_RE` + `servableSurfaceFiles()` —
+ * the whitelist, derived here because digestify was the first spell to need it.
+ * `src/kit/wire/serveDist.ts` now derives the same set (transitively, which the
+ * local copy did not), for all six adopters, because the identical leak was
+ * measured on the other five. Two copies of a defence is how one of them rots,
+ * so the derivation is gone from here and `serveFromDist` is the whole
+ * whitelist check.
  *
- * ⛔ **DERIVED, NOT ENUMERATED, BECAUSE A HAND-WRITTEN SET IS A BLACKLIST WITH
- * THE SIGN FLIPPED.** The chunk names carry content hashes, so any literal list
- * here would be wrong at the next build; a *shape* (`index-<hash>.js`) would be
- * wrong the first time the bundler split a chunk. Asking the entry document
- * what it loads is the only formulation that is true of whatever `bun run
- * build` actually emitted — and it is the same reading `/` already does.
+ * ⛔ **WHAT STAYS IS THE ONE LINE THAT IS THIS SPELL'S ALONE.** The kit's set
+ * INCLUDES `index.html`, because for every other spell that is the surface and
+ * `/` maps straight onto it. For digestify it is not: `/` returns
+ * `substitute(source)`, the built HTML with the review payload injected in
+ * memory, and the committed `dist/index.html` still has `__TITLE__` and
+ * `__PAYLOAD__` in it. Serving it raw is a page that renders with no questions,
+ * at HTTP 200, with nothing red anywhere. So the entry is refused HERE, above
+ * the kit call — one name, one spell, and `release-serve.test.ts` drives both
+ * ends of it.
  *
- * ⚠ It follows that a build emitting a file the entry does NOT reference (a
- * lazily-imported chunk, a font fetched from CSS) would 404 in release with
- * nothing red. That is the trade this whitelist takes deliberately, and
- * `release-serve.test.ts` holds the instrument for it: an INVENTORY cell that
- * accounts for every file in `dist/` as either served or deliberately refused,
- * so an unlinked emission goes red at build time instead of silent at runtime.
+ * ⚠ And the refusal stays case-insensitive by construction even so:
+ * `/INDEX.HTML` never reaches this line, because the kit's membership test is an
+ * exact match against the emitted name and no case variant is in the set.
  */
-let servableNames: Set<string> | null = null;
-function servableSurfaceFiles(): Set<string> {
-  if (servableNames) return servableNames;
-  const names = new Set<string>();
-  const entry = join(DIST_DIR, "index.html");
-  if (existsSync(entry)) {
-    for (const [, ref] of readFileSync(entry, "utf8").matchAll(ENTRY_REF_RE)) {
-      if (ref && !ref.includes("/") && !ref.includes("..")) names.add(ref);
-    }
-  }
-  servableNames = names;
-  return names;
-}
-
 function serveDist(path: string): Response | null {
   const rel = path.slice(1);
-  if (!servableSurfaceFiles().has(rel)) return null;
+  if (rel === "index.html") return null;
   return serveFromDist(DIST_DIR, rel);
 }
 

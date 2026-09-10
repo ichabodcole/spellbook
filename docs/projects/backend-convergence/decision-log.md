@@ -2552,3 +2552,147 @@ measured. _Widen the ward to follow arguments into callees_ — that is
 interprocedural analysis of an emitted bundle, and D42 already ruled the ward's
 blind spot declared rather than closed; what was missing is that a
 DE-DUPLICATION can push a pin into it silently, which is now C4's text.
+
+## D65 · The served set becomes a WHITELIST in the kit — the boundary moves, and it is the spine's first demonstration on a defect
+
+**Recorded:** implementer, 2026-09-09, `fix/dist-serves-only-the-surface`,
+driven at every caller before and after (`0260c725`).
+
+C5 predicted this and asked whoever took it to drive it first. Driven, through
+each spell's real launcher in release mode, against the committed `dist/`:
+
+| spell     | `/cli.js` | `/server.js` | `/join.js` | `/INDEX.HTML` |
+| --------- | --------- | ------------ | ---------- | ------------- |
+| astrolabe | 200       | 200          | —          | 200           |
+| bounty    | 200       | 200          | 200        | 200           |
+| glamour   | 200       | 200          | —          | 200           |
+| imago     | 200       | 200          | —          | 200           |
+| magpie    | 200       | 200          | —          | 200           |
+
+Every 200 is `text/javascript` and sha256-identical to the committed artifact.
+**Eleven bundles, and each is built with its sourcemap EMBEDDED** — bounty's
+`cli.js` carries a 152,127-byte map with five `sourcesContent` entries, the
+first being `src/bounty/backend/cli.ts` complete from its shebang down. D7
+records that `sourcemap:"inline"` is Cole's ruling **made knowing it embeds the
+complete original TypeScript**; that ruling is about what a shipped artifact
+CONTAINS, and this was about who could FETCH it.
+
+**Fixed rather than filed, by the register's own first rule: this branch — this
+project's own convergence — created it.** Before the ports, backends shipped as
+source under `scripts/` and `dist/` held only the surface. The relocation put
+the implementation inside the served directory and did not move the guard.
+
+**THE BOUNDARY MOVED, WHICH IS THE DECISION.** The kit's stated split was "the
+CALLER decides WHICH file; the kit decides whether it may be READ and what it is
+served as" — and the caller half is genuinely divergent (digestify substitutes,
+grapevine serves at `/watch`). C5 read that as forcing a choice between seven
+local whitelists and a boundary change. **The boundary did not actually need to
+move: "may this file be read" is exactly where a whitelist lives.** What changed
+is that the answer stopped being `existsSync` and started being derived. All
+five house callers are byte-identical —
+`path === "/" ? "index.html" : path.slice(1)` — so it was ONE edit for five
+spells, which is the demonstration the spine has not yet had on a defect rather
+than on a refactor.
+
+**Three properties, each because a cheaper formulation is already known to
+fail:**
+
+1. **DERIVED, not enumerated** — chunk names carry content hashes, so a literal
+   list is wrong at the next build.
+2. **TRANSITIVE, not a shape** — `index-<hash>.js` dies the first time the
+   bundler splits a chunk, and a whitelist reading only the entry would 404 the
+   split chunk in release **and only in release**. So each admitted `.js`/`.css`
+   is itself scanned for `./`-prefixed siblings until the set stops growing.
+3. **EXACT MATCH, so case-insensitive by CONSTRUCTION** — the second leak was
+   four case variants of `index.html` hitting one inode on APFS. A set of
+   emitted names refuses every variant of every name with no lower-case pass
+   anywhere to keep in sync (D61's finding, now the house's).
+
+⚠ **And one narrowing the local copy did not have: a referenced name must also
+be PRESENT.** A minified surface bundle can contain a string that merely looks
+like a `./` specifier; admitting only names that are on disk keeps a coincidence
+from widening the set, and an absent name 404s identically either way.
+
+**The trade, taken deliberately:** a file the entry graph does not reference — a
+lazily fetched chunk, a font pulled from a CSS `url()` this scan does not model
+— 404s in release with nothing red. Digestify's INVENTORY cell is the instrument
+for that class, and it stays local: it accounts for every file in ONE `dist/`,
+and the other five have their own populations.
+
+**Not taken:** _a second blacklist entry per artifact name_ — that is the
+formulation D61 already measured failing, twice, in the same class. _A local
+whitelist at each of the five callers_ — five copies of a defence is five
+chances for one to rot, and the callers are identical, so there was nothing
+local to preserve. _Widen `serveFromDist` to take a "which files" predicate_ —
+that is the signature the module's header refuses on purpose, and it would have
+made every caller re-answer a question with one right answer. _Serve `dist/`
+from a subdirectory instead_ — a layout change to Contract 2 that every
+launcher, ward and test tree pins, to fix a permission question.
+
+## D66 · The kit's whitelist INCLUDES `index.html`, and digestify keeps ONE line — the collapse is partial on purpose
+
+**Recorded:** implementer, 2026-09-09, driven at both ends (`0260c725`).
+
+For five spells the entry document IS the surface and `/` maps straight onto it,
+so `index.html` is in the kit's set. **For digestify it must not be served at
+all:** `/` returns the built HTML with the review payload injected in memory,
+and the committed `dist/index.html` still carries `__TITLE__` and `__PAYLOAD__`.
+Serving it raw is a page that renders with no questions, at HTTP 200, with
+nothing red anywhere — the exact silent failure digestify's own cell was written
+to catch.
+
+**So the collapse is asymmetric and that is the ruling.** The DERIVATION — the
+regex, the set, the cache — is gone from `review.ts`; the kit's is strictly
+stronger (it is transitive). What stays is
+`if (rel === "index.html") return null`, one line, above the kit call, because
+it is the one thing that is this spell's alone. Its cells keep their calibration
+unchanged: the entry refusal still asserts the placeholders are on disk and not
+on the wire, and the case-variant cell still passes **because the kit's
+membership is exact** — no variant is in the set, so none reaches digestify's
+line at all.
+
+⛔ **The proof it really collapsed rather than being shadowed:** with the kit's
+whitelist check removed and every bundle rebuilt, digestify goes RED —
+`GET /review.js` serves the backend bundle again. Its local fix is load-bearing
+on the kit's now, driven rather than asserted.
+
+**Not taken:** _keep digestify's local derivation as well_ — two copies is how
+one rots, and this one was already the weaker copy. _Exclude `index.html` from
+the kit's set and make all five callers special-case `/`_ — that pushes a
+question with one right answer onto five identical callers to spare one spell a
+single line. _Give `serveFromDist` an `allowEntry` flag_ — a boolean parameter
+that four of six callers pass the same way is a knob, not a boundary.
+
+## D67 · magpie was the one adopter with no release-serve gate — found by needing one, not by a sweep
+
+**Recorded:** implementer, 2026-09-09 (`f7281891`).
+
+astrolabe, imago, glamour, bounty and digestify each carry a
+`release-serve.test.ts`. magpie carried none. It was not skipped for a reason
+anyone wrote down — Phase 1b ported it in the same chapter as astrolabe and the
+gate did not travel — so the spell whose `dist/` **already held `cli.js` and no
+`index.html` for a whole slice**, the scar `resolveMode`'s comment is built on,
+had no cell that could have caught this leak and none that could hold the fix.
+
+Written here, and **scoped to the serve rather than ported whole**: the entry,
+the hashed chunks, the unknown-path and nesting 404s (with a REAL nested file,
+or the guard can be deleted and the cell stays green), the leak, the case
+variants, the `/assets/<name>` disjointness. It deliberately does NOT carry the
+siblings' forced-dev death cell or a handshake cell — magpie writes no stdout
+handshake, and a wider gate is a different piece of work than this fix.
+
+**Not taken:** _port the full sibling suite now_ — it would be the largest part
+of a fix branch and none of it is what this defect needed. _File it instead_ —
+the register's rule 3 covers instruments that guard remaining work, and this is
+the instrument for the thing just repaired.
+
+⚠ **What the tree taught back, unprompted:** the first draft of the kit's prose
+used the bare words `relative`, `lowercase`, `inline` and `fixed`. Tailwind's
+content scan harvests class-shaped tokens out of COMMENTS, so those four words
+in a KIT file added `.relative` and `.lowercase` rules to five spells' CSS —
+bounty, digestify, grapevine, imago and mind-mapper, including two this branch
+never touched. `grimoire/kit-prose-ward.test.ts` exists for exactly this and
+caught it at the gate; the CSS churn had already been diagnosed by rebuilding
+with the sources reverted, which is the same answer the ward gives for free.
+**The finding is that the ward is right and worth reading before writing kit
+prose, not after.**

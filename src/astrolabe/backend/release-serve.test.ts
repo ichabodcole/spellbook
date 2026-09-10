@@ -18,7 +18,16 @@
 // was the only thing stopping dist/ from being byte-reproducible). So this is
 // no longer an unported cell awaiting a port. There is nothing to port.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -51,6 +60,10 @@ const SKILL_ROOT = join(
 // What ships, and therefore what is copied: the built daemon and its launcher.
 const ARTIFACT_FILES: { from: string; to: string }[] = [
   { from: join(SKILL_ROOT, "dist", "server.js"), to: join("dist", "server.js") },
+  // ⛔ THE CLI BUNDLE IS COPIED THOUGH THE DAEMON NEVER IMPORTS IT — because a
+  // marketplace clone HAS it sitting in the served directory, and the leak cell
+  // below is about what a browser can reach, not about what the daemon loads.
+  { from: join(SKILL_ROOT, "dist", "cli.js"), to: join("dist", "cli.js") },
   { from: join(SKILL_ROOT, "scripts", "server.ts"), to: join("scripts", "server.ts") },
 ];
 
@@ -100,6 +113,11 @@ function buildReleaseTree(): string {
   writeFileSync(join(root, "dist", "chunk-abc123.css"), "body { margin: 0; }");
   return root;
 }
+
+/** The backend bundles the convergence put in `dist/`. Named here rather
+ *  than globbed, so a build that stops emitting one turns the cell below red
+ *  instead of quietly asserting nothing. */
+const BACKEND_ARTIFACTS = ["cli.js", "server.js"];
 
 let skillRoot: string;
 let home: string;
@@ -241,4 +259,51 @@ test("SPELLBOOK_SURFACE_MODE=dev OVERRIDES dist/ presence — and dev genuinely 
     devProc.kill();
     rmSync(overrideHome, { recursive: true, force: true });
   }
+});
+
+// ⛔ THE LEAK THIS PROJECT'S OWN CONVERGENCE CREATED, DRIVEN AT THE SEAM THAT
+// CREATED IT. Phase 1b moved the implementation INTO the served directory, and
+// `serveFromDist`'s permission was `existsSync` — so every backend bundle in
+// `dist/` answered at 200, `text/javascript`, byte-identical to the committed
+// artifact, and each carries an INLINE SOURCEMAP, so the response embeds the
+// complete original TypeScript. Closed in `src/kit/wire/serveDist.ts` by
+// deriving the served set from what the built `index.html` LINKS.
+//
+// CALIBRATED BOTH WAYS: the artifact must be ON DISK in the served tree and
+// still refused, or the cell passes over an empty subject; and the surface
+// cells above prove the whitelist did not simply refuse everything.
+test("⛔ the backend bundles in dist/ are REFUSED — and they are really there", async () => {
+  const present = readdirSync(join(skillRoot, "dist")).filter((f) => BACKEND_ARTIFACTS.includes(f));
+  expect(present.sort()).toEqual([...BACKEND_ARTIFACTS].sort());
+  for (const name of present) {
+    // The subject: the bundle is in the served directory, and it is the real
+    // artifact — its inline sourcemap is the thing that must not reach a browser.
+    const onDisk = readFileSync(join(skillRoot, "dist", name), "utf8");
+    expect(`${name}:${onDisk.includes("sourceMappingURL=data:application/json;base64,")}`).toBe(
+      `${name}:true`,
+    );
+    const res = await fetch(`${url}/${name}`);
+    expect(`${name}:${res.status}`).toBe(`${name}:404`);
+    const body = await res.text();
+    expect(body.length).toBeLessThan(1_000);
+    expect(body).not.toContain("sourceMappingURL");
+  }
+});
+
+// ⛔ CASE-INSENSITIVE BY CONSTRUCTION, NOT BY A SECOND BLACKLIST ENTRY. APFS
+// resolves every one of these to the same inode. Membership in the whitelist is
+// an exact match against the emitted name, so no variant of any name — servable
+// or not — has a route, and there is no lower-case pass anywhere to keep in sync.
+test("case variants of a servable name are refused; the emitted name still serves", async () => {
+  for (const p of [
+    "/INDEX.HTML",
+    "/Index.html",
+    "/index.HTML",
+    "/iNdEx.HtMl",
+    "/CHUNK-ABC123.JS",
+  ]) {
+    expect(`${p}:${(await fetch(`${url}${p}`)).status}`).toBe(`${p}:404`);
+  }
+  expect((await fetch(`${url}/index.html`)).status).toBe(200);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
 });
