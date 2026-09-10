@@ -1,7 +1,7 @@
 # Spell backends — how a spell is built, shipped and spawned
 
-**Created:** 2026-09-09 · **Last Updated:** 2026-09-09 · **Status:** ⚠ **CAVEATS
-TABLE COMPLETE (8/8) · PROSE NOT YET WRITTEN**
+**Created:** 2026-09-09 · **Last Updated:** 2026-09-10 · **Status:** ⚠ **CAVEATS
+TABLE COMPLETE (8/8) · PROSE NOT YET WRITTEN · UNASSIGNED**
 
 > **Read this banner before you trust anything below.** This document was
 > written by the backend convergence as it ran, not after it. **ALL EIGHT SPELLS
@@ -24,8 +24,18 @@ TABLE COMPLETE (8/8) · PROSE NOT YET WRITTEN**
 > ⚠ **The caveats table is now COMPLETE — one row per spell, eight of eight —
 > and the prose sections are still an outline.** The condition for writing them
 > ("when the last port lands") is met; the work is not done. **Treat the caveats
-> table as the reliable part** and the outline as a promise, and see register
-> item D3 for who owns the prose.
+> table as the reliable part** and the outline as a promise.
+>
+> ⛔ **WHO OWNS THE PROSE: NOBODY. IT IS UNASSIGNED, AND SAYING SO IS THE
+> REPAIR.** This banner used to point at register item **D3** "for who owns the
+> prose", and D3 named no owner — it read _"the architecture document — after
+> the last port, inputs accumulating now"_ and was attributed to Cole as the
+> person who asked for the document, which is not the same as an owner of the
+> writing. **A pointer to a document that does not answer the question is worse
+> than no pointer**, because the reader spends the trip. So: unassigned, said
+> plainly, until someone takes it. What the closing reconciliation established
+> about the size of the job is in **"What the prose still needs"** below — and
+> D3 now carries that instead of a promise.
 
 ---
 
@@ -35,13 +45,16 @@ Cole, 2026-09-09: an architecture doc explaining "how we build these apps — th
 structure of the source directory, how the elements relate, and the caveats we
 found in different apps."
 
-The rulings and the defects are already recorded — `decision-log.md` (D1–D84),
-the phase journals, playbook Phase B, three census investigations. **What none
-of those capture is shape that is not a defect**: that digestify has one entry
-and it is not called `cli`, that bounty's `join.ts` is a second participant
-rather than a helper, that grapevine names its daemon `daemon.ts`. Facts like
-those never become decision-log entries and are archaeology within weeks. Hence
-the table below, appended to by each port at the moment it learns something.
+The rulings and the defects are already recorded — `decision-log.md` (**D1–D97**
+as of 2026-09-10; it read "D1–D84" until then, and the log did not stop at the
+last port — D85–D91 came out of mind-mapper's port and the verify pass after it,
+D92–D97 out of closing the record), the phase journals, playbook Phase B, three
+census investigations. **What none of those capture is shape that is not a
+defect**: that digestify has one entry and it is not called `cli`, that bounty's
+`join.ts` is a second participant rather than a helper, that grapevine names its
+daemon `daemon.ts`. Facts like those never become decision-log entries and are
+archaeology within weeks. Hence the table below, appended to by each port at the
+moment it learns something.
 
 ## Outline — written when the roster is uniform
 
@@ -73,6 +86,33 @@ the table below, appended to by each port at the moment it learns something.
 
 **What does NOT get a diagram:** the layout (a file tree IS the picture) and the
 module inventory (a table says it better and stays current).
+
+### What the prose still needs — established 2026-09-10, so the job has a size
+
+**Six of the eight sections are ASSEMBLABLE from material that already exists**
+— they need an editor, not an author. §2 (the layout) is a file tree the
+`src/build.ts` header and any two spells' directories already describe; §4 (the
+shared spine) is `src/kit/wire/`'s eight module headers, which are the most
+carefully written prose in the repo; §5 (the two discovery conventions) is D3
+plus `kit/wire/discovery.ts`; §6 (the contracts) is Contracts 3, 4, 5, 18 and 19
+in `house-style.md`; §7 (the instruments) is `grimoire/` plus D42 and its three
+siblings, with register **C4**, **C8**, **C10** and **C11** as the four levels
+of one instrument defect; §8 is the caveats table below, already written.
+
+⛔ **Two sections need ORIGINAL WRITING and have no source to assemble from.**
+§1 ("what a spell is — a skill folder an agent spawns, plus a surface a human
+opens; why the two halves ship differently") exists nowhere: every document in
+the tree assumes it. And §3, **the seam**, is the hard one — it is the section
+this document's own outline marks _"⛔ this one gets a diagram"_, on the grounds
+that the shape is counter-intuitive in three ways and **"prose has failed at it
+repeatedly in this project's own briefs"**.
+
+⛔ **AND THE DIAGRAM DOES NOT EXIST.** Not drafted, not sketched, not anywhere
+in `docs/`. That is the single largest gap in this document: the one place where
+it says prose is insufficient is the one place with nothing but prose, and there
+is none of that either. **§3 is where the writing should start**, because it is
+the section a reader who understands nothing else needs, and because the other
+seven degrade gracefully into a table while this one does not.
 
 ## Per-spell caveats — APPEND AS YOU PORT
 

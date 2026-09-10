@@ -4529,3 +4529,51 @@ measurable rather than asserted.
   subject.
 - _Fix it._ It is a cross-spell contract decision (defer rule 2), and eight
   spells' exit-code surface is not a documentation branch's to change.
+
+## D95 · The architecture document's prose is UNASSIGNED, and the banner says so rather than pointing at a row that names nobody
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+`docs/architecture/spell-backend-architecture.md`'s banner sent the reader to
+register item **D3** _"for who owns the prose"_. **D3 named no owner.** It read
+_"The architecture document — after the last port, inputs accumulating now"_,
+attributed to Cole — who is the person who **asked for** the document, which is
+not the same as the person who will write it. ⛔ **A pointer to a document that
+does not answer the question is worse than no pointer, because the reader spends
+the trip and arrives at the same gap with less confidence that it is a gap.**
+
+**Ruled: unassigned, stated in the banner, in the status line, and in D3.** Not
+assigned to anybody by this branch — a documentation branch cannot allocate
+somebody's time, and inventing an owner would make the pointer false in a second
+way rather than repairing it.
+
+**What IS added, because "unassigned" alone is not useful, is the SIZE of the
+job.** Six of the eight outlined sections are **assemblable** from material that
+already exists (§2, §4, §5, §6, §7, §8) and want an editor rather than an
+author; **two need original writing** — §1, _"what a spell is"_, which exists
+nowhere because every document in the tree assumes it, and §3, **the seam**. ⛔
+**And §3's diagram — the one the document's own outline marks "⛔ this one gets
+a diagram", on the stated grounds that "prose has failed at it repeatedly in
+this project's own briefs" — DOES NOT EXIST**, in any form, anywhere in `docs/`.
+The one section that says prose is insufficient is the one section with neither
+prose nor a picture. That is where the writing should start, and it is now
+written down where an owner would look.
+
+**Not taken:**
+
+- _Assign it to Cole._ He asked for the document; the escalation contract is
+  that Cole rules product, cost and UX, and "who writes eight sections of prose"
+  is a scheduling question this branch has no standing to answer. It would also
+  make the banner say something Cole has not agreed to.
+- _Write the prose here._ Two sections need original writing and one of them
+  needs a diagram; that is a body of work, not the tail of a documentation
+  branch, and it would arrive unreviewed inside a commit series about closing a
+  record.
+- _Delete the outline and keep only the caveats table._ The outline is the most
+  useful thing in the document after the table — it is a specification of what
+  the prose owes, written by the ports while they still remembered. Deleting it
+  would convert a known gap into an unknown one.
+- _Drop the banner's pointer and say nothing._ The reader then cannot tell
+  "nobody owns this" from "somebody does and I have not found them", which is
+  D42's rule: absence of an owner must not be spelled the same way as absence of
+  the question.
