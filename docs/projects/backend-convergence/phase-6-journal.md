@@ -247,6 +247,18 @@ plugins/spellbook/skills/grapevine/dist/daemon.js  anchors=yes  anchor-read=yes 
 Both **examined**, not absent. On the first-emit commit both printed
 `NOT STAGED` and were scanned anyway, which is D42 working as designed.
 
+⚠ **AND `daemon.js` FELL FROM `pins=5` TO `pins=4` ACROSS CHAPTER 2, WITH NO
+PATH CHANGED AND NOTHING RED** — register C4's counting half, second instance,
+which makes it a shape rather than digestify's accident. The local `resolveMode`
+and the local `serveDist` each spelled `join(DIST_DIR, "index.html")` literally;
+adopting `resolveModeIn(DIST_DIR)` and `serveFromDist(DIST_DIR, rel)` put both
+reads behind a parameter. The daemon still reads exactly that file on every boot
+and every `/watch`. **The direction is what makes it dangerous: a coverage count
+going DOWN is what a successful de-duplication looks like and what a pin
+disappearing into the ward's blind spot looks like, and the ward cannot tell
+them apart.** Filed, not repaired — it is an instrument that guards the one
+remaining port (D44).
+
 **The prose sweep (B7's last paragraph): three live instances**, counted rather
 than inherited from imago's "thirty seconds" — a repo instrument's derivation
 note naming `grapevine/scripts/cli.ts` as one of the two files a rule was
