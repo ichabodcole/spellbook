@@ -11,8 +11,9 @@ has **TWO populations, one closed and one open.**
 - ⭐ **The BACKEND port is OPEN, and it re-opened this document.** **Phase B**
   (added 2026-09-08 from glamour, the migration pathfinder) takes a spell's
   whole backend — CLI and daemon — out of the deployed skill folder and ships it
-  built behind launchers. **Five subjects are queued: imago, bounty, digestify,
-  grapevine and mind-mapper.** Read Phase B as the live half
+  built behind launchers. **Four have landed — imago, bounty, digestify and
+  grapevine — and ONE is queued: mind-mapper**, the largest and the spell two of
+  the kit's modules were copied from. Read Phase B as the live half
 
 ---
 
@@ -866,6 +867,25 @@ port is before Phase 1, because they have different done-whens below.
 > experience differs from glamour's the difference is recorded, because that
 > difference is the part a third spell cannot predict.
 >
+> ⭐⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 IN PRE-WORK FOR MIND-MAPPER — THE
+> LAST PORT, THE LARGEST, AND THE SPELL TWO OF THE KIT'S MODULES WERE COPIED
+> FROM.** An independent verify pass read Phase B cold as mind-mapper's porting
+> agent and reported seven items; all seven were measured, **four confirmed, two
+> confirmed with the mechanism corrected, and one contradicted outright.** ⛔
+> **The finding under all of them: every verdict in B8 assumes the kit is the
+> DESTINATION, and for this spell two modules name it as their SOURCE.** B8
+> gains a fifth verdict, **LOSSY-COPY**, with a discriminator that tells a
+> RESTORATION from a widening by two numbers; a **WIRE-SCHEMA DELTA** becomes a
+> first-class cost with a required output, closing a class recorded four times
+> (D20, D35, D47, D51) that never grew a step; the missing-SKILL.md case gets
+> the same escape hatch the missing-`acc.config.json` case has had since imago;
+> and D75/D76 reach B8 at last. The account is
+> `docs/projects/backend-convergence/phase-7-prework.md`; the rulings are
+> **D79–D84**. **What did NOT transfer, stated once: the assumption that your
+> spell is the one that has to change.** Six of B8's eight rows are wrong here,
+> and five of the six say "NO SUBJECT" about a spell that is the source of two
+> of the eight modules.
+>
 > ⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY GRAPEVINE'S PORT — THE FIRST PORT
 > WHOSE DELIVERABLE WAS A REFUSAL, AND THE FIRST TO RUN ON THE REJECT-STRUCTURAL
 > VERDICT.** Everything the pre-work below added HELD: the launcher
@@ -976,7 +996,45 @@ Everywhere below that says "the two launchers", "the two files", "both
 artifacts", read "one per entry" — the shapes are all per-entry, the count is
 not two.
 
-#### ⛔ ⭐ AND THE NAMES ARE NOT THE KEY EITHER. ANSWER SEVEN QUESTIONS PER ENTRY, BEFORE B1.
+⛔ ⭐ **mind-mapper — AND A SPELL CAN HAVE NO `SKILL.md` AT ALL. THIS PHASE
+READS ONE AT EIGHT SITES AND HAD AN ESCAPE HATCH FOR NONE OF THEM.** The sites
+are: the sentence above, B2's load-bearing-paths paragraph, B7's exclusion-set
+bullet and its `INTERNAL_ENTRY_POINTS` row, B8's `discovery` row, B8's
+exit-table bullet and its two exit-code-population bullets, and the acceptance
+box. Every one is written in the indicative, and **mind-mapper is the only spell
+in the roster without the file.**
+
+**So the hatch, and it is the same one the acc paragraph below gives, for a
+stronger reason:**
+
+> **If the spell has no `SKILL.md`: derive the entry set from `scripts/` ALONE,
+> say the absence out loud once with what it costs, and DO NOT WRITE ONE.**
+
+⛔ **"Do not write one" is firmer here than for acc, because it is ALREADY RULED
+— and by Cole.** `grimoire/roster-drift.test.ts:32-38` records the correction,
+made the day after the pin landed: the pin originally read as debt awaiting
+repair, and **Cole then ruled the undeclared state INTENTIONAL AND CORRECT**
+(`47238d7`) — _"mind-mapper is unfinished, it is undeclared BECAUSE it is
+unfinished, and there is nothing to repair in the four listings, the trigger
+registry, or the missing `SKILL.md`. A spell that has not coalesced should not
+claim a roster slot."_
+
+⚠ **So the port is not deferring a judgement; it is honouring one.** Note also
+what that ruling leaves OPEN and which is likewise not the port's business:
+whether the built artifact belongs in the published package while the spell is
+WIP. ⚠ **And read the pin, not the older note** —
+`grimoire/flag-invariant.test.ts:151-157` still frames the same fact as an
+undecided _"Cole's product call"_ (#989); `roster-drift` is where the decision
+landed. **Two instruments, one fact, two vintages: the newer one is the
+ruling.**
+
+What to say, once, in the port's report — B7's discipline one level up: _"this
+spell has no SKILL.md; the entry set is derived from `scripts/` alone, the
+exit-code table has no published home, and 39 caller-facing flags stay unwarded.
+The port does not write one."_ **D56: an absence that is reasoned must not be
+spelled the same way as one that was skipped.** (D80.)
+
+#### ⛔ ⭐ AND THE NAMES ARE NOT THE KEY EITHER. ANSWER EIGHT QUESTIONS PER ENTRY, BEFORE B1.
 
 ⭐ **digestify.** D43 fixed the COUNT and left the BODY keyed on the pair. Read
 literally by a spell with one entry called `review.ts`, four steps below gave a
@@ -995,7 +1053,30 @@ your own entry:
 | 4   | **Is the entry LONG-RUNNING or SINGLE-SHOT?** Does it outlive the invocation and serve many callers, or serve one human once and exit?                                                                                                        | read what `main` returns and when.                                                                                                                                                               | **B8**'s module table (which rows have a SUBJECT)                  |
 | 5   | ⭐ **grapevine — DOES `main()` RETURN WHILE THE PROCESS MUST KEEP LIVING?** Question 4 asks how long the PROCESS lives; this asks WHAT KEEPS IT ALIVE. Not the same question, and the five spells that went first answered both the same way. | read what `main` awaits LAST and what is still alive after it returns. `Bun.serve` + a natural return means the **event loop** holds the process up, not the promise.                            | **B2**'s launcher shape                                            |
 | 6   | ⭐ **grapevine — ARE THE EVENT LOG'S IDS RECOVERED ACROSS A RESTART?**                                                                                                                                                                        | read where the id counter gets its value on boot: a literal, or a value read back from durable storage.                                                                                          | **B8**'s epoch ruling                                              |
-| 7   | ⭐ **grapevine — DOES ANY KIT MODULE'S SUBJECT EXIST HERE IN A DIFFERENT SHAPE?** Not "is it absent" (that is question 4) — "is it present and unrepresentable".                                                                              | for each of the eight, write down the spell's type and the kit's type side by side, and try to construct one from the other.                                                                     | **B8**'s **REJECT-STRUCTURAL** verdict                             |
+| 7   | ⭐ **grapevine — DOES ANY KIT MODULE'S SUBJECT EXIST HERE IN A DIFFERENT SHAPE?** Not "is it absent" (that is question 4) — "is it present and unrepresentable".                                                                              | for each of the eight, write down the spell's type and the kit's type side by side, and try to construct one from the other. ⛔ ⭐ **AND THEN THE SECOND HALF — see below.**                     | **B8**'s **REJECT-STRUCTURAL** verdict                             |
+| 8   | ⭐ **mind-mapper — DOES A KIT MODULE NAME YOUR SPELL AS ITS CONVERGENCE SOURCE?**                                                                                                                                                             | `grep -l <spell> src/kit/wire/*.ts` and read the headers. "Converged TOWARD `<spell>`'s X" is the string.                                                                                        | **B8**'s **LOSSY-COPY** verdict                                    |
+
+⛔ ⭐ **mind-mapper — QUESTION 7's PROCEDURE IS TYPE-TO-TYPE, AND A REAL
+INCOMPATIBILITY CAN OCCUPY NO TYPE.** Run it honestly on `sse` for mind-mapper
+and it answers **"representable"**: the kit's subject-type is `Set<SseClient>`,
+mind-mapper holds no client registry at all, so constructing one is trivial —
+you pass an empty set. And the row is still a refusal, because what mind-mapper
+needs is a frame written **before** the replay (`server.ts:423`, one line above
+`bus.subscribe`), and the kit's `onOpen` fires at `sse.ts:208` — after
+`": connected"`, after `log.subscribe`, after `clients.add`. **The
+incompatibility is a POSITION, and a type check cannot see a position.**
+
+> **So question 7 has a second half: where a module's subject is a SEQUENCE of
+> writes, compare the ORDER of the module's hooks against the order your spell
+> writes in.** Two hooks with the right signatures in the wrong order are as
+> incompatible as two types that will not unify, and only one of the two is
+> visible to the procedure above.
+
+⚠ **And it is the near-miss that makes it checkable rather than asserted
+(D78).** A caller CAN supply its own `clients` set and send from `onOpen` — that
+is expressible. It lands the grounding line after the replayed backlog instead
+of as the first data line. **The observable is the ordering, not the
+impossibility; name the near-miss in the same paragraph.**
 
 **Worked, on digestify, and this is why the four exist:**
 
@@ -1018,6 +1099,29 @@ and each was measured 2026-09-09 before its port:**
 | 5   | ⛔ **`main()` RETURNS WHILE THE PROCESS MUST KEEP LIVING.** It resolves as soon as `Bun.serve` binds; the event loop is what holds the daemon up. **Driven both ways** — see B2.                                                                                                |
 | 6   | ⛔ **IDS ARE RECOVERED.** `loadChannel()` derives `next_id` from a high-water mark over the channel's durable `.jsonl`. **No epoch.**                                                                                                                                           |
 | 7   | ⛔ **Three modules present-and-unrepresentable** — `eventLog`, `sse`, and `startHousekeeping`/`shouldIdleClose`'s half of `housekeeping`. See B8's fourth verdict.                                                                                                              |
+
+⭐ **Worked, on mind-mapper — question 8 exists BECAUSE OF ITS ANSWER, measured
+2026-09-09 before its port:**
+
+| #   | mind-mapper's answer                                                                                                                                                                                                                                                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `SCRIPT_DIR = import.meta.dir` then `SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts")` (`cli.ts:113-114`) — **a flat sibling spawn, glamour's exact shipped defect shape**, correct today only because the two files share a folder. The daemon holds the dev surface import (`server.ts`, B5's row). |
+| 2   | **Serves, and NOTHING is substituted.** `/` returns the committed `dist/index.html` unaltered. So the `serveDist` row is a **RECEIVED** whitelist, not a refusal to keep — and `dist/` is surface-only TODAY, which is what makes B4 blind to this spell (see B4).                                 |
+| 3   | **Yes** — `cli.ts` + `server.ts`. The seam is real and **hand-mirrored today**: a 15 s beat in the daemon against a hard-coded 45,000 ms watchdog in the CLI, each with its own env knob.                                                                                                          |
+| 4   | **Long-running**, and it runs **no idle sweep and no snapshot timer** — `server.ts:1685`, _"Standing until killed (SIGTERM/SIGINT) — no idle timeout in V1."_ So half of `housekeeping` is NO SUBJECT and the other half de-duplicates.                                                            |
+| 5   | **NO — teardown runs inside `main`.** It awaits a signal-resolved promise, so the event loop is empty when it returns. Either launcher shape works; `server.ts:1705` is already `process.exit(await main(…))`.                                                                                     |
+| 6   | **IDS ARE NOT RECOVERED** — `let seq = 0` per boot — **and it already stamps an epoch**, unconditionally, from `crypto.randomUUID()`. It is the spell census **L6 names as CORRECT.**                                                                                                              |
+| 7   | **One**, and it occupies no type: `sse` cannot write a frame BEFORE the replay. See question 7's second half.                                                                                                                                                                                      |
+| 8   | ⛔ **YES, TWICE.** `sse.ts:9` — _"Converged TOWARD mind-mapper's `sseResponse`"_ — and `eventLog.ts:7` — _"Converged TOWARD mind-mapper's `scripts/events.ts`"_. **Two of the eight modules name this spell as their source, and it has never adopted either.** See B8's fifth verdict.            |
+
+⛔ **AND THE MECHANISM IS RECORDED AND WAS NOBODY'S MISTAKE, WHICH IS WHY
+QUESTION 8 IS A GREP AND NOT A JUDGEMENT.** D1 ruled the spine be proven on the
+two spells that already build; D17 says so plainly — _"Checked against these two
+spells rather than against the census's counts"_. Astrolabe and magpie are
+downstream forks of the mind-mapper line, so the module boundaries were settled
+against two COPIES while the original was not in the room. **A convergence can
+name its source and still never consult it**, and the kit headers are the only
+place that fact is written down.
 
 ⚠ **Questions 1 and 2 are the two that go WRONG QUIETLY**, which is why they are
 first. Question 3 is the one that makes an instruction UNEXECUTABLE rather than
@@ -1099,9 +1203,23 @@ list of known repairs.
 **Land it as its own commit BETWEEN the chapters, before the work it judges.**
 Not inline (D44 forbids it, and a 1,700-line relocation is not the diff to hide
 an instrument change in) and not handed back (the port cannot then be
-validated). The discriminator: repair it separately when the fix is small AND
-the instrument is what will judge your next chapter; hand it back when the fix
-is a competing concern of its own size.
+validated).
+
+⚠ ⭐ **mind-mapper — "A 1,700-LINE RELOCATION" IS THE FLOOR, NOT THE CEILING,
+AND THE LAST PORT IS TEN TIMES IT.** Measured: **55 files, 16,306 lines** —
+`cli.ts` **alone** is 1,731, so one file exceeds what this paragraph calls the
+relocation. **Count your spell before you plan the chapters**, because two of
+this phase's instruments are sized by the count and not by the step: B6's triage
+(bounty's precedent is written for a **2**-file suite; mind-mapper's is **32**)
+and the half-relocated window `launcher-pairing-ward` guards. ⛔ **That window
+is the one that scales dangerously.** An unported spell's real `scripts/cli.ts`
+plus a half-moved `backend/cli.ts` makes `cli` an entry and emits a
+`dist/cli.js` nobody imports — the ward's own case 3, which names mind-mapper as
+one of the spells "one misplaced file away from this". At 55 files that window
+is open for hours rather than minutes. **Run the pairing ward as you go, not
+once at the end.** The discriminator: repair it separately when the fix is small
+AND the instrument is what will judge your next chapter; hand it back when the
+fix is a competing concern of its own size.
 
 **Chapter 1 must be green AND DEMONSTRATED ON A BOOTED DAEMON before chapter 2
 starts.** That is D9's whole point: chapter 1's two runtime hazards (B3's dead
@@ -1125,6 +1243,22 @@ being wrong, and **the brief's count has been under-stated before** (astrolabe:
 `imageOptimize.test.ts` imports the module that moves AND the two-sided module
 that stays. It moved, because its subject is the `.server.ts`. The one test that
 stayed behind is the one whose subject is `shared/types.ts`.
+
+⛔ ⭐ **mind-mapper — AND THE ANSWER CAN BE "EVERYTHING MOVES". FOUR SPELLS HAVE
+NOW KEPT A `shared/`, AND THIS STEP READS AS THOUGH THAT IS THE RULE.** It is
+not; it is four measurements. **Measured on mind-mapper: `src/<spell>/surface/`
+imports ZERO modules from the skill folder.** Every specifier in the surface is
+either surface-local or `src/kit/`; the only cross-boundary edge in the tree
+runs the OTHER way — the daemon's dev import of the surface's `index.html`,
+which is B5's row. **So all 23 non-test modules move, there is no two-sided
+contract, and there is no `shared/` to keep.**
+
+⚠ **The failure this avoids is not the obvious one.** An agent that expects a
+`shared/` and finds none does not stop — it goes looking for the two-sided
+module it has been told exists, and in a 23-module backend the plausible
+candidates are plentiful (`state.ts`, `db.ts`, a `types`). **The rule is a
+MEASUREMENT and "zero" is one of its answers.** Same discipline as B7's zero
+rows: write the count down, including when it is nought.
 
 ⭐ **imago is the fourth measurement and the first where the rule had to decide
 a test with no help from its filename.** 33 surface imports, every one of them
@@ -1443,6 +1577,41 @@ HAPPENS IS NO ROW.** A missing row reads as "nothing to cover"; it means "not
 looked at". `git add` the files and re-run, with nothing else changed, and the
 rows appear (imago: `cli.js pins=5`, `server.js pins=4`).
 
+⛔ ⭐ **mind-mapper — AND THE NO-ROW CASE IS STANDING IN THE TREE RIGHT NOW, ON
+A GREEN WARD, FOR A SPELL WITH A REAL DEFECT OF EXACTLY THIS CLASS.** Measured
+2026-09-09, nothing modified:
+
+```
+SPAWN-PATH WARD — 22 emitted file(s) across 8 spell(s): astrolabe, bounty,
+    digestify, glamour, grapevine, imago, magpie, mind-mapper
+    …14 coverage rows, and NOT ONE of them is mind-mapper's…
+9 pass · 0 fail
+```
+
+**mind-mapper is in the POPULATION HEADER and produces ZERO coverage rows**,
+because its `dist/` is surface-only (`index.html` plus two hashed chunks), so
+`isBackendArtifact` matches nothing. ⚠ **Note the exact shape, because it is
+worse than the imago case this step was written from: the header line is what
+makes the absence look like presence.** An agent that reads "8 spell(s): …
+mind-mapper" has been told its spell is covered by the one line most likely to
+be read.
+
+⛔ **And what the ward cannot see is live.** `cli.ts:113-114` is
+`SCRIPT_DIR = import.meta.dir` then
+`SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts")` — **glamour's exact shipped
+defect shape**, correct today only for as long as the CLI and the daemon share a
+folder. **The first backend emit both creates the coverage row and moves that
+expression to an address where it is false, in the same commit.** So for a
+surface-only-`dist/` spell the coverage check is not a confirmation step at the
+end — it is the thing that switches on, and the pin it produces is the defect.
+Read the row the moment it first appears.
+
+⚠ **The generalisation for the next spell in this position: a ward's population
+line and its coverage line answer different questions, and only one of them is
+about you.** B4 has now recorded this defect at four levels (D27, D36, D42, and
+here); this is the first instance where the misleading signal is the ward's own
+population summary rather than a missing assertion.
+
 ⚠ ⭐ **digestify — THE `git add` IS NO LONGER THE STEP, AND THE PARAGRAPH ABOVE
 STAYS BECAUSE THE SCAR OUTLIVED ITS REPAIR.** D42 closed this: the ward's
 `emittedFiles()` reads the **DISK** and then labels each file against the index,
@@ -1623,6 +1792,46 @@ Three specific moves, all earned:
    every spawn of every ENTRY, not only for the one the constant at the top
    names**, and give each its own launcher-anchored constant.
 
+   ⛔ ⭐ **mind-mapper — AND THERE IS A THIRD RELATIONSHIP A TEST CAN HAVE TO AN
+   ENTRY, WHICH NEITHER SCAR MODELS: IT CAN IMPORT SYMBOLS OUT OF IT. THE DAEMON
+   IS A LIBRARY WITH AN ENTRY POINT.** `server.ts:1708` is
+   `export { main, readDoc, sseResponse };` and `sse-keepalive.test.ts:7` does
+   `import { sseResponse } from "./server.ts"` — it spawns nothing and drives
+   the function in-process. bounty's scar is **one constant doing two jobs**;
+   this is **four spawners and one importer across five files**, so grepping for
+   a shared constant finds nothing and "split the constant" has no constant to
+   split.
+
+   **The rule that covers all three: sort every reference to a moved entry by
+   what it NEEDS, not by what it looks like.** A process spawn follows the
+   LAUNCHER; a source scan and a **symbol import** follow the SOURCE. Measured
+   for mind-mapper: `release-serve.test.ts:70`, `server.test.ts:20`,
+   `lifecycle.test.ts:23` and `presence.test.ts:24` spawn (→ launcher);
+   `sse-keepalive.test.ts:7` imports (→ `src/<spell>/backend/server.ts`).
+
+   ⛔ **And B3 makes the two mutually fatal if you get one wrong.** The
+   relocated module loses its `import.meta.main`, so a spawner left pointing at
+   the source boots **nothing** at exit 0; an importer pointed at the launcher
+   gets a file that **exports nothing at all**. Neither fails as a wrong path.
+
+   ⚠ **Five distinct path-constant spellings in one suite, and one of them no
+   grep you will write finds.** mind-mapper holds `join(SCRIPT_DIR, "cli.ts")`;
+   a bare `join(SCRIPT_DIR, "server.ts")` inline in the spawn with no constant
+   at all; `join(skillRoot, "scripts", "server.ts")`; and
+   `cli-contract.test.ts:21`'s `new URL("./cli.ts", import.meta.url).pathname`,
+   which matches neither a `SCRIPT_DIR` grep nor a `join(` grep. **Enumerate by
+   reading the suite's spawn and import sites, not by grepping for the spelling
+   you expect.**
+
+   ⚠ ⭐ **AND BUDGET THIS STEP BY THE FILE COUNT, BECAUSE THE SPLIT ABOVE IS A
+   TWO-FILE INSTRUCTION.** bounty's relocated backend suite is **2 files**; the
+   six landed ports run 2, 2, 3, 5, 7 and 9. **mind-mapper's is 32 — more than
+   all six combined, 9,072 lines.** At that size the executable form of "grep
+   for every READ of a moved file" is a **triage table written before anything
+   moves**: one row per test file, one column each for spawns / imports /
+   source-scans / none. Below about five files the split-the-constant advice is
+   the whole step; above it, the table is.
+
 2. **Anything computed from `import.meta.url` must be read out of the
    ARTIFACT.** glamour's `daemonCwd()` and `SKILL_ROOT_FOR_TEST` answer
    `src/<spell>/` when imported from source — a directory with no `SKILL.md`, no
@@ -1726,6 +1935,43 @@ grep at the END of chapter 2: chapter 2 is where adopting `errors.ts` can ADD
 exit sites to a spell that had none, which is the one direction the table above
 cannot predict from chapter 1.
 
+⛔ ⭐ **mind-mapper — AND THERE IS A FOURTH ANSWER BESIDE "RED EXPECTED", "ZERO
+ROWS" AND "GENERIC NOW": A WARD THAT IS GREEN OVER YOUR SPELL FOR A REASON THAT
+HAS NOTHING TO DO WITH YOUR PORT.** Not a list with no subject (D56's case) and
+not a stale expectation (`daemon-lifecycle-ward`) — **a ward with a subject, a
+pin, and no reach.** Measured for mind-mapper on today's tree:
+
+| list                                             | mind-mapper                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exit-site-inventory`                            | **ONE row, and it MUST NOT MOVE.** `server.ts` / `E-terminal`, bounty's precedent exactly: after the port the process entry IS the launcher. The CLI has **zero** rows and that is correct (`cli.ts:1730` is `process.exitCode`). ⚠ Its pinned TEXT is unique in the map — a launcher rewrite that normalises the wording reds it. |
+| `terminator-invariant`                           | **One row, on the CLI** — not a zero-row case.                                                                                                                                                                                                                                                                                     |
+| `INTERNAL_ENTRY_POINTS`                          | hand-work, **with no backstop** — see below.                                                                                                                                                                                                                                                                                       |
+| `flag-invariant`                                 | ⛔ **GREEN, AND STRUCTURALLY BLIND.** See below.                                                                                                                                                                                                                                                                                   |
+| `import-boundary-wards` ward 1a                  | **RED EXPECTED, one row** — `scripts/server.ts` → `dist/server.js` (B5).                                                                                                                                                                                                                                                           |
+| `import-boundary-wards` `DECLARED_EMITTED_ROOTS` | **RED EXPECTED** — mind-mapper is the ONE root missing, and this port closes the list at eight.                                                                                                                                                                                                                                    |
+| `import-boundary-wards` line-number pin          | ⛔ **RED EXPECTED, and it is the FOURTH instance of the scar that ward records about itself.** `:1576` pins `propose.test.ts` **line 463**. It reds as `undefined`, which reads as "the escape vanished".                                                                                                                          |
+| `spawn-path-ward`'s escape list                  | **RED EXPECTED** once the dev-surface pin is EMITTED.                                                                                                                                                                                                                                                                              |
+| `spawn-path-ward` coverage                       | ⛔ **NO ROW TODAY — see B4.** It switches on at the first backend emit.                                                                                                                                                                                                                                                            |
+| `gate-honesty` blind set                         | **NO-OP, and say so.** `DECLARED_BLIND` holds CSS/HTML/`bunfig.toml`/`.py`; `.ts` is gateable, so a backend relocation adds nothing.                                                                                                                                                                                               |
+
+⛔ **`flag-invariant` IS THE FOURTH ANSWER, AND B7 PROMISED IT AS THE LOUD
+HALF.** This step's exclusion-set bullet offers glamour's scar as the instrument
+that catches a relocated daemon: its private `--port`/`--project` were reported
+as undocumented SKILL.md flags. **The consolation — "a daemon with no private
+flags would have moved in silence" — does not apply here: mind-mapper's daemon
+HAS private flags (`--port`, `--host`, `--no-open`). The arm still cannot
+fire.** `flag-invariant.test.ts:179-187` returns from the per-spell cell
+**before either arm runs** when the SKILL.md is missing; the recognized-flag
+enumeration, the unresolved-entry-point assertion, the documented set and the
+two-sided diff are all below the `return`. The cell passes for a stated reason
+(honest, and the repair recorded at :135-149) over **39 caller-facing flags,
+more than any checked spell**.
+
+**So: `INTERNAL_ENTRY_POINTS` is hand-work here with nothing behind it.** ⚠ **Do
+not read the green as cover, and do not repair the ward** — D44: the instrument
+that guards a port must not be repaired BY that port. Say it out loud in the
+report instead, and file the widening. (D80.)
+
 Expect these to red, and re-declare every one by hand: `exit-site-inventory`,
 `import-boundary-wards` (1a's pin, 1b's `bun` floor, 1b's
 `DECLARED_EMITTED_ROOTS`, the re-export inventory, and any line-number pin — **a
@@ -1771,6 +2017,26 @@ imago had two live instances. bounty had **thirteen live backlog items** naming
 and two of them named a `template.html` deleted at its rewrite, so the sweep
 also finds prose that was already stale before you touched anything. Budget it
 by counting first, not by trusting the number above.
+
+⛔ ⭐ **mind-mapper — AND THE LAST PORT'S SWEEP HAS A SECOND POPULATION THAT NO
+PATH GREP FINDS: PROSE THAT NAMES YOUR SPELL AS A MEMBER OF A SHRINKING SET.**
+Two live instances, both stale before this port and both expiring AT it:
+
+- `grimoire/import-boundary-wards.test.ts:1082` — _"Three spells still ship
+  their daemons as SOURCE (digestify, grapevine, mind-mapper)"_. **Two of the
+  three have landed**, and this port takes that population to **zero** — which
+  is the stated reason the `bun` row in `BUILTIN_EXACT` still exists (D50's
+  "population is not closed" argument). **A count that reaches zero retires an
+  argument, and nothing reds when it does.**
+- `src/build.ts:121` — _"imago and mind-mapper have only a surface"_. imago
+  ported.
+
+**So run a second grep: `git grep -n <spell>` over `grimoire/`, `scripts/` and
+`src/`, and read every hit that is a LIST OF SPELL NAMES rather than a path.**
+Being the last of a set is the one prose class that goes wrong for every earlier
+port too — each landing makes some other file's roster sentence false, and no
+port owns it. ⚠ **The last port owns all of them at once**, which is the only
+reason this is written here rather than in a backlog item.
 
 #### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
 
@@ -1953,13 +2219,44 @@ convergence and is absent from bounty's copy — so adopting it CHANGED bounty's
 behaviour at one input (`--timeout 0` used to close the board on the first idle
 tick; it now means NEVER). Framed as "adopt and gain", that lands unnamed.
 
-**So: DIFF IN BOTH DIRECTIONS, and say for every row which of four it was —
+**So: DIFF IN BOTH DIRECTIONS, and say for every row which of FIVE it was —
 GAINED (the kit is better), DE-DUPLICATED (identical in substance), RECEIVED
 (the kit carries something your copy lacked, and it is a behaviour change you
-now owe a drive and a decision-log line), or REJECT-STRUCTURAL (below).** The
-third is the one nobody looks for, because the whole phase is written as though
-the kit is the destination. **The fourth is the one this phase had no word for
-at all**, which is why it is written out at length.
+now owe a drive and a decision-log line), REJECT-STRUCTURAL (below), or ⭐
+LOSSY-COPY (below, and it is the one that only a convergence SOURCE can
+answer).** The third is the one nobody looks for, because the whole phase is
+written as though the kit is the destination. **The fourth and fifth are the two
+this phase had no word for at all**, which is why they are written out at
+length.
+
+⛔ ⭐ **mind-mapper — AND THE TABLE ABOVE IS "MEASURED FOR DIGESTIFY". IT IS
+ALSO THE ONLY PER-ROW GUIDANCE THIS STEP GIVES, AND SIX OF ITS EIGHT ROWS ARE
+WRONG FOR THE LAST PORT — FIVE OF THEM IN THE SAME DIRECTION.** Scored as _would
+an agent following it verbatim reach the wrong verdict_, measured 2026-09-09:
+
+| kit module                    | the table says                     | mind-mapper's true verdict                                                                                    | ✓/✗ |
+| ----------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | --- |
+| `serveDist`                   | PARTIAL, read the caveats          | PARTIAL + **RECEIVED** (the whitelist; plus a `charset=utf-8` header delta)                                   | ✓   |
+| `heartbeat`                   | PARTIAL, "the seam does not exist" | **GAINED**, and the seam **does** exist — `cli.ts` + `server.ts`, hand-mirrored today                         | ✗   |
+| `housekeeping` idle/snapshot  | has a subject                      | **NO SUBJECT** — `server.ts:1685`, _"no idle timeout in V1"_                                                  | ✗   |
+| `housekeeping` `drainAndStop` | no subject                         | **DE-DUPLICATED** — `server.ts:1700`, `stopMs` **200**, grapevine's D73 shape exactly                         | ✗   |
+| `errors`                      | a documented caller contract       | **DE-DUPLICATED** — and the kit is WEAKER at the catch (see the `errors` ruling)                              | ✓   |
+| `eventLog`                    | "NO SUBJECT. No `events` array."   | ⛔ **the module's convergence SOURCE** — a wire rename plus an epoch demotion                                 | ✗   |
+| `sse`                         | "NO SUBJECT. No stream anywhere."  | ⛔ **the module's convergence SOURCE** — REJECT-STRUCTURAL on the grounding frame                             | ✗   |
+| `tailEvents`                  | "NO SUBJECT. Nothing tails it."    | **GAINED** — and mind-mapper is the spell `tailEvents`'s own constant-backoff warning is about (`cli.ts:761`) | ✗   |
+| `discovery`                   | "NO SUBJECT"                       | **GAINED** — `server.ts:1675-1676` is census **L3, with mind-mapper named as BROKEN**                         | ✗   |
+
+⛔ **The failure is systematic, not incidental: FIVE of the six wrong rows say
+"NO SUBJECT" about a spell that is the SOURCE of two of the eight modules.** An
+agent following the table would skip `eventLog`, `sse`, `tailEvents` and
+`discovery` as absent, adopt an idle sweep into a daemon that runs none, and
+decline to build the `heartbeat.ts` seam this step calls "the cleanest proof the
+port worked".
+
+⚠ **So read the table as ONE SPELL'S ANSWERS, which is what it says on its face
+and what nobody does.** The transferable part of it is the eight NAMES and the
+discipline of ruling on each; the verdicts belong to digestify. **Re-derive
+every row from questions 4, 7 and 8 before you use one.**
 
 ##### ⛔ ⭐ grapevine — THE FOURTH VERDICT: REJECT-STRUCTURAL
 
@@ -2055,6 +2352,236 @@ for grapevine — `eventLog`, `sse`, and half of `housekeeping` — and the kit 
 not widened."_ A port that reports "adopted the kit" over three structural
 refusals is reporting something that did not happen.
 
+##### ⛔ ⭐ mind-mapper — THE FIFTH VERDICT: LOSSY-COPY
+
+**Every verdict above assumes the kit is the DESTINATION.** GAINED, RECEIVED and
+REJECT-STRUCTURAL all describe a spell meeting a module written elsewhere;
+DE-DUPLICATED describes a tie; and bounty's ⭐ block covers the two cases where
+a spell is a convergence SOURCE — rows with no delta, and the one row that "runs
+backwards" because a sibling's improvement was folded in on the way. **None of
+the five covers the case where the kit is a LOSSY COPY of your module.**
+
+> **LOSSY-COPY** · the kit module NAMES YOUR SPELL as its convergence target
+> (question 8), and your module holds a property the kit's does not. Adoption is
+> not a neutral de-duplication and not a gain: it is a **net loss of a guarantee
+> that shipped**, and the port owes the loss a name, a disposition and a home.
+
+⛔ **AND THE MECHANISM IS RECORDED, SO THIS IS A PREDICTABLE CLASS RATHER THAN
+AN ACCIDENT.** D1 ruled the spine be proven on the two spells that already
+build; D17 records the consequence in as many words — _"Checked against these
+two spells rather than against the census's counts"_. Astrolabe and magpie are
+downstream FORKS of the mind-mapper line, so the module boundaries were settled
+against two copies while the original was not in the room — one page after the
+proposal ruled _"Convergence is toward the best sibling… **mind-mapper's
+`sseResponse` and event bus**"_. **Any convergence that proves itself on the
+cheapest adopters will do this to whichever spell it named as its source.**
+
+**Measured on mind-mapper, 2026-09-09, before its port — and the count is TWO,
+not the three an independent cold read reported:**
+
+| property                                                                                                                                         | verdict                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`sse` cannot write a frame BEFORE the replay.** `server.ts:423` emits the `--inbound` grounding frame one line above `bus.subscribe`.          | ⛔ **REAL.** The kit's `onOpen` fires at `sse.ts:208`, after `log.subscribe`. It is an ORDERING, not a type — see question 7's second half.                       |
+| **`eventLog` demoted the epoch from MANDATORY to OPTIONAL.** `events.ts:67` `epoch: string`, stamped unconditionally; `eventLog.ts:78` `epoch?`. | ⛔ **REAL**, and it re-opens census **L6** — in the one spell L6's table names as CORRECT, inside the module whose own header claims to fix L6 "BY CONSTRUCTION". |
+| **`eventLog` dropped `ALL_EVENT_KINDS`.**                                                                                                        | ✅ **CONTRADICTED.** `createEventLog<T extends object>` is generic; the vocabulary was never kit material and stays put, totality cell and all.                   |
+
+⚠ **Keep the third as a shape: "the kit dropped X" is a loss only if the kit
+ever had a SUBJECT for X.** A generic parameter is not a dropped feature, and a
+cold read cannot tell the two apart without opening the type. **Check the
+generic before you call something lost.**
+
+**Its discriminator against the other four is question 8 plus one more:** does
+the kit module name your spell, AND does your module hold something its copy
+does not? Against **RECEIVED** it is the opposite direction (a loss, not a
+gain). Against **DE-DUPLICATED** it is "identical in substance" being false in
+the direction nobody checks. Against **REJECT-STRUCTURAL** it is partial: you
+CAN adopt — `createEventLog` is the shape the kit copied — you simply adopt
+something poorer.
+
+###### The disposition is per PROPERTY, and there are three
+
+⛔ **A LOSSY-COPY verdict is NOT a licence to widen.** It requires one
+disposition per lost property, written down:
+
+1. **RESTORE** — the property goes into the kit. Permitted only on the two
+   numbers below.
+2. **KEEP-LOCAL** — the spell keeps its own for that property, and the kit
+   module's header records the loss by name (D68's requirement 2, D17).
+3. **FILE** — the loss stands, and it goes to `docs/backlog/` naming the census
+   row it re-opens.
+
+⛔ **Rule per PROPERTY, never per module.** `eventLog` for mind-mapper is a
+LOSSY-COPY on the epoch **and** a genuine GAINED on three other things (the cap,
+replay-whole on `since > seq`, the non-finite cursor). A verdict that forces
+all-or-nothing on that row loses three fixes to protect one.
+
+###### ⛔ RESTORATION vs WIDENING — two numbers, and both must be zero
+
+D68 rules widening out as the default and prices it in **artifacts across
+spells**. ⚠ **Provenance does not change that price.** "It was mine before you
+copied it" is a claim about history; it does not remove one artifact from the
+blast radius. So the discriminator is not provenance:
+
+> **Apply the change, rebuild every kit-bundling spell through `bun run build`,
+> and for each OTHER adopter ask: (a) does its source need any edit to compile?
+> (b) does any byte of its WIRE differ** — HTTP status, headers and body, stdout
+> and stderr bytes, exit codes — **under its own suite and its release drive?**
+>
+> **RESTORATION iff both numbers are ZERO.** That is what "the kit removed it
+> when it copied" means operationally: the other adopters never used the
+> property, so putting it back is inert at every call site that exists. **Any
+> non-zero number and it is a WIDENING** — D68 governs, and it leaves the port
+> to become its own argued decision with its own blast-radius count.
+
+⚠ **Measure the WIRE, never the artifact bytes.** Adding even an optional
+parameter changes the bundled module's source and therefore EVERY artifact's
+bytes, so a `dist/` byte-diff calls every change a widening and the
+discriminator dissolves — D77's "a one-way implication written as an 'if and
+only if' is not a discriminator", in miniature. `tsc --noEmit` across the
+adopters is a cheap **leading indicator** for (a) and is blind to (b).
+
+⛔ **DRIVEN, AND BY ACCIDENT, WHICH IS THE STRONGEST FORM OF THE POINT.** This
+pre-work's own repairs to `tailEvents.ts` and `eventLog.ts` are **COMMENTS
+ONLY** — zero executable bytes, zero signature change, zero behaviour.
+`bun run build` re-emitted **11 artifacts across 7 spells** and `dist-check`
+went red. Each diff is **exactly 1 insertion / 1 deletion, and the line is the
+base64 `//# sourceMappingURL=`**: Bun embeds `sourcesContent`, so a comment
+travels into every artifact that bundles the module. **The artifact-bytes test
+grades a COMMENT as a seven-spell widening.** ⚠ **Separate the two cheaply:**
+`git diff --numstat` per artifact plus a grep for `sourceMappingURL` tells "only
+the sourcemap moved" from "code moved" in one command — and **budget the
+re-emission**, because Contract 18 makes those 11 artifacts part of your commit
+whether or not anything executes differently.
+
+⚠ **A free confirmation of a refusal, worth knowing:**
+`grapevine/dist/server.js` was **absent from the 11**, because grapevine's
+daemon REJECT-STRUCTURALLY refused `eventLog` and `sse`. **A structural refusal
+is observable as an artifact that does not move** — a better liveness check on a
+recorded refusal than a ward reading prose (D68's own not-taken).
+
+⛔ **AND THE HOUSE HAS ALREADY RUN THIS TEST ONCE WITHOUT NAMING IT.** D32
+widened `SseClients` from a bare closer to `{close, send}` for glamour, and the
+sentence that justified it is exactly (a) and (b): _"`drainAndStop` was the only
+other consumer; neither adopting spell dereferences the elements."_ Both numbers
+were zero. Nobody wrote down that this was the test.
+
+**Worked on mind-mapper's two real losses, and they do not go the same way:**
+
+- **The epoch needs NO kit change.** Pass
+  `createEventLog({ epoch: crypto.randomUUID() })` at the one construction site
+  and re-tighten `epoch` to required in the spell's own frame type. Kit bytes:
+  zero. ⛔ **Making the kit's `epoch` mandatory would reverse D39 (imago), D48
+  (bounty) and D70 (grapevine), all of which reasoned their way to no epoch. Do
+  not propose it.** What the kit owes instead is an honest header: **L6 is
+  closed by OPT-IN, not "by construction"**, and three spells have since opted
+  out.
+- **The grounding frame is the one restoration candidate** — an `onOpen` that
+  receives `{ send }`, or an `openFrames?: () => string[]` emitted before
+  `log.subscribe`. Predicted zero and zero, because none of the other five
+  writes at open. ⚠ **DRIVE the prediction before proposing the change, not
+  after**; if it fails, the row is KEEP-LOCAL and the spell's own `sseResponse`
+  stays.
+
+⚠ **And that hook was rejected once, for a reason that does not reach this
+case.** D32's not-taken carries _"a `sseResponse` hook that hands the caller a
+raw `send` … the caller then has to keep its own collection of them"_. That was
+argued against glamour's presence **broadcast**, which pushes to already-open
+streams from outside and does need a collection. Mind-mapper needs **one frame,
+on one stream, at open**, and keeps no collection at all. **Read what a
+not-taken was argued AGAINST before treating it as settled** — a rejection is
+scoped to the case that produced it.
+
+###### What LOSSY-COPY requires you to write
+
+Same two destinations as REJECT-STRUCTURAL, because the failure mode is
+identical — a loss that is only a decision is indistinguishable from a loss
+nobody noticed:
+
+1. **In the journal / decision-log entry**, per lost property: the property, the
+   kit's shape and the spell's shape as types **(or as an ORDER, where it
+   occupies no type)**, the census row it re-opens if any, the disposition, and
+   — for a RESTORE — the two numbers, driven.
+2. **In the kit module's OWN header**, a line naming the spell and the property.
+   ⚠ `sse.ts` and `eventLog.ts` both currently say they converged TOWARD
+   mind-mapper and say nothing about what they left behind — which is exactly
+   the half D17 calls part of the ruling.
+
+Plus the count out loud: _"two properties of mind-mapper's own modules are
+LOSSY-COPY at the kit — the pre-replay open frame and the mandatory epoch — one
+is filed and one is a driven restoration."_ (D79.)
+
+##### ⛔ ⭐ mind-mapper — A WIRE-SCHEMA DELTA IS A COST OF ADOPTION, AND THIS PHASE HAD NO CELL FOR IT
+
+**Adopting a kit module can change a byte a CALLER reads, without changing any
+behaviour at all.** `createEventLog` builds `{ id: seq, ...msg }` and types it
+`Frame<T> = T & { id: number; epoch?: string }`; mind-mapper emits
+`{ seq, epoch, kind, payload }`. **The cursor field is renamed on a published
+wire, and the row would be ruled DE-DUPLICATED** — the kit's own header says it
+converged toward `scripts/events.ts` — **so the rename lands unnamed.** That is
+verbatim the failure bounty's `--timeout 0` bullet was written about: _"Framed
+as 'adopt and gain', that lands unnamed."_
+
+⛔ **THE CLASS HAS BEEN RECORDED FOUR TIMES AND NEVER GREW A STEP.** D20 ("Two
+wire-observable changes"), D35 ("Three…"), D47 ("Three… named rather than
+smuggled", later four), D51 (a fifth). The strings `wire-observable` and
+`wire observable` appear **nowhere in this phase**. Compare REJECT-STRUCTURAL,
+which grew a required-output section within one port. **A convention that lives
+only in the decision log is one the next port re-derives or misses.**
+
+**So: three questions, per adopted module.**
+
+> **(1) Does any field the wire carries change name, nesting, type or presence?
+> (2) WHO READS IT** — count the sites, in every tree, **including the ones
+> outside this repo's control** (an agent's pipe, a browser bundle, a committed
+> fixture). **(3) Is the change FORCED by the module, or is it the house IDIOM
+> the siblings happen to follow?**
+
+⛔ **Question 3 is the one nobody asks, and it halves this port's bill.**
+Measured:
+
+| change                      | forced?                                                                                                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `seq` → `id`                | ⛔ **FORCED.** Named in `Frame<T>` and in the emit literal. No option.                                                                                                                                                   |
+| `{kind, payload}` FLATTENED | ✅ **NOT FORCED.** `Frame<T>` is generic — `createEventLog<{kind; payload}>()` keeps the nesting. **All five existing adopters flatten**, so a port that copies a sibling flattens and one that reads the type need not. |
+
+⚠ **The generalisation: an idiom five siblings share is indistinguishable from a
+contract until you open the type** — and the whole of B1 trains the opposite
+instinct. **Read the signature; do not copy the neighbour.** ⚠ And the CLI half
+forces nothing at all: `tailEvents`'s `cursorOf` and `epochOf` are
+caller-supplied, so `(ev) => ev.seq` is legal and **a spell can adopt the entire
+tail client with ZERO wire change.** Price the two modules separately.
+
+**Counting: state the RULE, or it is not a measurement (D78).** For mind-mapper:
+strip comments, count word-boundary `seq|epoch|payload|ServerEvent|BusEvent`,
+then subtract homonyms by reading every matched line — the surface's UI bump
+counters (`focusRequest.seq`, `ComposerSeed.seq`), `WireMessage.seq` (a
+message-row sequence, wire but not this envelope), the `messages` table's own
+`seq` column, `epoch` meaning unix epoch, `payload` as prose in byte-cap errors.
+Result: **167 lines / 173 occurrences across 5 surface files**, **~158 lines /
+~209 occurrences across ~30 script files**. ⛔ **An independent report's figures
+(108 and 84) could not be reproduced by any stated rule, and both were too
+LOW.** A blast-radius number that arrives without its counting rule is not
+evidence.
+
+⛔ **AND COUNT THE READERS OF THE MEANING, NOT THE OCCURRENCES OF THE TOKEN.**
+The surface's reducer is a **cursor consumer**: `reducer.ts:25-26`'s
+`isGap(cursor, seq)` plus ~30 `cursor: event.seq` assignments. **A rename
+touches the gap-detection contract, not a property name** — and a field-name
+count cannot see that at all.
+
+**And name the shapes the sweep does NOT touch**, or the next reader thinks you
+missed them: mind-mapper's grounding line (`cli.ts:733`) and its synthesized
+`epoch.changed` (`cli.ts:741`) deliberately carry no `seq`, precisely so they
+never advance the cursor.
+
+**The required output**, in the port's report and its decision-log entry: per
+changed field, the old and new spelling, **FORCED or IDIOM**, the reader count
+with its counting rule and its tree, and the readers outside this repo's
+control. _"One field changes name on mind-mapper's wire (`seq` → `id`, forced);
+the flatten is the house idiom and was declined; 173 occurrences across 5
+surface files and ~209 across ~30 script files, plus every JSONL line the tail
+writes into an agent's pipe."_ (D81.)
+
 ⛔ **AND THERE IS A SECOND PER-SPELL RULING THIS STEP DID NOT NAME: WHETHER THE
 DAEMON STAMPS AN EPOCH.** `createEventLog` takes `{ epoch }`, mind-mapper stamps
 one, and census defect L6 is about its absence — so every adopter must decide,
@@ -2115,6 +2642,29 @@ D42's coverage cells exist to end. The row to write: _digestify has no event
 log, therefore no epoch, therefore **L6 does not apply** — neither closed nor
 narrowed._
 
+⛔ ⭐ **mind-mapper — AND THERE IS A FOURTH ANSWER, WHICH IS THE ONLY ONE THAT
+MAKES THE MODULE WORSE THAN THE SPELL: THE SPELL ALREADY STAMPS ONE, AND
+MANDATORILY.** `events.ts:67` types `epoch: string` — required — and `:90`
+stamps it unconditionally from `crypto.randomUUID()` on every bus construction.
+There is no opt-out and no caller discipline to get wrong. **It is the spell
+census L6 names as CORRECT.**
+
+⛔ **The kit's is `epoch?`, stamped only `if (epoch !== undefined)` — and its
+header's heading says "THE THREE THINGS THIS FIXES BY CONSTRUCTION".** Items 1
+(the cap) and 3 (replay-whole on `since > seq`) are genuinely by construction;
+item 2's own text immediately qualifies it to _"when the caller asks for one"_.
+**An optional field fixes nothing by construction**, and the evidence that the
+opt-in leaks is three rulings above this one: D39, D48 and D70 each declined it.
+**L6 is closed by OPT-IN.**
+
+**So the row mind-mapper writes is:** _ids restart at 1 per boot, the spell
+already stamps an epoch mandatorily, and adoption keeps it by passing
+`{ epoch }` at the one construction site — **L6 stays closed for this spell and
+remains open for the five that opt out.** The kit's "by construction" is
+corrected to "by opt-in" in its own header._ ⛔ **What the port must NOT do is
+make the kit's `epoch` required** — that reverses D39, D48 and D70, and it is a
+WIDENING by the fifth verdict's test rather than a restoration. (D79.)
+
 ⛔ **AND `errors` IS NOT AN INTERNAL MODULE. READ YOUR SPELL'S `die` BEFORE YOU
 ADOPT IT.** It is listed above beside seven modules nobody outside the daemon
 can observe, and it is the one that changes what every caller sees. If the
@@ -2123,6 +2673,26 @@ exit codes, then adopting it re-spells every failure the spell can produce:
 
 - **glamour felt none of this** because it was already CONFORMANT L0 and had
   reached the envelope shape independently. That is why this step said nothing.
+- ⛔ ⭐ **mind-mapper — AND IT IS THE SECOND SUCH SPELL, WHICH THE KIT'S OWN
+  HEADER SAYS AND THIS BULLET DOES NOT.** `errors.ts:33`: _"glamour and
+  mind-mapper reached this shape independently at their acc L0 passes."_ Its
+  `ErrKind` union is the kit's character-for-character, its `EXIT_FOR` is
+  `2/1/5/6`, and its envelope has the same keys in the same order. **So the
+  error-contract delta here is plausibly NIL — which the acceptance box already
+  permits ("or stated to be nil"), and which is worth stating rather than
+  hunting.**
+- ⛔ ⭐ **BUT THE ROW IS NOT FREE, BECAUSE THIS IS THE ONE STEP WHERE THE KIT IS
+  MEASURABLY WEAKER — AND NOTHING IN B8 HAS A CELL FOR THAT.** mind-mapper's
+  `main` catch (`cli.ts:544-558`) triages `ERR_PARSE_ARGS*`, a `SyntaxError`
+  (_"invalid JSON: …"_) and `ENOENT` into **`usage` envelopes**;
+  `reportCliError` returns **`null`** for all three and demands the caller
+  rethrow. **Adopting it naively regresses three documented usage classes into a
+  stack-trace crash** — the defect `cli.ts:537-540` records as cassandra's P2
+  gate finding, re-created by the adoption meant to standardise it. **Keep the
+  triage chain and call `reportCliError` inside it**, and say at the call site
+  that the kit does not carry the triage. ⚠ **The general shape: `errors.ts` is
+  two things — an ENVELOPE and a CLASSIFIER — and only the envelope converged.
+  Diff them separately.**
 - **imago's `die` wrote `imago: <msg>` as prose and exited 2** — a missing
   session, a bad flag and an internal fault were one number. After adoption: one
   JSON envelope, and `not_found` exits 5. Every one of its 21 raise sites
@@ -2252,6 +2822,96 @@ glamour's `tailIdleMs(SSE_HEARTBEAT_MS)` evaluates to 45,000 today, which is
 also its `--start-timeout` default — the file says in as many words that the two
 are unrelated, so nobody de-duplicates them later.
 
+⛔ ⭐ **mind-mapper — AND THE SEAM FILE IS WHERE `process.env` IS READ. THAT IS
+D75, IT WAS RULED AT GRAPEVINE'S REPAIR CHAPTER AFTER THE DEFECT SHIPPED, AND IT
+NEVER REACHED THIS DOCUMENT.** The shape shown above is glamour's — three plain
+`export const`s with no env override anywhere in the file — and glamour is the
+one spell in the roster with no knob to resolve. **Four of the six spell
+heartbeats DO take one.** Grapevine's port resolved the beat's knob in
+`daemon.ts` and left `heartbeat.ts` deriving the watchdog from the LITERAL
+default, so **the daemon's beat was tunable and the CLI's watchdog was not, and
+any value above the default broke every tail** — measured: 4 subscribes / 3
+reconnects / 0 keepalives in 30 s, and presence reporting two connections for
+one live tail.
+
+> **The rule: `<spell>/backend/heartbeat.ts` is where `process.env` is read.**
+> It is the one module BOTH halves import, and `process.env` is ambient in both
+> — unlike the daemon, which the CLI cannot import without dragging the server
+> graph into `dist/cli.js`. **Generalised: an env knob must be resolved at the
+> LOWEST point every consumer of the derived value can see. Resolving it any
+> higher splits the pair silently, and the split is invisible at the default.**
+
+⛔ **AND THE DERIVATION SUPPLIES THE DEFAULT, NOT THE VALUE.** A spell whose
+tests drive a short window needs the knob to reach past the derivation:
+`TAIL_IDLE_MS = intOr(env.<SPELL>_TAIL_IDLE_MS, tailIdleMs(SSE_HEARTBEAT_MS))`.
+⚠ **Do not route such a knob through the BEAT instead** — the kit floors
+`heartbeatMs` at `MIN_HEARTBEAT_MS = 500` (D76: the floor lives at the
+derivation), so the smallest watchdog reachable through `tailIdleMs` is 1,500
+ms. mind-mapper's suite drives a **200 ms** watchdog, which is unreachable that
+way **by construction**. `tailIdleMs` itself carries no floor, so a direct
+override reaches it.
+
+⚠ **And the cells that prove this resolve `process.env` at MODULE LOAD, so an
+in-process `process.env.X = …` proves nothing** — grapevine's defect shipped
+green under every in-process assertion there was. **Run a fresh `bun` per
+case.**
+
+⚠ ⭐ **The mapping for the last port was written eight months early and
+addressed to nobody.** `phase-1-journal.md:151-155`: `<SPELL>_TAIL_IDLE_MS` →
+`idleMs`, `<SPELL>_TAIL_RETRY_MS` → `retry.initialMs`, and _"a spell whose tests
+drive a short window will need one, and it should be that spell's env var, not
+the kit's."_ (D75, D76, D84.)
+
+⛔ ⭐ **mind-mapper — AND THIS IS WHERE THE REPO'S ONLY EXECUTABLE TAIL
+SPECIFICATION LIVES OR DIES.** `scripts/tail.test.ts` is four cells that spawn
+the CLI as a PROCESS against a scripted fake SSE server; **it imports nothing
+from the spell**, so the project proposal's _"re-pointed at the shared client
+rather than rewritten"_ **has no import to re-point and is unexecutable as
+written.**
+
+> **The ruling: the file is neither re-pointed nor rewritten. It is left ALONE —
+> assertions untouched — and it becomes the ORACLE the adoption is measured
+> by.** Its only edit is B6.1's: the spawn constant follows the LAUNCHER. Green
+> before chapter 2, swap the hand-rolled loop for `tailEvents`, green after. **A
+> test whose subject is what the PROCESS writes does not care which module wrote
+> it, and that is exactly why it is the acceptance criterion.**
+
+⚠ **Say the second half out loud, because "re-point" implies it and it is
+false:** moving the path does not point the test at the shared client — it
+points it at a CLI that now runs `tailEvents`, so every assertion becomes a
+claim about **how the spell CONFIGURES `tailEvents`**. That is the right thing
+to assert and is not what the proposal's sentence describes.
+`src/kit/wire/tailEvents.test.ts:5-8` carries the same error from the other end
+(_"deliberately left pointed at mind-mapper's own loop until a later phase
+re-points it here"_); **correct that sentence, do not act on it.**
+
+⛔ **Followed literally, the glamour shape kills two of the four cells — and the
+worse one goes GREEN.** All four set `<SPELL>_TAIL_IDLE_MS=200` and
+`<SPELL>_TAIL_RETRY_MS=50`:
+
+| cell                                  | with a no-knob `heartbeat.ts`                                                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| idle watchdog aborts a silent stream  | **FAILS** — a 45,000 ms watchdog cannot fire, the 5 s deadline expires, and it reads as a broken watchdog                        |
+| keepalives feed the watchdog          | ⛔ **PASSES VACUOUSLY** — it asserts nothing was aborted, and 45 s cannot abort inside its 800 ms window. **It proves nothing.** |
+| grounding line forwarded exactly once | survives                                                                                                                         |
+| epoch change resets the cursor        | survives                                                                                                                         |
+
+⚠ **A green cell that lost its subject is worse than a red one**, and it is this
+step's own warning arriving at a test: _a guard that names a window and does not
+cover it reports the same thing as a window with nothing to guard._ ⚠ **The
+independent report predicted both cells failing to a deadline; the measured pair
+is one red and one green** — D57 again, the predicted symptom safer than the
+measured one. **Measured before touching anything: all four green, 16
+assertions, ~1.25 s.** (D82.)
+
+⚠ **And the grounding-suppression cell DOES have an affordance, contrary to the
+report.** `accept` and `render` are caller-written closures — `render` returns
+`null` for the second grounding — and a `cursorOf` returning `undefined` leaves
+the seq-less frame from advancing the cursor. **The honest gap is narrower: no
+DEDICATED affordance, no worked example, and the closure's STATE lives outside
+`tailEvents` across reconnects that `tailEvents` owns.** That last clause is the
+real risk and the kit does not answer it.
+
 **That file IS the seam, and it is the cleanest proof the port worked:** before
 it, the heartbeat was a literal inside the daemon and hand-mirrored in the CLI
 under a comment saying "an edit there is an edit here", because the CLI could
@@ -2288,6 +2948,28 @@ The kit's `die` **THROWS** rather than exits, which is what stops a failure
 three frames down from truncating its own stdout. The cost, and it is the
 adopting spell's to pay: **a `die` REACHABLE from inside a `try` whose `catch`
 SWALLOWS is now a silent continue rather than an exit.**
+
+⛔ ⭐ **mind-mapper — AND THE PREMISE CAN ALREADY BE TRUE, IN WHICH CASE THIS
+STEP'S COST IS PAID AND ITS WARNING IS NOT.** This step is written for a spell
+whose raise mechanism EXITS and whose adoption converts it to THROW; the audit
+exists to find where that conversion turns a hard stop into a silent continue.
+**mind-mapper has no `die` at all and already throws**: `cli.ts:207`'s local
+`CliError`, with `usage:2 · internal:1 · not_found:5 · conflict:6` — the kit's
+taxonomy exactly — under a comment at `:190-194` recording the reason (_"THROW
+and let main() catch and RETURN the code — this CLI ships large stdout payloads,
+and a `process.exit` inside a `die()` would truncate them at 65,536 bytes"_).
+
+**So there is no exit→throw conversion, and the audit finds no port-INTRODUCED
+swallow class.** Any swallowing catch on a raise path is a pre-existing defect —
+still worth reporting, and not attributable to this port. ⚠ **Say that out loud
+rather than reporting a clean audit**, or the next reader cannot tell a step
+that found nothing from a step that had nothing to find.
+
+⛔ **What DOES still bite is step 1, harder than anywhere else: a `die(` grep
+under-counts to ZERO here.** That is digestify's case at its sharpest — _look
+for the RAISE, not for the helper._ The raise set is every `new CliError(…)` and
+every `throw usageError(…)`, and `cli.ts:756`'s
+`if (e instanceof CliError) throw e;` is a propagating rethrow already in place.
 
 ⛔ **REACHABILITY, NOT CALL SITES.** A helper that dies, invoked from inside a
 swallowing `catch`, has its `die` at a site that reads as perfectly safe.
@@ -2463,7 +3145,9 @@ belongs in its own commit, filed rather than smuggled.
       spawns directly, and the drive that proves it is a HOST and a JOINER
       connected and exchanging one mutation EACH WAY — not one process starting.
       Read your SKILL.md for what it tells a caller to spawn, and drive each
-      one.
+      one. ⭐ **If the spell has no SKILL.md, derive the caller-facing set from
+      the entries and their arg parsing instead, and say the substitution out
+      loud** — do not write one (D80).
 - [ ] **acc re-run FROM THE SKILL DIRECTORY** (that is where `acc.config.json`
       is discovered) and the level reported. It must not regrade. ⭐ **If the
       spell has no `acc.config.json`, this box is N/A** — say so explicitly
@@ -2477,7 +3161,18 @@ belongs in its own commit, filed rather than smuggled.
       reader cannot tell from an oversight.
 - [ ] ⭐ **Every hand-kept list with ZERO rows for your spell, named and stated
       to be correct** (B7's table) — `exit-site-inventory` and
-      `terminator-invariant` for digestify.
+      `terminator-invariant` for digestify. ⭐ **And every instrument that is
+      GREEN over your spell for a reason unrelated to the port**, named as such
+      — `flag-invariant` for a spell with no SKILL.md, `spawn-path-ward`'s
+      coverage for a spell whose `dist/` was surface-only (D80).
+- [ ] ⭐ **Every kit module that names YOUR spell as its convergence source
+      (question 8), with a per-PROPERTY verdict** — and for each LOSSY-COPY
+      property, the disposition (RESTORE / KEEP-LOCAL / FILE), the census row it
+      re-opens, and for a RESTORE the two numbers, driven (D79).
+- [ ] ⭐ **Every WIRE-SCHEMA DELTA named**, or stated to be nil: per changed
+      field, old and new spelling, **FORCED or house IDIOM**, the reader count
+      **with its counting rule and its tree**, and the readers outside this
+      repo's control (D81).
 - [ ] ⭐ **The `idleMs` DERIVATION reported** — the expression, not the number —
       and, for a single-entry spell, the seam demonstration stated N/A rather
       than manufactured.
@@ -2829,6 +3524,29 @@ inventory at
 
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
+
+- **2026-09-09** — ⭐⭐⭐⭐⭐⭐⭐ **A CONVERGENCE CAN BE LOSSY ABOUT THE SPELL
+  IT NAMES AS ITS SOURCE, in pre-work for mind-mapper.** Not taught by a port:
+  an independent verify pass read Phase B cold as mind-mapper's porting agent
+  and reported seven items; four confirmed, two confirmed with the mechanism
+  corrected, one contradicted. **The finding under all of them is that every
+  verdict in B8 assumes the kit is the DESTINATION**, and two of the eight
+  modules name this spell as their SOURCE — a predictable consequence of D1 and
+  D17 proving the spine on two downstream forks while the original was not in
+  the room. Phase B gains a **fifth verdict, LOSSY-COPY**, ruled per PROPERTY,
+  with a RESTORATION told from a widening by two numbers that must both be zero
+  — a test D32 already ran once without naming it. **A WIRE-SCHEMA DELTA**
+  becomes a first-class cost with a required output and a FORCED-vs-IDIOM
+  question, closing a class recorded four times (D20, D35, D47, D51) that never
+  grew a step. Question 7 gains a second half, because an incompatibility can be
+  an ORDERING and occupy no type. The missing-SKILL.md case gets the escape
+  hatch the missing-acc case has had since imago. **D75 and D76 reach B8 at
+  last**, and with them the ruling that `tail.test.ts` is the port's ORACLE
+  rather than something to re-point — it imports nothing, so the proposal's verb
+  was never executable. The account is
+  `docs/projects/backend-convergence/phase-7-prework.md`; the rulings are
+  **D79–D84**. **What did NOT transfer, stated once: the assumption that your
+  spell is the one that has to change.**
 
 - **2026-09-09** — ⭐⭐⭐⭐⭐⭐ **grapevine's PORT: a REFUSAL is a deliverable,
   and a spell's failure PROSE can be a machine surface.** The seventh consumer,
