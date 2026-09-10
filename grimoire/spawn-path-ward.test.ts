@@ -45,7 +45,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildableSpells } from "../src/build.ts";
+import { buildableSpells, hasSurface } from "../src/build.ts";
 import { classifyDist, distDirFor, isBackendArtifact } from "./lib/dist-artifacts.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -147,11 +147,43 @@ const emittedJs = (spell: string): string[] => emittedFiles(spell).map((e) => e.
 // in `lib/dist-artifacts.ts` reads the split off `index.html`'s reference
 // closure instead — see that module for the reasoning, which travelled with it.
 
-type Pin = { file: string; line: number; expr: string; resolved: string };
+/**
+ * ⛔ `kind` EXISTS BECAUSE THE WARD NOW READS PATHS OF TWO PROVENANCES (D98).
+ *
+ * - `literal` — the arithmetic is written IN this file: `join(ANCHOR, "a.py")`.
+ *   Every such pin naming a file inside the plugin must resolve, full stop.
+ * - `family` — the arithmetic is written in the KIT, and this file supplies the
+ *   anchor: `resolveMode(DIST_DIR)` / `serveFromDist(DIST_DIR, rel)`, whose
+ *   bodies read `join(distDir, "index.html")`. The read is the artifact's, at
+ *   the artifact's own address; only the `join` lives elsewhere. It is asserted
+ *   in its OWN cell, under a source-derived gate — see `FAMILY` below.
+ */
+type Pin = {
+  file: string;
+  line: number;
+  expr: string;
+  resolved: string;
+  kind: "literal" | "family";
+};
+
+/** What one emitted file yielded. `unresolvedFamily` is the D42 half: a family
+ *  call site whose dist argument this ward could not resolve is a FINDING, not
+ *  an absence — it means the ward looked at the one read every dist-serving
+ *  spell now shares and could not follow it. */
+type Scan = { pins: Pin[]; unresolvedFamily: string[] };
 
 // `join(X, "a", "b")` where X is an anchor we have resolved and every other
 // argument is a string literal. A non-literal argument (`join(DIST_DIR, rel)`)
 // is deliberately NOT a candidate: it is not a pinned path, it is a router.
+//
+// ⛔ AND "IT IS A ROUTER" WAS TRUE OF THE ARGUMENT AND FALSE OF THE CALL — C8.
+// The backend convergence moved every spell's `dist/` reads into two kit
+// helpers, so `join(distDir, …)` is what appears in the emitted text and
+// `distDir` is a PARAMETER this exclusion drops. Measured at the repair: 4 such
+// reads in each of 8 emitted backend artifacts, **32 reads and not one in a
+// coverage row**, while grapevine's only `dist/`-naming pin was a string
+// interpolated into a 500-response body. The exclusion stays — a parameter is
+// not a pin — and the CALL SITE, where the anchor is supplied, becomes one.
 const JOIN_CALL =
   /\bjoin\d*\(\s*([A-Za-z_$][\w$]*|import\.meta\.dir)\s*,\s*((?:"[^"]*"\s*,?\s*)+)\)/g;
 // `var X = import.meta.dir` and `var X = dirname(fileURLToPath(import.meta.url))`
@@ -257,6 +289,117 @@ const asksWhereItIs = (text: string): boolean =>
 const literals = (args: string): string[] =>
   [...args.matchAll(/"([^"]*)"/g)].map((m) => m[1] as string);
 
+// ── THE SHARED DIST FAMILY (D98, closing C8) ────────────────────────────────
+//
+// ⛔ DERIVED FROM THE KIT'S OWN SOURCE, NEVER NAMED HERE. A hand-kept
+// `["resolveMode", "serveFromDist"]` is the same defect D43/D44 removed twice
+// already (a list of the two names that happen to be right today), and it would
+// go silently blind the day the kit grows a third dist reader or the day one is
+// renamed. So both halves are read off `src/kit/wire/serveDist.ts`:
+//
+//   - the FUNCTIONS: every `export function F(distDir: …)` — an exported reader
+//     whose first parameter IS the dist directory. `contentTypeFor(nameOrExt)`
+//     is excluded by that rule rather than by a list.
+//   - the LITERALS: every `join(distDir, "<name>")` in the module. Today that is
+//     `index.html` (twice: `resolveMode`'s existence probe and the whitelist's
+//     entry read). `join(distDir, rel)` and `join(distDir, name)` are the router
+//     half and contribute nothing — their members are exactly what the entry
+//     document links, so the entry read is the family's anchor.
+//
+// ⚠ THE LITERALS ARE ATTRIBUTED TO THE MODULE, NOT TO EACH FUNCTION, and that is
+// deliberate: `serveFromDist` reads the entry document through `surfaceWhitelist`,
+// one hop away and not exported, so a per-function attribution would need a
+// call-graph walk inside the kit to say something the module-level answer
+// already says. The claim a family pin makes is "this call site hands the kit an
+// anchor, and the kit reads THESE names under it".
+const KIT_DIST_MODULE = join(REPO_ROOT, "src", "kit", "wire", "serveDist.ts");
+
+type DistFamily = { fns: string[]; reads: string[]; specifier: string };
+
+function kitDistFamily(modulePath: string = KIT_DIST_MODULE): DistFamily {
+  const text = readFileSync(modulePath, "utf8");
+  return {
+    fns: [
+      ...new Set(
+        [...text.matchAll(/\bexport\s+function\s+([A-Za-z_$][\w$]*)\s*\(\s*distDir\s*[:,)]/g)].map(
+          (m) => m[1] as string,
+        ),
+      ),
+    ].sort(),
+    reads: [
+      ...new Set(
+        [...text.matchAll(/\bjoin\d*\(\s*distDir\s*,\s*"([^"]+)"\s*\)/g)].map(
+          (m) => m[1] as string,
+        ),
+      ),
+    ].sort(),
+    // How an adopter's SOURCE names this module, derived from the path rather
+    // than written twice.
+    specifier: relative(join(REPO_ROOT, "src"), modulePath),
+  };
+}
+
+const FAMILY = kitDistFamily();
+
+/** `F(X, …)` for a family function `F`, where `X` is a bare identifier — the
+ *  anchor the adopter supplies. Bun's bundler may suffix the name (`resolveMode2`),
+ *  hence the digit tolerance, and the callee may be namespaced by an import
+ *  object, hence `QUALIFIER`. */
+const FAMILY_CALL = new RegExp(
+  String.raw`\b${QUALIFIER}(${FAMILY.fns.join("|")})\d*\(\s*([A-Za-z_$][\w$]*|import\.meta\.dir)\s*[,)]`,
+  "g",
+);
+
+/** The bundled DEFINITION of a family function is not a call site — `function
+ *  resolveMode(distDir) {` matches `FAMILY_CALL` and its `distDir` is a
+ *  parameter, so without this the ward would red on every artifact that
+ *  CORRECTLY bundles the kit. */
+const IS_DEFINITION = /(?:^|[^\w$])function\s+$/;
+
+/**
+ * Which of a spell's BACKEND SOURCE files import a family function, and which —
+ * read as `file:originalName`, aliases resolved to the kit's own name because
+ * `resolveMode as resolveModeIn` is how five of the eight spell it.
+ *
+ * ⛔ THIS IS THE D27-SAFE GATE, AND IT IS THE WHOLE POINT OF THE CELL BELOW.
+ * The requirement "this artifact must produce a family pin" cannot be computed
+ * from "does the artifact's emitted text contain a family call" — that is the
+ * predicate the cell exists to backstop, and a bundler change, a rename, or a
+ * de-duplication that moves the read out of `FAMILY_CALL`'s reach would make
+ * the artifact EXEMPT rather than LOUD. That is D27's defect and C4's counting
+ * half: a coverage number going DOWN is what a successful de-duplication looks
+ * like AND what a pin vanishing looks like.
+ *
+ * So the requirement comes from the SOURCE tree — a different tree, a different
+ * predicate, and one nothing in the emitted artifact can influence. A spell
+ * whose `src/<spell>/backend/*.ts` imports the family MUST show that read
+ * pinned in its emitted artifacts, or the ward reds NAMING THE SPELL.
+ */
+function familyImportsOf(spell: string, root: string = REPO_ROOT): string[] {
+  const dir = join(root, "src", spell, "backend");
+  if (!existsSync(dir)) return [];
+  const specifier = FAMILY.specifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const importRe = new RegExp(
+    String.raw`import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["'][^"']*${specifier}["']`,
+    "g",
+  );
+  const out: string[] = [];
+  for (const f of readdirSync(dir).sort()) {
+    if (!f.endsWith(".ts") || f.endsWith(".test.ts")) continue;
+    const text = readFileSync(join(dir, f), "utf8");
+    for (const m of text.matchAll(importRe)) {
+      for (const clause of (m[1] as string).split(",")) {
+        const original = clause
+          .trim()
+          .split(/\s+as\s+/)[0]
+          ?.trim();
+        if (original && FAMILY.fns.includes(original)) out.push(`${f}:${original}`);
+      }
+    }
+  }
+  return [...new Set(out)].sort();
+}
+
 /**
  * Every path this emitted file pins, resolved the way the RUNTIME will resolve
  * it: from the emitted file's own directory.
@@ -268,10 +411,11 @@ const literals = (args: string): string[] =>
  * the ANCHOR-ARITHMETIC class, which is the class that bundling breaks and the
  * class both of chapter 1's defects belonged to.
  */
-function pinnedPaths(absFile: string): Pin[] {
+function scanFile(absFile: string): Scan {
   const here = dirname(absFile);
   const anchors = new Map<string, string>();
   const out: Pin[] = [];
+  const unresolvedFamily: string[] = [];
 
   const resolveCall = (anchor: string, args: string): string | null => {
     const base = anchor === "import.meta.dir" ? here : anchors.get(anchor);
@@ -301,11 +445,39 @@ function pinnedPaths(absFile: string): Pin[] {
         line: i + 1,
         expr: m[0],
         resolved,
+        kind: "literal",
       });
     }
+    // ⛔ AND THE CALL SITES OF THE SHARED DIST FAMILY — the reads that live in
+    // the kit and are anchored HERE. An argument this ward cannot resolve is
+    // collected, never skipped: a family call whose anchor is invisible is
+    // precisely the silence C8 records, and it must be LOUD.
+    for (const m of line.matchAll(FAMILY_CALL)) {
+      if (IS_DEFINITION.test(line.slice(0, m.index))) continue;
+      const arg = m[2] as string;
+      const base = arg === "import.meta.dir" ? here : anchors.get(arg);
+      if (base === undefined) {
+        unresolvedFamily.push(
+          `${relative(REPO_ROOT, absFile)}:${i + 1}  UNRESOLVED DIST ARGUMENT  ${line.trim()}`,
+        );
+        continue;
+      }
+      for (const read of FAMILY.reads) {
+        out.push({
+          file: relative(REPO_ROOT, absFile),
+          line: i + 1,
+          expr: `${m[1]}(${arg}, …) → kit reads join(distDir, "${read}")`,
+          resolved: join(base, read),
+          kind: "family",
+        });
+      }
+    }
   });
-  return out;
+  return { pins: out, unresolvedFamily };
 }
+
+/** The pins only — the shape every cell written before D98 consumes. */
+const pinnedPaths = (absFile: string): Pin[] => scanFile(absFile).pins;
 
 /** A pin that must resolve to a real FILE: it names a file (it has an
  *  extension) and it lands inside WHAT THE MARKETPLACE COPIES.
@@ -396,7 +568,17 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     const unread: string[] = [];
     const blind: string[] = [];
     const notLookedAt: string[] = [];
-    const coverage: string[] = [];
+    // ⛔ A ROW IS `{spell, text}`, NOT A STRING, AND THAT IS C10 (D98). This
+    // cell's population header printed `across 8 spell(s): … mind-mapper …`
+    // while mind-mapper produced ZERO rows — its `dist/` was surface-only, so
+    // `isBackendArtifact` matched nothing — and it stayed that way over a live
+    // flat-sibling spawn defect until its first backend emit. **The header line
+    // is what made the absence look like presence.** Keeping the spell on the
+    // row makes "every spell in the population is accounted for" assertable
+    // instead of eyeballable, and the accounting is asserted against `spells`
+    // (the DISK-derived population) rather than against the rows that happened
+    // to be produced.
+    const coverage: { spell: string; text: string }[] = [];
     for (const spell of spells) {
       // ⛔ `null` FROM THE SPLIT IS "NOT LOOKED AT", NEVER "NOT A BACKEND". It
       // is unreachable by construction here — `spells` is filtered to those
@@ -420,23 +602,47 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
         for (const hit of unreadAnchorLines(text, new Set(pins.map((p) => p.line)))) {
           unread.push(`${rel}:${hit.replace(":", "  UNREAD ANCHOR SPELLING  ")}`);
         }
-        coverage.push(
-          `${rel}  ${emitted.staged ? "staged    " : "NOT STAGED"}  anchors=${
-            anchoring ? "yes" : "no "
-          }  anchor-read=${hasReadableAnchor(text) ? "yes" : "no "}  pins=${pins.length}`,
-        );
+        coverage.push({
+          spell,
+          text:
+            `${rel}  ${emitted.staged ? "staged    " : "NOT STAGED"}  anchors=${
+              anchoring ? "yes" : "no "
+            }  anchor-read=${hasReadableAnchor(text) ? "yes" : "no "}  pins=${pins.length}` +
+            ` (literal=${pins.filter((p) => p.kind === "literal").length} family=${
+              pins.filter((p) => p.kind === "family").length
+            })`,
+        });
         if (anchoring && pins.length === 0) blind.push(rel);
       }
+      // ⛔ C10's ROW. A spell whose emitted `dist/` holds no BACKEND artifact is
+      // a legitimate shape (a surface-only emit), so it cannot be a red — but it
+      // must not be a SILENCE either. It gets a row that says which of the two
+      // absences it is.
+      if (!coverage.some((c) => c.spell === spell)) {
+        coverage.push({
+          spell,
+          text: `${spell} — dist/ holds NO BACKEND ARTIFACT (surface-only emit) — NOT LOOKED AT by this cell`,
+        });
+      }
     }
-    console.warn(`\n  SPAWN-PATH WARD — coverage:\n    ${coverage.join("\n    ")}\n`);
+    console.warn(
+      `\n  SPAWN-PATH WARD — coverage:\n    ${coverage.map((c) => c.text).join("\n    ")}\n`,
+    );
     expect(notLookedAt).toEqual([]);
     expect(unread).toEqual([]);
     expect(blind).toEqual([]);
+    // ⛔ EVERY SPELL IN THE POPULATION IS ACCOUNTED FOR (C10). The comparison is
+    // against `spells` — the population the header above prints — so a spell
+    // this cell names and does not examine can no longer contribute nothing.
+    expect([...new Set(coverage.map((c) => c.spell))].sort()).toEqual([...spells].sort());
     // ⛔ AND THE COVERAGE SET IS NOT EMPTY. The split is now DERIVED, so a
     // derivation that answered "no backend artifacts anywhere" would empty this
     // cell's population and leave it green — the vacuity failure, one level up
     // from the one the cell itself asserts against.
-    expect(coverage.length).toBeGreaterThan(0);
+    // …and it counts the rows that came from an EXAMINED ARTIFACT, not C10's
+    // not-looked-at rows, which every spell now gets for free and which would
+    // otherwise make this guard tautological.
+    expect(coverage.filter((c) => c.text.includes("pins=")).length).toBeGreaterThan(0);
   });
 
   test("⛔ EVERY SHIPPED PIN RESOLVES — this is the cell `remove.py` would have reddened", () => {
@@ -445,6 +651,14 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     for (const spell of spells) {
       for (const file of emittedJs(spell)) {
         for (const pin of pinnedPaths(file)) {
+          // ⛔ `family` PINS ARE ASSERTED IN THEIR OWN CELL, NOT HERE, and the
+          // reason is D27. Their target is `<DIST_DIR>/index.html`, whose
+          // presence is exactly what `resolveMode` tests to choose dev vs
+          // release — so asserting it unconditionally would red a legitimate
+          // backend-only daemon. The gate belongs on the SOURCE tree
+          // (`hasSurface`), and putting it here would put a source-shaped
+          // condition inside the cell that governs written-here arithmetic.
+          if (pin.kind !== "literal") continue;
           if (!isShippedFile(pin)) continue;
           const rel = relative(REPO_ROOT, pin.resolved);
           inventory.push(`${pin.file}:${pin.line}  ${pin.expr}  ->  ${rel}`);
@@ -539,6 +753,231 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // to up-and-back-down in the same breath.
       "plugins/spellbook/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
     ]);
+  });
+
+  test("⛔ THE SHARED DIST FAMILY IS FOLLOWED TO ITS CALL SITE — the read behind a PARAMETER is a pin (C8)", () => {
+    // ⛔ WHAT THIS CELL IS FOR. Until D98 this ward could not answer its own
+    // question — _does this artifact's `dist/` resolution work from where it
+    // ships?_ — for the ONE family every dist-serving spell shares. The
+    // convergence moved every `dist/` read into `resolveMode`/`serveFromDist`,
+    // so the emitted arithmetic reads `join(distDir, "index.html")` with
+    // `distDir` a PARAMETER, and `JOIN_CALL` registers a pin only for an anchor
+    // it has resolved. Measured before the repair: **4 such reads in each of 8
+    // emitted backend artifacts — 32 reads, not one in a coverage row** — while
+    // grapevine's `dist/daemon.js` reported `pins=4` whose only `dist/`-naming
+    // member was `join(DIST_DIR, "index.html")` interpolated into a 500-response
+    // body. Deleting one line of decorative error prose would have made the
+    // daemon's entire `dist/` resolution invisible, with nothing red.
+    //
+    // ⛔ THE POPULATION IS THE SOURCE IMPORT, NOT THE EMITTED TEXT (D27). See
+    // `familyImportsOf`. This is what makes the cell a backstop rather than a
+    // restatement: the emitted text is the thing being measured, so it cannot
+    // also be what decides whether to measure.
+    //
+    // ⛔ AND THE ASSERTION IS GATED ON `hasSurface`, WHICH READS THE SOURCE
+    // TREE (D27 again). `<DIST_DIR>/index.html` is exactly the file
+    // `resolveMode` probes to choose dev vs release, so "assert it exists if it
+    // exists" would be vacuous. "This spell ships surface source, therefore its
+    // artifact's own arithmetic must land on the emitted entry" is not.
+    const rows: string[] = [];
+    const blind: string[] = [];
+    const missing: string[] = [];
+    const unresolved: string[] = [];
+
+    const adopters = buildableSpells().filter((s) => familyImportsOf(s).length > 0);
+    for (const spell of adopters) {
+      const imports = familyImportsOf(spell);
+      const surface = hasSurface(spell);
+      // ⛔ D42: A SPELL THIS CELL NAMES AND CANNOT EXAMINE SAYS SO. An adopter
+      // with no emitted `.js` on disk has not been looked at — that is
+      // `dist-check`'s and the pairing ward's finding, not a clean bill here,
+      // and it must not be spelled by the absence of a row.
+      if (!spells.includes(spell)) {
+        rows.push(
+          `  ${spell.padEnd(12)} imports=[${imports.join(" ")}]  NOTHING EMITTED ON DISK — NOT LOOKED AT (dist-check / launcher-pairing own it)`,
+        );
+        continue;
+      }
+      const pins: Pin[] = [];
+      for (const abs of emittedJs(spell)) {
+        if (isBackendArtifact(abs) !== true) continue;
+        const scan = scanFile(abs);
+        unresolved.push(...scan.unresolvedFamily);
+        pins.push(...scan.pins.filter((p) => p.kind === "family"));
+      }
+      const gone = pins.filter((p) => !existsSync(p.resolved) || !statSync(p.resolved).isFile());
+      rows.push(
+        `  ${spell.padEnd(12)} imports=[${imports.join(" ")}]  family-pins=${pins.length}  surface-source=${
+          surface ? "yes" : "no "
+        }  ${
+          surface
+            ? `ASSERTED — ${pins.length - gone.length}/${pins.length} resolve`
+            : "NO SURFACE SOURCE — enumerated, NOT asserted (release mode unreachable)"
+        }`,
+      );
+      if (pins.length === 0) {
+        blind.push(
+          `${spell}: src/${spell}/backend imports [${imports.join(" ")}] and NO emitted backend artifact yields a family pin — the shared dist read is invisible to this ward`,
+        );
+      }
+      if (surface) {
+        for (const p of gone) {
+          missing.push(`${p.file}:${p.line} -> ${relative(REPO_ROOT, p.resolved)} (${p.expr})`);
+        }
+      }
+    }
+
+    console.warn(
+      [
+        "",
+        `  SPAWN-PATH WARD — the shared dist family, derived from ${relative(REPO_ROOT, KIT_DIST_MODULE)}:`,
+        `    functions=[${FAMILY.fns.join(", ")}]  reads=[${FAMILY.reads.join(", ")}]`,
+        `  ${adopters.length} source adopter(s):`,
+        ...rows,
+        "",
+      ].join("\n"),
+    );
+
+    // ZERO-GUARDS, three of them, because any one emptiness makes the rest of
+    // this cell vacuously green: a derivation that found no family function, a
+    // derivation that found no read under `distDir`, and a source tree in which
+    // nobody imports either.
+    expect(FAMILY.fns.length).toBeGreaterThan(0);
+    expect(FAMILY.reads.length).toBeGreaterThan(0);
+    expect(adopters.length).toBeGreaterThan(0);
+
+    expect(unresolved).toEqual([]);
+    expect(blind).toEqual([]);
+    expect(missing).toEqual([]);
+  });
+
+  test("⛔ CALIBRATION — the family follow discriminates, BOTH DIRECTIONS, on a tree this cell builds", () => {
+    // Four worlds in one synthetic `dist/`, driven through `scanFile` — the
+    // same function the cell above calls — because a green ward proves nothing
+    // about an enumerator that has not been shown answering differently.
+    const root = mkdtempSync(join(tmpdir(), "spawn-path-family-"));
+    const dist = join(root, "dist");
+    mkdirSync(dist);
+    const fn = FAMILY.fns[0] as string;
+    const read = FAMILY.reads[0] as string;
+
+    // 1 · A CORRECT resolution: the anchor is readable, `DIST_DIR` lands on this
+    //     directory, and the file the kit reads is really there. It must be
+    //     pinned AND must not be reported missing — the false-positive probe.
+    const good = join(dist, "good.js");
+    writeFileSync(
+      good,
+      [
+        `function ${fn}(distDir) { return join(distDir, "${read}"); }`, // the BUNDLED DEFINITION
+        "var SCRIPT_DIR = import.meta.dir;",
+        'var DIST_DIR = join(SCRIPT_DIR, ".");',
+        `var MODE = ${fn}(DIST_DIR);`,
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(join(dist, read), "<!-- the emitted entry -->\n");
+    const goodScan = scanFile(good);
+    const goodFamily = goodScan.pins.filter((p) => p.kind === "family");
+    // ⭐ ONE pin per (call site × kit read) — and NOT one for the definition,
+    // whose `distDir` is a parameter. A false red there would fire on every
+    // artifact that correctly bundles the kit.
+    expect(goodFamily.map((p) => relative(dist, p.resolved))).toEqual(FAMILY.reads);
+    expect(goodScan.unresolvedFamily).toEqual([]);
+    expect(goodFamily.every((p) => existsSync(p.resolved))).toBe(true);
+
+    // 2 · The anchor arithmetic points somewhere WRONG. The pin still exists —
+    //     the ward can follow it — and it does not resolve, which is the red.
+    const wrong = join(dist, "wrong.js");
+    writeFileSync(
+      wrong,
+      [
+        "var SCRIPT_DIR = import.meta.dir;",
+        'var DIST_DIR = join(SCRIPT_DIR, "..", "NOWHERE");',
+        `var MODE = ${fn}(DIST_DIR);`,
+        "",
+      ].join("\n"),
+    );
+    const wrongFamily = scanFile(wrong).pins.filter((p) => p.kind === "family");
+    expect(wrongFamily.length).toBe(FAMILY.reads.length);
+    expect(wrongFamily.every((p) => existsSync(p.resolved))).toBe(false);
+    expect(wrongFamily[0]?.resolved).toBe(join(root, "NOWHERE", read));
+
+    // 3 · The ANCHOR ITSELF is a spelling this ward cannot read. `DIST_DIR` is
+    //     then unresolvable, so there is no pin to check — and THAT is the case
+    //     C8 records, so it is a FINDING rather than a silence.
+    const opaque = join(dist, "opaque.js");
+    writeFileSync(
+      opaque,
+      [
+        "var SCRIPT_DIR = import.meta.dirname;", // unreadable (see the anchor cell)
+        'var DIST_DIR = join(SCRIPT_DIR, ".");',
+        `var MODE = ${fn}(DIST_DIR);`,
+        "",
+      ].join("\n"),
+    );
+    const opaqueScan = scanFile(opaque);
+    expect(opaqueScan.pins.filter((p) => p.kind === "family")).toEqual([]);
+    expect(opaqueScan.unresolvedFamily.length).toBe(1);
+    expect(opaqueScan.unresolvedFamily[0]).toContain("UNRESOLVED DIST ARGUMENT");
+
+    // 4 · A file that never calls the family yields nothing — the enumerator
+    //     discriminates rather than answering the same thing everywhere.
+    const inert = join(dist, "inert.js");
+    writeFileSync(
+      inert,
+      ["var SCRIPT_DIR = import.meta.dir;", 'var X = join(SCRIPT_DIR, "a.txt");', ""].join("\n"),
+    );
+    const inertScan = scanFile(inert);
+    expect(inertScan.pins.filter((p) => p.kind === "family")).toEqual([]);
+    expect(inertScan.unresolvedFamily).toEqual([]);
+    expect(inertScan.pins.filter((p) => p.kind === "literal").length).toBe(1);
+
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("⛔ CALIBRATION — the FAMILY DERIVATION reads the kit, and it discriminates", () => {
+    // ⛔ THE DERIVATION IS THE NEW SINGLE POINT OF FAILURE. If `kitDistFamily`
+    // ever returned an empty function set the cell above would still be green
+    // on its zero-guards' word alone, so the derivation is driven against a
+    // synthetic module whose content this cell chose — the ruling
+    // `trackedBuildInputs` earned, applied to a regex.
+    const root = mkdtempSync(join(tmpdir(), "spawn-path-kitderive-"));
+    const mod = join(root, "serveDist.ts");
+    writeFileSync(
+      mod,
+      [
+        "export function resolveMode(distDir: string): string {",
+        '  return existsSync(join(distDir, "index.html")) ? "release" : "dev";',
+        "}",
+        "export function serveFromDist(distDir: string, rel: string) {",
+        "  return join(distDir, rel); // the ROUTER half — no literal, no read",
+        "}",
+        "export function contentTypeFor(nameOrExt: string) {", // not a dist reader
+        "  return nameOrExt;",
+        "}",
+        "function surfaceWhitelist(distDir: string) {", // not exported
+        '  return join(distDir, "manifest.json");',
+        "}",
+        "",
+      ].join("\n"),
+    );
+    const derived = kitDistFamily(mod);
+    // ⭐ The first-parameter rule admits the two dist readers and refuses
+    // `contentTypeFor` — by the rule, not by a name list.
+    expect(derived.fns).toEqual(["resolveMode", "serveFromDist"]);
+    // ⭐ Both literal reads are found, including the one in a non-exported
+    // helper (the kit's whitelist is exactly that shape today), and the router
+    // read contributes nothing.
+    expect(derived.reads).toEqual(["index.html", "manifest.json"]);
+
+    // …and against the REAL kit module the derivation is non-empty and the
+    // functions it names are really exported there.
+    expect(FAMILY.fns.length).toBeGreaterThan(1);
+    const kitText = readFileSync(KIT_DIST_MODULE, "utf8");
+    for (const f of FAMILY.fns) expect(kitText).toContain(`export function ${f}(distDir`);
+    for (const r of FAMILY.reads) expect(kitText).toContain(`join(distDir, "${r}")`);
+
+    rmSync(root, { recursive: true, force: true });
   });
 
   test("⛔ CALIBRATION — an anchor spelling this ward CANNOT READ is LOUD, not exempt", () => {

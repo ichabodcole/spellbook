@@ -61,6 +61,18 @@ const launcherFor = (spell: string, name: string) =>
   join(DEPLOY_ROOT, spell, "scripts", `${name}.ts`);
 const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
 
+/** Does this spell have SURFACE SOURCE — `src/<spell>/surface/index.html`?
+ *
+ *  ⛔ EXPORTED FOR `grimoire/spawn-path-ward.test.ts` (D98), AND THE REASON IS
+ *  D27's. That ward now follows `DIST_DIR` into the kit's dist family and pins
+ *  `<DIST_DIR>/index.html` — and it must decide whether to ASSERT that the file
+ *  is there. The obvious gate ("does `dist/index.html` exist?") is the same
+ *  predicate `resolveMode` uses to answer dev-vs-release, so gating on it would
+ *  assert the file exists if the file exists: vacuous, and D27's defect exactly.
+ *  This predicate reads the SOURCE tree instead — a different tree, a different
+ *  question ("does this spell ship a surface at all?") — so a spell with surface
+ *  source whose emitted entry is at the wrong address goes RED, and a
+ *  backend-only daemon is enumerated rather than falsely reddened. */
 const hasSurface = (spell: string) => existsSync(entryFor(spell));
 
 /**
@@ -326,6 +338,7 @@ export {
   buildBackendEntry,
   buildSpell,
   buildSurface,
+  hasSurface,
   launcherFor,
   main,
 };
