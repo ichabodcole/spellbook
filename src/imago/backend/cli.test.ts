@@ -4,7 +4,15 @@
 // batch.add, losing --prompt/--tag/--summary). Both forms must work now.
 
 import { expect, test } from "bun:test";
-import { parseArgs } from "./cli";
+import { readFileSync } from "node:fs";
+import {
+  parseArgs,
+  RECOGNIZED_FLAGS,
+  VALID_CONTEXT_KINDS,
+  VALID_CONTEXT_LINKS,
+  VERB_ALIASES,
+  VERBS,
+} from "./cli";
 
 test("space form: --key value", () => {
   const { pos, flags } = parseArgs(["--kind", "edit", "src1", "src2"]);
@@ -102,4 +110,42 @@ test("context verb: tags flag splits into array candidates", () => {
     .map((t) => t.trim())
     .filter(Boolean);
   expect(tags).toEqual(["cinematic", "moody", "dark"]);
+});
+
+// ── register A1 · the declaration is bound to the behaviour ──────────────────
+//
+// ⛔ `VERBS` IS WHAT `choices` ON AN UNKNOWN VERB IS BUILT FROM, and it is a
+// DECLARATION while the `switch (verb)` is the BEHAVIOUR. Nothing in the type
+// system ties them, so a verb added to one and not the other makes imago either
+// advertise a verb it cannot run or run one it will not name — and `choices` is
+// only worth emitting because a caller can trust it.
+//
+// magpie's cell, ported (`src/magpie/backend/cli.test.ts`, "VERB_SPEC is the
+// dispatch switch"). The SOURCE is parsed rather than the module inspected,
+// because a case label is not a value. Calibrated both directions.
+test("VERBS is the dispatch switch — neither may grow a verb alone (A1)", () => {
+  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
+  const dispatch = src.slice(src.indexOf("switch (verb) {"));
+  const cases = new Set(
+    [...dispatch.matchAll(/^\s{4}case "(-{0,2}[a-z-]+)":/gm)].map((m) => m[1] as string),
+  );
+  expect([...cases].sort()).toEqual([...VERBS, ...VERB_ALIASES].sort());
+});
+
+// `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS`, so the only way it can lie
+// is if the parser stops reading that object.
+test("the parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
+  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
+  expect(src).toContain("options: CLI_OPTIONS,");
+  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
+});
+
+// The two ENUMERATED types are now single arrays, checked and published. These
+// cells are what stops a member being added to the check and not the set.
+test("context's enumerated sets are the ones the checks read (A1)", () => {
+  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
+  expect(src).toContain("VALID_CONTEXT_KINDS.includes(");
+  expect(src).toContain("VALID_CONTEXT_LINKS.includes(");
+  expect([...VALID_CONTEXT_KINDS]).toEqual(["prompt", "style", "skill", "context"]);
+  expect([...VALID_CONTEXT_LINKS]).toEqual(["active", "quickPrompts"]);
 });

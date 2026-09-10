@@ -171,6 +171,22 @@ the eight; **a scaffolded spell should not be able to make the mistake in the
 first place**, which is the one thing a new spell can contribute to that row
 without deciding it for the others.
 
+⚠ **AMENDED 2026-09-10, LATER THE SAME DAY — A1 CLOSED, AND THE RULING NARROWED
+THIS RULE IN TWO PLACES.** S5's wording ("every `usage` raise whose rejection
+has an enumerable accepted set") read loosely turns out to over-reach, and the
+census ward's own calibration is the measurement: a draft arm that did not
+distinguish a usage SYNOPSIS from an accepted-set claim reported **50 sites**
+whose "enumerable set" was a `usage:` line. The closed ruling adds **"and is IN
+HAND at the raise"** (so a daemon-relayed refusal, whose set lives upstream, is
+excluded and carries `server` instead) and a **≥2-member floor** on
+required-input disjunctions (so `add requires --path <p>` gains no one-element
+`choices`). It also adds the half S5 did not state at all: **`hint` is required
+only where a next act exists**, and an absent one is a decision. S5's DIRECTION
+was right and its BOUNDARY was loose. The operative text is now
+[A1's ruling](../../architecture/house-conformance-register.md#a1s-ruling--when-choices-is-required-and-when-hint-is-not);
+Phase N5 of the playbook points there, and this entry stays as the record of
+what a scaffolded spell was told before the roster was ruled.
+
 **Not taken:** _wait for A1 to be ruled roster-wide before telling a new spell
 anything_ — leaves the ninth spell free to arrive at 0 `choices`, growing the
 row it is waiting on. _State it as a target ("aim for glamour's 6")_ — a number

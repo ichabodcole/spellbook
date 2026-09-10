@@ -457,22 +457,40 @@ function guessMime(name: string): string {
  * returning a number — see `main`, which is the one place a `CliError` becomes
  * an exit code.
  */
+/**
+ * The one flag map — lifted out of the `parseArgs` call so a REJECTION can
+ * name the same set the parser accepts (register A1). Inline, the accepted set
+ * existed only inside the invocation that consumed it, and the rejection could
+ * do no better than repeat node's sentence about the flag that was wrong.
+ *
+ * ⚠ digestify has no verbs, so there is no verb roster to declare: its one
+ * entry takes flags only (`allowPositionals: false`). That is why this file's
+ * qualifying set is TWO sites — the flag rejection and `--theme` — and not the
+ * four astrolabe has.
+ */
+const CLI_OPTIONS = {
+  file: { type: "string" },
+  reference: { type: "string" },
+  title: { type: "string", default: "Document Review" },
+  theme: { type: "string", default: "digestify" },
+  timeout: { type: "string", default: "1800" },
+  "no-open": { type: "boolean", default: false },
+  port: { type: "string", default: "0" },
+  host: { type: "string", default: "127.0.0.1" },
+  id: { type: "string" },
+} as const;
+
+/** Every flag the entry recognises, as the caller would type it. */
+export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
 async function runReview(argv: string[]): Promise<number> {
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs({
       args: argv,
-      options: {
-        file: { type: "string" },
-        reference: { type: "string" },
-        title: { type: "string", default: "Document Review" },
-        theme: { type: "string", default: "digestify" },
-        timeout: { type: "string", default: "1800" },
-        "no-open": { type: "boolean", default: false },
-        port: { type: "string", default: "0" },
-        host: { type: "string", default: "127.0.0.1" },
-        id: { type: "string" },
-      },
+      options: CLI_OPTIONS,
       strict: true,
       allowPositionals: false,
     });
@@ -480,7 +498,25 @@ async function runReview(argv: string[]): Promise<number> {
     // A bad flag is the most ordinary failure this entry has, and it is the
     // caller's to fix by changing the command — `usage`, which the taxonomy
     // already exits 2 for, so this site changes its ENVELOPE and not its code.
-    die(e instanceof Error ? e.message : String(e), "usage");
+    //
+    // ⛔ AND IT NOW NAMES THE SET (A1), but only for an UNKNOWN OPTION: node's
+    // other parse rejections mean a recognised flag was given a value from an
+    // open set, and answering that with the flag roster points the caller at
+    // the half that was right. Routed on node's error CODE, not its prose.
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+    die(
+      e instanceof Error ? e.message : String(e),
+      "usage",
+      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
+        ? // ⚠ NO `hint`, AND THAT IS A DECISION (A1's second half). digestify
+          // answers no `help` verb and no `--help` flag — there is nothing to
+          // tell the caller to RUN — so the only true next act is "pass one of
+          // these", which `choices` already says. A hint here would be the
+          // ~146 "run help" strings the rule exists to keep out.
+          { choices: [...RECOGNIZED_FLAGS] }
+        : undefined,
+    );
   }
   const v = parsed.values;
   const theme = v.theme as string;

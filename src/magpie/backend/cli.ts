@@ -43,6 +43,7 @@ import { printJson } from "../../kit/lib/printJson";
 import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
 import { tailEvents } from "../../kit/wire/tailEvents";
 import {
+  ALPHA_POLICIES,
   type AlphaPolicy,
   isMediaForgeModel,
   mediaForgeBackend,
@@ -591,8 +592,13 @@ async function cmdExtract(session: string | undefined, flags: Record<string, str
   // Policy: crop-only by default; --remove flips to rembg (auto); --alpha wins.
   let alpha: AlphaPolicy = flags.remove === true ? "auto" : "none";
   if (typeof flags.alpha === "string") {
-    if (!["auto", "all", "none"].includes(flags.alpha)) {
-      die(`--alpha must be auto|all|none (got ${flags.alpha})`);
+    if (!ALPHA_POLICIES.includes(flags.alpha as AlphaPolicy)) {
+      // ⛔ REGISTER A1 — ONE ARRAY, CHECKED AND PUBLISHED. The members used to
+      // be an inline literal for the check and the string `auto|all|none` for
+      // the message: two copies, and the machine-readable one did not exist.
+      // magpie's root rejections already carried `choices` (verb roster,
+      // per-verb flags); this was its one ENUMERATED VALUE left in prose.
+      die(`invalid --alpha '${flags.alpha}'`, "usage", { choices: [...ALPHA_POLICIES] });
     }
     alpha = flags.alpha as AlphaPolicy;
   }

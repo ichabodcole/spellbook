@@ -445,6 +445,20 @@ export function buildFocusCmd(
 
 // Resolve a gen image source to an OPTIMIZED webp data-URL (the daemon stores
 // it as-is). --url downloads; --file reads; --src is an existing data-URL.
+/**
+ * ── `gen`'s TWO ACCEPTED SETS (register A1) ─────────────────────────────────
+ *
+ * `GEN_SRC_FLAGS` is a DISJUNCTION — any one satisfies `resolveGenSrc`.
+ * `GEN_REQUIRED_FLAGS` is a CONJUNCTION — all three must be present — and the
+ * rejection below filters it, so its `choices` names the ones actually MISSING
+ * rather than the whole roster. Both are derived at the site that enforces
+ * them; neither is re-typed into a message.
+ */
+const GEN_SRC_FLAGS = ["url", "file", "src"] as const;
+const GEN_REQUIRED_FLAGS = ["prompt", "model", "round"] as const;
+/** `gen-meta`'s disjunction — either one satisfies it. */
+const GEN_META_FLAGS = ["prompt", "custom"] as const;
+
 async function resolveGenSrc(flags: Record<string, string | boolean>): Promise<string> {
   if (typeof flags.url === "string") {
     const res = await fetch(flags.url);
@@ -462,7 +476,15 @@ async function resolveGenSrc(flags: Record<string, string | boolean>): Promise<s
     return optimizeImageDataUrl(`data:image/png;base64,${btoa(bin)}`);
   }
   if (typeof flags.src === "string") return optimizeImageDataUrl(flags.src);
-  die("gen: one of --url, --file, or --src is required");
+  // ⛔ REGISTER A1 — THE DISJUNCTION IS `choices`, NOT A SENTENCE. Three flags
+  // any ONE of which satisfies this is exactly a routing decision: the caller
+  // (usually an agent) has to pick one, and picking from prose means parsing
+  // prose. `GEN_SRC_FLAGS` is the set the branches above read, and
+  // `cli.test.ts` binds the two so a fourth source cannot be added to one.
+  die("gen: a source is required", "usage", {
+    hint: `pass one of ${GEN_SRC_FLAGS.map((k) => `--${k}`).join(" ")}`,
+    choices: GEN_SRC_FLAGS.map((k) => `--${k}`),
+  });
 }
 
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
@@ -844,10 +866,16 @@ const COMMANDS: CommandSpec[] = [
     describe:
       "post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
     run: async (_pos, flags, session) => {
-      if (!flags.prompt || !flags.model || !flags.round)
-        die(
-          `usage: ${usageOf(findCommand("gen") as CommandSpec)} — --prompt, --model and --round are required`,
-        );
+      // ⛔ `choices` NAMES WHAT IS MISSING, FILTERED FROM THE REQUIRED SET —
+      // so the set the message asserts and the set the check enforces cannot
+      // be two lists. `gen --prompt p --model m` answers `["--round"]`, which
+      // is one repair rather than three to re-read.
+      const missingGen = GEN_REQUIRED_FLAGS.filter((k) => !flags[k]).map((k) => `--${k}`);
+      if (missingGen.length > 0)
+        die(`usage: ${usageOf(findCommand("gen") as CommandSpec)}`, "usage", {
+          hint: `missing required ${missingGen.join(" ")}`,
+          choices: missingGen,
+        });
       const src = await resolveGenSrc(flags);
       await postCmd(session, buildGenCmd(src, flags));
     },
@@ -870,10 +898,13 @@ const COMMANDS: CommandSpec[] = [
     positionals: P.id,
     describe: "backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
     run: (pos, flags, session) => {
-      if (flags.prompt === undefined && flags.custom === undefined)
-        die(
-          `usage: ${usageOf(findCommand("gen-meta") as CommandSpec)} — give --prompt or --custom`,
-        );
+      // A DISJUNCTION, so `choices` is the whole set rather than the missing
+      // half: either one satisfies this, and the caller picks.
+      if (!GEN_META_FLAGS.some((k) => flags[k] !== undefined))
+        die(`usage: ${usageOf(findCommand("gen-meta") as CommandSpec)}`, "usage", {
+          hint: `give one of ${GEN_META_FLAGS.map((k) => `--${k}`).join(" ")}`,
+          choices: GEN_META_FLAGS.map((k) => `--${k}`),
+        });
       return postCmd(session, buildGenMetaCmd(pos, flags));
     },
   },

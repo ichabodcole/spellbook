@@ -1979,8 +1979,20 @@ function guardBody(verb: "send" | "announce", text: string, fromInline: boolean,
   }
 }
 
+/**
+ * ⛔ REGISTER A1 — `choices` IS `GLOBAL_FLAGS`, THE SET `resolveAlias` READS.
+ * This is a DISJUNCTION (either flag satisfies it), so the caller has to pick,
+ * and it is the one identity refusal four verbs share. The env var stays in
+ * `hint` and deliberately NOT in `choices`: `choices` enumerates COMMAND
+ * TOKENS — what would have been accepted IN THE INVOCATION — and putting an
+ * environment name in the same array would give a caller a "choice" it cannot
+ * pass on the command line.
+ */
 const identityRequired = (verb: string): never =>
-  die(`${verb}: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var`);
+  die(`${verb}: identity required`, "usage", {
+    hint: `pass ${GLOBAL_FLAGS.map((f) => `--${f}`).join("/")} <alias>, or set GRAPEVINE_FROM`,
+    choices: GLOBAL_FLAGS.map((f) => `--${f}`),
+  });
 
 const COMMANDS: CommandSpec[] = [
   {
