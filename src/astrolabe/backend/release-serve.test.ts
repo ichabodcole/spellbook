@@ -1,5 +1,5 @@
 // Release-mode serve (seams Contract 1). ADAPTED FROM
-// mind-mapper/scripts/release-serve.test.ts — cassandra's Seam D recipe: boot
+// src/mind-mapper/backend/release-serve.test.ts — cassandra's Seam D recipe: boot
 // the daemon from a COPIED tree that has a dist/ but NO surface/ and NO
 // bunfig.toml at all, proving the code path genuinely never reads surface
 // source in release mode rather than merely working when both happen to sit

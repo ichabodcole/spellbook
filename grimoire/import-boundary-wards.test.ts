@@ -1099,12 +1099,29 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     //     NOT by this entry (asserted directly in the synthetic cell above).
     //     Deleting `bun` from `BUILTIN_EXACT` would therefore narrow the ward by
     //     exactly one specifier and would not tidy anything else away.
-    //  3. **THE POPULATION IS NOT CLOSED.** Three spells still ship their
-    //     daemons as SOURCE (digestify, grapevine, mind-mapper). The day one of
-    //     them writes this dependency in a file the bundler does not erase it
-    //     from — or the day any spell needs a VALUE import of `Bun`'s own API —
-    //     the row comes back. The floor "only falls" was always a statement
-    //     about today's roster, never about the language.
+    //  3. ⛔ **THIS CLAUSE READ "THE POPULATION IS NOT CLOSED. Three spells
+    //     still ship their daemons as SOURCE (digestify, grapevine,
+    //     mind-mapper)" — AND THAT POPULATION REACHED ZERO ON 2026-09-09, WHEN
+    //     mind-mapper's PORT LANDED THE LAST BACKEND UNDER `src/`.** Every one
+    //     of the eight now ships a BUILT daemon, so no spell writes this
+    //     specifier in a file the bundler does not erase it from, and nothing
+    //     reddened when that became true — which is the whole hazard a roster
+    //     sentence in a comment carries (D87). **A count that reaches zero
+    //     retires an argument**, and this one is retired: the clause it was
+    //     supporting is now clause 1's, not its own.
+    //
+    //     What SURVIVES the count, and it is the half that was always the real
+    //     argument: the day any spell needs a VALUE import of `Bun`'s own API,
+    //     the row comes back — that is a statement about the language and not
+    //     about a roster, and it is the reason the exemption is not deleted
+    //     merely because its writers are. The floor "only falls" was always a
+    //     statement about today's roster.
+    //
+    //     ⚠ AND THE EXEMPTION IS STILL LOAD-BEARING BY THE SYNTHETIC CELL
+    //     BELOW, NOT BY ANY OF THIS. Read the next paragraph before treating a
+    //     zero population as a reason to tidy the row away: the liveness proof
+    //     was deliberately moved OFF the roster in D50, precisely so that
+    //     reaching zero would cost nothing. This is that design being paid out.
     //
     // **And the liveness proof MOVES rather than dying with the population.**
     // It now lives entirely in the synthetic cell above, which is the stronger

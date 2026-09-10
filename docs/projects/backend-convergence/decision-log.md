@@ -3831,3 +3831,222 @@ wrap-up, not repaired here.
 - _Repair the collection gap now (a wrap-up step that sweeps post-amendment
   decisions into the playbook)._ It is a real gap and it is not a port's to fix
   mid-flight; naming it is the deliverable.
+
+## D85 · The pre-replay open frame is RESTORED to `sse.ts` — the first restoration under the fifth verdict, and both numbers were driven BEFORE it was proposed
+
+**Decided and driven 2026-09-09, at mind-mapper's port (Phase 7 chapter 2).**
+The account is `phase-7-journal.md`.
+
+D79 ruled `sse`'s missing pre-replay frame a **LOSSY-COPY** property and named
+it "the one restoration candidate", with the two numbers **predicted** zero and
+zero and the instruction to **drive the prediction before proposing the change,
+not after**. Driven, and the prediction held.
+
+**The change.** `SseOptions` gains `openFrames?: () => string[]`, and `start`
+emits whatever it returns after the `": connected"` preamble and **before**
+`log.subscribe`. Four executable lines: one added destructure binding and a
+three-line `if`.
+
+**Why `onOpen` could not serve, restated because it is the transferable half.**
+`onOpen` fires at the end of `start` — after the preamble, after
+`log.subscribe`, after `clients.add` — so a caller that supplies its own
+`clients` set and sends from `onOpen` lands its frame **after the replayed
+backlog**. ⛔ **That is EXPRESSIBLE, and the near-miss is what makes this a
+measurement rather than an assertion (D78).** Run the playbook's question-7
+type-to-type procedure on this row and it answers "representable": the kit's
+subject type is `Set<SseClient>`, mind-mapper holds no registry at all, so
+constructing one is trivial. **The incompatibility occupies no type. It is an
+ORDER, and a type check cannot see an order.**
+
+### The two numbers, driven — and the artifact test would have got it wrong
+
+| number                                                          | result                                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **(a) source edits needed at any other adopter, to compile**    | **ZERO.** Controlled: 371 pre-existing `tsc` errors across the five other adopters' trees WITH the change and 371 WITHOUT it, same tree, change stashed and restored. The field is optional and nobody passes it.                                            |
+| **(b) bytes of any other adopter's WIRE that differ**           | **ZERO.** astrolabe, bounty, glamour, imago and magpie under their own suites — **564 cells, all green**, release drives included — plus glamour's live SSE stream captured byte-for-byte either side of the change: **61 bytes, identical**, and `GET /` identical at `200 text/html; charset=utf-8`. |
+
+⛔ **AND THIS IS THE CASE THAT SHOWS WHY THE ARTIFACT TEST IS THE WRONG ONE, from
+the opposite direction to the pre-work's.** D79's own accidental demonstration
+was a COMMENT that dirtied 11 artifacts across 7 spells while changing nothing.
+This change is the mirror: **executable code genuinely MOVED into five
+`dist/server.js` files** — `git diff --numstat` says 6 insertions / 3 deletions
+each, and a `sourceMappingURL` grep separates the sourcemap line from the four
+real lines — **and the wire did not move at all.** A comment can look like a
+seven-spell widening and a real code change can be inert on every wire. Only (a)
+and (b) tell them apart.
+
+⚠ **The rejection that did not reach this case, checked rather than inherited.**
+D32's not-taken carries _"a `sseResponse` hook that hands the caller a raw
+`send` … the caller then has to keep its own collection of them"_. That was
+argued against glamour's presence **broadcast**, which pushes to already-open
+streams from outside and does need a collection. This is **one frame, on one
+stream, at open**, and the caller keeps no collection. **Read what a not-taken
+was argued AGAINST before treating it as settled.**
+
+**The second LOSSY-COPY property went the other way and needed nothing.** The
+mandatory epoch is **KEEP-LOCAL**: mind-mapper passes
+`createEventLog({ epoch: crypto.randomUUID() })` at its one construction site
+and re-tightens `epoch` to required in its own frame type. Kit bytes zero.
+Making the kit's `epoch` mandatory would reverse D39, D48 and D70, so it was not
+proposed. **L6 is closed for the two spells that ask and open, by opt-out, for
+the three that decline** — and both kit headers now say so, which is the half
+that survives the session (D68 requirement 2).
+
+**Not taken:**
+
+- _KEEP-LOCAL for the frame too, keeping mind-mapper's own `sseResponse`._
+  Available and it was the fallback if either number came back non-zero. It
+  costs the module the spell is the SOURCE of: the once-only teardown funnel,
+  the `req.signal` wiring and the measured dead-socket account are all
+  mind-mapper's own body, and declining would have left the last port as the one
+  spell running a private copy of its own design.
+- _Widen `onOpen` to receive `{ send }` instead._ Same capability, and it
+  changes an existing signature five daemons already pass — a widening by this
+  entry's own test, where a new optional field is not.
+- _Let the caller push through `clients` from `onOpen` and accept the ordering._
+  This is the near-miss, and accepting it is accepting the loss: the grounding
+  line lands after the backlog, and `cli.ts`'s `grounded` flag forwards the
+  first grounding it sees.
+
+## D86 · `tail.test.ts`'s FAKE SERVER is a WRITER of the wire, so D82 and D81 collide — and the oracle's fixture schema is what moves
+
+**Found at mind-mapper's port, 2026-09-09, at the moment of the swap.**
+
+D82 ruled `tail.test.ts` the port's **oracle**: left ALONE, assertions
+untouched, green before chapter 2 and green after, on the reasoning that **"a
+test whose subject is what the PROCESS writes does not care which module wrote
+it."** D81 ruled, separately, that adopting `createEventLog` **renames the
+cursor field on the wire** (`seq` → `id`, FORCED) and priced the rename by
+counting its READERS — 173 occurrences across 5 surface files, ~209 across ~30
+backend files, plus every JSONL line the tail writes into an agent's pipe.
+
+⛔ **The two rulings are in direct conflict at exactly one point, and neither
+pre-work document noticed.** D82's reasoning is true of the CLIENT module and
+silent about the SERVER SCHEMA. This suite is not only a reader of the envelope:
+its scripted fake **WRITES** it, standing in for the daemon. `tail.test.ts:104`
+is `function event(seq, epoch)` building `{ seq, epoch, kind, payload }`, and six
+assertions read that field back off a forwarded frame. Left unmodified against a
+CLI whose `cursorOf` reads `id`:
+
+- `cursorOf` answers `undefined`, so the cursor never advances;
+- `expect(sinces[1]).toBe(3)` sees **0**, and `toBe(5)` in the epoch cell sees
+  **0**;
+- the two `toMatchObject({ seq: N })` rows fail on a frame that now carries `id`.
+
+**The ruling: the four cells' SUBJECTS are untouched and the FIXTURE'S SCHEMA
+moves.** `event()` emits `id`; the six assertions that read a forwarded frame's
+cursor read `id`; every deadline, every window, every count and every cell name
+is unchanged. Nothing was weakened, no cell was dropped, and the whole conflict
+is written into the file's own header where the next reader meets it.
+
+⛔ **AND THE GENERAL SHAPE IS THE FINDING, NOT THE EDIT: a wire-schema delta has
+WRITERS, and D81's required output only counts READERS.** A fixture, a recorded
+`acc` surface, a committed golden file and a mock server are all writers of a
+schema, and every one of them is invisible to "count the sites that read this
+field". D81's own sharpest line — _"count the readers of the MEANING, not the
+occurrences of the token"_ — is one level too shallow: **count the writers too,
+and a fixture that stands in for the renamed component is the one most likely to
+be missed, because it is the one that looks like a test rather than a consumer.**
+
+⚠ **The oracle earned its keep a second time in the same chapter, and this is
+the argument for having one at all.** Adopting `errors.ts` deleted a
+module-level `CURRENT_COMMAND` and left two references to it — one in a template
+literal inside `passOrThrow`, on the daemon-refusal path. Measured on what would
+have caught it: **`bunx biome check` PASSES** (no rule flags an undeclared
+identifier here), **`bun run build` exits 0**, and only `tsc --noEmit` names it —
+**and `tsc` is not in the gate** (`gate = build && biome check && bun test`). So
+the gate's only reach on an undefined identifier is a test that runs the
+PROCESS, which is exactly what this file is. It reported
+`{"kind":"internal","message":"CURRENT_COMMAND is not defined"}` at exit 1 on
+all four cells, twice (the second time for a `getCurrentCommand` import that a
+formatter's import-sort had silently displaced from a `python` anchor).
+
+**Not taken:**
+
+- _Read both spellings (`ev.id ?? ev.seq`)._ Two spellings of one field is how
+  one rots (D71), and it would have left the oracle green over a daemon that
+  emitted neither.
+- _Keep `cursorOf: (ev) => ev.seq` so the fixture need not move._ It compiles and
+  runs — `cursorOf` is caller-supplied, which is D81's own "the CLI half forces
+  nothing" — and it reads a field the daemon no longer emits, so the cursor never
+  advances and **every reconnect re-requests `since=0`: the whole replay window
+  into an agent's pipe, silently, forever.** ⛔ **A caller-supplied accessor is
+  where a wire rename goes wrong QUIETLY.**
+- _Decline `eventLog` and keep `seq`._ D81's own not-taken; it costs the three
+  things the kit genuinely fixed.
+- _Rewrite the four cells as `tailEvents` unit cells._ D82's not-taken, and it
+  would delete the repo's only end-to-end tail specification.
+
+## D87 · The two closing items of the roll — the lifecycle ward is KEPT, and the source-shipping population reaching zero retires an argument nothing reddens over
+
+**Decided 2026-09-09, at the last port.**
+
+### The lifecycle ward asked for its own deletion. It is kept, per clause.
+
+`grimoire/daemon-lifecycle-ward.test.ts:29-33` reads: _"THIS IS A STOPGAP AND
+SHOULD BE DELETED, NOT GROWN … **When the backends build and share a spine,
+these properties become true by construction and this file's whole job
+disappears.**"_ Register F2 carried the deletion as **a deliverable of the roll,
+not a side effect of it**, and mind-mapper's port is the commit that makes the
+stated condition true: all eight backends now build.
+
+⛔ **It is not deleted, because the condition as WRITTEN and the condition as
+REASONED disagree, and the reasoned one governs.** The request rests on "these
+properties become true by construction". Measured, clause by clause, at the last
+port:
+
+| clause                             | by construction now?                                                                                                                                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 · `idleTimeout` is set**       | ⛔ **NO — and it is the clause whose last violation was the real bug.** Seven daemons pass the option at their OWN `Bun.serve` call and **no kit module owns it**: `kit/wire/heartbeat.ts` supplies the constant, the parse and the clamp, and it cannot supply the option, because the kit never calls `Bun.serve`. A ninth daemon that omits it still drops every SSE client at ten seconds. |
+| **2 · the pointer write is atomic** | ✅ **YES** — all seven pointer-writing daemons call `writeFileAtomic`. ⚠ Which makes the clause's population **EMPTY**: its predicate (`writeFileSync(sessionFile\|latestFile)`) matches nothing anywhere, so absence of a finding is now spelled exactly like absence of a subject — D42's own shape, inside an instrument D42 built cells for.        |
+| **3 · `readSession` branches on ENOENT** | ⛔ **NO** — four CLIs still carry their own `readSession` (bounty, glamour, imago, magpie) and the kit has no session reader at all. Nothing converged, so nothing became true by construction.                                                                          |
+
+**One of three.** So the ward stays and the reason is written into its own
+header, where the next reader meets the request. What changed is what the
+deletion is now pending ON: not "the backends build" — they do — but **clause 1
+finding a home that owns the `Bun.serve` options**, which is a kit question and
+not a port's. Clause 2's empty population wants a coverage cell or a deletion and
+is **FILED**, because D44 forbids the instrument that guards a port being
+repaired by that port, and removing an assertion is more than repairing one.
+
+⚠ **The transferable half: a stopgap's deletion condition is usually written as
+an EVENT ("when X lands") and meant as a PROPERTY ("when this is true by
+construction"). Check the property.** The event arrived and two thirds of the
+property did not, and a port that read only the sentence would have deleted a
+live guard on the roll's last commit — with nothing to red, because deleting a
+ward removes the thing that would have complained.
+
+### The source-shipping population reached zero, and nothing reddened
+
+`import-boundary-wards.test.ts` clause 3 of the `BUILTIN_EXACT` argument read
+_"THE POPULATION IS NOT CLOSED. Three spells still ship their daemons as SOURCE
+(digestify, grapevine, mind-mapper)."_ Digestify landed in Phase 5, grapevine in
+Phase 6, and **mind-mapper takes that population to zero.** The clause is
+retired in place, with what survives it stated separately: the day any spell
+needs a VALUE import of `Bun`'s own API the row comes back, and **that is a claim
+about the language rather than about a roster.** The exemption is untouched,
+because D50 had already moved its liveness proof OFF the roster and into a
+synthetic cell precisely so that reaching zero would cost nothing — **this is
+that design being paid out.**
+
+Two more roster sentences expired at the same commit and are corrected:
+`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set; only
+magpie is one-aspect now) and its _"`mind-mapper/scripts/cli.ts` is a real
+unported CLI, not a launcher"_.
+
+⚠ **And this is the class the last port owns all of at once.** Every landing made
+some other file's roster sentence false, and no port owned it, because the sweep
+that finds a moved PATH does not find a moved MEMBERSHIP. The instruction that
+works is B7's second grep — read every hit that is a LIST OF SPELL NAMES rather
+than a path — and the reason it belongs in a playbook rather than a backlog item
+is that it is un-ownable one port at a time.
+
+**Not taken:**
+
+- _Delete the lifecycle ward, since its stated condition is met._ Above.
+- _Grow it a fourth clause._ Its own header says a fourth clause is the signal to
+  go build the thing instead.
+- _Delete clause 2 now that its population is empty._ D44. Filed.
+- _Delete `bun` from `BUILTIN_EXACT` now that nobody writes it._ Clause 2 of its
+  own argument: it would narrow the ward by exactly one specifier and tidy
+  nothing else away, and clause 1 never rested on the roster.

@@ -64,7 +64,7 @@
  * many events as the old one did. Stamping an epoch alone does NOT close that
  * gap: the epoch rides a frame, and the bug is that no frame is sent. So
  * `subscribe` treats `since > cursor` as "this cursor is from another process"
- * and replays whole. `mind-mapper/scripts/tail.test.ts`'s epoch cell is the
+ * and replays whole. `src/mind-mapper/backend/tail.test.ts`'s epoch cell is the
  * executable spec of the client half and shows the reconnect still carrying the
  * stale cursor — detection happens on what is RECEIVED.
  *

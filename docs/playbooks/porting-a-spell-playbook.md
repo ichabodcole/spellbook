@@ -860,12 +860,41 @@ port is before Phase 1, because they have different done-whens below.
 > ported.** It is the backend convergence's Phase 2, generalised — written from
 > glamour, which is the first spell to take its whole backend out of the
 > deployed skill folder, and which was chosen as the pathfinder precisely so
-> five spells could follow it. **Its population is OPEN:** mind-mapper still
-> walks this — digestify, bounty and grapevine all landed 2026-09-09, grapevine
-> last and as the only port whose deliverable was a refusal. Astrolabe and
-> magpie walked half of it first (their CLIs already built), and where their
-> experience differs from glamour's the difference is recorded, because that
-> difference is the part a third spell cannot predict.
+> five spells could follow it. ⛔ **ITS POPULATION IS NOW CLOSED: all eight
+> spells have walked it.** digestify, bounty and grapevine landed 2026-09-09,
+> and **mind-mapper landed the same day as the last and largest** — 55 files /
+> 16,306 lines, and the only port where the kit was the SOURCE rather than the
+> destination. Astrolabe and magpie walked half of it first (their CLIs already
+> built), and where their experience differs from glamour's the difference is
+> recorded, because that difference is the part a third spell cannot predict.
+>
+> ⚠ **A CLOSED POPULATION CHANGES WHAT THIS DOCUMENT IS FOR, AND SAYING SO IS
+> PART OF THE LAST PORT'S JOB.** Nothing in the roster is left to port, so the
+> next reader is either scaffolding a NEW spell — for which the material is here
+> but the shape is wrong, and register item F1 is the doc that should exist — or
+> maintaining the spine. **Read the ⭐ blocks as a record of how each step was
+> wrong for somebody, not as a queue.** Eight ports, and no step below survived
+> all eight unamended.
+>
+> ⭐⭐⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY MIND-MAPPER'S PORT — THE LAST
+> PORT, WHICH CLOSED THE POPULATION, AND THE FIRST WHERE THE KIT WAS THE
+> SOURCE.** Everything the pre-work below added HELD: the fifth verdict was
+> ruled per property and the two properties went DIFFERENT ways, the two-number
+> discriminator permitted a restoration on measurements rather than on
+> provenance, the missing-SKILL.md hatch was executable as written, and the
+> wire-rename output was producible. **Six gaps remain, each marked
+> `⭐ mind-mapper-port`**, recorded at the moment they were hit and amended in
+> one pass at the end; the account is
+> `docs/projects/backend-convergence/phase-7-journal.md` and the rulings are
+> **D85–D87**. ⛔ **What did NOT transfer, stated once: the assumption that a
+> ruling about a TEST and a ruling about a WIRE cannot collide.** B8 rules
+> `tail.test.ts` untouchable because "a test whose subject is what the PROCESS
+> writes does not care which module wrote it", and B8 rules the cursor rename
+> forced and prices it by counting READERS. That test's fake server is a
+> **WRITER** of the wire, so the two rulings are incompatible at exactly one
+> fixture function and neither pre-work noticed. **A wire-schema delta has
+> writers, and the writer that goes wrong quietly is the one a port has been
+> told not to touch.**
 >
 > ⭐⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 IN PRE-WORK FOR MIND-MAPPER — THE
 > LAST PORT, THE LARGEST, AND THE SPELL TWO OF THE KIT'S MODULES WERE COPIED
@@ -1832,6 +1861,28 @@ Three specific moves, all earned:
    source-scans / none. Below about five files the split-the-constant advice is
    the whole step; above it, the table is.
 
+   ⛔ ⭐ **mind-mapper-port — AND THE TABLE'S OUTPUT IS A MODULE, NOT A TABLE.
+   THAT IS THE HALF THIS STEP STILL DID NOT SAY.** The triage was written before
+   anything moved and it was worth every minute: 32 files sorted into 24
+   importers, 7 spawners, 1 source-scanner and one file that was two of those at
+   once. **But then seven files each needed the same three addresses**, and B6.2
+   above hands you a fourteen-line marker walk to paste into each of them —
+   which is the copying this whole convergence exists to remove, arriving inside
+   the step that removes it.
+
+   **So: derive the addresses ONCE, in a module beside the tests, and name each
+   one for what it is FOR.** mind-mapper's is `src/mind-mapper/backend/paths.ts`
+   — one `repoRoot()` marker walk, then `SKILL_ROOT`, `DIST_DIR`,
+   `CLI_LAUNCHER`, `SERVER_LAUNCHER`, `CLI_SOURCE` and `SURFACE_CWD`. ⚠ **The
+   NAMES are the load-bearing part, not the de-duplication:** `CLI_LAUNCHER` and
+   `CLI_SOURCE` sitting side by side is what makes bounty's
+   one-constant-two-jobs defect unwriteable, where a single `CLI` invites it.
+   And such a module is a legitimate backend source that is in no bundle and is
+   not an entry — there is no launcher of that name, and `src/build.ts` derives
+   an entry from a launcher (D43) — so it costs no artifact and no instrument
+   edit. **Above about five consumers, write the module; below it, split the
+   constant at each site.**
+
 2. **Anything computed from `import.meta.url` must be read out of the
    ARTIFACT.** glamour's `daemonCwd()` and `SKILL_ROOT_FOR_TEST` answer
    `src/<spell>/` when imported from source — a directory with no `SKILL.md`, no
@@ -2582,6 +2633,33 @@ the flatten is the house idiom and was declined; 173 occurrences across 5
 surface files and ~209 across ~30 script files, plus every JSONL line the tail
 writes into an agent's pipe."_ (D81.)
 
+⛔ ⭐ **mind-mapper-port — AND QUESTION 2 SAYS "WHO READS IT", WHICH IS ONE
+LEVEL TOO SHALLOW. A SCHEMA HAS WRITERS, AND THE WRITER MOST LIKELY TO BE MISSED
+IS THE ONE THAT LOOKS LIKE A TEST.** Measured at the last port, at the moment of
+the swap: `tail.test.ts`'s scripted fake server BUILDS the envelope while
+standing in for the daemon (`function event(seq, epoch)` →
+`{ seq, epoch, kind, payload }`), and six of its assertions read that field back
+off a forwarded frame. **It is in no reader count**, because a count of "sites
+that read this field" is a count of consumers and a fixture is a producer. Left
+unmodified against a CLI whose `cursorOf` reads the new name, the cursor never
+advances and two cells fail on numbers (`sinces[1]` is 0, not 3) rather than on
+a field name — which reads like a broken watchdog.
+
+> **So the count is TWO populations: who READS the field, and who WRITES it.**
+> The writer set is small and it is always the same four shapes — a test FIXTURE
+> or mock server, a committed golden file, a recorded conformance surface, and
+> any sibling that re-emits the envelope. ⛔ **A fixture that stands in for the
+> renamed component is the one that goes wrong quietly**, because it is the file
+> a port has been told not to touch.
+
+⚠ **AND THE SAME ASYMMETRY BITES THE CLIENT SIDE FROM THE OTHER DIRECTION.**
+`tailEvents`'s `cursorOf` is CALLER-SUPPLIED, so the old spelling still compiles
+and still runs after a daemon-side rename — it simply reads a field that is no
+longer there, the cursor never advances, and every reconnect re-requests
+`since=0`: **the whole replay window into an agent's pipe, silently, forever.**
+A caller-supplied accessor is where a wire rename goes wrong with nothing red
+anywhere. (D86.)
+
 ⛔ **AND THERE IS A SECOND PER-SPELL RULING THIS STEP DID NOT NAME: WHETHER THE
 DAEMON STAMPS AN EPOCH.** `createEventLog` takes `{ epoch }`, mind-mapper stamps
 one, and census defect L6 is about its absence — so every adopter must decide,
@@ -2856,6 +2934,35 @@ in-process `process.env.X = …` proves nothing** — grapevine's defect shipped
 green under every in-process assertion there was. **Run a fresh `bun` per
 case.**
 
+⛔ ⭐ **mind-mapper-port — AND THAT WARNING IS ABOUT THE TAIL KNOBS WHILE THE
+DEFECT IS WAITING AT THE BEAT KNOB, IN A SUITE THAT ALREADY EXISTED AND ALREADY
+PASSED.** Putting the resolution in the seam file makes it a module-load
+`const`, and **every in-process consumer of that constant becomes untunable** —
+which is correct for production and fatal for any existing cell that tuned it
+through a `beforeEach`. Measured: `sse-keepalive.test.ts` set
+`MIND_MAPPER_KEEPALIVE_MS = "20"` and saw **ZERO** beats, twice over — the
+constant was already evaluated when the test file's `import "./server.ts"`
+pulled the graph in, and 20 ms is below the kit's `MIN_HEARTBEAT_MS = 500`
+anyway. The cells did not fail as "the knob is inert"; they failed as "no
+keepalive arrived", which reads like a broken heartbeat.
+
+> **The repair is the KIT'S OWN SHAPE, and it is worth taking as the rule: pass
+> the derived value as an ARGUMENT with the seam file's constant as its
+> DEFAULT.** `kit/wire/sse.ts` takes `heartbeatMs` as a required option and
+> reads no env at all, precisely because where the number comes from is the
+> caller's business. A spell wrapper that closes over its own `SSE_HEARTBEAT_MS`
+> and offers no parameter makes the beat unobservable in-process — and nothing
+> production passes the argument, so the knob is still resolved in exactly one
+> place and the kit's floor still governs every value a human can type.
+
+⚠ **AND SWEEP THE SIBLING SUITES FOR THE SAME PREMISE, because the ones that
+still pass are the dangerous ones.** mind-mapper's `presence.test.ts` asks a
+CHILD for a 25 ms beat — a fresh `bun`, which is the shape this step recommends
+— and gets **500 ms**, silently, from the floor. It stayed green because its
+deadlines are 2,000 ms, and its header claimed a 25 ms tick for as long as
+nobody checked. **A shortened-tick premise that the floor has quietly raised is
+a comment the tree contradicts, not a failure.**
+
 ⚠ ⭐ **The mapping for the last port was written eight months early and
 addressed to nobody.** `phase-1-journal.md:151-155`: `<SPELL>_TAIL_IDLE_MS` →
 `idleMs`, `<SPELL>_TAIL_RETRY_MS` → `retry.initialMs`, and _"a spell whose tests
@@ -2998,7 +3105,13 @@ swallowing `catch`, has its `die` at a site that reads as perfectly safe.
    29, glamour ~20 raise sites plus its further invocation edges, imago **21**
    (20 `die(` + one `throw new UsageError` a token grep does not see) across 14
    functions and nine `try` blocks — every enclosing catch on every path
-   PROPAGATES.
+   PROPAGATES. ⭐ **mind-mapper is the largest by an order of magnitude and the
+   one where the token grep answers ZERO: 60 raise sites** (4 × `new CliError`,
+   56 × `throw usageError`), against a `die(` grep that finds exactly one hit
+   and it is prose. **"Grepping `die(` under-counts, measurably" is right and
+   understated** — at a spell that never had a `die` it under-counts to nothing,
+   and a step-1 that reported "no error contract to change" would have been the
+   loudest possible wrong answer for a CLI with 64 raise expressions.
 5. ⭐ **imago: THE CALL GRAPH NOW LEAVES THE SPELL, and step 3 stops at the file
    boundary unless you push it.** Adopting `tailEvents` in the same chapter puts
    a die-reachable call — the `resolve` closure, which reads the session pointer
@@ -3092,6 +3205,20 @@ belongs in its own commit, filed rather than smuggled.
   finding and "it fit" is also one: `sse.ts`'s `client.send`, widened in Phase 2
   for glamour's presence, covered imago's presence case at zero cost, which is
   the first evidence that a widening generalised rather than fitting one spell.
+  ⛔ ⭐ **mind-mapper-port — AND THERE IS A FOURTH CASE, WHICH IS THE MIRROR OF
+  BOUNTY'S AND THE ONE THE RESTORE/WIDENING TEST EXISTS FOR: CODE GENUINELY
+  MOVED IN FIVE ARTIFACTS AND NO WIRE MOVED AT ALL.** The last port restored
+  `openFrames` to `kit/wire/sse.ts` — four executable lines — and `git status`
+  showed five `dist/server.js` files at 6 insertions / 3 deletions each, of
+  which the sourcemap line is one. So the roster now has BOTH directions
+  measured: bounty's comment dirtied six artifacts while changing nothing, and
+  this changed five artifacts' code while changing nothing a caller can observe.
+  ⚠ **Report which of the FOUR you were in, and never report artifact churn as
+  if it answered the question** — the two numbers in the LOSSY-COPY test (does
+  another adopter need a source edit; does any byte of its WIRE differ) are what
+  answer it, and `git diff --numstat` plus a `sourceMappingURL` grep is what
+  separates "the sourcemap moved" from "code moved" in one command.
+
   ⭐ **bounty is a THIRD case and it is the one that surprises: a kit change
   that alters NO behaviour still dirties every consumer.** Its chapter 2
   modified one kit module by ONE PARAGRAPH OF COMMENT, and the blast radius was
@@ -3101,6 +3228,7 @@ belongs in its own commit, filed rather than smuggled.
   `git diff` shows one line, the sourcemap. Contract 18 verifies by
   reproduction, so they all belong in the chapter. **Report the blast radius
   either way, from `git status`, and say which case you were in.**
+
 - **`bun run gate` is not sufficient after a `src/kit/` change.** Run
   `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in
   spells you never opened: `src/kit/theme/base.css` declares `@source "../"`, so
@@ -3173,6 +3301,19 @@ belongs in its own commit, filed rather than smuggled.
       field, old and new spelling, **FORCED or house IDIOM**, the reader count
       **with its counting rule and its tree**, and the readers outside this
       repo's control (D81).
+- [ ] ⛔ ⭐ **And the WRITERS of that schema enumerated, not only the readers**
+      — every test fixture or mock that BUILDS the envelope while standing in
+      for the renamed component, every committed golden file, every recorded
+      conformance surface. **A reader count cannot see a producer**, and the
+      producer that goes wrong quietly is the fixture a port has been told to
+      leave alone (D86).
+- [ ] ⛔ ⭐ **Every knob your seam file resolves, swept across the EXISTING
+      suites that tuned it.** Moving a knob into the seam file makes it a
+      module-load constant, so an in-process `process.env.X = …` in any
+      pre-existing `beforeEach` becomes INERT — and the cell fails as "the
+      feature did not happen", not as "the knob is dead". ⚠ **Check the suites
+      that still PASS too:** a floored value can leave a green cell whose stated
+      premise the tree now contradicts (D86, mind-mapper's `presence.test.ts`).
 - [ ] ⭐ **The `idleMs` DERIVATION reported** — the expression, not the number —
       and, for a single-entry spell, the seam demonstration stated N/A rather
       than manufactured.
@@ -3502,6 +3643,39 @@ inventory at
 [behaviour-inventory.md](../projects/digestify-conversion/behaviour-inventory.md)
 — 138 rows, 128 driven in a browser, five `not:` — and the options not taken in
 [the decision log](../projects/digestify-conversion/decision-log.md).
+
+### Example 10: mind-mapper — the last port, and the one where the kit was the SOURCE
+
+**Phase 7, 2026-09-09** — `refactor(mind-mapper)` `5dc3fcc1` +
+`feat(mind-mapper)` `67f3949a`. The largest port in the roll (**55 files /
+16,306 lines**, ~9.6× what B0 calls its floor) and the one that closed this
+phase's population at eight.
+
+**What it is the example OF: a spell meeting a module that names IT as the
+source.** `sse.ts:9` and `eventLog.ts:7` both say "converged TOWARD
+mind-mapper's …" and it had adopted neither, because the spine was proven on
+astrolabe and magpie — two downstream FORKS of the same line — while the
+original was not in the room (D1/D17). **A convergence can name its source and
+still never consult it**, and B8's whole table reads backwards for such a spell:
+five of its six wrong rows say "NO SUBJECT" about the source of two of the eight
+modules.
+
+**The fifth verdict, ruled per property and going two ways.** `sse` could not
+write a frame BEFORE the replay — an ORDER, not a type, which is why the
+type-to-type procedure answers "representable" — so it was **RESTORED** to the
+kit as `openFrames`, on two driven numbers (zero source edits, zero wire bytes
+at the other five adopters, measured with 564 cells and a byte-compared live SSE
+stream). The mandatory epoch is **KEEP-LOCAL**, at zero kit cost, because making
+the kit's `epoch` required would reverse three earlier rulings. A third claimed
+loss was **contradicted**: a generic parameter is not a dropped feature.
+
+**And the thing to copy: it kept an ORACLE.** `tail.test.ts` spawns the CLI as a
+process against a scripted fake SSE server and imports nothing, so it was green
+before the adoption, green after, and it caught a `ReferenceError` that `biome`
+passes and `bun run build` exits 0 over. ⚠ **It also proved the limit of that
+idea**: the fake is a WRITER of the wire, so a forced field rename reached
+inside the file the ruling had declared untouchable. **An oracle that stands in
+for the component you are changing is part of the blast radius of changing it.**
 
 ## Related Patterns
 
