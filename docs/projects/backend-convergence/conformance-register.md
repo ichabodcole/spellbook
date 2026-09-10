@@ -4,8 +4,8 @@
 [`docs/architecture/house-conformance-register.md`](../../architecture/house-conformance-register.md).
 
 **Why, in one line:** it is a house-conformance inventory spanning eight spells
-with roughly thirty-five rows still open, not a project artifact — and archiving
-this project would have buried every one of them.
+with thirty-five rows still open, not a project artifact — and archiving this
+project would have buried every one of them.
 
 This stub exists so that a reader arriving at the old path from a journal, a
 brief or a commit message is not left with a 404. **Do not append rows here.**

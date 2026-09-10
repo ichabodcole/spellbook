@@ -8,10 +8,12 @@ spells are all supposed to satisfy.
 > ⛔ **THIS DOCUMENT OUTLIVES THE PROJECT THAT STARTED IT, AND THAT IS WHY IT
 > MOVED.** It was written inside `docs/projects/backend-convergence/` while that
 > project ran, and it was the convergence that produced most of it. But it is a
-> **house-conformance inventory spanning eight spells, with roughly thirty-five
-> rows still open**, and archiving the project it was born in would have buried
-> every one of them. It is now an architecture-level living reference (D92, with
-> the options not taken). Its companion is
+> **house-conformance inventory spanning eight spells, with THIRTY-FIVE rows
+> still open** — eleven in A, six in B, ten in C, seven in D and one in F, plus
+> Section E's four design questions and F2's one pending clause (counted
+> 2026-09-10; nine rows are closed) — **and archiving the project it was born in
+> would have buried every one of them.** It is now an architecture-level living
+> reference (D92, with the options not taken). Its companion is
 > [the backend architecture doc](./spell-backend-architecture.md) — that
 > document records the shape each spell HAS, this one records where the eight do
 > not yet agree; read them as two halves of one inventory.
