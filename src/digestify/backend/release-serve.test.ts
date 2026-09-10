@@ -15,6 +15,14 @@
 // two mascots and two sent-page illustrations are not build inputs), and the
 // forced-dev cell.
 //
+// ⛔ AND THREE CELLS THE REPAIR CHAPTER EARNED, ALL ON ONE DEFENCE: what `dist/`
+// will and will not hand out. The entry-document refusal, the BACKEND BUNDLE
+// refusal (this port put the implementation in the served directory), and the
+// case-variant refusal (the old check was `===` on a case-insensitive
+// filesystem). Plus the INVENTORY cell that keeps the whitelist honest as the
+// build changes. Each was calibrated by mutation against the blacklist it
+// replaced — see the Phase 5 journal's repair chapter.
+//
 // ⛔ ONE MODE TRANSPORT, NOT TWO OR THREE, AND IT IS COUNTED RATHER THAN
 // SUBTRACTED. Bounty's port recorded that R5's "two transports, not three"
 // sentence gets the wrong answer for a daemon whose set is differently shaped,
@@ -34,7 +42,15 @@
 // Nothing here needs a scoped HOME: digestify writes no state, keeps no
 // registry and leaves no pointer. One process per review.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -189,8 +205,17 @@ test("Contract 18: the substitution happens IN MEMORY — dist/index.html on dis
   expect(onDisk).toContain("__PAYLOAD__");
 });
 
+/** The names the built entry document links — the whitelist, read the way the
+ *  daemon reads it, so this file never hand-copies a content hash. */
+function linkedChunks(): string[] {
+  const html = readFileSync(join(skillRoot, "dist", "index.html"), "utf8");
+  return [...html.matchAll(/(?:src|href)\s*=\s*"(?:\.\/)?([^"]+)"/g)]
+    .map(([, ref]) => ref)
+    .filter((ref) => ref && !ref.includes("/"));
+}
+
 test("GET /index-*.js and .css serve the hashed assets with the right content type", async () => {
-  const names = readdirSync(join(skillRoot, "dist")).filter((f) => f !== "index.html");
+  const names = linkedChunks();
   expect(names.length).toBeGreaterThan(0);
   for (const name of names) {
     const res = await fetch(`${url}/${name}`);
@@ -200,14 +225,30 @@ test("GET /index-*.js and .css serve the hashed assets with the right content ty
   }
 });
 
+// ⛔ THE INVENTORY CELL — WHAT MAKES THE WHITELIST A WHITELIST AND NOT A LUCKY
+// LIST. Every file in `dist/` is accounted for: it is either linked by the
+// entry document (served), or it is one of the two files this daemon must never
+// hand out (the entry itself, and the backend artifact the launcher imports).
+// A build that emits a THIRD kind of file — a split chunk, a font, a sourcemap
+// — turns this red at build time, which is the trade the whitelist takes in
+// exchange for refusing everything it was not told about.
+test("INVENTORY: every file in dist/ is either a linked chunk or a deliberate refusal", () => {
+  const REFUSED = ["index.html", "review.js"];
+  const linked = new Set(linkedChunks());
+  const unaccounted = readdirSync(join(skillRoot, "dist")).filter(
+    (f) => !linked.has(f) && !REFUSED.includes(f),
+  );
+  expect(unaccounted).toEqual([]);
+});
+
 // ⛔ THE CELL THE KIT ADOPTION EARNED, AND THE ONE THING `serveFromDist` COULD
 // HAVE BROKEN SILENTLY. `src/kit/wire/serveDist.ts` guards empty / `..` /
-// nested and NOTHING ELSE — the refusal of the entry document BY NAME is
-// digestify's own, and a verbatim adoption would have deleted it and left this
-// route answering the committed `dist/index.html` UNSUBSTITUTED: a page that
-// renders with no questions in it, at HTTP 200, with nothing red anywhere.
-// Driven rather than read, and driven at BOTH ends — the route must refuse, and
-// `/` must still answer the injected payload (the cell above).
+// nested and NOTHING ELSE — the refusal of the entry document is digestify's
+// own, and a verbatim adoption would have deleted it and left this route
+// answering the committed `dist/index.html` UNSUBSTITUTED: a page that renders
+// with no questions in it, at HTTP 200, with nothing red anywhere. Driven
+// rather than read, and driven at BOTH ends — the route must refuse, and `/`
+// must still answer the injected payload (the cell above).
 test("GET /index.html does NOT serve the unsubstituted page — the refusal is this spell's, not the kit's", async () => {
   const res = await fetch(`${url}/index.html`);
   expect(res.status).toBe(404);
@@ -220,6 +261,61 @@ test("GET /index.html does NOT serve the unsubstituted page — the refusal is t
   // otherwise this cell passes because there was nothing to leak.
   const onDisk = await Bun.file(join(skillRoot, "dist", "index.html")).text();
   expect(onDisk).toContain("__PAYLOAD__");
+});
+
+// ⛔ THE LEAK THIS PORT ITSELF CREATED, IN THE DEFENCE CLASS IT MADE ITS
+// HEADLINE. Phase 5 moved the implementation INTO `dist/`, and the name-based
+// refusal above knew one name — so `GET /review.js` answered the 122,389-byte
+// backend bundle at 200, `text/javascript`, byte-identical to
+// `plugins/spellbook/skills/digestify/dist/review.js`. On `develop` that route
+// is 404 because there was no such file to serve. Modelled on the cell above:
+// the artifact must be ON DISK and still refused, so this cannot pass over an
+// empty subject.
+test("GET /review.js does NOT serve the backend bundle — dist/ holds the implementation now", async () => {
+  const artifact = join(skillRoot, "dist", "review.js");
+  const source = await Bun.file(artifact).text();
+  // The subject: the bundle really is sitting in the served directory, and it
+  // really is the backend (its own module marker, not a guess at a byte count).
+  expect(existsSync(artifact)).toBe(true);
+  expect(source).toContain("cannot start in dev mode");
+  expect(source.length).toBeGreaterThan(50_000);
+
+  const res = await fetch(`${url}/review.js`);
+  expect(res.status).toBe(404);
+  const body = await res.text();
+  expect(body.length).toBeLessThan(1_000);
+  expect(body).not.toContain("cannot start in dev mode");
+});
+
+// ⛔ THE BY-NAME REFUSAL WAS CASE-SENSITIVE AND APFS IS NOT — PRE-EXISTING ON
+// `develop`, CLOSED HERE BY CONSTRUCTION. Every one of these variants missed
+// the old `rel === "index.html"` and every one resolved to the same inode, so
+// each served the committed, UNSUBSTITUTED entry document at 200 (three of them
+// as `application/octet-stream`, because the content-type map's extension
+// lookup is case-sensitive too). A whitelist of exact emitted names refuses all
+// of them without a lowercase pass anywhere — which is what "case-insensitive
+// by construction" buys: the same is true of a case variant of a name that IS
+// servable, driven below.
+test("case variants of the entry document are refused — the whitelist matches EXACTLY", async () => {
+  const variants = ["/INDEX.HTML", "/Index.html", "/index.HTML", "/iNdEx.HtMl"];
+  for (const p of variants) {
+    const res = await fetch(`${url}${p}`);
+    expect(`${p}:${res.status}`).toBe(`${p}:404`);
+    const body = await res.text();
+    expect(body).not.toContain("__PAYLOAD__");
+    expect(body).not.toContain("__TITLE__");
+  }
+  // The subject again: on a case-insensitive filesystem the read behind those
+  // routes WOULD have succeeded, and the document it would have handed over is
+  // still unsubstituted on disk.
+  const onDisk = await Bun.file(join(skillRoot, "dist", "index.html")).text();
+  expect(onDisk).toContain("__PAYLOAD__");
+  // And the same exactness applies to a name that IS servable: an upper-cased
+  // hashed chunk is not the emitted name, so it is not served either.
+  const chunk = linkedChunks()[0] ?? "";
+  expect(chunk).not.toBe("");
+  expect((await fetch(`${url}/${chunk.toUpperCase()}`)).status).toBe(404);
+  expect((await fetch(`${url}/${chunk}`)).status).toBe(200);
 });
 
 test("an unknown static path 404s (not a silent fallthrough)", async () => {

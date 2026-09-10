@@ -91,32 +91,85 @@ const TAILWIND_PLUGIN = "bun-plugin-tailwind";
 const DEV_SURFACE_ROUTE = "/__surface";
 
 /**
- * Serves `dist/` verbatim EXCEPT its entry: the hashed `index-*.js` /
- * `index-*.css` that `index.html` links RELATIVELY, which from "/" arrive as
- * bare filenames (Contract 2's flat layout).
+ * Serves the surface files `dist/index.html` LINKS, and nothing else in
+ * `dist/` — the hashed `index-*.js` / `index-*.css` that the entry document
+ * references RELATIVELY, which from "/" arrive as bare filenames (Contract 2's
+ * flat layout).
  *
- * ⛔ **THE `index.html` REFUSAL IS DIGESTIFY'S AND THE KIT DOES NOT CARRY IT.**
- * `serveFromDist` decides whether a file may be READ — its guards are
- * empty / `..` / nested only — and the CALLER decides WHICH file. The house
- * caller is `path === "/" ? "index.html" : path.slice(1)`, and that expression
- * is exactly what this spell must never write: `/` here returns
+ * ⛔ **A WHITELIST, AND THE BLACKLIST IT REPLACED IS WHY.** Until Phase 5's
+ * repair chapter this read `if (rel === "index.html") return null` — one name,
+ * refused by literal comparison — and it leaked twice, in the same class, for
+ * the same reason: a blacklist refuses the file it was told about and serves
+ * every neighbour.
+ *
+ * 1. **The backend's own bundle.** Phase 5 moved the implementation INTO
+ *    `dist/`, so `GET /review.js` answered 122,389 bytes of `dist/review.js`
+ *    at HTTP 200, `content-type: text/javascript`, byte-identical to the
+ *    artifact — a route that does not exist on `develop`, created by the very
+ *    port whose headline was this defence class.
+ * 2. **The refusal was case-sensitive and APFS is not.** `GET /INDEX.HTML`,
+ *    `/Index.html`, `/index.HTML` and `/iNdEx.HtMl` all missed the `===` and
+ *    all resolved to the same inode, so all four served the committed,
+ *    UNSUBSTITUTED entry document at 200, placeholders and all.
+ *
+ * So the question is inverted. `serveFromDist` still decides whether a file may
+ * be READ — its guards are empty / `..` / nested only — and the CALLER still
+ * decides WHICH file; this caller now decides from a set of names the surface
+ * is KNOWN to need rather than from a list of names it must not have. The
+ * refusal is case-insensitive **by construction**: membership is an exact match
+ * against the emitted name, so every case variant of every name — whitelisted
+ * or not — falls through to 404 without a lowercase pass anywhere.
+ *
+ * The house caller — `path === "/" ? "index.html" : path.slice(1)` — remains
+ * exactly what this spell must never write: `/` here returns
  * `substitute(source)`, the built HTML with the review payload injected in
- * memory. Handing the entry document to the kit would serve the committed
- * `dist/index.html` UNSUBSTITUTED — a page that renders with no questions in
- * it, at HTTP 200, with nothing red anywhere — and even leaving the router
- * alone, a verbatim adoption would leave `GET /index.html` answering that same
- * unsubstituted document, because the refusal being deleted is this file's and
- * not the kit's. So the name check stays HERE, one line above the call, and
- * `src/digestify/backend/release-serve.test.ts` drives both routes in release
- * mode rather than reading them.
+ * memory, and the entry document is not in the whitelist because the whitelist
+ * is what the entry document LINKS, never the entry itself.
  *
- * ⚠ The nesting guard is the KIT's now, and it is what keeps this serve clear
+ * ⚠ The nesting guard is the KIT's still, and it is what keeps this serve clear
  * of the review's own `/assets/<name>` route (all nested, all refused here).
  * Same rule, one owner.
  */
+
+/** `src`/`href` values in the built entry document, `./`-prefixed or bare.
+ *  Anything with a slash in it (a CDN URL, a nested path) is dropped below. */
+const ENTRY_REF_RE = /(?:src|href)\s*=\s*"(?:\.\/)?([^"]+)"/g;
+
+/**
+ * The names `dist/index.html` links — read once, on the first asset request, in
+ * release mode only.
+ *
+ * ⛔ **DERIVED, NOT ENUMERATED, BECAUSE A HAND-WRITTEN SET IS A BLACKLIST WITH
+ * THE SIGN FLIPPED.** The chunk names carry content hashes, so any literal list
+ * here would be wrong at the next build; a *shape* (`index-<hash>.js`) would be
+ * wrong the first time the bundler split a chunk. Asking the entry document
+ * what it loads is the only formulation that is true of whatever `bun run
+ * build` actually emitted — and it is the same reading `/` already does.
+ *
+ * ⚠ It follows that a build emitting a file the entry does NOT reference (a
+ * lazily-imported chunk, a font fetched from CSS) would 404 in release with
+ * nothing red. That is the trade this whitelist takes deliberately, and
+ * `release-serve.test.ts` holds the instrument for it: an INVENTORY cell that
+ * accounts for every file in `dist/` as either served or deliberately refused,
+ * so an unlinked emission goes red at build time instead of silent at runtime.
+ */
+let servableNames: Set<string> | null = null;
+function servableSurfaceFiles(): Set<string> {
+  if (servableNames) return servableNames;
+  const names = new Set<string>();
+  const entry = join(DIST_DIR, "index.html");
+  if (existsSync(entry)) {
+    for (const [, ref] of readFileSync(entry, "utf8").matchAll(ENTRY_REF_RE)) {
+      if (ref && !ref.includes("/") && !ref.includes("..")) names.add(ref);
+    }
+  }
+  servableNames = names;
+  return names;
+}
+
 function serveDist(path: string): Response | null {
   const rel = path.slice(1);
-  if (rel === "index.html") return null;
+  if (!servableSurfaceFiles().has(rel)) return null;
   return serveFromDist(DIST_DIR, rel);
 }
 
