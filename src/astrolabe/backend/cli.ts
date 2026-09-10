@@ -389,6 +389,89 @@ async function cmdInfo() {
   }
 }
 
+/**
+ * ── THE THREE ACCEPTED SETS, DECLARED ONCE (register A1) ────────────────────
+ *
+ * `choices` is the machine-routable half of the house error contract
+ * (`src/kit/wire/errors.ts`) — *what WOULD have been accepted* — and its whole
+ * value is that it is the ACTUAL set. So each set below is the one the parser
+ * and the dispatcher themselves read; a rejection cannot name a roster the CLI
+ * does not run, because there is no second copy to drift.
+ *
+ * ⛔ `CLI_OPTIONS` IS LIFTED OUT OF THE `parseArgs` CALL FOR EXACTLY THIS
+ * REASON. Inline, the recognized-flag set existed only inside the invocation
+ * that consumed it, so a rejection could only re-type it as prose — which is
+ * how bounty and imago both ended up with a hand-kept flag list inside a
+ * message string.
+ *
+ * ⚠ `VERBS` IS THE ONE DECLARATION HERE, and it is bound to the switch by a
+ * cell in `cli.test.ts` rather than by the type system — see its own comment.
+ */
+const CLI_OPTIONS = {
+  as: { type: "string" },
+  from: { type: "string" },
+  path: { type: "string" },
+  description: { type: "string" },
+  avatar: { type: "string" },
+  id: { type: "string" },
+  phase: { type: "string" },
+  question: { type: "string" },
+  since: { type: "string" },
+  timeout: { type: "string" },
+  clear: { type: "boolean", default: false },
+  stdin: { type: "boolean", default: false },
+  "no-open": { type: "boolean", default: false },
+} as const;
+
+/** Every flag the root parser recognises, as the caller would type it. */
+export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
+/**
+ * The dispatched verbs, in the switch's own order.
+ *
+ * ⚠ A DECLARATION, NOT A DERIVATION — the `switch (verb)` is the behaviour and
+ * nothing in the type system ties them together. `cli.test.ts` does: it parses
+ * this file's case labels and asserts set equality, magpie's binding cell
+ * ported rather than re-derived. Without that cell this is a hand-kept list
+ * wearing a derivation's clothes.
+ *
+ * ⛔ AND IT IS A BARE ARRAY ON PURPOSE, not magpie's `VERB_SPEC` verb->flags
+ * table. astrolabe parses ONE flag map at the root and does not scope flags per
+ * verb, so a per-verb flag list here would be documentary — a second, unchecked
+ * copy of the help text. It also tripped a real instrument: a string literal
+ * `"from"` inside an EXPORTED object literal is read as a re-export by
+ * `grimoire/lib/import-graph.ts`'s `STATIC_RE` (`export ... from "…"`, with no
+ * `;` or paren in between to stop it), and `import-boundary-wards` failed with
+ * a phantom `src/astrolabe/backend/cli.ts -> ", "` row. The pin caught it
+ * loudly, which is that ward working; the finding is recorded in the register.
+ */
+export const VERBS: readonly string[] = [
+  "open",
+  "add",
+  "remove",
+  "status",
+  "attention",
+  "poke",
+  "state",
+  "list",
+  "close",
+  "info",
+  "join",
+  "tail",
+];
+
+/**
+ * Tokens the root answers BEFORE the switch — `help` and `version` are not
+ * dispatched verbs, so a `choices` built from the switch alone would understate the
+ * accepted set by exactly these (mind-mapper's alias finding, same shape).
+ */
+export const ROOT_TOKENS: readonly string[] = ["help", "version"];
+
+/** What the root actually accepts as a first token. */
+export const VERB_CHOICES: readonly string[] = [...VERBS, ...ROOT_TOKENS];
+
 const HELP = `astrolabe — a standing observatory board for projects in flight.
 
   open [--no-open]
@@ -453,7 +536,8 @@ async function dispatch(argv: string[]): Promise<number> {
   setCurrentCommand(verb ?? null);
   // A bare invocation requested nothing — that is a usage error, not a help
   // request. help stays reachable by name (and --help/-h) on stdout at exit 0.
-  if (verb === undefined) die("no verb given — try 'help'");
+  if (verb === undefined)
+    die("no verb given", "usage", { hint: "run: cli.ts help", choices: [...VERB_CHOICES] });
   if (verb === "help" || verb === "--help" || verb === "-h") {
     process.stdout.write(`${HELP}\n`);
     return 0;
@@ -468,26 +552,28 @@ async function dispatch(argv: string[]): Promise<number> {
   try {
     parsed = parseArgs({
       args: argv.slice(1),
-      options: {
-        as: { type: "string" },
-        from: { type: "string" },
-        path: { type: "string" },
-        description: { type: "string" },
-        avatar: { type: "string" },
-        id: { type: "string" },
-        phase: { type: "string" },
-        question: { type: "string" },
-        since: { type: "string" },
-        timeout: { type: "string" },
-        clear: { type: "boolean", default: false },
-        stdin: { type: "boolean", default: false },
-        "no-open": { type: "boolean", default: false },
-      },
+      options: CLI_OPTIONS,
       strict: true,
       allowPositionals: true,
     });
   } catch (e) {
-    die(e instanceof Error ? e.message : String(e));
+    // ⛔ `choices` ONLY WHEN THE REJECTED TOKEN CAME FROM A CLOSED SET. An
+    // unknown option is that case and the set is `CLI_OPTIONS`; node's other
+    // parse rejections are not — `ERR_PARSE_ARGS_INVALID_OPTION_VALUE` means a
+    // recognised flag was given a value from an open set, and answering it with
+    // the flag roster would tell the caller to fix the thing that was right.
+    // Routed on node's own error CODE rather than on its prose, which is the
+    // same cut the taxonomy makes: `kind` is contract, `message` is
+    // presentation.
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+    die(
+      e instanceof Error ? e.message : String(e),
+      "usage",
+      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
+        ? { hint: "run: cli.ts help", choices: [...RECOGNIZED_FLAGS] }
+        : undefined,
+    );
   }
   const flags = parsed.values as Record<string, string | boolean>;
   const pos = parsed.positionals as string[];
@@ -534,7 +620,16 @@ async function dispatch(argv: string[]): Promise<number> {
         state: { projects: Array<{ id: string }> };
       };
       if (!state.projects.some((p) => p.id === id))
-        die(`unknown project '${id}' — register it first`);
+        // ⭐ THE SET IS ALREADY IN HAND, WHICH IS WHY THIS SITE QUALIFIES AND
+        // the same rejection relayed from the daemon (`cmd()`) does not: the
+        // snapshot was fetched one line above to make this very check, so
+        // naming the registered ids costs nothing and needs no second call.
+        // An EMPTY board answers `choices: []` — "nothing would have been
+        // accepted" — which is a true answer and not the same as no field.
+        die(`unknown project '${id}'`, "usage", {
+          hint: "run: cli.ts add <name> --path <p> to register it",
+          choices: state.projects.map((p) => p.id),
+        });
       return await streamEvents({ since, project: id, scopeId: id, self: resolveAs(flags) });
     }
     case "tail": {
@@ -544,7 +639,10 @@ async function dispatch(argv: string[]): Promise<number> {
       return await streamEvents({ since, self: resolveAs(flags) });
     }
     default:
-      die(`unknown verb '${verb}' — try 'help'`);
+      die(`unknown verb '${verb}'`, "usage", {
+        hint: "run: cli.ts help",
+        choices: [...VERB_CHOICES],
+      });
   }
 }
 

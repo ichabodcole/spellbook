@@ -21,10 +21,11 @@
 // The fake answers `/state` so the CLI's own start-up handshake is satisfied
 // and no real daemon is ever spawned.
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { RECOGNIZED_FLAGS, ROOT_TOKENS, VERBS } from "./cli.ts";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
 
@@ -160,3 +161,44 @@ test("join follows the daemon to a NEW port after a restart (B1)", async () => {
   // ...and it resumed from the cursor rather than replaying from the start.
   expect(sinces[0]).toBe(1);
 }, 30000);
+
+// ── register A1 · the declaration is bound to the behaviour ──────────────────
+//
+// ⛔ `VERBS` IS WHAT EVERY `choices` ON AN UNKNOWN VERB IS BUILT FROM, and
+// it is a DECLARATION while the `switch (verb)` is the BEHAVIOUR. Nothing in
+// the type system ties them, so a verb added to one and not the other makes
+// astrolabe either advertise a verb it cannot run or run one it will not name —
+// and `choices` is only worth emitting because a caller can trust it.
+//
+// magpie's cell, ported rather than re-derived (`src/magpie/backend/cli.test.ts`,
+// "VERB_SPEC is the dispatch switch"). The source is parsed rather than the
+// module inspected, because a case label is not a value.
+//
+// ⚠ CALIBRATED BOTH WAYS at the close: a verb added to the declaration with no
+// case reds, and a case added with no declaration reds.
+test("VERBS is the dispatch switch — neither may grow a verb alone (A1)", () => {
+  const src = readFileSync(CLI, "utf8");
+  const dispatch = src.slice(src.indexOf("switch (verb) {"));
+  const cases = new Set(
+    [...dispatch.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1] as string),
+  );
+  expect([...cases].sort()).toEqual([...VERBS].sort());
+});
+
+// The pre-switch interceptors are the other half: `help` and `version` are in
+// `choices` and are NOT `VERB_SPEC` keys, so if one stops being answered at the
+// root the roster starts advertising a token nothing handles.
+test("every ROOT_TOKEN is answered before the switch (A1)", () => {
+  const src = readFileSync(CLI, "utf8");
+  const root = src.slice(src.indexOf("async function dispatch("), src.indexOf("switch (verb) {"));
+  for (const token of ROOT_TOKENS) expect(root).toContain(`verb === "${token}"`);
+});
+
+// `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS`, so the only way it can lie
+// is if the parser stops reading that object. Assert the invocation does.
+test("the root parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
+  const src = readFileSync(CLI, "utf8");
+  expect(src).toContain("options: CLI_OPTIONS,");
+  expect(RECOGNIZED_FLAGS).toContain("--path");
+  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
+});
