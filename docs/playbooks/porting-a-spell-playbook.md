@@ -916,16 +916,16 @@ port is before Phase 1, because they have different done-whens below.
 > an EVENT and was meant as a PROPERTY (D87). It is landed now, at the end of
 > B7, marked. **A gap recorded in a journal is not a gap folded into a
 > playbook**, and nothing was comparing the two counts; the account is
-> `docs/projects/backend-convergence/phase-7-journal.md` and the rulings are
-> **D85–D87**. ⛔ **What did NOT transfer, stated once: the assumption that a
-> ruling about a TEST and a ruling about a WIRE cannot collide.** B8 rules
-> `tail.test.ts` untouchable because "a test whose subject is what the PROCESS
-> writes does not care which module wrote it", and B8 rules the cursor rename
-> forced and prices it by counting READERS. That test's fake server is a
-> **WRITER** of the wire, so the two rulings are incompatible at exactly one
-> fixture function and neither pre-work noticed. **A wire-schema delta has
-> writers, and the writer that goes wrong quietly is the one a port has been
-> told not to touch.**
+> `docs/projects/_archive/backend-convergence/phase-7-journal.md` and the
+> rulings are **D85–D87**. ⛔ **What did NOT transfer, stated once: the
+> assumption that a ruling about a TEST and a ruling about a WIRE cannot
+> collide.** B8 rules `tail.test.ts` untouchable because "a test whose subject
+> is what the PROCESS writes does not care which module wrote it", and B8 rules
+> the cursor rename forced and prices it by counting READERS. That test's fake
+> server is a **WRITER** of the wire, so the two rulings are incompatible at
+> exactly one fixture function and neither pre-work noticed. **A wire-schema
+> delta has writers, and the writer that goes wrong quietly is the one a port
+> has been told not to touch.**
 >
 > ⭐⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 IN PRE-WORK FOR MIND-MAPPER — THE
 > LAST PORT, THE LARGEST, AND THE SPELL TWO OF THE KIT'S MODULES WERE COPIED
@@ -940,11 +940,11 @@ port is before Phase 1, because they have different done-whens below.
 > (D20, D35, D47, D51) that never grew a step; the missing-SKILL.md case gets
 > the same escape hatch the missing-`acc.config.json` case has had since imago;
 > and D75/D76 reach B8 at last. The account is
-> `docs/projects/backend-convergence/phase-7-prework.md`; the rulings are
-> **D79–D84**. **What did NOT transfer, stated once: the assumption that your
-> spell is the one that has to change.** Six of B8's eight rows are wrong here,
-> and five of the six say "NO SUBJECT" about a spell that is the source of two
-> of the eight modules.
+> `docs/projects/_archive/backend-convergence/phase-7-prework.md`; the rulings
+> are **D79–D84**. **What did NOT transfer, stated once: the assumption that
+> your spell is the one that has to change.** Six of B8's eight rows are wrong
+> here, and five of the six say "NO SUBJECT" about a spell that is the source of
+> two of the eight modules.
 >
 > ⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY GRAPEVINE'S PORT — THE FIRST PORT
 > WHOSE DELIVERABLE WAS A REFUSAL, AND THE FIRST TO RUN ON THE REJECT-STRUCTURAL
@@ -953,12 +953,12 @@ port is before Phase 1, because they have different done-whens below.
 > answered "no epoch" without a list, and all three structural refusals survived
 > contact with the code. **Six gaps remain, each marked `⭐ grapevine-port`**,
 > recorded at the moment they were hit and amended in one pass at the end; the
-> account is `docs/projects/backend-convergence/phase-6-journal.md` and the
-> rulings are D71–D74. **What did NOT transfer, stated once: the assumption that
-> a spell's failure PROSE is only presentation.** grapevine's rejections were
-> engineered for a machine reader — flag-set extractor markers, with a sort — so
-> adopting `errors.ts` was not "the envelope replaces the wording", it was "the
-> enumeration has to survive the move into a field".
+> account is `docs/projects/_archive/backend-convergence/phase-6-journal.md` and
+> the rulings are D71–D74. **What did NOT transfer, stated once: the assumption
+> that a spell's failure PROSE is only presentation.** grapevine's rejections
+> were engineered for a machine reader — flag-set extractor markers, with a sort
+> — so adopting `errors.ts` was not "the envelope replaces the wording", it was
+> "the enumeration has to survive the move into a field".
 >
 > ⭐⭐⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR GRAPEVINE — THE FIRST SPELL
 > WITH A DURABLE EVENT LOG, AND THE FIRST WHOSE `main()` RETURNS WHILE THE
@@ -973,10 +973,10 @@ port is before Phase 1, because they have different done-whens below.
 > written output. B2's launcher discriminator is re-homed onto the property that
 > decides it, and B8's epoch ruling is re-homed off a list of spell names onto
 > "are ids recovered across a restart?". The account is
-> `docs/projects/backend-convergence/phase-6-prework.md`; the rulings are
-> D68–D70. **What did NOT transfer, stated once: the assumption that the kit can
-> always be made to fit** — every prior mismatch was repaired by widening the
-> kit, and that precedent applied here would dirty six artifacts across five
+> `docs/projects/_archive/backend-convergence/phase-6-prework.md`; the rulings
+> are D68–D70. **What did NOT transfer, stated once: the assumption that the kit
+> can always be made to fit** — every prior mismatch was repaired by widening
+> the kit, and that precedent applied here would dirty six artifacts across five
 > spells.
 >
 > ⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY DIGESTIFY'S PORT — THE FIRST PORT RUN
@@ -987,11 +987,11 @@ port is before Phase 1, because they have different done-whens below.
 > D57's warning is what stopped the anchor being diagnosed from its own error
 > message. **Six gaps remain, each marked `⭐ digestify-port`**, recorded at the
 > moment they were hit and amended in one pass at the end; the account is
-> `docs/projects/backend-convergence/phase-5-journal.md` and the ruling is D60.
-> **What did NOT transfer, stated once: the assumption that a spell is exercised
-> by BOOTING it.** Digestify's whole product is one human reading a page and
-> submitting once, and a booted daemon nobody submits to proves neither the
-> substitution nor the exit.
+> `docs/projects/_archive/backend-convergence/phase-5-journal.md` and the ruling
+> is D60. **What did NOT transfer, stated once: the assumption that a spell is
+> exercised by BOOTING it.** Digestify's whole product is one human reading a
+> page and submitting once, and a booted daemon nobody submits to proves neither
+> the substitution nor the exit.
 >
 > ⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR DIGESTIFY — THE FIRST
 > SINGLE-ENTRY, SINGLE-SHOT SPELL, AND THE PORT THIS PHASE WAS LEAST ABLE TO
@@ -1002,31 +1002,33 @@ port is before Phase 1, because they have different done-whens below.
 > Every one is re-homed below onto a PROPERTY an agent can check rather than
 > onto a name, each marked `⭐ digestify`. **Nothing was deleted; every scar was
 > moved.** The account, with what was measured and what the report got wrong, is
-> `docs/projects/backend-convergence/phase-5-prework.md`. **What did NOT
-> transfer, stated once: the assumption that the spell has two halves.** Half of
-> B8's flagship instruction, B5's pin destination, B3's entry permission and
-> B7's expected-red list all read a second entry that digestify does not have.
+> `docs/projects/_archive/backend-convergence/phase-5-prework.md`. **What did
+> NOT transfer, stated once: the assumption that the spell has two halves.**
+> Half of B8's flagship instruction, B5's pin destination, B3's entry permission
+> and B7's expected-red list all read a second entry that digestify does not
+> have.
 >
 > ⭐⭐ **AMENDED AGAIN 2026-09-09 FROM BOUNTY — the second port driven by this
 > document, the first with THREE entries, and the first of a spell the shared
 > spine was half copied FROM.** Six more gaps, each marked `⭐ bounty`; the
-> account is `docs/projects/backend-convergence/phase-4-journal.md`. **What
-> transferred, stated once: B1's import rule, B3's entry ruling, B4's spawn-path
-> class — which predicted bounty's shipped `SERVER_SCRIPT` defect a second time,
-> in writing, before the spell was touched — B5's specifier, B6's re-anchoring,
-> B7's list and B9's audit all held, and B9 found a real swallow the adoption
-> itself created.** What did NOT transfer is the assumption running under B8's
-> whole table: that the spell you are porting is the one with the worse code.
+> account is `docs/projects/_archive/backend-convergence/phase-4-journal.md`.
+> **What transferred, stated once: B1's import rule, B3's entry ruling, B4's
+> spawn-path class — which predicted bounty's shipped `SERVER_SCRIPT` defect a
+> second time, in writing, before the spell was touched — B5's specifier, B6's
+> re-anchoring, B7's list and B9's audit all held, and B9 found a real swallow
+> the adoption itself created.** What did NOT transfer is the assumption running
+> under B8's whole table: that the spell you are porting is the one with the
+> worse code.
 >
 > ⭐ **AMENDED 2026-09-08 FROM IMAGO, THE FIRST PORT DRIVEN BY THIS DOCUMENT
 > RATHER THAN WRITTEN FROM ONE.** Imago's whole job was to run on Phase B and
 > record every place it was not enough; the seven gaps it found are folded in
 > below, each marked `⭐ imago`. The full account, with what was measured, is
-> `docs/projects/backend-convergence/phase-3-journal.md`. **What transferred is
-> the more important half and is stated once here: B1's import rule, B3's entry
-> ruling, B4's spawn-path class, B5's specifier, B6's re-anchoring and B9's
-> audit all held on a spell nobody had them in front of, and B4 predicted
-> imago's shipped defect before it was looked for.**
+> `docs/projects/_archive/backend-convergence/phase-3-journal.md`. **What
+> transferred is the more important half and is stated once here: B1's import
+> rule, B3's entry ruling, B4's spawn-path class, B5's specifier, B6's
+> re-anchoring and B9's audit all held on a spell nobody had them in front of,
+> and B4 predicted imago's shipped defect before it was looked for.**
 
 **Goal:** `src/<spell>/backend/` holds the spell's caller-facing entries; the
 skill folder holds ONE LAUNCHER PER ENTRY and a committed `dist/<entry>.js` for
@@ -3691,7 +3693,7 @@ boundary** — bounty's shutdown watchdog turned out to cover `await done` and o
 fs append, not the fifteen-line teardown its own comment named, and a hang
 planted in a copy of the shipped artifact found it in one run after five
 readings had not. Full account:
-`docs/projects/backend-convergence/phase-4-journal.md`.
+`docs/projects/_archive/backend-convergence/phase-4-journal.md`.
 
 ### Example 9: grapevine — the port that refused three kit modules
 
@@ -3717,7 +3719,7 @@ is "adopted nothing, and did not widen".
   rejections writing their own prose, and the prose turned out to be a machine
   surface.
 
-`docs/projects/backend-convergence/phase-6-journal.md`; D68–D74.
+`docs/projects/_archive/backend-convergence/phase-6-journal.md`; D68–D74.
 
 ### Example 7: digestify — the third rewrite, and the one that closed the population
 
@@ -3811,9 +3813,9 @@ port **taught**, not what it confirmed.
   last**, and with them the ruling that `tail.test.ts` is the port's ORACLE
   rather than something to re-point — it imports nothing, so the proposal's verb
   was never executable. The account is
-  `docs/projects/backend-convergence/phase-7-prework.md`; the rulings are
-  **D79–D84**. **What did NOT transfer, stated once: the assumption that your
-  spell is the one that has to change.**
+  `docs/projects/_archive/backend-convergence/phase-7-prework.md`; the rulings
+  are **D79–D84**. **What did NOT transfer, stated once: the assumption that
+  your spell is the one that has to change.**
 
 - **2026-09-09** — ⭐⭐⭐⭐⭐⭐ **grapevine's PORT: a REFUSAL is a deliverable,
   and a spell's failure PROSE can be a machine surface.** The seventh consumer,
@@ -3833,8 +3835,8 @@ port **taught**, not what it confirmed.
   in a registry-dispatched CLI, and the union a reader writes first does not
   compile; and B9's CONDITIONAL shape recurred a THIRD time, at a verb that
   prints a receipt. The account is
-  `docs/projects/backend-convergence/phase-6-journal.md`; the rulings are
-  D71–D74.
+  `docs/projects/_archive/backend-convergence/phase-6-journal.md`; the rulings
+  are D71–D74.
 
 - **2026-09-09** — ⭐⭐⭐ **Phase B RE-KEYED FROM NAMES ONTO PROPERTIES, in
   pre-work for digestify.** Not taught by a port: an independent verify pass

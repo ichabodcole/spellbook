@@ -1,5 +1,29 @@
 # Backend convergence — proposal
 
+> **ARCHIVED 2026-09-10.** All eight spells build their whole backend and share
+> one spine. The roll is complete and independently verified: gate 2,022 pass /
+> 0 fail unpiped, `dist-check` green on all three arms, 16 of 16 shipped entries
+> genuine launchers, no source-shipped backend anywhere in the roster.
+>
+> **Two of this document's four "done means" criteria were overturned by ruling
+> rather than met** — the ward was kept (D87) and `tail.test.ts` became the
+> port's oracle rather than being re-pointed (D82/D86). Both departures are
+> recorded in the amendment block below, because a criterion that was changed
+> and a criterion that was missed look identical to a future reader.
+>
+> **What outlived this project lives elsewhere, deliberately:** the open
+> inventory moved to
+> [`docs/architecture/house-conformance-register.md`](../../../architecture/house-conformance-register.md)
+> (33 open rows, spanning eight spells) so that archiving this folder could not
+> bury it — including B1/B2, the epoch parameter, which this proposal excluded
+> **by name** as a dependency rather than smuggling it into scope. The method
+> lives in
+> [Phase B of the porting playbook](../../../playbooks/porting-a-spell-playbook.md),
+> whose population is now closed. The architecture doc that describes the result
+> is
+> [`docs/architecture/spell-backend-architecture.md`](../../../architecture/spell-backend-architecture.md),
+> and its prose is **unassigned** (D95).
+
 **Created:** 2026-09-08 · **Last Updated:** 2026-09-10 · **Status:** ⛔
 **COMPLETE — all eight spells ported, 2026-09-08→09; the record closed
 2026-09-10** · **Ruled by:** Cole

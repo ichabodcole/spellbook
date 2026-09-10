@@ -6,17 +6,18 @@ acc conformance** — this is _house_ conformance: one specification these eight
 spells are all supposed to satisfy.
 
 > ⛔ **THIS DOCUMENT OUTLIVES THE PROJECT THAT STARTED IT, AND THAT IS WHY IT
-> MOVED.** It was written inside `docs/projects/backend-convergence/` while that
-> project ran, and it was the convergence that produced most of it. But it is a
-> **house-conformance inventory spanning eight spells, with THIRTY-THREE rows
-> still open** — eleven in A, six in B, eight in C, seven in D and one in F,
-> plus Section E's four design questions and F2's one pending clause (re-counted
-> 2026-09-10 after C8 and C10 closed; eleven rows are closed) — **and archiving
-> the project it was born in would have buried every one of them.** It is now an
-> architecture-level living reference (D92, with the options not taken). Its
-> companion is [the backend architecture doc](./spell-backend-architecture.md) —
-> that document records the shape each spell HAS, this one records where the
-> eight do not yet agree; read them as two halves of one inventory.
+> MOVED.** It was written inside `docs/projects/_archive/backend-convergence/`
+> while that project ran, and it was the convergence that produced most of it.
+> But it is a **house-conformance inventory spanning eight spells, with
+> THIRTY-THREE rows still open** — eleven in A, six in B, eight in C, seven in D
+> and one in F, plus Section E's four design questions and F2's one pending
+> clause (re-counted 2026-09-10 after C8 and C10 closed; eleven rows are closed)
+> — **and archiving the project it was born in would have buried every one of
+> them.** It is now an architecture-level living reference (D92, with the
+> options not taken). Its companion is
+> [the backend architecture doc](./spell-backend-architecture.md) — that
+> document records the shape each spell HAS, this one records where the eight do
+> not yet agree; read them as two halves of one inventory.
 >
 > ⛔ **B1 AND B2 — THE EPOCH PARAMETER — LIVE HERE RATHER THAN IN THE ARCHIVED
 > FOLDER, AND THAT PLACEMENT IS THE POINT.** The convergence's proposal excluded
@@ -39,13 +40,13 @@ spells are all supposed to satisfy.
 >
 > ⚠ **Where the fifteen census defects stand** — the convergence's headline
 > criterion, which had no ledger until 2026-09-10 — is in that project's
-> [proposal](../projects/backend-convergence/proposal.md), under _"The defect
-> ledger"_: one row per defect, closed by which module, by construction or by
-> convention, with a file:line or a test name. **Three of its rows have residues
-> that live HERE rather than in the archive**: L6's epoch (**B1** and **B2**),
-> census tail defect **B8** — open, unruled, filed below, and the register's own
-> B8 IS the census's — and L4's optional `sockets` argument, which is named in
-> the ledger and is a convention rather than a construction.
+> [proposal](../projects/_archive/backend-convergence/proposal.md), under _"The
+> defect ledger"_: one row per defect, closed by which module, by construction
+> or by convention, with a file:line or a test name. **Three of its rows have
+> residues that live HERE rather than in the archive**: L6's epoch (**B1** and
+> **B2**), census tail defect **B8** — open, unruled, filed below, and the
+> register's own B8 IS the census's — and L4's optional `sockets` argument,
+> which is named in the ledger and is a convention rather than a construction.
 
 ## How a row closes
 
