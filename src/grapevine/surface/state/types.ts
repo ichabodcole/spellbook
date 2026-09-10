@@ -1,8 +1,9 @@
 // The daemon's wire shapes as the watch surface consumes them. Mirrors the
-// header comment of plugins/spellbook/skills/grapevine/scripts/daemon.ts (the
-// backend ships as source and shares nothing, so this is a copy of the
-// contract, not an import across the artifact boundary — Contract 3 does not
-// fire and no `shared/` folder exists for grapevine).
+// header comment of `src/grapevine/backend/daemon.ts` (⚠ the backend BUILDS as
+// of backend convergence Phase 6 — it moved out of the deployed skill folder
+// and ships as `dist/daemon.js` behind a launcher — and the surface still holds
+// a COPY of the contract rather than an import: nothing under `surface/`
+// imports the backend, which is exactly what let the whole backend move.)
 
 export type MessageKind = "message" | "topic" | "announcement" | "status";
 

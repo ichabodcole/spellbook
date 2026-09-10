@@ -8,8 +8,9 @@
 // THE PREDICATE: among functions containing a catch clause that RETURNS a value,
 // a scalar return type must admit a non-domain sentinel (`null`/`undefined`).
 //
-// MEASURED over the two files the rule was DERIVED from (bounty/scripts/server.ts,
-// grapevine/scripts/cli.ts):
+// MEASURED over the two files the rule was DERIVED from (bounty/backend/server.ts,
+// grapevine/backend/cli.ts — both relocated by the backend convergence since; the
+// measurement is of those modules, not of those addresses):
 //
 //     IN DOMAIN 7 · CONVICTED 2 · DECLARED BLIND 26 · TRUE POSITIVES 0
 //

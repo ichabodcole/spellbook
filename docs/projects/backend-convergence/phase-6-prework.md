@@ -101,10 +101,24 @@ Three are not, for a reason the phase had no word for.
 | `sse`          | `Set<SseClient>`, `SseClient = {close, send}`, `size` is all it reads   | `Map<symbol, {alias, human, lurk, send}>`, metadata read by **six routes**                        | **REJECT-STRUCTURAL**                |
 | `housekeeping` | `shouldIdleClose` + `startHousekeeping` + `drainAndStop`                | no idle sweep, no snapshot, no `--timeout`; a `Promise.race([server.stop(true), 200ms])` teardown | **SPLIT** — see the refinement below |
 
-The six routes reading subscriber metadata, counted: `/presence`
-(`daemon.ts:419-421`), `/channels/:name/subscribers` (739-747), the roll/clear
-broadcast (909-921), the archive live-guard (981), the watch-presence
-registration (1111-1117), and the tail's own registration (1307-1314).
+⛔ **The six routes reading subscriber metadata — RE-COUNTED in the repair
+chapter, because the first count was right by coincidence and four of its six
+citations were wrong.** As now verified in this file's own subject, `develop`'s
+`plugins/spellbook/skills/grapevine/scripts/daemon.ts`: `GET /channels` via
+`listChannels`→`visibleSubs` (**421**), `GET /presence` (**739-747**),
+`POST /channels` (**826**), `POST /announce` (**886-887**),
+`POST /channels/:name/messages` (**1049-1054**), and
+`GET /channels/:name/subscribers` (**1182-1188**).
+
+_What the first count said, kept visible because the failure is instructive:_
+`/presence` was cited at 419-421 and `/channels/:name/subscribers` at 739-747 —
+**the two labels swapped onto each other's lines**. The "roll/clear broadcast
+(909-921)" is `DELETE /channels/:name` and reads **only `s.send`**; the "archive
+live-guard (981)" is `POST /channels/:name/reset` and reads
+**`ch.subscribers.size`**. Both of those are exactly what the kit's type CAN
+express, which weakened the argument where it is meant to be strongest. And the
+two registrations (1111-1117, 1307-1314) **write** the record — a writer is not
+evidence that a type is too narrow to read.
 
 **Why this is not NO SUBJECT:** grapevine HAS an event log and HAS an SSE
 registry, and they are the busiest things in the spell. Reporting them as "no

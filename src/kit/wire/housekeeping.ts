@@ -7,6 +7,39 @@
  * Converged 2026-09-08 (Phase 1b chapter 2) TOWARD bounty — the census's
  * convergence target #3 — with astrolabe's `timeoutMs > 0` guard folded in,
  * which is the one thing bounty's copy does not express.
+ *
+ * ── ⛔ GRAPEVINE ADOPTS `drainAndStop` AND NOTHING ELSE HERE — SPLIT PER EXPORT
+ *
+ * Ruled at grapevine's port (Phase 6, 2026-09-09; D68), and it is written down
+ * because a row is a MODULE and "partial" is not an answer until it says which
+ * exports. Grapevine is long-running, so nothing about its lifecycle makes this
+ * module read as inapplicable — and two of its three exports still have no
+ * subject there:
+ *
+ *   `shouldIdleClose`      NO SUBJECT. Grapevine runs no idle sweep and has no
+ *   `startHousekeeping`    `--timeout`; it is a broker that stands until `stop`
+ *                          (`DELETE /`) or a signal, and it takes no snapshot.
+ *                          Adopting the pair-manager would mean writing a no-op
+ *                          `touch` and a `subscriberCount` that exists only to
+ *                          return a number nobody acts on — two lies to gain a
+ *                          `clearInterval`.
+ *   `drainAndStop`         ADOPTED, and it is a DE-DUPLICATION rather than a
+ *                          gain: grapevine's teardown already WAS
+ *                          `Promise.race([server.stop(true), 200 ms])`, which is
+ *                          `stopMs` exactly.
+ *
+ * ⚠ **AND IT IS CALLED WITH NO `clients`, WHICH IS A MEASUREMENT, NOT AN
+ * OVERSIGHT.** This module closes a held connection by calling `client.close()`;
+ * grapevine's subscriber records are `{alias, human, lurk, send}` and carry no
+ * `close` — its per-stream teardown is a closure stashed on the ReadableStream
+ * controller, reachable only from `cancel()`. There is nothing to hand the
+ * argument. `sse.ts`'s header carries the rest of that ruling, including the
+ * widening not done and its cost (six artifacts across five spells).
+ *
+ * ⚠ Grapevine also passes `graceMs: 0`. Not a disagreement with the grace
+ * period: it emits no farewell frame at daemon shutdown, and its `DELETE /`
+ * already returns the response and schedules the teardown 10 ms later, so its
+ * flush window sits at the route rather than in the drain.
  */
 
 import type { SseClients } from "./sse.ts";

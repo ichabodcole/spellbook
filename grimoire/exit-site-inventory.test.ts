@@ -138,10 +138,33 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "grapevine/scripts/daemon.ts", text: "process.exit(0);", family: "C-signal" },
+  // ⛔ RE-ADDRESSED BY PHASE 6 CHAPTER 1, NOT CHANGED. grapevine's backend now
+  // builds, so its sources sit under the second root and LAUNCHERS hold the old
+  // addresses. Families and texts are identical either side of the move — that
+  // is chapter 1's whole contract — and the launchers add no row: BOTH of
+  // grapevine's are `process.exitCode` + a natural return, which is the one
+  // thing about this spell that differs from the five daemons above (D69 — its
+  // `main()` returns while the process must keep living, so a terminal exit at
+  // the launcher would kill a live server; there is no E-terminal row for
+  // grapevine and there must not be one).
+  // ⭐ grapevine's CLI A-DRAIN/C-SIGNAL SITE IS GONE, and it is the third time
+  // this inventory has recorded that sentence. `cmdTail` held
+  // `stopped = true; process.exit(0)` in a SIGINT/SIGTERM handler seven lines
+  // into a 220-line hand-written reconnect loop — the P0f shape exactly, and the
+  // half five spells did not fix when they fixed the terminal frame. Phase 6
+  // chapter 2 adopted `src/kit/wire/tailEvents.ts`, whose client RETURNS an exit
+  // code instead of ending the process from inside three nested loops, so the
+  // site has nowhere to live.
+  //
+  // ⛔ AND ONE OF grapevine's DAEMON ROWS WENT WITH IT, FOR A DIFFERENT REASON.
+  // `process.exit(code),` — the trailing comma is the tell — sat inside
+  // `Promise.race([server.stop(true), 200ms]).finally(…)`. That race IS
+  // `src/kit/wire/housekeeping.ts`'s `drainAndStop`, so adopting it left ONE
+  // terminal exit after an awaited drain instead of two spellings of the same
+  // ending. The two rows below are what remains: the awaited teardown, and the
+  // already-running branch that exits before anything is bound.
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "grapevine/backend/daemon.ts", text: "process.exit(0);", family: "C-signal" },
   // bounty/server.ts, RE-READ at 2cc513d after the funnel (t-1b9424ab). The two
   // hardcoded signal exits (143/130) are GONE -- routed into the teardown. What
   // remains are three exits that are correct BY CONSTRUCTION, each read at its
@@ -193,7 +216,15 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // requireDaemon die became a thrown CliError that main() returns as an exit
   // code — zero live process.exit sites remain in that CLI, which is the
   // direction this inventory exists to push.
-  { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
+  // ⛔ grapevine/backend/cli.ts LEFT THIS FAMILY in Phase 6 chapter 2, by
+  // adopting the SAME module (`src/kit/wire/errors.ts`) glamour, imago, magpie
+  // and bounty did — ⚠ and for grapevine that was a CALLER-VISIBLE change, at
+  // 38 raise sites: its die() emitted PROSE and exit 2 for every failure (two
+  // internal faults at 1), and a SECOND contract lived beside it in four
+  // `process.stderr.write(...); return 2` rejections the parser owned. Driven
+  // before and after; see D72 and the Phase 6 journal. **grapevine's CLI now has
+  // ZERO live `process.exit` sites — the SIXTH CLI to reach that**, after
+  // magpie, mind-mapper, glamour, imago and bounty.
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   // ⛔ THESE TWO DID **NOT** MOVE, AND THAT IS THE INTERESTING HALF OF BOUNTY'S

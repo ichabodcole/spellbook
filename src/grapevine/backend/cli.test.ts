@@ -7,11 +7,64 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+// ⚠ SOURCE, DELIBERATELY, AND ONLY FOR THESE TWO. `looksShellRisky` and
+// `probeVersion` are pure — neither computes a path from its own location — so
+// importing the source asserts the same function the artifact carries. Anything
+// that DOES read `import.meta.url` must be read out of the artifact instead
+// (playbook B6.2); `release-serve.test.ts` does that for `daemonCwd`.
 import { looksShellRisky, probeVersion } from "./cli.ts";
 
+/**
+ * ⛔ THE SKILL ROOT IS FOUND BY A MARKER, NEVER BY COUNTING `..` (playbook B6).
+ * This suite now lives at `src/grapevine/backend/` and the process it spawns
+ * lives at `plugins/spellbook/skills/grapevine/scripts/` — different trees, so
+ * no number of `..` reaches it. A marker fails LOUDLY and by name when it fails
+ * at all; a wrong `..` fails as "the daemon never answered".
+ */
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
+}
+
 const HOME = mkdtempSync(join(tmpdir(), "grapevine-test-"));
-const CLI = join(import.meta.dir, "cli.ts");
+/**
+ * ⛔ THE LAUNCHER, NOT THE SOURCE (playbook B6.1). The contract this suite
+ * asserts is what the PROCESS writes and exits with, and the process a caller
+ * runs is `scripts/cli.ts` → `dist/cli.js`. It is also the path the CLI's own
+ * runnable hints compose from their argument vector, which is why the
+ * "run what stderr told you" cell below can execute one verbatim.
+ *
+ * ⚠ ONE CONSTANT, ONE JOB. bounty's suite used its `CLI` to spawn a process AND
+ * to read the source with `Bun.file(CLI).text()`; re-pointing it at the launcher
+ * re-pointed the source scans, which then read a comment block and failed as a
+ * broken regex. This suite reads no source through this constant — checked at
+ * the port — and must not start.
+ */
+const CLI = join(
+  repoRoot(import.meta.dir),
+  "plugins",
+  "spellbook",
+  "skills",
+  "grapevine",
+  "scripts",
+  "cli.ts",
+);
+/**
+ * ⛔ THE DAEMON LAUNCHER, FOR THE TWO CELLS THAT SPAWN A DAEMON DIRECTLY. They
+ * read `join(import.meta.dir, "daemon.ts")` before the port, which after it is
+ * `src/grapevine/backend/daemon.ts` — a module with no `import.meta.main` block
+ * (playbook B3), so the spawn would boot nothing, exit 0, and the two cells
+ * would fail as "no such daemon on this machine": a wrong-file defect wearing a
+ * missing-feature symptom. Both were RED at the move and both are fixed here.
+ */
+const DAEMON = join(dirname(CLI), "daemon.ts");
 
 // Track every long-lived child process we spawn (tails, the wait helper,
 // etc.) so afterAll can SIGTERM them even if `bunRun(["stop"])` fails or
@@ -1375,7 +1428,10 @@ describe("grapevine cli", () => {
     const infoBefore = await bunRun(["info"]);
     const pidBefore = JSON.parse(infoBefore.stdout).pid;
     const r = await bunRun(["restart"]);
-    expect(r.code).toBe(2);
+    // 6 = `conflict` since Phase 6 chapter 2: a precondition failed (live
+    // subscribers), which is not the caller mistyping the command.
+    expect(r.code).toBe(6);
+    expect(errorOf(r.stderr).kind).toBe("conflict");
     expect(r.stderr.toLowerCase()).toMatch(/subscriber|--force|live/);
     // Daemon untouched — same process, subscriber undisturbed.
     const infoAfter = await bunRun(["info"]);
@@ -1662,7 +1718,7 @@ describe("grapevine cli", () => {
   test("doctor labels other daemons with status + reapable (V1.9)", async () => {
     await bunRun(["start"]);
     const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan2-"));
-    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+    const op = spawn(process.execPath, [DAEMON], {
       env: { ...process.env, GRAPEVINE_HOME: orphanHome },
       stdio: ["ignore", "ignore", "ignore"],
       detached: true,
@@ -1888,7 +1944,7 @@ describe("grapevine cli", () => {
     // Spawn an orphan: a daemon under a DIFFERENT, throwaway home dir, then delete
     // that home's port file so nothing recognizes it.
     const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan-"));
-    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+    const op = spawn(process.execPath, [DAEMON], {
       env: { ...process.env, GRAPEVINE_HOME: orphanHome },
       stdio: ["ignore", "ignore", "ignore"],
       detached: true,
@@ -2005,10 +2061,17 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
   test("an unknown verb flag is rejected with THAT verb's own set — not the global registry", async () => {
     const { code, stderr } = await bunRun(["send", "chan", "--timeout", "5"]);
     expect(code).toBe(2);
-    // The verb is named, and the marker phrase is the exact shape flag-set
-    // extractors read ("recognized flags:" — colon straight after the noun).
-    expect(stderr).toContain("grapevine: send:");
-    const enumeration = stderr.split("\n").find((l) => l.includes("recognized flags:"));
+    // ⛔ THE ENUMERATION IS `choices` NOW, NOT A PROSE MARKER (Phase 6 chapter
+    // 2). It used to be a second stderr line reading `recognized flags: --a --b`
+    // — spelled with the colon straight after the noun because that is the shape
+    // a flag-set extractor matches — and the cell found it by splitting on
+    // newlines. The envelope carries an ARRAY, which cannot be truncated by a
+    // reader that stops at the first token which is not a `--long` flag, and the
+    // verb names itself in `meta.command` and in the message.
+    const e = errorOf(stderr);
+    expect(e.kind).toBe("usage");
+    expect(e.message).toStartWith("send:");
+    const enumeration = e.choices;
     expect(enumeration).toBeDefined();
     expect(enumeration).toContain("--in-reply-to");
     // --timeout belongs to wait; send's enumeration must not advertise it.
@@ -2027,13 +2090,17 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     const { code, stdout, stderr } = await bunRun(["read", "chan"]);
     expect(code).toBe(2);
     expect(stdout).toBe("");
-    expect(stderr).toContain("missing required <id>");
+    expect(errorOf(stderr).message).toContain("missing required <id>");
   });
 
   test("an excess positional is rejected, not silently swallowed", async () => {
     const { code, stderr } = await bunRun(["info", "extra"]);
     expect(code).toBe(2);
-    expect(stderr).toContain('unexpected argument "extra"');
+    // ⚠ THE QUOTES ARE WHY THIS ONE HAD TO CHANGE AND ITS SIBLINGS DID NOT. The
+    // message still says `unexpected argument "extra"`; inside a JSON document
+    // those quotes are escaped, so a `toContain` over the RAW stderr fails while
+    // the contract is intact. Parse, then match the field.
+    expect(errorOf(stderr).message).toContain('unexpected argument "extra"');
   });
 
   test("schema emits parseable acc declaration v0 on stdout at exit 0, and lists its own verb", async () => {
@@ -2082,7 +2149,7 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     const { code, stdout, stderr } = await bunRun(["wait", "chan", "--timeout", "notanumber"]);
     expect(code).toBe(2);
     expect(stdout).toBe("");
-    expect(stderr).toContain("--timeout expects a non-negative number");
+    expect(errorOf(stderr).message).toContain("--timeout expects a non-negative number");
     expect(stderr).not.toContain("RangeError");
   });
 });
@@ -2104,6 +2171,42 @@ function daemonPort(): number {
 
 /** Names in `grapevine list`. The second assertion of every no-resurrection
  *  test: refusing is not enough if the name came back anyway. */
+/**
+ * The failure envelope this CLI writes on stderr, parsed.
+ *
+ * ⛔ ADDED AT PHASE 6 CHAPTER 2, AND IT IS THE SHAPE OF THE DELTA. Before the
+ * adoption of `src/kit/wire/errors.ts` every failure was PROSE at exit 2 —
+ * `grapevine: <msg>`, sometimes with a second indented line — so the cells below
+ * matched substrings and split sentences. After it there is ONE JSON document on
+ * stderr with a `kind`, the taxonomy's exit code, the message, an optional
+ * `hint` (the runnable recovery) and an optional `choices` (the enumeration that
+ * used to be a prose marker). Matching a field is what the contract actually is;
+ * matching prose is what "rewording must never break a caller" means.
+ */
+function errorOf(stderr: string): {
+  kind: string;
+  exit_code: number;
+  message: string;
+  hint?: string;
+  choices?: string[];
+  server?: { error?: string; hint?: string };
+} {
+  const parsed = JSON.parse(stderr) as {
+    ok: boolean;
+    error: {
+      kind: string;
+      exit_code: number;
+      message: string;
+      hint?: string;
+      choices?: string[];
+      server?: { error?: string; hint?: string };
+    };
+    meta: { command: string | null };
+  };
+  expect(parsed.ok).toBe(false);
+  return parsed.error;
+}
+
 async function listedChannels(): Promise<string[]> {
   const { stdout } = await bunRun(["list"]);
   return (JSON.parse(stdout) as { channels: { name: string }[] }).channels.map((c) => c.name);
@@ -2127,12 +2230,22 @@ describe("a read verb never creates a channel", () => {
     test(`${label} refuses a missing channel, names the recovery, and leaves list unchanged`, async () => {
       const before = await listedChannels();
       const { code, stdout, stderr } = await bunRun(argv);
-      expect(code).toBe(2);
+      // ⛔ 5, NOT 2, SINCE PHASE 6 CHAPTER 2. "The channel does not exist" is
+      // `not_found` in the house taxonomy, and the daemon already said so with a
+      // 404 — the CLI used to collapse it, a bad flag and a broken daemon into
+      // one number, which left an agent nothing to route on.
+      expect(code).toBe(5);
       expect(stdout).toBe("");
-      expect(stderr).toContain(`no channel "${argv[1]}"`);
-      // A refusal names the act that recovers from it — and the line it prints
-      // must be RUNNABLE, not a `grapevine …` command no PATH resolves.
-      expect(stderr).toContain(`try: bun ${CLI} open ${argv[1]}`);
+      const e = errorOf(stderr);
+      expect(e.kind).toBe("not_found");
+      expect(e.message).toContain(`no channel "${argv[1]}"`);
+      // A refusal names the act that recovers from it — and the line it names
+      // must be RUNNABLE, not a `grapevine …` command no PATH resolves. It is a
+      // FIELD now rather than a clause appended to the message.
+      expect(e.hint).toBe(`try: bun ${CLI} open ${argv[1]}`);
+      // The upstream's own body rides along verbatim, so a caller can branch on
+      // what the DAEMON said rather than on this CLI's prose about it.
+      expect(e.server?.error).toBe(`no channel "${argv[1]}"`);
       // THE ACTUAL BUG: the name must not have come back.
       const after = await listedChannels();
       expect(after).not.toContain(argv[1]);
@@ -2147,8 +2260,8 @@ describe("a read verb never creates a channel", () => {
     expect((await bunRun(["close", "resurrect-me"])).code).toBe(0);
 
     const pull = await bunRun(["pull", "resurrect-me"]);
-    expect(pull.code).toBe(2);
-    expect(pull.stderr).toContain('no channel "resurrect-me"');
+    expect(pull.code).toBe(5);
+    expect(errorOf(pull.stderr).message).toContain('no channel "resurrect-me"');
     expect(await listedChannels()).not.toContain("resurrect-me");
   });
 
@@ -2221,9 +2334,13 @@ describe("topic on an archived channel is refused by the route AND the verb", ()
     await bunRun(["open", "arch-topic"]);
     await bunRun(["archive", "arch-topic"]);
     const { code, stdout, stderr } = await bunRun(["topic", "arch-topic", "a new topic"]);
-    expect(code).toBe(2);
+    // ⛔ 6, NOT 2, SINCE PHASE 6 CHAPTER 2 — `conflict`. The daemon answered 409
+    // and the CLI now carries that distinction through instead of flattening it.
+    expect(code).toBe(6);
     expect(stdout).toBe("");
-    expect(stderr).toContain("archived");
+    const e = errorOf(stderr);
+    expect(e.kind).toBe("conflict");
+    expect(e.message).toContain("archived");
     await bunRun(["unarchive", "arch-topic"]);
     const pull = await bunRun(["pull", "arch-topic"]);
     const kinds = (JSON.parse(pull.stdout) as { messages: { kind: string }[] }).messages;
@@ -2474,11 +2591,17 @@ describe("a late joiner is told the channel is archived", () => {
 describe("the recovery a refusal names is runnable (verify ⚠6)", () => {
   test("what stderr tells you to run, run verbatim, actually recovers", async () => {
     const refused = await bunRun(["pull", "runnable-ghost"]);
-    expect(refused.code).toBe(2);
-    // Pull the command straight out of the message and execute it — no
-    // interpretation, which is the whole point of the finding: the old hint
-    // read `grapevine open x`, and nothing installs a `grapevine` binary.
-    const line = refused.stderr.split("try: ")[1]?.trim();
+    expect(refused.code).toBe(5);
+    // Take the command straight out of the envelope's `hint` and execute it — no
+    // interpretation, which is the whole point of the finding: the old hint read
+    // `grapevine open x`, and nothing installs a `grapevine` binary.
+    //
+    // ⛔ AND THE PARSE STOPPED BEING A PARSE AT PHASE 6 CHAPTER 2. This read
+    // `stderr.split("try: ")[1]` — recovering a command by splitting a sentence,
+    // which is the shape the envelope exists to retire. Same property, one field
+    // read: the recovery is `hint`, and a caller no longer has to know that the
+    // CLI happens to write "try: " before it.
+    const line = errorOf(refused.stderr).hint?.replace(/^try: /, "");
     expect(line).toBeDefined();
     const [runner, ...rest] = (line as string).split(" ");
     expect(runner).toBe("bun");
@@ -2503,9 +2626,11 @@ describe("a retired channel's refusal names its recovery too (verify ⚠7)", () 
     expect((await bunRun(["archive", "hinted-arch"])).code).toBe(0);
 
     const refused = await bunRun(["topic", "hinted-arch", "a new topic"]);
-    expect(refused.code).toBe(2);
-    expect(refused.stderr).toContain("archived");
-    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-arch`);
+    expect(refused.code).toBe(6);
+    const e = errorOf(refused.stderr);
+    expect(e.kind).toBe("conflict");
+    expect(e.message).toContain("archived");
+    expect(e.hint).toBe(`try: bun ${CLI} unarchive hinted-arch`);
   });
 
   test("send to an archived channel refuses WITH the unarchive hint", async () => {
@@ -2513,15 +2638,15 @@ describe("a retired channel's refusal names its recovery too (verify ⚠7)", () 
     expect((await bunRun(["archive", "hinted-send"])).code).toBe(0);
 
     const refused = await bunRun(["send", "hinted-send", "nope", "--as", "agent"]);
-    expect(refused.code).toBe(2);
-    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-send`);
+    expect(refused.code).toBe(6);
+    expect(errorOf(refused.stderr).hint).toBe(`try: bun ${CLI} unarchive hinted-send`);
   });
 
   test("what the archived refusal tells you to run, run verbatim, recovers", async () => {
     await bunRun(["open", "hinted-run"]);
     await bunRun(["archive", "hinted-run"]);
     const refused = await bunRun(["topic", "hinted-run", "after the thaw"]);
-    const line = refused.stderr.split("try: ")[1]?.trim();
+    const line = errorOf(refused.stderr).hint?.replace(/^try: /, "");
     expect(line).toBeDefined();
     const [runner, ...rest] = (line as string).split(" ");
     const recovered = await new Promise<number>((resolve) => {
@@ -2548,9 +2673,14 @@ describe("a retired channel's refusal names its recovery too (verify ⚠7)", () 
     await bunRun(["archive", "sym-arch"]);
     const archived = await bunRun(["topic", "sym-arch", "x"]);
 
-    expect(missing.code).toBe(2);
-    expect(archived.code).toBe(2);
-    for (const s of [missing.stderr, archived.stderr]) expect(s).toContain("try: bun ");
+    // ⚠ THE TWO CODES ARE NO LONGER THE SAME NUMBER, AND THE CELL IS ABOUT THE
+    // HINT, NOT THE CODE. `topic <missing>` is `not_found` (5) and
+    // `topic <archived>` is `conflict` (6) since Phase 6 chapter 2 — which is
+    // the taxonomy doing its job, since the two refusals are recovered by
+    // different acts. The asymmetry ⚠7 named is that BOTH must name theirs.
+    expect(missing.code).toBe(5);
+    expect(archived.code).toBe(6);
+    for (const r of [missing, archived]) expect(errorOf(r.stderr).hint).toContain("try: bun ");
   });
 });
 
@@ -2603,6 +2733,6 @@ describe("a created channel outlives the daemon that created it (backlog ⚠4)",
     expect((await bunRun(["close", "closed-stays-closed"])).code).toBe(0);
     expect((await bunRun(["restart", "--yes"])).code).toBe(0);
     expect(await listedChannels()).not.toContain("closed-stays-closed");
-    expect((await bunRun(["pull", "closed-stays-closed"])).code).toBe(2);
+    expect((await bunRun(["pull", "closed-stays-closed"])).code).toBe(5);
   });
 });

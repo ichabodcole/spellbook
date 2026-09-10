@@ -71,7 +71,9 @@ const HAZARD_APPLIES: Record<string, string> = {
   "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
   "bounty/backend/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
   "glamour/backend/cli.ts": "caller-facing; prompt text is a positional",
-  "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
+  // Re-addressed by Phase 6 chapter 1: the CLI builds now, the launcher parses
+  // nothing, and the exclusion follows the file that has the interface.
+  "grapevine/backend/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/backend/cli.ts": "caller-facing; prompt text is a positional",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",

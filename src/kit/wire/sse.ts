@@ -31,6 +31,57 @@
  * ⚠ Known hole, accepted and inherited: Bun's own `fetch()` reader `.cancel()`
  * closes nothing client-side and the server cannot see it. Real clients close
  * the socket.
+ *
+ * ── ⛔ GRAPEVINE DOES NOT ADOPT THIS, AND THE REFUSAL IS PART OF THE RULING ──
+ *
+ * REJECT-STRUCTURAL, ruled at grapevine's port (Phase 6, 2026-09-09; D68).
+ * Grapevine HAS an SSE registry and it is the busiest thing in the spell; the
+ * two types simply cannot be constructed from each other:
+ *
+ *   this module  `SseClients = Set<SseClient>` where `SseClient = {close, send}`
+ *                — a registry of ANONYMOUS closers, and `size` is the only thing
+ *                any adopting daemon reads off it.
+ *   grapevine    `Map<symbol, {alias, human, lurk, send}>`, per channel.
+ *
+ * **The readers that make them incompatible, counted rather than asserted: SIX
+ * routes read `alias`/`human`/`lurk`** — `GET /channels` (through
+ * `listChannels` → `visibleSubs`), `GET /presence`, `POST /channels`,
+ * `POST /announce`, `POST /channels/:name/messages`, and
+ * `GET /channels/:name/subscribers`. `alias` is a name a human sees in a roster,
+ * `human` tells an agent it is talking to a person, and `lurk` excludes a
+ * connection from every presence count. There is no way to put any of that into
+ * a set of closers. Adopting this module would not be dead code; it would be a
+ * rewrite of what grapevine IS.
+ *
+ * ⚠ **AND THE LIST IS DELIBERATELY NOT THE OBVIOUS ONE.** The port's first
+ * count named the `roll`/clear broadcast, the archive live-guard and two
+ * REGISTRATIONS — and every one of those is a site this module's type would
+ * serve perfectly: the broadcast reads only `s.send`, the live-guard only
+ * `subscribers.size` (which this header itself says is all any adopter reads),
+ * and a registration WRITES the record rather than reading it. The six above are
+ * the ones that read a field the kit's `SseClient` does not have; the writers
+ * (`/wait`'s presence registration and the tail's) are named separately because
+ * a writer is not evidence of anything. Counted in the pre-port daemon,
+ * `plugins/spellbook/skills/grapevine/scripts/daemon.ts` on `develop`:
+ * l.421, 739-747, 826, 886-887, 1049-1054, 1182-1188 — writers at 1111-1112 and
+ * 1307. (Corrected 2026-09-09 in the repair chapter; D68's requirement is that
+ * the refusal be written where the next reader meets it, which makes a
+ * mis-measured list worse than none.)
+ *
+ * ⚠ And grapevine's records carry no `close` at all — the per-stream teardown is
+ * a closure stashed on the ReadableStream controller, reachable only from
+ * `cancel()` — which is also why `housekeeping`'s `drainAndStop` is adopted
+ * there with its `clients` argument deliberately empty.
+ *
+ * **The widening NOT done, with its cost:** admitting an alias-bearing record
+ * would change the type five other daemons compile against and re-emit SIX
+ * artifacts across FIVE spells, each owed a drive. It would also re-create the
+ * thing this registry exists to stop, and this file's own boundary paragraph
+ * says how: a signature wide enough to absorb every caller's shape stops being a
+ * registry and becomes a union. The census converged copies into one module by
+ * finding what they SHARED; a module widened to fit the one spell that shares
+ * nothing is those copies again with a union type over the top. The spell keeps
+ * its own, and a widening remains a separate, argued decision.
  */
 
 import type { EventLog, Frame } from "./eventLog.ts";

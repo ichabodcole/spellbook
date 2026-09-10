@@ -1,0 +1,1566 @@
+#!/usr/bin/env bun
+// grapevine daemon — multi-tenant broker hosting N named channels on
+// 127.0.0.1. One daemon per machine; CLI verbs (open/list/tail/send/close)
+// talk to it over HTTP. Channels persist as append-only JSONL under
+// ~/.grapevine/channels/<name>.jsonl. Live fan-out uses SSE.
+//
+// Started on demand by any CLI verb that finds no running daemon. Writes
+// its port + pid to ~/.grapevine/daemon.{port,pid} for discovery. Stays up
+// until `grapevine stop` (DELETE /) or the user kills it.
+//
+// HTTP surface (all 127.0.0.1):
+//   GET    /             — daemon info ({pid, started_at, channels: N, version})
+//   DELETE /             — shut down the daemon
+//   GET    /watch        — the watch surface (live view; channel from URL hash). Built:
+//                          release serves dist/index.html + its hashed chunks at the root;
+//                          dev serves Bun's bundle of src/grapevine/surface/ (Contract 1)
+//   GET    /identity     — { alias } the persisted default alias (config.json) [V1.7]
+//   GET    /channels     — list channels (each: { …, archived })
+//   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], humans:[alias], connections, named, anonymous }]
+//   POST   /channels     — { name, topic?, from?, explicit? } create channel (idempotent; 409 if
+//                          archived unless explicit, which auto-unarchives and appends the
+//                          kind:"status" unarchived frame)
+//   DELETE /channels/:name — close channel (deletes log + archived marker)
+//   POST   /channels/:name/archive   — { from? } mark read-only (sidecar marker) [V1.7]; appends a
+//                                    kind:"status" frame (event:"archived") ONLY when the state
+//                                    flipped; response carries { changed, id } [2026-09-06]
+//   POST   /channels/:name/unarchive — { from? } clear read-only [V1.7]; same, event:"unarchived"
+//   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
+//   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
+//   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
+//   GET    /channels/:name/topic    — { channel, topic } [404 if no such channel]
+//   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message;
+//                                    creates the channel — it is a write; 409 if archived)
+//   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
+//   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
+//                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
+//                                    subscribed event includes the current topic, `created` (true when THIS
+//                                    subscribe brought the channel into being — i.e. a mistyped name) and
+//                                    `archived` (the channel is read-only; a send will be rejected).
+//
+// READS DO NOT CREATE (2026-09-06). Only an act declaring intent that the
+// channel exist may bring one into being: POST /channels, every append, PUT
+// /topic, and GET /tail (a subscription is forward-looking). GET /messages,
+// GET /wait and GET /topic answer 404 with a `hint` naming the `open` that
+// would fix it. Before this, they all ran through loadChannel(), which
+// registers any name it is handed, so a read resurrected a closed channel into
+// `list` — empty, file-less, and undetectable from the reader's side.
+//
+// Message shape: { id, channel, from, text, ts, kind: "message", in_reply_to?: <id> }
+// IDs are channel-scoped, monotonically ascending integers. `ts` is unix
+// millis at append time.
+
+import {
+  appendFileSync,
+  closeSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  readSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { drainAndStop } from "../../kit/wire/housekeeping.ts";
+import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd to
+// src/grapevine/ in dev for bunfig.toml's sake (Contract 5), so cwd is not a
+// stable base for dist/.
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). DE-DUPLICATED into
+// `src/kit/wire/serveDist.ts` at Phase 6 chapter 2: the census measured this
+// function byte-identical in all eight daemons, and grapevine's copy was one of
+// the eight. Kept exported at this name because the tests read it.
+export function resolveMode(): "dev" | "release" {
+  return resolveModeIn(DIST_DIR);
+}
+const MODE = resolveMode();
+
+/**
+ * The SSE keepalive, CLAMPED TO HALF the server's idle timeout by the kit's
+ * derivation rather than by a comment.
+ *
+ * ⛔ THE THREE NUMBERS ARE ONE INVARIANT: `idleTimeout > heartbeat` or Bun
+ * closes a held SSE connection before the keepalive that was supposed to
+ * preserve it ever fires; `tail watchdog > heartbeat` or a healthy-but-quiet
+ * tail reconnects forever. Grapevine held the first of those in PROSE — `255`
+ * and `3000` were two literals ten lines apart in this file — and did not hold
+ * the second at all, because its tail had no watchdog. `heartbeatMs` makes the
+ * first true for any configured pair; `./heartbeat.ts`'s `TAIL_IDLE_MS` makes
+ * the second true for the CLI, from the same value.
+ *
+ * ⛔ **AND THE ENV IS READ IN `./heartbeat.ts`, NOT HERE — THIS FILE ONCE DID IT
+ * AND THAT WAS THE DEFECT (D75).** Chapter 2 resolved `GRAPEVINE_HEARTBEAT_MS`
+ * at this line while the seam file derived the tail's watchdog from the literal
+ * 3,000, so the daemon's beat was tunable and the CLI's watchdog was not: driven
+ * at 20,000, a healthy daemon re-subscribed a real tail four times in 30 s and
+ * reported `count: 2` for one connection. **A resolution that only one half of
+ * the pair can see is not a seam.** `IDLE_TIMEOUT_SEC` and
+ * `SSE_HEARTBEAT_MS` are IMPORTED at their own names — already env-resolved,
+ * already clamped — from the file the CLI imports too, and they KEEP those names
+ * at their use sites (`Bun.serve`'s `idleTimeout`, and the keepalive interval)
+ * so a reader who follows either one lands in the seam and not on a local alias.
+ */
+
+/**
+ * Serve one file out of `dist/` — RECEIVED, not de-duplicated.
+ *
+ * ⛔ **THE ROUTER IS OURS; WHETHER THE FILE MAY BE READ IS THE KIT'S** — and the
+ * kit's answer is now strictly stronger than the one this spell had. Grapevine's
+ * local copy was the pre-whitelist kit function verbatim (empty / `..` / nested
+ * + `existsSync`), with no by-name refusal anywhere, because grapevine
+ * substitutes nothing: `/watch` serves the committed `dist/index.html` unaltered
+ * and `/` is a JSON status route. It had no defence to KEEP.
+ *
+ * ⛔ **AND THIS PHASE IS WHAT MADE THAT LOAD-BEARING** (D61, D65). Chapter 1 put
+ * `dist/cli.js` and `dist/daemon.js` into the directory this daemon serves.
+ * Measured on the chapter-1 tree, through the real launcher: `GET /daemon.js`
+ * answered **200, 146,330 bytes**, and `GET /cli.js` **200, 251,310 bytes** —
+ * this spell's whole implementation, embedded sourcemap and complete original
+ * TypeScript included, to any local caller. `serveFromDist` serves only what the
+ * built `index.html` TRANSITIVELY LINKS, so both now 404 by construction rather
+ * than by anyone remembering to name them — a whitelist refuses the neighbour it
+ * was never told about, which is the whole reason D61 ruled against a second
+ * blacklist entry. Celled at both ends in `release-serve.test.ts`.
+ *
+ * The router half stays here because it is genuinely grapevine's: the entry is
+ * served at **`/watch`**, not at `/`, and the hashed chunks it links relatively
+ * arrive as bare filenames at the root (Contract 2's flat layout).
+ */
+function serveDist(rel: string): Response | null {
+  return serveFromDist(DIST_DIR, rel);
+}
+
+// Read our plugin version from the same plugin.json the CLI reads. Daemon
+// advertises this on GET / so CLI clients can detect cache-pinning mismatches
+// (e.g. a V1.5 daemon serving a V1.6 CLI, where daemon-side features like
+// `recipients` are silently absent). Best-effort — version is null if read fails.
+function readPluginVersion(): string | null {
+  try {
+    const pluginJsonPath = join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json");
+    const raw = readFileSync(pluginJsonPath, "utf-8");
+    return JSON.parse(raw).version ?? null;
+  } catch {
+    return null;
+  }
+}
+const PLUGIN_VERSION = readPluginVersion();
+
+const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
+const CHANNELS_DIR = join(DATA_DIR, "channels");
+const ARCHIVE_DIR = join(DATA_DIR, "archive");
+const PORT_FILE = join(DATA_DIR, "daemon.port");
+const PID_FILE = join(DATA_DIR, "daemon.pid");
+const HOLD_FILE = join(DATA_DIR, "daemon.hold");
+// Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
+// (`grapevine alias <name>`) and the watch surface reads via GET /identity so a
+// human has a consistent name across every grapevine without re-typing it.
+const CONFIG_FILE = join(DATA_DIR, "config.json");
+
+function readConfigAlias(): string | null {
+  try {
+    const cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    return typeof cfg.alias === "string" && cfg.alias.trim() ? cfg.alias.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+type Message = {
+  id: number;
+  channel: string;
+  from: string;
+  text: string;
+  ts: number;
+  kind: "message" | "topic" | "announcement" | "status";
+  // V1.7 threading — id of the message this one replies to (same channel).
+  // Stored only when set; readers that don't understand it ignore it.
+  in_reply_to?: number;
+  // V1.9 disposition — status frames reference the message being acted on.
+  target?: number;
+  disposition?: string;
+  // 2026-09-06 — the OTHER kind of kind:"status" frame: a channel-level
+  // lifecycle fact (archive / unarchive), which references no message and
+  // carries no disposition. `event` is the discriminator, and consumers need
+  // it: `pull` and `tail` drop DISPOSITION frames as metadata, and would
+  // otherwise swallow these too.
+  event?: "archived" | "unarchived";
+};
+
+type Subscriber = {
+  alias: string | null;
+  // V1.7 — a human-driven connection (the watch surface, or `tail --human`)
+  // marks itself so agents can tell the human apart from another agent rather
+  // than seeing an anonymous count bump.
+  human?: boolean;
+  // V1.7 — a lurk connection (the watch in lurk mode, or `tail --lurk`) still
+  // receives live messages but is **excluded from every presence count** — it
+  // bumps nothing, so browsing a channel is genuinely invisible to agents.
+  lurk?: boolean;
+  send: (m: Message) => void;
+};
+
+type PendingWait = {
+  since: number;
+  resolve: (msgs: Message[]) => void;
+};
+
+type Channel = {
+  name: string;
+  created_at: number;
+  next_id: number;
+  subscribers: Map<symbol, Subscriber>;
+  waits: Set<PendingWait>;
+  last_activity: number;
+  topic: string | null; // latest kind:"topic" message text; null if never set.
+  // V1.7 — archived channels are read-only: history stays readable, but sends
+  // are rejected and the name is locked from re-open. Persisted as a sidecar
+  // marker file (see archivedPath) so it survives a daemon restart.
+  archived: boolean;
+};
+
+const channels = new Map<string, Channel>();
+
+function ensureDirs() {
+  mkdirSync(CHANNELS_DIR, { recursive: true });
+}
+
+function channelPath(name: string): string {
+  // Defensive: allow [a-zA-Z0-9_.-] in the middle, alphanumeric/underscore/
+  // hyphen at the ends. Reject leading/trailing dots (hidden files,
+  // trailing-dot oddities) and consecutive dots (path traversal — `..`,
+  // `foo..bar`). Internal dots are allowed so version-numbered channel
+  // names like `grapevine-v1.7` work naturally.
+  const VALID = /^[a-zA-Z0-9_-]([a-zA-Z0-9_.-]{0,62}[a-zA-Z0-9_-])?$/;
+  if (!VALID.test(name) || name.includes("..")) {
+    throw new Error(`invalid channel name: ${JSON.stringify(name)}`);
+  }
+  return join(CHANNELS_DIR, `${name}.jsonl`);
+}
+
+// Sidecar marker for the archived (read-only) state. Its mere existence means
+// archived — content is irrelevant. Validated via channelPath first.
+function archivedPath(name: string): string {
+  channelPath(name); // reuse name validation (throws on invalid)
+  return join(CHANNELS_DIR, `${name}.archived`);
+}
+
+// Snapshot a channel's log to the archive dir, then clear the live log. Returns
+// the snapshot path, or null if there was nothing to snapshot. No subscriber
+// guard here — callers (reset / open --fresh) apply their own.
+function snapshotAndClear(name: string): string | null {
+  const p = channelPath(name); // validates the name
+  let snapshot: string | null = null;
+  if (existsSync(p)) {
+    mkdirSync(ARCHIVE_DIR, { recursive: true });
+    snapshot = join(ARCHIVE_DIR, `${name}-${Date.now()}.jsonl`);
+    copyFileSync(p, snapshot);
+    writeFileSync(p, "");
+  }
+  const ch = channels.get(name);
+  if (ch) {
+    ch.next_id = 1;
+    ch.topic = null;
+    ch.last_activity = Date.now();
+  }
+  return snapshot;
+}
+
+// V2.2 — a creating act writes the channel down. Before this, `open` with no
+// `--topic` appended nothing, so the channel lived only in the daemon's map:
+// `restart` (a DOCUMENTED healing action) dropped it, and once reads stopped
+// resurrecting missing channels, a wrapper that had correctly opened first
+// still broke. "Only intent creates" cannot rest on a record that does not
+// outlive the process holding it.
+//
+// An EMPTY `.jsonl`, not a header record: this file is a message log and every
+// consumer parses its lines as messages — including `grep`, which reads it off
+// disk without the daemon, and the count, which counts non-empty lines. A
+// metadata first line would have to be taught to each of them and would make an
+// empty channel report one message. The file's existence is the record of
+// existence; its birth time is the creation time; and a null topic is exactly
+// what "no topic frame yet" already means. Truncation to zero bytes is also
+// already a supported state — that is what clearing a channel leaves behind.
+function persistChannel(name: string): void {
+  const p = channelPath(name); // validates the name
+  if (!existsSync(p)) writeFileSync(p, "");
+  // ⚠ Align the in-memory record to the file it now has. `loadChannel` stamps
+  // `Date.now()` for a channel with nothing to read a `ts` from, and this write
+  // happens a moment later — so memory and disk hold two readings of the same
+  // instant, and `created_at` CHANGED across a restart even though the channel
+  // had not. The file is the record; make it the age too. Guarded on an empty
+  // log: once a message exists, its `ts` is the better answer and must stand.
+  const ch = channels.get(name);
+  if (ch && ch.next_id === 1) {
+    try {
+      const st = statSync(p);
+      ch.created_at = st.birthtimeMs || st.mtimeMs;
+    } catch {}
+  }
+}
+
+function loadChannel(name: string): Channel {
+  const existing = channels.get(name);
+  if (existing) return existing;
+  const path = channelPath(name);
+  let next_id = 1;
+  let created_at = Date.now();
+  let topic: string | null = null;
+  if (existsSync(path)) {
+    const raw = readFileSync(path, "utf-8");
+    const lines = raw.split("\n").filter((l) => l.trim());
+    let sawParseableLine = false;
+    if (lines.length) {
+      // b11 — this block used to read the FIRST line for created_at and the
+      // LAST line for next_id, each in a `try` with an EMPTY CATCH. A final
+      // line truncated mid-JSON — a crash or kill during appendFileSync — threw,
+      // and `next_id` was left at its initialised 1. Measured consequences, all
+      // at ok:true: the next message was assigned an ALREADY-USED id, so every
+      // --since cursor and tail resume for that channel was wrong; and because
+      // the truncated line had no terminating newline, the append FUSED onto it
+      // and the message became permanently unreadable.
+      //
+      // An empty catch converts "I could not compute this" into "here is the
+      // initial value", and nothing downstream can tell which happened. The
+      // repair is to derive next_id from EVERY parseable line rather than from
+      // one line that might be the broken one.
+      //
+      // HIGH-WATER MARK, not last-id: ids are expected to ascend, but a corrupt
+      // line anywhere must not lower the mark. `lines.length` is folded in so a
+      // file whose lines NONE parse still advances past the number of records
+      // present instead of restarting at 1 — over-report, never under-report,
+      // because under-reporting here is what reuses an id.
+      let maxId = 0;
+      for (let i = 0; i < lines.length; i++) {
+        let m: Message;
+        try {
+          m = JSON.parse(lines[i]) as Message;
+        } catch {
+          continue; // a corrupt line is skipped for RECOVERY, never for COUNTING
+        }
+        if (!sawParseableLine && typeof m.ts === "number") {
+          created_at = m.ts;
+          sawParseableLine = true;
+        }
+        if (typeof m.id === "number" && m.id > maxId) maxId = m.id;
+        // Latest topic wins; this walks forward, so the last one assigned stands.
+        if (m.kind === "topic") topic = m.text;
+      }
+      next_id = Math.max(maxId, lines.length) + 1;
+    }
+    if (!sawParseableLine) {
+      // An EMPTY log is a real state, not a missing one: `open` creates the
+      // file (V2.2), and clearing a channel truncates it to zero bytes. With no
+      // line to read a `ts` from, `Date.now()` would make the channel's age
+      // restart on every daemon boot — the same drift the file was written to
+      // stop. The file's own birth is the honest answer; mtime backs it up on
+      // filesystems that do not record one.
+      try {
+        const st = statSync(path);
+        created_at = st.birthtimeMs || st.mtimeMs;
+      } catch {}
+    }
+  }
+  const ch: Channel = {
+    name,
+    created_at,
+    next_id,
+    subscribers: new Map(),
+    waits: new Set(),
+    last_activity: Date.now(),
+    topic,
+    archived: existsSync(archivedPath(name)),
+  };
+  channels.set(name, ch);
+  return ch;
+}
+
+// b5 — an UNLOADED channel reported `message_count: 0`, which is
+// indistinguishable from a channel that genuinely holds nothing. Measured: 57 of
+// 57 channels read 0 after a roll. That zero feeds a janitor choosing between
+// `archive` (preserves) and `close` (DELETES the log), so the wrong reading is
+// the destructive one.
+//
+// PORTED from bounty's `snapshotTaskCount()` rather than re-derived a fifth
+// time: `number | null`, where null means "I could not count" and is never
+// spelled 0.
+//
+// The cost objection is MEASURED, not assumed: counting every one of the 61 real
+// channels (3,905 messages, 7.7 MB) takes 16-45 ms, n=3 — and `loadChannel`
+// already reads each file IN FULL to recover created_at/next_id/topic, so this
+// is a read the daemon was doing anyway on the path that matters.
+//
+// ⚠ NON-EMPTY lines, deliberately NOT parseable-only. This count feeds a
+// delete-or-keep decision, so it must OVER-report content and never UNDER-report
+// it — a corrupt line is still something somebody wrote. Under-reporting here is
+// what deletes a channel.
+function channelMessageCount(path: string): number | null {
+  try {
+    const raw = readFileSync(path, "utf-8");
+    let n = 0;
+    for (const line of raw.split("\n")) if (line.trim()) n++;
+    return n;
+  } catch {
+    return null;
+  }
+}
+
+function listChannels() {
+  // Include channels on disk that we haven't loaded yet.
+  const onDisk = readdirSync(CHANNELS_DIR)
+    .filter((f) => f.endsWith(".jsonl"))
+    .map((f) => f.slice(0, -".jsonl".length));
+  const merged = new Set([...channels.keys(), ...onDisk]);
+  return Array.from(merged)
+    .sort()
+    .map((name) => {
+      const ch = channels.get(name);
+      let last_activity = 0;
+      // null, not 0 — see channelMessageCount. A count is only ever a number
+      // when this daemon actually established one.
+      let message_count: number | null = null;
+      if (ch) {
+        last_activity = ch.last_activity;
+        // This is the high-water id, which equals the count for a channel whose
+        // ids are contiguous from 1 — the normal case. It no longer collapses to
+        // 0 on a truncated final line: b11 made next_id a high-water mark over
+        // every parseable line, so a corrupt tail can no longer restart it at 1.
+        message_count = ch.next_id - 1;
+      } else {
+        // Stat disk file for last_activity; the count is a real read.
+        try {
+          const s = statSync(channelPath(name));
+          last_activity = s.mtimeMs;
+        } catch {}
+        message_count = channelMessageCount(channelPath(name));
+      }
+      return {
+        name,
+        // Exclude lurkers — the left-rail count must match `who`'s presence,
+        // or a lurking watch tab makes the badge tick up while who shows no one.
+        subscribers: ch ? visibleSubs(ch).length : 0,
+        message_count,
+        last_activity,
+        loaded: !!ch,
+        archived: existsSync(archivedPath(name)),
+      };
+    });
+}
+
+function appendMessage(
+  name: string,
+  from: string,
+  text: string,
+  kind: Message["kind"] = "message",
+  inReplyTo?: number,
+  extra?: Partial<Pick<Message, "target" | "disposition" | "event">>,
+): Message {
+  const ch = loadChannel(name);
+  const msg: Message = {
+    id: ch.next_id++,
+    channel: name,
+    from,
+    text,
+    ts: Date.now(),
+    kind,
+    ...(typeof inReplyTo === "number" ? { in_reply_to: inReplyTo } : {}),
+    ...(extra ?? {}),
+  };
+  // b11 — the second half of the destroyed-write defect. A JSONL record is only
+  // a record because a newline terminates it, and a partial write (crash, kill,
+  // full disk) can leave a final line without one. Appending straight onto that
+  // fuses the new message into the broken fragment, and BOTH become unreadable
+  // — the write is destroyed and this function still returns a Message and
+  // answers ok:true.
+  //
+  // So terminate the previous record before writing a new one. This repairs the
+  // file rather than refusing: the truncated fragment stays on its own line
+  // where a human or a recovery pass can see it, and it stops eating writes
+  // immediately. Only reachable when the file does NOT already end in a
+  // newline, so the healthy path is byte-identical to before.
+  const p = channelPath(name);
+  let separator = "";
+  try {
+    const size = statSync(p).size;
+    if (size > 0) {
+      const fd = openSync(p, "r");
+      try {
+        const tailByte = Buffer.alloc(1);
+        readSync(fd, tailByte, 0, 1, size - 1);
+        if (tailByte[0] !== 0x0a) separator = "\n";
+      } finally {
+        closeSync(fd);
+      }
+    }
+  } catch {
+    // The file is unreadable or absent; appendFileSync will create it. Leaving
+    // separator empty is correct here and is NOT an empty-catch of the kind b11
+    // exists to kill — there is no value being silently defaulted, and the
+    // healthy path is a fresh file.
+  }
+  appendFileSync(p, `${separator}${JSON.stringify(msg)}\n`);
+  if (kind === "topic") ch.topic = text;
+  ch.last_activity = msg.ts;
+  // Fan out to live subscribers. Errors in one subscriber must not break
+  // delivery to others.
+  for (const sub of ch.subscribers.values()) {
+    try {
+      sub.send(msg);
+    } catch (e) {
+      console.error("subscriber error:", e);
+    }
+  }
+  // Drain long-poll waiters: anyone whose `since` < msg.id is now resolvable.
+  // They receive every message they haven't seen yet, not just the new one,
+  // in case multiple messages landed during the same tick.
+  for (const w of [...ch.waits]) {
+    if (msg.id > w.since) {
+      ch.waits.delete(w);
+      try {
+        w.resolve(readBacklog(name, w.since));
+      } catch (e) {
+        console.error("wait resolve error:", e);
+      }
+    }
+  }
+  return msg;
+}
+
+// Connections that count as presence — everything except lurkers (V1.7). A
+// lurk connection receives messages but is invisible: excluded from every
+// count and roster below.
+function visibleSubs(ch: Channel): Subscriber[] {
+  return Array.from(ch.subscribers.values()).filter((s) => !s.lurk);
+}
+
+// The roster is a set of distinct aliases — a seat with multiple live
+// connections (e.g. two tails under one alias) appears once. The connection
+// *counts* (`connections`/`named`) stay per-connection; only the name list
+// dedupes.
+function subscriberAliases(name: string): string[] {
+  const ch = channels.get(name);
+  if (!ch) return [];
+  const seen = new Set<string>();
+  for (const sub of visibleSubs(ch)) {
+    if (sub.alias) seen.add(sub.alias);
+  }
+  return Array.from(seen).sort();
+}
+
+// Named subscribers flagged as human (V1.7) — a subset of subscriberAliases,
+// so consumers can render `cole (human)` and agents can tell who is the human.
+// Deduped by alias for the same reason.
+function subscriberHumans(name: string): string[] {
+  const ch = channels.get(name);
+  if (!ch) return [];
+  const seen = new Set<string>();
+  for (const sub of visibleSubs(ch)) {
+    if (sub.alias && sub.human) seen.add(sub.alias);
+  }
+  return Array.from(seen).sort();
+}
+
+function readBacklog(name: string, since: number): Message[] {
+  const path = channelPath(name);
+  if (!existsSync(path)) return [];
+  const out: Message[] = [];
+  const raw = readFileSync(path, "utf-8");
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const m = JSON.parse(line) as Message;
+      if (m.id > since) out.push(m);
+    } catch {}
+  }
+  return out;
+}
+
+// Does this channel exist? A NON-CREATING lookup — the counterpart to
+// loadChannel, which builds a record for any name you hand it and registers it
+// in `channels`, so `listChannels()` (which unions the map with the .jsonl
+// files on disk) reports it as live. That is the resurrection: a read verb on a
+// channel the human just closed put it back in `list` with no file, no messages
+// and no way for the reader to tell.
+//
+// "Exists" is loaded-in-memory OR a log on disk, matching exactly what
+// `listChannels()` will report. An invalid name is not an existence question —
+// it can never be on disk, so it answers false and the caller 404s rather than
+// throwing a 400 out of a read.
+function channelExists(name: string): boolean {
+  if (channels.has(name)) return true;
+  try {
+    return existsSync(channelPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// The refusal a read route gives for a channel that is not there. Same envelope
+// as every other daemon error ({ error, channel }) plus `hint`: a response
+// should name the act it makes likely, and the only act that recovers from this
+// one is an explicit open. Without the hint the agent is left guessing whether
+// the name is wrong, the daemon is wrong, or the channel is merely empty.
+//
+// ⚠ `hint` IS A VERB INVOCATION — the arguments to the CLI — NOT a shell
+// command. It read `grapevine open <name>`, which looks pasteable and is not:
+// nothing installs a `grapevine` binary on PATH, and SKILL.md's own canonical
+// form is `bun …/cli.ts open <name>`. The daemon cannot honestly render the
+// runnable line, because it does not know how its client was invoked — a CLI
+// from the plugin cache can be talking to a daemon started from a checkout. So
+// the daemon names the ACT and the CLI, which is the thing being invoked,
+// composes the runnable command from its own argv. Consumers that build a
+// command from this field must prefix their own invocation.
+function missingChannel(name: string): Response {
+  return json(
+    { error: `no channel "${name}"`, channel: name, hint: `open ${name}` },
+    { status: 404 },
+  );
+}
+
+// The refusal for a channel that IS there and is retired. Same reasoning as
+// missingChannel, and the same `hint` contract (a VERB INVOCATION, not a shell
+// command — the CLI composes the runnable line from its own argv).
+//
+// ⚠ These 409s used to carry no hint while the 404s did, which made the SAME
+// verb answer two ways: `topic <missing>` named its recovery and
+// `topic <archived>` did not. An agent that has learned to read `hint` reads
+// its absence as "nothing recovers this". Unarchiving is exactly as guessable
+// as opening was, which is to say not at all until something says it.
+//
+// Deliberately NOT extended to the `live` 409 on a destructive reset: the act
+// that recovers from it is `--force`, and naming it would turn a guard that
+// exists to protect a live session into a suggestion to override it. That
+// refusal wants a human, not a hint.
+function archivedChannel(name: string): Response {
+  return json({ error: "archived", channel: name, hint: `unarchive ${name}` }, { status: 409 });
+}
+
+function json(data: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
+  });
+}
+
+// Request bodies are untrusted external JSON. We return a loose record (or
+// null on parse failure) and narrow each field at the use site.
+type JsonBody = Record<string, unknown> | null;
+
+// Is there something here to archive or unarchive? Same non-creating question
+// as channelExists, widened by the archived marker: a channel that was opened,
+// archived and never written to has a marker and no log, and unarchiving it
+// must still work. Archiving a name that does not exist would otherwise CREATE
+// its log via appendLifecycle — reintroducing, on a lifecycle route, exactly
+// the resurrection the read guard removed.
+function lifecycleTarget(name: string): boolean {
+  if (channelExists(name)) return true;
+  try {
+    return existsSync(archivedPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// Who retired it. Both clients send `{from}` when they have a name: the CLI
+// passes the globally-accepted `--as`/`--from`, and the watch surface signs
+// with the same alias its topic edit uses (surface inventory L5a). "system" is
+// therefore what you get when there genuinely is no name — a lurker with no
+// persisted default — rather than a placeholder for a name we failed to read.
+//
+// ⚠ This comment previously said both clients posted with no body. It was
+// stale in the commit that introduced it (the CLI half changed in the same
+// diff), and the surface half then stayed unsigned for a commit because the
+// comment said that was intended. A comment that describes the caller is a
+// claim about a file you are not editing; re-read the caller.
+async function lifecycleFrom(req: Request): Promise<string> {
+  const body = await readJsonBody(req);
+  return body && typeof body.from === "string" && body.from.trim() ? body.from.trim() : "system";
+}
+
+// The archive/unarchive frame. kind:"status" with an `event` and NO
+// `disposition` — see the Message type: that absence is what tells `pull` and
+// `tail` this is a channel-level fact rather than disposition metadata.
+//
+// Goes through appendMessage rather than writing the line itself, so it
+// inherits the b11 newline repair, the id allocation, the SSE fan-out and the
+// long-poll drain. A second appender is a second place to get JSONL wrong.
+function appendLifecycle(name: string, from: string, event: "archived" | "unarchived"): Message {
+  const text =
+    event === "archived" ? "channel archived — read-only" : "channel unarchived — writable again";
+  return appendMessage(name, from, text, "status", undefined, { event });
+}
+
+async function readJsonBody(req: Request): Promise<JsonBody> {
+  try {
+    return (await req.json()) as JsonBody;
+  } catch {
+    return null;
+  }
+}
+
+async function handle(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const path = url.pathname;
+  const method = req.method;
+
+  if (path === "/" && method === "GET") {
+    return json({
+      ok: true,
+      pid: process.pid,
+      started_at: STARTED_AT,
+      channels: channels.size,
+      data_dir: DATA_DIR,
+      version: PLUGIN_VERSION,
+      // Which surface this daemon serves (Contract 1) — additive, so a CLI
+      // that does not know the field ignores it.
+      mode: MODE,
+    });
+  }
+
+  if (path === "/" && method === "DELETE") {
+    // Reply, then schedule shutdown so the response actually flushes.
+    setTimeout(() => shutdown(0), 10);
+    return json({ ok: true, shutting_down: true });
+  }
+
+  if (path === "/watch" && method === "GET") {
+    // Release: the built surface's entry. Dev never reaches here — Bun's
+    // `routes` answers /watch with the HTMLBundle before fetch() runs — so a
+    // miss is a broken install, and it fails LOUD with the path it looked for.
+    return (
+      serveDist("index.html") ??
+      json(
+        {
+          error: "watch surface missing",
+          details: `${join(DIST_DIR, "index.html")} not found (mode ${MODE})`,
+        },
+        { status: 500 },
+      )
+    );
+  }
+
+  if (path === "/channels" && method === "GET") {
+    return json({ channels: listChannels() });
+  }
+
+  // Persisted default identity (V1.7) — the watch surface reads this on load to
+  // pre-fill the human's alias. Set via `grapevine alias <name>` (writes
+  // config.json); read fresh each request so a CLI change shows up live.
+  if (path === "/identity" && method === "GET") {
+    return json({ alias: readConfigAlias() });
+  }
+
+  // Cross-channel presence aggregation — one shot of names × channel for the
+  // `who --all` view and `doctor`'s cross-check. Only channels with at least
+  // one live connection appear (presence only exists for loaded channels).
+  if (path === "/presence" && method === "GET") {
+    const out = [];
+    for (const ch of channels.values()) {
+      const subs = visibleSubs(ch); // lurkers excluded — invisible presence
+      if (subs.length === 0) continue;
+      out.push({
+        name: ch.name,
+        subscribers: subscriberAliases(ch.name),
+        humans: subscriberHumans(ch.name),
+        connections: subs.length,
+        named: subs.filter((s) => s.alias).length,
+        anonymous: subs.filter((s) => !s.alias).length,
+      });
+    }
+    out.sort((a, b) => a.name.localeCompare(b.name));
+    return json({ channels: out });
+  }
+
+  if (path === "/channels" && method === "POST") {
+    const body = await readJsonBody(req);
+    if (!body || typeof body.name !== "string") {
+      return json({ error: "name required" }, { status: 400 });
+    }
+    try {
+      // Auto-unarchive: the obvious verb does the obvious thing, so a
+      // convene-at-start wrapper never breaks on a channel a prior session retired.
+      // Auto-unarchive only for explicit `open` calls (body.explicit === true).
+      // Other verbs (pull, tail, who, read) also call POST /channels to ensure
+      // the channel is loaded, but should not silently unarchive a retired channel.
+      let unarchived = false;
+      const ap = archivedPath(body.name);
+      if (body.explicit === true && existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+        if (existsSync(ap)) {
+          return json(
+            { error: "unarchive failed — marker still present", channel: body.name },
+            { status: 500 },
+          );
+        }
+        unarchived = true;
+      } else if (body.explicit !== true && existsSync(ap)) {
+        return archivedChannel(body.name);
+      }
+      // open --fresh: clear the channel for a new session, but ONLY when no seats
+      // are connected. A re-runnable convene must never wipe a live session.
+      let cleared = false;
+      let snapshot: string | null = null;
+      if (body.fresh === true) {
+        const existing = channels.get(body.name);
+        const liveSubs = existing ? existing.subscribers.size : 0;
+        if (liveSubs === 0) {
+          snapshot = snapshotAndClear(body.name);
+          cleared = true;
+        }
+      }
+      const ch = loadChannel(body.name);
+      // The channel is written down here, not on its first message: this route
+      // IS the explicit creating act, and an open that leaves no trace does not
+      // survive a restart (see persistChannel).
+      persistChannel(body.name);
+      if (unarchived) {
+        ch.archived = false;
+        // ⛔ `open`'s auto-unarchive is an UNARCHIVE, and it must announce
+        // itself for the same reason the explicit route does — otherwise a
+        // convene-at-start wrapper silently makes a retired channel writable
+        // again and the agents tailing it never see the state change. This is
+        // the third unarchive path, and it was the one with no signal.
+        appendLifecycle(
+          body.name,
+          typeof body.from === "string" ? body.from : "system",
+          "unarchived",
+        );
+      }
+      // Optional topic on open — only set if provided AND channel has no
+      // topic yet (so re-opening doesn't clobber). To update later, use
+      // the explicit PUT /topic endpoint.
+      if (typeof body.topic === "string" && body.topic.trim() !== "" && ch.topic === null) {
+        appendMessage(
+          body.name,
+          typeof body.from === "string" ? body.from : "system",
+          body.topic,
+          "topic",
+        );
+      }
+      return json({
+        name: ch.name,
+        created_at: ch.created_at,
+        message_count: ch.next_id - 1,
+        subscribers: visibleSubs(ch).length,
+        topic: ch.topic,
+        unarchived,
+        cleared,
+        snapshot,
+      });
+    } catch (e) {
+      return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+    }
+  }
+
+  if (path === "/announce" && method === "POST") {
+    const body = await readJsonBody(req);
+    if (!body || typeof body.from !== "string" || typeof body.text !== "string") {
+      return json({ error: "from and text required" }, { status: 400 });
+    }
+    const requested: string[] | undefined = Array.isArray(body.channels)
+      ? body.channels.filter((c: unknown): c is string => typeof c === "string")
+      : undefined;
+
+    const delivered: { name: string; recipients: number }[] = [];
+    const skipped: { name: string; reason: string }[] = [];
+
+    // Resolve the target set.
+    let targets: string[];
+    if (requested) {
+      // Explicit targeting: named channels regardless of activity. Archived →
+      // skip (read-only). Unknown (not loaded and no on-disk log) → skip.
+      targets = [];
+      for (const name of requested) {
+        let onDisk = false;
+        try {
+          onDisk = existsSync(channelPath(name));
+        } catch {
+          // invalid channel name → treat as unknown
+        }
+        if (existsSync(archivedPath(name))) {
+          skipped.push({ name, reason: "archived" });
+        } else if (channels.has(name) || onDisk) {
+          targets.push(name);
+        } else {
+          skipped.push({ name, reason: "unknown" });
+        }
+      }
+    } else {
+      // Default: every active (in-memory) channel, minus archived. Archived
+      // in-memory channels are silently excluded — the caller didn't name them.
+      targets = [...channels.keys()].filter((name) => !channels.get(name)?.archived);
+    }
+
+    for (const name of targets) {
+      // Re-check archived immediately before append: a channel could have been
+      // archived between target resolution and here. Mirrors the sibling
+      // POST /channels/:name/messages handler, which re-checks before appending.
+      if (existsSync(archivedPath(name))) {
+        skipped.push({ name, reason: "archived" });
+        continue;
+      }
+      appendMessage(name, body.from, body.text, "announcement");
+      const ch = channels.get(name);
+      const vis = ch ? visibleSubs(ch) : [];
+      const recipients = vis.reduce((n, sub) => (sub.alias !== body.from ? n + 1 : n), 0);
+      delivered.push({ name, recipients });
+    }
+
+    const total_recipients = delivered.reduce((n, d) => n + d.recipients, 0);
+    return json({ ok: true, channels: delivered, skipped, total_recipients });
+  }
+
+  // Route-level channel name pattern. Mirrors channelPath()'s rules:
+  // alnum/underscore/hyphen at the ends, optional dot in the middle.
+  // channelPath() does the canonical validation (incl. no-`..`) on
+  // anything that gets through here.
+  const chMatch = path.match(
+    /^\/channels\/([a-zA-Z0-9_-](?:[a-zA-Z0-9_.-]{0,62}[a-zA-Z0-9_-])?)(\/.*)?$/,
+  );
+  if (chMatch) {
+    const name = chMatch[1];
+    const sub = chMatch[2] ?? "";
+
+    if (sub === "" && method === "DELETE") {
+      const ch = channels.get(name);
+      if (ch) {
+        for (const s of ch.subscribers.values()) {
+          try {
+            s.send({
+              id: -1,
+              channel: name,
+              from: "system",
+              text: "channel closed",
+              ts: Date.now(),
+              kind: "message",
+            });
+          } catch {}
+        }
+        ch.subscribers.clear();
+        channels.delete(name);
+      }
+      // Delete persisted log too, plus any archived marker.
+      const p = channelPath(name);
+      if (existsSync(p)) {
+        try {
+          unlinkSync(p);
+        } catch {}
+      }
+      const ap = archivedPath(name);
+      if (existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+      }
+      return json({ ok: true });
+    }
+
+    // Archive / unarchive (V1.7) — a non-destructive alternative to close. The
+    // marker file is the source of truth; the in-memory flag mirrors it.
+    //
+    // Both APPEND a kind:"status" frame (2026-09-06). Persisted, not an
+    // SSE-only event: an agent that was not connected at the moment learns from
+    // `pull`, and a reconnecting tail replays it — an event would be invisible
+    // to both. Retiring a channel is a fact about the channel, and before this
+    // the only signal either party got was its next send being rejected.
+    //
+    // ⚠ THE FRAME IS EMITTED ONLY WHEN THE STATE ACTUALLY FLIPPED. Both routes
+    // are idempotent — archiving an archived channel has always been an ok:true
+    // no-op — and an unconditional emitter turned that no-op into a durable,
+    // broadcast claim that a transition happened. `unarchive` on a healthy
+    // channel wrote `event:"unarchived"` into its log and every tailing agent
+    // saw it: a false statement in the permanent record, which is the exact
+    // failure class this branch exists to remove. The same guard already lives
+    // on the explicit-open path, which emits only when `unarchived` flipped.
+    // `changed` reports which it was, so an idempotent caller can tell.
+    if (sub === "/archive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
+      // Read the prior state BEFORE the write, or there is nothing left to
+      // compare against.
+      const wasArchived = existsSync(archivedPath(name));
+      // Marker first, frame second: the frame asserts a state, so the state is
+      // true by the time any reader can see the assertion.
+      writeFileSync(archivedPath(name), "");
+      const ch = channels.get(name);
+      if (ch) ch.archived = true;
+      const m = wasArchived ? null : appendLifecycle(name, from, "archived");
+      return json({
+        ok: true,
+        channel: name,
+        archived: true,
+        changed: !wasArchived,
+        id: m ? m.id : null,
+      });
+    }
+    if (sub === "/reset" && method === "POST") {
+      const body = (await readJsonBody(req)) ?? {};
+      const ch = channels.get(name);
+      const liveSubs = ch ? ch.subscribers.size : 0;
+      if (liveSubs > 0 && body.force !== true) {
+        return json({ error: "live", channel: name, subscribers: liveSubs }, { status: 409 });
+      }
+      const snapshot = snapshotAndClear(name);
+      return json({
+        ok: true,
+        channel: name,
+        snapshot,
+        cleared: snapshot !== null,
+      });
+    }
+
+    if (sub === "/unarchive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
+      const ap = archivedPath(name);
+      // The prior state, read before the unlink — see the archive route above:
+      // no flip, no frame.
+      const wasArchived = existsSync(ap);
+      if (existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+      }
+      // The marker file is the source of truth across restarts. If it still
+      // exists, the unlink failed — don't report success with a stale on-disk
+      // state that would silently re-archive on the next daemon start.
+      if (existsSync(ap)) {
+        return json(
+          { error: "unarchive failed — marker still present", channel: name },
+          { status: 500 },
+        );
+      }
+      const ch = channels.get(name);
+      if (ch) ch.archived = false;
+      const m = wasArchived ? appendLifecycle(name, from, "unarchived") : null;
+      return json({
+        ok: true,
+        channel: name,
+        archived: false,
+        changed: wasArchived,
+        id: m ? m.id : null,
+      });
+    }
+
+    if (sub === "/messages" && method === "GET") {
+      // A read never creates. This route never did (readBacklog goes straight
+      // to the file) — but it answered `{"messages":[]}` for a name that does
+      // not exist, which is indistinguishable from an empty channel. The guard
+      // is here for the lie, not for the resurrection.
+      if (!channelExists(name)) return missingChannel(name);
+      const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
+      return json({ messages: readBacklog(name, since) });
+    }
+
+    if (sub === "/messages" && method === "POST") {
+      const body = await readJsonBody(req);
+      if (!body || typeof body.text !== "string" || typeof body.from !== "string") {
+        return json({ error: "from and text required" }, { status: 400 });
+      }
+      if (existsSync(archivedPath(name))) {
+        return archivedChannel(name);
+      }
+      try {
+        const inReplyTo = typeof body.in_reply_to === "number" ? body.in_reply_to : undefined;
+        const m = appendMessage(name, body.from, body.text, "message", inReplyTo);
+        const ch = channels.get(name);
+        const aliases = subscriberAliases(name);
+        // recipients = visible subscribers excluding the sender. Lurkers receive
+        // the message but stay uncounted (invisible); anonymous non-lurk watch
+        // tabs do count.
+        const vis = ch ? visibleSubs(ch) : [];
+        const recipients = vis.reduce((n, sub) => (sub.alias !== body.from ? n + 1 : n), 0);
+        return json(
+          {
+            ...m,
+            subscribers: vis.length,
+            recipients,
+            subscriber_aliases: aliases,
+          },
+          { status: 201 },
+        );
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+      }
+    }
+
+    if (sub === "/status" && method === "POST") {
+      const body = await readJsonBody(req);
+      if (
+        !body ||
+        typeof body.from !== "string" ||
+        typeof body.target !== "number" ||
+        typeof body.disposition !== "string"
+      ) {
+        return json({ error: "from, target, disposition required" }, { status: 400 });
+      }
+      // Target must be a real, non-status message in this channel.
+      const exists = readBacklog(name, 0).some((m) => m.id === body.target && m.kind !== "status");
+      if (!exists) {
+        return json({ error: `no message ${body.target} in ${name}` }, { status: 404 });
+      }
+      const note = typeof body.note === "string" ? body.note : "";
+      const m = appendMessage(name, body.from, note, "status", undefined, {
+        target: body.target as number,
+        disposition: body.disposition as string,
+      });
+      return json(m, { status: 201 });
+    }
+
+    if (sub === "/wait" && method === "GET") {
+      // A read never creates — and this one DID: loadChannel below registers
+      // the name in `channels`, which is what put a closed channel back in
+      // `list`.
+      if (!channelExists(name)) return missingChannel(name);
+      const ch = loadChannel(name);
+      const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
+      const alias = url.searchParams.get("as");
+      const timeoutS = Math.min(
+        Math.max(parseFloat(url.searchParams.get("timeout") ?? "30") || 30, 0.1),
+        300,
+      );
+      // Register a no-op presence subscriber for the wait duration so the
+      // alias appears on `who`. `wait` is long-poll — semantically a tail
+      // with a deadline — so it deserves presence. `pull` is fire-and-forget
+      // and intentionally does not register.
+      let presenceKey: symbol | null = null;
+      if (alias) {
+        presenceKey = Symbol(`wait:${alias}`);
+        ch.subscribers.set(presenceKey, {
+          alias,
+          send: () => {}, // no-op; wait fulfillment is via the waits set, not SSE
+        });
+      }
+      const cleanupPresence = () => {
+        if (presenceKey) ch.subscribers.delete(presenceKey);
+      };
+      // Immediate-return path: if there are messages newer than `since`, hand
+      // them back right away. Mirrors the codex `wait` UX — long-poll only
+      // when you're truly current.
+      const immediate = readBacklog(name, since);
+      const cursorOf = (msgs: Message[]) =>
+        msgs.length ? msgs[msgs.length - 1].id : Math.max(since, ch.next_id - 1);
+      if (immediate.length) {
+        cleanupPresence();
+        return json({
+          messages: immediate,
+          cursor: cursorOf(immediate),
+          timed_out: false,
+        });
+      }
+      // Else hold for up to `timeoutS` seconds; resolves when appendMessage
+      // sees something new for this `since`.
+      const result = await new Promise<{
+        messages: Message[];
+        timed_out: boolean;
+      }>((resolve) => {
+        let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+        const waiter: PendingWait = {
+          since,
+          resolve: (msgs) => {
+            if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+            resolve({ messages: msgs, timed_out: false });
+          },
+        };
+        ch.waits.add(waiter);
+        // Defense-in-depth recheck. JS event-loop semantics make the
+        // register-after-broadcast race nearly impossible in practice, but
+        // some runtimes (notably Bun pre-1.3.10) have shown long-poll hangs
+        // where the awaited Promise neither resolves via drain nor via
+        // setTimeout. Re-reading the backlog after registering closes the
+        // theoretical race AND gives us a fallback if append sees no
+        // waiters during its drain pass for whatever reason.
+        const missed = readBacklog(name, since);
+        if (missed.length > 0) {
+          ch.waits.delete(waiter);
+          resolve({ messages: missed, timed_out: false });
+          return;
+        }
+        timeoutHandle = setTimeout(() => {
+          ch.waits.delete(waiter);
+          resolve({ messages: [], timed_out: true });
+        }, timeoutS * 1000);
+      });
+      cleanupPresence();
+      return json({
+        messages: result.messages,
+        cursor: cursorOf(result.messages),
+        timed_out: result.timed_out,
+      });
+    }
+
+    if (sub === "/subscribers" && method === "GET") {
+      const ch = channels.get(name);
+      // Lurkers are excluded from every count — an invisible watcher bumps
+      // nothing. Honest presence accounting over what's left: `connections` is
+      // the raw (non-lurk) socket count, `named` carries an alias, `anonymous`
+      // is null-alias (e.g. a CLI `tail` with no `--as`). named + anonymous ===
+      // connections, so a `count` over the name list is explainable, not a
+      // ghost. `count` stays === connections for back-compat.
+      const subs = ch ? visibleSubs(ch) : [];
+      const named = subs.filter((s) => s.alias).length;
+      const anonymous = subs.filter((s) => !s.alias).length;
+      return json({
+        channel: name,
+        subscribers: subscriberAliases(name),
+        humans: subscriberHumans(name),
+        count: subs.length,
+        connections: subs.length,
+        named,
+        anonymous,
+        topic: ch?.topic ?? null,
+      });
+    }
+
+    if (sub === "/topic" && method === "GET") {
+      // Reading a topic is a read: it does not create. (PUT does — it is a
+      // write, and only intent creates.)
+      if (!channelExists(name)) return missingChannel(name);
+      const ch = loadChannel(name);
+      return json({ channel: name, topic: ch.topic });
+    }
+
+    if (sub === "/topic" && method === "PUT") {
+      const body = await readJsonBody(req);
+      if (!body || typeof body.topic !== "string") {
+        return json({ error: "topic required" }, { status: 400 });
+      }
+      // Archived means read-only, and a topic is a write — it appends a
+      // kind:"topic" frame to the log like any other message. The sibling
+      // POST …/messages has had this guard since V1.7; this route never did, so
+      // `archive x` then `topic x "t"` landed a frame on a read-only channel
+      // and answered ok:true. Same status, same envelope as the sibling.
+      if (existsSync(archivedPath(name))) {
+        return archivedChannel(name);
+      }
+      // Deliberately NO existence guard: under "only intent creates", a topic
+      // WRITE declares that this channel should hold this, so it may create
+      // one — the same class of act as `send`. Only the read (GET) refuses.
+      try {
+        const m = appendMessage(
+          name,
+          typeof body.from === "string" ? body.from : "system",
+          body.topic,
+          "topic",
+        );
+        return json({ ok: true, channel: name, topic: body.topic, id: m.id });
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+      }
+    }
+
+    if (sub === "/tail" && method === "GET") {
+      // A subscribe is forward-looking — "tell me about this from now on" — so
+      // it MAY create the channel, and that is deliberate: a fresh `tail name`
+      // works without an explicit open, and the watch surface's first load
+      // relies on it. But an agent that tails a MISTYPED name then waits
+      // forever inside a channel of its own making, with no signal that this is
+      // what happened — the same silent-failure class as a resurrecting read,
+      // just slower. So the subscribed event says so. Computed BEFORE
+      // loadChannel, which is what does the creating.
+      const created = !channelExists(name);
+      const ch = loadChannel(name);
+      // A subscribe that created the channel is a creating act like any other,
+      // so it writes the channel down too — otherwise `tail`'s own creation is
+      // the one that still evaporates on a restart.
+      if (created) persistChannel(name);
+      // ⚠ The LATE JOINER. `created` tells a subscriber it just invented the
+      // channel; nothing told it the channel it joined is already retired. The
+      // lifecycle frame closes the case for an agent that was connected at the
+      // moment, or that pulls history — but a `tail` that arrives afterwards
+      // got an ordinary grounding line and then "found out when its next send
+      // was rejected", which is verbatim the failure the frame was added to
+      // end. Read off the MARKER, not `ch.archived`: the marker file is the
+      // source of truth and the in-memory flag only mirrors it.
+      const archived = existsSync(archivedPath(name));
+      const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
+      const alias = url.searchParams.get("as");
+      // V1.7 — a human-driven connection (the watch, or `tail --human`) flags
+      // itself so it shows as `cole (human)` in presence instead of an
+      // unattributed count bump.
+      const human = ["1", "true"].includes(url.searchParams.get("human") ?? "");
+      // V1.7 — a lurk connection receives messages but is excluded from every
+      // presence count, so browsing a channel is genuinely invisible.
+      const lurk = ["1", "true"].includes(url.searchParams.get("lurk") ?? "");
+      // #68 — `tail --last N`: backfill the most recent N messages, then go
+      // live. The daemon holds the log, so the slice is computed here
+      // (race-free) as an effective `since` = latest_id - N; it overrides
+      // `since`. A cold mid-session joiner can thus catch up on a bounded volume
+      // without knowing a cursor (--since) or replaying the whole log
+      // (--from-start). N is clamped to ≥0; N=0 backfills nothing (live only).
+      const lastRaw = url.searchParams.get("last");
+      const lastN = lastRaw !== null ? parseInt(lastRaw, 10) : Number.NaN;
+      const hasLast = Number.isFinite(lastN) && lastN >= 0;
+      const effectiveSince = hasLast ? Math.max(-1, ch.next_id - 1 - lastN) : since;
+      const backlog = effectiveSince >= 0 ? readBacklog(name, effectiveSince) : [];
+
+      // We stash the per-stream cleanup fn on the controller so cancel() can
+      // reach it via `this`. ReadableStream's typings don't model arbitrary
+      // properties, so we use a small augmenting interface.
+      type CleanupController = ReadableStreamDefaultController<Uint8Array> & {
+        __cleanup?: () => void;
+      };
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller: CleanupController) {
+          const enc = new TextEncoder();
+          const send = (m: Message) => {
+            try {
+              controller.enqueue(enc.encode(`data: ${JSON.stringify(m)}\n\n`));
+            } catch {
+              // Controller closed; drop.
+            }
+          };
+          // Initial event: subscribed marker so client knows the stream is
+          // hot. Includes the current topic so a freshly-joined agent has
+          // grounding context before any messages arrive.
+          controller.enqueue(
+            enc.encode(
+              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1, created, archived })}\n\n`,
+            ),
+          );
+          // Replay backlog before live tail begins.
+          for (const m of backlog) send(m);
+
+          const key = Symbol(`sub:${alias ?? "anon"}`);
+          ch.subscribers.set(key, { alias: alias ?? null, human, lurk, send });
+
+          let cleanedUp = false;
+          const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            clearInterval(hb);
+            ch.subscribers.delete(key);
+          };
+
+          // Heartbeat every `SSE_HEARTBEAT_MS` — 3 s by default, and WHATEVER
+          // `GRAPEVINE_HEARTBEAT_MS` resolved it to otherwise (`./heartbeat.ts`,
+          // which is also where the tail's watchdog derives from it). Both a
+          // keep-alive signal and a liveness probe: if the write fails, the
+          // client has dropped, so we unregister the subscriber and `who` does
+          // not show a ghost. ⚠ Raising the beat therefore makes presence
+          // STALER, not merely quieter — a dead tail lingers in every count
+          // until the next beat fails.
+          // SSE comments (`:`) are ignored by the spec parser.
+          const hb = setInterval(() => {
+            try {
+              controller.enqueue(enc.encode(`: hb ${Date.now()}\n\n`));
+            } catch {
+              cleanup();
+            }
+          }, SSE_HEARTBEAT_MS);
+
+          // Hold a reference so cancel() can clean up.
+          controller.__cleanup = cleanup;
+        },
+        cancel(this: { __cleanup?: () => void }) {
+          this.__cleanup?.();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache",
+          connection: "keep-alive",
+        },
+      });
+    }
+  }
+
+  // Release only: the surface's hashed chunks, linked relatively from /watch,
+  // arrive as bare filenames at the root. Dev never serves from dist/ — a
+  // checkout can carry a committed dist/ that is stale against its source,
+  // and in dev Bun's router owns the bundle's assets.
+  if (MODE === "release" && method === "GET") {
+    const served = serveDist(path.slice(1));
+    if (served) return served;
+  }
+
+  return json({ error: "not found", path }, { status: 404 });
+}
+
+let server: ReturnType<typeof Bun.serve> | null = null;
+let STARTED_AT = Date.now();
+
+// True iff the file exists and its trimmed content equals `expected`.
+//
+// ⛔ DE-DUPLICATED INTO `src/kit/wire/discovery.ts` AT PHASE 6 CHAPTER 2, and the
+// kit's `unlinkIfMatches` is the read AND the unlink in one call — which is the
+// only way this predicate was ever used. The reason it exists is the kit's
+// reason verbatim: a daemon that unlinks its lifecycle files unconditionally at
+// exit deletes the pointer a SUCCESSOR has already written, the successor can no
+// longer be found, and the next CLI verb spawns a third daemon. Kept exported at
+// this name because `cli.test.ts` reads it; it now delegates.
+export function fileHasValue(path: string, expected: string): boolean {
+  try {
+    return existsSync(path) && readFileSync(path, "utf-8").trim() === expected;
+  } catch {
+    return false;
+  }
+}
+
+async function shutdown(code: number) {
+  // ⛔ `unlinkIfMatches`, NOT an unconditional unlink — see `fileHasValue`.
+  try {
+    if (server) unlinkIfMatches(PORT_FILE, String(server.port));
+    unlinkIfMatches(PID_FILE, String(process.pid));
+  } catch {}
+  if (server) {
+    // ⛔ `drainAndStop` IS ADOPTED FOR ITS STOP AND NOTHING ELSE, AND THE EMPTY
+    // ARGUMENT IS THE RULING (playbook B8's REJECT-STRUCTURAL row, SPLIT per
+    // export). Its server-stop half IS grapevine's, byte for byte: this was
+    // `Promise.race([server.stop(true), new Promise(r => setTimeout(r, 200))])`,
+    // which is `stopMs: 200` exactly — a DE-DUPLICATION, and the one export of
+    // `housekeeping` that has an expressible value here.
+    //
+    // ⛔ `clients` IS DELIBERATELY NOT PASSED, AND IT CANNOT BE. The kit closes
+    // every registered client by calling `client.close()`; grapevine's
+    // subscriber records are `{ alias, human, lurk, send }` and carry **no
+    // `close`** — the per-stream teardown is a closure stashed on the
+    // ReadableStream's controller, reachable only from `cancel()`. There is
+    // nothing to hand it, and widening `SseClient` to admit that would re-emit
+    // six artifacts across five spells (D68). The stop closes the sockets, which
+    // fires each stream's `cancel` and each subscriber's own cleanup.
+    //
+    // ⚠ `graceMs: 0`, DELIBERATELY, and this is the one place the adoption
+    // could have changed behaviour without saying so. The kit's default is 150
+    // ms, and it is not politeness — it exists so a `closed` frame emitted just
+    // before the stop is actually SEEN. Grapevine emits no farewell frame at
+    // daemon shutdown (its only close broadcast is on `DELETE /channels/:name`,
+    // a different verb), and its `DELETE /` already schedules this teardown 10 ms
+    // AFTER the response is returned, so its flush window sits at the route.
+    // A second 150 ms here would be added latency with nothing to flush.
+    await drainAndStop({ server, graceMs: 0, stopMs: 200 });
+  }
+  process.exit(code);
+}
+
+async function main() {
+  // --- mode, resolved BEFORE any filesystem write -----------------------------
+  // dev: a dynamic string-literal import keeps the surface graph off the module
+  // load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at serve
+  // time, reading bunfig.toml from cwd, which cli.ts pins to src/grapevine/
+  // (Contract 5). A forced-dev boot at a surface-free destination must die
+  // HERE, at the import, having written nothing: no port file, no pid file, no
+  // channels dir — so a CLI polling for the port file sees a clean failure
+  // rather than a half-born daemon. release: dist/ is static and pre-built
+  // (Contract 2) — /watch and the hashed chunks are answered by serveDist() in
+  // handle(), so this branch never touches surface source or bunfig.toml and
+  // never needs either to exist. This is the ONE src/-naming specifier in the
+  // deployed spell (grimoire/import-boundary-wards.test.ts pins it).
+  const devIndex =
+    MODE === "dev"
+      ? (await import("../../../../../src/grapevine/surface/index.html")).default
+      : undefined;
+  const routes = (devIndex ? { "/watch": devIndex } : {}) as Record<string, never>;
+
+  ensureDirs();
+
+  // Delete an expired hold file for tidiness (the hold is enforced CLI-side).
+  try {
+    if (existsSync(HOLD_FILE)) {
+      const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+      if (!Number.isFinite(until) || until <= Date.now()) unlinkSync(HOLD_FILE);
+    }
+  } catch {}
+
+  // Check if a daemon is already running by reading the port file and
+  // trying to ping it. If alive, exit 0 quietly — caller will discover.
+  if (existsSync(PORT_FILE) && existsSync(PID_FILE)) {
+    try {
+      const port = parseInt(readFileSync(PORT_FILE, "utf-8").trim(), 10);
+      const res = await fetch(`http://127.0.0.1:${port}/`, {
+        signal: AbortSignal.timeout(500),
+      });
+      if (res.ok) {
+        console.error(`daemon already running on port ${port}`);
+        process.exit(0);
+      }
+    } catch {
+      // Stale; clean up.
+      try {
+        unlinkSync(PORT_FILE);
+      } catch {}
+      try {
+        unlinkSync(PID_FILE);
+      } catch {}
+    }
+  }
+
+  server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0, // OS-assigned
+    // SSE streams are long-lived and silent client→server. Default 10s
+    // idleTimeout closes them prematurely; ask for Bun's maximum (0 is NOT
+    // "disabled" — it is the default). The number and the beat that depends on
+    // it now live together in `./heartbeat.ts`, which BOTH halves of the spell
+    // import; the invariant `heartbeat <= idleTimeout / 2` is asserted below
+    // rather than written in prose, which is how it used to be held.
+    idleTimeout: IDLE_TIMEOUT_SEC,
+    // dev: the HTMLBundle at /watch (Bun serves its assets itself). release:
+    // no routes — handle() serves dist/. Bun's Routes type ties the value's
+    // type to the literal object shape, so the mode-ternary union is cast.
+    routes,
+    development: { hmr: MODE === "dev" },
+    fetch: handle,
+  });
+
+  // ⛔ ATOMIC AND SYNCHRONOUS, WHICH `Bun.write` IS NEITHER — RECEIVED from
+  // `src/kit/wire/discovery.ts` at Phase 6 chapter 2. These two lines were
+  // `Bun.write(...)`, whose promise nobody awaited, so the `listening` line
+  // below could be printed — and a CLI polling for the port file could read it —
+  // before or during the write. `writeFileAtomic` writes a pid-suffixed temp and
+  // renames, so a reader sees the whole value or no file at all, and two daemons
+  // racing to publish cannot clobber each other's intermediate.
+  writeFileAtomic(PORT_FILE, String(server.port));
+  writeFileAtomic(PID_FILE, String(process.pid));
+  STARTED_AT = Date.now();
+  console.error(
+    `grapevine daemon listening on http://127.0.0.1:${server.port} (pid ${process.pid}, mode ${MODE})`,
+  );
+  console.error(`data dir: ${DATA_DIR}`);
+
+  process.on("SIGINT", () => shutdown(0));
+  process.on("SIGTERM", () => shutdown(0));
+}
+
+// ⛔ NO `import.meta.main` BLOCK, AND ITS ABSENCE IS THE STEP (playbook B3).
+// `dist/daemon.js` is IMPORTED by `scripts/daemon.ts`, never executed as the
+// process entry, so the guard would never run: the daemon would boot, serve
+// nothing and exit 0, and every test would fail as "never bound a port".
+//
+// ⛔ AND NO SECOND ENTRY IS OFFERED FROM THIS ADDRESS, DELIBERATELY. Every path
+// this file computes is anchored at `SKILL_ROOT = join(SCRIPT_DIR, "..")`,
+// which is the skill root ONLY from `dist/`. Run from `src/grapevine/backend/`
+// it computes `src/grapevine/`, finds no `dist/index.html`, resolves DEV, and
+// then fails the dev import from the wrong anchor — with a diagnostic computed
+// by the bug it is reporting (D57). The artifact is the one address this
+// arithmetic was ever true at.
+//
+// ⛔ AND THE LAUNCHER THAT IMPORTS THIS IS `process.exitCode` + A NATURAL
+// RETURN, NOT THE TERMINAL EXIT THE OTHER FIVE DAEMONS SHIP. `main()` resolves
+// the instant `Bun.serve` binds; the EVENT LOOP is what holds this process up,
+// and an explicit exit at the launcher terminates a live server milliseconds
+// after it bound (D69, driven both ways). The reason lives in full at
+// `plugins/spellbook/skills/grapevine/scripts/daemon.ts`; it is named here too
+// because this is the file whose shape makes it true.
+export async function run(): Promise<undefined> {
+  await main();
+  return undefined;
+}

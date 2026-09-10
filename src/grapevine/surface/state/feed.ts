@@ -64,7 +64,7 @@ export function fmtTime(ts: number): string {
  *  TWO clauses, and the second one matters (verify ⚠5). `event` marks a
  *  lifecycle frame; a `disposition` DISQUALIFIES it. That second clause is what
  *  makes this agree with the CLI, which classifies by the presence of
- *  `disposition` (`isDispositionFrame` in `scripts/cli.ts`) so that an unknown
+ *  `disposition` (`isDispositionFrame` in `src/grapevine/backend/cli.ts`) so that an unknown
  *  future frame stays visible rather than being swallowed as metadata. Without
  *  it, a frame carrying BOTH fields would be metadata to the CLI and a channel
  *  note here — the two consumers reading the same bytes and disagreeing. They
