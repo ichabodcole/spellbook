@@ -73,6 +73,36 @@ import { must } from "./lib/must.ts";
 // it is pending on clause 1 finding a home that owns the `Bun.serve` options,
 // which is a kit question and not a port's. Nothing in this file's assertions
 // was touched at the last port; only this paragraph was added.
+//
+// ── ⛔ AND THEN CLAUSE 1 WAS FOUND TO BE SATISFIED BY A COMMENT — 2026-09-10,
+//    D100 (`fix/wards-that-pass-on-prose`) ──────────────────────────────────
+//
+// The paragraph above rests clause 1's survival on its being a TEXT SCAN, which
+// makes the scan the only thing standing behind the bug it replaces. It was not
+// standing behind it. `!/idleTimeout\s*:/.test(d.text)` read the file as
+// WRITTEN, and glamour, imago and bounty each carry a comment discussing
+// `idleTimeout: 255` beside their one real setting — so deleting the real
+// setting from any of the three left this ward GREEN (driven in type-debt Phase
+// 1, T13 #1, and re-driven three ways here). **Two of the three spells the
+// `fixed.idleTimeout` list below names as this clause's founding cases could not
+// be convicted by it.**
+//
+// ⭐ THE FIX WAS ALREADY IN THIS FILE, ONE CLAUSE OVER, AND HAD BEEN SINCE THE
+//    MONTH'S FIRST WARD WORK. `readSession`'s ENOENT clause strips comments
+//    before scanning, because a calibration there once produced a FALSE PASS by
+//    editing a docstring. The same discipline is now applied at the ROW
+//    (`stripComments`), so every clause gets it and a fourth cannot be added
+//    without it. Two neighbouring clauses, one written against prose and one
+//    written against code, and nothing reconciled them for a month: **the
+//    lesson is that a false-pass fix belongs at the shared read, not in the
+//    cell that found it.**
+//
+// ⚠ D87'S RULING IS UNCHANGED IN OUTCOME AND STRENGTHENED IN REASONING. Clause
+// 1 is still not true by construction (no kit module owns the `Bun.serve`
+// option), so the ward still stays — but D87 kept it partly on the strength of
+// a clause that could convict one of its three subjects. It can now convict all
+// six connection-holding daemons, and the population it asserts over is pinned
+// per clause rather than counted as a file total.
 
 const SKILLS = join(import.meta.dir, "..", "plugins", "spellbook", "skills");
 
@@ -80,22 +110,63 @@ function read(rel: string): string {
   return readFileSync(join(SKILLS, rel), "utf8");
 }
 
+/** ⛔ EVERY TEXT-SCAN CLAUSE READS THIS, NOT THE RAW FILE — AND THE FILE YOU ARE
+ *  READING CONTAINED ITS OWN ANSWER FOR A MONTH.
+ *
+ *  The `readSession` clause below has stripped comments since the first ward
+ *  work of the month, after a calibration attempt deleted the word `ENOENT`
+ *  from a DOCSTRING and the ward stayed green — a false pass that looked like a
+ *  working drive. The `idleTimeout` clause, one cell over, kept scanning raw
+ *  text, and 2026-09-10's mutation pass found the same defect there: glamour's
+ *  real `idleTimeout: IDLE_TIMEOUT_SEC` deleted, ward GREEN, because line 408 of
+ *  that file DISCUSSES `idleTimeout: 255` in prose. bounty and imago carry the
+ *  same prose (`server.ts:1103`, `server.ts:839`) — **two of the three spells
+ *  this ward's own `fixed.idleTimeout` list says clause 1 was written from.**
+ *  astrolabe's two mentions have no colon, which is the only reason it could be
+ *  driven red at all.
+ *
+ *  A clause satisfiable by prose ABOUT the fix is not standing behind the fix.
+ *  Applied here at the row, once, so a fourth clause cannot be added without it.
+ *
+ *  ⚠ It is a stripper, not a parser: `//` inside a string literal takes the
+ *  rest of that line with it. Measured on all eight daemons and all fourteen
+ *  CLIs — no clause's population and no clause's verdict moves except the three
+ *  prose shields it was added to remove. */
+function stripComments(text: string): string {
+  return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
+/** One scanned backend file. `code` is the file with its comments removed, and
+ *  it is the ONLY text any predicate below sees — see `stripComments`. `spell`
+ *  is what the population census prints, so a shrink is reported as *which
+ *  spell left* rather than as an integer.
+ *
+ *  ⚠ THERE IS NO RAW `text` FIELD, AND THAT IS DELIBERATE. Keeping the file as
+ *  written beside the stripped copy would have left a field no cell reads —
+ *  which is exactly the defect type-debt Phase 1 found here (`spell`, computed
+ *  twice and read nowhere, holding four of `grimoire`'s fourteen type errors).
+ *  A repair that leaves a dead field behind has not finished. */
+type Backend = { spell: string; file: string; code: string };
+
 /** Every backend file that calls `Bun.serve`, ACROSS BOTH ROOTS.
  *
  *  ⛔ THE SECOND ROOT IS NOT OPTIONAL, and this ward proved it the loud way.
  *  Phase 1b moved astrolabe's and magpie's DAEMON SOURCE to
  *  `src/<spell>/backend/server.ts` and left a launcher at the old address. A
- *  scan of `skills/` alone went 7 -> 5 and the population zero-guard below
- *  reddened — which is the ward working (seams Contract 19: the pin is what
+ *  scan of `skills/` alone went 7 -> 5 and the population guard below reddened
+ *  (a floor then, an exact pin now) — which is the ward working (seams Contract 19: the pin is what
  *  converts a silent shrink into a loud failure). The repair is to EXTEND THE
- *  WALK, never to lower the floor: `clis()` below already had both roots for
+ *  WALK, never to lower the pin: `clis()` below already had both roots for
  *  exactly this reason, one function away. */
-function daemons(): { spell: string; file: string; text: string }[] {
-  const out: { spell: string; file: string; text: string }[] = [];
+function daemons(): Backend[] {
+  const out: Backend[] = [];
   for (const rel of new Glob("*/scripts/*.ts").scanSync(SKILLS)) {
     if (rel.endsWith(".test.ts")) continue;
-    const text = read(rel);
-    if (!text.includes("Bun.serve(")) continue;
+    // ⚠ THE MEMBERSHIP TEST READS THE STRIPPED COPY TOO, so a `Bun.serve(` that
+    // only appears in a comment cannot enrol a non-daemon. Measured: the
+    // population is 8 either way today.
+    const code = stripComments(read(rel));
+    if (!code.includes("Bun.serve(")) continue;
     // `String.split` always yields at least one element, so index 0 is a
     // `noUncheckedIndexedAccess` artifact rather than a real absence — stated
     // here instead of silenced with `!`, because if the glob ever hands back a
@@ -104,18 +175,18 @@ function daemons(): { spell: string; file: string; text: string }[] {
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `skills/${rel}`,
-      text,
+      code,
     });
   }
   const srcRoot = join(import.meta.dir, "..", "src");
   for (const rel of new Glob("*/backend/*.ts").scanSync(srcRoot)) {
     if (rel.endsWith(".test.ts")) continue;
-    const text = readFileSync(join(srcRoot, rel), "utf8");
-    if (!text.includes("Bun.serve(")) continue;
+    const code = stripComments(readFileSync(join(srcRoot, rel), "utf8"));
+    if (!code.includes("Bun.serve(")) continue;
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `src/${rel}`,
-      text,
+      code,
     });
   }
   return out.sort((a, b) => a.file.localeCompare(b.file));
@@ -124,13 +195,13 @@ function daemons(): { spell: string; file: string; text: string }[] {
 /** Every backend CLI, including the two authored under `src/` because they
  *  ship built. A census scoped to `skills/` is blind to exactly those two —
  *  the mistake seams Contract 19 is named for. */
-function clis(): { spell: string; file: string; text: string }[] {
-  const out: { spell: string; file: string; text: string }[] = [];
+function clis(): Backend[] {
+  const out: Backend[] = [];
   for (const rel of new Glob("*/scripts/cli.ts").scanSync(SKILLS)) {
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `skills/${rel}`,
-      text: read(rel),
+      code: stripComments(read(rel)),
     });
   }
   const srcRoot = join(import.meta.dir, "..", "src");
@@ -138,19 +209,115 @@ function clis(): { spell: string; file: string; text: string }[] {
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `src/${rel}`,
-      text: readFileSync(join(srcRoot, rel), "utf8"),
+      code: stripComments(readFileSync(join(srcRoot, rel), "utf8")),
     });
   }
   return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
+/** Clause 1's SUBJECTS: a daemon that HOLDS a connection. digestify serves a
+ *  one-shot page with no SSE and no socket and must not be dragged in. */
+const holdsConnection = (d: Backend): boolean =>
+  /ReadableStreamDefaultController|ServerWebSocket|text\/event-stream/.test(d.code);
+
+/** Clause 2's SUBJECTS: a daemon that writes the discovery pointer AT ALL —
+ *  either through the kit's `writeFileAtomic` (the fix) or as the bare pair the
+ *  clause convicts (the defect). Both spellings, deliberately, because the
+ *  subject is "writes a pointer" and the clause only asks HOW.
+ *
+ *  ⚠ AND THE RESIDUE, STATED: a THIRD spelling — a bare `writeFileSync` onto a
+ *  differently-named variable — is in neither set, so it is neither a subject
+ *  nor an offender. That is the class C9 names and it is not closed by this
+ *  cell; what this cell closes is the concrete blindness, that clause 2's empty
+ *  offender list was indistinguishable from an empty world. */
+const writesPointer = (d: Backend): boolean =>
+  /writeFileAtomic\(/.test(d.code) || barePointerWrite(d);
+
+const barePointerWrite = (d: Backend): boolean =>
+  /writeFileSync\(\s*(sessionFile|latestFile)\b/.test(d.code);
+
+/** Clause 3's SUBJECTS: a CLI that carries its own `readSession`. */
+const hasReadSession = (c: Backend): boolean => /function readSession\b/.test(c.code);
+
+/** The BRACE-MATCHED body of a named function in comment-stripped code.
+ *
+ *  ⚠ REPLACES A 1,500-CHARACTER WINDOW, and the window was not merely crude —
+ *  it OVERRAN. Measured 2026-09-10: `readSession` is 503–514 characters in all
+ *  four CLIs that carry it, so a fixed 1,500 read a third of the way into the
+ *  functions that follow, and an `ENOENT` in a NEIGHBOUR satisfied the clause.
+ *  Driven: with the branch reverted in glamour's `readSession` and the word
+ *  planted in the next function down, the window clause passed and this one
+ *  convicts. Scoped to the function, the clause asserts what its name says. */
+function functionBody(code: string, name: string): string {
+  const at = code.indexOf(`function ${name}`);
+  if (at < 0) return "";
+  let depth = 0;
+  for (let i = code.indexOf("{", at); i < code.length; i++) {
+    if (code[i] === "{") depth++;
+    else if (code[i] === "}") {
+      depth--;
+      if (depth === 0) return code.slice(at, i + 1);
+    }
+  }
+  // Unbalanced braces after the declaration: the file does not parse as this
+  // ward assumes. Loud, never a quiet whole-file fallback — a fallback here
+  // would hand the clause the REST OF THE FILE and pass on any sibling's
+  // ENOENT, which is the defect this function exists to remove.
+  throw new Error(`daemon-lifecycle-ward: unterminated body for function ${name}`);
+}
+
 describe("daemon lifecycle ward", () => {
-  test("the ward has a population — an empty scan is not a pass", () => {
-    // Without this, a rename or a moved folder turns every cell below into a
-    // vacuous green. The counts are deliberately lower bounds, not pins: a new
-    // spell should not have to edit this file.
-    expect(daemons().length).toBeGreaterThanOrEqual(7);
-    expect(clis().length).toBeGreaterThanOrEqual(7);
+  test("the population is PINNED per clause, and a shrink names the spell that left", () => {
+    // ⛔ THIS CELL USED TO BE TWO FLOORS AT THE WRONG GRAIN (register C11, and
+    // Phase 1's mutation pass, T13 #4): `>= 7` against actuals of 8 and 14, so
+    // a walk that lost SIX CLIs passed silently — the D64 shape living inside
+    // the guard written to catch it. Worse, both floors counted the FILE SCAN,
+    // while every clause below runs over a SUBSET of it: when D87 measured
+    // clause 2's population as EMPTY, these two numbers were 8 and 14 and this
+    // cell was green. A guard that cannot see a clause go vacuous is not
+    // guarding the clauses.
+    //
+    // So: exact pins, at the grain each clause actually asserts over.
+    //
+    // ⚠ A NEW SPELL EDITS FIVE PINS HERE — two counts and three subject lists —
+    // AND THAT IS THE POINT. The old comment said "a new spell should not have
+    // to edit this file" and bought that convenience with silence in the other
+    // direction. seams Contract 19: the pin is what converts a silent shrink
+    // into a loud failure — and the failure message below says which of the two
+    // it is looking at.
+    const ds = daemons();
+    const cs = clis();
+    console.log(`  daemon lifecycle: ${ds.length} daemon(s) — ${ds.map((d) => d.spell).join(" ")}`);
+    console.log(`  daemon lifecycle: ${cs.length} cli(s) — ${cs.map((c) => c.spell).join(" ")}`);
+    const census = {
+      daemons: ds.length,
+      clis: cs.length,
+      holdsConnection: ds.filter(holdsConnection).map((d) => d.spell),
+      writesPointer: ds.filter(writesPointer).map((d) => d.spell),
+      readSession: cs.filter(hasReadSession).map((c) => c.spell),
+    };
+    console.log(`  daemon lifecycle: clause subjects ${JSON.stringify(census)}`);
+    expect(census).toEqual({
+      daemons: 8,
+      clis: 14,
+      // clause 1 — the SSE/socket holders. digestify and mind-mapper are out.
+      holdsConnection: ["astrolabe", "bounty", "glamour", "grapevine", "imago", "magpie"],
+      // clause 2 — every pointer writer. All seven go through the kit today,
+      // which is why the clause's OFFENDER list is empty (C9); the subjects are
+      // pinned here so that empty list cannot come to mean "nobody writes a
+      // pointer any more" without this cell saying so.
+      writesPointer: [
+        "astrolabe",
+        "bounty",
+        "glamour",
+        "grapevine",
+        "imago",
+        "magpie",
+        "mind-mapper",
+      ],
+      // clause 3 — the four CLIs that still carry their own reader.
+      readSession: ["bounty", "glamour", "imago", "magpie"],
+    });
   });
 
   test("a daemon that holds a long-lived connection sets idleTimeout", () => {
@@ -162,11 +329,18 @@ describe("daemon lifecycle ward", () => {
     //
     // Scoped to daemons that actually HOLD a connection: digestify serves a
     // one-shot page with no SSE and no socket, and must not be dragged in.
+    //
+    // ⛔ AND IT IS `d.code`, NOT `d.text`, WHICH IS THE WHOLE REPAIR OF
+    //    2026-09-10. Over raw text this clause was satisfied by PROSE: glamour's
+    //    real setting deleted, ward green, on the strength of a comment
+    //    discussing `idleTimeout: 255` — and bounty and imago carry the same
+    //    shield, so the clause could not convict two of the three spells its own
+    //    `fixed.idleTimeout` list below says it was written from. The fix was
+    //    already in this file, one clause down: `readSession` has stripped
+    //    comments since the day a docstring edit produced a false pass there.
     const offenders = daemons()
-      .filter((d) =>
-        /ReadableStreamDefaultController|ServerWebSocket|text\/event-stream/.test(d.text),
-      )
-      .filter((d) => !/idleTimeout\s*:/.test(d.text))
+      .filter(holdsConnection)
+      .filter((d) => !/idleTimeout\s*:/.test(d.code))
       .map((d) => d.file);
     expect(offenders).toEqual([]);
   });
@@ -177,8 +351,14 @@ describe("daemon lifecycle ward", () => {
     // could observe a half-written file — which the CLI then reported as "no
     // running session". glamour was fixed 2026-09-07 and the other three stayed
     // broken for a day, which is this ward's whole reason to exist.
+    //
+    // ⚠ ITS POPULATION IS EMPTY OF OFFENDERS BY CONSTRUCTION (D87, register C9)
+    // — all seven pointer writers call the kit's `writeFileAtomic`. The SUBJECT
+    // count is pinned in the population cell above, so this `[]` now means
+    // "seven daemons write a pointer and none writes it bare" rather than "the
+    // scan found nothing", which is what it meant until 2026-09-10.
     const offenders = daemons()
-      .filter((d) => /writeFileSync\(\s*(sessionFile|latestFile)\b/.test(d.text))
+      .filter(barePointerWrite)
       .map((d) => d.file);
     expect(offenders).toEqual([]);
   });
@@ -203,16 +383,13 @@ describe("daemon lifecycle ward", () => {
     // of the bug it was meant to catch. Found while calibrating this cell: the
     // first attempt to break it deleted the word from the docstring and the
     // ward stayed green, which looked like a working calibration.
+    // ⚠ THE STRIP NOW HAPPENS AT THE ROW (`stripComments`, applied by both
+    // enumerators) so that clause 1 gets it too — and the window it used to
+    // read is now the BRACE-MATCHED function, because the window overran into
+    // the neighbours (see `functionBody`).
     const offenders = clis()
-      .filter((c) => /function readSession\b/.test(c.text))
-      .filter((c) => {
-        const body = c.text.slice(c.text.indexOf("function readSession"), undefined);
-        const code = body
-          .slice(0, 1500)
-          .replace(/\/\*[\s\S]*?\*\//g, "")
-          .replace(/\/\/[^\n]*/g, "");
-        return !code.includes("ENOENT");
-      })
+      .filter(hasReadSession)
+      .filter((c) => !functionBody(c.code, "readSession").includes("ENOENT"))
       .map((c) => c.file);
     expect(offenders).toEqual([]);
   });
