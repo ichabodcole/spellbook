@@ -15,10 +15,17 @@
 //                      fence, or nothing to review
 //     5   not_found  — --file/--reference names a path that is not there, or a
 //                      forced dev boot cannot find the surface source
-//     6   conflict   — the review server could not bind (recovery re-binds the
-//                      port in the session id, and the old daemon may hold it)
+//     6   conflict   — the review server could not START (recovery re-binds the
+//                      port in the session id, and the old daemon may hold it).
+//                      ⚠ ALSO the landing site for a malformed `--port` (which
+//                      parses to NaN and is refused by `Bun.serve`, not here)
+//                      and an unresolvable `--host`. Ruled at the repair
+//                      chapter: the TABLE narrows rather than the codes moving
+//                      — see D62, which files the parse-time conversion
 //     1   internal   — nothing raises this deliberately; an unknown throw ends
-//                      the process here with its stack, as it always did
+//                      the process here with its stack, as it always did — so
+//                      `1` is the ONE failure code with NO envelope (an
+//                      unreadable --file lands here: EISDIR, EACCES)
 //
 //   SESSION OUTCOMES, returned rather than raised, each with an observation
 //   line on STDOUT and no envelope. They are OUTSIDE the taxonomy:
@@ -553,7 +560,7 @@ async function runReview(argv: string[]): Promise<number> {
   //
   // ⚠ NEITHER REPLACE IS GLOBAL, and that is the shipped behaviour: only the
   // FIRST occurrence of each token is substituted. index.html carries each
-  // exactly once (asserted by scripts/release-serve.test.ts).
+  // exactly once (asserted by src/digestify/backend/release-serve.test.ts).
   let substitute: (html: string) => string = (html) => html;
   let heartbeatAt = performance.now();
   // b4 — what the surface told us about the human's departure, and whether the
@@ -787,7 +794,15 @@ async function runReview(argv: string[]): Promise<number> {
   //
   // ⚠ AND ONE THING CAME BACK THE OTHER WAY — a RECEIVED change, not a gained
   // one, at exactly one input. `shouldIdleClose` carries astrolabe's
-  // `timeoutMs <= 0` guard, which means NEVER. Before this adoption
+  // `timeoutMs <= 0` guard, which means NEVER — ⚠ ANY non-positive value, not
+  // just `0`: `--timeout=-1` reaches here and behaves identically (`--timeout -1`
+  // with a space never gets this far, `parseArgs` calls it ambiguous at 2).
+  // ⚠ AND SO DOES `NaN`, WHICH IS NOT A DECISION ANYONE MADE: `--timeout abc`
+  // parses to NaN, `NaN <= 0` is false so the guard does not catch it, and
+  // `idleMs >= NaN` is false forever — a silent never-times-out with no
+  // diagnostic anywhere. Ruled a usage error and FILED, not fixed (D62), with
+  // `--port notanumber`, which is the same class at the same distance from the
+  // parse. Before this adoption
   // `--timeout 0` closed the review on the first 50 ms tick; it now means the
   // review never times out on its own. Driven both sides and recorded as its
   // own decision-log entry, because "adopt and gain" is the framing that lands

@@ -1748,6 +1748,25 @@ absorb those stops being a file server and becomes a router."_ So:
   boundary** (the substituted route answers the payload; the refused one answers
   nothing), because a status check alone passes over a 404 page that happens to
   be the document.
+- ⛔ ⭐ **digestify-port, REPAIR CHAPTER — AND THE CELL MUST BE OVER THE CLASS
+  OF FILES `dist/` HOLDS, NOT OVER THE ONE NAME YOU KNOW.** The bullet above was
+  written, driven, celled and shipped — and it was still not enough, because
+  everything in it is about `index.html`. **A refusal by name is a blacklist,
+  and a blacklist refuses the file it was told about and serves every
+  neighbour.** Two neighbours were reachable in the very port that wrote the
+  bullet: the BACKEND BUNDLE the port had just moved into `dist/`
+  (`GET /review.js` → 200, 122,389 bytes, byte-identical to the artifact — a
+  route that does not exist on `develop`), and the same document under
+  `/INDEX.HTML`, `/Index.html`, `/index.HTML`, `/iNdEx.HtMl`, because `===` is
+  case-sensitive and APFS is not. ⛔ **So: WHITELIST the names the surface needs
+  — derive them from what the built entry document LINKS — and never add a
+  second blacklist entry**, which is what "just also refuse `review.js`" would
+  have been. A whitelist makes the refusal case-insensitive by construction, and
+  it is the only formulation that is still right the next time the build emits
+  something new. ⚠ **And ask the question the port's own headline should have
+  asked: this phase MOVES IMPLEMENTATIONS INTO THE DIRECTORY THE DAEMON
+  SERVES.** Every built-backend spell now has an artifact sitting in its served
+  `dist/`. The cell is: the artifact is on disk AND the route refuses it. (D61.)
 
 ⛔ ⭐ **bounty — AND EVERY ROW OF THAT TABLE ASSUMES YOUR SPELL HAS THE WORSE
 CODE. FOR A CONVERGENCE-SOURCE SPELL, HALF OF THEM ARE DE-DUPLICATIONS AND ONE
@@ -2062,16 +2081,16 @@ belongs in its own commit, filed rather than smuggled.
 
 - [ ] **Every entry's artifact** built and committed **in the same chapter as
       its source** — one per entry, not two; `bun scripts/dist-check.ts` exit 0.
-- [ ] ⭐ **"BOOTED" IS THE WRONG NOUN FOR A SINGLE-SHOT SPELL — DRIVE THE WHOLE
-      SESSION, NOT THE START OF ONE** (question 4). A standing daemon is
-      exercised by booting it and asking it things; digestify exists for a human
-      to read a rendered page and submit ONCE, and a daemon nobody submits to
-      exercises neither the in-memory substitution nor the exit path that
-      carries the payload. The drive that proves this spell is: boot → `GET /`
-      and read back the injected payload → `POST /submit` → **the process exits
-      0 and the answers are on stdout**, plus the two other endings
-      (`POST /cancel` → 130, idle → 124). One invocation each, and they are what
-      caught bounty's hang class at the launcher shape.
+- [ ] ⭐ **digestify-port — "BOOTED" IS THE WRONG NOUN FOR A SINGLE-SHOT SPELL —
+      DRIVE THE WHOLE SESSION, NOT THE START OF ONE** (question 4). A standing
+      daemon is exercised by booting it and asking it things; digestify exists
+      for a human to read a rendered page and submit ONCE, and a daemon nobody
+      submits to exercises neither the in-memory substitution nor the exit path
+      that carries the payload. The drive that proves this spell is: boot →
+      `GET /` and read back the injected payload → `POST /submit` → **the
+      process exits 0 and the answers are on stdout**, plus the two other
+      endings (`POST /cancel` → 130, idle → 124). One invocation each, and they
+      are what caught bounty's hang class at the launcher shape.
 - [ ] **Dev AND release both driven on a booted daemon, through the real
       launcher chain**, and say which bytes you saw: release serves the
       committed hashed chunks; dev serves `/_bun/client/…` and `/_bun/asset/…`

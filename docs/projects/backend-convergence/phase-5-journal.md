@@ -73,8 +73,21 @@ whole session through the real launcher chain.
 files. **`bun scripts/dist-check.ts` exit 0, all arms.**
 **`launcher-pairing-ward`:**
 `digestify derived=[review] review.ts→dist/review.js`. **`spawn-path-ward`
-coverage:** `digestify/dist/review.js … anchor-read=yes pins=6` — **examined,
+coverage:** `digestify/dist/review.js … anchor-read=yes pins=5` — **examined,
 not absent**, which is the row D42 exists to produce.
+
+> ⚠ **CORRECTED at the repair chapter: this said `pins=6`, and the ward printed
+> `5` at the commit these records shipped in.** It WAS 6 at `110a3611` and
+> became 5 at `67f74097`, when de-duplicating `resolveMode` replaced an inlined
+> `join(DIST_DIR, "index.html")` with `resolveModeIn(DIST_DIR)` — the same read,
+> at the same path, now assembled inside a callee from a PARAMETER, which is the
+> ward's declared blind spot. **A de-duplication reduced ward coverage, and a
+> coverage count going DOWN is not a failure, so nothing said anything.** Driven
+> at all three commits; full account in D64 and C4.
+>
+> (The count reads 6 again at the repair chapter, from a NEW literal `join` in
+> the whitelist. Same number, different site — which is the finding, not a
+> coincidence: `pins=N` counts literal spellings, not pins.)
 
 ---
 
@@ -247,3 +260,110 @@ were amended in ONE pass at the end (marked `⭐ digestify-port`).
   scar it defended is now true by BUNDLING.
 - **B10's build rule.** Every build through `bun run build`; the roster build
   after chapter 2 dirtied exactly one file.
+
+---
+
+# The repair chapter — 2026-09-09, driven by an independent verify pass
+
+**The port's own headline was a defence class, and the port created a hole in
+it.** Everything below was found by a verify pass this implementer did not run,
+against a branch this implementer had already called done. That is the second
+consecutive session where the no-stake reader found what the author's own drive
+missed, and it found it by asking the SAME question one step wider: not "does
+`GET /index.html` refuse?" but "what ELSE is in the directory that route
+serves?"
+
+## A · The served set — before and after, driven
+
+Boot the real launcher chain from the real skill root, release mode, and fetch:
+
+| route                                       | before (`20e3135`)                                                                     | after (this chapter) |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------- |
+| `GET /review.js`                            | **200** · 122,389 B · `text/javascript` · sha256 `6ed9d235…` = **`dist/review.js`**    | **404** · 21 B JSON  |
+| `GET /REVIEW.JS`                            | **200** · 122,389 B · `application/octet-stream` · same sha                            | **404**              |
+| `GET /INDEX.HTML`                           | **200** · 1,180 B · `application/octet-stream` · **`__TITLE__` + `__PAYLOAD__` in it** | **404**              |
+| `GET /Index.html`                           | **200** · `text/html; charset=utf-8` · unsubstituted                                   | **404**              |
+| `GET /index.HTML`                           | **200** · unsubstituted                                                                | **404**              |
+| `GET /iNdEx.HtMl`                           | **200** · unsubstituted                                                                | **404**              |
+| `GET /index.html`                           | 404                                                                                    | **404**              |
+| `GET /index-dfcfc4w0.js`                    | 200 · `text/javascript`                                                                | **200**, unchanged   |
+| `GET /index-ty4gdnpw.css`                   | 200 · `text/css`                                                                       | **200**, unchanged   |
+| `GET /` (the substituted page)              | 200, payload injected                                                                  | **200**, unchanged   |
+| `GET /assets/classic/…-mascot-classic.webp` | 200 · `image/webp`                                                                     | **200**, unchanged   |
+
+**`GET /review.js` 404s on `develop`** — there was no such file to serve until
+this port moved the implementation into `dist/`. **The case variants are
+pre-existing**: `rel === "index.html"` is case-sensitive and APFS is not, so
+four spellings reached one inode. The fix is one change for both — a whitelist
+of the names the built `index.html` LINKS, matched exactly, which makes the
+refusal case-insensitive by construction. D61 carries the ruling and the five
+options not taken.
+
+**Cells, each calibrated by mutation:**
+
+| cell                              | calibrated by                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| the backend-bundle refusal        | RED against the pre-fix artifact (200, the bundle) before the rebuild                                                             |
+| the case-variant refusal          | RED against the pre-fix artifact (200 × 4, unsubstituted) before the rebuild                                                      |
+| both, against an empty subject    | each asserts its subject is ON DISK first — the artifact carries the backend's own marker, `index.html` still holds `__PAYLOAD__` |
+| exactness, not a second blacklist | an upper-cased HASHED CHUNK 404s while the exact name 200s — in the same cell                                                     |
+| the INVENTORY cell                | RED when `review.js` is dropped from its refused list                                                                             |
+
+## B · `pins=6` was false when it shipped
+
+See the corrected coverage line above, D64, and C4. Driven at three commits by
+putting each one's artifact under the live ward: `110a3611` → 6, `67f74097` → 5,
+`20e3135` → 5, this chapter → 6 again from a new site. **A de-duplication
+reduced ward coverage**, and the count came back for an unrelated reason, which
+is what says the number measures literal spellings rather than pins.
+
+## C · The exit table was not true of the shipped code
+
+| drive                     | result                                                                  |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `--file <a directory>`    | **exit 1** · raw Bun stack · `EISDIR` · **no envelope**                 |
+| `--file <chmod 000 file>` | **exit 1** · raw Bun stack · `EACCES` · **no envelope**                 |
+| `--port notanumber`       | **exit 6** `conflict` · `hint: host=127.0.0.1 port=NaN: … Received NaN` |
+| `--host nonsense.invalid` | **exit 6** `conflict` · `hint: host=nonsense.invalid port=0: …`         |
+
+SKILL.md's new paragraph said `1`, `2`, `5` and `6` "each write exactly one JSON
+envelope", and its own row for `1` contradicted it. **Ruled: the table narrows**
+— row 1 says no envelope and why, row 5 gains the second `not_found` site, row 6
+stops claiming to be only about a busy port and points at `hint`. **The
+conversion of the numeric flags to `usage` is filed as C6, not made** (D62).
+
+## D · `--timeout`'s received change was never about `0`
+
+| drive           | result                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `--timeout=1`   | **exit 124** at the idle window — the guard works                                        |
+| `--timeout 0`   | **never** times out (killed at 10 s)                                                     |
+| `--timeout=-1`  | **never** times out — identical, because the guard is `timeoutMs <= 0`                   |
+| `--timeout -1`  | **exit 2** `usage` — `parseArgs` calls the space form ambiguous; never reaches the guard |
+| `--timeout abc` | **never** times out · `NaN` · **no diagnostic anywhere**                                 |
+
+D59, this journal and SKILL.md all named `0`. The received change is **any
+non-positive value**. The `NaN` case is ruled a usage error and **filed** with
+`--port notanumber` as one item (D63, C6); SKILL.md documents it as current
+behaviour meanwhile, because a caller told the default is 1800 and not told
+`abc` means never finds out by waiting.
+
+## E · Two more stale pointers
+
+`src/digestify/backend/review.ts` and `grimoire/import-boundary-wards.test.ts`
+still said `scripts/release-serve.test.ts`. The chapter-2 sweep found two and
+repaired two; these are two more, in files this port edited. ⚠ **A third hit is
+CORRECT and was left alone** — `import-boundary-wards.test.ts`'s grapevine row,
+because grapevine's test really does still live at `scripts/`. The sweep's
+instrument is a grep; the grep cannot tell those apart, which is why the count
+was wrong.
+
+## What this chapter says about the phase
+
+**The port that makes a defence its headline is the port most likely to breach
+it.** The whole of D60's sixth gap is about keeping a defence the kit does not
+carry — written, driven, celled, shipped — and it was written in the one chapter
+that also moved a 122 KB implementation into the directory that defence guards.
+The cell was over the name it knew. **Move-the-implementation and
+guard-the-directory were the same chapter, and nobody asked what the move did to
+the guard.**

@@ -275,18 +275,26 @@ Stdout JSON on successful submit:
 **There are TWO populations here and they are read differently.** `0`, `124` and
 `130` are **session outcomes** — what happened to the review — and each writes a
 line to **stdout**. `1`, `2`, `5` and `6` are **failures**: the review never
-started, and each writes exactly **one JSON envelope to stderr** with stdout
-left empty. The channel is what tells them apart, not the number.
+started, and stdout is left empty.
 
-| Code | Population | Meaning                                                                                       | What to do                                                                                                                                                |
-| ---- | ---------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | outcome    | Submitted                                                                                     | Parse stdout JSON, continue conversation                                                                                                                  |
-| 124  | outcome    | Timeout                                                                                       | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.) |
-| 130  | outcome    | User closed the tab _after typing something_                                                  | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                    |
-| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review | stderr's envelope explains; fix the command or the markdown and retry. An invalid `--theme` also lists `choices`.                                         |
-| 5    | failure    | `not_found` — `--file`/`--reference` names a path that is not there                           | Check the path. Do not retry unchanged.                                                                                                                   |
-| 6    | failure    | `conflict` — the review server could not bind                                                 | Usually a relaunch onto the port in a session id while the old daemon still holds it (see **Session Recovery**). Retry without `--id`, or wait.           |
-| 1    | failure    | `internal` — the spell broke                                                                  | Not the invocation's fault. Report it; the stack is on stderr.                                                                                            |
+⚠ **`2`, `5` and `6` each write exactly one JSON envelope to stderr. `1` does
+NOT, and that is deliberate.** `1` is the code for a throw nothing classified —
+it ends the process with a **raw Bun stack** on stderr, which is the thing worth
+having when the spell broke in a way it did not anticipate. Reporting it as a
+tidy envelope would mean losing that stack, so an agent parsing stderr as JSON
+must be ready for `1` to be prose. Driven: `--file <a directory>` exits `1` with
+`EISDIR`; `--file` naming a file it cannot read exits `1` with `EACCES`. Both
+are stack, not envelope.
+
+| Code | Population | Meaning                                                                                                                                                                                                          | What to do                                                                                                                                                                                                                                                                                          |
+| ---- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | outcome    | Submitted                                                                                                                                                                                                        | Parse stdout JSON, continue conversation                                                                                                                                                                                                                                                            |
+| 124  | outcome    | Timeout                                                                                                                                                                                                          | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.)                                                                                                                                           |
+| 130  | outcome    | User closed the tab _after typing something_                                                                                                                                                                     | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                                                                                                                                                              |
+| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review                                                                                                                    | stderr's envelope explains; fix the command or the markdown and retry. An invalid `--theme` also lists `choices`.                                                                                                                                                                                   |
+| 5    | failure    | `not_found` — the named thing does not exist. TWO sites: `--file`/`--reference` names a path that is not there, **and** a forced dev boot (`SPELLBOOK_SURFACE_MODE=dev`) that cannot find the surface source     | Check the path. Do not retry unchanged.                                                                                                                                                                                                                                                             |
+| 6    | failure    | `conflict` — the review server could not start. **Not only a busy port:** a malformed `--port` (`--port notanumber` → `port=NaN`) and an unresolvable `--host` reach the bind and come back as this same refusal | Usually a relaunch onto the port in a session id while the old daemon still holds it (see **Session Recovery**) — retry without `--id`, or wait. **Read the envelope's `hint`**: it carries `host=… port=…` and the bind's own words, which is what separates a busy port from a flag you mistyped. |
+| 1    | failure    | `internal` — the spell broke. **No envelope** — an unclassified throw, ending with its stack                                                                                                                     | Not the invocation's fault _in the usual sense_ (an unreadable `--file` lands here too). Report it; the stack is on stderr, and it is a stack, not JSON.                                                                                                                                            |
 
 **The failure envelope** is the house shape, so an agent routes on `kind` and
 never on prose:
@@ -333,7 +341,15 @@ earlier session of this review closed" is a true and useful fact.
   first, agent content appended).
 - `--title TEXT` — page/tab title (default `"Document Review"`)
 - `--theme NAME` — visual theme: `digestify` (default), `cthulhu`, `classic`
-- `--timeout SECONDS` — failsafe timeout (default `1800` / 30 min)
+- `--timeout SECONDS` — failsafe **idle** timeout (default `1800` / 30 min). ⚠
+  **`0` or any negative value means NEVER** — the review then only ends on
+  submit or cancel, and a caller with no human at the other end waits forever.
+  This changed on 2026-09-09: `--timeout 0` used to close on the first tick.
+  (Pass a negative through `=`: `--timeout=-1`. `--timeout -1` with a space is
+  rejected as ambiguous, exit `2`.) ⚠ **A non-numeric value is not rejected** —
+  `--timeout abc` parses to `NaN`, which compares false against every threshold
+  and therefore also means NEVER, with no diagnostic. Filed, not fixed; pass a
+  number.
 - `--no-open` — don't auto-open the browser; useful in headless / SSH setups
 - `--port N` — bind specific port (default: random free port)
 - `--host HOST` — bind host (default `127.0.0.1`)

@@ -441,8 +441,8 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // names the missing surface. Neither widens the escape. Pinned by the agent
   // that wrote the specifier after running existsSync on the resolved path; the
   // admission was verified the same way as the others —
-  // scripts/release-serve.test.ts boots a copied tracked subtree with a dist/
-  // and no surface/, and its forced-dev cell dies before binding.
+  // src/digestify/backend/release-serve.test.ts boots a copied tracked subtree
+  // with a dist/ and no surface/, and its forced-dev cell dies before binding.
   //
   // ⚠ AND ITS ADDRESS MOVED TO THE EMITTED FILE IN PHASE 5, for the same reason
   // astrolabe's, magpie's, glamour's and bounty's did — with one difference

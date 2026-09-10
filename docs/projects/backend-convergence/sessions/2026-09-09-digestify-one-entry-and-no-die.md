@@ -39,10 +39,17 @@ digestify's row before it was asked to.
 | `bun run gate`, unpiped, exit read from a file | 0 · 1,978 pass / 0 fail         | **0** · **1,982 pass / 0 fail**                          |
 | `bun scripts/dist-check.ts`, all arms          | 0                               | **0** · 36 tracked / 36 on disk                          |
 | `launcher-pairing-ward`                        | 6 pass, no digestify entries    | **6 pass** · `derived=[review] review.ts→dist/review.js` |
-| `spawn-path-ward`                              | 9 pass, digestify **not a row** | **9 pass** · `review.js  anchor-read=yes  pins=6`        |
+| `spawn-path-ward`                              | 9 pass, digestify **not a row** | **9 pass** · `review.js  anchor-read=yes  pins=5` ⚠      |
 | kit modules with a subject                     | —                               | **4 of 8** adopted; 4 with none, plus 2 partial exports  |
 | acc                                            | **no config** (D37)             | **no config** — not acquired, by decision                |
 | blast radius of chapter 2                      | —                               | **1 artifact** — no kit module was modified              |
+
+⚠ **`pins=5`, not `pins=6` — this table said 6 and the ward printed 5.** The
+number was true at `110a3611` and false from `67f74097`, because de-duplicating
+`resolveMode` moved a literal `join(DIST_DIR, "index.html")` behind a function
+parameter and into the ward's declared blind spot. **A de-duplication reduced
+ward coverage**, silently, since a coverage count going down is not a failure.
+Corrected at the repair chapter, driven at three commits — D64, C4.
 
 ---
 
