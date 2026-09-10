@@ -9,15 +9,28 @@
  * the six copied-in-place buses that is a module, is bounded, carries an epoch, and is
  * unit-tested. The five others are the same twenty lines written five times.
  *
- * ── THE THREE THINGS THIS FIXES BY CONSTRUCTION ─────────────────────────────
+ * ── THE THREE THINGS THIS FIXES — TWO BY CONSTRUCTION, ONE BY OPT-IN ────────
+ *
+ * ⛔ THE HEADING USED TO SAY "THE THREE THINGS THIS FIXES BY CONSTRUCTION" AND
+ * ITEM 2 IS NOT ONE OF THEM. Corrected 2026-09-09 in mind-mapper's pre-work
+ * (D79): `epoch` is OPTIONAL here, so L6 is closed only for a caller that asks.
+ * Three adopters have since declined to — imago (D39), bounty (D48) and
+ * grapevine (D70) — so the defect the heading claimed to make impossible is
+ * live in the tree, by opt-out, and the overclaim is what hid that. Items 1 and
+ * 3 ARE by construction: a caller cannot switch the cap off or reach the buffer.
+ *
+ * ⚠ AND MIND-MAPPER'S OWN BUS, WHICH THIS MODULE CONVERGED TOWARD, TYPES THE
+ * EPOCH AS REQUIRED and stamps it unconditionally — it is the spell census L6
+ * names as CORRECT. Making it required HERE is not the repair: it would reverse
+ * D39, D48 and D70. The honest statement is this heading.
  *
  * **1 · L5 — the buffer is bounded.** Five daemons append to an array for the
  * whole life of the process. The window is a REPLAY window for reconnects within one
  * daemon's lifetime, not a durable log; a cap is the honest shape.
  *
- * **2 · L6 — a frame carries an epoch, when the caller asks for one.** After a
- * restart the ids start again at 1, so a resuming client cannot tell a stale
- * watermark from a fresh one by id alone.
+ * **2 · L6 — a frame carries an epoch, WHEN THE CALLER ASKS FOR ONE (opt-in,
+ * not construction — see above).** After a restart the ids start again at 1, so
+ * a resuming client cannot tell a stale watermark from a fresh one by id alone.
  *
  * **3 · A STALE WATERMARK REPLAYS FROM THE BEGINNING, and this is the half the
  * client cannot do.** MEASURED on astrolabe: a tail that resumes at

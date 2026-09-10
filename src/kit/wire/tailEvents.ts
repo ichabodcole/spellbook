@@ -63,10 +63,24 @@
  * Ctrl-C on a tail piped into a reader discarded undrained stdout. Same loop,
  * same exit path, one answer.
  *
- * ⚠ NOT re-homed, deliberately: mind-mapper's measured Bun 1.3.14 finding that
- * `controller.enqueue()` on an orphaned stream never throws. It is a DAEMON-side
- * fact about dead-socket detection and bears on `sseResponse`, not on any
- * client. It stays where it was measured.
+ * ⚠ NOT re-homed INTO THIS MODULE, deliberately: mind-mapper's measured Bun
+ * 1.3.14 finding that `controller.enqueue()` on an orphaned stream never throws.
+ * It is a DAEMON-side fact about dead-socket detection and bears on
+ * `sseResponse`, not on any client.
+ *
+ * ⛔ AND IT DID GET A HOME — SAY SO, BECAUSE THIS SENTENCE USED TO END "it stays
+ * where it was measured" AND THAT IS FALSE. Read at port time it pointed a
+ * reader at `mind-mapper/scripts/server.ts`, a file the backend port relocates
+ * and whose local `sseResponse` may be replaced, so the measurement looked at
+ * risk. It is not: the daemon half landed in `./sse.ts` the same day, under its
+ * own heading ("THE SCAR, RE-HOMED: `try { enqueue } catch` DOES NOT DETECT A
+ * DEAD CLIENT"), with the teardown-funnel ruling and the same known hole. Two
+ * further copies live in mind-mapper's `presence.test.ts` and
+ * `sse-keepalive.test.ts`.
+ *
+ * The general shape, worth the four lines (D83): a refusal recorded in ONE
+ * module's header cannot be read from the module it points AT. When a refusal
+ * names another module as the right home, say whether it got there.
  *
  * ── THE WIRE FORMAT, AND THE `"data: "` QUESTION RESOLVED ───────────────────
  *
