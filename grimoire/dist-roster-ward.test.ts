@@ -39,6 +39,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  expectedBackendArtifacts,
   isBackendArtifact,
   roster,
   trackedBuildInputs,
@@ -88,11 +89,41 @@ describe("dist roster ward", () => {
   test("ARM 1b — BOTH numbers are measured, so a green cannot mean `unexamined`", () => {
     // The disk count is what makes the tracked count falsifiable. Without it,
     // `3 tracked ✅` and `3 tracked of 5 on disk ✅` print identically.
-    console.log(`  dist roster: ${rows.map((r) => `${r.spell}:${r.tracked}/${r.disk}`).join(" ")}`);
-    for (const r of rows) expect(r.disk).toBeGreaterThanOrEqual(0);
+    console.log(
+      `  dist roster: ${rows.map((r) => `${r.spell}:${r.tracked}/${r.disk}`).join(" ")} — ${rows.reduce((n, r) => n + expectedBackendArtifacts(r.spell).length, 0)} declared backend artifact(s)`,
+    );
+    // ⛔ WHAT USED TO BE HERE COULD NOT FAIL: `expect(r.disk).toBeGreaterThanOrEqual(0)`
+    //    over a COUNT, inside the cell named "a green cannot mean unexamined"
+    //    (type-debt Phase 1, T13 #3). Half of this cell was decoration.
+    //
+    // The falsifiable form of the same intent, in two clauses:
+    //
+    // 1 · THE DISK WALK REACHED SOMETHING, NAMED PER SPELL. `readdirSync` over a
+    //     path that is not there returns nothing here by design (`diskDistFiles`
+    //     guards with `existsSync`), so a wrong root reads exactly like eight
+    //     empty dists.
+    //
+    //     ⚠ ITS HONEST SIZE, MEASURED RATHER THAN ASSUMED: this is a MESSAGE,
+    //     not new conviction. Driven with `diskDistFiles` pointed at a
+    //     nonexistent root, the THIRD clause below already reddened (every
+    //     spell has tracked files), so the total-blindness case was never open.
+    //     What this clause buys is that the failure names the spells whose disk
+    //     read came back empty instead of printing a row diff. Recorded because
+    //     a ward comment that overclaims is the same defect as a ward that
+    //     overclaims.
+    expect(rows.filter((r) => r.disk === 0).map((r) => r.root)).toEqual([]);
+    // 2 · EVERY BACKEND ARTIFACT THE BUILD DECLARES IS ON THE DISK — the
+    //     PARTIAL loss, which the clause below is blind to. Removing one of
+    //     astrolabe's five artifacts printed `astrolabe:5/4` and reddened
+    //     nothing; it now names the path. The expected set comes from
+    //     `src/build.ts`'s own `backendEntryNames`, imported, so this is not a
+    //     fourth copy of the `endsWith("/cli.js")` hard-coding (D43, D44).
+    expect(rows.flatMap((r) => r.absent)).toEqual([]);
     // A spell whose dist/ exists on disk must contribute to BOTH measurements —
     // a zero disk count beside a non-zero tracked count means the walk read a
     // path that is not there, which is how this script's v1 pathspec failed.
+    // ⚠ KEPT THOUGH CLAUSE 1 NOW SUBSUMES IT: it is the clause whose failure
+    // message names the pathspec defect, and the two are not the same finding.
     expect(rows.filter((r) => r.tracked > 0 && r.disk === 0)).toEqual([]);
   });
 
