@@ -12,9 +12,27 @@
 // brace-match each branch body. Report the denominator at every stage.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-const SKILLS = "/Users/colereed/Projects/Spellbook/plugins/spellbook/skills";
+// ⛔ THE ROOT: AN ENV OVERRIDE WITH A DERIVED DEFAULT, AND IT USED TO BE A
+// HARDCODED ABSOLUTE PATH TO ONE MACHINE'S CHECKOUT — pointed, moreover, at
+// `plugins/spellbook/skills`, which the backend convergence emptied of
+// dispatchers. Every one of the three r8 copies therefore exited 1 with
+// `ZERO-DENOMINATOR — verdict withheld` (type-debt Phase 1, T10): live,
+// self-calibrating logic aimed at a tree that had moved out from under it, and
+// unrunnable on any other machine besides.
+//
+// The default is DERIVED from this file's own location, so the instrument runs
+// wherever the checkout is; `R8_ROOT` is the house override idiom
+// (`gate-blind-set.ts` takes `ROOT_DIR`, `type-debt-census.ts`
+// `TYPE_DEBT_ROOT`, `canon-ledger-ward.ts` `CANON_DIR`) and is what points it
+// at the OLD tree, or at a fixture, without editing a specimen.
+//
+// ⚠ AND THE REPORT IS BYTE-IDENTICAL TO THE PRE-CHANGE FILE RUN AGAINST THE
+// SAME ROOT — verified for all three copies before and after `biome --write`,
+// which is `c4d669eb`'s own discipline for touching these files. The only thing
+// that changed is which tree the instrument can find.
+const ROOT = resolve(process.env.R8_ROOT ?? join(import.meta.dir, "..", "..", "src"));
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -73,7 +91,7 @@ function must<T>(v: T | undefined, invariant: string): T {
 
 type Hit = { file: string; verb: string; local: string; callee: string; reason: string };
 
-const files = walk(SKILLS);
+const files = walk(ROOT);
 const hits: Hit[] = [];
 const dispatchers: { file: string; disc: string; n: number }[] = [];
 let branchCount = 0;
@@ -113,7 +131,7 @@ for (const f of files) {
     }
     const group = marks.slice(i, j + 1);
     if (group.length >= 3) {
-      dispatchers.push({ file: f.replace(`${SKILLS}/`, ""), disc: head.disc, n: group.length });
+      dispatchers.push({ file: f.replace(`${ROOT}/`, ""), disc: head.disc, n: group.length });
       for (let k = 0; k < group.length; k++) {
         const g = must(group[k], `group[${k}] absent inside 0..${group.length}`);
         // ⚠ `group[k + 1]` IS legitimately absent on the last branch of the
@@ -136,7 +154,7 @@ for (const f of files) {
               callee.replace(/^.*\./, ""),
             );
           hits.push({
-            file: f.replace(`${SKILLS}/`, ""),
+            file: f.replace(`${ROOT}/`, ""),
             verb: g.verb,
             local,
             callee,
