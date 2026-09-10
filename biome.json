@@ -23,8 +23,14 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "correctness": {
+        "noUndeclaredVariables": "error"
+      }
     }
+  },
+  "javascript": {
+    "globals": ["Bun"]
   },
   "overrides": [
     {

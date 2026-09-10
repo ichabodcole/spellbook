@@ -3860,20 +3860,20 @@ ORDER, and a type check cannot see an order.**
 
 ### The two numbers, driven — and the artifact test would have got it wrong
 
-| number                                                          | result                                                                                                                                                                                                                                                       |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **(a) source edits needed at any other adopter, to compile**    | **ZERO.** Controlled: 371 pre-existing `tsc` errors across the five other adopters' trees WITH the change and 371 WITHOUT it, same tree, change stashed and restored. The field is optional and nobody passes it.                                            |
-| **(b) bytes of any other adopter's WIRE that differ**           | **ZERO.** astrolabe, bounty, glamour, imago and magpie under their own suites — **564 cells, all green**, release drives included — plus glamour's live SSE stream captured byte-for-byte either side of the change: **61 bytes, identical**, and `GET /` identical at `200 text/html; charset=utf-8`. |
+| number                                                       | result                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **(a) source edits needed at any other adopter, to compile** | **ZERO.** Controlled: 371 pre-existing `tsc` errors across the five other adopters' trees WITH the change and 371 WITHOUT it, same tree, change stashed and restored. The field is optional and nobody passes it.                                                                                      |
+| **(b) bytes of any other adopter's WIRE that differ**        | **ZERO.** astrolabe, bounty, glamour, imago and magpie under their own suites — **564 cells, all green**, release drives included — plus glamour's live SSE stream captured byte-for-byte either side of the change: **61 bytes, identical**, and `GET /` identical at `200 text/html; charset=utf-8`. |
 
-⛔ **AND THIS IS THE CASE THAT SHOWS WHY THE ARTIFACT TEST IS THE WRONG ONE, from
-the opposite direction to the pre-work's.** D79's own accidental demonstration
-was a COMMENT that dirtied 11 artifacts across 7 spells while changing nothing.
-This change is the mirror: **executable code genuinely MOVED into five
-`dist/server.js` files** — `git diff --numstat` says 6 insertions / 3 deletions
-each, and a `sourceMappingURL` grep separates the sourcemap line from the four
-real lines — **and the wire did not move at all.** A comment can look like a
-seven-spell widening and a real code change can be inert on every wire. Only (a)
-and (b) tell them apart.
+⛔ **AND THIS IS THE CASE THAT SHOWS WHY THE ARTIFACT TEST IS THE WRONG ONE,
+from the opposite direction to the pre-work's.** D79's own accidental
+demonstration was a COMMENT that dirtied 11 artifacts across 7 spells while
+changing nothing. This change is the mirror: **executable code genuinely MOVED
+into five `dist/server.js` files** — `git diff --numstat` says 6 insertions / 3
+deletions each, and a `sourceMappingURL` grep separates the sourcemap line from
+the four real lines — **and the wire did not move at all.** A comment can look
+like a seven-spell widening and a real code change can be inert on every wire.
+Only (a) and (b) tell them apart.
 
 ⚠ **The rejection that did not reach this case, checked rather than inherited.**
 D32's not-taken carries _"a `sseResponse` hook that hands the caller a raw
@@ -3924,14 +3924,15 @@ backend files, plus every JSONL line the tail writes into an agent's pipe.
 pre-work document noticed.** D82's reasoning is true of the CLIENT module and
 silent about the SERVER SCHEMA. This suite is not only a reader of the envelope:
 its scripted fake **WRITES** it, standing in for the daemon. `tail.test.ts:104`
-is `function event(seq, epoch)` building `{ seq, epoch, kind, payload }`, and six
-assertions read that field back off a forwarded frame. Left unmodified against a
-CLI whose `cursorOf` reads `id`:
+is `function event(seq, epoch)` building `{ seq, epoch, kind, payload }`, and
+six assertions read that field back off a forwarded frame. Left unmodified
+against a CLI whose `cursorOf` reads `id`:
 
 - `cursorOf` answers `undefined`, so the cursor never advances;
 - `expect(sinces[1]).toBe(3)` sees **0**, and `toBe(5)` in the epoch cell sees
   **0**;
-- the two `toMatchObject({ seq: N })` rows fail on a frame that now carries `id`.
+- the two `toMatchObject({ seq: N })` rows fail on a frame that now carries
+  `id`.
 
 **The ruling: the four cells' SUBJECTS are untouched and the FIXTURE'S SCHEMA
 moves.** `event()` emits `id`; the six assertions that read a forwarded frame's
@@ -3946,16 +3947,17 @@ schema, and every one of them is invisible to "count the sites that read this
 field". D81's own sharpest line — _"count the readers of the MEANING, not the
 occurrences of the token"_ — is one level too shallow: **count the writers too,
 and a fixture that stands in for the renamed component is the one most likely to
-be missed, because it is the one that looks like a test rather than a consumer.**
+be missed, because it is the one that looks like a test rather than a
+consumer.**
 
 ⚠ **The oracle earned its keep a second time in the same chapter, and this is
 the argument for having one at all.** Adopting `errors.ts` deleted a
 module-level `CURRENT_COMMAND` and left two references to it — one in a template
 literal inside `passOrThrow`, on the daemon-refusal path. Measured on what would
 have caught it: **`bunx biome check` PASSES** (no rule flags an undeclared
-identifier here), **`bun run build` exits 0**, and only `tsc --noEmit` names it —
-**and `tsc` is not in the gate** (`gate = build && biome check && bun test`). So
-the gate's only reach on an undefined identifier is a test that runs the
+identifier here), **`bun run build` exits 0**, and only `tsc --noEmit` names it
+— **and `tsc` is not in the gate** (`gate = build && biome check && bun test`).
+So the gate's only reach on an undefined identifier is a test that runs the
 PROCESS, which is exactly what this file is. It reported
 `{"kind":"internal","message":"CURRENT_COMMAND is not defined"}` at exit 1 on
 all four cells, twice (the second time for a `getCurrentCommand` import that a
@@ -3966,12 +3968,12 @@ formatter's import-sort had silently displaced from a `python` anchor).
 - _Read both spellings (`ev.id ?? ev.seq`)._ Two spellings of one field is how
   one rots (D71), and it would have left the oracle green over a daemon that
   emitted neither.
-- _Keep `cursorOf: (ev) => ev.seq` so the fixture need not move._ It compiles and
-  runs — `cursorOf` is caller-supplied, which is D81's own "the CLI half forces
-  nothing" — and it reads a field the daemon no longer emits, so the cursor never
-  advances and **every reconnect re-requests `since=0`: the whole replay window
-  into an agent's pipe, silently, forever.** ⛔ **A caller-supplied accessor is
-  where a wire rename goes wrong QUIETLY.**
+- _Keep `cursorOf: (ev) => ev.seq` so the fixture need not move._ It compiles
+  and runs — `cursorOf` is caller-supplied, which is D81's own "the CLI half
+  forces nothing" — and it reads a field the daemon no longer emits, so the
+  cursor never advances and **every reconnect re-requests `since=0`: the whole
+  replay window into an agent's pipe, silently, forever.** ⛔ **A
+  caller-supplied accessor is where a wire rename goes wrong QUIETLY.**
 - _Decline `eventLog` and keep `seq`._ D81's own not-taken; it costs the three
   things the kit genuinely fixed.
 - _Rewrite the four cells as `tailEvents` unit cells._ D82's not-taken, and it
@@ -3995,18 +3997,18 @@ REASONED disagree, and the reasoned one governs.** The request rests on "these
 properties become true by construction". Measured, clause by clause, at the last
 port:
 
-| clause                             | by construction now?                                                                                                                                                                                                                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1 · `idleTimeout` is set**       | ⛔ **NO — and it is the clause whose last violation was the real bug.** Seven daemons pass the option at their OWN `Bun.serve` call and **no kit module owns it**: `kit/wire/heartbeat.ts` supplies the constant, the parse and the clamp, and it cannot supply the option, because the kit never calls `Bun.serve`. A ninth daemon that omits it still drops every SSE client at ten seconds. |
-| **2 · the pointer write is atomic** | ✅ **YES** — all seven pointer-writing daemons call `writeFileAtomic`. ⚠ Which makes the clause's population **EMPTY**: its predicate (`writeFileSync(sessionFile\|latestFile)`) matches nothing anywhere, so absence of a finding is now spelled exactly like absence of a subject — D42's own shape, inside an instrument D42 built cells for.        |
-| **3 · `readSession` branches on ENOENT** | ⛔ **NO** — four CLIs still carry their own `readSession` (bounty, glamour, imago, magpie) and the kit has no session reader at all. Nothing converged, so nothing became true by construction.                                                                          |
+| clause                                   | by construction now?                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 · `idleTimeout` is set**             | ⛔ **NO — and it is the clause whose last violation was the real bug.** Seven daemons pass the option at their OWN `Bun.serve` call and **no kit module owns it**: `kit/wire/heartbeat.ts` supplies the constant, the parse and the clamp, and it cannot supply the option, because the kit never calls `Bun.serve`. A ninth daemon that omits it still drops every SSE client at ten seconds. |
+| **2 · the pointer write is atomic**      | ✅ **YES** — all seven pointer-writing daemons call `writeFileAtomic`. ⚠ Which makes the clause's population **EMPTY**: its predicate (`writeFileSync(sessionFile\|latestFile)`) matches nothing anywhere, so absence of a finding is now spelled exactly like absence of a subject — D42's own shape, inside an instrument D42 built cells for.                                               |
+| **3 · `readSession` branches on ENOENT** | ⛔ **NO** — four CLIs still carry their own `readSession` (bounty, glamour, imago, magpie) and the kit has no session reader at all. Nothing converged, so nothing became true by construction.                                                                                                                                                                                                |
 
 **One of three.** So the ward stays and the reason is written into its own
 header, where the next reader meets the request. What changed is what the
 deletion is now pending ON: not "the backends build" — they do — but **clause 1
 finding a home that owns the `Bun.serve` options**, which is a kit question and
-not a port's. Clause 2's empty population wants a coverage cell or a deletion and
-is **FILED**, because D44 forbids the instrument that guards a port being
+not a port's. Clause 2's empty population wants a coverage cell or a deletion
+and is **FILED**, because D44 forbids the instrument that guards a port being
 repaired by that port, and removing an assertion is more than repairing one.
 
 ⚠ **The transferable half: a stopgap's deletion condition is usually written as
@@ -4023,30 +4025,141 @@ _"THE POPULATION IS NOT CLOSED. Three spells still ship their daemons as SOURCE
 (digestify, grapevine, mind-mapper)."_ Digestify landed in Phase 5, grapevine in
 Phase 6, and **mind-mapper takes that population to zero.** The clause is
 retired in place, with what survives it stated separately: the day any spell
-needs a VALUE import of `Bun`'s own API the row comes back, and **that is a claim
-about the language rather than about a roster.** The exemption is untouched,
-because D50 had already moved its liveness proof OFF the roster and into a
-synthetic cell precisely so that reaching zero would cost nothing — **this is
-that design being paid out.**
+needs a VALUE import of `Bun`'s own API the row comes back, and **that is a
+claim about the language rather than about a roster.** The exemption is
+untouched, because D50 had already moved its liveness proof OFF the roster and
+into a synthetic cell precisely so that reaching zero would cost nothing —
+**this is that design being paid out.**
 
 Two more roster sentences expired at the same commit and are corrected:
-`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set; only
-magpie is one-aspect now) and its _"`mind-mapper/scripts/cli.ts` is a real
+`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set;
+only magpie is one-aspect now) and its _"`mind-mapper/scripts/cli.ts` is a real
 unported CLI, not a launcher"_.
 
-⚠ **And this is the class the last port owns all of at once.** Every landing made
-some other file's roster sentence false, and no port owned it, because the sweep
-that finds a moved PATH does not find a moved MEMBERSHIP. The instruction that
-works is B7's second grep — read every hit that is a LIST OF SPELL NAMES rather
-than a path — and the reason it belongs in a playbook rather than a backlog item
-is that it is un-ownable one port at a time.
+⚠ **And this is the class the last port owns all of at once.** Every landing
+made some other file's roster sentence false, and no port owned it, because the
+sweep that finds a moved PATH does not find a moved MEMBERSHIP. The instruction
+that works is B7's second grep — read every hit that is a LIST OF SPELL NAMES
+rather than a path — and the reason it belongs in a playbook rather than a
+backlog item is that it is un-ownable one port at a time.
 
 **Not taken:**
 
 - _Delete the lifecycle ward, since its stated condition is met._ Above.
-- _Grow it a fourth clause._ Its own header says a fourth clause is the signal to
-  go build the thing instead.
+- _Grow it a fourth clause._ Its own header says a fourth clause is the signal
+  to go build the thing instead.
 - _Delete clause 2 now that its population is empty._ D44. Filed.
 - _Delete `bun` from `BUILTIN_EXACT` now that nobody writes it._ Clause 2 of its
   own argument: it would narrow the ward by exactly one specifier and tidy
   nothing else away, and clause 1 never rested on the roster.
+
+## D88 · The gate was blind to an undefined identifier on any UNCOVERED path — closed with two lines of `biome.json`, and NOT with `tsc`
+
+**Decided 2026-09-10, in the repair chapter, driven end to end before it was
+proposed.**
+
+D86 recorded that `bunx biome check` passes and `bun run build` exits 0 over a
+`ReferenceError`, and that **"only `tsc --noEmit` names it."** That sentence is
+true and it is the wrong conclusion, twice over: it understates the hole and it
+misprices the repair.
+
+### The hole, measured
+
+Planted on the path D86's own defect lived on — `versionInfo`'s `catch`, which
+no cell reaches — one undeclared identifier gave:
+
+| instrument      | verdict                                          |
+| --------------- | ------------------------------------------------ |
+| `bun run build` | **exit 0**, and the bug ships into `dist/cli.js` |
+| `bun run check` | **exit 0**                                       |
+| `bun test`      | **2,019 pass / 0 fail**                          |
+
+⛔ **The whole gate green over a latent `ReferenceError` in a committed
+artifact**, which reaches a caller as `{"kind":"internal","exit_code":1}`. D86's
+own case was caught only because it sat on a path `tail.test.ts` runs — so the
+reach of "a test that runs the process" is exactly the covered statements, and
+**the hole is every uncovered statement in all eight backends.** A coverage
+threshold is the other repair and it is a far larger argument; this one is two
+lines.
+
+### The repair, with the denominator asserted
+
+`correctness/noUndeclaredVariables` is a real Biome rule at default severity
+**error** and is **NOT in `recommended`**, which is why 556 files of house code
+never met it. Turned on, plus `javascript.globals: ["Bun"]`:
+
+| configuration                         | violations across the tree                                      |
+| ------------------------------------- | --------------------------------------------------------------- |
+| rule on, `globals: ["Bun"]`           | **0** — 563 files checked, exit 0                               |
+| rule on, no `globals`                 | **272**, every one of them `Bun`                                |
+| rule on, `globals`, **plant applied** | **1 — the plant**, `src/mind-mapper/backend/cli.ts:568`, exit 1 |
+
+**Zero pre-existing debt, and no `knownFailures` ledger.** The second row is the
+whole reason this needed driving rather than believing: Biome truncates at
+`--max-diagnostics=20`, so a first look at the un-globalled configuration shows
+twenty `Bun` diagnostics and reads as "hundreds of pre-existing violations, this
+route is closed." It is one missing global. ⚠ **Never read a violation count off
+a truncated diagnostic list — raise `--max-diagnostics` and count.**
+
+### Calibrated in both directions
+
+**planted → `bun run gate` exit 1**, naming
+`src/mind-mapper/backend/cli.ts:568:10 lint/correctness/noUndeclaredVariables × The plantedUndeclaredIdentifier variable is undeclared`
+· **restored → `bun run gate` exit 0**, 2,019 pass / 0 fail / 6,181 assertions /
+180.1 s. The old configuration over the same plant: `bun run check` **exit 0** —
+the before half of the measurement, taken rather than assumed.
+
+### ⛔ What this deliberately is NOT: adding `tsc` to the gate
+
+**A typecheck gate is a standing Cole ruling — "ruled out of sprint 05" —
+recorded at `scripts/instruments/type-sentinel-probe.ts:30` as a SCOPE FENCE on
+the one instrument in the tree that reads `tsc`'s type information at all.** It
+is also 584 pre-existing errors. So the biome route is not merely the cheaper of
+two options: **framing this repair as "add `tsc`" would re-litigate a ruling
+that is already made**, and it is said here explicitly so that nobody reads
+D86's "only `tsc` names it" as a recommendation. That sentence is accurate about
+_reach_ and misleading about _cost_ — Biome names it too, for two lines and zero
+debt, because an undeclared identifier is a **scope** question and not a type
+question.
+
+### ⚠ What the new rule still does not catch
+
+It is **not a type checker**, and the boundary is worth stating so the next
+reader does not over-read the green:
+
+- **A wrong TYPE still passes.** `versionInfo()` returning `{name, version: 3}`,
+  a `string` handed an `ErrKind`, a misspelled _property_ (`pkg.verison`) — all
+  green. The rule reads bindings in scope, not their shapes.
+- **Anything not in `files.includes`** — `dist/` is excluded (correctly: it is
+  generated), as is `.anthill/`.
+- **Dynamic reach** — `globalThis["someName"]`, `eval`, a property access on a
+  declared object.
+- **A declared-but-wrong binding** — importing the right name from the wrong
+  module resolves and passes.
+
+What it DOES catch is the exact class that bit twice in one chapter: an adoption
+deletes a module-level binding and leaves references to it. Both of D86's
+instances (`CURRENT_COMMAND` in a template literal, and a `getCurrentCommand`
+import an import-sort displaced) are in that class, and both would now red at
+`bun run check` in under a second instead of at whichever cell happened to run
+the process.
+
+**Not taken:**
+
+- _Add `tsc --noEmit` to the gate._ The standing ruling above, plus 584
+  pre-existing errors that would need a suppression ledger the biome route does
+  not need at all.
+- _Leave it, and rely on `tail.test.ts`._ That is what was relied on, and it
+  works only where a cell runs the process. It is a coverage-shaped guarantee
+  wearing a correctness-shaped claim.
+- _A coverage floor instead._ It would catch this class and much else, and it is
+  a real argument with a real cost — a threshold, a per-file exemption policy,
+  and a fight about which statements deserve a cell. Filed as the larger
+  question; it is not a reason to decline two lines that cost nothing.
+- _`javascript.globals` with more names than `Bun` (pre-emptively adding `Deno`,
+  `process`, …)._ Every other global the tree uses is already in Biome's own
+  environment sets — measured, not assumed: adding only `Bun` takes 272 to 0. A
+  speculative global is an unfalsifiable suppression.
+- _Severity `warn`._ `bun run check` runs `--error-on-warnings`, so `warn` and
+  `error` are the same verdict here and `error` says what is meant. It also
+  survives someone dropping that flag.
