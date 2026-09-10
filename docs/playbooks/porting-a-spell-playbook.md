@@ -859,12 +859,26 @@ port is before Phase 1, because they have different done-whens below.
 > ported.** It is the backend convergence's Phase 2, generalised — written from
 > glamour, which is the first spell to take its whole backend out of the
 > deployed skill folder, and which was chosen as the pathfinder precisely so
-> five spells could follow it. **Its population is OPEN:** digestify, grapevine
-> and mind-mapper still walk this — grapevine and mind-mapper as of 2026-09-09,
-> digestify having landed that day alongside bounty. Astrolabe and magpie walked
-> half of it first (their CLIs already built), and where their experience
-> differs from glamour's the difference is recorded, because that difference is
-> the part a third spell cannot predict.
+> five spells could follow it. **Its population is OPEN:** mind-mapper still
+> walks this — digestify, bounty and grapevine all landed 2026-09-09, grapevine
+> last and as the only port whose deliverable was a refusal. Astrolabe and
+> magpie walked half of it first (their CLIs already built), and where their
+> experience differs from glamour's the difference is recorded, because that
+> difference is the part a third spell cannot predict.
+>
+> ⭐⭐⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY GRAPEVINE'S PORT — THE FIRST PORT
+> WHOSE DELIVERABLE WAS A REFUSAL, AND THE FIRST TO RUN ON THE REJECT-STRUCTURAL
+> VERDICT.** Everything the pre-work below added HELD: the launcher
+> discriminator gave the right shape on the first try, the epoch property
+> answered "no epoch" without a list, and all three structural refusals survived
+> contact with the code. **Six gaps remain, each marked `⭐ grapevine-port`**,
+> recorded at the moment they were hit and amended in one pass at the end; the
+> account is `docs/projects/backend-convergence/phase-6-journal.md` and the
+> rulings are D71–D74. **What did NOT transfer, stated once: the assumption that
+> a spell's failure PROSE is only presentation.** grapevine's rejections were
+> engineered for a machine reader — flag-set extractor markers, with a sort — so
+> adopting `errors.ts` was not "the envelope replaces the wording", it was "the
+> enumeration has to survive the move into a field".
 >
 > ⭐⭐⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR GRAPEVINE — THE FIRST SPELL
 > WITH A DURABLE EVENT LOG, AND THE FIRST WHOSE `main()` RETURNS WHILE THE
@@ -1595,6 +1609,20 @@ Three specific moves, all earned:
    subject says so; a regex over the wrong file returns null. **Grep for every
    READ of a moved file, not only for every spawn of one.**
 
+   ⛔ ⭐ **grapevine-port — AND "THE LAUNCHER" IS NOT ONLY THE CLI'S. A SUITE
+   CAN SPAWN THE DAEMON DIRECTLY, AND THAT SPAWN IS THE ONE B3 SILENTLY
+   BREAKS.** This step and its scar are written entirely about the `CLI`
+   constant, because bounty's defect was there. grapevine's suite holds
+   `spawn(process.execPath, [join(import.meta.dir, "daemon.ts")])` in two cells
+   that need a SECOND daemon on the machine (`doctor` and `reap`, which classify
+   other daemons). After the move that path is `src/<spell>/backend/daemon.ts` —
+   a module B3 has just stripped of its `import.meta.main` block — so the spawn
+   boots **nothing**, exits 0, and both cells fail as _"no such daemon on this
+   machine"_: a wrong-file defect wearing a missing-feature symptom, which is
+   the same disguise B3 warns about one step earlier. **So: grep the suite for
+   every spawn of every ENTRY, not only for the one the constant at the top
+   names**, and give each its own launcher-anchored constant.
+
 2. **Anything computed from `import.meta.url` must be read out of the
    ARTIFACT.** glamour's `daemonCwd()` and `SKILL_ROOT_FOR_TEST` answer
    `src/<spell>/` when imported from source — a directory with no `SKILL.md`, no
@@ -1898,6 +1926,18 @@ absorb those stops being a file server and becomes a router."_ So:
   asked: this phase MOVES IMPLEMENTATIONS INTO THE DIRECTORY THE DAEMON
   SERVES.** Every built-backend spell now has an artifact sitting in its served
   `dist/`. The cell is: the artifact is on disk AND the route refuses it. (D61.)
+- ⚠ ⭐ **grapevine-port — AND MEASURE THE LEAK IN CHAPTER 1, WHILE IT IS STILL
+  THERE.** Nothing above says to, and it costs one `curl` against the daemon you
+  are already driving at the end of chapter 1 (B0 requires a booted one). The
+  refusal cell asserts an absence; a BEFORE value is what turns "404" from a
+  status into a repair anybody can check. grapevine's, through the real
+  launcher: `GET /daemon.js` → **200, 146,330 bytes** and `GET /cli.js` → **200,
+  251,310 bytes**, both `text/javascript` and byte-identical to the committed
+  artifacts — then 404 after chapter 2. ⛔ **And it is not only bookkeeping: it
+  is the only thing that proves the whitelist is load-bearing rather than
+  shadowed.** D66 had to demonstrate that for digestify by deleting the kit's
+  check and rebuilding; a chapter-1 measurement gets the same evidence for free,
+  from the tree as it actually stood.
 
 ⛔ ⭐ **bounty — AND EVERY ROW OF THAT TABLE ASSUMES YOUR SPELL HAS THE WORSE
 CODE. FOR A CONVERGENCE-SOURCE SPELL, HALF OF THEM ARE DE-DUPLICATIONS AND ONE
@@ -2117,6 +2157,24 @@ exit codes, then adopting it re-spells every failure the spell can produce:
   step by itself. So: **edit the exit table in the same chapter as the
   conversion, name the two populations in it, and show the envelope.** Digestify
   is the worked case (D58).
+- ⛔ ⭐ **grapevine-port — AND A SPELL'S REJECTION PROSE CAN BE A MACHINE
+  SURFACE, ENGINEERED ON PURPOSE. CHECK BEFORE YOU REPLACE IT.** Every bullet
+  above treats the old wording as presentation the envelope improves on. That is
+  right for four spells and wrong for one: grapevine's rejections carry
+  **flag-set extractor markers** — `recognized flags: --a --b`, spelled with the
+  colon straight after the noun under a comment recording that a qualifier
+  between the noun and the colon "reads as prose, not a set", and SORTED
+  long-flags-first because an extractor reads left to right and stops at the
+  first token that is not a `--long` flag. It came out of that spell's own acc
+  work. **Inside a JSON document a marker is a substring of an escaped string**,
+  so the adoption either keeps both or moves the enumeration into a field. ⛔
+  **It moves, and the field already exists:** `ErrExtra.choices` is the
+  envelope's enumeration ("what WOULD have been accepted"), and it is what
+  glamour — CONFORMANT L0 — publishes instead of a marker. **Check the
+  conformant sibling rather than assuming either way**, then move the set into
+  `choices` and the runnable recovery into `hint`, and keep the sort (it is
+  free, and still right for a consumer that flattens the array back to a line).
+  Never emit both: two spellings of one set is how one rots. (D71.)
 - ⛔ ⭐ **digestify — AND A SPELL CAN HAVE NO `die` AND STILL HAVE THE WHOLE
   CONTRACT. LOOK FOR THE RAISE, NOT FOR THE HELPER.** `review.ts` has no `die`,
   no error class and no envelope: it raises by
@@ -2164,6 +2222,21 @@ artifact, copy it, mutate the copy, run it, throw it away.
 **So: state the delta, drive it, and put it in its own commit and its own
 decision-log entry** — D38 is the worked example. Do not let a chapter whose
 sibling is titled "behaviour unchanged" quietly re-spell every error.
+
+⛔ ⭐ **grapevine-port — AND `tailEvents`'s RETURNED EXIT CODE HAS TO REACH
+`main`, WHICH IS A SEAM IN ANY SPELL THAT DISPATCHES THROUGH A REGISTRY.** The
+whole P0f repair is that the client RETURNS a code instead of exiting from
+inside three loops — and a CLI whose verbs are rows in a table
+(`COMMANDS[].run: (positional, flags) => Promise<void>`) has **nowhere to put
+it**: its dispatcher does `await spec.run(...); return 0;`. The code is dropped
+silently, at exit 0, which is the one failure the adoption was supposed to end.
+⚠ **And the union a reader writes first does not compile:**
+`Promise<number | undefined>` is not what an `async` verb ending without a
+`return` produces (that is `Promise<void>`, not assignable), so a union reds
+every other verb for the sake of one — and `void` in a union is a lint error in
+this repo. Type the seam **`unknown`** and widen at the ONE place that reads the
+value (`typeof outcome === "number" ? outcome : 0`). The registry genuinely does
+not care what a verb returns. (D74.)
 
 ⛔ **THE ONE RULE THAT CANNOT BE COPIED FROM A SIBLING: `idleMs` — the tail's
 watchdog — is DERIVED FROM THAT SPELL'S OWN DAEMON HEARTBEAT.** Give the spell
@@ -2269,6 +2342,17 @@ glamour's `postCmd`/ECONNRESET, at a different spell, at a different verb, found
 by following the graph. **Two spells, two conditionals, both three lines from
 being real.**
 
+⚠ ⭐ **grapevine-port — THE THIRD, AND IT IS AT A VERB THAT PRINTS A RECEIPT,
+WHICH IS WORSE THAN THE OTHER TWO.** `cmdRoll` and `cmdRestart` each call
+`const fresh = await ensureDaemon()` — die-reachable — sitting BETWEEN two
+`catch {}` blocks, one line below one and two lines above another. Safe today.
+One refactor that widens either `try` over that call turns "the daemon failed to
+start" into a swallowed `pid = null` and a printed `{ok:true, rolled:true}`:
+**success reported for a roll that did not happen.** Three spells, three
+conditionals, and the shape is stable enough to look for on purpose — a
+die-reachable call adjacent to a bare `catch {}` in a function that ends by
+printing a receipt.
+
 ⚠ **Report a CONDITIONAL even when it is currently unreachable, and do not
 silently fix it.** glamour's `postCmd` catches an ECONNRESET on `close` and
 answers `{"ok":true}` at exit 0, matching on `message.includes("ECONNRESET")`
@@ -2346,6 +2430,15 @@ belongs in its own commit, filed rather than smuggled.
 
 - [ ] **Every entry's artifact** built and committed **in the same chapter as
       its source** — one per entry, not two; `bun scripts/dist-check.ts` exit 0.
+      ⛔ ⭐ **grapevine-port — AND ON A FIRST-EMIT PORT THAT CHECK IS ONLY GREEN
+      AFTER THE COMMIT, WHICH THIS BOX NEVER SAYS.** ARM 2 diffs the dist roots
+      with `git status`, and a staged-but-uncommitted NEW artifact is `A ` — a
+      dirty path. Measured: exit 1, both of grapevine's artifacts listed under
+      _"the committed dist/ is NOT the build of the committed source"_, whose
+      own remedy is "stage it" — which was already done. **It is not a real
+      failure and there is nothing to fix**: commit the chapter, then re-run,
+      and it is exit 0 across every root. Do not go looking for a build defect,
+      and do not let it block the commit it is describing.
 - [ ] ⭐ **digestify-port — "BOOTED" IS THE WRONG NOUN FOR A SINGLE-SHOT SPELL —
       DRIVE THE WHOLE SESSION, NOT THE START OF ONE** (question 4). A standing
       daemon is exercised by booting it and asking it things; digestify exists
@@ -2671,6 +2764,32 @@ planted in a copy of the shipped artifact found it in one run after five
 readings had not. Full account:
 `docs/projects/backend-convergence/phase-4-journal.md`.
 
+### Example 9: grapevine — the port that refused three kit modules
+
+**What it is:** the seventh consumer, two entries (`cli.ts` + `daemon.ts`, no
+`server.ts`), and the first spell for which the honest B8 outcome at three rows
+is "adopted nothing, and did not widen".
+
+**What it is worth reading for:**
+
+- **The launcher that would have killed the daemon** — B2's discriminator on the
+  property (`main()` returns while the process must keep living), and the only
+  spell in the roster whose daemon takes the NATURAL-RETURN launcher.
+- **Three defect classes, one error string.** `daemon failed to start within 3s`
+  is the launcher shape, a flat-sibling spawn, and a dev-mode surface import
+  dying. The journal's table is how you tell them apart; the discriminator for
+  the first is "run the daemon launcher alone, with no CLI in the picture".
+- **REJECT-STRUCTURAL, written in both places.** `eventLog`, `sse` and half of
+  `housekeeping`, each with its two types, the reader that makes them
+  incompatible (six routes read the subscriber alias), and the widening not done
+  — plus a line in each kit module's own header, which is the half that survives
+  the session.
+- **An error contract that was TWO contracts.** 46 `die` sites plus four parser
+  rejections writing their own prose, and the prose turned out to be a machine
+  surface.
+
+`docs/projects/backend-convergence/phase-6-journal.md`; D68–D74.
+
 ### Example 7: digestify — the third rewrite, and the one that closed the population
 
 A 1,505-line hand-written page with **no framework at all** — ~600 lines of
@@ -2710,6 +2829,27 @@ inventory at
 
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
+
+- **2026-09-09** — ⭐⭐⭐⭐⭐⭐ **grapevine's PORT: a REFUSAL is a deliverable,
+  and a spell's failure PROSE can be a machine surface.** The seventh consumer,
+  and the first to run on the REJECT-STRUCTURAL verdict the pre-work had just
+  written. Everything the pre-work added held — the launcher discriminator gave
+  the right shape first try, the epoch property answered without a list of spell
+  names, and all three structural refusals survived contact with the code. **Six
+  gaps:** `dist-check` ARM 2 cannot be green until the chapter is COMMITTED on a
+  first-emit port (its "dirty paths" are the staged-new artifacts, and its own
+  remedy is the thing you already did); B6.1's "spawn the launcher" is written
+  about the CLI constant and misses a suite that spawns the DAEMON source, which
+  B3 has just made inert; the `serveDist` row never says to MEASURE the leak in
+  chapter 1, which is the only free proof the whitelist is load-bearing rather
+  than shadowed; B8's `errors` bullets treat old wording as presentation, and
+  grapevine's carried flag-set extractor markers that had to move into `choices`
+  rather than be replaced; `tailEvents`'s returned exit code has nowhere to go
+  in a registry-dispatched CLI, and the union a reader writes first does not
+  compile; and B9's CONDITIONAL shape recurred a THIRD time, at a verb that
+  prints a receipt. The account is
+  `docs/projects/backend-convergence/phase-6-journal.md`; the rulings are
+  D71–D74.
 
 - **2026-09-09** — ⭐⭐⭐ **Phase B RE-KEYED FROM NAMES ONTO PROPERTIES, in
   pre-work for digestify.** Not taught by a port: an independent verify pass

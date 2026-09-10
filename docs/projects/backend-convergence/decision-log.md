@@ -2890,3 +2890,141 @@ an epoch and simply not wire `epochOf` on the CLI side_ — a field nothing read
 and the next agent to wire `tailEvents` properly would arm the replay without
 knowing it. _Keep the epoch and cap the backlog replay_ — that changes
 `tail --from-start`'s contract to fix a problem grapevine does not have.
+
+## D71 · grapevine's rejection ENUMERATIONS move from an acc-shaped prose marker into `choices` — the envelope's field, not a second copy
+
+**Decided and driven 2026-09-09, grapevine's port chapter 2 (`ec543bfb`).**
+
+Adopting `src/kit/wire/errors.ts` puts one JSON document on stderr. Grapevine's
+rejections were **deliberately shaped for a prose reader**:
+`recognized flags: --as --from`, spelled with the colon straight after the noun
+under a comment recording that "a qualifier between the noun and the colon reads
+as prose, not a set", and sorted long-flags-first because a flag-set extractor
+reads left-to-right and stops at the first token that is not a `--long` flag.
+That shape came out of grapevine's own acc registry work and it was not
+incidental.
+
+**Inside a JSON document a prose marker is a substring of an escaped string.**
+So the adoption had to either keep the markers beside the envelope, or move the
+enumeration into the envelope's own field.
+
+**It moves.** The house answer already existed and was CHECKED rather than
+assumed: glamour is **CONFORMANT L0** and publishes its accepted set as
+`choices` — `errors.ts`'s `ErrExtra` has the field for exactly this, and its own
+comment says `choices` "enumerates what WOULD have been accepted". A rejection
+that names its valid set is the property; the prose marker was one rendering of
+it, for one kind of reader.
+
+Four rejections moved with it, and they are the finding underneath: **grapevine
+had a SECOND error contract beside `die`** — the parser's
+`process.stderr.write(...); return 2` sites (bare invocation, unknown root flag,
+unknown verb, arity) — with their own wording, their own markers and no `kind`
+on the wire. A grep for `die(` reports the contract as 46 sites. It was 46 plus
+those four, and those four are the ones an agent meets first.
+
+⚠ **The sort is KEPT even though an array cannot be truncated by a left-to-right
+reader.** It is free, and it is still right for any consumer that flattens
+`choices` back to a line.
+
+**Not taken:** _emit the envelope AND keep the marker lines_ — two spellings of
+one set is how one rots, and stdout/stderr would then carry the enumeration
+twice. _Keep the prose rejections and convert only `die`_ — that leaves one
+spell answering two ways, which is register row A3 at bounty, deliberately not
+reproduced here. _Widen `errorEnvelope` with a `markers` field_ — a kit widening
+for one spell's reader, which is precisely what D68 rules out.
+
+## D72 · grapevine's failure contract is re-spelled at 38 raise sites — 5 and 6 are new, and SKILL.md is part of the change
+
+**Driven before and after, 2026-09-09 (`ec543bfb`).**
+
+**Before:** `process.stderr.write(\`grapevine: ${msg}\n\`); process.exit(code)`
+— prose at exit **2** for everything, with two rare internal faults at 1. A
+missing channel, a mistyped flag, an archived channel and a daemon that would
+not start were **one number** to an agent.
+
+**After:** one JSON envelope, stdout empty, and the taxonomy — `usage` 2,
+`internal` 1, `not_found` **5**, `conflict` **6**. The mapping is not a new
+opinion: the daemon already distinguished these on the wire (404 for a channel
+that does not exist, 409 for archived / live / already-open) and the CLI was
+flattening it. `dieApi` reads the status and carries the daemon's own body
+verbatim under `error.server`, so a caller can branch on what the other side
+actually said rather than on this CLI's prose about it.
+
+Driven at seven invocations; the table is in `phase-6-journal.md`. Eighteen
+cells of `cli.test.ts` were red at the conversion and each was re-pinned to the
+field rather than to the prose — including two that RAN what they found by
+splitting stderr on `"try: "`, which now read `error.hint`.
+
+⛔ **AND THE RULING HAS A DESTINATION OUTSIDE THE CODE: SKILL.md.** The spell's
+published surface said "exit 2" in four places and described the enumeration as
+`recognized flags: …`. A port that moves `not_found` to 5 and leaves the
+documentation saying 2 has shipped a contract its own documentation contradicts,
+and **no ward reads that prose**. The exit table, the envelope and a per-code
+sentence an agent can act on are now in SKILL.md, with 5 and 6 marked as new.
+Fourth spell to make this move (imago, bounty, digestify, grapevine) and the
+fourth to find the step by itself.
+
+⚠ **Nothing in the gate reports any of this**, because grapevine has no
+`acc.config.json` (D37). Register row A4 gets one spell worse: grapevine now
+emits the house envelope with no grade asserting it.
+
+## D73 · `drainAndStop` is adopted with an EMPTY `clients` and `graceMs: 0` — and both blanks are measurements
+
+**Ruled at grapevine's port, 2026-09-09 (`ec543bfb`).**
+
+`housekeeping` is SPLIT for grapevine (D68): the two timer exports have no
+subject, and `drainAndStop` is a de-duplication — its server-stop race IS
+grapevine's `Promise.race([server.stop(true), setTimeout(200)])`, `stopMs`
+exactly. What the row could not say until the call was written is what happens
+to the two arguments it does not use.
+
+**`clients` has no expressible value, and that is the `sse` refusal arriving at
+a second site.** The kit closes a held connection by calling `client.close()`.
+Grapevine's subscriber records are `{alias, human, lurk, send}` — no `close`;
+the per-stream teardown is a closure stashed on the ReadableStream controller
+and reachable only from `cancel()`. There is nothing to hand it.
+`server.stop(true)` closes the sockets, which fires each stream's `cancel` and
+each subscriber's own cleanup, so the teardown is not weaker for the blank.
+
+**`graceMs: 0` is a deliberate deviation from the kit's 150 ms**, and the kit is
+right about why 150 exists: a `closed` frame followed immediately by an
+aggressive stop is a frame the client never sees. **Grapevine emits no farewell
+frame at daemon shutdown** — its only close broadcast is on
+`DELETE /channels/:name`, a different verb — and its `DELETE /` already returns
+the response and schedules the teardown 10 ms later, so its flush window sits at
+the route rather than in the drain. A second 150 ms would be latency with
+nothing to flush.
+
+**Not taken:** _take the default 150 ms as RECEIVED_ — that is a behaviour
+change bought for nothing, in the chapter whose contract is that every change is
+named. _Give the subscriber records a `close`_ — a rewrite of the spell to fit
+the kit, which is what REJECT-STRUCTURAL means. _Skip `drainAndStop` because two
+of three exports have no subject_ — a row is a module, and the one export with a
+subject is a genuine de-duplication.
+
+## D74 · the tail's EXIT CODE crosses grapevine's command registry, and the registry's `run` is typed `unknown` to let it
+
+**Ruled at grapevine's port, 2026-09-09 (`ec543bfb`).**
+
+`tailEvents` never calls `process.exit`; it RETURNS a code, and the caller does
+`process.exitCode = …` and returns naturally. That is the whole of the P0f
+repair. Grapevine dispatches through a command REGISTRY — `COMMANDS[].run` —
+that was typed `(positional, flags) => Promise<void> | void` and whose caller
+did `await spec.run(...); return 0;`. **The code had nowhere to go.**
+
+The registry's `run` is now typed **`unknown`**, and `runCommand` does
+`typeof outcome === "number" ? outcome : 0`.
+
+⚠ **The union a reader writes first does not compile.**
+`Promise<number | undefined>` is not what an `async` verb that ends without a
+`return` produces — that is `Promise<void>`, which is not assignable — so a
+union type makes twenty verbs red for the sake of one. `void` inside a union is
+also a lint error in this repo (`noConfusingVoidType`). Typing the seam
+`unknown` and widening at the ONE place that reads the value is the smaller
+change and the honest one: the registry genuinely does not care what a verb
+returns.
+
+**Not taken:** _keep `Promise<void>` and let `tail` set `process.exitCode`
+itself_ — that puts the process's ending back inside a verb, one phase after the
+adoption took it out. _Give `CommandSpec` a second optional field_ — a field
+exactly one verb sets, which every reader then has to rule out for the other 31.
