@@ -161,6 +161,15 @@ touching these files, reused.
 
 ## 5 · ⛔ Five pre-existing ward defects, found by mutation and not by typing
 
+> ⭐ **ALL FIVE WERE REPAIRED 2026-09-10 on `fix/wards-that-pass-on-prose`**
+> (decision log **T16–T20**; register rows **C9, C11, C12–C16**), each
+> re-calibrated by mutation in both directions. ⚠ **And #6's stated MECHANISM
+> was falsified there:** `bun test` runs test files sequentially and the ratchet
+> awaits its `tsc` child, so it does not compete with the peer at all — the
+> flake is `ensureDaemon`'s 10-second boot budget against a 5,000 ms framework
+> default, and it now reproduces on demand (T20). Nothing else in this section
+> changed.
+
 **None caused by this phase. None would have been found by reading.** Full
 detail in **T13**.
 
@@ -292,11 +301,13 @@ had already convinced himself was not there.
 - `bun run gate` **unpiped**, exit read from a file: **exit 0**, 2035 pass / 0
   fail across 162 files, 188.8 s.
 - ⚠ **One earlier gate run failed on a FLAKE in a file this phase never
-  touched** — `src/mind-mapper/backend/cli.test.ts`'s _"open `--port N`"_ cell,
-  at 5004.19 ms against `bun test`'s default 5,000 ms. Green in the two runs
-  after, and 2.49 s alone. **This is T2's own hazard arriving on a peer:** the
-  ratchet added a ~6 s `tsc` subprocess to the suite's CPU budget and only the
-  ratchet's cells got extended deadlines. Recorded as T13 #6.
+  touched** — ⛔ **the mechanism below is WRONG, corrected by measurement in
+  T20; the observation is exact and now reproducible** — —
+  `src/mind-mapper/backend/cli.test.ts`'s _"open `--port N`"_ cell, at 5004.19
+  ms against `bun test`'s default 5,000 ms. Green in the two runs after, and
+  2.49 s alone. **This is T2's own hazard arriving on a peer:** the ratchet
+  added a ~6 s `tsc` subprocess to the suite's CPU budget and only the ratchet's
+  cells got extended deadlines. Recorded as T13 #6.
 - `bun scripts/dist-check.ts`: exit **0**.
 - `bunx biome check --write` on every changed `.ts`, and the r8 + canon outputs
   re-verified byte-identical AFTER formatting.

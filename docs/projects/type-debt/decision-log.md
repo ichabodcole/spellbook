@@ -726,3 +726,294 @@ its cheapest chance to be corrected (Phase 0's own instruction).
 **Nothing about the fall path was WRONG.** It fired on both areas, in the right
 direction, with the right deltas, and it caught an error the phase's own author
 had already convinced himself was not there.
+
+---
+
+## T16 · ⭐ THE `idleTimeout` CLAUSE'S FIX WAS IN ITS OWN FILE, ONE CLAUSE OVER — so the defect is not "a text scan is weak", it is "a false-pass fix was left where it was found"
+
+**Decided:** implementer, 2026-09-10, branch `fix/wards-that-pass-on-prose`, on
+T13 #1.
+
+`daemon-lifecycle-ward`'s clause 1 was `!/idleTimeout\s*:/.test(d.text)` — the
+file as WRITTEN. Re-driven at HEAD before touching anything: glamour's real
+`idleTimeout: IDLE_TIMEOUT_SEC` deleted, **ward 5 pass / 0 fail**, because
+`src/glamour/backend/server.ts:408` discusses `` `idleTimeout: 255` `` in prose.
+bounty (`server.ts:1103`) and imago (`server.ts:839`) carry the same shield;
+astrolabe's two mentions have no colon, which is the only reason Phase 1's drive
+7 could redden it at all. **Two of the three spells the ward's own
+`fixed.idleTimeout` list names as this clause's founding cases could not be
+convicted by it.**
+
+⭐ **The repair was thirty lines away and a month old.** Clause 3
+(`readSession`'s ENOENT branch) has stripped comments since the month's first
+ward work, and its comment says why: a calibration attempt there deleted the
+word from a DOCSTRING, the ward stayed green, and that looked like a working
+drive. **One clause learned the lesson and the neighbour did not.** So the fix
+is applied at the ROW — both enumerators now carry `code` (comment-stripped)
+beside `text`, and every clause reads `code` — which is what stops a fourth
+clause from being written against prose.
+
+**The transferable half:** a false-pass fix belongs at the SHARED READ, not in
+the cell that found it. A ward with N text scans and one stripped read is a ward
+with N−1 undriven clauses.
+
+**Driven, both directions, per spell:** real setting deleted from glamour,
+imago, bounty and astrolabe in turn → **RED naming each file**, restored →
+green. Prose-only mention planted with the real setting removed → **HEAD ward
+GREEN, this ward RED**. That last drive is the defect itself, on demand.
+
+**Not taken:**
+
+- _Delete clause 1 and rely on the kit._ It is the option F2's own text refutes:
+  no kit module owns the `Bun.serve` option, so a ninth daemon can still omit
+  it.
+- _Assert the option's VALUE (`IDLE_TIMEOUT_SEC`) rather than its presence._
+  Tighter, and it would convict a daemon that passes a hand-typed number that
+  happens to be right — a style, which the ward's header forbids it from
+  asserting.
+- _Parse the file instead of stripping comments._ A parser is the correct
+  instrument and it is the wrong SIZE for a file whose header says it should be
+  deleted, not grown. The stripper's limit is stated where it lives: `//` inside
+  a string literal takes the rest of that line, measured across all 8 daemons
+  and 14 CLIs as moving no population and no verdict.
+
+### ⛔ AND D87 IS STRENGTHENED, NOT WEAKENED — but its evidence was worse than it knew
+
+D87 declined the ward's deletion, correctly, and clause 1 was the load-bearing
+reason: _"⛔ NOT by construction, and it is the clause whose last violation was
+the real bug."_ **That reasoning is untouched** — the kit still cannot supply
+the option, because the kit still does not call `Bun.serve`, so the ward still
+stays and the deletion is still pending on clause 1 finding a home.
+
+⚠ **What was wrong is the confidence the ruling could have had.** D87 kept a
+clause on the strength of its being _the text scan standing behind the bug_, and
+the scan could convict ONE of its three subjects. The ruling was right for a
+reason it had not verified. **A ruling that keeps an instrument should drive the
+instrument's clause on the day it rules** — the same discipline D44 states for
+ports, applied to rulings. The register's F2 row is annotated accordingly rather
+than reopened: the answer is still KEEP.
+
+---
+
+## T17 · The population guard is now a PIN PER CLAUSE, and a new spell editing four integers is the price of a loud shrink
+
+**Decided:** implementer, 2026-09-10, on T13 #4 and register C11.
+
+The cell was two floors — `daemons().length >= 7` and `clis().length >= 7`
+against actuals of **8** and **14** — so a walk that lost six CLIs passed
+silently. Worse, both counted the FILE SCAN, while each clause runs over a
+SUBSET: when D87 measured clause 2's population as EMPTY, these two numbers were
+8 and 14 and the cell was green. **A guard that cannot see a clause go vacuous
+is not guarding the clauses** (C11's own words, mechanised).
+
+It is now one exact-equality assertion over a census printed by spell: **8
+daemons · 14 CLIs · 6 connection holders · 7 pointer writers · 4 CLIs with their
+own `readSession`**.
+
+**Driven:** one CLI moved out of the walk (14 → 13) → RED. astrolabe's
+`writeFileAtomic` renamed → RED naming the shrunken subject list, **where the
+old floor was green.**
+
+⚠ **The convenience it gives up, stated.** The old comment said _"a new spell
+should not have to edit this file"_ and bought that with silence in the other
+direction. seams Contract 19 is the tiebreak — the pin is what converts a silent
+shrink into a loud failure — and the failure message names which of the two
+directions it is looking at, so the edit is one integer with an instruction.
+
+**Not taken:**
+
+- _Raise the floors to 8 and 14._ Cheapest, keeps the D64 shape: 14 → 8 still
+  passes.
+- _Assert `>= previous` from a recorded file._ A second denominator, in a ward
+  built because a spell's population was read twice.
+- _Delete clause 2 (its offenders are empty by construction)._ D44's rule
+  against the instrument being repaired by the work it guards is not the
+  obstacle here, but **removing an assertion is a bigger act than repairing
+  one** and C9 asked for "a coverage cell OR a deletion". The coverage cell is
+  the reversible half.
+
+### The dead `spell` field: GIVEN A READER, not deleted
+
+Phase 1 found that `daemons()` and `clis()` both compute `spell` and **no cell
+read it** — four of `grimoire`'s fourteen type errors were in a field nothing
+consumed. It now has a reader: the population census prints `spell` and pins the
+subject sets BY SPELL, so a shrink is reported as _which spell left_ rather than
+as an integer that moved. **Deleting it would have removed the only handle the
+new guard needed** — which is the argument for looking at what a dead field is
+FOR before removing it.
+
+---
+
+## T18 · A PARTIAL loss of `dist/` is now convicted, and the vacuous half of ARM 1b is gone
+
+**Decided:** implementer, 2026-09-10, on T13 #2 and #3.
+
+⚠ **Both defects live in `dist-roster-ward` / `dist-check.ts`, not in
+`daemon-lifecycle-ward`** — the branch brief grouped all five as "the same
+ward", and they are two instruments. Stated because the grouping is what a
+future reader would otherwise inherit.
+
+**#2 · the partial loss.** `r.tracked > 0 && r.disk === 0` convicts only a
+TOTALLY empty `dist/`. Re-driven at HEAD: astrolabe's `dist/cli.js` removed from
+the disk printed `astrolabe:5/4` in the ward's own output — **8 pass / 0 fail**,
+`bun scripts/dist-check.ts --no-build` **exit 0**. The new clause compares the
+disk against **`src/build.ts`'s own declaration** (`backendEntryNames`,
+imported), so it is not a fourth copy of the `endsWith("/cli.js")` name test D43
+removed from the build, D44 from the spawn-path ward and 2026-09-09 from
+`isBackendArtifact`. Driven: **7 pass / 1 fail** naming the path, script **exit
+1** naming the path.
+
+⛔ **Only one direction is asserted, and the asymmetry is the same one Cole
+ruled on.** "Tracked but not on disk" is ordinary work in progress: `dist/` is
+rm'd before every build (`src/build.ts:308`), so a rebuilt surface renames its
+hashed chunk and the previously tracked name is legitimately gone until it is
+staged — ARM 2's question, CI-only. A DECLARED backend entry missing from the
+disk has no such innocent reading.
+
+**#3 · the vacuous clause.** `expect(r.disk).toBeGreaterThanOrEqual(0)` over a
+count, inside the cell named _"a green cannot mean unexamined"_. Replaced with a
+per-spell empty-disk clause — and ⚠ **its honest size was measured, not
+assumed**: with `diskDistFiles` pointed at a nonexistent root, the cell's THIRD
+clause already reddened, so the total-blindness case was never open. The new
+clause buys a message that names the spells, not new conviction, and the comment
+says so. (§2 of the Phase 1 journal made the same correction to a comment about
+`rows[0]`; this is the second instance of that discipline paying out.)
+
+---
+
+## T19 · The r8 trio's root: an env override over a DERIVED default, and the reports are byte-identical
+
+**Decided:** implementer, 2026-09-10, on T10's filed consequence.
+
+All three copies carried
+`const SKILLS = "/Users/colereed/Projects/Spellbook/plugins/spellbook/skills"` —
+one machine's checkout, pointed at a tree the backend convergence emptied of
+dispatchers, so each exited 1 with `ZERO-DENOMINATOR — verdict withheld`. Now
+`R8_ROOT` over a default derived from `import.meta.dir`, and the const is named
+`ROOT`, because it has not been the skills tree for some time.
+
+**The property T10 established and this change had to preserve:** each
+instrument's report `diff`s **byte-identical** to the pre-change file run
+against the same root, after `biome --write` — v1 **286** lines, v2 **46**, v3
+**151**, the counts Phase 1 recorded. Re-calibrated:
+
+- `R8_ROOT=…/plugins/spellbook/skills` reproduces the withheld verdict exactly —
+  0 branches, 0 mutator sites, exit 1. **The root is demonstrably what it
+  reads**, which is the drive that makes the default meaningful.
+- v3's discriminating arm, through the corrected root: imago's `context.add`
+  given a distinguishing return flips **RED ✅ → ❌** while the GREEN arm
+  (bounty `task.add`) and the v2-BLIND arm (magpie `element.add`) hold.
+
+⚠ **The two citations are no longer unreproducible — they are one number
+stale.** `docs/projects/spell-hardening/sprints/05-the-gate/cold-read.md:87` and
+sprint 06's `plan.md:158` cite **113 RED / 11 GREEN**; the command now
+reproduces **119 RED / 11 GREEN** from this tree. Not rewritten: they are dated
+sprint records, and the honest correction is that the tree gained six rows, not
+that the numbers were wrong when written.
+
+⚠ **And `.anthill/retro.md:552`'s H1 is un-falsified by this change.** Phase 1
+recorded H1 (_"a natural red arm is a wasting asset"_) as falsified **by the
+relocation** — the command could not convict anything because it could not find
+the tree. It can again: `r8-outcome-check-v3` convicts a live in-tree instance
+in one command, which is H1's stated falsifier. The wasting-asset thesis is back
+to being tested by the fix wearing out, which is what it was about.
+
+**Not taken:** _a shared `lib/r8-root.ts`._ It is the obvious de-duplication and
+it is the one thing `c4d669eb` forbade for these three files: they are
+calibrated specimens whose independence is their evidentiary value, and a shared
+module lets one edit move all three at once, silently.
+
+---
+
+## T20 · ⛔ THE GATE FLAKE'S FILED MECHANISM IS FALSE, AND THE REAL ONE IS TWO DEADLINES DISAGREEING
+
+**Decided:** implementer, 2026-09-10, on T13 #6.
+
+T13 #6 read: _"the ratchet also puts a ~6-second `tsc` subprocess into the
+suite's CPU budget, and nothing extended the deadline of the PEERS it now
+competes with."_ **Measured, that mechanism does not hold.** `bun test` runs
+test FILES sequentially in one process; `grimoire/` sorts before `src/`; and the
+ratchet AWAITS its child. A run of the ratchet plus the peer file takes **9.87 s
+against 7.6 + 2.5 alone — the SUM, not the max.** There is nothing concurrent to
+nice, to serialise, or to move out of band, and T2's reason for the ratchet
+being inside the gate is untouched.
+
+⭐ **What the 5004.19 ms actually says.** `src/mind-mapper/backend/cli.ts`'s
+`ensureDaemon` spawns the daemon and polls discovery **100 times at 100 ms**,
+naming its own budget in its failure: _"daemon did not come up within 10s"_. The
+cells that spawn a daemon ran at `bun test`'s **default 5,000 ms**. So for five
+of those ten seconds the CLI was legitimately still waiting while the framework
+had already ruled the test broken — **T2's own sentence, arriving on a peer: a
+timeout is the one failure that makes an instrument look broken when it is
+merely slow.** The peer's median for that cell is ~**0.12 s**; 5,004 ms is not
+contention creep, it is a boot that took most of its allowance.
+
+**The house already does the derived thing everywhere else:** astrolabe's
+`ensureDaemon` budgets **45 s** (_"glamour uses the same ~45s budget"_) and its
+CLI cells carry explicit **20–30 s** deadlines; digestify's review cells carry
+**10–15 s**. mind-mapper's was the one file spawning daemons at the framework
+default.
+
+**So: `DAEMON_BOOT_MS = 15_000` on the four cells that can spawn one, derived
+from the 10 s boot budget plus the CLI's own cold start — and the flake is now
+REPRODUCIBLE rather than inferred:**
+
+- A **7-second** boot planted before the daemon's discovery write, rebuilt
+  through `bun run build`: the HEAD cells fail at **5000.99 ms** and **5006.19
+  ms** — _"this test timed out after 5000ms"_ — which is the incident, on
+  demand, within 2 ms of the number Phase 1 saw. This branch's file: **46 pass /
+  0 fail in 16.49 s.**
+- The discovery write removed entirely: the cell fails at **10,226 ms** — at
+  `ensureDaemon`'s OWN give-up, inside the cell's deadline. **A daemon that
+  really does not come up still reds**, with a message that names why rather
+  than a timeout that names nothing and sends the next reader to the wrong file.
+
+### The measurement: three full gates, and the peer's spread
+
+**`bun run gate` unpiped, exit read from a file, three times: exit 0, 0, 0 —
+2035 pass / 0 fail across 162 files each, 188.67 s / 190.12 s / 188.31 s wall.**
+Three more runs of the same three steps with a JUnit reporter attached (the only
+way to get per-cell times out of a green `bun test`) also went 0, 0, 0.
+
+| run | `open --port N` | the other three spawning cells | full suite |
+| --- | --------------: | ------------------------------ | ---------: |
+| 1   |    **0.1197 s** | 0.120 · 0.017 · 0.015 s        |   187.28 s |
+| 2   |    **0.1194 s** | 0.120 · 0.017 · 0.015 s        |   188.51 s |
+| 3   |    **0.1200 s** | 0.120 · 0.017 · 0.015 s        |   188.36 s |
+
+⛔ **THE SPREAD IS 0.6 MILLISECONDS ACROSS THREE FULL-SUITE RUNS, AND THAT IS
+THE ARGUMENT.** The cell does not live near its deadline and never did: the
+incident was a **40×** outlier against a 0.12 s median, so no deadline chosen
+from the observed distribution would have been the honest fix and no amount of
+re-running reproduces it. **What reproduces it is the MECHANISM** — plant a
+7-second boot and the incident returns to within 2 ms of the recorded number
+(above). An unreproducible flake with a demonstrated mechanism is worth more
+than a re-tuned number, which is why the drives are the evidence here and the
+spread is only the control.
+
+⚠ **AND THE MARGIN ELSEWHERE WAS CHECKED RATHER THAN ASSUMED.** Of 2035 cells,
+**five** run at ≥ 3.5 s — astrolabe's held-join reconnect (7.06 s), the
+ratchet's own census cell (6.09–6.25 s), bounty's respawned-empty board (4.77 s)
+and idle-touch (4.31 s), grapevine's keepalive sentinel (4.04 s) — and **all
+five already carry explicit deadlines** (20 s, 120 s, 60 s, 25 s, 10 s). Every
+cell close to the default was already handled; mind-mapper's four were the
+exception, which is what made the filed "peers are being starved" reading
+plausible and wrong.
+
+**Not taken:**
+
+- _Raise the peer's timeout until it stops failing._ The dishonest option, and
+  the one this looks like from the diff alone. The difference is that the number
+  is derived from the dependency's published budget and the drives above show
+  what it does and does not make pass.
+- _Move the ratchet out of the gate, or nice its `tsc`._ Both answer the filed
+  mechanism, which the measurement refutes; the first also reverses T2 on the
+  basis of a flake it did not cause.
+- _Shorten `ensureDaemon`'s poll so the cell fits in 5,000 ms._ Tempting, and it
+  makes the CLI worse for a human on a cold machine to make a test fit a
+  default.
+- _Fix the class in one sweep (every process-spawning cell in the repo)._ Filed,
+  not done: astrolabe and digestify already carry explicit deadlines, and the
+  three CLIs with an `ensureDaemon` are the population worth a sweep. Doing it
+  here would put an unmeasured 20-file edit inside a branch whose whole claim is
+  that each change was driven.
