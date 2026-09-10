@@ -13,11 +13,31 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildPayload,
+  classifyDeparture,
   htmlEscape,
   isoZNoMillis,
   parsePortFromSessionId,
   parseQuestions,
 } from "./review.ts";
+
+/**
+ * ⛔ READ A POSSIBLY-UNDEFINED VALUE AND DIE NAMING THE INVARIANT — R3's third
+ * option, the one `arr[i]!` and `?? fallback` both hide.
+ *
+ * ⚠ LOCAL ON PURPOSE. The ward version is `grimoire/lib/must.ts`; `grimoire/`
+ * is test INFRASTRUCTURE and `src/` does not import from it, so this file
+ * carries its own copy on the `scripts/instruments/*` precedent (type-debt
+ * T11). Four lines duplicated is cheaper than an import boundary crossed.
+ *
+ * ⚠ AND IT IS NOT FOR EVERY `undefined`. It states an invariant that is TRUE
+ * TODAY at a site the compiler cannot see it. A legitimately absent value gets
+ * an explicit named branch instead — `parsePortFromSessionId` in `review.ts` is
+ * the worked example, and it is the reason `must` did NOT go into `src/kit/`.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
 
 /**
  * ⛔ THE PROCESS SPAWNED IS THE LAUNCHER, NOT THIS DIRECTORY'S SOURCE (playbook
@@ -77,7 +97,14 @@ describe("parseQuestions", () => {
   test("question body can contain markdown", () => {
     const md = "::: question id=naming\nPick: `Foo`, `Bar`, or `Baz`?\n:::";
     const { questions } = parseQuestions(md);
-    expect(questions[0].prompt).toBe("Pick: `Foo`, `Bar`, or `Baz`?");
+    // ⚠ The read used to be `questions[0].prompt`, whose PRECONDITION — that
+    // one block was parsed — was asserted in no cell at all: an empty parse
+    // failed this as a `TypeError` on `undefined`, red but mute about why. The
+    // invariant is now stated, and it is genuinely an invariant: the fixture
+    // holds exactly one well-formed block.
+    expect(must(questions[0], "one well-formed block parses to one question").prompt).toBe(
+      "Pick: `Foo`, `Bar`, or `Baz`?",
+    );
   });
 
   test("no questions returns empty list (read-only mode is valid)", () => {
@@ -176,6 +203,69 @@ describe("parsePortFromSessionId", () => {
   });
 });
 
+// ⛔ THE ARM THE COMPILER POINTED AT IS THE ONE ARM NO TEST DROVE. `b4 — a
+// departure is observable through a pipe` covers `never-opened`,
+// `opened-then-silent` and `read-then-left` end to end; `engaged-then-left`
+// had NO cell, and it is exactly the branch `tsc` reported as `never`
+// (type-debt Phase 2, T21). All four are now pinned here without a daemon,
+// and the fourth is additionally driven through the built launcher.
+describe("classifyDeparture", () => {
+  test("never-opened — the page was never served, so nothing else can be known", () => {
+    expect(classifyDeparture(false, null)).toBe("never-opened");
+    // ⚠ A departure record cannot outrank an unserved page: the beacon comes
+    // FROM the page, so this input is impossible and the answer must still not
+    // claim the human read anything.
+    expect(
+      classifyDeparture(false, {
+        engaged: true,
+        elapsedMs: 1,
+        answered: 1,
+        commented: 0,
+        stale: false,
+      }),
+    ).toBe("never-opened");
+  });
+  test("opened-then-silent — served, and no beacon ever arrived", () => {
+    expect(classifyDeparture(true, null)).toBe("opened-then-silent");
+  });
+  test("read-then-left — a beacon that says the human touched nothing", () => {
+    expect(
+      classifyDeparture(true, {
+        engaged: false,
+        elapsedMs: 32775,
+        answered: 0,
+        commented: 0,
+        stale: false,
+      }),
+    ).toBe("read-then-left");
+  });
+  test("engaged-then-left — the arm `tsc` called `never`, and the exit-130 case", () => {
+    expect(
+      classifyDeparture(true, {
+        engaged: true,
+        elapsedMs: 4242,
+        answered: 1,
+        commented: 0,
+        stale: false,
+      }),
+    ).toBe("engaged-then-left");
+  });
+  test("a STALE beacon is still classified on what it says — staleness is recorded, not judged", () => {
+    // `stale` means the beacon named a review this daemon replaced on the same
+    // re-bound port. `/cancel` ignores such a beacon; the OBSERVATION does not,
+    // because the fact that somebody engaged and left is still the fact.
+    expect(
+      classifyDeparture(true, {
+        engaged: true,
+        elapsedMs: 9,
+        answered: 0,
+        commented: 1,
+        stale: true,
+      }),
+    ).toBe("engaged-then-left");
+  });
+});
+
 describe("htmlEscape", () => {
   test("escapes the five interesting chars", () => {
     expect(htmlEscape(`<>&"'`)).toBe("&lt;&gt;&amp;&quot;&#x27;");
@@ -207,8 +297,15 @@ async function spawnAndWaitForReady(
     stderr: "pipe",
   });
   if (stdinText !== undefined) {
-    proc.stdin.write(new TextEncoder().encode(stdinText));
-    proc.stdin.end();
+    // ⚠ `stdin` is optional on a `Bun.spawn` handle because the OPTION is a
+    // ternary here, and the compiler cannot correlate the two. Inside this
+    // branch the option was `"pipe"`, so the sink exists — and if it ever did
+    // not, the alternative to a named throw is a subprocess that never receives
+    // its markdown and fails 5 seconds later as "didn't print ready line",
+    // blaming the daemon for the harness.
+    const stdin = must(proc.stdin, 'spawned with stdin:"pipe", so proc.stdin is a sink');
+    stdin.write(new TextEncoder().encode(stdinText));
+    stdin.end();
   }
   // Read stderr until we see the ready JSON line.
   const reader = proc.stderr.getReader();
@@ -235,7 +332,20 @@ async function spawnAndWaitForReady(
 }
 
 async function readStdout(proc: ReturnType<typeof Bun.spawn>): Promise<string> {
-  return new Response(proc.stdout).text();
+  // ⚠ TWO absences in one union, and only one of them is `undefined`, which is
+  // why this is an `instanceof` and not `must()`: `proc.stdout` is
+  // `number | ReadableStream | undefined` because a handle spawned with
+  // `stdout: "inherit"` gives a raw FD. `new Response(<fd>)` would coerce the
+  // NUMBER to a body — every cell downstream would then compare its JSON
+  // against a decimal string and fail as "the daemon wrote the wrong thing".
+  // Every spawn in this file passes `"pipe"`; the guard names that.
+  const out = proc.stdout;
+  if (!(out instanceof ReadableStream)) {
+    throw new Error(
+      `INVARIANT VIOLATED — spawned with stdout:"pipe", so proc.stdout is a ReadableStream (got ${typeof out})`,
+    );
+  }
+  return new Response(out).text();
 }
 
 async function postSubmit(
@@ -377,7 +487,12 @@ describe("end-to-end via subprocess", () => {
     expect(await new Response(proc.stdout).text()).toBe("");
     const lines = err.trim().split("\n").filter(Boolean);
     expect(lines).toHaveLength(1);
-    const env = JSON.parse(lines[0]);
+    // ⚠ The guard is the `toHaveLength` on the line above and `expect` narrows
+    // nothing, so the invariant is restated where the compiler can see it. It
+    // is unreachable BECAUSE of that assertion — which is the distinction R3
+    // asks for: this is not a guess about the data, it is the cell's own
+    // precondition, one line up.
+    const env = JSON.parse(must(lines[0], "the length assertion above pinned exactly one line"));
     expect(env.ok).toBe(false);
     expect(env.error.kind).toBe("not_found");
     expect(env.error.exit_code).toBe(5);

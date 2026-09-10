@@ -209,9 +209,26 @@ test("Contract 18: the substitution happens IN MEMORY — dist/index.html on dis
  *  daemon reads it, so this file never hand-copies a content hash. */
 function linkedChunks(): string[] {
   const html = readFileSync(join(skillRoot, "dist", "index.html"), "utf8");
-  return [...html.matchAll(/(?:src|href)\s*=\s*"(?:\.\/)?([^"]+)"/g)]
-    .map(([, ref]) => ref)
-    .filter((ref) => ref && !ref.includes("/"));
+  return (
+    [...html.matchAll(/(?:src|href)\s*=\s*"(?:\.\/)?([^"]+)"/g)]
+      .map(([, ref]) => ref)
+      // ⛔ THE PREDICATE IS `ref is string` AND NOT A `!` — AND THE RUNTIME
+      // GUARD IS UNCHANGED. `matchAll` types every group as `string |
+      // undefined`, so the returned array did not satisfy the declared
+      // `string[]`; the `ref &&` clause already dropped a missing group at
+      // runtime, and `Array.filter` simply does not narrow without a type
+      // predicate. So the fix is a PREDICATE over the SAME expression:
+      // `!!ref && !ref.includes("/")` is what `ref && !ref.includes("/")`
+      // already meant inside a filter. Nothing enters or leaves this set that
+      // did not before — which matters more here than anywhere else in the
+      // file, because this set IS the whitelist that three cells below read.
+      //
+      // ⚠ The absence itself is unreachable: the group is mandatory (one
+      // alternative, no `?`), so a match always sets it. The clause stays
+      // because it is the ORIGINAL author's, and deleting a live runtime guard
+      // to satisfy a typechecker is the exact trade this project refuses.
+      .filter((ref): ref is string => !!ref && !ref.includes("/"))
+  );
 }
 
 test("GET /index-*.js and .css serve the hashed assets with the right content type", async () => {
