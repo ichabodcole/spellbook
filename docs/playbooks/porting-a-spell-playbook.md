@@ -860,10 +860,30 @@ port is before Phase 1, because they have different done-whens below.
 > glamour, which is the first spell to take its whole backend out of the
 > deployed skill folder, and which was chosen as the pathfinder precisely so
 > five spells could follow it. **Its population is OPEN:** digestify, grapevine
-> and mind-mapper still walk this (bounty landed 2026-09-09). Astrolabe and
-> magpie walked half of it first (their CLIs already built), and where their
-> experience differs from glamour's the difference is recorded, because that
-> difference is the part a third spell cannot predict.
+> and mind-mapper still walk this — grapevine and mind-mapper as of 2026-09-09,
+> digestify having landed that day alongside bounty. Astrolabe and magpie walked
+> half of it first (their CLIs already built), and where their experience
+> differs from glamour's the difference is recorded, because that difference is
+> the part a third spell cannot predict.
+>
+> ⭐⭐⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR GRAPEVINE — THE FIRST SPELL
+> WITH A DURABLE EVENT LOG, AND THE FIRST WHOSE `main()` RETURNS WHILE THE
+> PROCESS MUST KEEP LIVING.** An independent verify pass read Phase B cold as
+> grapevine's porting agent and found three things that break it; all three were
+> measured against the tree and all three CONFIRMED. **The third is a missing
+> CONCEPT, not a wrong sentence:** Phase B's only refusal was NO SUBJECT, gated
+> on question 4 — and grapevine answers "long-running", so every kit row read as
+> applicable while three of them are structurally wrong for it. B8 now carries a
+> fourth verdict, **REJECT-STRUCTURAL**, beside GAINED / DE-DUPLICATED /
+> RECEIVED, with widening the kit ruled OUT as the default repair and a required
+> written output. B2's launcher discriminator is re-homed onto the property that
+> decides it, and B8's epoch ruling is re-homed off a list of spell names onto
+> "are ids recovered across a restart?". The account is
+> `docs/projects/backend-convergence/phase-6-prework.md`; the rulings are
+> D68–D70. **What did NOT transfer, stated once: the assumption that the kit can
+> always be made to fit** — every prior mismatch was repaired by widening the
+> kit, and that precedent applied here would dirty six artifacts across five
+> spells.
 >
 > ⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY DIGESTIFY'S PORT — THE FIRST PORT RUN
 > ON THE REWRITTEN PHASE, AND THE FIRST SINGLE-ENTRY, SINGLE-SHOT SPELL TO
@@ -942,23 +962,26 @@ Everywhere below that says "the two launchers", "the two files", "both
 artifacts", read "one per entry" — the shapes are all per-entry, the count is
 not two.
 
-#### ⛔ ⭐ AND THE NAMES ARE NOT THE KEY EITHER. ANSWER FOUR QUESTIONS PER ENTRY, BEFORE B1.
+#### ⛔ ⭐ AND THE NAMES ARE NOT THE KEY EITHER. ANSWER SEVEN QUESTIONS PER ENTRY, BEFORE B1.
 
 ⭐ **digestify.** D43 fixed the COUNT and left the BODY keyed on the pair. Read
 literally by a spell with one entry called `review.ts`, four steps below gave a
 wrong answer and two of them gave it quietly. The repair is not another special
 case: **every ruling in B3, B5, B7 and B8 is really about a PROPERTY, and the
 names `cli` and `server` were only ever a fast way to guess the property on the
-five spells that had both.** Guess it directly instead. Write the four answers
-down before B1 — they are what the steps below dispatch on, and each is one
-`grep` of your own entry:
+five spells that had both.** Guess it directly instead. Write the answers down
+before B1 — they are what the steps below dispatch on, and each is one `grep` of
+your own entry:
 
-| #   | the question, of EACH entry                                                                                                            | how you answer it                                                                                                                                                                                | what it governs                                                        |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| 1   | **What ARITHMETIC does it carry?** Does it compute a path from its own location — a skill root, a sibling, a spawn?                    | grep the file for `import.meta.url` / `import.meta.dir` / `import.meta.dirname` / `fileURLToPath` (any qualifier) / `__dirname`. Then RESOLVE each from `src/<spell>/backend/` AND from `dist/`. | **B3** (may this entry keep `import.meta.main`?) · **B4** · **B5**     |
-| 2   | **Does it SERVE, and does any route return something other than a file on disk?**                                                      | grep for `Bun.serve`, then read every route that answers a document — is any of them substituted, templated, or re-addressed?                                                                    | **B8**'s `serveFromDist` row                                           |
-| 3   | **Does the spell have a SECOND HALF?** More than one entry, such that a value could be hand-mirrored between them?                     | count the entry set you just derived.                                                                                                                                                            | **B8**'s `heartbeat.ts` seam                                           |
-| 4   | **Is the entry LONG-RUNNING or SINGLE-SHOT?** Does it outlive the invocation and serve many callers, or serve one human once and exit? | read what `main` returns and when.                                                                                                                                                               | **B8**'s module table (which rows have a SUBJECT) and its epoch ruling |
+| #   | the question, of EACH entry                                                                                                                                                                                                                   | how you answer it                                                                                                                                                                                | what it governs                                                    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| 1   | **What ARITHMETIC does it carry?** Does it compute a path from its own location — a skill root, a sibling, a spawn?                                                                                                                           | grep the file for `import.meta.url` / `import.meta.dir` / `import.meta.dirname` / `fileURLToPath` (any qualifier) / `__dirname`. Then RESOLVE each from `src/<spell>/backend/` AND from `dist/`. | **B3** (may this entry keep `import.meta.main`?) · **B4** · **B5** |
+| 2   | **Does it SERVE, and does any route return something other than a file on disk?**                                                                                                                                                             | grep for `Bun.serve`, then read every route that answers a document — is any of them substituted, templated, or re-addressed?                                                                    | **B8**'s `serveFromDist` row                                       |
+| 3   | **Does the spell have a SECOND HALF?** More than one entry, such that a value could be hand-mirrored between them?                                                                                                                            | count the entry set you just derived.                                                                                                                                                            | **B8**'s `heartbeat.ts` seam                                       |
+| 4   | **Is the entry LONG-RUNNING or SINGLE-SHOT?** Does it outlive the invocation and serve many callers, or serve one human once and exit?                                                                                                        | read what `main` returns and when.                                                                                                                                                               | **B8**'s module table (which rows have a SUBJECT)                  |
+| 5   | ⭐ **grapevine — DOES `main()` RETURN WHILE THE PROCESS MUST KEEP LIVING?** Question 4 asks how long the PROCESS lives; this asks WHAT KEEPS IT ALIVE. Not the same question, and the five spells that went first answered both the same way. | read what `main` awaits LAST and what is still alive after it returns. `Bun.serve` + a natural return means the **event loop** holds the process up, not the promise.                            | **B2**'s launcher shape                                            |
+| 6   | ⭐ **grapevine — ARE THE EVENT LOG'S IDS RECOVERED ACROSS A RESTART?**                                                                                                                                                                        | read where the id counter gets its value on boot: a literal, or a value read back from durable storage.                                                                                          | **B8**'s epoch ruling                                              |
+| 7   | ⭐ **grapevine — DOES ANY KIT MODULE'S SUBJECT EXIST HERE IN A DIFFERENT SHAPE?** Not "is it absent" (that is question 4) — "is it present and unrepresentable".                                                                              | for each of the eight, write down the spell's type and the kit's type side by side, and try to construct one from the other.                                                                     | **B8**'s **REJECT-STRUCTURAL** verdict                             |
 
 **Worked, on digestify, and this is why the four exist:**
 
@@ -969,12 +992,25 @@ down before B1 — they are what the steps below dispatch on, and each is one
 | 3   | **No.** One entry. There is nothing for a shared module to be shared BETWEEN.                                                                                                                                                                                             |
 | 4   | **Single-shot.** One human, one review, then exit — no event log, no SSE, no discovery pointer, no second client.                                                                                                                                                         |
 
+⭐ **Worked, on grapevine — questions 5, 6 and 7 exist BECAUSE OF THESE ANSWERS,
+and each was measured 2026-09-09 before its port:**
+
+| #   | grapevine's answer                                                                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `SCRIPT_DIR` → `SKILL_ROOT` → `DIST_DIR` in `daemon.ts`; `DAEMON_SCRIPT = join(SCRIPT_DIR, "daemon.ts")` in `cli.ts` — a **flat sibling spawn**, glamour's exact defect shape (B4). `daemon.ts` also holds the roster's ONE `src/`-naming specifier, a dev-only dynamic import. |
+| 2   | **Serves, and NOTHING is substituted.** `/watch` returns the committed `dist/index.html` verbatim; `/` is a JSON status route. So question 2 is NO — and B8's `serveDist` row used to tell grapevine to "keep a refusal" it does not have.                                      |
+| 3   | **Yes** — `cli.ts` + `daemon.ts`. The seam is real; the heartbeat is a literal `3000` in the daemon's SSE keepalive against `idleTimeout: 255`.                                                                                                                                 |
+| 4   | **Long-running, and a SINGLETON** — no idle sweep, no snapshot, no `--timeout`; it stands until `stop`. Which makes every B8 row read as applicable, and three of them are not (question 7).                                                                                    |
+| 5   | ⛔ **`main()` RETURNS WHILE THE PROCESS MUST KEEP LIVING.** It resolves as soon as `Bun.serve` binds; the event loop is what holds the daemon up. **Driven both ways** — see B2.                                                                                                |
+| 6   | ⛔ **IDS ARE RECOVERED.** `loadChannel()` derives `next_id` from a high-water mark over the channel's durable `.jsonl`. **No epoch.**                                                                                                                                           |
+| 7   | ⛔ **Three modules present-and-unrepresentable** — `eventLog`, `sse`, and `startHousekeeping`/`shouldIdleClose`'s half of `housekeeping`. See B8's fourth verdict.                                                                                                              |
+
 ⚠ **Questions 1 and 2 are the two that go WRONG QUIETLY**, which is why they are
 first. Question 3 is the one that makes an instruction UNEXECUTABLE rather than
-wrong, and an unexecutable instruction is the safest of the four — an agent
-stops and asks. Question 4 mostly removes work, and removing work is the case
-where an agent is most likely to invent some; see B7 and B8 on saying an absence
-out loud.
+wrong, and an unexecutable instruction is the safest of them — an agent stops
+and asks. Question 4 mostly removes work, and removing work is the case where an
+agent is most likely to invent some; see B7 and B8 on saying an absence out
+loud.
 
 ⚠ **AND THE COUNT IS WHAT `grimoire/launcher-pairing-ward.test.ts` CHECKS**, in
 both directions: a launcher importing `../dist/X.js` with no built `X.js`, and a
@@ -1102,10 +1138,13 @@ forwarder that touched `process.argv` would match the roster enumerator's
 arg-parsing predicate and the flag ward would then judge the spell's documented
 flags against a file that recognises none.
 
-Launchers come in exactly two shapes — one for a CLI (anything whose stdout the
-caller parses) and one for a DAEMON — and they differ in exactly one line, which
-is not a style choice. Pick by what the entry IS, not by what it is called:
-grapevine's `daemon.ts` is a daemon shape.
+Launchers come in exactly two shapes, and they differ in exactly one line, which
+is not a style choice. ⛔ **The two shapes are NOT "CLI" and "DAEMON", and this
+sentence said they were until grapevine's pre-work — read the grapevine block
+below BEFORE you copy the code block, because for grapevine the shape this
+paragraph used to name is the one that kills the process.** The discriminator is
+stated there; everything between here and it is the stdout half of the question,
+which is real and is not the whole of it.
 
 ⛔ ⭐ **digestify — AND "WHAT THE ENTRY IS" IS TWO QUESTIONS, NOT ONE. THIS STEP
 ANSWERS ONLY THE STDOUT ONE, AND EVERY STEP BELOW READS ITS ANSWER AS THOUGH IT
@@ -1151,14 +1190,75 @@ relocation whose contract is "nothing the caller sees moves" is not the place to
 trade a truncation for a hang. File the lifecycle fix (close the socket on every
 path, then return naturally) separately.
 
+⛔ ⭐ **grapevine — AND THE DISCRIMINATOR IS NOT "CLI vs DAEMON". IT IS: DOES
+THIS ENTRY'S `main()` RETURN WHILE THE PROCESS MUST KEEP LIVING?** That is the
+only property the one differing line acts on, and "daemon" was a fast way to
+guess it on the five spells whose `main` happened to `await` its own teardown.
+**Grapevine is a daemon by every other measure and answers NO to the property**,
+so the shape this step used to hand it exits the daemon milliseconds after it
+binds.
+
+**Ask it as ONE question with three answers, and the question is about the
+PROCESS, not about the entry:** _after `main()` resolves, must this process
+still be alive?_
+
+| after `main()` resolves…                                                                                                                                                                            | then                                                                                                                      | worked instance                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **YES — the process must keep living**, held up by the EVENT LOOP (a bound `Bun.serve`, an armed timer, an open handle that IS the product) rather than by the promise                              | ⛔ **`process.exitCode = await run();`** — the natural return. An explicit exit here **terminates a live server**.        | ⭐ **grapevine's `daemon.ts`**: `main()` resolves the instant `Bun.serve` binds. Its exit codes are not `main`'s return value at all. |
+| **NO, and nothing is left holding it open** — the entry's teardown already ran inside `main` (it `await`s a drain, a `close` verb, or a signal-resolved promise) and the loop will empty on its own | either shape works; take **`process.exit(exitCode)`** if the stdout is not a parsed pipe, the natural return if it is     | the five spells that went first, which is why "daemon" LOOKED like the property                                                       |
+| **NO, but something is still holding it open that must NOT keep living** — a socket a natural exit will wait on rather than close                                                                   | **`const exitCode = await run(); process.exit(exitCode);`** — the terminal exit, family **E-terminal**, doing double duty | bounty's `join.ts`, measured: the natural return ran to a 15 s test timeout                                                           |
+
+⚠ **The first and third rows both have a live handle after `main` returns, and
+the launcher line is opposite in each. What separates them is whether that
+handle is THE PRODUCT** — grapevine's bound server is the whole point of the
+process; bounty's WebSocket is a leftover of a conversation that has ended. Ask
+it that way and the two stop looking alike.
+
 ```ts
-// scripts/cli.ts   — a CLI's stdout is a pipe the caller parses
+// scripts/cli.ts   — main() returns when the work is done; stdout is a pipe the caller parses
 process.exitCode = await run();
 
-// scripts/server.ts — a daemon's teardown already ran inside main()
+// scripts/server.ts — main() returns only AFTER teardown; the process has nothing left to keep alive
 const exitCode = await run();
 process.exit(exitCode);
 ```
+
+⛔ **THE SECOND COMMENT USED TO SAY ONLY "a daemon's teardown already ran inside
+`main()`", AS A DESCRIPTION OF DAEMONS. IT IS A PRECONDITION, AND IT IS FALSE
+FOR AT LEAST ONE OF THEM.** Grapevine's `daemon.ts` `main()` resolves the
+instant `Bun.serve` returns: it writes the port and pid files, prints
+`listening`, registers `SIGINT`/`SIGTERM`, and returns `undefined`. Its exit
+codes are not `main`'s return value at all — they live at in-body `process.exit`
+calls (the already-running branch) and inside `shutdown()`, reached only from a
+signal. So `await run()` resolves to `undefined`, `process.exit(undefined)`
+exits **0**, and the daemon is gone.
+
+⚠ **DRIVEN, 2026-09-09, on a copy of the shipped `daemon.ts` with `run()`
+exported exactly as the port will emit it** (copy in `scripts/`, driven, removed
+— never in the repo):
+
+| launcher shape                                    | result                                                                                                                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `const exitCode = await run(); process.exit(...)` | prints `grapevine daemon listening on http://127.0.0.1:56250 (pid 18450, mode release)`, writes `daemon.port` + `daemon.pid`, **returns to the shell, exit 0** |
+| `process.exitCode = await run();`                 | stays up; `GET /` answers `{"ok":true,"pid":…}`. **Correct.**                                                                                                  |
+
+⛔ **AND THE SYMPTOM IS B4'S SIGNATURE, WHICH IS WHY THIS COSTS A DAY IF YOU
+GUESS IT.** The port file is written before the exit, so `cli.ts`'s
+`readDaemonPort()` finds it, pings it, gets nothing, deletes it as stale, and
+the poll loop runs out: **`daemon failed to start within 3s`** — the exact
+string B4's glamour scar produces from a bad spawn path, and the exact string
+`cli.ts:348-352`'s own comment attributes to a dev-mode surface import dying.
+**A launcher-shape defect, a spawn-path defect and a dev-anchor defect all
+report the same sentence here.** Three baits, one message. Discriminate by
+driving the LAUNCHER alone, with no CLI in the picture — if it returns to your
+shell, it is this class and nothing else.
+
+⚠ **So B2's own instruction to DRIVE the shape (bounty's scar, above) is the
+whole step, not a belt-and-braces addition, and it discriminates in BOTH
+directions:** bounty found the CLI shape by watching a launcher that would not
+exit; grapevine finds the daemon shape by watching one that exits when it must
+not. **Run the launcher end to end and watch what it does with the process. One
+invocation, before chapter 1.**
 
 ⛔ **DO NOT "TIDY" THEM INTO A MATCH.** Bun's stdout is ASYNCHRONOUS on a pipe,
 so an explicit exit discards whatever has not drained — measured at exactly
@@ -1653,10 +1753,17 @@ All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,
 MODULES HAVE NO SUBJECT IN A SINGLE-SHOT SPELL, AND A MODULE ADOPTED WITHOUT A
 SUBJECT IS EITHER DEAD CODE OR AN INVENTED FEATURE.** The eight were extracted
 from eight STANDING daemons that each serve many clients over time. Question 4
-from the entry block is what decides whether a row applies, and the honest
+from the entry block is what decides whether a row has a SUBJECT, and the honest
 answer for a row that does not is the same discipline as B7's: **say "no
 subject", say why, and move on** — never leave the row unmentioned, because an
 unmentioned row reads as a skipped step to the next person.
+
+⛔ ⭐ **grapevine — AND QUESTION 4 IS NOT SUFFICIENT: A ROW CAN HAVE A SUBJECT
+AND STILL NOT APPLY.** A long-running spell answers question 4 "yes" and every
+row then reads as applicable, which is wrong for three of grapevine's. **The
+second refusal is REJECT-STRUCTURAL and it is ruled at the end of this step**,
+beside GAINED / DE-DUPLICATED / RECEIVED. Read it before you conclude a row with
+a subject is a row you must adopt.
 
 Measured for digestify, before its port, against the table below:
 
@@ -1732,10 +1839,34 @@ absorb those stops being a file server and becomes a router."_ So:
   defence and leaves a live route (`GET /index.html`) that answers the
   unsubstituted document.** Keep the refusal at the call site, and say at the
   call site that the kit does not carry it.
-- **The general form, for whoever ports grapevine next:** if question 2 answered
-  YES, then this row is `serveFromDist` **plus a router you write and a refusal
-  you keep**, and the port owes a drive of the substituted route in release mode
-  — not a reading of it.
+- **The general form:** if question 2 answered YES, then this row is
+  `serveFromDist` **plus a router you write**, and the port owes a drive of the
+  substituted route in release mode — not a reading of it.
+- ⛔ ⭐ **grapevine — AND THIS BULLET USED TO END "plus a router you write and a
+  refusal you KEEP", ADDRESSED BY NAME TO WHOEVER PORTS GRAPEVINE. IT PRESCRIBED
+  A DEFENCE GRAPEVINE DOES NOT HAVE, ONE PAGE AFTER B5 WARNED ABOUT EXACTLY
+  THAT.** "Keep" is only executable for a spell that already refuses something.
+  Grapevine's local `serveDist` is the pre-whitelist kit function verbatim —
+  three guards (empty, `..`, nested) and `existsSync` — with **no by-name
+  refusal anywhere**, because it substitutes nothing: its `/watch` serves the
+  committed `dist/index.html` unaltered and `/` is a JSON status route. An agent
+  told to keep a refusal will hunt for one, find none, and either invent one or
+  conclude the step does not apply. **Split the two halves:** the ROUTER is
+  always yours (grapevine's is `/watch` → `index.html` plus bare hashed chunks
+  at the root); the REFUSAL is a per-spell KEEP that exists only where a route
+  answers something other than the file on disk.
+- ⚠ **AND THE KIT MOVED UNDER THIS ROW — `serveFromDist` NOW CARRIES THE
+  WHITELIST** (D65, landed `0260c725`, merged `2c61cde5`): a `dist/` file is
+  served only if the built `index.html` transitively links it. **For a spell
+  with no refusal of its own this row is therefore not PARTIAL and not a keep —
+  it is RECEIVED**, in the fourth-verdict sense below: adoption GAINS a defence
+  the spell lacked. It is also load-bearing rather than theoretical, because
+  **this phase is what puts the backend bundle into the served directory**:
+  post-port, grapevine's own `serveDist` would answer `GET /daemon.js` and
+  `GET /cli.js` with its implementation at 200. Ruling the row RECEIVED means
+  owing it a `release-serve.test.ts` cell (D67: magpie was the one adopter
+  without one, and it was found by needing it) — **the artifact is on disk AND
+  the route refuses it**, plus the surface route still answering.
 - ⛔ ⭐ **digestify-port — AND A DRIVE DOES NOT SURVIVE THE SESSION. THE KEPT
   DEFENCE NEEDS A CELL.** The bullet above stops at "drive it", and driving is
   what finds the defect once; the refusal being kept is a one-line `if` sitting
@@ -1782,11 +1913,107 @@ convergence and is absent from bounty's copy — so adopting it CHANGED bounty's
 behaviour at one input (`--timeout 0` used to close the board on the first idle
 tick; it now means NEVER). Framed as "adopt and gain", that lands unnamed.
 
-**So: DIFF IN BOTH DIRECTIONS, and say for every row which of three it was —
-GAINED (the kit is better), DE-DUPLICATED (identical in substance), or RECEIVED
+**So: DIFF IN BOTH DIRECTIONS, and say for every row which of four it was —
+GAINED (the kit is better), DE-DUPLICATED (identical in substance), RECEIVED
 (the kit carries something your copy lacked, and it is a behaviour change you
-now owe a drive and a decision-log line).** The third is the one nobody looks
-for, because the whole phase is written as though the kit is the destination.
+now owe a drive and a decision-log line), or REJECT-STRUCTURAL (below).** The
+third is the one nobody looks for, because the whole phase is written as though
+the kit is the destination. **The fourth is the one this phase had no word for
+at all**, which is why it is written out at length.
+
+##### ⛔ ⭐ grapevine — THE FOURTH VERDICT: REJECT-STRUCTURAL
+
+**A module can fail to serve a spell for a reason that is not "no subject", and
+Phase B's only refusal was NO SUBJECT.** NO SUBJECT is gated on question 4
+(lifecycle): a single-shot spell has no standing daemon, so the row has nothing
+to be about. Grapevine answers question 4 **long-running**, so every row reads
+as applicable — and three of them are still wrong for it, because **the subject
+exists and its DATA MODEL DIFFERS IN KIND from the one the module was extracted
+against.**
+
+> **REJECT-STRUCTURAL** · the spell HAS the thing the module is about, and the
+> module cannot express it. Not "no subject" (there is one), not "GAINED" (there
+> is no delta to take), not "RECEIVED" (there is nothing to receive) — the two
+> shapes are incompatible, and adopting the module would mean changing the SPELL
+> to fit the kit.
+
+**How to tell it from NO SUBJECT, which is the distinction that matters:**
+
+| ask                                                           | NO SUBJECT | REJECT-STRUCTURAL                                       |
+| ------------------------------------------------------------- | ---------- | ------------------------------------------------------- |
+| Does the spell have the concept at all?                       | no         | **yes**                                                 |
+| Could you construct the kit's type from what the spell holds? | n/a        | **no**                                                  |
+| Would adopting it be dead code?                               | yes        | no — it would be a **rewrite of the spell's behaviour** |
+
+**Measured on grapevine, 2026-09-09, before its port:**
+
+| kit module     | verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eventLog`     | ⛔ **REJECT-STRUCTURAL.** `createEventLog` is ONE process-wide, in-memory, capped array (`REPLAY_BUFFER_SIZE = 1000`) with one monotonic `seq`, explicitly documented as _"a REPLAY window for reconnects within one daemon's lifetime, not a durable log"_. Grapevine's bus is **N durable append-only `.jsonl` files, one per channel, each with its own `next_id`**, replayed from disk by `readBacklog`, surviving restart, `roll`, archive and clear. It is the thing the kit's header says it is deliberately not.                     |
+| `sse`          | ⛔ **REJECT-STRUCTURAL.** `SseClients` is `Set<SseClient>` and `SseClient` is `{close, send}` — a registry of anonymous closers, and `size` is the only thing a daemon reads off it. Grapevine's is `Map<symbol, Subscriber>` where `Subscriber` is `{alias, human, lurk, send}`, and **the metadata is read by six routes** — `/presence`, `/channels/:name/subscribers`, the roll/clear broadcast, the archive live-guard, the watch-presence registration, and the tail itself. There is no way to put an alias into a `Set` of closers.  |
+| `housekeeping` | **SPLIT, and the row is a MODULE so it must rule per export.** `shouldIdleClose` + `startHousekeeping`: **NO SUBJECT** — grapevine runs no idle sweep and no snapshot; it is a singleton that stands until `stop`. `drainAndStop`: **PARTIAL** — its server-stop race IS grapevine's `Promise.race([server.stop(true), 200ms])`, so that half de-duplicates; its `clients` argument has **no expressible value**, since grapevine's subscriber records carry no `close`. Adopt the stop, feed no clients, and say why the argument is empty. |
+
+⛔ **AND THE HOUSE PRECEDENT FOR A MISMATCH IS "WIDEN THE KIT" — B10 AND D31 —
+WHICH IS RULED OUT AS THE DEFAULT REPAIR HERE.** The reason is not taste and it
+is not effort:
+
+> **A widening lands in every spell that bundles the module.** The kit is a leaf
+> that six spells build INTO their artifacts. A signature widened to admit
+> grapevine's per-channel durable log, or a client registry widened to carry an
+> alias, changes the type five other daemons compile against, re-emits five
+> other `dist/` artifacts, and needs a drive at each. **The cost of a widening
+> is measured in ARTIFACTS ACROSS SPELLS, not in lines** — six artifacts across
+> five spells for these three rows — and it is paid by ports that are already
+> finished and by spells whose agents are not in the room.
+>
+> ⚠ **And it re-creates the thing the registry exists to stop.** `sse.ts`'s own
+> header records what a wide signature becomes: _"A signature wide enough to
+> absorb those stops being a file server and becomes a router."_ The census
+> converged eight copies into one module by finding what they SHARED. A module
+> widened to fit the one spell that shares nothing is eight copies again, with a
+> union type over the top.
+
+**So the default repair is: the spell KEEPS ITS OWN, and the refusal is
+recorded.** A widening is available, but it is a separate, argued decision with
+its own decision-log entry and its own blast-radius count — never a step inside
+a port.
+
+##### What REJECT-STRUCTURAL REQUIRES YOU TO WRITE
+
+⛔ **A refusal that is only a decision is indistinguishable from a step that was
+skipped** (D56, and D42 before it). This verdict is the one most likely to read
+as laziness, because the honest outcome is "I adopted nothing here". So it has a
+**required output, in two places, and the port is not done until both exist:**
+
+1. **In the port's journal / decision-log entry**, one row per rejected module,
+   carrying four things:
+   - **the kit's shape**, named as a type (`Set<SseClient>` where
+     `SseClient = {close, send}`);
+   - **the spell's shape**, named as a type
+     (`Map<symbol, {alias, human, lurk, send}>`);
+   - **the reader that makes them incompatible** — the concrete consumers that
+     need what the kit's shape cannot hold (six routes read the alias), because
+     "they are different" is an assertion and "six routes read this field" is a
+     measurement;
+   - **the widening that was NOT done, and its counted cost** — which module,
+     which signature, and how many artifacts across how many spells it would
+     re-emit.
+2. ⛔ **In the kit module's OWN header**, a line naming the spell and the reason
+   it does not adopt. This is the half that survives the session. The next agent
+   to open `sse.ts` is reading it to adopt it, and the module's own file is
+   where it will look for whether that is a good idea; a ruling that lives only
+   in a port's journal is a ruling that gets re-litigated by every spell after
+   grapevine. **The precedent already exists and is why these headers are
+   trustworthy:** `serveDist.ts` records the router boundary it refuses,
+   `housekeeping.ts` records that bounty's watchdog is deliberately not there,
+   and `sse.ts` records `send` arriving from its third consumer. **D17: what a
+   module refused is part of the ruling.** Write it in the same shape.
+
+⚠ **And say the count out loud in the port's report**, the way B7 says zero rows
+and B8 says four absences: _"three of eight kit modules are REJECT-STRUCTURAL
+for grapevine — `eventLog`, `sse`, and half of `housekeeping` — and the kit was
+not widened."_ A port that reports "adopted the kit" over three structural
+refusals is reporting something that did not happen.
 
 ⛔ **AND THERE IS A SECOND PER-SPELL RULING THIS STEP DID NOT NAME: WHETHER THE
 DAEMON STAMPS AN EPOCH.** `createEventLog` takes `{ epoch }`, mind-mapper stamps
@@ -1795,9 +2022,47 @@ and there was no criterion here. **The criterion, which existed only as a
 comment inside one spell's `server.ts`: a SESSION-scoped daemon stamps NO epoch;
 a SINGLETON daemon is the case that needs one.** A session is identified by
 `session_id`, a restart is a DIFFERENT session, and a resuming tail is already
-talking to a different daemon by name. Session-scoped: glamour, imago, magpie,
-bounty. Singleton: astrolabe, mind-mapper, grapevine. Either way **say which you
-chose and whether L6 is closed or merely NARROWED** (D39).
+talking to a different daemon by name. Either way **say which you chose and
+whether L6 is closed or merely NARROWED** (D39).
+
+⛔ ⭐ **grapevine — AND THIS RULING USED TO CARRY A LIST OF SPELL NAMES WITH
+GRAPEVINE UNDER "SINGLETON", WHICH IS THE WRONG ANSWER FOR IT. THE LIST IS
+DELETED; THE PROPERTY IS THIS:**
+
+> **ARE THE LOG'S IDS RECOVERED ACROSS A RESTART?** Read where the id counter
+> gets its initial value on boot. If it is a literal (`let seq = 0`), the ids
+> restart and a resuming client cannot tell a stale watermark from a fresh one —
+> **that is what an epoch is for.** If it is READ BACK from durable storage, the
+> ids are continuous across the restart, the client's cursor is still valid, and
+> **an epoch is not a missing safeguard — it is a false alarm generator.**
+
+Session-scoped-vs-singleton was a proxy for that property and it holds for the
+seven spells whose logs are in-memory arrays. It breaks on the first spell with
+a durable log, and grapevine is that spell. **Measured:** `loadChannel()`
+derives `next_id` from a HIGH-WATER MARK over every parseable line of
+`~/.grapevine/channels/<name>.jsonl`
+(`next_id = Math.max(maxId, lines.length) + 1`), so ids ascend across every
+restart, and a tail that reconnects at `since=<last id>` resumes exactly where
+it left off today.
+
+⛔ **AND STAMPING ONE ANYWAY IS NOT INERT — IT IS A REGRESSION WITH A MEASURED
+MECHANISM.** `tailEvents`'s `onEpochChange` sets **`cursor = 0`**. Grapevine's
+tail route answers `since=0` with `readBacklog(name, 0)`, which is the WHOLE
+channel log off disk. So epoch + `tailEvents` = **every `grapevine roll` replays
+every message of every tailed channel into every tail's stdout** — into agent
+pipes, which is what `tail` exists to feed. The reasoning generalises: **the
+epoch's client-side action is "your cursor is worthless, start over", and that
+is only safe where starting over costs a bounded in-memory replay window.**
+Against a durable log it costs the log.
+
+**So the row grapevine writes is:** _ids are recovered from durable storage and
+are continuous across a restart, therefore **no epoch**, therefore **L6 does not
+arise** — it is neither closed nor narrowed, because the condition it describes
+(ids restarting at 1) cannot occur here._ ⚠ **Write that sentence.** D56: an
+absence that is reasoned must not be spelled the same way as one that was
+skipped, and this is the second shape of not-applicable this ruling has had to
+grow (digestify's was "no log at all"; grapevine's is "a log that does not
+forget").
 
 ⭐ **digestify — AND THERE IS A THIRD ANSWER THIS RULING HAD NO ROW FOR: THE
 QUESTION DOES NOT ARISE.** The epoch is a field on `createEventLog`, and a
