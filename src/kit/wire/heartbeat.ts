@@ -47,8 +47,34 @@ export const DEFAULT_HEARTBEAT_MS = 15_000;
  *  shows a card as permanently present, which is the worse lie. */
 export const MISSED_BEATS = 3;
 
+/**
+ * The smallest beat this module will hand back, in ms — the FLOOR half of the
+ * clamp whose ceiling is `idleTimeout / 2`.
+ *
+ * ⛔ IT EXISTS BECAUSE `intOr` PARSES WITH `parseInt`, AND `parseInt` IS LENIENT
+ * WHERE IT MATTERS MOST. `intOr` falls back safely on everything that LOOKS
+ * hostile — `""`, `"0"`, `"-1"`, `"abc"`, `"NaN"`, `"Infinity"` all take the
+ * fallback — and then reads `"1e9"`, the most plausible spelling of "make it
+ * huge", as **1**. MEASURED at grapevine's Phase 6 repair, before this floor:
+ * `GRAPEVINE_HEARTBEAT_MS=1e9` put ~528 keepalive comments into every open SSE
+ * client in 528 ms. `"3.9"` gives 3 ms and `"5abc"` gives 5 ms the same way.
+ * A knob whose fastest setting is spelled like its slowest is a flood.
+ *
+ * ⚠ **THE FLOOR IS HERE AND NOT IN `intOr` — that is the ruling, not an
+ * accident of where it was easy to write** (D76). `intOr` is the general parser
+ * behind every env knob in the kit; there is no single roster-correct minimum
+ * for "a positive integer", and tightening its PARSE (rejecting `1e9` outright)
+ * would change what every other knob accepts, silently, for values nobody has
+ * audited. `heartbeatMs` already owns one end of this invariant, and 500 was
+ * already written into it as the smallest ceiling it would compute. The floor
+ * belongs beside the ceiling, where the quantity is known.
+ */
+export const MIN_HEARTBEAT_MS = 500;
+
 /** Parse a positive integer from an env value, falling back on anything that is
- *  absent, empty, non-numeric or non-positive. */
+ *  absent, empty, non-numeric or non-positive. ⚠ `parseInt` semantics: `"1e9"`
+ *  is 1 and `"5abc"` is 5. Any caller with a known safe minimum must clamp —
+ *  see `MIN_HEARTBEAT_MS`. */
 function intOr(raw: string | undefined, fallback: number): number {
   const n = Number.parseInt(raw ?? "", 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
@@ -60,20 +86,26 @@ export function idleTimeoutSec(raw?: string | undefined, fallback = MAX_IDLE_TIM
 }
 
 /**
- * The SSE heartbeat, in ms, CLAMPED TO HALF the idle timeout.
+ * The SSE heartbeat, in ms, CLAMPED AT BOTH ENDS: never above half the idle
+ * timeout, never below `MIN_HEARTBEAT_MS`.
  *
- * The clamp is astrolabe's, and the census named it convergence target #4: the
- * other daemons hard-code 15 s against 255 s and write the relationship only in
- * prose, which holds at the default and at no other value. Enforcing
+ * The ceiling is astrolabe's, and the census named it convergence target #4:
+ * the other daemons hard-code 15 s against 255 s and write the relationship
+ * only in prose, which holds at the default and at no other value. Enforcing
  * `heartbeat <= idleTimeout / 2` makes the invariant true for ANY configured
  * pair, which is exactly the invariant whose violation caused the bug above.
+ *
+ * ⚠ The floor cannot fight the ceiling: the ceiling expression is itself
+ * `Math.max(500, …)`, so it is never below `MIN_HEARTBEAT_MS` and the two
+ * clamps can never cross.
  */
 export function heartbeatMs(
   raw: string | undefined,
   idleSec: number,
   fallback = DEFAULT_HEARTBEAT_MS,
 ): number {
-  return Math.min(intOr(raw, fallback), Math.max(500, Math.floor((idleSec * 1000) / 2)));
+  const ceiling = Math.max(MIN_HEARTBEAT_MS, Math.floor((idleSec * 1000) / 2));
+  return Math.min(Math.max(intOr(raw, fallback), MIN_HEARTBEAT_MS), ceiling);
 }
 
 /** The tail-side watchdog for a given heartbeat: three missed beats. */

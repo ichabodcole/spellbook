@@ -4,6 +4,7 @@ import {
   heartbeatMs,
   idleTimeoutSec,
   MAX_IDLE_TIMEOUT_SEC,
+  MIN_HEARTBEAT_MS,
   tailIdleMs,
 } from "./heartbeat.ts";
 
@@ -41,6 +42,33 @@ describe("heartbeatMs", () => {
 
   test("the fallback is per-spell, and junk uses it", () => {
     expect(heartbeatMs("nonsense", 255, 10_000)).toBe(10_000);
+  });
+
+  test("⛔ THE HOSTILE VALUES, AND THE ONE THAT IS NOT OBVIOUSLY HOSTILE", () => {
+    // These take the fallback, and always did — `intOr` rejects anything that
+    // does not parse to a positive integer.
+    for (const raw of ["", "0", "-1", "abc", "NaN", "Infinity"]) {
+      expect(heartbeatMs(raw, 255, 3_000)).toBe(3_000);
+    }
+    // ⛔ AND THESE ARE WHY `MIN_HEARTBEAT_MS` EXISTS. `parseInt` reads the most
+    // plausible spelling of "make it huge" as ONE. Driven before the floor
+    // existed: `GRAPEVINE_HEARTBEAT_MS=1e9` put ~528 keepalive comments into
+    // every open SSE client in 528 ms.
+    expect(Number.parseInt("1e9", 10)).toBe(1); // the mechanism, stated
+    expect(heartbeatMs("1e9", 255, 3_000)).toBe(MIN_HEARTBEAT_MS);
+    expect(heartbeatMs("3.9", 255, 3_000)).toBe(MIN_HEARTBEAT_MS);
+    expect(heartbeatMs("5abc", 255, 3_000)).toBe(MIN_HEARTBEAT_MS);
+    expect(heartbeatMs("1", 255, 3_000)).toBe(MIN_HEARTBEAT_MS);
+  });
+
+  test("the floor can never cross the ceiling", () => {
+    // The ceiling is itself `Math.max(MIN_HEARTBEAT_MS, idle/2)`, so a tiny idle
+    // timeout narrows the window to exactly one legal value rather than to none.
+    for (const idle of [1, 2, 4, 255]) {
+      const beat = heartbeatMs("1e9", idle, 3_000);
+      expect(beat).toBeGreaterThanOrEqual(MIN_HEARTBEAT_MS);
+      expect(beat).toBeLessThanOrEqual(Math.max(MIN_HEARTBEAT_MS, (idle * 1000) / 2));
+    }
   });
 });
 

@@ -68,7 +68,6 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
-import { heartbeatMs, idleTimeoutSec } from "../../kit/wire/heartbeat.ts";
 import { drainAndStop } from "../../kit/wire/housekeeping.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
@@ -104,12 +103,18 @@ const MODE = resolveMode();
  * first true for any configured pair; `./heartbeat.ts`'s `TAIL_IDLE_MS` makes
  * the second true for the CLI, from the same value.
  *
- * ⚠ Both halves of the pair are env-readable through the kit's parser, which is
- * why they are computed here rather than re-exported: an operator who raises the
- * beat cannot push it past half the idle timeout even by trying.
+ * ⛔ **AND THE ENV IS READ IN `./heartbeat.ts`, NOT HERE — THIS FILE ONCE DID IT
+ * AND THAT WAS THE DEFECT (D75).** Chapter 2 resolved `GRAPEVINE_HEARTBEAT_MS`
+ * at this line while the seam file derived the tail's watchdog from the literal
+ * 3,000, so the daemon's beat was tunable and the CLI's watchdog was not: driven
+ * at 20,000, a healthy daemon re-subscribed a real tail four times in 30 s and
+ * reported `count: 2` for one connection. **A resolution that only one half of
+ * the pair can see is not a seam.** `IDLE_TIMEOUT_SEC` and
+ * `SSE_HEARTBEAT_MS` are IMPORTED at their own names — already env-resolved,
+ * already clamped — from the file the CLI imports too, and they KEEP those names
+ * at their use sites (`Bun.serve`'s `idleTimeout`, and the keepalive interval)
+ * so a reader who follows either one lands in the seam and not on a local alias.
  */
-const IDLE_SEC = idleTimeoutSec(process.env.GRAPEVINE_IDLE_TIMEOUT_SEC, IDLE_TIMEOUT_SEC);
-const HEARTBEAT_MS = heartbeatMs(process.env.GRAPEVINE_HEARTBEAT_MS, IDLE_SEC, SSE_HEARTBEAT_MS);
 
 /**
  * Serve one file out of `dist/` — RECEIVED, not de-duplicated.
@@ -1343,9 +1348,14 @@ async function handle(req: Request): Promise<Response> {
             ch.subscribers.delete(key);
           };
 
-          // Heartbeat every SSE_HEARTBEAT_MS (3s) — both a keep-alive signal and a liveness
-          // probe. If the write fails, the client has dropped, so we
-          // unregister the subscriber so `who` doesn't show ghosts.
+          // Heartbeat every `SSE_HEARTBEAT_MS` — 3 s by default, and WHATEVER
+          // `GRAPEVINE_HEARTBEAT_MS` resolved it to otherwise (`./heartbeat.ts`,
+          // which is also where the tail's watchdog derives from it). Both a
+          // keep-alive signal and a liveness probe: if the write fails, the
+          // client has dropped, so we unregister the subscriber and `who` does
+          // not show a ghost. ⚠ Raising the beat therefore makes presence
+          // STALER, not merely quieter — a dead tail lingers in every count
+          // until the next beat fails.
           // SSE comments (`:`) are ignored by the spec parser.
           const hb = setInterval(() => {
             try {
@@ -1353,7 +1363,7 @@ async function handle(req: Request): Promise<Response> {
             } catch {
               cleanup();
             }
-          }, HEARTBEAT_MS);
+          }, SSE_HEARTBEAT_MS);
 
           // Hold a reference so cancel() can clean up.
           controller.__cleanup = cleanup;
@@ -1502,7 +1512,7 @@ async function main() {
     // it now live together in `./heartbeat.ts`, which BOTH halves of the spell
     // import; the invariant `heartbeat <= idleTimeout / 2` is asserted below
     // rather than written in prose, which is how it used to be held.
-    idleTimeout: IDLE_SEC,
+    idleTimeout: IDLE_TIMEOUT_SEC,
     // dev: the HTMLBundle at /watch (Bun serves its assets itself). release:
     // no routes — handle() serves dist/. Bun's Routes type ties the value's
     // type to the literal object shape, so the mode-ternary union is cast.
