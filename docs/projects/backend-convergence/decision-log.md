@@ -4427,3 +4427,105 @@ falsify it.
 - _Rename it `spell-conformance-register.md`._ Accurate today and wrong the
   moment something non-spell-shaped is filed; `house-` is the word the document
   already uses about itself.
+
+## D93 · The register's "nothing is closed here without a sha" is AMENDED, not enforced — a ruling has no commit to point at
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+The register's header asserted a rule its own rows falsified. **A10, B7 and F3
+all close on a date and a D-number**, with no sha: A10 because the row read OPEN
+for an adoption that had already happened and was corrected at the verify pass;
+B7 and F3 because the ruling was that the row's own verb — _"re-point
+`tail.test.ts`"_ — was **unexecutable**, so there is nothing a commit could
+record. B6 is the pure case in the other direction: it closes with a sha
+(`ec543bfb`) **and** says explicitly that it closes as a RULING rather than a
+repair.
+
+⛔ **The rule was reaching for the right thing and had named the wrong
+mechanism.** What it wanted was: _a row never closes on an assertion._ A sha is
+one way to satisfy that; a decision entry a reader can go and read is the other,
+and it is the only one available when the close is "the answer is KEEP" or "the
+premise was wrong". Requiring a sha for those leaves two shapes of outcome: a
+fabricated sha, or a settled row left open — and the second is exactly the
+stale-open failure this branch exists to repair.
+
+Amended to name **two** closing shapes, each with its examples, and to keep the
+substance: closed with a commit, or with a ruling. The strike-through-never-
+delete rule is promoted into the same section, because it is the other half of
+"this document closes rows rather than tidying them" and it was only stated
+inside A2.
+
+**Not taken:**
+
+- _Enforce the rule — go and find a sha for A10, B7 and F3._ There is none for
+  B7 and F3; the ruling is that no commit was owed. Manufacturing one (the
+  verify pass's own commit, say) would point a reader at a diff that does not
+  contain the reasoning.
+- _Delete the sentence._ It is doing real work: it is why A2 survives as a
+  struck-through row instead of vanishing, and why nobody has closed a row by
+  agreeing with it.
+- _Weaken it to "closed with evidence"._ True, and unusable — every row cites
+  evidence, including the open ones. The value was in naming a specific,
+  checkable artifact, so the amendment names two rather than none.
+
+## D94 · A1 is REMEASURED with its counting method declared, because the original figures do not reproduce
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+A1 read _"`hint` / `choices` half-applied. glamour 12/12, magpie 3/6, imago 2/0,
+bounty 1/0"_ against three spells. ⛔ **Three defects, and the third is the one
+that matters:** it named 3 of 8 spells for a question the row itself calls
+roster-wide; it **omitted astrolabe, which is at 0/0** and is therefore the
+worst case rather than an exception; and **it recorded no counting method**, so
+the figures could not be checked. Attempted and failed to reproduce them —
+`hint`/`choices` occurrence counts, raise-site denominators and verb
+denominators all give different numbers, and glamour has 21 raise sites, not 12.
+
+**The method, stated so the next reader can re-run it.** Count the literal
+object properties `hint:` and `choices:` on the CLI-failure raise path:
+`src/<spell>/backend/**/*.ts`, excluding `*.test.ts`, excluding comment lines,
+and excluding daemon-side HTTP JSON bodies (grapevine's `daemon.ts:629` and
+`:649` carry a `hint` in a 404 and a 409 **response body** — a different
+contract from the CLI envelope, and counting them would inflate grapevine
+against spells whose daemons say nothing). Reported as **hint / choices**, at
+`HEAD` of `docs/close-the-convergence-record`, 2026-09-10:
+
+| spell       | hint | choices |
+| ----------- | ---- | ------- |
+| astrolabe   | 0    | 0       |
+| bounty      | 3    | 0       |
+| digestify   | 4    | 1       |
+| glamour     | 9    | 6       |
+| grapevine   | 6    | 4       |
+| imago       | 2    | 0       |
+| magpie      | 3    | 3       |
+| mind-mapper | 9    | 11      |
+
+⛔ **And the shape of the gap is not what the old row described.** It is not
+three laggards trailing a conformant glamour. **`choices` — the field an agent
+routes on — is absent from three spells and near-absent from a fourth**
+(astrolabe 0, bounty 0, imago 0, digestify 1), while `hint`, which is prose for
+a human, is present nearly everywhere. **The machine-readable half is the half
+that was skipped**, which is the opposite of what a row titled "half-applied"
+suggests, and it changes what the eventual house decision is about. The sharpest
+instance: **astrolabe has neither, over 15 raise sites, and astrolabe's CLI is
+one of the two the shared error contract was EXTRACTED FROM** (`errors.ts:40-44`
+counts its sites by name).
+
+The row stays OPEN — defer rule 2, a decision that spans spells — but it is now
+measurable rather than asserted.
+
+**Not taken:**
+
+- _Leave the original numbers and add astrolabe._ They do not reproduce; adding
+  a row to a table whose other cells cannot be checked spreads the problem.
+- _Count raise sites as the denominator (`3 of 21`)._ The more informative
+  figure, and not what the row was ever measuring — `imago 2/0` cannot be read
+  as a fraction. Switching the unit silently would make the old and new numbers
+  look comparable when they are not. The raise-site counts are cited in the
+  prose where they sharpen a point instead.
+- _Count the deployed skill folders._ Where the original figures may well have
+  come from, pre-port. Those files are now launchers; the authored source is the
+  subject.
+- _Fix it._ It is a cross-spell contract decision (defer rule 2), and eight
+  spells' exit-code surface is not a documentation branch's to change.
