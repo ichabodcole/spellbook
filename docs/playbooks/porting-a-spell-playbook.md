@@ -1,19 +1,35 @@
 # Porting a Spell to the Built / Shared Layout — Playbook
 
-**Created:** 2026-08-31 **Last Updated:** 2026-09-08 **Status:** Active, and it
-has **TWO populations, one closed and one open.**
+**Created:** 2026-08-31 · **Last Updated:** 2026-09-10 · **Status:** Reference.
+⛔ **BOTH populations are now CLOSED**, and nothing in the roster is left to
+port.
 
-- **The SURFACE port is CLOSED** — five real runs, three of them rewrites
-  (grapevine, bounty, digestify). Every spell in the roster builds; no
-  hand-written HTML surface remains anywhere in the tree. For that half this is
-  no longer a schedule, it is the thing an agent reads before writing a NEW
-  spell's first surface (see Applicability).
-- ⭐ **The BACKEND port is OPEN, and it re-opened this document.** **Phase B**
-  (added 2026-09-08 from glamour, the migration pathfinder) takes a spell's
-  whole backend — CLI and daemon — out of the deployed skill folder and ships it
-  built behind launchers. **Four have landed — imago, bounty, digestify and
-  grapevine — and ONE is queued: mind-mapper**, the largest and the spell two of
-  the kit's modules were copied from. Read Phase B as the live half
+- **The SURFACE port CLOSED 2026-09-07** — five real runs, three of them
+  rewrites (grapevine, bounty, digestify). Every spell in the roster builds; no
+  hand-written HTML surface remains anywhere in the tree.
+- **The BACKEND port CLOSED 2026-09-09.** **Phase B** (added 2026-09-08 from
+  glamour, the migration pathfinder) takes a spell's whole backend — CLI and
+  daemon — out of the deployed skill folder and ships it built behind launchers.
+  **All eight spells have walked it**: astrolabe and magpie had built CLIs
+  before the convergence, glamour was the pathfinder, then imago, bounty,
+  digestify, grapevine and — the same day as the last and largest —
+  **mind-mapper**, the spell two of the kit's modules were copied from.
+
+⚠ **THIS HEADER SAID OTHERWISE UNTIL 2026-09-10, AND THE DOCUMENT CONTRADICTED
+ITSELF IN ONE FILE.** It read _"the BACKEND port is OPEN, and it re-opened this
+document … four have landed and ONE is queued: mind-mapper"_ while Phase B's own
+banner, four hundred lines down, said its population was CLOSED and all eight
+spells had walked it. The banner was right; the header was frozen at 2026-09-08.
+**The header is the thing a reader trusts first, so a stale header is worse than
+a stale section** — which is register rule 2, and the reason this paragraph
+stays rather than being tidied away.
+
+⛔ **What a closed population changes about what this document IS.** It is no
+longer a schedule for either half. The next reader is either **scaffolding a NEW
+spell** — for which the material is here but the shape is wrong, and register
+item F1 is the document that should exist — or **maintaining the spine**. Read
+the ⭐ blocks as a record of how each step was wrong for somebody, not as a
+queue: eight backend ports, and no step survived all eight unamended
 
 ---
 
@@ -37,18 +53,20 @@ then neither is wrong.
 
 ## Applicability
 
-> **⛔ THE SURFACE POPULATION IS CLOSED (2026-09-07); THE BACKEND POPULATION IS
-> NOT.** digestify was the last spell the SURFACE half had a subject in; the
-> roster is eight spells and eight built surfaces. **Phase B has five subjects
-> left** and everything under it is a live schedule, not a retrospective.
-> **Everything below still applies — to a spell that does not exist yet.** Read
-> that as the change it is: the phases were written by agents porting things
-> that were already shipping, under a fidelity ruling, against an inventory that
-> existed because the old page did. A NEW spell has none of that. What survives
-> for it is Phase 0 (instruments before the work), Phase S (the registry is
-> where primitives come from), and the destination shape R0 points at. What does
-> not is the premise of Phase R, which is that there is something to be faithful
-> to.
+> **⛔ BOTH POPULATIONS ARE CLOSED — the surface half on 2026-09-07, the backend
+> half on 2026-09-09.** digestify was the last spell the SURFACE half had a
+> subject in; mind-mapper was the last for the BACKEND half. The roster is eight
+> spells, eight built surfaces and eight built backends, and **Phase B has no
+> subjects left** — everything under it is a retrospective, not a schedule. _(It
+> read "Phase B has five subjects left" until 2026-09-10; corrected with the
+> header.)_ **Everything below still applies — to a spell that does not exist
+> yet.** Read that as the change it is: the phases were written by agents
+> porting things that were already shipping, under a fidelity ruling, against an
+> inventory that existed because the old page did. A NEW spell has none of that.
+> What survives for it is Phase 0 (instruments before the work), Phase S (the
+> registry is where primitives come from), and the destination shape R0 points
+> at. What does not is the premise of Phase R, which is that there is something
+> to be faithful to.
 >
 > **And one section is now a prediction with no population left to test it:**
 > R6's "expect four wards to red" was four for grapevine, four for bounty, and
@@ -64,7 +82,9 @@ then neither is wrong.
 - ⭐ **Moving a spell's whole BACKEND — CLI and daemon — out to
   `src/<spell>/backend/`, emitting `dist/cli.js` + `dist/server.js` behind
   launchers, and adopting `src/kit/wire/`. That is Phase B**, it runs after
-  Phases 1–3 on an already-ported spell, and it is the half with subjects left.
+  Phases 1–3 on an already-ported spell, and **all eight spells have now walked
+  it** — so read it for a spell that does not exist yet, not for one in the
+  roster.
 - Cutting a spell's backend↔surface seam so its daemon stops reaching into
   surface source.
 - Making two spells share one implementation, on either side of that line.
@@ -882,9 +902,20 @@ port is before Phase 1, because they have different done-whens below.
 > ruled per property and the two properties went DIFFERENT ways, the two-number
 > discriminator permitted a restoration on measurements rather than on
 > provenance, the missing-SKILL.md hatch was executable as written, and the
-> wire-rename output was producible. **Six gaps remain, each marked
-> `⭐ mind-mapper-port`**, recorded at the moment they were hit and amended in
-> one pass at the end; the account is
+> wire-rename output was producible. ⚠ **Six gaps were FOUND, and they were
+> AMENDED, not left standing** — the sentence here used to say both "remain" and
+> "amended in one pass", which cannot both be true; the honest word is
+> **amended**, at the end of the port, in one pass. ⛔ **And the marker count
+> did not match the gap count, which is checked here for the first time
+> (2026-09-10):** four carry `⭐ mind-mapper-port` (B6's triage output being a
+> MODULE; B8's wire-schema WRITERS; the seam file's env resolution making an
+> in-process constant untunable; B10's fourth `git status` case), a fifth landed
+> in **B9** under a plain `⭐` with no tag (60 raise sites against a `die(` grep
+> that finds one, and it is prose), and **the sixth never reached this document
+> at all** — B7's second instance, the stopgap whose deletion condition read as
+> an EVENT and was meant as a PROPERTY (D87). It is landed now, at the end of
+> B7, marked. **A gap recorded in a journal is not a gap folded into a
+> playbook**, and nothing was comparing the two counts; the account is
 > `docs/projects/backend-convergence/phase-7-journal.md` and the rulings are
 > **D85–D87**. ⛔ **What did NOT transfer, stated once: the assumption that a
 > ruling about a TEST and a ruling about a WIRE cannot collide.** B8 rules
@@ -2117,6 +2148,39 @@ row in it, `git grep -n` the OLD spelling across `.anthill/`, `grimoire/`,
 required to write is the input to the sweep you were not** — and authoritative
 team canon (`.anthill/dev/**`) is the first place to look, not the last, because
 nothing in it is under a ward.
+
+⛔ ⭐ **mind-mapper-port — AND THE LIST MOST LIKELY TO BE STALE IS NOT A LIST IN
+`grimoire/` AT ALL. IT IS A STOPGAP'S OWN DELETION CONDITION, WRITTEN IN PROSE,
+AND NOTHING GREPS IT.** _(Landed 2026-09-10 with the header reconcile — this was
+the sixth of mind-mapper's six gaps and it was the one that never reached this
+document; see the note under Phase B's banner.)_ This step teaches "green over
+your spell for an unrelated reason", and its two examples are both hand-kept
+arrays. **The second instance is a sentence.**
+`grimoire/daemon-lifecycle-ward. test.ts` carried its own retirement condition
+in its header — _"delete this ward when the backends build and share a spine"_ —
+and at the last port that condition **became literally true**, so the roll was
+carrying its deletion as a deliverable. ⛔ **It was NOT deleted (D87), because
+the condition as WRITTEN is an EVENT and the condition as REASONED is a
+PROPERTY**, and only ONE of the ward's three clauses became true by
+construction: the atomic write did (and its population is now empty, which is
+register C9, which register C11 then found the ward's own guard cannot see);
+`idleTimeout` did not, because it is passed at each daemon's own `Bun.serve`
+call and **no kit module owns it** — the kit never calls `Bun.serve`, so it can
+supply the constant, the parse and the clamp but not the option; and
+`readSession`'s ENOENT branch never converged at all.
+
+**So the instruction, and it is one more grep than the three above.** Before you
+claim a stopgap's condition is met, `git grep -n` the phrases a retirement
+condition is written in — _"delete this"_, _"remove this ward"_, _"once every
+spell"_, _"when the backends"_ — across `grimoire/`, and for each hit **restate
+the condition as a PROPERTY and check the property, clause by clause.** ⚠ **The
+transferable half, and it is not about wards: a stopgap's deletion condition is
+almost always written as an EVENT and meant as a PROPERTY.** An event is
+checkable and arrives on schedule; the property is what the author actually
+wanted, and the two come apart precisely when the event is a project finishing.
+**Check the property.** And write the reason into the stopgap's own header,
+where the next reader meets the request rather than the ruling about it (D68's
+rule, D87's application).
 
 #### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
 
