@@ -3214,3 +3214,620 @@ copies is the shape D68 asked for precisely so a reader can cross-check; two
 right and one wrong is worse than one wrong. _Drop the line numbers and keep the
 route names_ — line numbers rot, but they are what made this checkable at all;
 they are kept and now say which tree they are of.
+
+## D79 · A FIFTH verdict at B8 — LOSSY-COPY — and a RESTORATION is told from a WIDENING by two numbers, both of which must be zero
+
+**Decided 2026-09-09, in pre-work for mind-mapper. No spell was ported.** The
+account is `phase-7-prework.md`.
+
+B8 has four verdicts — GAINED, DE-DUPLICATED, RECEIVED, REJECT-STRUCTURAL — and
+bounty's ⭐ block covers the two cases where a spell is a convergence SOURCE:
+rows with no behaviour delta (DE-DUPLICATED) and the one row that "runs
+backwards" (RECEIVED, where a sibling's improvement was folded in on the way).
+**None of the five covers the case where the kit is a LOSSY COPY of the spell's
+own module** — where the module was converged toward this spell by name, and
+dropped something on the way that the spell still has.
+
+**Why the phase could not have this word before now.** The kit's headers name
+their convergence targets, and mind-mapper is named as target #1 (`sse.ts:9`,
+"TOWARD mind-mapper's `sseResponse`") and target #2 (`eventLog.ts:7`, "TOWARD
+mind-mapper's `scripts/events.ts`"). It is the only spell in the roster that is
+the named source of a module it has not yet adopted. **The mechanism is recorded
+and was nobody's mistake:** D1 ruled the spine be proven on the two spells that
+already build, and D17 says so in as many words — _"Checked against these two
+spells rather than against the census's counts"_. Astrolabe and magpie are
+downstream forks of the mind-mapper line, so the module boundaries were settled
+against two copies while the original was not in the room.
+
+> **LOSSY-COPY** · the kit module names YOUR spell as its convergence target,
+> and your module holds a property the kit's does not. Adoption is not a neutral
+> de-duplication and not a gain: it is a **net loss of a guarantee that
+> shipped**, and the port owes the loss a name, a disposition and a home.
+
+**Measured, 2026-09-09, and the count is two — not the three an independent cold
+read reported:**
+
+| loss                                                                                                                                                            | real?                                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`sse` cannot emit a per-stream frame at OPEN.** `server.ts:423` writes the `--inbound` grounding frame _before_ `bus.subscribe` at `:424`.                    | ⛔ **YES.** `sse.ts:144`'s `onOpen?: () => void` takes no argument and fires at `:208`, _after_ `log.subscribe` at `:200`. See D79's ordering note below.                          |
+| **`eventLog` demoted the epoch from MANDATORY to OPTIONAL.** `events.ts:67` is `epoch: string`, stamped unconditionally at `:90`; `eventLog.ts:78` is `epoch?`. | ⛔ **YES**, and it reproduces census **L6** — the defect the module's own header claims to fix "BY CONSTRUCTION", in the one spell L6's table names as CORRECT.                    |
+| **`eventLog` dropped `ALL_EVENT_KINDS`.**                                                                                                                       | ✅ **NO — CONTRADICTED.** `createEventLog<T extends object>` is generic; the vocabulary never was kit material. `ALL_EVENT_KINDS`, `EventKind` and the totality cell all stay put. |
+
+⚠ **The third claim is the one worth keeping as a shape.** "The kit dropped X"
+is only a loss if the kit ever had a SUBJECT for X. A generic parameter is not a
+dropped feature, and a cold read cannot tell the two apart without opening the
+type. **Check the generic before you call something lost.**
+
+⛔ **AND THE FIRST LOSS OCCUPIES NO TYPE, WHICH IS WHY QUESTION 7 WILL NOT FIND
+IT.** Q7's procedure is _"write down the spell's type and the kit's type side by
+side, and try to construct one from the other"_. Run honestly on `sse`, it
+answers **"representable"**: the kit's subject-type is `Set<SseClient>`, and
+mind-mapper holds no registry at all, so constructing one is trivial — you pass
+an empty set. The incompatibility is not in a data type. It is **a statement
+between two hooks**, and its observable is an ORDERING: a caller that supplies
+its own `clients` set and sends from `onOpen` gets the grounding frame _after_
+the replayed backlog rather than as the first data line. **So Q7 gains a second
+half: where a module's subject is a SEQUENCE of writes, compare the ORDER of the
+module's hooks against the order your spell writes in.** A type check cannot see
+a position.
+
+### The disposition is per PROPERTY, and there are three of them
+
+A LOSSY-COPY verdict is **not** a licence to widen. It requires the port to pick
+one disposition per lost property and write it down:
+
+1. **RESTORE** — the property goes into the kit. Permitted only on the numbers
+   below.
+2. **KEEP-LOCAL** — the spell keeps its own for that property, and the kit
+   module's header records the loss by name (D68 requirement 2, D17).
+3. **FILE** — the loss stands, and it goes to `docs/backlog/` naming the census
+   row it re-opens.
+
+### ⛔ RESTORATION vs WIDENING — the discriminator, and it is two numbers
+
+D68 rules widening out as the default repair and prices it in **artifacts across
+spells**. A restoration is not exempt from that price merely because the
+property was ours first: **provenance does not remove one artifact from the
+blast radius**, and "it was mine before you copied it" is a claim about history,
+not about cost. So the discriminator is not provenance. It is this, and it is a
+claim about an observable (D77):
+
+> **Apply the change, rebuild every kit-bundling spell's artifact through
+> `bun run build`, and for each OTHER adopter ask two questions:**
+>
+> **(a) does its source need any edit to compile?** and **(b) does any byte of
+> its wire differ** — HTTP status, headers and body, stdout and stderr bytes,
+> exit codes — under its own suite and its release drive?
+>
+> **RESTORATION iff both numbers are ZERO.** That is what "the kit removed it
+> when it copied" means operationally: the other adopters never used the
+> property, so putting it back is inert at every existing call site. **Any
+> non-zero number and it is a WIDENING**, D68 governs, and it leaves the port to
+> become its own argued decision with its own blast-radius count.
+
+⚠ **Measure the WIRE, never the artifact bytes.** Adding even an optional
+parameter changes the bundled module's source and therefore every artifact's
+bytes, so a `dist/` byte-diff calls every change a widening and the
+discriminator is useless — D77's "a one-way implication written as an 'if and
+only if' is not a discriminator", in miniature. `tsc --noEmit` across the
+adopters is a cheap **leading indicator** for (a) and is blind to (b).
+
+⛔ **DRIVEN, IN THIS PRE-WORK, BY ACCIDENT — AND IT IS THE STRONGEST FORM OF THE
+POINT.** This document's own repairs to `tailEvents.ts` and `eventLog.ts` are
+**COMMENTS ONLY: zero executable bytes, zero signature change, zero behaviour.**
+`bun run build` then re-emitted **11 artifacts across 7 spells**, and
+`dist-check` went red. Each diff is **exactly 1 insertion / 1 deletion, and the
+line is the base64 `//# sourceMappingURL=`** — Bun embeds `sourcesContent`, so
+the source map carries the comment text into every artifact that bundles the
+module.
+
+**So the artifact-bytes test grades a COMMENT as an eight-artifact widening**,
+and the wire test correctly grades it zero. A discriminator that cannot tell a
+comment from a signature change would have made D79's own restoration
+unarguable. ⚠ **And it is cheap to run in the honest direction:**
+`git diff --numstat` per artifact plus a grep for `sourceMappingURL` separates
+"only the sourcemap moved" from "code moved", in one command.
+
+⚠ **One further confirmation, free:** `grapevine/dist/server.js` is **absent
+from the 11**, because grapevine's daemon REFUSED `eventLog` and `sse` at D68.
+**A structural refusal is observable as an artifact that does not move**, which
+is a better liveness check on a recorded refusal than any ward reading prose
+(D68's own not-taken).
+
+⛔ **AND THE HOUSE HAS ALREADY RUN THIS TEST ONCE WITHOUT NAMING IT.** D32
+widened `SseClients` from a bare closer to `{close, send}` for glamour, and the
+sentence that justified it is exactly (a) and (b): _"`drainAndStop` was the only
+other consumer; neither adopting spell dereferences the elements."_ Both numbers
+were zero and nobody wrote down that this was the test. It is now.
+
+**Applied to mind-mapper's two real losses, and they do not go the same way:**
+
+- **The epoch needs NO kit change at all.** mind-mapper passes
+  `createEventLog({ epoch: crypto.randomUUID() })` at its one construction site
+  and re-tightens `epoch` to required in its own local frame type. Kit bytes:
+  zero. ⛔ **Making the kit's `epoch` mandatory is a widening in the worst
+  direction** — it would reverse D39 (imago), D48 (bounty) and D70 (grapevine),
+  all of which reasoned their way to no epoch. **Do not propose it.** What the
+  kit owes instead is an honest header: L6 is closed **by opt-in**, not "by
+  construction", and three spells have since opted out.
+- **The grounding frame is the one restoration candidate**, and it is small: an
+  `onOpen` that receives `{ send }`, or an `openFrames?: () => string[]` emitted
+  before `log.subscribe`. **Predicted** zero source edits and zero wire deltas
+  at the other five, because none of them writes at open. ⚠ **That prediction is
+  to be DRIVEN before the change is proposed, not after** — and if it fails, the
+  row is KEEP-LOCAL and mind-mapper's `sseResponse` stays its own.
+
+⚠ **And the hook was considered and rejected once, for a reason that does not
+reach this case.** D32's not-taken list carries _"A `sseResponse` hook that
+hands the caller a raw `send` … the caller then has to keep its own collection
+of them"_. That was argued against glamour's **presence broadcast**, which
+pushes to already-open streams from outside and therefore does need a
+collection. Mind-mapper needs **one frame, on one stream, at open**, and keeps
+no collection at all. **Read what a not-taken was argued AGAINST before you
+treat it as settled** — a rejection is scoped to the case that produced it.
+
+### What LOSSY-COPY requires you to write
+
+Same two destinations as D68, because the failure mode is identical — a loss
+that is only a decision is indistinguishable from a loss nobody noticed:
+
+1. **In the journal / decision-log entry**, per lost property: the property, the
+   kit's shape and the spell's shape as types (or as an ORDER, where it occupies
+   no type), **the census row it re-opens if any**, the disposition chosen, and
+   — for a RESTORE — the two numbers, driven.
+2. **In the kit module's OWN header**, a line naming the spell and the property.
+   `sse.ts` and `eventLog.ts` both currently say they converged TOWARD
+   mind-mapper and say nothing about what they left behind, which is the exact
+   half D17 calls part of the ruling.
+
+Plus the count out loud in the port's report: _"two properties of mind-mapper's
+own modules are LOSSY-COPY at the kit — the pre-replay open frame and the
+mandatory epoch — one is filed and one is a driven restoration."_
+
+**Not taken:**
+
+- _Fold this into RECEIVED, running backwards._ RECEIVED is bounty's row and it
+  is a GAIN the spell did not have. This is a LOSS the spell did have, and
+  spelling them the same way is how the loss ships unnamed.
+- _Fold it into REJECT-STRUCTURAL._ Tempting for `sse`, and wrong for
+  `eventLog`: mind-mapper CAN adopt `createEventLog` — it is the same shape, it
+  is the shape the kit copied. Refusing the whole module would lose the three
+  things the kit genuinely fixed (the cap, the replay-whole on `since > seq`,
+  the non-finite cursor). **A verdict that forces all-or-nothing on a row whose
+  answer is per-property is the thing this entry exists to stop.**
+- _Rule that a source spell may always restore, on provenance._ The attractive
+  version, and it prices nothing. D68's cost is artifacts across spells and
+  provenance does not reduce it; a restoration that breaks a sibling is a
+  widening whatever its history.
+- _Widen the kit for both losses now, in the port._ D68 forbids it as a step
+  inside a port and the reason holds here unchanged.
+- _Add a ward that a LOSSY-COPY property was restored or filed._ It would read
+  the absence of a line, which is what a skip looks like too — D68's own
+  not-taken, and Gotcha 12 on wards reading prose.
+
+## D80 · A missing SKILL.md gets the SAME KIND of escape hatch as a missing `acc.config.json` — and the ward that would have caught the difference is blind to this spell
+
+**Measured 2026-09-09, in pre-work for mind-mapper. No spell was ported.**
+
+Phase B reads a SKILL.md at **eight sites** and has an escape hatch for none of
+them: the entry-set rule (playbook:974, _"Read your spell's `scripts/` directory
+and its SKILL.md; that is the entry set"_), B2's load-bearing-paths paragraph
+(:1143), B7's exclusion-set bullet (:1687) and its `INTERNAL_ENTRY_POINTS` row
+(:1717), B8's `discovery` row (:1807), B8's exit-table bullet (:2148) and its
+two exit-code-population bullets (:2184, :2189), and the acceptance box (:2465,
+_"Read your SKILL.md for what it tells a caller to spawn"_). Every one is
+written in the indicative.
+
+**mind-mapper has no SKILL.md**, and it is the only one of the eight skills
+without one. The absence is pinned as debt at
+`grimoire/flag-invariant.test.ts:160-162`.
+
+⛔ **The asymmetry is the finding.** The other missing-artifact case got a named
+hatch the moment imago hit it (playbook:1040-1049 and :2467-2470, from D37):
+_"there is nothing to run, nothing to regrade, and you do not acquire one as
+part of the port. Do not stop, and do not write one; that is a day's work of a
+different kind."_ ⚠ **And mind-mapper is not even eligible for it** — :1041
+names mind-mapper as one of the four spells that HAVE a config, so acc stays
+live for this port and the hatch that exists is the wrong one.
+
+**The ruling: the same hatch, in the same words, for a stronger reason.** Do not
+stop; do not write one. ⛔ **And the reason is not "it is Cole's call" — it is
+that COLE HAS ALREADY MADE IT.** `grimoire/roster-drift.test.ts:32-38` records
+the correction, made the day after the pin landed and explicitly flagged as the
+point: the pin originally read as debt awaiting repair, and **Cole then ruled
+the undeclared state INTENTIONAL AND CORRECT** (`47238d7`) — _"mind-mapper is
+unfinished, it is undeclared BECAUSE it is unfinished, and there is nothing to
+repair in the four listings, the trigger registry, or the missing `SKILL.md`. A
+spell that has not coalesced should not claim a roster slot."_ So a port that
+writes one is not deciding a product question by implication; it is **reversing
+a standing ruling** inside a chapter titled "behaviour unchanged".
+
+⚠ **AND TWO INSTRUMENTS CARRY THE SAME FACT AT TWO VINTAGES, WHICH IS ITS OWN
+HAZARD.** `flag-invariant.test.ts:151-157` still frames it as undecided —
+_"Whether the repair is 'declare it' or 'it should not have shipped' is Cole's
+product call"_ (#989) — because that comment predates the ruling.
+`roster-drift.test.ts` is where the decision landed, and `roster-drift`'s
+population line also declares its own blindness (_"no SKILL.md check"_). **The
+newer instrument is the ruling; read both before quoting either.** Full context
+deliberately in a file rather than a board card:
+`docs/backlog/2026-08-10-mind-mapper-is-undeclared-and-shipped.md`.
+
+⚠ **Left OPEN by that ruling and likewise not the port's business:** whether the
+built artifact belongs in the published package while the spell is WIP. **This
+port ADDS artifacts to that package**, so name the question in the report and
+route it to Cole rather than answering it.
+
+**What the port owes instead, and it is B7's discipline pointed one level up:**
+say the absence out loud, once, with what it costs — _"mind-mapper has no
+SKILL.md; the entry set is derived from `scripts/` alone, the exit-code table
+has no published home, and 39 caller-facing flags stay unwarded. The port does
+not write one."_ D56: an absence that is reasoned must not be spelled the same
+way as one that was skipped.
+
+### ⛔ And B7's promised instrument does not fire here
+
+B7 offers the exclusion-set half a loud failure: glamour's relocated daemon
+stopped being excluded and `flag-invariant` reported its private `--port` and
+`--project` as undocumented SKILL.md flags, with the warning that _"a daemon
+with no private flags would have moved in silence"_.
+
+**Measured: mind-mapper's daemon HAS private flags — `--port`, `--host`,
+`--no-open` (`server.ts:448-457`) — and the loud half still cannot fire.**
+`flag-invariant.test.ts:179-187` returns from the per-spell cell **before either
+arm runs** when the SKILL.md is missing: the recognized-flag enumeration, the
+unresolved-entry-point assertion, the documented set and the two-sided diff are
+all below the `return`. The cell passes for a stated reason — that is the repair
+recorded at :135-149, and it is honest — but it passes over zero checking.
+
+⚠ **Correction to the report that raised this:** `--project` is **not** a
+private daemon flag. `server.ts:500` reads `project` only as an HTTP query
+param; `--project` is caller-facing on ~28 CLI verbs (`cli.ts:374-404`). The
+private set is `--port`/`--host`/`--no-open`, and the finding survives the
+correction.
+
+**So B7 gains a row it has never needed: an instrument that is GREEN over your
+spell for a reason unrelated to your port.** Not a zero-row list (D56's case,
+where there is no subject) and not a stale expectation (`daemon-lifecycle-ward`,
+where the ward went generic) — **a ward with a subject, a pin, and no reach.**
+The port cannot fix it (the fix is the SKILL.md) and must not read its green as
+cover: `INTERNAL_ENTRY_POINTS` is hand-work here with no backstop at all.
+
+**Not taken:**
+
+- _Write mind-mapper's SKILL.md as part of the port._ It is the fix, it is a
+  day's work of a different kind, and — unlike acc — it decides a product
+  question reserved to Cole (#989). It would also make this the one port that
+  did not follow the playbook, which is imago's exact argument at :1046.
+- _Block the port until the SKILL.md exists._ It makes a documentation gap a
+  scheduling dependency for a 16,306-line relocation, and #989 has been open
+  since before this project started.
+- _Widen `flag-invariant` so arm A runs against the CLI's `--help` instead._ A
+  real option and a genuinely better ward — and it is D44's forbidden shape: the
+  instrument that guards a port must not be repaired BY that port. Filed.
+- _Say nothing, since the cell is green._ The green is the defect. That is the
+  ward's own thesis, quoted in its header: a consumer cannot distinguish
+  "nothing is wrong" from "I could not look".
+
+## D81 · A WIRE-SCHEMA DELTA is a first-class cost of adoption, with a required output — the fourth time the class has been recorded and the first time it reaches the playbook
+
+**Decided 2026-09-09, in pre-work for mind-mapper. No spell was ported.**
+
+Adopting `src/kit/wire/eventLog.ts` **renames the cursor field on mind-mapper's
+wire**: the kit builds `{ id: seq, ...msg }` (`eventLog.ts:126`) and types it
+`Frame<T> = T & { id: number; epoch?: string }` (`:76-78`); mind-mapper emits
+`{ seq, epoch, kind, payload }` (`events.ts:96`). The rename is **forced** —
+`createEventLog` names the field in the type and in the literal, and there is no
+option.
+
+**Nothing in Phase B registers this as a cost.** Measured: `seq` appears in the
+phase twice, both about grapevine and neither about a rename; none of the seven
+entry questions asks what a module's wire field names are or who reads them; and
+the four verdicts have no cell for it. `eventLog` for mind-mapper would be ruled
+**DE-DUPLICATED** — the kit's own header says it converged toward
+`scripts/events.ts` — and the rename would then land unnamed, which is verbatim
+the failure bounty's `--timeout 0` bullet was written about: _"Framed as 'adopt
+and gain', that lands unnamed."_
+
+⛔ **AND THE CLASS HAS BEEN RECORDED FOUR TIMES WITHOUT EVER GROWING A STEP.**
+D20 ("Two wire-observable changes"), D35 ("Three…"), D47 ("Three… named rather
+than smuggled", later four), D51 (a fifth). The strings `wire-observable` and
+`wire observable` appear **zero times** in Phase B. Compare REJECT-STRUCTURAL,
+which produced a required-output section within one port. **A convention that
+lives only in the decision log is a convention the next port re-derives or
+misses.**
+
+### The three questions, and the second one is the one everybody skips
+
+> **WIRE-SCHEMA DELTA** · adopting a kit module changes a byte a CALLER reads.
+> Ask, per adopted module: **(1) does any field the wire carries change name,
+> nesting, type or presence? (2) WHO READS IT — count the sites, in every tree,
+> including the ones outside this repo's control (an agent's pipe, a browser
+> bundle, a committed fixture). (3) is the change FORCED by the module, or is it
+> the house IDIOM the siblings happen to follow?**
+
+**Question 3 is new and it halves this port's bill.** Measured:
+
+| change                                       | forced?                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `seq` → `id`                                 | ⛔ **FORCED.** Named in `Frame<T>` and in the emit literal.                                                                                                                                                                                                                                            |
+| `{kind, payload}` FLATTENED to the top level | ✅ **NOT FORCED — the report that raised this was wrong.** `Frame<T>` is generic; `createEventLog<{kind: EventKind; payload: Record<string, unknown>}>()` keeps the nesting. **All five existing adopters flatten**, so a port that copies a sibling flattens and a port that reads the type need not. |
+
+⚠ **The generalisation: an idiom five siblings share is indistinguishable from a
+contract until you open the type.** Phase B nowhere says which of the two you
+are looking at, and the whole of B1 is built on the opposite instinct ("decide
+from the imports, never from the names"). **Read the signature; do not copy the
+neighbour.**
+
+⚠ **And the CLI half forces nothing at all.** `tailEvents`'s `cursorOf` and
+`epochOf` are caller-supplied (`tailEvents.ts:132`), so `(ev) => ev.seq` is
+legal. The rename is a **daemon-side** cost of `eventLog` alone, which then
+propagates to every reader — so a spell can adopt the whole tail client with
+zero wire change, and that is worth knowing before the two are priced together.
+
+### Counted, for mind-mapper
+
+**Method stated, because a count whose rule cannot be stated is not a
+measurement (D78).** Strip comments; count word-boundary
+`seq|epoch|payload| ServerEvent|BusEvent`; then subtract the homonyms by reading
+every matched line — the surface's UI bump counters (`focusRequest.seq`,
+`ComposerSeed.seq`, `ScrollRequest.seq`), `WireMessage.seq` (a message-row
+sequence, wire but not this envelope), the `messages` table's own `seq` column,
+`epoch` meaning unix epoch, and `payload` as prose in byte-cap errors.
+
+| tree                             | envelope-only                                |
+| -------------------------------- | -------------------------------------------- |
+| `src/mind-mapper/surface/`       | **167 lines / 173 occurrences**, 5 files     |
+| `plugins/…/mind-mapper/scripts/` | **~158 lines / ~209 occurrences**, ~30 files |
+
+⛔ **The independent report's figures — 108 and 84 — could not be reproduced by
+any stated rule** (raw `seq` alone gives 137/94; non-test lines only 86/49;
+whole-word including comments 238/277). Both were too LOW. **A blast-radius
+number that arrives without its counting rule is not evidence**, which is D78's
+ruling arriving at a second kind of count.
+
+Plus the half a field-name count misses entirely: the surface's reducer is a
+**cursor consumer**, not only a field reader — `reducer.ts:25-26`'s
+`isGap(cursor, seq)` and ~30 `cursor: event.seq` assignments. **A rename touches
+the gap-detection contract, not just a property name.** Count the READERS OF THE
+MEANING, not the occurrences of the token.
+
+And the wire leaves the repo: `cli.ts:750` writes the verbatim envelope into an
+agent's pipe on every bus line. `cli.ts:733`'s grounding line and `:741`'s
+synthesized `epoch.changed` deliberately carry no `seq`, so they are unaffected
+— name them, or the next reader thinks the sweep missed two shapes.
+
+### The required output
+
+Same two destinations as D68 and D79:
+
+1. **In the port's journal / decision-log entry**, per changed field: old
+   spelling, new spelling, FORCED or IDIOM, the reader count with its counting
+   rule and its tree, and the readers outside this repo's control.
+2. **In the port's report, out loud**, in B7's and B8's shape: _"one field
+   changes name on mind-mapper's wire (`seq` → `id`, forced); the flatten is the
+   house idiom and was declined; 173 occurrences across 5 surface files and ~209
+   across ~30 script files, plus every JSONL line the tail writes into an
+   agent's pipe."_
+
+**Not taken:**
+
+- _Call it RECEIVED and rely on "you owe a drive and a decision-log line"._
+  RECEIVED is about a behaviour the kit carries and yours lacked. A rename
+  carries no behaviour, which is precisely why it slips through — and the row
+  here would be ruled DE-DUPLICATED anyway, which owes nothing.
+- _Keep `seq` by declining `eventLog`._ Available, and it costs the three things
+  the kit genuinely fixed (the cap, replay-whole on `since > seq`, the
+  non-finite cursor). Ruled per-property under D79 instead.
+- _Widen `createEventLog` with a configurable cursor field name._ A widening by
+  D79's test — it changes the type five other daemons compile against to spare
+  one spell a mechanical rename — and it would put two spellings of one field in
+  the house, which is the drift the registry exists to end.
+- _A ward that pins the wire field names._ Worth having and not this port's to
+  build (D44). Filed.
+
+## D82 · `tail.test.ts` is NOT re-pointed — it is the port's ORACLE, and its four cells survive only if the env knobs resolve in the SEAM FILE
+
+**Measured and driven 2026-09-09, in pre-work for mind-mapper. No spell was
+ported.**
+
+The proposal (`proposal.md:120-122`) rules that
+`mind-mapper/scripts/tail.test.ts`, _"today the only executable specification of
+tail behaviour in the repo, is **re-pointed at the shared client rather than
+rewritten**. Those four tests are the acceptance criteria for the tail half."_
+
+⛔ **"Re-pointed" is unexecutable as written, because there is nothing to
+re-point.** Measured: the file's only imports are `bun:test`, `node:fs`,
+`node:os`, `node:path` — **zero imports from the CLI or from anywhere in the
+spell**. It reaches the CLI by
+`Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail", …])` against a scripted
+`Bun.serve` fake SSE endpoint, with hand-written discovery files. It is a
+**black-box process contract**, not an import graph.
+
+**The ruling: the file is not re-pointed and not rewritten. It is left ALONE —
+assertions untouched — and it becomes the oracle the adoption is measured by.**
+Its only edit is the one B6.1 gives every spawner: `CLI_SCRIPT` follows the
+LAUNCHER. Run it green before chapter 2, swap the hand-rolled loop for
+`tailEvents`, run it green after. **A test whose subject is what the process
+writes does not care which module wrote it, and that property is the reason this
+file is the acceptance criterion in the first place.**
+
+⚠ **And say the second half out loud, because "re-pointed" implied it and it is
+false:** re-pointing the path does not point the test at the shared client. It
+points it at a CLI that now runs `tailEvents` internally, so every assertion
+becomes a claim about **how mind-mapper CONFIGURES `tailEvents`** — which is the
+right thing to assert and is not what the proposal's sentence describes.
+`src/kit/wire/tailEvents.test.ts:5-8` carries the matching error from the other
+end (_"deliberately left pointed at mind-mapper's own loop until a later phase
+re-points it here"_); this port is that phase, and the correct action there is
+to fix the sentence, not to move the cells.
+
+### ⛔ B8's derive rule kills two of the four cells, and the worse one goes GREEN
+
+`spawnTail` sets `MIND_MAPPER_TAIL_IDLE_MS: "200"` and
+`MIND_MAPPER_TAIL_RETRY_MS: "50"` for **all four** cells (`tail.test.ts:90-91`),
+read at `cli.ts:662-663` under a comment saying the overrides exist for the
+scripted-fake-server tests only. B8 tells the port to give the spell a
+`backend/heartbeat.ts` "holding its values and importing the kit's derivations",
+and shows glamour's — three plain `export const`s, **no env override anywhere in
+the file**, wired to `idleMs: TAIL_IDLE_MS` at the call site with no hatch
+either. Followed literally:
+
+| cell                                       | result                                                                                                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :125 idle watchdog aborts a silent stream  | **FAILS.** Watchdog 45,000 ms; the silent connection is never aborted; the 5 s deadline expires and it reads as a broken watchdog.                                              |
+| :149 keepalives feed the watchdog          | ⛔ **PASSES VACUOUSLY.** It asserts `connections === 1` — that nothing was aborted — and a 45 s watchdog cannot abort anything inside its 800 ms window. **It proves nothing.** |
+| :166 grounding line forwarded exactly once | survives (the kit's 250 ms default backoff lands inside 5 s).                                                                                                                   |
+| :198 epoch change resets the cursor        | survives.                                                                                                                                                                       |
+
+**A green cell that lost its subject is worse than a red one**, and it is the
+shape B8 warns about two pages earlier: _"a guard that names a window and does
+not cover it reports the same thing as a window with nothing to guard."_ ⚠ **The
+independent report predicted one failure mode — both cells failing to a deadline
+— and the measured pair is worse**, which is D57's shape again: the predicted
+symptom was safer than the measured one.
+
+⚠ **And the derived path cannot reach the value even if you try.** Four of six
+spell heartbeats DO take an env override, but on the **beat**, which the kit
+floors at `MIN_HEARTBEAT_MS = 500` — so the smallest watchdog reachable through
+`tailIdleMs` is 1,500 ms and **a 200 ms watchdog is unreachable by
+construction.**
+
+**The repair is D75, which already exists and never reached the playbook:** the
+env knob is resolved in the SEAM FILE, at the lowest point every consumer of the
+derived value can see. mind-mapper's `backend/heartbeat.ts` therefore reads both
+of its own knobs and the derivation supplies the DEFAULT, not the value:
+`TAIL_IDLE_MS = intOr(env.MIND_MAPPER_TAIL_IDLE_MS, tailIdleMs(SSE_HEARTBEAT_MS))`.
+⚠ `tailIdleMs` carries no floor of its own (the floor is on `heartbeatMs`), so a
+direct override reaches 200 ms and the cells keep their subject. **The
+derivation is still not copied — it is what the knob falls back to.**
+
+⚠ **The one place in the corpus that saw this coming is not the playbook.**
+`phase-1-journal.md:151-155`: \_"the mapping is: `MIND_MAPPER_TAIL_IDLE_MS` →
+`idleMs`, `MIND_MAPPER_TAIL_RETRY_MS` → `retry.initialMs`. Neither astrolabe nor
+magpie took an env override for those; **a spell whose tests drive a short
+window will need one, and it should be that spell's env var, not the kit's.**"
+Written for this port, eight months of ports ago, and addressed to nobody who
+would read it.
+
+### The grounding-suppression cell has an affordance — the claim it has none is CONTRADICTED
+
+`accept?: (ev, frame) => boolean` and `render?: (ev, frame) => string | null`
+are caller-written closures, so `let grounded = false` lives in the port's
+closure and `render` returns `null` for the second grounding. The seq-less frame
+is safe under both: `cursorOf` returning `undefined` leaves the cursor untouched
+and `epochOf` returning `undefined` skips the epoch check. `query`'s
+`firstConnect` flag is a second route.
+
+**The honest statement is narrower and sharper than "no affordance": there is no
+DEDICATED affordance and no worked example, and the closure's STATE lives
+outside `tailEvents` across reconnects that `tailEvents` owns.** That last
+clause is the real risk and the kit does not answer it.
+
+**Measured before touching anything:** all four cells green, 16 assertions,
+~1.25 s.
+
+**Not taken:**
+
+- _Rewrite the four cells against `tailEvents` directly, as unit cells._ It
+  would delete the repo's only end-to-end tail specification and replace it with
+  cells one level down that `src/kit/wire/tailEvents.test.ts` already has. The
+  proposal's instinct is right even though its verb is wrong.
+- _Drop the env knobs and re-point the cells at the beat knob._ Reachable
+  minimum 1,500 ms, so cell 2's 800 ms window still proves nothing, and it
+  changes what the specification specifies in order to fit a derivation.
+- _Keep the knobs resolved in `cli.ts` rather than the seam file._ D75 exactly,
+  driven and repaired at grapevine: the daemon's beat tunable and the CLI's
+  watchdog not, invisible at the default.
+- _Let the port write a dedicated `firstFrameOnce` option into `tailEvents`._ A
+  widening by D79's test, for a closure the port can write in three lines.
+
+## D83 · The orphaned-`enqueue` measurement was already re-homed — the sentence that says otherwise is what needs fixing
+
+**Measured 2026-09-09, in pre-work for mind-mapper.**
+
+`src/kit/wire/tailEvents.ts:66-69` reads: _"⚠ NOT re-homed, deliberately:
+mind-mapper's measured Bun 1.3.14 finding that `controller.enqueue()` on an
+orphaned stream never throws. It is a DAEMON-side fact about dead-socket
+detection and bears on `sseResponse`, not on any client. **It stays where it was
+measured.**"_ Read at port time that is alarming, because the file it appears to
+point at — `plugins/…/mind-mapper/scripts/server.ts:365-372` — is a file this
+port relocates and whose local `sseResponse` B8 may replace.
+
+⛔ **CONTRADICTED. The finding is already standing in the kit**, in the module
+the sentence's own reasoning names: `src/kit/wire/sse.ts:14-33`, under the
+heading _"THE SCAR, RE-HOMED: `try { enqueue } catch` DOES NOT DETECT A DEAD
+CLIENT. MEASURED ON BUN 1.3.14"_ — with the funnel ruling and the same known
+hole. It landed the same day. Two further copies live at mind-mapper's
+`presence.test.ts:1-6` (the rig that proves it) and `sse-keepalive.test.ts:3`.
+
+So `tailEvents.ts:66-69` means _"not re-homed **into this client module**"_, and
+the four words "It stays where it was measured" are, read against the tree,
+false. **The ruling: fix the sentence — say that the daemon half is in `sse.ts`
+and name it — and move nothing.** The port deletes nothing either way: Phase B
+MOVES implementations, so `server.ts:365-372` travels with the file, and it is
+dropped only if B8 also replaces the local `sseResponse`, in which case the text
+is already in the kit and the test copies remain.
+
+⚠ **The general shape, and it is the reason this was worth an entry: a refusal
+recorded in ONE module's header is invisible from the module it points AT.**
+D17's rule put the negative half in `tailEvents.ts` and the positive half in
+`sse.ts`, and no decision-log line paired them — `enqueue`, `NOT re-homed` and
+`stays where it was measured` appear nowhere in `docs/`. The instruction being
+answered is in `brief.md:92-102` (_"The same holds for mind-mapper's measured
+Bun 1.3.14 finding … **if it bears on the client**"_); the implementer evaluated
+the conditional as NO and wrote the negative result where a future reader of the
+WRONG module would meet it. **When a refusal names another module as the right
+home, say whether it got there.**
+
+**Not taken:**
+
+- _Move the measurement into mind-mapper's `backend/server.ts` header at the
+  port._ It is already in two kit modules and three spell files; a fourth copy
+  is the drift the convergence exists to end.
+- _Delete `tailEvents.ts:66-69`._ The negative result is worth keeping — a
+  reader of the tail client genuinely may wonder why a famous house measurement
+  is absent from it. Only its last sentence is wrong.
+- _Leave it; a careful reader can find `sse.ts`._ Two agents read it as a
+  warning about a file this port touches. That is the measurement.
+
+## D84 · D75, D76 and a journal's eight-month-old prediction never reached the playbook — the seam file's ENV RESOLUTION is B8 content
+
+**Measured 2026-09-09, in pre-work for mind-mapper.**
+
+D75 (env knobs resolve in the seam file) and D76 (the heartbeat's floor lives at
+the derivation) were ruled at grapevine's repair chapter, after an independent
+verify pass found the defect **shipped**. **Neither reached the playbook.**
+Measured: `D75`, `D76`, `env knob` and `process.env` — in the sense of a spell's
+own knobs — appear **nowhere in Phase B**. B8's `idleMs` ruling still shows only
+glamour's plain-`export const` shape, which is the one shape in the roster that
+has no knob to resolve.
+
+The same is true of `phase-1-journal.md:151-155`, which named
+`MIND_MAPPER_TAIL_IDLE_MS` and `MIND_MAPPER_TAIL_RETRY_MS` by name, mapped them
+onto `idleMs` and `retry.initialMs`, and concluded _"a spell whose tests drive a
+short window will need one, and it should be that spell's env var, not the
+kit's."_
+
+⛔ **So the last port is the one that pays for all three**, because it is the
+spell with the most env knobs (six across the pair: `MIND_MAPPER_HOME` ×2,
+`_ACTIVITY_TTL_MS`, `_STALL_TTL_MS`, `_KEEPALIVE_MS`, `_TAIL_IDLE_MS`,
+`_TAIL_RETRY_MS`) and the only one whose test suite drives them. **B8 now
+carries D75's rule, D76's floor and the journal's mapping**, at the `idleMs`
+step where the port meets them.
+
+⚠ **The generalisation, which is this pre-work's own subject pointed at itself:
+a ruling made in a REPAIR chapter is the likeliest to stay in the decision
+log.** D68–D70 came from pre-work and reached the playbook the same day; D71–D74
+came from a port and reached it in the port's amendment pass; D75–D78 came from
+a repair after the amendment pass had already run, and the document had stopped
+being edited. **Ports amend the playbook when they finish. Repairs happen after
+that, and nothing collects them.** Filed as a question for the project's own
+wrap-up, not repaired here.
+
+**Not taken:**
+
+- _Fold D75 into a general "read the decision log before you port" instruction._
+  Phase B is 1,700 lines precisely so an agent does not have to read 3,200 more.
+- _Repair the collection gap now (a wrap-up step that sweeps post-amendment
+  decisions into the playbook)._ It is a real gap and it is not a port's to fix
+  mid-flight; naming it is the deliverable.
