@@ -10,8 +10,13 @@ import { connect, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "mind-mapper");
+// ⛔ THE SPAWN FOLLOWS THE LAUNCHER AND THE CWD IS DERIVED FROM THE REPO ROOT
+// (playbook B6.1, B6.2). This file used to hold a bare inline
+// `SERVER_LAUNCHER` with no constant at all — a spelling no
+// grep for a shared constant finds — plus a five-level climb to the dev cwd
+// that was correct only while this suite sat in `scripts/`. Both now come
+// from one derivation.
+import { SERVER_LAUNCHER, SURFACE_CWD } from "./paths.ts";
 
 let proc: Bun.Subprocess<"ignore", "pipe", "inherit">;
 let home: string;
@@ -20,25 +25,22 @@ let port = 0;
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "mind-mapper-presence-test-"));
-  proc = Bun.spawn(
-    [process.execPath, "run", join(SCRIPT_DIR, "server.ts"), "--no-open", "--port", "0"],
-    {
-      cwd: SURFACE_CWD,
-      env: {
-        ...process.env,
-        MIND_MAPPER_HOME: home,
-        MIND_MAPPER_KEEPALIVE_MS: "25",
-        // Round 5 (SW1): the two TTLs are ASYMMETRIC here on purpose — the
-        // activity knob (thinking→idle) is short, the stall knob
-        // (received→stalled) is long — so the independence test can prove each
-        // arm reads its OWN knob (a received that fired on the 150ms activity
-        // knob would betray the pre-split shared value).
-        MIND_MAPPER_ACTIVITY_TTL_MS: "150",
-        MIND_MAPPER_STALL_TTL_MS: "600",
-      },
-      stdout: "pipe",
+  proc = Bun.spawn([process.execPath, "run", SERVER_LAUNCHER, "--no-open", "--port", "0"], {
+    cwd: SURFACE_CWD,
+    env: {
+      ...process.env,
+      MIND_MAPPER_HOME: home,
+      MIND_MAPPER_KEEPALIVE_MS: "25",
+      // Round 5 (SW1): the two TTLs are ASYMMETRIC here on purpose — the
+      // activity knob (thinking→idle) is short, the stall knob
+      // (received→stalled) is long — so the independence test can prove each
+      // arm reads its OWN knob (a received that fired on the 150ms activity
+      // knob would betray the pre-split shared value).
+      MIND_MAPPER_ACTIVITY_TTL_MS: "150",
+      MIND_MAPPER_STALL_TTL_MS: "600",
     },
-  );
+    stdout: "pipe",
+  });
   const line = await new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("daemon did not print ready line")), 10_000);
     (async () => {

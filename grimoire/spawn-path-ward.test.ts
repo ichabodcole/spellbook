@@ -522,6 +522,22 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // escape, which is what makes it a shape rather than a spell's quirk.
       "plugins/spellbook/skills/imago/dist/cli.js -> src/imago",
       "plugins/spellbook/skills/magpie/dist/cli.js -> src/magpie",
+      // mind-mapper's `SURFACE_CWD` — the SEVENTH and LAST instance of this one
+      // Contract 5 dev-cwd pin, arriving in Phase 7 with the same bare
+      // `import.meta.dir` anchor the pattern has always read. Seven spells, one
+      // escape each, and the population is now CLOSED: every CLI that fronts a
+      // bundling daemon has to name the directory whose bunfig.toml loads the
+      // Tailwind plugin, and that directory is outside the plugin.
+      // ⛔ AND FOR THIS SPELL THE ROW IS NOT ONLY THE ESCAPE — IT IS WHERE THE
+      // WARD SWITCHED ON. Until this commit mind-mapper appeared in this ward's
+      // POPULATION HEADER and produced ZERO coverage rows, because its `dist/`
+      // was surface-only and `isBackendArtifact` matched nothing. It was green
+      // over a live `join(SCRIPT_DIR, "server.ts")` — glamour's exact shipped
+      // defect shape — for as long as that held. The first backend emit both
+      // created the coverage row and moved the expression to an address where it
+      // was false, in the same commit, which is why the port repaired the spawn
+      // to up-and-back-down in the same breath.
+      "plugins/spellbook/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
     ]);
   });
 

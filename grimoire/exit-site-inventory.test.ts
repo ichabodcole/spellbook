@@ -212,7 +212,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // `src/kit/wire/errors.ts` and `main` returns the taxonomy code — the same
   // move glamour and mind-mapper made at their acc L0 passes, and the direction
   // this inventory exists to push.
-  // mind-mapper/scripts/cli.ts left this family entirely (acc L0 lane B): its
+  // mind-mapper/backend/cli.ts left this family entirely (acc L0 lane B): its
   // requireDaemon die became a thrown CliError that main() returns as an exit
   // code — zero live process.exit sites remain in that CLI, which is the
   // direction this inventory exists to push.
@@ -253,11 +253,16 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // returns the code instead of the launcher reaching into the daemon's own
   // result object; the family and the address did not.
   { file: "glamour/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
-  {
-    file: "mind-mapper/scripts/server.ts",
-    text: "process.exit(await main(process.argv.slice(2)));",
-    family: "E-terminal",
-  },
+  // ⚠ mind-mapper's daemon exit STAYED at `scripts/server.ts` across Phase 7 —
+  // the launcher is the process entry now, so this is still the site where the
+  // process ends, at the same address and in the same family. The TEXT changed
+  // because `main` moved to `src/mind-mapper/backend/server.ts` and the launcher
+  // calls its exported `run()` instead of holding the argument-vector slice
+  // itself: a forwarder that read argv would match the arg-parsing predicate in
+  // `grimoire/lib/entry-points.ts` and this launcher — not the daemon — would
+  // become the spell's pinned internal entry point. It is the LAST of the eight
+  // spells to make this move, which closes this map's relocation population.
+  { file: "mind-mapper/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   // F — live: an in-function exit with stdout pending upstream of it.
   // (imago's F-live site left with the rest — `tailEvents`'s `onUnresolved`
   //  returns "stop" and the tail RETURNS 0 instead of exiting from inside the
@@ -270,7 +275,11 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
 ];
 
 /** Walk for non-test .ts — by BEHAVIOUR (recursive), never a fixed depth or a
- *  per-spell layout guess. Five spells keep code in scripts/, three in tests/;
+ *  per-spell layout guess. ⚠ THIS DOCSTRING USED TO READ "Five spells keep code
+ *  in scripts/, three in tests/" — a layout census that expired at mind-mapper's
+ *  port, the last of the eight. EVERY spell's backend now lives under
+ *  `src/<spell>/backend/` and `scripts/` holds launchers only, so the recursion
+ *  is what keeps this walk right rather than what keeps it general;
  *  a hand-written glob is a silent filter (house-style, the 63-vs-37 scar). */
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {

@@ -10,8 +10,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "mind-mapper");
+// ⛔ THE SPAWN FOLLOWS THE LAUNCHER AND THE CWD IS DERIVED FROM THE REPO ROOT
+// (playbook B6.1, B6.2). This file used to hold a bare inline
+// `SERVER_LAUNCHER` with no constant at all — a spelling no
+// grep for a shared constant finds — plus a five-level climb to the dev cwd
+// that was correct only while this suite sat in `scripts/`. Both now come
+// from one derivation.
+import { SERVER_LAUNCHER, SURFACE_CWD } from "./paths.ts";
 
 let proc: Bun.Subprocess<"ignore", "pipe", "inherit">;
 let home: string;
@@ -19,10 +24,11 @@ let url = "";
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "mind-mapper-lifecycle-test-"));
-  proc = Bun.spawn(
-    [process.execPath, "run", join(SCRIPT_DIR, "server.ts"), "--no-open", "--port", "0"],
-    { cwd: SURFACE_CWD, env: { ...process.env, MIND_MAPPER_HOME: home }, stdout: "pipe" },
-  );
+  proc = Bun.spawn([process.execPath, "run", SERVER_LAUNCHER, "--no-open", "--port", "0"], {
+    cwd: SURFACE_CWD,
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdout: "pipe",
+  });
   const line = await new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("daemon did not print ready line")), 10_000);
     (async () => {

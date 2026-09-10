@@ -40,7 +40,7 @@ import {
 //     the tool built to enforce it.
 //  4. Resolve `options: <identifier>` to its declaration — bounty and glamour
 //     use named consts, and a literal-only scan reports all their flags as drift.
-//  5. Read EVERY options map, not the first: mind-mapper/cli.ts has 27.
+//  5. Read EVERY options map, not the first: mind-mapper/backend/cli.ts has 27.
 //  6. ZERO-DENOMINATOR GUARD ON BOTH SIDES. A two-sided diff has two
 //     denominators and guarding one feels like guarding the check.
 //

@@ -4,8 +4,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const CLI_SCRIPT = join(SCRIPT_DIR, "cli.ts");
+// ⛔ THE SPAWN FOLLOWS THE LAUNCHER, NOT THE SOURCE (playbook B6.1). The
+// contract this suite asserts is what the PROCESS writes and exits with, and
+// the process a caller runs is `scripts/cli.ts` -> `dist/cli.js`. Pointed at
+// this directory instead it would spawn a module with no `import.meta.main`
+// block and boot NOTHING, at exit 0.
+import { CLI_LAUNCHER as CLI_SCRIPT } from "./paths.ts";
+
 let home: string;
 
 beforeAll(() => {

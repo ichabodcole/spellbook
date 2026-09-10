@@ -18,26 +18,15 @@
 // → create → serve). The daemon no longer reads dist/ for anything but static
 // files, which is the release contract stated more plainly than before.
 // ⛔ Do not re-add a stamp cell here; removal was the ruling, not a deferral.
+//
+// ⛔ SINCE THE BACKEND PORT THE COPIED TREE IS THE ARTIFACT, NOT THE SOURCE: the
+// launcher `scripts/server.ts` and the bundle `dist/server.js` it imports, which
+// is precisely what a marketplace clone contains.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-const SCRIPT_DIR = import.meta.dir;
-// Every non-test engine module ships — a glob, not a hand-maintained mirror
-// (the mirror shipped a broken release twice: marks.ts, docs.ts; then bounced
-// zones.ts. A new module is in the copied tree by construction now).
-const SOURCE_FILES = readdirSync(SCRIPT_DIR).filter(
-  (f) => f.endsWith(".ts") && !f.endsWith(".test.ts"),
-);
+import { DIST_DIR, SKILL_ROOT } from "./paths.ts";
 
 let skillRoot: string;
 let home: string;
@@ -48,14 +37,27 @@ beforeAll(async () => {
   skillRoot = mkdtempSync(join(tmpdir(), "mind-mapper-release-test-"));
   home = mkdtempSync(join(tmpdir(), "mind-mapper-release-home-"));
 
+  // ⛔ TWO FILES, NOT A GLOB — AND THE SCAR THE GLOB CARRIED IS RE-HOMED, NOT
+  // DELETED. It copied every non-test `.ts` beside the daemon, under a property
+  // this spell earned the hard way: a hand-maintained mirror shipped a broken
+  // release twice (marks.ts, docs.ts) and then bounced zones.ts, so "a new
+  // module is in the copied tree BY CONSTRUCTION" was worth a glob. That
+  // property is now true by BUNDLING instead — `dist/server.js` IS the whole
+  // 23-module graph — and the glob has additionally become impossible: this
+  // directory's non-test modules now carry `../../kit/...` specifiers that
+  // cannot resolve from a temp tree, and the launcher they would need is not
+  // here at all.
   mkdirSync(join(skillRoot, "scripts"), { recursive: true });
-  for (const file of SOURCE_FILES) {
-    cpSync(join(SCRIPT_DIR, file), join(skillRoot, "scripts", file));
-  }
+  cpSync(join(SKILL_ROOT, "scripts", "server.ts"), join(skillRoot, "scripts", "server.ts"));
   // The dist/ a real `build.ts` would produce — flat, hashed-ish names,
   // relative hrefs (Contract 2's shape). Content is fake but the shape is
   // what release-mode serving actually reads.
   mkdirSync(join(skillRoot, "dist"), { recursive: true });
+  cpSync(join(DIST_DIR, "server.js"), join(skillRoot, "dist", "server.js"));
+  // ⛔ THE CLI BUNDLE TOO, THOUGH THE DAEMON NEVER IMPORTS IT — a marketplace
+  // clone HAS it in the served directory, and the leak cell below is about what
+  // a browser can reach, not about what the daemon loads.
+  cpSync(join(DIST_DIR, "cli.js"), join(skillRoot, "dist", "cli.js"));
   writeFileSync(
     join(skillRoot, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
@@ -65,6 +67,11 @@ beforeAll(async () => {
   // The gate's actual assertion: surface source is NOT present in this tree.
   expect(existsSync(join(skillRoot, "surface"))).toBe(false);
   expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
+  // ⛔ AND NO ENGINE SOURCE EITHER, which is the stronger claim the bundle makes
+  // available: the tree holds ONE `.ts` (the launcher) and the daemon boots from
+  // it anyway, because the graph is inside `dist/server.js`.
+  expect(existsSync(join(skillRoot, "scripts", "db.ts"))).toBe(false);
+  expect(existsSync(join(skillRoot, "dist", "server.js"))).toBe(true);
 
   proc = Bun.spawn(
     [process.execPath, "run", join(skillRoot, "scripts", "server.ts"), "--no-open", "--port", "0"],

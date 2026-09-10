@@ -94,9 +94,11 @@ const hasSurface = (spell: string) => existsSync(entryFor(spell));
  * convention, no exclusion list.
  *
  * ⚠ THE CONVERSE IS NOT ASSERTED HERE. A launcher with no backend module of
- * that name is not this function's problem — `mind-mapper/scripts/cli.ts` is a
- * real unported CLI, not a launcher, and `astrolabe/scripts/state.ts` is a
- * two-sided module. **`grimoire/launcher-pairing-ward.test.ts` is what checks
+ * that name is not this function's problem — `astrolabe/scripts/state.ts` is a
+ * two-sided module. ⛔ THIS PARAGRAPH ALSO NAMED `mind-mapper/scripts/cli.ts` as
+ * "a real unported CLI, not a launcher", AND THAT CLAUSE DIED AT ITS PORT: it is
+ * a launcher now, the last of the eight, so the unported-CLI case has no member
+ * left in the roster and only the two-sided module survives as an example. **`grimoire/launcher-pairing-ward.test.ts` is what checks
  * the pairing in both directions**; this function only answers "what does the
  * build emit".
  */
@@ -112,14 +114,19 @@ function backendEntryNames(spell: string): string[] {
 
 const hasBackend = (spell: string) => backendEntryNames(spell).length > 0;
 
-/** A spell is buildable iff `src/<spell>/surface/index.html` exists. Derived
- *  from the tree rather than from a hand-kept list, so relocating a spell is
- *  the only step needed to put it in the build.
+/** A spell is buildable iff it has a SURFACE (`src/<spell>/surface/index.html`)
+ *  or a BACKEND (`backendEntryNames` above, non-empty). Derived from the tree
+ *  rather than from a hand-kept list, so relocating a spell is the only step
+ *  needed to put it in the build.
  *
- *  A spell is buildable iff it has EITHER aspect. The two are INDEPENDENT:
- *  astrolabe has both, magpie has only a backend (its surface still ships
- *  inside the plugin subtree), imago and mind-mapper have only a surface.
- *  Anything assuming a spell has both is wrong about three of the four. */
+ *  The two aspects are INDEPENDENT, and ⛔ THIS DOCSTRING'S ROSTER OF WHICH
+ *  SPELL HAS WHICH EXPIRED AT THE BACKEND CONVERGENCE. It read "imago and
+ *  mind-mapper have only a surface"; imago ported in Phase 3 and mind-mapper in
+ *  Phase 7, so that set is now EMPTY and only magpie is a one-aspect spell (a
+ *  backend, its surface still shipping inside the plugin subtree). Seven of the
+ *  eight have both. **A roster sentence in a docstring is a claim nothing reds
+ *  over** — this one was wrong about imago for six days before the last port
+ *  came looking for it. */
 function buildableSpells(): string[] {
   return readdirSync(SRC_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name)))
