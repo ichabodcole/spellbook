@@ -1,6 +1,5 @@
-// Claim C (T8) — presence + activity against a live daemon on shortened
-// ticks (keepalive 25ms, activity TTL 150ms). This rig also proves the F→C
-// coupling end-to-end: an abruptly-destroyed SSE socket must decrement
+// Claim C (T8) — presence + activity against a live daemon on shortened ticks
+// (activity TTL 150 ms). This rig also proves the F→C coupling end-to-end: an abruptly-destroyed SSE socket must decrement
 // presence via the teardown funnel (req.signal abort — the measured
 // dead-socket signal in Bun 1.3.14; enqueue on an orphaned stream never
 // throws, so the ratified enqueue-throw clause is corrected here).
@@ -30,6 +29,20 @@ beforeAll(async () => {
     env: {
       ...process.env,
       MIND_MAPPER_HOME: home,
+      // ⛔ "25" IS NOT WHAT THIS DAEMON GETS, AND THE HEADER USED TO CLAIM IT
+      // WAS. Since the kit adoption the beat is clamped at the derivation:
+      // `kit/wire/heartbeat.ts` floors it at `MIN_HEARTBEAT_MS = 500` (D76,
+      // because `parseInt` reads "1e9" as 1 and a 1 ms beat measured ~528
+      // keepalive comments in 528 ms), so **this child beats at 500 ms.** The
+      // variable is kept because it is still the right way to ASK — it is read
+      // in the child's seam file at module load, which is the only shape that
+      // proves the knob is wired at all (an in-process assignment is inert;
+      // see `sse-keepalive.test.ts`) — and because the cells below do not
+      // depend on the beat being short: presence is decremented by the
+      // teardown funnel on `req.signal`, not by the next failed enqueue, which
+      // is the measured Bun 1.3.14 mechanism this rig exists to pin. ⚠ If a
+      // cell here is ever written that DOES need a sub-500 ms beat, it cannot
+      // have one through this variable.
       MIND_MAPPER_KEEPALIVE_MS: "25",
       // Round 5 (SW1): the two TTLs are ASYMMETRIC here on purpose — the
       // activity knob (thinking→idle) is short, the stall knob
@@ -279,7 +292,7 @@ test("POST /activity rejects stalled — daemon-synthesized vocabulary only", as
 });
 
 // ACT1 auto-flip: a role:user send while an agent tail is connected emits
-// received (source auto) AFTER message.posted — two seqs, ordered. No tail →
+// received (source auto) AFTER message.posted — two bus-envelope ids, ordered. No tail →
 // no flip.
 test("a user send with an agent tail connected auto-emits received after message.posted; no tail, no flip", async () => {
   await fetch(`${url}/projects`, {
@@ -301,7 +314,7 @@ test("a user send with an agent tail connected auto-emits received after message
   expect(watcher.events.filter((e) => e.kind === "agent.activity")).toHaveLength(0);
 
   // Connect an agent tail; now a user send flips received, ordered after the
-  // message.posted seq.
+  // message.posted envelope id.
   const ac = new AbortController();
   const tail = await fetch(`${url}/events?project=act1-auto`, { signal: ac.signal });
   await (tail.body as ReadableStream<Uint8Array>).getReader().read();
@@ -322,12 +335,12 @@ test("a user send with an agent tail connected auto-emits received after message
     ),
   ).toBe(true);
   const posted = watcher.events.filter((e) => e.kind === "message.posted").at(-1) as {
-    seq: number;
+    id: number;
   };
   const received = watcher.events.find(
     (e) => e.kind === "agent.activity" && (e.payload as { state: string }).state === "received",
-  ) as { seq: number };
-  expect(received.seq).toBe(posted.seq + 1); // emitted AFTER message.posted, both seq-consuming
+  ) as { id: number };
+  expect(received.id).toBe(posted.id + 1); // emitted AFTER message.posted, both id-consuming
 
   ac.abort();
   watcher.close();

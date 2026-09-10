@@ -46,7 +46,7 @@ test("ingestText emits a doc.added patch with the new doc, not the whole docs ar
     const received: unknown[] = [];
     bus.subscribe(0, (event) => received.push(event));
     const doc = ingestText(db, bus, docsDir, "Story 4", "text");
-    expect(received).toEqual([{ seq: 1, epoch: bus.epoch, kind: "doc.added", payload: doc }]);
+    expect(received).toEqual([{ id: 1, epoch: bus.epoch, kind: "doc.added", payload: doc }]);
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

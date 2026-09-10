@@ -1,13 +1,62 @@
-// P1 — a tiny in-process event bus. Events are derived-from-state and
-// replayable via snapshot (Claim A/B: no event-log table in V1), so the
-// buffer here is a bounded in-memory replay window for reconnects within one
-// daemon process's lifetime, not a durable log — a restart resets to cursor
-// 0, which is honest (nothing ratified is lost; only the resume-point for
-// events already ephemeral by design). One emit() fans out to both the
+// P1 — mind-mapper's event bus, which since Phase 7 is a THIN ADAPTER over the
+// house's one in-process event log (`src/kit/wire/eventLog.ts`). Events are
+// derived-from-state and replayable via snapshot (Claim A/B: no event-log table
+// in V1), so the buffer is a bounded in-memory replay window for reconnects
+// within one daemon process's lifetime, not a durable log — a restart resets to
+// cursor 0, which is honest (nothing ratified is lost; only the resume-point
+// for events already ephemeral by design). One emit() fans out to both the
 // browser's WS and the agent's SSE-shaped `tail` — same bus, two transports
 // (daedalus's WS-vs-SSE ruling, vine msg 6).
+//
+// ── ⛔ THIS MODULE IS THE ONE THE KIT WAS COPIED FROM, AND THE ADOPTION IS
+//    RULED PER PROPERTY — NOT PER MODULE (D79, the LOSSY-COPY verdict) ────────
+//
+// `eventLog.ts:7` says it "Converged 2026-09-08 TOWARD mind-mapper's
+// `scripts/events.ts` — the census's convergence target #2, and the only one of
+// the six copied-in-place buses that is a module, is bounded, carries an epoch,
+// and is unit-tested." This file is that source, and it had never adopted its
+// own copy: the spine was proven on the two spells that already built (D1/D17)
+// and both of those are downstream FORKS of this line, so the module boundaries
+// were settled against two copies while the original was not in the room.
+//
+// So there are four properties and they do not all go the same way:
+//
+//   GAINED · the CAP is enforced where a caller cannot switch it off.
+//   GAINED · a cursor BEYOND our own replays WHOLE. Measured on astrolabe: a
+//            tail resuming at the previous daemon's last id received NOTHING,
+//            because the new daemon's first frame is id 1 and `1 > since` is
+//            false — so no frame arrived, so the client's epoch check never
+//            ran, and the tail sat connected and silent. Stamping an epoch does
+//            not close that: the epoch RIDES a frame, and the bug is that no
+//            frame is sent. This bus had the bug.
+//   GAINED · a NON-FINITE cursor means "from the start". The copies wrote
+//            `parseInt(param ?? "-1")` and compared `id > since`, so a typo'd
+//            `?since=x` produced `NaN`, every comparison was false, and the
+//            tail opened EMPTY and stayed connected.
+//   LOSSY-COPY · the EPOCH. `epoch: string` here, stamped unconditionally —
+//            the one spell the census's L6 table names as CORRECT — became
+//            `epoch?` in the kit, stamped only `if (epoch !== undefined)`.
+//
+// ⛔ THE EPOCH'S DISPOSITION NEEDS NO KIT CHANGE, AND THAT IS THE RULING RATHER
+// THAN A COMPROMISE. It is passed at the ONE construction site below and
+// re-tightened to REQUIRED in this module's own frame type, so nothing this bus
+// emits can lack one. **Making the kit's `epoch` mandatory would reverse D39
+// (imago), D48 (bounty) and D70 (grapevine)**, each of which reasoned its way
+// to no epoch — grapevine's for a measured reason, since its ids are recovered
+// from durable storage and an epoch there is a false-alarm generator that
+// replays a whole channel log into an agent's pipe on every `roll`. So L6 stays
+// CLOSED for this spell and remains open, by opt-out, for the ones that decline
+// it. What the kit owed was an honest header, and it has one: L6 is closed by
+// OPT-IN, not "by construction".
+//
+// ⛔ AND THE ADOPTION RENAMES A FIELD ON A PUBLISHED WIRE: `seq` → `id`
+// (D81). FORCED — the kit names the field in `Frame<T>` and in its emit
+// literal, and there is no option. The NESTING is not forced and was DECLINED:
+// `Frame<T>` is generic, so `{kind, payload}` stays nested here even though all
+// five existing adopters flatten. An idiom five siblings share is
+// indistinguishable from a contract until you open the type.
 
-const REPLAY_BUFFER_SIZE = 1000;
+import { createEventLog } from "../../kit/wire/eventLog.ts";
 
 // The COMPLETE bus vocabulary — every emit() site's kind must be listed here
 // (the look.here drift hid from this union for a whole build; keep it total).
@@ -62,11 +111,26 @@ const ALL_EVENT_KINDS = [
 
 type EventKind = (typeof ALL_EVENT_KINDS)[number];
 
-interface BusEvent {
-  seq: number;
-  epoch: string;
+/** The body of one bus event — what the caller supplies. NESTED, deliberately:
+ *  see the header's note on the flatten that was declined. */
+interface BusEventBody {
   kind: EventKind;
   payload: Record<string, unknown>;
+}
+
+/**
+ * One event as it goes on the wire.
+ *
+ * ⛔ `id`, NOT `seq` — the field renamed by the `createEventLog` adoption
+ * (D81). And `epoch` is REQUIRED here where the kit's `Frame<T>` has it
+ * optional: that re-tightening is the whole of the epoch's LOSSY-COPY
+ * disposition, and it holds because the one construction site below always
+ * passes one. A consumer of THIS bus may rely on the epoch; a consumer of the
+ * kit's log in general may not.
+ */
+interface BusEvent extends BusEventBody {
+  id: number;
+  epoch: string;
 }
 
 type Listener = (event: BusEvent) => void;
@@ -78,38 +142,45 @@ interface EventBus {
   epoch: string;
 }
 
-// A fresh random epoch per bus instance (i.e. per daemon boot) — since seq
-// resets to 0 on restart (no durable event log, Claim A/B), a resuming
-// `tail --since <n>` client can't tell a stale watermark from a fresh one by
-// seq alone. Comparing epoch makes that detectable: a different epoch means
-// "this cursor is from a prior process, resnapshot instead of trusting it"
-// (cassandra's P2 gate finding — tail-resume-across-restart was previously
-// silent about this).
+/**
+ * A fresh random epoch per bus instance (i.e. per daemon boot) — since the id
+ * resets to 0 on restart (no durable event log, Claim A/B), a resuming
+ * `tail --since <n>` client cannot tell a stale watermark from a fresh one by id
+ * alone. Comparing epoch makes that detectable: a different epoch means "this
+ * cursor is from a prior process, resnapshot instead of trusting it"
+ * (cassandra's P2 gate finding — tail-resume-across-restart was previously
+ * silent about this).
+ *
+ * ⛔ THE EPOCH IS PASSED, ONCE, HERE. That is the LOSSY-COPY disposition in one
+ * line (D79): the kit's field is optional and three spells opt out, so a
+ * mind-mapper frame is guaranteed to carry one only because this call site
+ * always supplies it and `BusEvent` above types it as required. **Do not make
+ * this conditional and do not thread it through a parameter** — an opt-in with
+ * a caller to get wrong is exactly the shape that left L6 live in the tree.
+ *
+ * ⚠ THE ID COUNTER AND THE BUFFER NOW LIVE IN THE KIT, and the three things
+ * that came with them are in this module's header. `ALL_EVENT_KINDS` and
+ * `EventKind` did NOT go: `createEventLog<T extends object>` is generic, so the
+ * vocabulary was never kit material — a generic parameter is not a dropped
+ * feature, and the totality proof below is untouched.
+ */
 function createEventBus(): EventBus {
-  let seq = 0;
   const epoch = crypto.randomUUID();
-  const buffer: BusEvent[] = [];
-  const listeners = new Set<Listener>();
+  const log = createEventLog<BusEventBody>({ epoch });
 
   return {
     epoch,
     emit(kind, payload) {
-      seq += 1;
-      const event: BusEvent = { seq, epoch, kind, payload };
-      buffer.push(event);
-      if (buffer.length > REPLAY_BUFFER_SIZE) buffer.shift();
-      for (const listener of listeners) listener(event);
-      return event;
+      // The kit's `Frame<BusEventBody>` has `epoch?`; this bus's own contract
+      // is that it is always present, and the construction above is what makes
+      // the assertion true rather than hopeful.
+      return log.emit({ kind, payload }) as BusEvent;
     },
     subscribe(since, listener) {
-      for (const event of buffer) {
-        if (event.seq > since) listener(event);
-      }
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      return log.subscribe(since, (frame) => listener(frame as BusEvent));
     },
     cursor() {
-      return seq;
+      return log.cursor();
     },
   };
 }
@@ -201,7 +272,7 @@ function inboundGrounding(): GroundingLine {
   };
 }
 
-export type { BusEvent, EventBus, EventKind, GroundingLine, MessageChannel };
+export type { BusEvent, BusEventBody, EventBus, EventKind, GroundingLine, MessageChannel };
 export {
   ALL_EVENT_KINDS,
   createEventBus,

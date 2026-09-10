@@ -2,10 +2,23 @@
 //
 // These are UNIT cells over the client itself. The behavioural specification of
 // a tail — watchdog, abort, epoch, first-connect grounding — is
-// `plugins/spellbook/skills/mind-mapper/scripts/tail.test.ts`, which drives a
-// real CLI end to end and is deliberately left pointed at mind-mapper's own
-// loop until a later phase re-points it here. These cells cover the same
-// properties one level down, plus the frame parser the spec question turned on.
+// `src/mind-mapper/backend/tail.test.ts`, which drives a real CLI end to end.
+//
+// ⛔ THIS COMMENT USED TO SAY THAT FILE WAS "deliberately left pointed at
+// mind-mapper's own loop until a later phase RE-POINTS IT HERE", AND BOTH
+// HALVES OF THAT WERE WRONG (D82, D83's shape). It has no import to re-point:
+// it imports nothing from the spell and reaches the CLI by `Bun.spawn` against
+// a scripted fake server, so it is a black-box PROCESS contract and not an
+// import graph. And the cells were never going to move here — a `tailEvents`
+// unit cell cannot assert what a spell's PROCESS writes, which is the whole
+// property that made that file the backend port's acceptance oracle. Phase 7
+// swapped mind-mapper's hand-rolled loop for this module and the file stayed
+// where it is, green either side; its assertions now read as claims about how
+// that spell CONFIGURES this client, which is the right thing for them to be.
+// The correct action on this sentence was to FIX IT, not to act on it.
+//
+// These cells cover the same properties one level down, plus the frame parser
+// the spec question turned on.
 import { afterEach, describe, expect, test } from "bun:test";
 import { parseSseFrame, type Sink, tailEvents } from "./tailEvents";
 

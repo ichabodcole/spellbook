@@ -109,6 +109,17 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import {
+  EXIT_FOR,
+  errorEnvelope,
+  getCurrentCommand,
+  CliError as KitCliError,
+  type ErrKind as KitErrKind,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors.ts";
+import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import { TAIL_IDLE_MS, TAIL_RETRY_MAX_MS, TAIL_RETRY_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS COMPUTED FROM THE ARTIFACT'S ADDRESS, WHICH IS
 // `plugins/spellbook/skills/mind-mapper/dist/cli.js` — NOT FROM THIS SOURCE
@@ -192,78 +203,86 @@ function openBrowser(url: string): void {
   spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
 }
 
-function envMs(name: string, fallback: number): number {
-  const v = Number.parseInt(process.env[name] ?? "", 10);
-  return Number.isFinite(v) && v > 0 ? v : fallback;
-}
+// ⛔ `envMs` IS GONE, AND ITS TWO KNOBS MOVED RATHER THAN DISAPPEARED.
+// `MIND_MAPPER_TAIL_IDLE_MS` and `MIND_MAPPER_TAIL_RETRY_MS` are resolved in
+// `./heartbeat.ts` — the seam file BOTH halves import — because the watchdog is
+// DERIVED from the daemon's beat and a knob resolved above the derivation splits
+// the pair silently, invisibly at the default (D75).
 
-// ── error envelope (magpie's taxonomy, bounty's delivery) ───────────
+// ── the failure contract: THE HOUSE'S ONE COPY ─────────────────────────────
+//
+// ⛔ DE-DUPLICATED, AND MIND-MAPPER IS ONE OF THE TWO SPELLS THIS MODULE'S OWN
+// HEADER NAMES AS HAVING REACHED ITS SHAPE INDEPENDENTLY (`errors.ts:33`:
+// "glamour and mind-mapper reached this shape independently at their acc L0
+// passes"). The delta on the WIRE is NIL, and that is a measurement rather than
+// a hope: the `ErrKind` union was character-for-character identical, `EXIT_FOR`
+// was the same `2/1/5/6`, and the envelope had the same keys in the same order
+// — `{ok:false, error:{kind, exit_code, retryable, message, hint?, choices?,
+// server?}, meta:{command}}` — including `server` LAST, which the kit's own
+// comment says is deliberate so a spell that already emitted it keeps its byte
+// order. ⚠ ONE latent difference, checked and empty: the kit guards `hint` and
+// `choices` on TRUTHINESS where this file guarded on PRESENCE, so a
+// `hint: ""` would ship from one and not the other. Grepped: this CLI has no
+// empty-string hint at any of its 64 raise sites, so the populations agree.
 //
 // mind-mapper declares `defaultOutput: "json"`, and that declaration is about
-// EVERY stream, not just the happy path. A failure is ONE JSON document on
-// stderr; stdout stays empty because stdout carries data and a failure has
-// none. `kind` is the contract; `message` is presentation — rewording a
-// message must never break a caller, which it does the moment anyone matches
-// on prose. Delivery is bounty's, not magpie's: THROW and let main() catch and
-// RETURN the code — this CLI ships large stdout payloads, and a process.exit
-// inside a die() would truncate them at 65,536 bytes (see the drain idiom at
-// the bottom of this file).
-type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+// EVERY stream, not just the happy path. `kind` is the contract; `message` is
+// presentation — rewording a message must never break a caller, which it does
+// the moment anyone matches on prose. Delivery is bounty's, not magpie's: THROW
+// and let main() catch and RETURN the code — this CLI ships large stdout
+// payloads, and a `process.exit` inside a `die()` would truncate them at 65,536
+// bytes (see the drain idiom at the bottom of this file). The kit's `die`
+// throws for exactly that reason, so the adoption changes no delivery either.
+//
+// ⛔ AND THIS IS THE ONE STEP OF THE WHOLE PHASE WHERE THE KIT IS MEASURABLY
+// WEAKER, WHICH IS WHY THE TRIAGE CHAIN IN `main` BELOW IS KEPT AND NOT
+// REPLACED. `errors.ts` is TWO things — an ENVELOPE and a CLASSIFIER — and only
+// the envelope converged. `reportCliError` returns `null` for anything that is
+// not a `CliError` and demands the caller rethrow; this CLI triages THREE
+// documented usage classes out of raw throws (`ERR_PARSE_ARGS*`, a
+// `SyntaxError` from a JSON body, and `ENOENT` on a named file). Adopting the
+// classifier naively would regress all three into a stack-trace crash — the
+// exact defect this file's own comment records as cassandra's P2 gate finding,
+// re-created by the adoption meant to standardise it. So `reportCliError` is
+// called INSIDE the chain, at the position the chain reaches for a typed
+// failure, and the chain keeps the three branches the kit does not carry.
+type ErrKind = KitErrKind;
 
-const EXIT_FOR: Record<ErrKind, number> = {
-  usage: 2, // the caller can fix this by changing the command
-  internal: 1, // mind-mapper (or its daemon transport) broke; the invocation may have been fine
-  not_found: 5, // the named thing does not exist
-  conflict: 6, // a precondition failed (cited, zoned, needs-project, claim held, …)
-};
-
-// The verb under execution, so the envelope can name it. Set once by dispatch.
-let CURRENT_COMMAND: string | null = null;
-
-class CliError extends Error {
-  kind: ErrKind;
-  hint?: string;
-  choices?: string[];
-  // A daemon-refused request carries the server's own JSON body here VERBATIM
-  // (deliberate wrap-not-passthrough decision: the typed daemon errors —
-  // needs-project, cited, zoned, zone-not-empty, claim conflicts — keep their
-  // shape for callers that branch on them, while the process-level contract
-  // stays ONE envelope on stderr with an empty stdout).
-  server?: unknown;
+/**
+ * mind-mapper's raise type is now the kit's `CliError`, re-exported under the
+ * name 62 call sites already use. ⚠ The FIELD SHAPE differs: this file's class
+ * held `hint`/`choices`/`server` as own properties and the kit holds them in an
+ * `extra` bag, so the constructor below adapts rather than the call sites
+ * changing — a relocation-shaped edit at 62 sites inside a chapter titled
+ * "behaviour changes, and each change is named" is how a real change hides.
+ */
+class CliError extends KitCliError {
   constructor(
     kind: ErrKind,
     message: string,
     extra?: { hint?: string; choices?: string[]; server?: unknown },
   ) {
-    super(message);
-    this.kind = kind;
-    this.hint = extra?.hint;
-    this.choices = extra?.choices;
-    this.server = extra?.server;
+    super(kind, message, extra);
   }
 }
 
 const usageError = (message: string, extra?: { hint?: string; choices?: string[] }) =>
   new CliError("usage", message, extra);
 
-function writeEnvelope(e: CliError): number {
-  process.stderr.write(
-    `${JSON.stringify({
-      ok: false,
-      error: {
-        kind: e.kind,
-        exit_code: EXIT_FOR[e.kind],
-        // Nothing mind-mapper raises is worth retrying unchanged.
-        retryable: false,
-        message: e.message,
-        ...(e.hint !== undefined ? { hint: e.hint } : {}),
-        ...(e.choices !== undefined ? { choices: e.choices } : {}),
-        ...(e.server !== undefined ? { server: e.server } : {}),
-      },
-      meta: { command: CURRENT_COMMAND },
-    })}\n`,
-  );
-  return EXIT_FOR[e.kind];
+/**
+ * Report one of the three RAW throws the kit's classifier does not recognise as
+ * a `usage` envelope, and hand back its exit code.
+ *
+ * ⛔ IT EXISTS BECAUSE THE CLASSIFIER IS THE HALF THAT DID NOT CONVERGE. These
+ * three are not `CliError`s — they are a `node:util` parse rejection, a
+ * `SyntaxError` out of `JSON.parse`, and an `ENOENT` from a named path — and
+ * `reportCliError` answers `null` for all three. Routing them through the
+ * ENVELOPE (which did converge) is the whole of the repair: same bytes on
+ * stderr, same exit 2, and the triage stays where the spell can see it.
+ */
+function reportUsage(message: string): number {
+  process.stderr.write(errorEnvelope("usage", message));
+  return EXIT_FOR.usage;
 }
 
 // The one exit for every daemon round-trip: ok → the body text (caller prints
@@ -286,7 +305,7 @@ async function passOrThrow(res: Response): Promise<string> {
         : res.status === 400
           ? "usage"
           : "internal";
-  throw new CliError(kind, `${CURRENT_COMMAND ?? "request"} refused (HTTP ${res.status})`, {
+  throw new CliError(kind, `${getCurrentCommand() ?? "request"} refused (HTTP ${res.status})`, {
     server,
   });
 }
@@ -471,7 +490,7 @@ const subsOf = (verb: string): string[] =>
 // TWO STAGES, AND THE ORDER IS THE POINT (see the registry header). Also sets
 // meta.command to the RESOLVED path so an envelope from `node edit` says so.
 function parseVerbArgs(path: VerbPath, args: string[]) {
-  CURRENT_COMMAND = path;
+  setCurrentCommand(path);
   const parsed = parseArgs({
     args,
     options: CLI_OPTIONS,
@@ -558,19 +577,27 @@ async function main(argv: string[]): Promise<number> {
   try {
     return await dispatch(argv);
   } catch (e) {
-    if (e instanceof CliError) return writeEnvelope(e);
+    // ⛔ THE KIT'S REPORTER SITS INSIDE THIS CHAIN, NOT IN PLACE OF IT. It
+    // writes the envelope and hands back the taxonomy code for a typed failure,
+    // and returns `null` for everything else — so the three usage classes below
+    // are still classified HERE. Replacing the chain with a bare
+    // `reportCliError(e) ?? rethrow` would turn a stray flag, a malformed JSON
+    // body and a missing file into stack-trace crashes.
+    const reported = reportCliError(e);
+    if (reported !== null) return reported;
     const code =
       e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     const msg = e instanceof Error ? e.message : String(e);
     // A stray/unknown flag (node:util strict) is the CALLER's to fix.
-    if (code.startsWith("ERR_PARSE_ARGS")) return writeEnvelope(usageError(msg));
+    if (code.startsWith("ERR_PARSE_ARGS")) return reportUsage(msg);
     // A body that failed to parse (stdin/--body-file JSON) — also the caller's.
-    if (e instanceof SyntaxError) return writeEnvelope(usageError(`invalid JSON: ${msg}`));
+    if (e instanceof SyntaxError) return reportUsage(`invalid JSON: ${msg}`);
     // A named file that is not there (--file/--doc-edit paths) — the caller's.
-    if (code === "ENOENT") return writeEnvelope(usageError(msg));
+    if (code === "ENOENT") return reportUsage(msg);
     // Everything else is mind-mapper's own fault: one INTERNAL envelope, never
     // a stack trace — the process contract is JSON on stderr for EVERY failure.
-    return writeEnvelope(new CliError("internal", msg));
+    process.stderr.write(errorEnvelope("internal", msg));
+    return EXIT_FOR.internal;
   }
 }
 
@@ -579,8 +606,9 @@ async function dispatch(argv: string[]): Promise<number> {
   const rest = argv.slice(1);
   // The envelope names the verb under execution (meta.command); root tokens
   // and the fallthrough leave it as the raw first token, which is the honest
-  // answer to "what was being run when this failed".
-  CURRENT_COMMAND = verb ?? null;
+  // answer to "what was being run when this failed". The kit owns the variable
+  // now — one module, one `meta.command`.
+  setCurrentCommand(verb ?? null);
 
   // ROOT TOKENS FIRST, before any flag parsing (magpie/astrolabe pattern).
   // --help/-h resolve at the root; `help` is ALSO a dispatchable verb below, so
@@ -673,109 +701,120 @@ async function dispatch(argv: string[]): Promise<number> {
     const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
-    // Watchdog ≈ 3 missed server keepalives (15s tick, Claim F); env
-    // overrides are for the scripted-fake-server tests only.
-    const idleMs = envMs("MIND_MAPPER_TAIL_IDLE_MS", 45_000);
-    const retryMs = envMs("MIND_MAPPER_TAIL_RETRY_MS", 1_000);
     const since = Number.parseInt(parsed.values.since as string, 10);
-    let cursor = Number.isFinite(since) ? since : 0;
-    let epoch: string | null = null;
     // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
     // connect; forward only the FIRST so the agent's Monitor sees exactly one
     // grounding line, not one per reconnect (F5: first-connect line).
+    //
+    // ⛔ THE SUPPRESSION'S STATE LIVES IN THIS CLOSURE, OUTSIDE THE THING THAT
+    // OWNS THE RECONNECTS, AND THAT IS THE ONE HONEST GAP IN THIS ADOPTION.
+    // `render` is a caller-written closure, so `grounded` survives the
+    // reconnects `tailEvents` performs — which is exactly why it WORKS, and also
+    // why nothing in the kit guarantees it: there is no dedicated
+    // first-frame-once affordance and no worked example of one, and a future
+    // change to when `tailEvents` re-invokes its hooks would move this
+    // behaviour without touching this file. The alternative was asking the kit
+    // for a `firstFrameOnce` option, which is a widening for a closure the
+    // caller can write in three lines (D82's not-taken).
     let grounded = false;
 
-    // Standing, self-healing loop (Monitor-shaped): each connection attempt
-    // gets its own AbortController plus a rolling idle watchdog reset on
-    // every received RAW chunk before frame parsing — keepalive comments must
-    // feed the watchdog even though the data-line filter discards them. On
-    // fire (or any transport error): abort → reconnect with the last-seen
-    // seq. A reconnect that lands on a different epoch means the daemon
-    // restarted: reset the cursor to 0 and synthesize an {kind:
-    // "epoch.changed"} stdout line so the casting agent refetches state —
-    // CLI-synthesized only, never a bus event (the browser WS never sees it).
-    for (;;) {
-      const port = livePort();
-      if (port === null) {
-        await new Promise((r) => setTimeout(r, retryMs));
-        continue;
-      }
-      const params = new URLSearchParams({ since: String(cursor) });
-      if (parsed.values.project) params.set("project", parsed.values.project);
-      if (inbound) params.set("inbound", "1");
-      const controller = new AbortController();
-      let watchdog: ReturnType<typeof setTimeout> | null = null;
-      const resetWatchdog = () => {
-        if (watchdog !== null) clearTimeout(watchdog);
-        watchdog = setTimeout(() => controller.abort(), idleMs);
-      };
-      try {
-        const res = await fetch(`http://127.0.0.1:${port}/events?${params}`, {
-          signal: controller.signal,
-        });
-        // A refused connection (409 needs-project on a projectless store,
-        // 404 unknown project) is a usage error, not a transport blip —
-        // retrying it forever would just spin silently.
-        if (res.status === 409 || res.status === 404) {
-          if (watchdog !== null) clearTimeout(watchdog);
-          // Reuse the one status→kind mapping: passOrThrow always throws here.
-          await passOrThrow(res);
+    // ⛔ ONE CALL INTO THE HOUSE'S SHARED TAIL CLIENT
+    // (`src/kit/wire/tailEvents.ts`), REPLACING A HAND-ROLLED
+    // THREE-LEVEL LOOP — and mind-mapper is the spell that module's own
+    // constant-backoff warning was written about: the loop below used to sleep
+    // `retryMs` after EVERY failed attempt, flat, forever, which is a
+    // reconnect storm rather than a backoff. What the swap closes here, none of
+    // it by anyone editing it:
+    //
+    //   · BACKOFF. 1,000 ms flat becomes 1,000 · 2,000 · 4,000 · 5,000 · 5,000,
+    //     reset on a successful open. Driven on glamour before and after
+    //     against a server that accepts and immediately drops: 51 attempts in
+    //     14 s at a flat ~252 ms became 6 attempts at 252 · 503 · 1001 · 2002 ·
+    //     4002.
+    //   · THE SPEC. The hand-rolled frame parser matched `startsWith("data: ")`
+    //     and kept only the FIRST data line, so a spec-legal `data:{...}` was
+    //     silently DROPPED **and the cursor did not advance** — a frame nobody
+    //     can read is re-delivered on every reconnect for the daemon's life.
+    //     The kit splits at the first colon and strips at most one space, per
+    //     WHATWG, which is simultaneously byte-compatible with every house
+    //     daemon.
+    //   · THE SIGNAL HANDLERS. There were none. Ctrl-C on a tail piped into a
+    //     reader now ends the watch by RETURNING, so the runtime drains stdout
+    //     first — the half of the P0f drain fix five spells did not apply.
+    //   · THE EXIT CODE CROSSES THE LOOPS. The client RETURNS a code instead of
+    //     ending the process from inside three nested loops, which is what
+    //     retires the per-site question of whether a `return` escapes them all.
+    //
+    // ⚠ AND `idleMs`/`retry` ARE DERIVED, NOT COPIED (B8's one uncopyable rule).
+    // They come from `./heartbeat.ts`, the seam file both halves import, where
+    // the watchdog is `tailIdleMs(SSE_HEARTBEAT_MS)` — three of THIS daemon's
+    // beats, whatever the beat becomes — and where the two env knobs this
+    // spell's own tail suite drives are resolved (D75). The number is 45,000 at
+    // the default, which is what this file hard-coded; the EXPRESSION is what
+    // changed.
+    return await tailEvents<{ id?: unknown; epoch?: unknown; kind?: unknown }>({
+      resolve: () => {
+        const port = livePort();
+        return port === null ? null : `http://127.0.0.1:${port}`;
+      },
+      path: "/events",
+      since: Number.isFinite(since) ? since : 0,
+      query: (cursor) => ({
+        since: String(cursor),
+        ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
+        ...(inbound ? { inbound: "1" } : {}),
+      }),
+      // ⛔ `id`, NOT `seq` — the daemon's envelope field was renamed by the
+      // `createEventLog` adoption (D81), and this is the CLI-side reader of it.
+      // ⚠ The CLI half FORCED nothing: `cursorOf` is caller-supplied, so
+      // `(ev) => ev.seq` would have compiled and run. It would also have read a
+      // field the daemon no longer emits, so the cursor would never advance and
+      // every reconnect would re-request `since=0` — the whole replay window
+      // into an agent's pipe, silently, forever. **A caller-supplied accessor is
+      // where a wire rename goes wrong quietly.**
+      cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+      epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
+      // A reconnect that lands on a different epoch means the daemon restarted:
+      // the kit resets the cursor to 0 and this line tells the casting agent to
+      // refetch state. CLI-synthesized only, never a bus event (the browser WS
+      // never sees it), and it carries no `id` — so it never advances the
+      // cursor, which is the same separation the grounding line makes.
+      onEpochChange: (epoch) => JSON.stringify({ kind: "epoch.changed", epoch }),
+      // Grounding is a synthetic, id-less first-connect frame: forward the
+      // first, suppress re-groundings on reconnect (exactly one per process).
+      // Returning null writes nothing; it never carries id/epoch, so the
+      // cursor and the epoch are untouched either way.
+      render: (ev, frame) => {
+        if (ev.kind === "grounding") {
+          if (grounded) return null;
+          grounded = true;
         }
-        if (!res.body) throw new Error("no body");
-        resetWatchdog();
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          resetWatchdog(); // raw chunk, before frame parsing
-          buf += decoder.decode(value, { stream: true });
-          for (let idx = buf.indexOf("\n\n"); idx !== -1; idx = buf.indexOf("\n\n")) {
-            const frame = buf.slice(0, idx);
-            buf = buf.slice(idx + 2);
-            const dataLine = frame.split("\n").find((l) => l.startsWith("data: "));
-            if (!dataLine) continue;
-            const line = dataLine.slice("data: ".length);
-            try {
-              const event = JSON.parse(line) as { seq?: unknown; epoch?: unknown; kind?: unknown };
-              // Grounding is a synthetic, seq-less first-connect frame — forward
-              // the first, suppress re-groundings on reconnect (exactly one per
-              // process). It never carries seq/epoch, so cursor/epoch are
-              // untouched either way.
-              if (event.kind === "grounding") {
-                if (!grounded) {
-                  grounded = true;
-                  process.stdout.write(`${line}\n`);
-                }
-                continue;
-              }
-              if (typeof event.epoch === "string") {
-                if (epoch !== null && event.epoch !== epoch) {
-                  cursor = 0;
-                  process.stdout.write(
-                    `${JSON.stringify({ kind: "epoch.changed", epoch: event.epoch })}\n`,
-                  );
-                }
-                epoch = event.epoch;
-              }
-              if (typeof event.seq === "number") cursor = event.seq;
-            } catch {
-              /* non-JSON data line — pass through untracked */
-            }
-            process.stdout.write(`${line}\n`);
-          }
-        }
-      } catch (e) {
-        // A typed refusal (409/404 via passOrThrow) is a usage-class exit, not
-        // a transport blip — retrying it forever would just spin silently.
-        if (e instanceof CliError) throw e;
-        /* watchdog abort or transport error — reconnect below */
-      } finally {
-        if (watchdog !== null) clearTimeout(watchdog);
-      }
-      await new Promise((r) => setTimeout(r, retryMs));
-    }
+        return frame.data;
+      },
+      // A refused connection (409 needs-project on a projectless store, 404
+      // unknown project) is a usage error, not a transport blip — retrying it
+      // forever would just spin silently. `passOrThrow` always throws here, and
+      // the throw propagates out of the client into `main`'s catch, which is
+      // strictly better than a raise reachable from inside a reconnect loop.
+      onHttpError: async (res) => {
+        if (res.status === 409 || res.status === 404) await passOrThrow(res);
+        return "retry";
+      },
+      // ⛔ THE UNPARSEABLE LINE GOES TO STDOUT, WHICH IS THIS SPELL'S OWN
+      // BEHAVIOUR AND THE ONE THE KIT'S DEFAULT WOULD HAVE CHANGED. The
+      // hand-rolled loop caught the `JSON.parse` and passed the raw line
+      // through untracked; the kit's `onMalformed` return value goes to `err`
+      // instead, because a diagnostic about the stream is not data. mind-mapper
+      // is the "one spell" that module's header names as genuinely wanting it on
+      // stdout, and the way to keep that is to write it from inside the hook and
+      // return null.
+      onMalformed: (frame) => {
+        process.stdout.write(`${frame.data}\n`);
+        return null;
+      },
+      idleMs: TAIL_IDLE_MS,
+      retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
+    });
   }
 
   if (verb === "projects") {

@@ -36,7 +36,7 @@ test("setTags on a node: wholesale upsert, tags ride state.nodes[], event carrie
     expect(result).toEqual({ targetId: "n1", tags: ["theme", "wip"] });
     expect(received).toEqual([
       {
-        seq: 1,
+        id: 1,
         epoch: bus.epoch,
         kind: "tags.set",
         payload: { targetId: "n1", tags: ["theme", "wip"] },

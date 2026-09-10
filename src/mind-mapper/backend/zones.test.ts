@@ -38,7 +38,7 @@ test("createZone derives a slug id from the name, emits thin zone.created", () =
     expect(zone).toEqual({ id: "messy-ideas", name: "Messy Ideas!" });
     expect(received).toEqual([
       {
-        seq: 1,
+        id: 1,
         epoch: bus.epoch,
         kind: "zone.created",
         payload: { id: "messy-ideas", name: "Messy Ideas!" },
@@ -131,7 +131,7 @@ test("deleteZone --yes cascades the zone's proposals, leaves main-queue rows, em
     expect(deleteZone(db, bus, "messy", true)).toEqual({ id: "messy" });
     expect(received).toEqual([
       {
-        seq: received[0]?.seq ?? 0,
+        id: received[0]?.id ?? 0,
         epoch: bus.epoch,
         kind: "zone.deleted",
         payload: { id: "messy" },

@@ -173,7 +173,7 @@ test("proposeNode emits a proposal.added patch, not the whole proposals array", 
     bus.subscribe(0, (event) => received.push(event));
     const proposal = proposeNode(db, bus, { draft: { title: "Tam" }, evidence: {} });
     expect(received).toEqual([
-      { seq: 1, epoch: bus.epoch, kind: "proposal.added", payload: proposal },
+      { id: 1, epoch: bus.epoch, kind: "proposal.added", payload: proposal },
     ]);
   } finally {
     db.close();

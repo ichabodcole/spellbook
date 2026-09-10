@@ -23,10 +23,24 @@
 // launcher `scripts/server.ts` and the bundle `dist/server.js` it imports, which
 // is precisely what a marketplace clone contains.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DIST_DIR, SKILL_ROOT } from "./paths.ts";
+
+/** The backend bundles the convergence put in `dist/`. Named rather than
+ *  globbed, so a build that stops emitting one turns the refusal cell red
+ *  instead of quietly asserting nothing. */
+const BACKEND_ARTIFACTS = ["cli.js", "server.js"];
 
 let skillRoot: string;
 let home: string;
@@ -64,6 +78,11 @@ beforeAll(async () => {
   );
   writeFileSync(join(skillRoot, "dist", "chunk-abc123.js"), "console.log('release mode');");
   writeFileSync(join(skillRoot, "dist", "chunk-abc123.css"), "body { margin: 0; }");
+  // A REAL file at a nested path. Without it the "nested paths 404" cell would
+  // be VACUOUS: every nested request 404s anyway because nothing resolves
+  // there, so the cell would pass with the traversal guard deleted.
+  mkdirSync(join(skillRoot, "dist", "sub"), { recursive: true });
+  writeFileSync(join(skillRoot, "dist", "sub", "nested.js"), "console.log('must not be served');");
   // The gate's actual assertion: surface source is NOT present in this tree.
   expect(existsSync(join(skillRoot, "surface"))).toBe(false);
   expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
@@ -147,4 +166,83 @@ test("the backend still works in release mode — fresh store 409s needs-project
   const state = (await res.json()) as { project: { id: string }; nodes: unknown[] };
   expect(state.project.id).toBe("release-idea");
   expect(state.nodes).toEqual([]);
+});
+
+// ⛔ THE LEAK THIS PROJECT'S OWN CONVERGENCE CREATED, DRIVEN AT THE SEAM THAT
+// CREATED IT (D61, D65, D67). Phase B moves the IMPLEMENTATION into the served
+// directory, and `serveDist`'s permission here was `existsSync` — true of a
+// `dist/` that held only a surface, and false the moment this port landed two
+// bundles beside it. MEASURED at the end of chapter 1, through the real
+// launcher, before the whitelist: `GET /cli.js` -> 200, `text/javascript`,
+// 208,579 bytes and `GET /server.js` -> 200, 549,791 bytes, both byte-identical
+// to the committed artifacts — and each carries an INLINE SOURCEMAP, so the
+// response embedded the complete original TypeScript of a 23-module backend.
+// Closed in `src/kit/wire/serveDist.ts` by deriving the served set from what
+// the built `index.html` transitively LINKS.
+//
+// CALIBRATED BOTH WAYS, because either half alone passes over nothing: the
+// artifact must be ON DISK in the served tree and still refused, and the
+// surface cells above must still be answering, or a whitelist that refused
+// EVERYTHING would look like a working defence.
+test("⛔ the backend bundles in dist/ are REFUSED — and they are really there", async () => {
+  const present = readdirSync(join(skillRoot, "dist")).filter((f) => BACKEND_ARTIFACTS.includes(f));
+  expect(present.sort()).toEqual([...BACKEND_ARTIFACTS].sort());
+  for (const name of present) {
+    // The subject: the bundle is in the served directory, and it is the REAL
+    // artifact — its inline sourcemap is the thing that must not reach a browser.
+    const onDisk = readFileSync(join(skillRoot, "dist", name), "utf8");
+    expect(`${name}:${onDisk.includes("sourceMappingURL=data:application/json;base64,")}`).toBe(
+      `${name}:true`,
+    );
+    const res = await fetch(`${url}/${name}`);
+    expect(`${name}:${res.status}`).toBe(`${name}:404`);
+    const body = await res.text();
+    expect(body.length).toBeLessThan(1_000);
+    expect(body).not.toContain("sourceMappingURL");
+  }
+});
+
+// ⛔ CASE-INSENSITIVE BY CONSTRUCTION, NOT BY A SECOND BLACKLIST ENTRY. APFS
+// resolves every one of these to the same inode, and `===` does not. Membership
+// in the whitelist is an exact match against the EMITTED name, so no variant of
+// any name — servable or not — has a route, and there is no lower-case pass
+// anywhere to keep in sync. This is the half D61 had to add after a by-name
+// refusal shipped: a blacklist refuses the file it was told about and serves
+// every neighbour.
+test("case variants are refused; the emitted names still serve", async () => {
+  for (const p of [
+    "/INDEX.HTML",
+    "/Index.html",
+    "/index.HTML",
+    "/iNdEx.HtMl",
+    "/CHUNK-ABC123.JS",
+    "/CLI.JS",
+    "/Server.js",
+  ]) {
+    expect(`${p}:${(await fetch(`${url}${p}`)).status}`).toBe(`${p}:404`);
+  }
+  expect((await fetch(`${url}/index.html`)).status).toBe(200);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});
+
+// The nesting refusal, over a file that REALLY EXISTS one level down — see the
+// rig. `serveFromDist` returns null on anything with a slash in it, which is
+// also what keeps a `dist/` read clear of a spell's own one-level-deep routes.
+test("a nested path is refused even when the file is there; the bare sibling serves", async () => {
+  expect(existsSync(join(skillRoot, "dist", "sub", "nested.js"))).toBe(true);
+  expect((await fetch(`${url}/sub/nested.js`)).status).toBe(404);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});
+
+// ⚠ THE ONE WIRE DELTA THE `serveDist` ADOPTION MAKES TO A RESPONSE HEADER,
+// pinned rather than tolerated. This daemon served `.html` as bare `text/html`;
+// the kit's content-type map carries `charset=utf-8`, which was the census's
+// single divergent cell across eight daemons and was resolved toward the
+// correct copy — an HTML document served with no charset is decoded by the
+// browser's guess. Three of the eight carried it; mind-mapper was one of the
+// five that did not.
+test("the entry document carries an explicit charset (the kit's map, not this spell's)", async () => {
+  const res = await fetch(`${url}/`);
+  expect(res.status).toBe(200);
+  expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
 });

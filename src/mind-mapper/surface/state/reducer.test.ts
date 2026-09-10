@@ -35,7 +35,7 @@ function baseState(): ProjectState {
 
 test("doc.added appends a new doc and advances cursor", () => {
   const event: ServerEvent = {
-    seq: 6,
+    id: 6,
     kind: "doc.added",
     payload: { id: "ramble-02", title: "Ramble 2", kind: "ramble", kindAuthor: null },
   };
@@ -56,7 +56,7 @@ test("doc.added appends a new doc and advances cursor", () => {
 // node/edge this payload doesn't carry.
 test("node.ratified flips the matching proposal to ratified and does NOT fabricate a node", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "node.ratified",
     payload: { id: "the-hollow", proposalId: "prop-1" },
   });
@@ -66,7 +66,7 @@ test("node.ratified flips the matching proposal to ratified and does NOT fabrica
 
 test("node.anchored flips the node's anchorNodeId locally (thin event)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "node.anchored",
     payload: { nodeId: "maren", anchorNodeId: "the-hollow" },
   });
@@ -82,7 +82,7 @@ test("node.anchored with null anchorNodeId clears to top-level", () => {
     ],
   };
   const next = applyEvent(anchored, {
-    seq: 6,
+    id: 6,
     kind: "node.anchored",
     payload: { nodeId: "maren", anchorNodeId: null },
   });
@@ -91,7 +91,7 @@ test("node.anchored with null anchorNodeId clears to top-level", () => {
 
 test("edge.ratified flips the matching proposal to ratified and does NOT fabricate an edge", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "edge.ratified",
     payload: { id: "e1", proposalId: "prop-1" },
   });
@@ -101,7 +101,7 @@ test("edge.ratified flips the matching proposal to ratified and does NOT fabrica
 
 test("a ratified event whose proposalId matches nothing is a harmless no-op on proposals", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "node.ratified",
     payload: { id: "x", proposalId: "no-such-proposal" },
   });
@@ -114,7 +114,7 @@ test("doc.deleted filters the doc out and advances cursor", () => {
     docs: [{ id: "ramble-01", title: "R1", kind: "ramble", kindAuthor: null }],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "doc.deleted",
     payload: { id: "ramble-01" },
   });
@@ -148,7 +148,7 @@ test("node.deleted drops the node, drops edges touching it, and re-homes its chi
       { id: "e-keep", source: "other", target: "child", label: "", provenance: "asserted" },
     ],
   };
-  const next = applyEvent(state, { seq: 6, kind: "node.deleted", payload: { id: "maren" } });
+  const next = applyEvent(state, { id: 6, kind: "node.deleted", payload: { id: "maren" } });
   // The node is gone.
   expect(next.nodes.map((n) => n.id)).toEqual(["child", "other"]);
   // Its child re-homed to top-level (anchorNodeId cleared).
@@ -160,7 +160,7 @@ test("node.deleted drops the node, drops edges touching it, and re-homes its chi
 
 test("node.deleted with a non-string id advances the cursor and touches nothing", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "node.deleted",
     payload: { id: 123 },
   });
@@ -170,7 +170,7 @@ test("node.deleted with a non-string id advances the cursor and touches nothing"
 
 test("proposal.deleted hard-removes the proposal row (litter-clearing)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.deleted",
     payload: { id: "prop-1" },
   });
@@ -180,7 +180,7 @@ test("proposal.deleted hard-removes the proposal row (litter-clearing)", () => {
 
 test("proposal.rejected flips the row to rejected (decline-with-history, leaves the canvas)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.rejected",
     payload: { id: "prop-1" },
   });
@@ -194,14 +194,14 @@ test("proposal.rejected flips the row to rejected (decline-with-history, leaves 
 
 test("a delete/reject event whose id matches nothing is a harmless no-op that still advances the cursor", () => {
   const del = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.deleted",
     payload: { id: "no-such" },
   });
   expect(del.proposals).toEqual(baseState().proposals);
   expect(del.cursor).toBe(6);
   const rej = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.rejected",
     payload: { id: "no-such" },
   });
@@ -215,7 +215,7 @@ test("doc.marked upserts the full inline mark onto the doc, stale=false by const
   };
   const mark = { author: "agent", note: "nothing worth extracting", status: "analyzed", ts: 123 };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "doc.marked",
     payload: { docId: "ramble-01", mark },
   });
@@ -237,7 +237,7 @@ test("doc.marked replaces an existing mark (latest wins)", () => {
     ],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "doc.marked",
     payload: {
       docId: "ramble-01",
@@ -250,7 +250,7 @@ test("doc.marked replaces an existing mark (latest wins)", () => {
 
 test("presence.changed sets presence and advances cursor", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "presence.changed",
     payload: { agents: 2 },
   });
@@ -259,13 +259,13 @@ test("presence.changed sets presence and advances cursor", () => {
 });
 
 // The ephemeral-event cursor clause (Contract 9 amendment): fire-once
-// signals still consumed a seq on the bus, so they MUST advance the cursor
+// signals still consumed a frame `id` on the bus, so they MUST advance the cursor
 // here — the old hook early-returned look.here around the reducer, freezing
 // the cursor so every later event read as a phantom gap (wholesale refetch
 // per signal; fatal at agent.activity's 2–3×-per-turn rate).
 test("look.here advances cursor without touching state", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "look.here",
     payload: { nodeId: "maren" },
   });
@@ -276,7 +276,7 @@ test("look.here advances cursor without touching state", () => {
 
 test("agent.activity advances cursor without touching state", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "agent.activity",
     payload: { state: "thinking" },
   });
@@ -286,7 +286,7 @@ test("agent.activity advances cursor without touching state", () => {
 
 test("proposal.added upserts by id into proposals", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.added",
     payload: {
       id: "prop-1",
@@ -305,14 +305,14 @@ test("proposal.added upserts by id into proposals", () => {
 
 test("zone.created appends the zone (and dedupes a repeat)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "zone.created",
     payload: { id: "wild-ideas", name: "Wild ideas" },
   });
   expect(next.zones).toEqual([{ id: "wild-ideas", name: "Wild ideas" }]);
   expect(next.cursor).toBe(6);
   const again = applyEvent(next, {
-    seq: 7,
+    id: 7,
     kind: "zone.created",
     payload: { id: "wild-ideas", name: "Wild ideas" },
   });
@@ -337,7 +337,7 @@ test("zone.deleted drops the zone AND that zone's proposals — a scoped drop, n
     ],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "zone.deleted",
     payload: { id: "wild-ideas" },
   });
@@ -352,7 +352,7 @@ test("proposal.promoted clears zoneId on the row (thin event, move-not-duplicate
     proposals: [zonedProposal("z-1", "wild-ideas")],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "proposal.promoted",
     payload: { id: "z-1" },
   });
@@ -363,7 +363,7 @@ test("proposal.promoted clears zoneId on the row (thin event, move-not-duplicate
 
 test("a zone-tagged proposal.added upserts into the INCLUSIVE store untouched (views segregate, not the reducer)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "proposal.added",
     payload: {
       id: "z-new",
@@ -382,10 +382,12 @@ test("a zone-tagged proposal.added upserts into the INCLUSIVE store untouched (v
 
 test("message.posted appends the wire message to conversation", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "message.posted",
     payload: {
       id: "m1",
+      // NOT the envelope's cursor — this is WireMessage.seq, the message-ROW
+      // sequence off the `messages` table, which keeps its own name.
       seq: 1,
       role: "agent",
       kind: "info",
@@ -400,7 +402,7 @@ test("message.posted appends the wire message to conversation", () => {
 
 test("lens.set replaces the lens wholesale (docId always carried — null on a node lens)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "lens.set",
     payload: { owner: "agent", nodeId: "maren", depth: 2, docId: null },
   });
@@ -409,7 +411,7 @@ test("lens.set replaces the lens wholesale (docId always carried — null on a n
 
 test("lens.set carries the doc variant (nodeId null, depth null, docId set)", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "lens.set",
     payload: { owner: "agent", nodeId: null, depth: null, docId: "ramble-01" },
   });
@@ -419,7 +421,7 @@ test("lens.set carries the doc variant (nodeId null, depth null, docId set)", ()
 test("an event at or before the current cursor is a no-op (dedupe on resume)", () => {
   const state = baseState();
   const next = applyEvent(state, {
-    seq: 5,
+    id: 5,
     kind: "doc.added",
     payload: { id: "x", title: "x", kind: "ramble" },
   });
@@ -430,22 +432,22 @@ test("an unknown event kind is ignored, not thrown, but still advances the curso
   const next = applyEvent(baseState(), {
     // biome-ignore lint/suspicious/noExplicitAny: exercising an unrecognized wire kind on purpose
     kind: "something.new" as any,
-    seq: 6,
+    id: 6,
     payload: { anything: true },
   });
   expect(next.cursor).toBe(6);
   expect(next.nodes).toEqual(baseState().nodes);
 });
 
-test("isGap: seq immediately after cursor is not a gap", () => {
+test("isGap: an id immediately after cursor is not a gap", () => {
   expect(isGap(5, 6)).toBe(false);
 });
 
-test("isGap: a skipped seq is a gap", () => {
+test("isGap: a skipped id is a gap", () => {
   expect(isGap(5, 8)).toBe(true);
 });
 
-test("isGap: a stale/duplicate seq is not treated as a gap (it's a no-op, handled separately)", () => {
+test("isGap: a stale/duplicate id is not treated as a gap (it's a no-op, handled separately)", () => {
   expect(isGap(5, 5)).toBe(false);
   expect(isGap(5, 3)).toBe(false);
 });
@@ -457,7 +459,7 @@ test("isGap: a stale/duplicate seq is not treated as a gap (it's a no-op, handle
 test("actions.set replaces the actions array on a matching node", () => {
   const slots = [{ id: "jungian", label: "Explore archetypes", seed: "Explore archetypes — " }];
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "actions.set",
     payload: { targetId: "maren", actions: slots },
   });
@@ -468,7 +470,7 @@ test("actions.set replaces the actions array on a matching node", () => {
 test("actions.set replaces the actions array on a matching proposal", () => {
   const slots = [{ id: "a", label: "A", seed: "A — " }];
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "actions.set",
     payload: { targetId: "prop-1", actions: slots },
   });
@@ -477,12 +479,12 @@ test("actions.set replaces the actions array on a matching proposal", () => {
 
 test("actions.set is wholesale — a second set replaces, never merges", () => {
   const first = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "actions.set",
     payload: { targetId: "maren", actions: [{ id: "a", label: "A", seed: "A" }] },
   });
   const second = applyEvent(first, {
-    seq: 7,
+    id: 7,
     kind: "actions.set",
     payload: { targetId: "maren", actions: [{ id: "b", label: "B", seed: "B" }] },
   });
@@ -491,12 +493,12 @@ test("actions.set is wholesale — a second set replaces, never merges", () => {
 
 test("actions.set with an empty array clears back to wire absence (absent = none)", () => {
   const withSlots = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "actions.set",
     payload: { targetId: "maren", actions: [{ id: "a", label: "A", seed: "A" }] },
   });
   const cleared = applyEvent(withSlots, {
-    seq: 7,
+    id: 7,
     kind: "actions.set",
     payload: { targetId: "maren", actions: [] },
   });
@@ -505,7 +507,7 @@ test("actions.set with an empty array clears back to wire absence (absent = none
 
 test("actions.set on an unknown target advances the cursor and touches nothing", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "actions.set",
     payload: { targetId: "no-such-target", actions: [{ id: "a", label: "A", seed: "A" }] },
   });
@@ -520,7 +522,7 @@ test("actions.set on an unknown target advances the cursor and touches nothing",
 
 test("tags.set replaces the tags array on a matching node", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "tags.set",
     payload: { targetId: "maren", tags: ["protagonist", "haunted"] },
   });
@@ -530,7 +532,7 @@ test("tags.set replaces the tags array on a matching node", () => {
 
 test("tags.set replaces the tags array on a matching pending proposal", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "tags.set",
     payload: { targetId: "prop-1", tags: ["draft"] },
   });
@@ -539,12 +541,12 @@ test("tags.set replaces the tags array on a matching pending proposal", () => {
 
 test("tags.set is wholesale — a second set replaces, never merges", () => {
   const first = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "tags.set",
     payload: { targetId: "maren", tags: ["a", "b"] },
   });
   const second = applyEvent(first, {
-    seq: 7,
+    id: 7,
     kind: "tags.set",
     payload: { targetId: "maren", tags: ["c"] },
   });
@@ -553,12 +555,12 @@ test("tags.set is wholesale — a second set replaces, never merges", () => {
 
 test("tags.set with an empty array clears back to wire absence (absent = none)", () => {
   const withTags = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "tags.set",
     payload: { targetId: "maren", tags: ["x"] },
   });
   const cleared = applyEvent(withTags, {
-    seq: 7,
+    id: 7,
     kind: "tags.set",
     payload: { targetId: "maren", tags: [] },
   });
@@ -567,7 +569,7 @@ test("tags.set with an empty array clears back to wire absence (absent = none)",
 
 test("tags.set on an unknown target advances the cursor and touches nothing", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "tags.set",
     payload: { targetId: "no-such-target", tags: ["x"] },
   });
@@ -587,7 +589,7 @@ test("node.ratified keeps the flipped proposal's actions intact for the refetch 
   if (!target) throw new Error("fixture missing");
   target.actions = [{ id: "a", label: "A", seed: "A" }];
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "node.ratified",
     payload: { id: "the-hollow", proposalId: "prop-1" },
   });
@@ -603,7 +605,7 @@ test("doc.kind sets kind + kindAuthor on the matching doc", () => {
     docs: [{ id: "ramble-01", title: "R1", kind: null, kindAuthor: null }],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "doc.kind",
     payload: { docId: "ramble-01", kind: "bible", author: "user" },
   });
@@ -618,7 +620,7 @@ test("doc.kind with kind null clears BOTH kind and author (a clear un-attributes
     docs: [{ id: "ramble-01", title: "R1", kind: "story", kindAuthor: "agent" as const }],
   };
   const next = applyEvent(state, {
-    seq: 6,
+    id: 6,
     kind: "doc.kind",
     payload: { docId: "ramble-01", kind: null, author: null },
   });
@@ -628,7 +630,7 @@ test("doc.kind with kind null clears BOTH kind and author (a clear un-attributes
 
 test("doc.kind on an unknown doc advances the cursor and touches nothing", () => {
   const next = applyEvent(baseState(), {
-    seq: 6,
+    id: 6,
     kind: "doc.kind",
     payload: { docId: "no-such-doc", kind: "bible", author: "user" },
   });
@@ -653,7 +655,7 @@ test.each([
 ] as const)("%s advances the cursor and leaves the board untouched (no surface jobs state)", (kind) => {
   const before = baseState();
   const next = applyEvent(before, {
-    seq: 6,
+    id: 6,
     kind,
     payload: { id: "job-1", title: "Research the archive", status: "queued" },
   });

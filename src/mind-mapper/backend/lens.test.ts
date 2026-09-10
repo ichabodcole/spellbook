@@ -28,7 +28,7 @@ test("setLens writes the lens row, readState reflects it, emits lens.set", () =>
     expect(state.lens).toEqual({ owner: "agent", nodeId: "maren", depth: 1, docId: null });
     expect(received).toEqual([
       {
-        seq: 1,
+        id: 1,
         epoch: bus.epoch,
         kind: "lens.set",
         payload: { owner: "agent", nodeId: "maren", depth: 1, docId: null },
@@ -130,7 +130,7 @@ test("lookHere emits a fire-once event, writes no table row", () => {
     bus.subscribe(0, (e) => received.push(e));
     lookHere(bus, "maren");
     expect(received).toEqual([
-      { seq: 1, epoch: bus.epoch, kind: "look.here", payload: { nodeId: "maren" } },
+      { id: 1, epoch: bus.epoch, kind: "look.here", payload: { nodeId: "maren" } },
     ]);
 
     const state = readState(db, { id: "default", title: "Default" });

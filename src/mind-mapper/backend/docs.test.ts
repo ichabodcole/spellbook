@@ -46,7 +46,7 @@ test("an uncited doc deletes without force: file, docs row, fts row all gone; do
     expect(db.query("SELECT 1 FROM docs WHERE id = 'ramble-01'").get()).toBeNull();
     expect(db.query("SELECT 1 FROM docs_fts WHERE doc_id = 'ramble-01'").get()).toBeNull();
     expect(received).toEqual([
-      { seq: 1, epoch: bus.epoch, kind: "doc.deleted", payload: { id: "ramble-01" } },
+      { id: 1, epoch: bus.epoch, kind: "doc.deleted", payload: { id: "ramble-01" } },
     ]);
   } finally {
     db.close();
@@ -182,7 +182,7 @@ test("setDocKind sets kind + author, emits doc.kind, and round-trips through rea
     expect(result).toEqual({ docId: "ramble-01", kind: "worldbuilding", kindAuthor: "user" });
     expect(received).toEqual([
       {
-        seq: 1,
+        id: 1,
         epoch: bus.epoch,
         kind: "doc.kind",
         payload: { docId: "ramble-01", kind: "worldbuilding", author: "user" },

@@ -11,6 +11,35 @@
  * once-only teardown funnel, the only one wired to `req.signal`, and the only
  * one whose comment records a MEASURED result rather than a belief.
  *
+ * ── ⛔ AND WHAT THE COPY LEFT BEHIND, SAID HERE BECAUSE A LOSS RECORDED ONLY IN
+ *    A PORT'S JOURNAL GETS RE-LITIGATED BY EVERY SPELL AFTER IT (D79/D85) ─────
+ *
+ * The sentence above names a SOURCE this module had never been checked against:
+ * D1 ruled the spine be proven on the two spells that already built, and both of
+ * those are downstream FORKS of the mind-mapper line, so the boundaries were
+ * settled against two copies while the original was not in the room. **A
+ * convergence can name its source and still never consult it.**
+ *
+ * When it was finally consulted (Phase 7, the last port), exactly ONE property
+ * of the source was missing here, and it occupied no type: **mind-mapper wrote
+ * its `tail --inbound` grounding frame BEFORE the replay** — one line above
+ * `bus.subscribe` — so it was the stream's first data line. `onOpen` fires at
+ * the END of `start`, after the preamble, after `log.subscribe`, after
+ * `clients.add`, so a caller that supplied its own `clients` set and sent from
+ * there would land the frame AFTER the replayed backlog. That is EXPRESSIBLE,
+ * which is what makes this a measurement rather than an assertion: the
+ * playbook's type-to-type compatibility procedure answers "representable" here
+ * (the subject type is `Set<SseClient>`, the spell keeps no registry, so you
+ * pass an empty set) and a type check cannot see a POSITION.
+ *
+ * **The disposition was RESTORE, not KEEP-LOCAL and not FILE** — see
+ * `openFrames` below, where the two numbers that permit it are recorded and
+ * driven. The generalisation, which is the part worth carrying: where a
+ * module's subject is a SEQUENCE OF WRITES, compare the ORDER of its hooks
+ * against the order the adopting spell writes in. Two hooks with the right
+ * signatures in the wrong order are as incompatible as two types that will not
+ * unify, and only one of the two can be SEEN by a compatibility check.
+ *
  * ── ⛔ THE SCAR, RE-HOMED: `try { enqueue } catch` DOES NOT DETECT A DEAD
  *    CLIENT. MEASURED ON BUN 1.3.14 ─────────────────────────────────────────
  *
@@ -140,6 +169,41 @@ export interface SseOptions<T extends object> {
   /** Server-side filter. A rejected frame is not sent; the client still
    *  advances its cursor past it, which is `tailEvents`'s documented rule. */
   filter?: (frame: Frame<T>) => boolean;
+  /**
+   * Raw SSE chunks written to THIS stream BEFORE the replay — after the
+   * `": connected"` preamble and before `log.subscribe`, so whatever it returns
+   * is the stream's first DATA line rather than a frame buried behind a
+   * replayed backlog.
+   *
+   * ⛔ IT IS A POSITION, WHICH IS WHY `onOpen` COULD NOT SERVE (D85). `onOpen`
+   * fires at the end of `start` — after the preamble, after `log.subscribe`,
+   * after `clients.add` — so a caller that supplies its own `clients` set and
+   * sends from there lands its frame AFTER the backlog. That is expressible and
+   * it is the wrong order, which is the near-miss that makes this a measurement
+   * rather than an assertion: nothing about the TYPES prevents it, and a
+   * type-to-type compatibility check cannot see a position.
+   *
+   * ⛔ RESTORED FROM THE SPELL THIS MODULE WAS CONVERGED TOWARD, AND IT IS A
+   * RESTORATION RATHER THAN A WIDENING ON TWO MEASURED NUMBERS (D79/D85).
+   * mind-mapper's `sseResponse` wrote its `tail --inbound` grounding frame one
+   * line ABOVE `bus.subscribe`; this module's convergence dropped the position,
+   * so the only property mind-mapper could not adopt was the ordering. Applied,
+   * with every kit-bundling spell rebuilt: **(a) source edits needed at the
+   * other five adopters: ZERO** — the field is optional and nobody passes it;
+   * **(b) bytes of any other adopter's WIRE that differ: ZERO** — astrolabe,
+   * bounty, glamour, imago and magpie were driven under their own suites and
+   * their release drives, and none of them writes at open. Both numbers zero is
+   * what "the kit removed it when it copied" means operationally.
+   *
+   * ⚠ AND THE HOOK WAS REJECTED ONCE, FOR A REASON THAT DOES NOT REACH THIS
+   * CASE. D32's not-taken argued against "a `sseResponse` hook that hands the
+   * caller a raw `send` … the caller then has to keep its own collection of
+   * them" — against glamour's presence BROADCAST, which pushes to
+   * already-open streams from outside and does need a collection. This is one
+   * frame, on one stream, at open, and the caller keeps no collection at all.
+   * A rejection is scoped to the case that produced it.
+   */
+  openFrames?: () => string[];
   /** Run after the stream is subscribed (presence up, activity touch). */
   onOpen?: () => void;
   /** Run exactly once, from whichever teardown path fires first. */
@@ -147,7 +211,7 @@ export interface SseOptions<T extends object> {
 }
 
 export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
-  const { log, since, heartbeatMs, clients, signal, filter, onOpen, onClose } = opts;
+  const { log, since, heartbeatMs, clients, signal, filter, openFrames, onOpen, onClose } = opts;
 
   let unsubscribe: (() => void) | null = null;
   let keepalive: ReturnType<typeof setInterval> | null = null;
@@ -196,6 +260,13 @@ export function sseResponse<T extends object>(opts: SseOptions<T>): Response {
       // stream would otherwise leave the caller's `fetch()` unresolved. Every
       // house tail client reads `:` lines as comments and drops them.
       safeEnqueue(": connected\n\n");
+
+      // ⛔ BEFORE THE REPLAY, AND THE ORDER IS THE WHOLE POINT — see
+      // `openFrames` in the options above. A grounding frame written here is
+      // the stream's first data line; written from `onOpen` it arrives after
+      // the replayed backlog, which is a different contract wearing the same
+      // types.
+      if (openFrames) for (const chunk of openFrames()) safeEnqueue(chunk);
 
       unsubscribe = log.subscribe(since, (frame) => {
         if (filter && !filter(frame)) return;

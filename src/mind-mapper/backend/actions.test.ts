@@ -37,7 +37,7 @@ test("setActions on a node: wholesale upsert, actions ride state.nodes[], event 
     expect(result).toEqual({ targetId: "n1", actions: [SLOT] });
     expect(received).toEqual([
       {
-        seq: 1,
+        id: 1,
         epoch: bus.epoch,
         kind: "actions.set",
         payload: { targetId: "n1", actions: [SLOT] },

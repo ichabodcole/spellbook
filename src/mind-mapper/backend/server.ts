@@ -11,10 +11,23 @@
 // without the surface build graph present (Contract 1's "why it bites").
 
 import type { Database } from "bun:sqlite";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+// ── THE SHARED SPINE (seams Contract 3; backend convergence Phase 7) ────────
+// Six of the eight kit modules have a subject in this daemon. The two that do
+// not are named out loud rather than left unmentioned, because an unmentioned
+// row reads as a skipped step: `housekeeping`'s idle sweep and debounced
+// snapshot (`startHousekeeping`/`shouldIdleClose`) have NO SUBJECT here — this
+// daemon runs neither timer and stands until it is killed, see the teardown
+// comment at the bottom of `main` — and `tailEvents` is the CLI's half of the
+// pair, in `./cli.ts`.
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import type { EventLog } from "../../kit/wire/eventLog.ts";
+import { drainAndStop } from "../../kit/wire/housekeeping.ts";
+import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { sseResponse as kitSseResponse } from "../../kit/wire/sse.ts";
 import { clearActions, setActions } from "./actions.ts";
 import { anchorNode } from "./anchor.ts";
 import { readChanges } from "./changes.ts";
@@ -22,7 +35,15 @@ import { openStore } from "./db.ts";
 import { deleteNode, deleteProposal, deleteProposalBatch, NodeCitedError } from "./del.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { editNode } from "./edit.ts";
-import { createEventBus, type EventBus, inboundGrounding, isInboundEvent } from "./events.ts";
+import {
+  type BusEvent,
+  type BusEventBody,
+  createEventBus,
+  type EventBus,
+  inboundGrounding,
+  isInboundEvent,
+} from "./events.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
 import {
   addSubtask,
@@ -83,38 +104,24 @@ const SCRIPT_DIR = import.meta.dir;
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 
-// release iff dist/index.html exists at the skill root, else dev; env
-// override wins either way (seams Contract 1). Release: zero reads of
-// surface/ or bunfig.toml — static files only. Dev: the existing dynamic
-// import + Bun's serve-time bundling.
-function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
-}
-
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
-// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
-// (Contract 2's flat, relative-href layout). Path traversal guarded (a
-// static asset request is always a bare filename, never nested).
-function serveDist(path: string): Response | null {
-  const rel = path === "/" ? "index.html" : path.slice(1);
-  if (rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
-}
+// ⛔ THE MODE PREDICATE, THE CONTENT-TYPE MAP AND THE FILE HALF OF `serveDist`
+// ARE THE KIT'S SINCE PHASE 7 (`src/kit/wire/serveDist.ts`). The census measured
+// `resolveMode` as byte-identical in all eight daemons (the only md5 difference
+// being the `export` keyword) and the content-type map as differing in exactly
+// one cell — which was ours, and which the convergence resolved AGAINST us:
+//
+//   ⚠ THE ONE WIRE DELTA THE ADOPTION MAKES TO A RESPONSE HEADER. This daemon
+//   served `.html` as `text/html`; the kit serves it as
+//   `text/html; charset=utf-8`. Three of the eight daemons carried the charset
+//   and five did not, and the kit kept it because it is the right answer — an
+//   HTML document served with no charset is decoded by the browser's guess. So
+//   `GET /` and `GET /index.html` change one response header. Named here rather
+//   than smuggled (D20/D35/D47/D51/D81's class).
+//
+// ⛔ AND THE ROUTER STAYS MINE. The caller decides WHICH file; the kit decides
+// whether it may be READ. mind-mapper substitutes nothing — `/` returns the
+// committed `dist/index.html` unaltered — so it has no by-name refusal to KEEP,
+// and the house router expression below is exactly the one it may write.
 
 // Discovery root — cli.ts derives the same path to find (or skip spawning) us.
 const HOME = process.env.MIND_MAPPER_HOME ?? join(homedir(), ".mind-mapper");
@@ -376,11 +383,53 @@ function openBrowser(url: string): void {
 // enqueue try/catch only as belt-and-braces. (Known hole, accepted: Bun's
 // own fetch reader.cancel() closes nothing client-side and is invisible to
 // the server — real clients close the socket.)
-function keepaliveMs(): number {
-  const v = Number.parseInt(process.env.MIND_MAPPER_KEEPALIVE_MS ?? "", 10);
-  return Number.isFinite(v) && v > 0 ? v : 15_000;
-}
+// ⛔ THE BEAT IS NO LONGER A LITERAL HERE, AND ITS KNOB IS NO LONGER READ HERE.
+// Both live in `./heartbeat.ts` — the seam file BOTH halves import — because the
+// CLI's tail watchdog is DERIVED from this number and a derivation only one half
+// of a pair can see is not a derivation (D75). This function used to be a local
+// `parseInt` against a literal 15,000 while `cli.ts` hard-coded 45,000 under a
+// comment saying "≈ 3 missed server keepalives"; the "≈" is now an "=".
 
+/**
+ * One agent SSE tail on `/events`, from the house's ONE server-side stream
+ * (`src/kit/wire/sse.ts`).
+ *
+ * ⛔ THIS FUNCTION IS WHY THAT MODULE EXISTS, AND ADOPTING IT TOOK A KIT
+ * CHANGE — the only one this port made (D85). `sse.ts:9` records that it
+ * "Converged 2026-09-08 TOWARD mind-mapper's `sseResponse`, the census's
+ * convergence target #1: the only one of the seven with a once-only teardown
+ * funnel, the only one wired to `req.signal`, and the only one whose comment
+ * records a MEASURED result rather than a belief." All three of those are the
+ * body that used to be here, and they came back unchanged.
+ *
+ * ⛔ WHAT DID NOT SURVIVE THE COPY WAS A POSITION, AND A POSITION OCCUPIES NO
+ * TYPE. The `--inbound` grounding frame was written ONE LINE ABOVE
+ * `bus.subscribe`, so it was the stream's first data line. The kit's `onOpen`
+ * fires at the END of `start` — after the preamble, after `log.subscribe`,
+ * after `clients.add` — so a caller that supplied its own `clients` set and
+ * sent from `onOpen` would land the grounding line AFTER the replayed backlog.
+ * That is EXPRESSIBLE, which is the near-miss that makes this a measurement
+ * rather than an assertion: run the playbook's type-to-type compatibility
+ * procedure on this row and it answers "representable" (the kit's subject type
+ * is `Set<SseClient>`, this daemon keeps no registry at all, so you pass an
+ * empty set). The incompatibility is an ORDER, and a type check cannot see an
+ * order.
+ *
+ * ⛔ SO `openFrames` WAS RESTORED TO THE KIT — a RESTORATION and not a
+ * WIDENING, on two numbers that were DRIVEN before the change was proposed:
+ * (a) source edits needed at the other five adopters, ZERO; (b) bytes of any
+ * other adopter's WIRE that differ, ZERO — astrolabe, bounty, glamour, imago
+ * and magpie under their own suites (564 cells) and glamour's live SSE stream
+ * captured byte-for-byte either side of the change (61 bytes, identical),
+ * because none of them writes at open. Provenance was NOT the argument: "it was
+ * mine before you copied it" does not remove one artifact from a blast radius.
+ *
+ * ⚠ AND THE KEEPALIVE COMMENT'S TEXT CHANGES ON THE WIRE: `: keepalive` becomes
+ * the kit's `: hb`. Every house tail reads `:` lines as comments and drops them
+ * — `tailEvents` feeds the watchdog from them before any hook sees them — so
+ * nothing branches on the text, but it is a byte a caller receives and it is
+ * named here rather than smuggled.
+ */
 function sseResponse(
   bus: EventBus,
   since: number,
@@ -391,60 +440,35 @@ function sseResponse(
   // opens with a grounding frame naming watched/not-watched channels. The
   // browser WS never sets this (the surface uses the full WS stream unchanged).
   inbound = false,
+  // ⛔ THE BEAT IS A PARAMETER, WITH THE SEAM FILE'S VALUE AS ITS DEFAULT — and
+  // that is the kit's own shape rather than a test hatch bolted on. The kit's
+  // `sseResponse` takes `heartbeatMs` as a REQUIRED option and reads no env of
+  // its own, precisely because where the number comes from is the caller's
+  // business; a wrapper that closes over `SSE_HEARTBEAT_MS` and offers no seam
+  // makes the beat unobservable in-process, which is what
+  // `sse-keepalive.test.ts` hit. ⚠ AND THE DEFAULT IS THE ONLY VALUE ANYTHING
+  // IN PRODUCTION PASSES: every route below omits this argument, so the knob is
+  // still resolved in exactly one place (D75) and the kit's 500 ms floor (D76)
+  // still governs every value a CALLER can reach. An explicit beat here bypasses
+  // the floor by construction, which is correct — the floor guards a knob a
+  // human types, not an argument a test hands in.
+  heartbeatMs: number = SSE_HEARTBEAT_MS,
 ): Response {
-  let unsubscribe: (() => void) | null = null;
-  let keepalive: ReturnType<typeof setInterval> | null = null;
-  let closed = false;
-  // Every exit path (clean cancel, enqueue-throw on a dead controller)
-  // funnels through here exactly once — Claim C's presence decrement rides
-  // hooks.onClose, so this funnel is what bounds presence accuracy.
-  const teardown = () => {
-    if (closed) return;
-    closed = true;
-    if (keepalive !== null) clearInterval(keepalive);
-    unsubscribe?.();
-    hooks.onClose?.();
-  };
-  const stream = new ReadableStream({
-    start(controller) {
-      const encoder = new TextEncoder();
-      const safeEnqueue = (chunk: string) => {
-        if (closed) return;
-        try {
-          controller.enqueue(encoder.encode(chunk));
-        } catch {
-          teardown();
-        }
-      };
-      // An opening comment flushes the response headers immediately — some
-      // HTTP clients (Bun's own fetch() included) otherwise buffer until the
-      // first byte of body arrives, so an SSE stream that's genuinely quiet
-      // between events would leave the caller's fetch() unresolved.
-      safeEnqueue(": connected\n\n");
-      // F5 belt-and-suspenders: an inbound stream opens by NAMING the channels
-      // it watches + does not watch, so a missing channel is visible. Emitted
-      // server-side (not CLI-synthesized) so the list is derived from the same
-      // predicate that filters — it cannot drift. No seq/epoch: it never
-      // advances the tail's cursor (the epoch.changed separation).
-      if (inbound) safeEnqueue(`data: ${JSON.stringify(inboundGrounding())}\n\n`);
-      unsubscribe = bus.subscribe(since, (event) => {
-        if (inbound && !isInboundEvent(event)) return;
-        safeEnqueue(`data: ${JSON.stringify(event)}\n\n`);
-      });
-      keepalive = setInterval(() => safeEnqueue(": keepalive\n\n"), keepaliveMs());
-      signal?.addEventListener("abort", teardown, { once: true });
-      hooks.onOpen?.();
-    },
-    cancel() {
-      teardown();
-    },
-  });
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
+  return kitSseResponse<BusEventBody>({
+    log: bus as unknown as EventLog<BusEventBody>,
+    since,
+    heartbeatMs,
+    signal,
+    filter: inbound ? (frame) => isInboundEvent(frame as BusEvent) : undefined,
+    // F5 belt-and-suspenders: an inbound stream opens by NAMING the channels it
+    // watches + does not watch, so a missing channel is visible. Emitted
+    // server-side (not CLI-synthesized) so the list is derived from the same
+    // predicate that filters — it cannot drift. No id/epoch: it never advances
+    // the tail's cursor (the epoch.changed separation). ⛔ AND IT MUST BE THE
+    // FIRST DATA LINE, WHICH IS WHY THIS OPTION EXISTS AT ALL.
+    openFrames: inbound ? () => [`data: ${JSON.stringify(inboundGrounding())}\n\n`] : undefined,
+    onOpen: hooks.onOpen,
+    onClose: hooks.onClose,
   });
 }
 
@@ -468,7 +492,7 @@ async function main(argv: string[]): Promise<number> {
   const host = parsed.values.host as string;
   const port = Number.parseInt(parsed.values.port as string, 10);
 
-  const mode = resolveMode();
+  const mode = resolveMode(DIST_DIR);
 
   // dev: the dynamic string-literal import keeps the surface graph off the
   // module load path (Contract 1's "why it bites" — a top-level static
@@ -499,7 +523,7 @@ async function main(argv: string[]): Promise<number> {
       // Bun clamps this to a uint8 (max 255s); 0 disables it for the whole
       // request but also (empirically) stalls the initial response — use the
       // max instead.
-      idleTimeout: 255,
+      idleTimeout: IDLE_TIMEOUT_SEC,
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -1641,7 +1665,21 @@ async function main(argv: string[]): Promise<number> {
             });
           }
           if (mode === "release") {
-            const asset = serveDist(path);
+            // ⛔ RECEIVED, NOT DE-DUPLICATED: `serveFromDist` CARRIES A
+            // WHITELIST this daemon did not have (D65). Its permission used to
+            // be `existsSync`, which was true of a `dist/` holding only a
+            // surface — and this very phase is what put the IMPLEMENTATION in
+            // the served directory. MEASURED at the end of chapter 1, through
+            // the real launcher: `GET /cli.js` -> 200, text/javascript, 208,579
+            // bytes and `GET /server.js` -> 200, 549,791 bytes, both
+            // byte-identical to the committed artifacts, inline sourcemaps and
+            // all — so the response embedded the complete original TypeScript.
+            // The kit serves only what the built `index.html` transitively
+            // LINKS, which is a WHITELIST rather than a second blacklist entry:
+            // it is case-insensitive by construction (APFS is not) and it is
+            // still right the next time the build emits something new.
+            const rel = path === "/" ? "index.html" : path.slice(1);
+            const asset = serveFromDist(DIST_DIR, rel);
             if (asset) return asset;
           }
           return new Response('{"error":"not found"}', {
@@ -1678,8 +1716,15 @@ async function main(argv: string[]): Promise<number> {
   const url = `http://${host}:${server.port}`;
   try {
     mkdirSync(HOME, { recursive: true });
-    writeFileSync(PORT_FILE, String(server.port));
-    writeFileSync(PID_FILE, String(process.pid));
+    // ⛔ GAINED — ATOMIC, WHERE THIS PAIR OF BARE WRITES WAS CENSUS DEFECT L3
+    // WITH MIND-MAPPER NAMED AS BROKEN. `writeFileSync` is not atomic, so a CLI
+    // reading the pointer while the daemon wrote it could observe a half-written
+    // file — which `livePort()` then parses as NaN and reports as "no daemon
+    // running", i.e. a live daemon reported absent. `writeFileAtomic` writes a
+    // pid-suffixed temp and renames, so a reader sees the old bytes or the new
+    // ones and never a prefix. L3 is CLOSED for this spell by this line.
+    writeFileAtomic(PORT_FILE, String(server.port));
+    writeFileAtomic(PID_FILE, String(process.pid));
   } catch (e) {
     process.stderr.write(
       `mind-mapper: could not write discovery files: ${e instanceof Error ? e.message : String(e)}\n`,
@@ -1694,16 +1739,31 @@ async function main(argv: string[]): Promise<number> {
     process.on("SIGTERM", shutdown);
     process.on("SIGINT", shutdown);
   });
-  try {
-    if (existsSync(PID_FILE) && readFileSync(PID_FILE, "utf8").trim() === String(process.pid)) {
-      unlinkSync(PID_FILE);
-      unlinkSync(PORT_FILE);
-    }
-  } catch {
-    /* fine */
+  // ⛔ "STILL OURS" IS THE WHOLE POINT, AND IT WAS ALREADY RIGHT HERE — this is
+  // a DE-DUPLICATION, not a repair. A daemon that unlinks its discovery file
+  // unconditionally deletes the pointer a SUCCESSOR has already written, and the
+  // next CLI verb then spawns a third daemon. The hand-rolled version compared
+  // the pid file's bytes to its own pid and unlinked BOTH files under that one
+  // guard; `unlinkIfMatches` is the same comparison with every failure — absent,
+  // unreadable, unparseable — swallowed as "not ours to remove".
+  if (unlinkIfMatches(PID_FILE, String(process.pid))) {
+    unlinkIfMatches(PORT_FILE, String(server.port));
   }
   for (const { db } of projects.values()) db.close();
-  await Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]);
+  // ⛔ DE-DUPLICATED — the raced stop below WAS the kit's, character for
+  // character, before the kit had one: `Promise.race([server.stop(true), 200ms])`
+  // with a comment recording that one wedged peer is enough to park
+  // `server.stop(true)` forever, which is how a 23-minute hang shipped once.
+  //
+  // ⚠ `graceMs: 0`, `clients` UNSET and `sockets` UNSET — three blanks, and each
+  // is a measurement rather than an omission (grapevine's D73 shape). There is
+  // no farewell frame to flush, so the 150 ms grace has nothing to buy here;
+  // this daemon keeps no `SseClients` registry at all (the kit's `clients` is
+  // optional and every per-stream teardown rides `req.signal` and `cancel()`
+  // through the funnel in `sse.ts`); and the browser WebSockets are closed by
+  // the stop itself. `stopMs` stays at the 200 this daemon already used, which
+  // is also the kit's default.
+  await drainAndStop({ server, graceMs: 0, stopMs: 200 });
   return 0;
 }
 

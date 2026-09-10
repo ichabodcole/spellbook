@@ -1,4 +1,4 @@
-// P1 — the event bus: seq monotonicity, late subscribers only get events
+// P1 — the event bus: cursor-`id` monotonicity, late subscribers only get events
 // after their --since cursor, per-entity patch payloads only (circe's
 // addendum — never a full-array payload; this is a hard constraint, not
 // enforced by types alone, so a shape test lives here too).
@@ -13,12 +13,12 @@ import {
   MESSAGE_CHANNELS,
 } from "./events.ts";
 
-test("emit assigns monotonically increasing seq", () => {
+test("emit assigns monotonically increasing id", () => {
   const bus = createEventBus();
   const e1 = bus.emit("doc.added", { id: "d1" });
   const e2 = bus.emit("node.ratified", { id: "n1" });
-  expect(e1.seq).toBe(1);
-  expect(e2.seq).toBe(2);
+  expect(e1.id).toBe(1);
+  expect(e2.id).toBe(2);
 });
 
 test("subscribe(since) only replays events after the given cursor", () => {
@@ -28,7 +28,7 @@ test("subscribe(since) only replays events after the given cursor", () => {
   bus.emit("doc.added", { id: "d3" });
 
   const received: number[] = [];
-  const unsubscribe = bus.subscribe(2, (event) => received.push(event.seq));
+  const unsubscribe = bus.subscribe(2, (event) => received.push(event.id));
   // events emitted after subscribing are delivered live
   bus.emit("doc.added", { id: "d4" });
   unsubscribe();
@@ -41,7 +41,7 @@ test("a fresh subscriber (since=0) gets nothing replayed until a new emit", () =
   bus.emit("doc.added", { id: "d1" });
 
   const received: number[] = [];
-  bus.subscribe(bus.cursor(), (event) => received.push(event.seq));
+  bus.subscribe(bus.cursor(), (event) => received.push(event.id));
   bus.emit("doc.added", { id: "d2" });
 
   expect(received).toEqual([2]);
