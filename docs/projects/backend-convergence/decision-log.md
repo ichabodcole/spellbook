@@ -2250,3 +2250,305 @@ agent told to look for silence, meeting a confident exit 2 about its cwd, will
 conclude B3 does not apply and go fix its cwd. _Record it only in the pre-work
 doc_ — the misdirection happens at the step, so the correction belongs at the
 step, with the pre-work doc holding the transcript.
+
+## D58 · digestify's failures adopt the envelope; its OUTCOMES keep their numbers — and three codes move
+
+**Decided:** implementer, 2026-09-09, Phase 5 chapter 2, driven at all eight
+sites.
+
+digestify had **no `die` and no error class**, which is not the same as having
+no error contract. It raised by `process.stderr.write("error: …"); return 2;` at
+**eight** sites — counted by following the returns, because a grep for `die(`
+finds nothing and reports "no error contract to change" for a spell whose exit
+codes SKILL.md publishes in a table with a per-code sentence for the agent.
+
+**The two populations, ruled separately, which is D52 arriving at the spell it
+was written for.**
+
+| population           | codes         | channel                                        | ruling                                       |
+| -------------------- | ------------- | ---------------------------------------------- | -------------------------------------------- |
+| **failures**         | 1 · 2 · 5 · 6 | ONE JSON envelope on **stderr**, stdout empty  | **adopt `errors.ts`** — kind, envelope, code |
+| **session outcomes** | 0 · 124 · 130 | an observation line on **stdout**, no envelope | **outside the taxonomy, numbers unchanged**  |
+
+A timeout and a closed tab are not refusals of a caller's command: they are what
+happened to the review, they are RETURNED from `main` and never raised, and
+SKILL.md gives the agent a different sentence to say to the human for each.
+Adopting the taxonomy over them would re-spell the two states this spell exists
+to distinguish. ⚠ **The channel is the discriminator, not the number** — the
+same named residue `join.ts` carries.
+
+**What moved, driven through the real launcher:**
+
+| invocation                       | before          | after                                   |
+| -------------------------------- | --------------- | --------------------------------------- |
+| a bad flag                       | 2 · prose       | **2** `usage`, enveloped                |
+| a bad `--theme`                  | 2 · prose       | **2** `usage` + `choices` as DATA       |
+| a malformed `::: question` fence | 2 · prose       | **2** `usage`                           |
+| nothing to review                | 2 · prose       | **2** `usage` + `hint`                  |
+| `--reference` at a missing path  | 2 · prose       | **5** `not_found`                       |
+| dev boot from the wrong cwd      | 2 · 10 lines    | **2** `usage`, all ten lines in `hint`  |
+| dev boot with no surface source  | 2 · prose       | **5** `not_found`                       |
+| the server could not bind        | 2 · a JSON line | **6** `conflict`, and that line is GONE |
+
+The `{"event":"bind_error"}` line is deleted rather than kept beside the
+envelope: "ONE JSON document on stderr" is the contract and a second JSON line
+above it is a second document — `join.ts`'s repair, for the same reason.
+
+**And the ruling has a destination outside the code, which Phase B does not
+say.** `5` and `6` are new caller-visible numbers, so **SKILL.md's exit table
+carries them**, with the two populations named and the envelope shown. Nothing
+in the gate would have reported it (digestify has no acc grade, D37), and
+nothing in Phase B names SKILL.md as the place a code change lands.
+
+**Not taken:** _force every kind to `usage` so all failures stay at 2_ — that
+adopts the envelope's shape and discards its content; `kind` is the contract,
+and calling a missing file a usage error is a lie an agent routes on. _Convert
+124/130 as well, for uniformity_ — refused for D52's reason and one more: they
+are the spell's whole product. _Leave the two dev refusals as prose because
+their diagnostics are multi-line_ — `hint` exists for exactly that, and a spell
+that keeps one prose path keeps the two-formats problem for its caller.
+
+## D59 · `--timeout 0` used to mean "immediately" and now means "never" — the kit gave something back
+
+**Decided:** implementer, 2026-09-09, Phase 5 chapter 2, driven both sides.
+
+`shouldIdleClose` carries astrolabe's `timeoutMs <= 0` guard — the
+standing-observatory default, where a `>= 0` comparison would close the daemon
+on its first tick. digestify's own watcher was
+`(now - heartbeatAt)/1000 >= timeout`, so **`--timeout 0` ended the review 124
+on the first 50 ms tick**: a review nobody could ever read. Adopting the module
+changes that one input to mean **never time out**; `/submit` and `/cancel` still
+end the session, and the cell that pins it ends the session through `/cancel`
+rather than waiting for a timeout that will never come.
+
+**This is bounty's third category — RECEIVED, not GAINED or DE-DUPLICATED — and
+it is the one nobody looks for**, because the whole phase is written as though
+the kit is the destination. Framed as "adopt and gain", a behaviour change lands
+unnamed.
+
+**Not taken:** _preserve the old meaning by passing `timeout * 1000 || -1`_ — it
+keeps a value nobody wants (a review that dies before it renders) and puts a
+second idle policy back into a spell that just adopted the house's. _Reject
+`--timeout 0` as a usage error_ — a new refusal is a bigger caller-visible
+change than a new meaning, and "never" is the useful reading of zero.
+
+## D60 · Phase B's first single-entry consumer — six places it was still not enough
+
+**Recorded:** implementer, 2026-09-09, at the end of Phase 5.
+
+Phase B was rewritten the day before this port to dispatch on four properties
+instead of on the names `cli`/`server` (D55), and digestify is its first
+consumer. **The rewrite held**: B3's arithmetic ruling, B5's derived pin
+destination, B7's zero-row discipline and B8's no-subject table each produced
+the right answer, and D57's warning stopped the anchor being diagnosed from its
+own error message. Six gaps remain, each hit before it was solved, and all six
+are amended in ONE pass:
+
+1. **B6 tells a moved test to re-derive from an explicit `SKILL_ROOT` and never
+   says the skill root is now in ANOTHER TREE.** No count of `..` reaches it.
+   The house form already existed in this spell's own `dev-styled.test.ts` — a
+   `.anthill/config.json` marker walk, under a comment recording that a
+   hand-counted climb died at spawn when a non-author placed the file.
+2. **B4's "do not stage artifacts as a ward workaround" and B10's "`dist-check`
+   exit 0" read as a contradiction**, and the reconciliation lives only in D42's
+   prose. `dist-check` ARM 1b FAILS on a first-emit artifact until it is staged,
+   because ARM 1b's question IS shipping. Stage it for the COMMIT; never to make
+   a ward green.
+3. **B10's checklist says "driven on a booted daemon", and for a single-shot
+   spell a boot proves nothing.** Digestify exists for a human to read a page
+   and submit once; a daemon nobody submits to exercises neither the
+   substitution nor the exit.
+4. **B8's `housekeeping` row rules on `shouldIdleClose` and `drainAndStop` and
+   never mentions `startHousekeeping`**, which is what an "adopt the module"
+   reading takes. It owns the PAIR of standing timers; a one-timer spell needs a
+   ruling, not a silence.
+5. **B8 never names SKILL.md as the destination of an error-contract ruling.**
+   It says correctly that nothing in the gate will tell you; the thing that
+   tells the CALLER is the spell's published exit table, and three spells have
+   now changed codes without a step naming it.
+6. **B8 tells the port to DRIVE the defence the kit does not carry, and stops
+   there.** A drive does not survive the session. Where the kit deletes a
+   defence the spell keeps, the kept defence needs a CELL — digestify's is
+   `GET /index.html` must not answer the unsubstituted document.
+
+**Not taken:** _file the six as backlog items_ — the reader who needs them is
+the next porting agent inside the step, which is where imago's and bounty's
+went. _Amend as each was hit_ — six commits into a document two other ports are
+reading; one pass, at the end, with the port's evidence behind it.
+
+## D61 · The refusal was a blacklist that knew ONE name, and the port put a second file in the directory it guards
+
+**Decided:** implementer, 2026-09-09, Phase 5 repair chapter, driven before and
+after. **Found by an independent verify pass, not by the author.**
+
+D60's sixth gap ends "the kept defence needs a CELL — digestify's is
+`GET /index.html` must not answer the unsubstituted document", and that cell was
+written, driven and shipped. It was still not enough, and the reason is a
+property of the SHAPE of the defence rather than of its coverage: **the refusal
+was `rel === "index.html"` — a blacklist — and a blacklist refuses the file it
+was told about and serves every neighbour.**
+
+Two neighbours were reachable, and **the first one this port created itself, in
+the exact defence class it made its headline**:
+
+| drive                                                        | before (`20e3135`)                                                                                                             | after                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| `GET /review.js`                                             | **200**, **122,389 bytes**, `text/javascript`, sha256 `6ed9d235…` — **byte-identical to `dist/review.js`**, the backend bundle | **404**, 21-byte JSON |
+| `GET /INDEX.HTML`                                            | **200**, 1,180 bytes, `application/octet-stream`, `__TITLE__` and `__PAYLOAD__` still in it                                    | **404**               |
+| `GET /Index.html`                                            | **200**, `text/html; charset=utf-8`, unsubstituted                                                                             | **404**               |
+| `GET /index.HTML`, `GET /iNdEx.HtMl`                         | **200**, unsubstituted                                                                                                         | **404**               |
+| `GET /REVIEW.JS`                                             | **200**, the bundle again                                                                                                      | **404**               |
+| `GET /index-dfcfc4w0.js`, `GET /index-ty4gdnpw.css`, `GET /` | 200                                                                                                                            | **200, unchanged**    |
+
+`GET /review.js` **does not exist on `develop`** — Phase 5 is what put an
+implementation inside the directory the daemon serves. The case variants are
+**pre-existing on `develop`**, and they are a second lesson: the refusal was
+case-SENSITIVE and APFS is case-INSENSITIVE, so four spellings missed one `===`
+and reached the same inode. Three of the four also came back as
+`application/octet-stream`, because the content-type map's extension lookup is
+case-sensitive too — a leak whose own header says something is wrong, to nobody.
+
+**Ruled: ONE change, a WHITELIST, derived from what the built `index.html`
+LINKS.** Not a second blacklist entry, because a second blacklist entry is the
+same instrument that just failed twice. Membership is an exact match against the
+emitted name, which is what makes the refusal **case-insensitive by
+construction**: every case variant of every name — servable or not — misses the
+set. Four cells hold it, each calibrated by mutation (the two new refusal cells
+were red against the pre-fix artifact; the inventory cell was calibrated by
+dropping `review.js` from its refused list).
+
+⚠ **The shipped architecture document asserted the false half.** It said the
+by-name refusal is what keeps the unsubstituted document from escaping; that
+sentence was true of `/index.html` and false of four spellings of it. Corrected
+in the same chapter.
+
+**Not taken:** _add `review.js` to the refusal_ — the smallest change, and it
+leaves the next file added to `dist/` served by default; the blacklist is the
+defect, not its contents. _Lowercase the comparison_ — closes the case leak and
+not the bundle leak, and a `toLowerCase()` refusal still says "everything is
+served unless I remembered it". _Move the whitelist into
+`src/kit/wire/serveDist.ts`_ — tempting, because **the same exposure exists at
+bounty today** (its `dist/` holds `cli.js`, `server.js` and `join.js` beside the
+surface, all served by the house caller), but the kit's stated boundary is "the
+caller decides WHICH file", the repair chapter's subject is digestify, and a
+roster-wide serve change with no cells at the other seven spells is a bigger
+blast radius than the defect. Filed as C5 instead. _Whitelist by SHAPE
+(`index-<hash>.js`)_ — wrong the first time the bundler emits a split chunk or a
+font. _Enumerate the names by hand_ — wrong at the next build, since the names
+carry content hashes.
+
+## D62 · The exit table NARROWS; the numeric-flag conversion is filed, not made
+
+**Decided:** implementer, 2026-09-09, Phase 5 repair chapter, all four sites
+driven.
+
+SKILL.md's new exit-code section claimed `1`, `2`, `5` and `6` "each write
+exactly one JSON envelope to stderr", and its own row for `1` contradicted the
+paragraph directly above it. `review.ts`'s header had it right. Driven:
+`--file <a directory>` → **exit 1, raw Bun stack, `EISDIR`, no envelope**;
+`--file` on a `chmod 000` file → **exit 1, `EACCES`, no envelope**. Corrected: 1
+is the one failure code with no envelope, and that is deliberate — the stack is
+the thing worth having when the throw was not anticipated.
+
+Two more table defects, both driven:
+
+- **Row 5 named only `--file`/`--reference`** and omitted the second `not_found`
+  site, a forced dev boot that cannot find the surface source. Added.
+- **Row 6 says "could not bind", and `conflict` also catches flags a caller
+  repairs by RETYPING**: `--port notanumber` → `port=NaN` → exit 6, and a
+  nonsense `--host` → exit 6. Both come back through the same bind refusal, with
+  the reason in the envelope's `hint`.
+
+**Ruled: the TABLE narrows.** Row 6 stops claiming to be only about a busy port
+and says what it is, and points the caller at `hint`, which is the field that
+separates a mistyped flag from a port someone else holds. **The conversion to
+`usage` (2) is FILED, not made** — as C6, and deliberately as ONE item covering
+both numeric flags, because `--timeout abc` is the identical defect at the
+identical distance from the parse (D63) and half a conversion is worse than
+none: it would ship a spell where one mistyped number is a usage error and the
+other is silence.
+
+**Not taken:** _convert `--port` here and leave `--host` at conflict_ — the
+ruling is right (a non-integer port is decidable without touching the network; a
+hostname that does not resolve is indistinguishable at the bind from a port in
+use, and the daemon must not claim to know which) but it is an exit-code change
+to a shipped contract, landing in the same chapter that repairs a security
+defect, in a document the same chapter is already rewriting. _Convert all three
+numeric flags now_ — same reason, plus it wants its own cells and its own
+SKILL.md revision. _Leave the table as it was and call the paragraph a typo_ —
+the paragraph is what an agent reads to decide whether to `JSON.parse` stderr.
+
+## D63 · `--timeout 0` was never the received change — ANY non-positive value was, and `NaN` is a third case nobody ruled
+
+**Recorded:** implementer, 2026-09-09, Phase 5 repair chapter, driven.
+
+D59, the journal and SKILL.md all name `0`. Driven: **`--timeout=-1` behaves
+identically** — `shouldIdleClose`'s guard is `timeoutMs <= 0`, so the received
+change is "any non-positive value means NEVER", and `0` is one member of it.
+SKILL.md's flag line said only "failsafe timeout (default 1800)" and did not
+mention the new meaning at all. Both corrected.
+
+⚠ **One nuance the record must not smooth over:** `--timeout -1` with a SPACE
+never reaches the guard — `parseArgs` calls it ambiguous and dies `usage` at 2.
+Only `--timeout=-1` gets there. The behaviour is the guard's; the reachability
+is the parser's, and a reader who tries the obvious spelling sees the wrong
+answer.
+
+**And a third case, which is not a decision anyone made:** `--timeout abc` →
+`parseFloat` → `NaN`. `NaN <= 0` is **false**, so the guard does not catch it,
+and `idleMs >= NaN` is false forever — **a review that never times out, with no
+diagnostic on either side of the port.** Ruled: **that is a usage error** — the
+caller repairs it by retyping, which is the taxonomy's own discriminator — and
+**filed rather than fixed**, as C6, with `--port notanumber` (D62). Documented
+in SKILL.md as current behaviour in the meantime, because a caller who is told
+`1800` is the default and is not told `abc` means never will find out by
+waiting.
+
+**Not taken:** _fix the NaN here as a one-line `Number.isNaN` guard_ — it is one
+line, and it is also a new refusal of an input the spell accepts today, which is
+the caller-visible change D59 explicitly weighed against a new meaning; it goes
+with `--port`'s, ruled together, celled together. _Say "0 or negative" in
+SKILL.md and stop_ — leaves `abc` silent, which is the member of the set a
+caller actually types by accident.
+
+## D64 · `pins=6` was true when it was written and false when it shipped — a de-duplication moved a pin into the ward's blind spot
+
+**Recorded:** implementer, 2026-09-09, Phase 5 repair chapter, driven at three
+commits.
+
+Three shipped documents say the spawn-path ward reports
+`digestify/dist/review.js … anchor-read=yes pins=6`. At `20e3135` — the commit
+they shipped in — **the ward reports `pins=5`.**
+
+Driven, by putting each commit's artifact under the live ward:
+
+| commit                                        | literal `join(DIST_DIR, "index.html")` in the artifact | ward   |
+| --------------------------------------------- | ------------------------------------------------------ | ------ |
+| `110a3611` (the relocation)                   | 2                                                      | pins=6 |
+| `67f74097` (the kit adoption)                 | 1                                                      | pins=5 |
+| `20e3135` (the records — where the 6 shipped) | 1                                                      | pins=5 |
+| this chapter                                  | 2                                                      | pins=6 |
+
+**WHY it moved, which is the transferable part: a DE-DUPLICATION reduced ward
+coverage.** `resolveMode` was inlined in `review.ts` and its body spelled
+`join(DIST_DIR, "index.html")` literally. Adopting `src/kit/wire/serveDist.ts`
+replaced that body with `resolveModeIn(DIST_DIR)` — the same read, at the same
+path, through a function PARAMETER. The ward counts pins it can read as literals
+in the emitted text; a path assembled inside a callee from an argument is
+**inside its declared blind spot**. So the number fell by one while nothing
+about the spell's path behaviour changed, and no instrument reddened, because a
+coverage COUNT going down is not a failure.
+
+⚠ **And the count came back to 6 in this chapter, for a different reason** — the
+whitelist reads the entry document and spells `join(DIST_DIR, "index.html")`
+literally again. The same number, from a new site. **That is the finding, not a
+coincidence:** `pins=N` measures literal spellings the ward can resolve, not
+pins the spell has, and it moves when code is TIDIED as readily as when paths
+change. Registered as C4's second half.
+
+**Not taken:** _edit the three documents to say `pins=6` and move on_ — the
+number is right again today and the sentence would still be wrong about what was
+measured. _Widen the ward to follow arguments into callees_ — that is
+interprocedural analysis of an emitted bundle, and D42 already ruled the ward's
+blind spot declared rather than closed; what was missing is that a
+DE-DUPLICATION can push a pin into it silently, which is now C4's text.

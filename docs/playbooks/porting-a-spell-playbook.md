@@ -865,6 +865,20 @@ port is before Phase 1, because they have different done-whens below.
 > experience differs from glamour's the difference is recorded, because that
 > difference is the part a third spell cannot predict.
 >
+> ⭐⭐⭐⭐ **AMENDED AGAIN 2026-09-09 BY DIGESTIFY'S PORT — THE FIRST PORT RUN
+> ON THE REWRITTEN PHASE, AND THE FIRST SINGLE-ENTRY, SINGLE-SHOT SPELL TO
+> ACTUALLY WALK IT.** The rewrite below HELD: B3's arithmetic ruling, B5's
+> derived pin destination, B7's zero-row discipline and B8's no-subject table
+> each produced the right answer on a spell nobody had them in front of, and
+> D57's warning is what stopped the anchor being diagnosed from its own error
+> message. **Six gaps remain, each marked `⭐ digestify-port`**, recorded at the
+> moment they were hit and amended in one pass at the end; the account is
+> `docs/projects/backend-convergence/phase-5-journal.md` and the ruling is D60.
+> **What did NOT transfer, stated once: the assumption that a spell is exercised
+> by BOOTING it.** Digestify's whole product is one human reading a page and
+> submitting once, and a booted daemon nobody submits to proves neither the
+> substitution nor the exit.
+>
 > ⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR DIGESTIFY — THE FIRST
 > SINGLE-ENTRY, SINGLE-SHOT SPELL, AND THE PORT THIS PHASE WAS LEAST ABLE TO
 > CARRY.** An independent verify pass read Phase B cold as digestify's porting
@@ -1331,6 +1345,22 @@ gate, D42 moved its population to the disk); a fourth level is likelier than
 not, and the shape of the miss — a row that does not appear — is what you are
 looking for, whatever produced it.
 
+⛔ ⭐ **digestify-port — AND "DO NOT STAGE" READS AS A CONTRADICTION AGAINST
+B10, WHICH IS WHERE IT WAS HIT.** `bun scripts/dist-check.ts` **FAILS** on a
+first-emit backend artifact until it is staged — ARM 1b, fatal, naming the file
+— and B10's validation requires it to exit 0. An agent that reads the paragraph
+above as a blanket prohibition has one instruction telling it not to do the
+thing another instruction requires. **The reconciliation is real and it is only
+in D42's prose:** the two instruments ask DIFFERENT QUESTIONS. The spawn-path
+ward asks "does the arithmetic in the artifact the build just produced resolve",
+and that artifact is on the disk whether or not anyone ran `git add`; ARM 1b
+asks "will this artifact SHIP", and staging is the answer to that one.
+
+**So the rule, spelled so it is not a judgement call: stage the artifact because
+it is part of your COMMIT (Contract 18 — same chapter as its source), never to
+make a ward go green.** If staging changes a ward's verdict, that ward is
+reading the index and you have found the fourth level.
+
 ⚠ **AND THIS IS THE SAME DEFECT ONE LEVEL UP, FOR THE FOURTH TIME.** D27 built
 the coverage cell because population ≠ coverage; D36 rebuilt its gate because a
 backstop computed from the predicate it backstops is not a backstop. **Coverage
@@ -1402,6 +1432,46 @@ A backend's tests are full of paths that were relative to `tests/` or
 `scripts/`. **Every one is re-derived from an explicit `SKILL_ROOT`, never
 adjusted by counting `..`** — the count is the repair that rots, and a test
 whose spawn path is wrong fails as "the daemon never answered".
+
+⛔ ⭐ **digestify-port — AND THIS STEP NEVER SAYS WHERE THAT `SKILL_ROOT` COMES
+FROM AFTER THE MOVE, WHICH IS THE HALF THAT IS ACTUALLY HARD.** The test now
+lives at `src/<spell>/backend/` and its subject lives under
+`plugins/spellbook/skills/<spell>/`. **They are in different trees, so NO number
+of `..` reaches it** — "re-derive from an explicit root" is advice about a root
+the step assumes you still have. Write it and the instruction is complete; leave
+it and every agent invents a climb, and a climb is the exact thing the sentence
+above forbids.
+
+**The house form already exists and it was written down inside a spell rather
+than here: walk up for a repo-root MARKER.**
+
+```ts
+function repoRoot(from: string): string {
+  let d = from;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(d, ".anthill", "config.json"))) return d;
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  throw new Error(
+    `repo root marker (.anthill/config.json) not found above ${from}`
+  );
+}
+const SKILL_ROOT = join(
+  repoRoot(import.meta.dir),
+  "plugins",
+  "spellbook",
+  "skills",
+  spell
+);
+```
+
+⚠ **And it is a scar, not a taste.** `src/digestify/dev-styled.test.ts` carries
+this walk under a comment recording why: a sibling spell's copy counted `..`, a
+non-author placed the file at a different depth, and **both arms died at spawn**
+— which reads as a broken daemon, not as a wrong path. The marker also fails
+LOUDLY and by name when it fails at all, which a wrong `..` never does.
 
 Three specific moves, all earned:
 
@@ -1590,21 +1660,34 @@ unmentioned row reads as a skipped step to the next person.
 
 Measured for digestify, before its port, against the table below:
 
-| kit module     | digestify                                                                                                                                                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `serveDist`    | **PARTIAL, and read the row's own caveats below.** `resolveMode` and the content-type map transfer; `serveFromDist` transfers **for hashed chunks only**, and the router half stays local.                                                                          |
-| `heartbeat`    | **PARTIAL, and the seam does not exist** — see the `idleMs` ruling at the end of this step.                                                                                                                                                                         |
-| `housekeeping` | **PARTIAL.** It has ONE `setInterval` idle watcher, slid forward by a `POST /heartbeat` the page sends — `shouldIdleClose` has a subject. `drainAndStop` does **not**: there are no SSE clients, no sockets and no snapshot; teardown is one `await server.stop()`. |
-| `errors`       | **SUBJECT, and it is a documented caller contract** — see the `errors` ruling below.                                                                                                                                                                                |
-| `eventLog`     | **NO SUBJECT.** No `events` array, no `emitEvent`, no sequence. One human, one submission, one JSON object on stdout.                                                                                                                                               |
-| `sse`          | **NO SUBJECT.** No stream anywhere; the page polls `POST /heartbeat` and finishes with `POST /submit`.                                                                                                                                                              |
-| `tailEvents`   | **NO SUBJECT.** Nothing tails it — there is no second process, and the "CLI side" is the same process as the server side.                                                                                                                                           |
-| `discovery`    | **NO SUBJECT, and the file says so in as many words:** _"There is no discovery file, no ready EVENT and no stdout handshake"_ — one ready line to stdout, which SKILL.md documents.                                                                                 |
+| kit module     | digestify                                                                                                                                                                                                                                                                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serveDist`    | **PARTIAL, and read the row's own caveats below.** `resolveMode` and the content-type map transfer; `serveFromDist` transfers **for hashed chunks only**, and the router half stays local.                                                                                                                                                                |
+| `heartbeat`    | **PARTIAL, and the seam does not exist** — see the `idleMs` ruling at the end of this step.                                                                                                                                                                                                                                                               |
+| `housekeeping` | **PARTIAL.** It has ONE `setInterval` idle watcher, slid forward by a `POST /heartbeat` the page sends — `shouldIdleClose` has a subject. `drainAndStop` does **not**: there are no SSE clients, no sockets and no snapshot; teardown is one `await server.stop()`. ⭐ **And `startHousekeeping` is the third export this row did not name — see below.** |
+| `errors`       | **SUBJECT, and it is a documented caller contract** — see the `errors` ruling below.                                                                                                                                                                                                                                                                      |
+| `eventLog`     | **NO SUBJECT.** No `events` array, no `emitEvent`, no sequence. One human, one submission, one JSON object on stdout.                                                                                                                                                                                                                                     |
+| `sse`          | **NO SUBJECT.** No stream anywhere; the page polls `POST /heartbeat` and finishes with `POST /submit`.                                                                                                                                                                                                                                                    |
+| `tailEvents`   | **NO SUBJECT.** Nothing tails it — there is no second process, and the "CLI side" is the same process as the server side.                                                                                                                                                                                                                                 |
+| `discovery`    | **NO SUBJECT, and the file says so in as many words:** _"There is no discovery file, no ready EVENT and no stdout handshake"_ — one ready line to stdout, which SKILL.md documents.                                                                                                                                                                       |
 
 **Four of eight have no subject at all, and two more are half-adoptions.** That
 is not a defect in digestify and it is not a shortfall in the port. It is what a
 single-shot spell looks like, and a port that reported "adopted the kit" without
 the four absences would be reporting something that did not happen.
+
+⚠ ⭐ **digestify-port — AND A ROW IS A MODULE, NOT A FUNCTION, SO "PARTIAL" HAS
+TO SAY WHICH EXPORTS.** The `housekeeping` row ruled on `shouldIdleClose` and
+`drainAndStop` and never mentioned **`startHousekeeping`**, which is the export
+an "adopt the module" reading takes first. It was ruled at the port and the
+reason generalises: **`startHousekeeping` exists to own the PAIR of standing
+timers a session daemon runs** — the idle sweep and the debounced snapshot, "one
+call because they have always been one lifetime". A single-shot spell has ONE
+timer and no snapshot, so adopting the pair-manager means writing a no-op
+`touch` and a `subscriberCount` that exists only to return zero: two lies to
+gain a `clearInterval`. **Take the DECISION (`shouldIdleClose`) and keep the
+sweep.** The general form: when a row says PARTIAL, enumerate the module's
+exports and rule on each — a function nobody names reads as a step nobody did.
 
 ⭐ **imago: WHAT EACH ONE REPLACES.** This step used to name the eight modules
 and stop, so the mapping had to be recovered by reading a ported sibling
@@ -1653,6 +1736,37 @@ absorb those stops being a file server and becomes a router."_ So:
   YES, then this row is `serveFromDist` **plus a router you write and a refusal
   you keep**, and the port owes a drive of the substituted route in release mode
   — not a reading of it.
+- ⛔ ⭐ **digestify-port — AND A DRIVE DOES NOT SURVIVE THE SESSION. THE KEPT
+  DEFENCE NEEDS A CELL.** The bullet above stops at "drive it", and driving is
+  what finds the defect once; the refusal being kept is a one-line `if` sitting
+  above a call to a shared module, and **the next kit change, or the next tidy,
+  deletes it exactly as this adoption nearly did** — at HTTP 200, with nothing
+  red anywhere. Digestify's is now a cell in its `release-serve.test.ts`:
+  `GET /index.html` 404s, its body carries neither placeholder, **and the file
+  it would have served is asserted to still hold them** — otherwise the cell
+  passes because there was nothing to leak. **Write the cell at BOTH ends of the
+  boundary** (the substituted route answers the payload; the refused one answers
+  nothing), because a status check alone passes over a 404 page that happens to
+  be the document.
+- ⛔ ⭐ **digestify-port, REPAIR CHAPTER — AND THE CELL MUST BE OVER THE CLASS
+  OF FILES `dist/` HOLDS, NOT OVER THE ONE NAME YOU KNOW.** The bullet above was
+  written, driven, celled and shipped — and it was still not enough, because
+  everything in it is about `index.html`. **A refusal by name is a blacklist,
+  and a blacklist refuses the file it was told about and serves every
+  neighbour.** Two neighbours were reachable in the very port that wrote the
+  bullet: the BACKEND BUNDLE the port had just moved into `dist/`
+  (`GET /review.js` → 200, 122,389 bytes, byte-identical to the artifact — a
+  route that does not exist on `develop`), and the same document under
+  `/INDEX.HTML`, `/Index.html`, `/index.HTML`, `/iNdEx.HtMl`, because `===` is
+  case-sensitive and APFS is not. ⛔ **So: WHITELIST the names the surface needs
+  — derive them from what the built entry document LINKS — and never add a
+  second blacklist entry**, which is what "just also refuse `review.js`" would
+  have been. A whitelist makes the refusal case-insensitive by construction, and
+  it is the only formulation that is still right the next time the build emits
+  something new. ⚠ **And ask the question the port's own headline should have
+  asked: this phase MOVES IMPLEMENTATIONS INTO THE DIRECTORY THE DAEMON
+  SERVES.** Every built-backend spell now has an artifact sitting in its served
+  `dist/`. The cell is: the artifact is on disk AND the route refuses it. (D61.)
 
 ⛔ ⭐ **bounty — AND EVERY ROW OF THAT TABLE ASSUMES YOUR SPELL HAS THE WORSE
 CODE. FOR A CONVERGENCE-SOURCE SPELL, HALF OF THEM ARE DE-DUPLICATIONS AND ONE
@@ -1725,6 +1839,19 @@ exit codes, then adopting it re-spells every failure the spell can produce:
 - **Half the roster has no acc grade** (imago, bounty, digestify, grapevine), so
   **nothing in the gate will tell you.** D37 is right that building does not
   drag conformance in front of a spell; **B8 does.**
+- ⛔ ⭐ **digestify-port — AND THE RULING HAS A DESTINATION OUTSIDE THE CODE,
+  WHICH NOTHING IN THIS PHASE NAMES: THE SPELL'S OWN `SKILL.md`.** The bullet
+  above is right that the gate is silent and incomplete about what is not: the
+  thing that tells the CALLER is the spell's published **exit-code table**, with
+  a per-code sentence the agent says to the human. A port that changes
+  `not_found` to 5 and `conflict` to 6 and leaves that table saying "2 · Bad
+  input · fix the markdown and retry" has shipped a contract its own
+  documentation contradicts, and **no ward reads it** (B7's last paragraph is
+  about prose naming PATHS; this is prose naming BEHAVIOUR). **Three spells have
+  now moved codes this way** — imago, bounty and digestify — and each found the
+  step by itself. So: **edit the exit table in the same chapter as the
+  conversion, name the two populations in it, and show the envelope.** Digestify
+  is the worked case (D58).
 - ⛔ ⭐ **digestify — AND A SPELL CAN HAVE NO `die` AND STILL HAVE THE WHOLE
   CONTRACT. LOOK FOR THE RAISE, NOT FOR THE HELPER.** `review.ts` has no `die`,
   no error class and no envelope: it raises by
@@ -1954,6 +2081,16 @@ belongs in its own commit, filed rather than smuggled.
 
 - [ ] **Every entry's artifact** built and committed **in the same chapter as
       its source** — one per entry, not two; `bun scripts/dist-check.ts` exit 0.
+- [ ] ⭐ **digestify-port — "BOOTED" IS THE WRONG NOUN FOR A SINGLE-SHOT SPELL —
+      DRIVE THE WHOLE SESSION, NOT THE START OF ONE** (question 4). A standing
+      daemon is exercised by booting it and asking it things; digestify exists
+      for a human to read a rendered page and submit ONCE, and a daemon nobody
+      submits to exercises neither the in-memory substitution nor the exit path
+      that carries the payload. The drive that proves this spell is: boot →
+      `GET /` and read back the injected payload → `POST /submit` → **the
+      process exits 0 and the answers are on stdout**, plus the two other
+      endings (`POST /cancel` → 130, idle → 124). One invocation each, and they
+      are what caught bounty's hang class at the launcher shape.
 - [ ] **Dev AND release both driven on a booted daemon, through the real
       launcher chain**, and say which bytes you saw: release serves the
       committed hashed chunks; dev serves `/_bun/client/…` and `/_bun/asset/…`
