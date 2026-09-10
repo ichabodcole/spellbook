@@ -89,7 +89,9 @@ config (D37).
   in the kit module's own header naming grapevine and the reason.
 - Gate green **unpiped**; records: `decision-log.md` D71+, `phase-6-journal.md`,
   a session doc, a **Phase B amendment pass**, a **caveats row**, and any live
-  inconsistency filed in `conformance-register.md`.
+  inconsistency filed in `conformance-register.md`. _(That register moved on
+  2026-09-10 to `docs/architecture/house-conformance-register.md`; D92. This
+  brief is left as it was given.)_
 
 ## Conventions that bite
 

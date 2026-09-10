@@ -432,10 +432,13 @@ healthy tail reconnects at the tip every time and would be handed the whole
 buffer again). Five daemons stamp no epoch, so the client's epoch hook is inert
 for them.
 
-**The spells do not yet agree with each other.** The new
-`docs/projects/backend-convergence/conformance-register.md` records 21 such
-items at the moment each was chosen, so they are decisions rather than
-omissions. The ones a caller can feel:
+**The spells do not yet agree with each other.**
+`docs/architecture/house-conformance-register.md` — written inside the backend
+convergence, relocated 2026-09-10 (D92) because it outlives that project —
+records each such item at the moment it was chosen, so they are decisions rather
+than omissions. It stood at 21 rows when this paragraph was written and has
+grown since; **read the count off the register, not off this line.** The ones a
+caller can feel:
 
 - **`hint` / `choices` is half-applied**: glamour 12/12, magpie 3/6, imago 2/0,
   bounty 1/0. An agent routing on `error.choices` gets nothing from three

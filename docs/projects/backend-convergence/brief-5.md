@@ -77,6 +77,9 @@ config (D37).
   a session doc, a **Phase B amendment pass**, and — new standing requirement —
   **a row appended to `docs/architecture/spell-backend-architecture.md`'s
   caveats table and any live inconsistency added to `conformance-register.md`.**
+  _(That register moved on 2026-09-10 to
+  `docs/architecture/house-conformance-register.md`; D92. This brief is left as
+  it was given.)_
 
 ## Conventions that bite
 

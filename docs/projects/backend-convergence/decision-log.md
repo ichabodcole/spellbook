@@ -4360,3 +4360,70 @@ verify pass, and clause 2's disposition is C9's to settle.
   population correctly and filed it. What is new is that the ward's OWN guard
   cannot see what D87 found by hand — which is a fact about the instrument, not
   a correction to the entry.
+
+## D92 · The conformance register moves OUT of this project folder, to `docs/architecture/house-conformance-register.md`
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+**The register is not a project artifact.** It was written inside this folder on
+2026-09-09 because that is where the ports were running, and the convergence
+produced most of its rows. But what it inventories is **house conformance across
+eight spells** — one specification the roster is supposed to satisfy — and it
+still carries roughly thirty-five open rows spanning every spell in the book.
+Archiving this project, which is the next step after C8, would have buried all
+of them behind an `_archive/` path.
+
+**The decisive argument is B1/B2.** This project's own proposal excluded epoch
+resume **by name**: _"Epoch resume for the five daemons that cannot do it. The
+client carries the hook; the daemons must learn to stamp an epoch first. Named
+as a dependency, not smuggled in."_ ⛔ **A dependency a project declared it
+would not discharge cannot live in that project's archive** — the whole value of
+naming it rather than smuggling it was that it stays visible afterwards. Filing
+it under the project that refused it inverts that.
+
+**New path and name, with the reasoning:** `docs/architecture/` is the
+scaffold's directory for _living documents that describe the system as it is,
+not tied to a specific body of work_ (`docs/README.md`), which is exactly what
+the register is; and its natural companion —
+`docs/architecture/spell-backend-architecture.md` — was already its principal
+inbound reference. Read together they are two halves of one inventory: that
+document records the shape each spell HAS, this one records where the eight do
+not yet agree. The name gains **`house-`** because the document's own second
+sentence is _"Not acc conformance — this is house conformance"_, and a bare
+`conformance-register.md` at architecture level would invite exactly the
+confusion that sentence exists to prevent.
+
+**A stub stays at the old path.** Six months of journals, briefs and commit
+messages name `docs/projects/backend-convergence/conformance-register.md`, and a
+reader arriving from one of them gets a pointer instead of a 404. The two briefs
+that name the file bare (brief-5, brief-6) are annotated rather than rewritten —
+a brief is a record of what a phase was told, and editing the instruction would
+falsify it.
+
+**Not taken:**
+
+- _Leave it in the project folder and archive around it._ The failure mode this
+  whole branch exists to repair: a live inventory filed under a finished project
+  is read as finished. And `docs/projects/_archive/` already holds a
+  `spell-kit/` whose material nobody looks at.
+- _`docs/backlog/`._ Tempting, because the register's own header says "when the
+  last spell ports, this list is the work". Rejected on two counts. A backlog
+  item is a unit of work that is **removed** when done, and this register's
+  closed rows are load-bearing evidence — A2 is kept visibly stale-then-closed
+  on purpose, as the proof that it closes rows rather than tidying them. And
+  routing it to the backlog would split it: the four Section E design questions
+  and the three Section F "work the convergence makes possible" rows are not
+  defects at all.
+- _Top-level `docs/house-conformance-register.md`._ The scaffold reserves the
+  `docs/` root for its five foundational documents (README, PROJECT-SUMMARY,
+  PROJECT_MANIFESTO, AGENTS, CLAUDE); a sixth would erode a boundary that is
+  currently exact.
+- _Split it — spine rows to architecture, instrument rows to the grimoire, doc
+  rows to the release draft._ Each row would land nearer its subject, and the
+  document's one real value would be gone: it is a **single place** where a
+  cross-spell inconsistency is visible as a cross-spell inconsistency. Section C
+  alone is the argument — C4, C8 and C10 are three levels of ONE defect, and
+  they only read that way side by side.
+- _Rename it `spell-conformance-register.md`._ Accurate today and wrong the
+  moment something non-spell-shaped is filed; `house-` is the word the document
+  already uses about itself.
