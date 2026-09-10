@@ -4577,3 +4577,129 @@ written down where an owner would look.
   "nobody owns this" from "somebody does and I have not found them", which is
   D42's rule: absence of an owner must not be spelled the same way as absence of
   the question.
+
+## D96 · astrolabe's two SHIPPED test files STAY, and their relocation is FILED — D10 ruled the module and nothing had ruled the tests
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+`plugins/spellbook/skills/astrolabe/scripts/` ships **775 lines of non-launcher
+TypeScript** into the published package, against 73 lines of launcher (`cli.ts`
+37, `server.ts` 36):
+
+| file            | lines | status                                                              |
+| --------------- | ----- | ------------------------------------------------------------------- |
+| `state.ts`      | 268   | **ruled by D10** — a two-sided contract, 4 surface importers, stays |
+| `state.test.ts` | 264   | ⛔ **ruled by nothing**                                             |
+| `cli.test.ts`   | 243   | ⛔ **ruled by nothing**                                             |
+
+**D10 rules the MODULE and is silent about the tests.** Its rule is _"a module
+moves to `src/<spell>/backend/` iff nothing under `src/<spell>/surface/` imports
+it"_, and it settled `state.ts` explicitly — four surface importers, so it is a
+two-sided contract and stays in the deployed folder where both halves reach it.
+`src/astrolabe/backend/server.ts:68,79` imports it back across the boundary,
+which is the cost D10 named and accepted. **Nothing in D1–D95 mentions the two
+test files.** ⚠ **And D7's artifact-size measurement does not count them**: its
+three levers are the surfaces, the backends' inline sourcemaps and CSS. 775
+lines of shipped TypeScript are in no size ledger in this repo.
+
+**Ruled: they STAY. Both are live tests of SHIPPED things**, which is why this
+is a ruling rather than a deletion. `state.test.ts` tests the two-sided module
+D10 deliberately left in the package. `cli.test.ts` spawns `scripts/cli.ts` —
+the launcher, at its load-bearing fixed path — as a subprocess against an
+auto-spawned daemon on an isolated `$ASTROLABE_HOME`, so it is one of the few
+things in the tree that exercises the real launcher chain rather than a source
+path. **Deleting either would remove coverage of the shipped artifact, which is
+the opposite of what a size argument should buy.**
+
+⛔ **What IS filed, as a register row rather than done here: they are in the
+wrong DIRECTORY, and astrolabe is the only spell that does this.** The house
+already has a convention for a shipped test of a two-sided module and it is a
+sibling `tests/` folder — `glamour/tests/types.test.ts`,
+`magpie/tests/versions.test.ts`. Astrolabe is the sole spell shipping tests
+**inside `scripts/`**, the directory whose contract is _"every file here is a
+launcher"_, which is exactly the reading a fresh agent applies to it and exactly
+what makes 775 lines surprising. Relocating them is a code move with import
+re-points and a `launcher-pairing-ward` population to re-check; **this branch
+changes no code** (its whole subject is documents), so the move is filed with
+its reasoning rather than smuggled in.
+
+**Not taken:**
+
+- _Delete `cli.test.ts` and `state.test.ts`._ The obvious size answer, and it
+  buys 507 lines by removing the only in-package coverage of a launcher spawn. A
+  shipped test is not dead weight because it shipped.
+- _Move them now._ It is a code change on a documentation branch, and
+  `cli.test.ts`'s `CLI` constant is computed from `import.meta.url` — the exact
+  shape D89/B6 record as invisible to a `SCRIPT_DIR` or `join(` grep, so the
+  move wants its own verify pass rather than a footnote in this one.
+- _Widen D10 to cover tests._ Tempting and wrong: D10's rule is about the IMPORT
+  graph, and a test's relationship to its subject is not an import from the
+  surface. A test beside a shipped module is a different question with a
+  different answer (`tests/`, per glamour and magpie), and folding it into D10
+  would make one rule answer two questions badly.
+- _Leave it entirely unrecorded._ It was already unrecorded, which is why a
+  fresh reader trips on it. The failure this branch repairs.
+
+## D97 · Section E's four design questions have MET their precondition — they are OPEN AND ANSWERABLE, not gated, and their evidence is named
+
+**Decided:** implementer, 2026-09-10, closing the project record.
+
+Register section **E** carries four design questions under an explicit gate:
+_"They are places where the shape we have may not be the shape we want, and
+**only a complete roster can answer them**."_ ⛔ **The complete roster now
+exists** — all eight spells build and share the spine as of 2026-09-09 — **so
+the precondition is met and the disposition was never stated.** A question whose
+stated gate has opened, still filed under the gate, reads as blocked; a fresh
+reader cannot tell it from one that is genuinely waiting.
+
+**Ruled: the gate is CLOSED, the four questions are OPEN AND ANSWERABLE, and
+each is annotated with the evidence the roll produced for it.** Not answered —
+all four are product-shape questions (what a spell IS, where its boundary sits,
+whether co-presence is a direction), and the escalation contract puts those with
+Cole. **What a documentation branch can do is remove the false gate and hand
+each question the material it was waiting for**, so that answering it is a
+sitting rather than an investigation:
+
+1. **Is `join.ts`'s participant model general?** The roll produced no second
+   instance: bounty is still the only spell with a caller-facing second
+   participant, over eight ports. So the honest state is _one instance, eight
+   spells, no pressure_ — which is evidence for "bounty feature", not for
+   "missing kit module", and it inverts what the question implied.
+2. **Should the two discovery conventions (D3) survive long-term?** Both
+   survived all eight ports unchanged, and the shared half — `writeFileAtomic` /
+   `unlinkIfMatches`, one predicate carrying both conventions
+   (`discovery.test.ts:59`) — is what closed census **L3** for seven daemons.
+   The distinction cost nothing to keep and the defect was underneath it, which
+   is exactly what D3 predicted.
+3. **Is a spell's daemon the right unit at all** for single-shot digestify
+   versus standing everything-else? The port made this sharper rather than
+   settling it: Phase B had to be **re-keyed from names onto properties**
+   (D2/register D2) because four steps were wrong for a single-shot,
+   single-entry spell, and register **D9** found digestify's idle window and its
+   page's heartbeat are a chained pair across the backend↔surface seam with no
+   home to declare it in. **The evidence now says the unit is wrong for one
+   spell in a specific, measured way.**
+4. **Does the surface belong in the same repo boundary as the backend?**
+   Mind-mapper answered its own half decisively: its surface imports **zero**
+   backend modules and it is **the first spell to end B1 with an empty `shared/`
+   set**. So the question has one worked example of complete separation, and the
+   four spells whose surfaces reach into the skill folder for types are the
+   remaining population.
+
+**Not taken:**
+
+- _Answer them here._ Three of the four are product-shape decisions and one (§3)
+  is a spell-architecture decision with a shipped consequence. Neither is a
+  documentation branch's to make, and answering them by implication is what the
+  register's own routing rule (D10's "a port must not decide a product question
+  by implication") exists to prevent.
+- _Leave the gate sentence and add "precondition met"._ Half a repair: the
+  sentence would still say only a complete roster can answer them, and the next
+  reader would still have to work out that one exists.
+- _Promote them to a proposal or an investigation._ The right move for whichever
+  of the four Cole picks up, and premature for all four at once — a proposal per
+  open question is how a register becomes four abandoned project folders. They
+  stay as rows until one is chosen.
+- _Route them to `docs/backlog/`._ They are not work items; they are questions
+  about shape, and the register is now a house-level living document (D92) which
+  is the correct home for exactly that.
