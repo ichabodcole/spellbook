@@ -32,7 +32,7 @@ chapter. The three hand-kept lists that reddened were re-declared inside chapter
 | two artifacts built and committed        | ✅ `dist/cli.js`, `dist/server.js`, each in the same chapter as its source (Contract 18)                                                     |
 | `bun scripts/dist-check.ts`              | ✅ **exit 0, all arms** — ARM 0/1 8/8 spells 40 tracked, ARM 1b 0 untracked, ARM 2 rebuild is a git no-op                                    |
 | pairing ward, mind-mapper's row          | ✅ `derived=[cli, server] · cli.ts→dist/cli.js server.ts→dist/server.js · surface=[index-rjrfjxdy.js] backend=[cli.js, server.js]`           |
-| spawn-path ward coverage                 | ✅ `dist/cli.js anchors=yes anchor-read=yes pins=6` · `dist/server.js pins=3` — the rows **switched on at the first backend emit** (see B4)  |
+| spawn-path ward coverage                 | ✅ `dist/cli.js anchors=yes anchor-read=yes pins=6` · `dist/server.js pins=2` — the rows **switched on at the first backend emit** (see B4)  |
 | `GET /cli.js` + `GET /server.js` refused | ✅ 200/208,579 and 200/549,791 at the end of chapter 1 → **404/21 bytes** after, artifacts proven on disk first                              |
 | `tail.test.ts` green both sides          | ✅ 4 pass / 16 assertions / 1,249 ms before · 4 pass / 16 assertions / 1,250 ms after — ⚠ with ONE recorded fixture edit, D86                |
 | acc, from the skill directory            | ✅ **CONFORMANT L0, exit 0, every count byte-identical to the baseline** (17 core / 16 passed / 0 failures / 1 core-unverified) — no regrade |
@@ -106,21 +106,27 @@ is a driven RESTORATION and one is KEEP-LOCAL, and neither is filed._
 
 ⛔ **The number that mattered most is the one the artifact test gets
 backwards.** D79's accidental demonstration was a COMMENT dirtying 11 artifacts
-across 7 spells while changing nothing. This restoration is the mirror: **code
-genuinely moved** into five `dist/server.js` files (6 insertions / 3 deletions
-each; the four real lines separated from the sourcemap by one `grep`) **and the
-wire did not move at all.** Both directions of the same point, in one project.
+across 7 spells while changing nothing. ⚠ **11/7 is D79's PRE-WORK figure and is
+correct only as history — re-measured after this port the same comment-only
+probe dirties 13 artifacts across 7 spells** (mind-mapper's own `cli.js` and
+`server.js` joined the population; `digestify` and `grapevine/dist/server.js`
+remain outside it, which is the structural refusal still being observable as an
+artifact that does not move). This restoration is the mirror: **code genuinely
+moved** into five `dist/server.js` files (6 insertions / 3 deletions each; the
+four real lines separated from the sourcemap by one `grep`) **and the wire did
+not move at all.** Both directions of the same point, in one project.
 
 ---
 
 ## The wire-schema delta (D81's required output)
 
-| field                 | old               | new                        | forced?                                                                                            |
-| --------------------- | ----------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
-| cursor                | `seq`             | `id`                       | ⛔ **FORCED** — named in `Frame<T>` and in the emit literal                                        |
-| body                  | `{kind, payload}` | unchanged                  | ✅ **NOT FORCED — DECLINED.** `Frame<T>` is generic; all five earlier adopters flatten by IDIOM    |
-| SSE keepalive comment | `: keepalive`     | `: hb`                     | forced by `sse.ts`                                                                                 |
-| `.html` content type  | `text/html`       | `text/html; charset=utf-8` | forced by `serveDist.ts`'s map — the census's one divergent cell, resolved toward the correct copy |
+| field                 | old                           | new                          | forced?                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------- | ----------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| cursor                | `seq`                         | `id`                         | ⛔ **FORCED** — named in `Frame<T>` and in the emit literal                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| body                  | `{kind, payload}`             | unchanged                    | ✅ **NOT FORCED — DECLINED.** `Frame<T>` is generic; all five earlier adopters flatten by IDIOM                                                                                                                                                                                                                                                                                                                                                                                      |
+| SSE keepalive comment | `: keepalive`                 | `: hb`                       | forced by `sse.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `.html` content type  | `text/html`                   | `text/html; charset=utf-8`   | forced by `serveDist.ts`'s map — the census's one divergent cell, resolved toward the correct copy                                                                                                                                                                                                                                                                                                                                                                                   |
+| JSON **key order**    | `{seq, epoch, kind, payload}` | `{id, kind, payload, epoch}` | ⛔ **FORCED, AND OMITTED FROM THIS TABLE UNTIL THE VERIFY PASS.** `createEventLog`'s emit literal puts `id` first (so the monotonic cursor wins over a payload `id`) and appends `epoch` after the spread. **Inert for every JSON parser — and it is still a change to the bytes on the wire**, so it belongs in a wire-schema delta whether or not anything can observe it. A delta table that lists only fields ADDED, REMOVED or RENAMED is not a byte-level account of the wire. |
 
 **Readers, with the counting rule** (comments stripped; word-boundary
 `seq|epoch|payload|ServerEvent|BusEvent`; homonyms subtracted by reading every

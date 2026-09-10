@@ -3930,9 +3930,21 @@ against a CLI whose `cursorOf` reads `id`:
 
 - `cursorOf` answers `undefined`, so the cursor never advances;
 - `expect(sinces[1]).toBe(3)` sees **0**, and `toBe(5)` in the epoch cell sees
-  **0**;
-- the two `toMatchObject({ seq: N })` rows fail on a frame that now carries
-  `id`.
+  **0**.
+
+⚠ **CORRECTED 2026-09-10 — this list originally carried a third row that
+conflates two states.** It read _"the two `toMatchObject({ seq: N })` rows fail
+on a frame that now carries `id`"_. **They do not fail in the unmodified
+oracle**, because the fixture is the WRITER: an untouched `event()` emits `seq`,
+the CLI forwards the frame verbatim, so a forwarded frame still carries `seq`
+and both rows pass. They fail only in the **PARTIAL-EDIT state** — fixture moved
+to `id`, assertions not yet moved — a state that existed for about a minute
+during the swap and is not what "left unmodified" describes. The conclusion is
+unaffected: the fixture's schema still has to move, and the first two rows are
+what force it. But a defect account that names a failure the described state
+does not produce is a worse instrument than one that names fewer. ⛔ **And the
+mis-statement is this entry's own error one layer down — attributing to the
+READER a failure that belongs to the WRITER.**
 
 **The ruling: the four cells' SUBJECTS are untouched and the FIXTURE'S SCHEMA
 moves.** `event()` emits `id`; the six assertions that read a forwarded frame's
@@ -4297,3 +4309,54 @@ both careful. Carefulness is not the missing ingredient — a reader is.
 - _Delete the history along with the claim._ D17: the ruling includes what it
   left behind. Two wrong versions with their shas are what make the third
   attempt unnecessary.
+
+## D91 · `daemon-lifecycle-ward`'s zero-population guard cannot see C9 — a population guard at FILE-SCAN grain is blind to a per-clause subject count reaching zero
+
+**Recorded, not fixed, 2026-09-10.** Filed alongside C9; no repair is proposed
+here.
+
+The ward opens with a cell whose whole job is to refuse a vacuous green:
+
+```
+test("the ward has a population — an empty scan is not a pass", () => {
+  expect(daemons().length).toBeGreaterThanOrEqual(7);
+  expect(clis().length).toBeGreaterThanOrEqual(7);
+});
+```
+
+⛔ **It counts the FILE SCAN, not the SUBJECTS of any clause — so C9 is
+invisible to the one cell built to catch exactly C9's shape.** D87 measured
+clause 2 (the atomic pointer write) as having an **empty population**: its
+predicate `writeFileSync(sessionFile|latestFile)` now matches nothing anywhere,
+because all seven pointer-writing daemons call `writeFileAtomic`. The guard is
+unmoved by that — eight daemon files still exist, so `daemons().length >= 7`
+passes — and clause 2 goes on reporting green over zero subjects. **The guard
+and the vacuity it was written to prevent are at different grains.**
+
+⚠ **The transferable half: "does this ward have a population" and "does this
+CLAUSE have a subject" are different questions, and a guard at the scan grain
+answers only the first.** A ward whose clauses each `.filter()` the scan down to
+their own subject set has one population per clause, and the shared scan being
+non-empty licenses none of them. The general instruction is D42's, one level
+finer: **assert the denominator where the finding is made** — per clause, not
+per file scan.
+
+⚠ **And the reason this is recorded rather than repaired is the same as C9's.**
+D44 forbids the instrument that guards a port being repaired by that port, and
+the fix here is not a repair but a redesign — either a per-clause denominator
+assertion (which changes what every clause licenses) or clause 2's deletion
+(which removes an assertion rather than mending one). Both are larger than a
+verify pass, and clause 2's disposition is C9's to settle.
+
+**Not taken:**
+
+- _Raise the guard's lower bound._ It measures the wrong quantity; a bigger
+  wrong number is not closer.
+- _Add `expect(offenders.length + compliant.length).toBeGreaterThan(0)` to each
+  clause now._ The correct shape, and it is C9's decision to make with clause
+  2's disposition rather than a side effect of noticing it. Filing it separately
+  would also split one finding across two register rows.
+- _Treat this as a defect in D87._ It is not: D87 measured clause 2's empty
+  population correctly and filed it. What is new is that the ward's OWN guard
+  cannot see what D87 found by hand — which is a fact about the instrument, not
+  a correction to the entry.
