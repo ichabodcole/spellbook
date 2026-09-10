@@ -77,7 +77,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   "imago/backend/cli.ts": "caller-facing; prompt text is a positional",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
-  "mind-mapper/scripts/cli.ts": "caller-facing; send bodies are prose positionals",
+  "mind-mapper/backend/cli.ts": "caller-facing; send bodies are prose positionals",
 };
 
 describe("ward — the `--` terminator silently demotes flags to free text", () => {
@@ -130,7 +130,7 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
   test("the pin PRINTS its unit — a bare count cannot say which question it answered", () => {
     // ⛔ THE UNIT IS THE FINDING (cassandra, #1006), and it is this module's own
     // requirement 5 arriving at the DENOMINATOR instead of the parser: "read
-    // EVERY options map, not the first — mind-mapper/cli.ts has 27."
+    // EVERY options map, not the first — mind-mapper/backend/cli.ts has 27."
     //
     // The `--` hazard bites PER parseArgs CALL SITE, not per file. A per-file
     // count reports mind-mapper's 16 positional-accepting commands as ONE, so

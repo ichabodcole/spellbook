@@ -263,7 +263,7 @@ async function streamEvents(opts: {
     // re-requesting the stale cursor on every subsequent reconnect. The line is
     // SYNTHESIZED — it is not a bus event, carries no `id`, and never advances
     // the cursor — which is the same separation mind-mapper's `epoch.changed`
-    // makes and `mind-mapper/scripts/tail.test.ts` pins.
+    // makes and `src/mind-mapper/backend/tail.test.ts` pins.
     epochOf: (ev) => ev.epoch,
     onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     idleMs: TAIL_IDLE_MS,

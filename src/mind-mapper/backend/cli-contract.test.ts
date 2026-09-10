@@ -16,9 +16,26 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { VERB_ALIASES, VERB_SPEC, VERBS } from "./cli";
+import { VERB_ALIASES, VERB_SPEC, VERBS } from "./cli.ts";
+import { CLI_LAUNCHER, CLI_SOURCE } from "./paths.ts";
 
-const CLI = new URL("./cli.ts", import.meta.url).pathname;
+// ⛔ ONE CONSTANT USED TO DO BOTH JOBS, AND THE PORT IS WHAT MAKES THEM DIFFERENT
+// FILES (playbook B6.1, bounty's scar). `const CLI = new URL("./cli.ts",
+// import.meta.url).pathname` was the SPAWN target and the `readFileSync` target
+// at once — a spelling neither a `SCRIPT_DIR` grep nor a `join(` grep finds.
+// After the relocation the two addresses diverge:
+//
+//   the SPAWN wants the LAUNCHER  — what a caller runs is `scripts/cli.ts`,
+//                                   which imports the built `dist/cli.js`.
+//   the SCANS want the SOURCE     — they regex the dispatch if-chain out of the
+//                                   file's text (`src.indexOf("async function
+//                                   dispatch")`). Pointed at the 40-line
+//                                   launcher, `indexOf` answers -1, `slice(-1)`
+//                                   returns the last character, the compared set
+//                                   is EMPTY, and the cell fails as a broken
+//                                   regex rather than as a wrong file.
+const CLI = CLI_LAUNCHER;
+const CLI_SRC = CLI_SOURCE;
 
 // A HOME with no daemon discovery files, so requireDaemon answers not_found —
 // and no test here ever touches a real ~/.mind-mapper store.
@@ -46,7 +63,7 @@ test("the dispatch if-chain and VERB_SPEC name the same verbs — neither may gr
   // runs. Nothing in the type system ties them together — changes,
   // delete-batch and message each shipped dispatched-but-unadvertised through
   // exactly this gap.
-  const src = readFileSync(CLI, "utf8");
+  const src = readFileSync(CLI_SRC, "utf8");
   const dispatchSrc = src.slice(src.indexOf("async function dispatch"));
   const compared = new Set(
     [...dispatchSrc.matchAll(/verb === "([a-zA-Z-]+)"/g)].map((m) => m[1] as string),
@@ -64,7 +81,7 @@ test("every VERB_SPEC path's flags exist in the registry by construction, and ev
   // the runtime half — a path like "job claim" is reachable only through its
   // top verb, so a spec row whose top verb the chain never compares is dead
   // advertised surface.
-  const src = readFileSync(CLI, "utf8");
+  const src = readFileSync(CLI_SRC, "utf8");
   const dispatchSrc = src.slice(src.indexOf("async function dispatch"));
   const compared = new Set(
     [...dispatchSrc.matchAll(/verb === "([a-zA-Z-]+)"/g)].map((m) => m[1] as string),

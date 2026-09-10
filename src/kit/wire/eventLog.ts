@@ -24,6 +24,29 @@
  * names as CORRECT. Making it required HERE is not the repair: it would reverse
  * D39, D48 and D70. The honest statement is this heading.
  *
+ * ⛔ **RESOLVED AT THAT SPELL'S PORT, AND THE DISPOSITION IS RECORDED HERE
+ * BECAUSE A LOSS THAT LIVES ONLY IN A JOURNAL IS A LOSS NOBODY CAN SEE
+ * (D79/D85).** mind-mapper adopted this module in Phase 7 and kept its
+ * guarantee WITHOUT A KIT CHANGE: it passes `{ epoch: crypto.randomUUID() }` at
+ * its ONE construction site and re-tightens `epoch` to REQUIRED in its own
+ * local frame type, so nothing its bus emits can lack one. Kit bytes: zero.
+ * **So the epoch is a LOSSY-COPY property whose disposition is KEEP-LOCAL, not
+ * RESTORE** — the only property of that spell's own module this module could
+ * not carry and did not need to. L6 is CLOSED for the two spells that ask and
+ * OPEN, by opt-out, for the three that decline; that asymmetry is the honest
+ * state and this heading is where it is written.
+ *
+ * ⚠ **AND THE ADOPTION RENAMES A FIELD ON AN ADOPTER'S PUBLISHED WIRE.** `id`
+ * is named in `Frame<T>` and in the emit literal below, so a spell whose bus
+ * spelled the cursor anything else pays a rename at every reader — for
+ * mind-mapper, 173 occurrences across 5 surface files, ~209 across ~30 backend
+ * files, every JSONL line its `tail` writes into an agent's pipe, and (the one
+ * nobody counted) the FIXTURE in its own `tail.test.ts`, which WRITES the
+ * envelope while standing in for the daemon. The NESTING is not forced —
+ * `Frame<T>` is generic, and mind-mapper kept `{kind, payload}` nested where all
+ * five earlier adopters flatten by idiom. **An idiom five siblings share is
+ * indistinguishable from a contract until you open the type** (D81, D86).
+ *
  * **1 · L5 — the buffer is bounded.** Five daemons append to an array for the
  * whole life of the process. The window is a REPLAY window for reconnects within one
  * daemon's lifetime, not a durable log; a cap is the honest shape.
@@ -41,7 +64,7 @@
  * many events as the old one did. Stamping an epoch alone does NOT close that
  * gap: the epoch rides a frame, and the bug is that no frame is sent. So
  * `subscribe` treats `since > cursor` as "this cursor is from another process"
- * and replays whole. `mind-mapper/scripts/tail.test.ts`'s epoch cell is the
+ * and replays whole. `src/mind-mapper/backend/tail.test.ts`'s epoch cell is the
  * executable spec of the client half and shows the reconnect still carrying the
  * stale cursor — detection happens on what is RECEIVED.
  *

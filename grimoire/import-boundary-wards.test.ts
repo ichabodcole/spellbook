@@ -276,6 +276,12 @@ const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/grapevine/dist",
   "plugins/spellbook/skills/imago/dist",
   "plugins/spellbook/skills/magpie/dist",
+  // ⛔ THE EIGHTH AND LAST, added by mind-mapper's port (backend convergence
+  // Phase 7). This list is now the WHOLE roster, which is the state the
+  // hand-kept hazard above stops being latent in: there is no ninth spell to
+  // forget. The cell "EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE" reds
+  // the moment `src/mind-mapper/backend/server.ts` exists and this row does not.
+  "plugins/spellbook/skills/mind-mapper/dist",
 ];
 
 /** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
@@ -497,8 +503,14 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // depth, not a property, which is why it is asserted here rather than trusted:
   // nothing else would red, since the specifier is never resolved at build time.
   //
-  // ⛔ AND grapevine's IS THE ROSTER'S ONLY `src/`-NAMING SPECIFIER — the one
-  // reason this admission list still has a member at all.
+  // ⚠ THIS COMMENT USED TO SAY grapevine's WAS "THE ROSTER'S ONLY `src/`-NAMING
+  // SPECIFIER — the one reason this admission list still has a member at all",
+  // AND IT WAS ALREADY FALSE WHEN IT WAS WRITTEN: mind-mapper's row sat four
+  // entries below it, unported, pinned at a `.ts`. The honest count is EIGHT,
+  // one per spell in this list — every spell whose entry serves a dev-mode
+  // surface carries exactly one — and as of mind-mapper's port every one of them
+  // is pinned at its ARTIFACT rather than at a source file, which is the state
+  // the population rule above describes.
   {
     file: "plugins/spellbook/skills/grapevine/dist/daemon.js",
     spec: "../../../../../src/grapevine/surface/index.html",
@@ -519,8 +531,17 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/magpie/surface/index.html",
     resolved: "src/magpie/surface/index.html",
   },
+  // mind-mapper, Phase 7 — the LAST pin to follow its specifier into the
+  // artifact, and the one that empties the paragraph above. The string is
+  // byte-identical before and after the relocation because `dist/` sits at the
+  // same depth as the `scripts/` it replaced; ⚠ that is a coincidence of depth,
+  // not a property, which is why it is asserted here rather than trusted —
+  // nothing else would red, since the specifier is `--external` and is never
+  // resolved at build time. Left at `scripts/server.ts` this row would have been
+  // DELETED as "no longer present" (`trackedSources` is `.ts`/`.tsx` only) and
+  // the ward would have gone green because it stopped looking — Contract 19.
   {
-    file: "plugins/spellbook/skills/mind-mapper/scripts/server.ts",
+    file: "plugins/spellbook/skills/mind-mapper/dist/server.js",
     spec: "../../../../../src/mind-mapper/surface/index.html",
     resolved: "src/mind-mapper/surface/index.html",
   },
@@ -1078,12 +1099,29 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     //     NOT by this entry (asserted directly in the synthetic cell above).
     //     Deleting `bun` from `BUILTIN_EXACT` would therefore narrow the ward by
     //     exactly one specifier and would not tidy anything else away.
-    //  3. **THE POPULATION IS NOT CLOSED.** Three spells still ship their
-    //     daemons as SOURCE (digestify, grapevine, mind-mapper). The day one of
-    //     them writes this dependency in a file the bundler does not erase it
-    //     from — or the day any spell needs a VALUE import of `Bun`'s own API —
-    //     the row comes back. The floor "only falls" was always a statement
-    //     about today's roster, never about the language.
+    //  3. ⛔ **THIS CLAUSE READ "THE POPULATION IS NOT CLOSED. Three spells
+    //     still ship their daemons as SOURCE (digestify, grapevine,
+    //     mind-mapper)" — AND THAT POPULATION REACHED ZERO ON 2026-09-09, WHEN
+    //     mind-mapper's PORT LANDED THE LAST BACKEND UNDER `src/`.** Every one
+    //     of the eight now ships a BUILT daemon, so no spell writes this
+    //     specifier in a file the bundler does not erase it from, and nothing
+    //     reddened when that became true — which is the whole hazard a roster
+    //     sentence in a comment carries (D87). **A count that reaches zero
+    //     retires an argument**, and this one is retired: the clause it was
+    //     supporting is now clause 1's, not its own.
+    //
+    //     What SURVIVES the count, and it is the half that was always the real
+    //     argument: the day any spell needs a VALUE import of `Bun`'s own API,
+    //     the row comes back — that is a statement about the language and not
+    //     about a roster, and it is the reason the exemption is not deleted
+    //     merely because its writers are. The floor "only falls" was always a
+    //     statement about today's roster.
+    //
+    //     ⚠ AND THE EXEMPTION IS STILL LOAD-BEARING BY THE SYNTHETIC CELL
+    //     BELOW, NOT BY ANY OF THIS. Read the next paragraph before treating a
+    //     zero population as a reason to tidy the row away: the liveness proof
+    //     was deliberately moved OFF the roster in D50, precisely so that
+    //     reaching zero would cost nothing. This is that design being paid out.
     //
     // **And the liveness proof MOVES rather than dying with the population.**
     // It now lives entirely in the synthetic cell above, which is the stronger
@@ -1573,7 +1611,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // imports of its own; had the pin been left at the old address it would have
     // read `undefined` and been indistinguishable from "the escape vanished".
     expect(at("src/glamour/backend/server.ts", 141)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
-    expect(at("plugins/spellbook/skills/mind-mapper/scripts/propose.test.ts", 463)).toBe("type");
+    expect(at("src/mind-mapper/backend/propose.test.ts", 463)).toBe("type"); // ⚠ RE-ADDRESSED in backend convergence Phase 7 — the suite moved with its subject and the line number did NOT change, because the port edited nothing above it. Same warning as the row above: a line number is the wrong pin, and this is the fourth time this cell has paid for it.
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an
     // exemption. This is the half a literal "exempt type queries" ruling would

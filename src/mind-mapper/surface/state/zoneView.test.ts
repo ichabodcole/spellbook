@@ -51,7 +51,7 @@ test("a zoned row is segregated from the main view whether it arrived by snapsho
     presence: { agents: 0 },
   };
   const afterEvent = applyEvent(snapshotState, {
-    seq: 2,
+    id: 2,
     kind: "proposal.added",
     payload: proposal({ id: "via-event", zoneId: "wild" }),
   });

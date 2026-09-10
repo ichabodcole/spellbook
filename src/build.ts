@@ -94,9 +94,11 @@ const hasSurface = (spell: string) => existsSync(entryFor(spell));
  * convention, no exclusion list.
  *
  * ⚠ THE CONVERSE IS NOT ASSERTED HERE. A launcher with no backend module of
- * that name is not this function's problem — `mind-mapper/scripts/cli.ts` is a
- * real unported CLI, not a launcher, and `astrolabe/scripts/state.ts` is a
- * two-sided module. **`grimoire/launcher-pairing-ward.test.ts` is what checks
+ * that name is not this function's problem — `astrolabe/scripts/state.ts` is a
+ * two-sided module. ⛔ THIS PARAGRAPH ALSO NAMED `mind-mapper/scripts/cli.ts` as
+ * "a real unported CLI, not a launcher", AND THAT CLAUSE DIED AT ITS PORT: it is
+ * a launcher now, the last of the eight, so the unported-CLI case has no member
+ * left in the roster and only the two-sided module survives as an example. **`grimoire/launcher-pairing-ward.test.ts` is what checks
  * the pairing in both directions**; this function only answers "what does the
  * build emit".
  */
@@ -112,14 +114,29 @@ function backendEntryNames(spell: string): string[] {
 
 const hasBackend = (spell: string) => backendEntryNames(spell).length > 0;
 
-/** A spell is buildable iff `src/<spell>/surface/index.html` exists. Derived
- *  from the tree rather than from a hand-kept list, so relocating a spell is
- *  the only step needed to put it in the build.
+/** A spell is buildable iff it has a SURFACE (`src/<spell>/surface/index.html`)
+ *  or a BACKEND (`backendEntryNames` above, non-empty). Derived from the tree
+ *  rather than from a hand-kept list, so relocating a spell is the only step
+ *  needed to put it in the build.
  *
- *  A spell is buildable iff it has EITHER aspect. The two are INDEPENDENT:
- *  astrolabe has both, magpie has only a backend (its surface still ships
- *  inside the plugin subtree), imago and mind-mapper have only a surface.
- *  Anything assuming a spell has both is wrong about three of the four. */
+ *  The two aspects are INDEPENDENT: the `||` above is the whole contract, and a
+ *  one-aspect spell is admitted by construction rather than by exception.
+ *
+ *  ⛔ **AND THIS DOCSTRING NO LONGER NAMES WHICH SPELL HAS WHICH, BECAUSE IT WAS
+ *  WRONG BOTH TIMES IT TRIED.** It first read "imago and mind-mapper have only a
+ *  surface" (imago had ported in Phase 3). The correction written at the last
+ *  port — "only magpie is a one-aspect spell … Seven of the eight have both" —
+ *  was ALSO false on the day it was written: `src/magpie/surface/index.html` had
+ *  moved into the tree at `c6a6e9a1`, before the port, and the plugin subtree
+ *  ships no surface source. **All eight have both.** Two consecutive attempts to
+ *  keep the sentence true, both wrong, is the argument for not keeping it.
+ *
+ *  **A roster sentence in a docstring is a claim nothing reds over** — and the
+ *  answer is not a better sentence, it is DERIVATION, which already exists
+ *  twice: the predicate below computes membership from the tree, and
+ *  `grimoire/launcher-pairing-ward.test.ts` PRINTS the per-spell census
+ *  (`surface=[…] backend=[…]`) on every gate run. Read the ward's output for the
+ *  census; this docstring owns only the rule. */
 function buildableSpells(): string[] {
   return readdirSync(SRC_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name)))

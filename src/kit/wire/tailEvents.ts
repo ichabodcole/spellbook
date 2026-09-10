@@ -70,13 +70,18 @@
  *
  * ⛔ AND IT DID GET A HOME — SAY SO, BECAUSE THIS SENTENCE USED TO END "it stays
  * where it was measured" AND THAT IS FALSE. Read at port time it pointed a
- * reader at `mind-mapper/scripts/server.ts`, a file the backend port relocates
- * and whose local `sseResponse` may be replaced, so the measurement looked at
- * risk. It is not: the daemon half landed in `./sse.ts` the same day, under its
- * own heading ("THE SCAR, RE-HOMED: `try { enqueue } catch` DOES NOT DETECT A
- * DEAD CLIENT"), with the teardown-funnel ruling and the same known hole. Two
- * further copies live in mind-mapper's `presence.test.ts` and
- * `sse-keepalive.test.ts`.
+ * reader at `mind-mapper/scripts/server.ts`, a file whose local `sseResponse`
+ * the backend port might replace, so the measurement looked at risk. It was
+ * not: the daemon half landed in `./sse.ts` the same day, under its own heading
+ * ("THE SCAR, RE-HOMED: `try { enqueue } catch` DOES NOT DETECT A DEAD
+ * CLIENT"), with the teardown-funnel ruling and the same known hole.
+ *
+ * ⚠ **AND THE PORT HAS SINCE HAPPENED, WHICH SETTLES IT.** mind-mapper's daemon
+ * is now `src/mind-mapper/backend/server.ts` and it DID replace its local
+ * `sseResponse` with `./sse.ts`'s (Phase 7, 2026-09-09) — so the only copies of
+ * that measurement are the kit's and the two test files that PROVE it,
+ * `src/mind-mapper/backend/presence.test.ts` and `sse-keepalive.test.ts`. The
+ * risk this paragraph described is closed, in the direction it hoped for.
  *
  * The general shape, worth the four lines (D83): a refusal recorded in ONE
  * module's header cannot be read from the module it points AT. When a refusal

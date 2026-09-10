@@ -26,7 +26,7 @@
  *     hit the function DECLARATION and produced 46 plausible findings.
  *  4. Resolve `options: <identifier>` to its declaration — bounty and glamour
  *     use named consts, and a literal-only scan reports all their flags as drift.
- *  5. Read EVERY options map, not the first: mind-mapper/cli.ts has 27.
+ *  5. Read EVERY options map, not the first: mind-mapper/backend/cli.ts has 27.
  *  6. `null` means THE INSTRUMENT COULD NOT READ THIS FILE. Never an empty set —
  *     that is `null` not `0` (the project's own rule) applied to the instrument.
  *
@@ -215,7 +215,7 @@ export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
   "bounty/backend/server.ts",
   "glamour/backend/server.ts",
   "imago/backend/server.ts",
-  "mind-mapper/scripts/server.ts",
+  "mind-mapper/backend/server.ts",
 ]);
 
 export const isCallerFacing = (rel: string) => !INTERNAL_ENTRY_POINTS.has(rel);

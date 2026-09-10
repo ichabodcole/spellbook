@@ -2,6 +2,37 @@
 // fake SSE server (not the real daemon: the scenarios need a server that goes
 // deliberately silent, closes streams, and switches epochs on cue).
 //
+// ── ⛔ THIS FILE IS THE BACKEND PORT'S ACCEPTANCE ORACLE, AND ITS ONE EDIT IS A
+//    RECORDED DECISION RATHER THAN A REPAIR (D82, D86) ────────────────────────
+//
+// The project proposal ruled that this file — "today the only executable
+// specification of tail behaviour in the repo" — be "re-pointed at the shared
+// client rather than rewritten", and its four cells are the acceptance criteria
+// for the tail half. D82 then found "re-pointed" unexecutable: the file imports
+// NOTHING from the spell, reaching the CLI by `Bun.spawn` against the fake
+// below, so there is no import to re-point. It ruled the file left ALONE,
+// assertions untouched, as the oracle the adoption is measured by: green before
+// chapter 2, swap the hand-rolled loop for `tailEvents`, green after. A test
+// whose subject is what the PROCESS writes does not care which module wrote it.
+//
+// ⛔ THAT REASONING IS TRUE OF THE CLIENT AND SILENT ABOUT THE SERVER, WHICH IS
+// THE HALF THAT BIT. This suite is not only a reader of the wire — the fake
+// below is a WRITER of it, standing in for the daemon, so it encodes the
+// daemon's envelope SCHEMA. Chapter 2 adopts `createEventLog`, which renames the
+// cursor field `seq` -> `id` (FORCED; D81), so an unmodified fixture emits a
+// field the CLI no longer reads: `cursorOf` would answer `undefined`, the cursor
+// would never advance, and `sinces[1]` would be 0 instead of 3. **D82 and D81
+// are in direct conflict at exactly this point and neither pre-work document
+// noticed**, because D81 counted the READERS of the envelope (167 surface lines,
+// ~158 under the backend) and a fixture that WRITES it is in neither count.
+//
+// So: the four cells' SUBJECTS are untouched — the watchdog fires on a silent
+// stream, keepalive comments feed it, the grounding line is forwarded exactly
+// once, an epoch change resets the cursor and synthesizes its line. What
+// changed is the FIXTURE'S SCHEMA (`event()` below emits `id`) and the field
+// name in the assertions that read a forwarded frame back. Nothing was
+// weakened, no cell was dropped, and no deadline was relaxed.
+//
 // The fake writes the discovery files the cli reads (port + THIS test
 // process's pid, so the liveness probe passes) into a temp
 // MIND_MAPPER_HOME.
@@ -10,8 +41,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const CLI_SCRIPT = join(SCRIPT_DIR, "cli.ts");
+// ⛔ THE SPAWN FOLLOWS THE LAUNCHER, NOT THE SOURCE (playbook B6.1). The
+// contract this suite asserts is what the PROCESS writes and exits with, and
+// the process a caller runs is `scripts/cli.ts` -> `dist/cli.js`. Pointed at
+// this directory instead it would spawn a module with no `import.meta.main`
+// block and boot NOTHING, at exit 0.
+import { CLI_LAUNCHER as CLI_SCRIPT } from "./paths.ts";
 
 type Conn = {
   since: number;
@@ -97,8 +132,12 @@ function spawnTail(home: string, ...args: string[]) {
   return proc;
 }
 
+// ⛔ `id`, NOT `seq` — this fake stands in for the daemon, so it emits the
+// daemon's post-`createEventLog` envelope (D81's forced rename). The parameter
+// keeps the name `seq` deliberately: it is the CURSOR VALUE the scenario is
+// about, and every cell below reads as a sentence about a sequence.
 function event(seq: number, epoch: string): string {
-  return `data: ${JSON.stringify({ seq, epoch, kind: "doc.added", payload: { id: `d${seq}` } })}\n\n`;
+  return `data: ${JSON.stringify({ id: seq, epoch, kind: "doc.added", payload: { id: `d${seq}` } })}\n\n`;
 }
 
 function grounding(): string {
@@ -139,8 +178,8 @@ test("idle watchdog aborts a silent connection and reconnects with the last-seen
 
   const lines = await readLines(proc, 2, 5000);
   expect(lines.length).toBeGreaterThanOrEqual(2);
-  expect(JSON.parse(lines[0] as string)).toMatchObject({ seq: 3 });
-  expect(JSON.parse(lines[1] as string)).toMatchObject({ seq: 4 });
+  expect(JSON.parse(lines[0] as string)).toMatchObject({ id: 3 });
+  expect(JSON.parse(lines[1] as string)).toMatchObject({ id: 4 });
   // The reconnect resumed from the last-seen seq, not from 0.
   expect(sinces[0]).toBe(0);
   expect(sinces[1]).toBe(3);
@@ -190,9 +229,9 @@ test("tail --inbound requests inbound=1 and forwards the grounding line exactly 
   expect(inbounds[0]).toBe("1");
   // Exactly one grounding line reached stdout despite two server groundings.
   expect(parsed.filter((p) => p.kind === "grounding").length).toBe(1);
-  // Both real events still passed through (grounding has no seq → cursor kept).
-  expect(parsed.some((p) => p.seq === 1)).toBe(true);
-  expect(parsed.some((p) => p.seq === 2)).toBe(true);
+  // Both real events still passed through (grounding has no id → cursor kept).
+  expect(parsed.some((p) => p.id === 1)).toBe(true);
+  expect(parsed.some((p) => p.id === 2)).toBe(true);
 });
 
 test("an epoch change on reconnect resets the cursor and synthesizes epoch.changed on stdout", async () => {
@@ -215,11 +254,11 @@ test("an epoch change on reconnect resets the cursor and synthesizes epoch.chang
 
   const lines = await readLines(proc, 3, 5000);
   expect(lines.length).toBeGreaterThanOrEqual(3);
-  expect(JSON.parse(lines[0] as string)).toMatchObject({ seq: 5, epoch: "epoch-a" });
+  expect(JSON.parse(lines[0] as string)).toMatchObject({ id: 5, epoch: "epoch-a" });
   // The synthesized line lands BEFORE the new-epoch event, and is exactly
-  // {kind, epoch} — no seq, it is not a bus event.
+  // {kind, epoch} — no id, it is not a bus event.
   expect(JSON.parse(lines[1] as string)).toEqual({ kind: "epoch.changed", epoch: "epoch-b" });
-  expect(JSON.parse(lines[2] as string)).toMatchObject({ seq: 1, epoch: "epoch-b" });
+  expect(JSON.parse(lines[2] as string)).toMatchObject({ id: 1, epoch: "epoch-b" });
   // First reconnect still carried the stale seq (detection happens via the
   // received epoch, not the request); the cursor reset lands after.
   expect(sinces[0]).toBe(0);

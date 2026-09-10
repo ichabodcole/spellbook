@@ -4,8 +4,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SCRIPT_DIR = import.meta.dir;
-const CLI_SCRIPT = join(SCRIPT_DIR, "cli.ts");
+// ⛔ THE SPAWN FOLLOWS THE LAUNCHER, NOT THE SOURCE (playbook B6.1). The
+// contract this suite asserts is what the PROCESS writes and exits with, and
+// the process a caller runs is `scripts/cli.ts` -> `dist/cli.js`. Pointed at
+// this directory instead it would spawn a module with no `import.meta.main`
+// block and boot NOTHING, at exit 0.
+import { CLI_LAUNCHER as CLI_SCRIPT } from "./paths.ts";
+
 let home: string;
 
 beforeAll(() => {
@@ -176,7 +181,7 @@ test("tail with --since unset streams from 0 — the registry-defaults migration
   // migration must not move: a bare `tail` replays from cursor 0, byte-equal
   // in effect to an explicit `--since 0` — the seed section above guarantees
   // events exist to replay.
-  const firstSeq = async (...args: string[]): Promise<number> => {
+  const firstId = async (...args: string[]): Promise<number> => {
     const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail", ...args], {
       env: { ...process.env, MIND_MAPPER_HOME: home },
       stdout: "pipe",
@@ -194,21 +199,21 @@ test("tail with --since unset streams from 0 — the registry-defaults migration
         for (const line of buf.split("\n")) {
           if (!line.trim()) continue;
           try {
-            const parsed = JSON.parse(line) as { seq?: number };
-            if (typeof parsed.seq === "number") return parsed.seq;
+            const parsed = JSON.parse(line) as { id?: number };
+            if (typeof parsed.id === "number") return parsed.id;
           } catch {
             /* partial or non-event line — keep reading */
           }
         }
       }
-      throw new Error("no event line carrying a seq arrived within the deadline");
+      throw new Error("no event line carrying an id arrived within the deadline");
     } finally {
       proc.kill();
       await proc.exited;
     }
   };
-  const bare = await firstSeq();
-  const explicit = await firstSeq("--since", "0");
+  const bare = await firstId();
+  const explicit = await firstId("--since", "0");
   expect(bare).toBeGreaterThanOrEqual(1);
   expect(bare).toBe(explicit);
 });

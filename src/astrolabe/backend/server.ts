@@ -86,7 +86,7 @@ export type {
 // Tailwind build graph when the module LOADS, so a destination that ships
 // `dist/` and no `surface/` — the published artifact — dies before it can serve
 // the dist it does have. The dev import below is therefore dynamic and inside
-// the release branch's `else`, exactly as mind-mapper/scripts/server.ts does it.
+// the release branch's `else`, exactly as src/mind-mapper/backend/server.ts does it.
 //
 // Paths are anchored at the SKILL ROOT, never at cwd: cli.ts pins the daemon's
 // cwd for bunfig.toml's sake (Contract 5), so cwd is not a stable base for

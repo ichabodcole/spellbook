@@ -31,6 +31,47 @@ import { Glob } from "bun";
 // implementation. When the backends build and share a spine, these properties
 // become true by construction and this file's whole job disappears. Adding a
 // fourth clause here is a signal to go do that instead.
+//
+// ── ⛔ THE DELETION WAS ASKED FOR, MEASURED, AND DECLINED — 2026-09-09, AT THE
+//    LAST PORT (register F2; backend convergence D87) ─────────────────────────
+//
+// mind-mapper was the eighth and last backend to move under `src/`, so the
+// condition the paragraph above states — "when the backends build and share a
+// spine" — is now literally met, and the register carried the deletion as a
+// deliverable of the roll rather than a side effect of it. **It is not deleted,
+// because the condition as WRITTEN and the condition as REASONED disagree, and
+// the reasoned one is the one that matters:** the request rests on "these
+// properties become true by construction", and that is true of ONE of the three
+// clauses. Measured at the last port, clause by clause:
+//
+//   1 · `idleTimeout`  ⛔ NOT by construction, and it is the clause whose last
+//       violation was the real bug. Seven daemons pass the option at their OWN
+//       `Bun.serve` call and NO kit module owns it: `kit/wire/heartbeat.ts`
+//       supplies the constant (`MAX_IDLE_TIMEOUT_SEC`), the parse
+//       (`idleTimeoutSec`) and the beat/timeout clamp, and it cannot supply the
+//       option, because the kit does not call `Bun.serve`. A ninth daemon that
+//       omits `idleTimeout` is still expressible and still drops every SSE
+//       client at ten seconds. **This clause survives the spine intact.**
+//   2 · the atomic pointer write  ✅ BY CONSTRUCTION, and therefore the clause
+//       now has an EMPTY POPULATION: all seven pointer-writing daemons call
+//       `writeFileAtomic` from `kit/wire/discovery.ts`, so the predicate below
+//       (`writeFileSync(sessionFile|latestFile)`) matches nothing anywhere. ⚠
+//       That makes it D42's own shape — a scan whose absence of a finding is
+//       spelled exactly like absence of a subject — and it wants a coverage
+//       cell or a deletion. **FILED, not done here:** D44 forbids the
+//       instrument that guards a port being repaired BY that port, and
+//       removing an assertion is more than repairing one.
+//   3 · `readSession`'s ENOENT branch  ⛔ NOT by construction: four CLIs still
+//       carry their own `readSession` (bounty, glamour, imago, magpie) and the
+//       kit has no session reader at all — nothing converged here, so nothing
+//       became true by construction.
+//
+// **So the ward stays, and this note is the answer rather than the absence of
+// one** (D56: a reasoned absence must not be spelled like a skipped step). What
+// changed is that the deletion is no longer PENDING on the backends building —
+// it is pending on clause 1 finding a home that owns the `Bun.serve` options,
+// which is a kit question and not a port's. Nothing in this file's assertions
+// was touched at the last port; only this paragraph was added.
 
 const SKILLS = join(import.meta.dir, "..", "plugins", "spellbook", "skills");
 

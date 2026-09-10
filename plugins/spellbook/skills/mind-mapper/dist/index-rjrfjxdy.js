@@ -52284,8 +52284,8 @@ function rememberProject(id2) {
 var import_react20 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/state/reducer.ts
-function isGap(cursor, seq) {
-  return seq > cursor + 1;
+function isGap(cursor, id2) {
+  return id2 > cursor + 1;
 }
 function upsertById(list2, item) {
   const i = list2.findIndex((x3) => x3.id === item.id);
@@ -52308,66 +52308,66 @@ function markProposalRatified(proposals, proposalId) {
   return next;
 }
 function applyEvent(state, event) {
-  if (event.seq <= state.cursor)
+  if (event.id <= state.cursor)
     return state;
   switch (event.kind) {
     case "doc.added":
-      return { ...state, docs: [...state.docs, event.payload], cursor: event.seq };
+      return { ...state, docs: [...state.docs, event.payload], cursor: event.id };
     case "doc.deleted": {
       const { id: id2 } = event.payload;
-      return { ...state, docs: state.docs.filter((d) => d.id !== id2), cursor: event.seq };
+      return { ...state, docs: state.docs.filter((d) => d.id !== id2), cursor: event.id };
     }
     case "doc.kind": {
       const { docId, kind, author } = event.payload;
       if (typeof docId !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       const nextKind = typeof kind === "string" ? kind : null;
       const nextAuthor = author === "user" || author === "agent" ? author : null;
       return {
         ...state,
         docs: state.docs.map((d) => d.id === docId ? { ...d, kind: nextKind, kindAuthor: nextAuthor } : d),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "doc.marked": {
       const { docId, mark } = event.payload;
       if (typeof docId !== "string" || !mark)
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         docs: state.docs.map((d) => d.id === docId ? { ...d, mark: { ...mark, stale: false } } : d),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "node.deleted": {
       const { id: id2 } = event.payload;
       if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         nodes: state.nodes.filter((n) => n.id !== id2).map((n) => n.anchorNodeId === id2 ? { ...n, anchorNodeId: null } : n),
         edges: state.edges.filter((e) => e.source !== id2 && e.target !== id2),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "proposal.deleted": {
       const { id: id2 } = event.payload;
       if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.filter((p2) => p2.id !== id2),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "proposal.rejected": {
       const { id: id2 } = event.payload;
       if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.map((p2) => p2.id === id2 ? { ...p2, status: "rejected" } : p2),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "node.ratified":
@@ -52376,50 +52376,50 @@ function applyEvent(state, event) {
       return {
         ...state,
         proposals: markProposalRatified(state.proposals, payload.proposalId),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "proposal.added":
       return {
         ...state,
         proposals: upsertById(state.proposals, event.payload),
-        cursor: event.seq
+        cursor: event.id
       };
     case "zone.created": {
       const zone = event.payload;
       if (typeof zone?.id !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         zones: state.zones.some((z2) => z2.id === zone.id) ? state.zones : [...state.zones, zone],
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "zone.deleted": {
       const { id: id2 } = event.payload;
       if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         zones: state.zones.filter((z2) => z2.id !== id2),
         proposals: state.proposals.filter((p2) => p2.zoneId !== id2),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "proposal.promoted": {
       const { id: id2 } = event.payload;
       if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.map((p2) => p2.id === id2 ? { ...p2, zoneId: null } : p2),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "actions.set": {
       const { targetId, actions } = event.payload;
       if (typeof targetId !== "string" || !Array.isArray(actions)) {
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       }
       const slots = actions;
       const apply = (list2) => list2.map((item) => {
@@ -52432,13 +52432,13 @@ function applyEvent(state, event) {
         ...state,
         nodes: apply(state.nodes),
         proposals: apply(state.proposals),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "tags.set": {
       const { targetId, tags } = event.payload;
       if (typeof targetId !== "string" || !Array.isArray(tags)) {
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       }
       const list2 = tags;
       const apply = (items) => items.map((item) => {
@@ -52451,36 +52451,36 @@ function applyEvent(state, event) {
         ...state,
         nodes: apply(state.nodes),
         proposals: apply(state.proposals),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "node.anchored": {
       const { nodeId, anchorNodeId } = event.payload;
       if (typeof nodeId !== "string")
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       const nextAnchor = typeof anchorNodeId === "string" ? anchorNodeId : null;
       return {
         ...state,
         nodes: state.nodes.map((n) => n.id === nodeId ? { ...n, anchorNodeId: nextAnchor } : n),
-        cursor: event.seq
+        cursor: event.id
       };
     }
     case "message.posted":
       return {
         ...state,
         conversation: [...state.conversation, event.payload],
-        cursor: event.seq
+        cursor: event.id
       };
     case "lens.set":
-      return { ...state, lens: event.payload, cursor: event.seq };
+      return { ...state, lens: event.payload, cursor: event.id };
     case "presence.changed": {
       const { agents } = event.payload;
       if (typeof agents !== "number")
-        return { ...state, cursor: event.seq };
-      return { ...state, presence: { agents }, cursor: event.seq };
+        return { ...state, cursor: event.id };
+      return { ...state, presence: { agents }, cursor: event.id };
     }
     default:
-      return { ...state, cursor: event.seq };
+      return { ...state, cursor: event.id };
   }
 }
 
@@ -52562,7 +52562,7 @@ function useProjectState(projectId) {
           setState((prev) => {
             if (!prev)
               return prev;
-            if (isGap(prev.cursor, event.seq)) {
+            if (isGap(prev.cursor, event.id)) {
               fetchSnapshot().catch((err) => setError(err instanceof Error ? err.message : String(err)));
               return prev;
             }

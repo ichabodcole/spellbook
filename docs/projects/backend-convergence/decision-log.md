@@ -3831,3 +3831,532 @@ wrap-up, not repaired here.
 - _Repair the collection gap now (a wrap-up step that sweeps post-amendment
   decisions into the playbook)._ It is a real gap and it is not a port's to fix
   mid-flight; naming it is the deliverable.
+
+## D85 · The pre-replay open frame is RESTORED to `sse.ts` — the first restoration under the fifth verdict, and both numbers were driven BEFORE it was proposed
+
+**Decided and driven 2026-09-09, at mind-mapper's port (Phase 7 chapter 2).**
+The account is `phase-7-journal.md`.
+
+D79 ruled `sse`'s missing pre-replay frame a **LOSSY-COPY** property and named
+it "the one restoration candidate", with the two numbers **predicted** zero and
+zero and the instruction to **drive the prediction before proposing the change,
+not after**. Driven, and the prediction held.
+
+**The change.** `SseOptions` gains `openFrames?: () => string[]`, and `start`
+emits whatever it returns after the `": connected"` preamble and **before**
+`log.subscribe`. Four executable lines: one added destructure binding and a
+three-line `if`.
+
+**Why `onOpen` could not serve, restated because it is the transferable half.**
+`onOpen` fires at the end of `start` — after the preamble, after
+`log.subscribe`, after `clients.add` — so a caller that supplies its own
+`clients` set and sends from `onOpen` lands its frame **after the replayed
+backlog**. ⛔ **That is EXPRESSIBLE, and the near-miss is what makes this a
+measurement rather than an assertion (D78).** Run the playbook's question-7
+type-to-type procedure on this row and it answers "representable": the kit's
+subject type is `Set<SseClient>`, mind-mapper holds no registry at all, so
+constructing one is trivial. **The incompatibility occupies no type. It is an
+ORDER, and a type check cannot see an order.**
+
+### The two numbers, driven — and the artifact test would have got it wrong
+
+| number                                                       | result                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **(a) source edits needed at any other adopter, to compile** | **ZERO.** Controlled: 371 pre-existing `tsc` errors across the five other adopters' trees WITH the change and 371 WITHOUT it, same tree, change stashed and restored. The field is optional and nobody passes it.                                                                                      |
+| **(b) bytes of any other adopter's WIRE that differ**        | **ZERO.** astrolabe, bounty, glamour, imago and magpie under their own suites — **564 cells, all green**, release drives included — plus glamour's live SSE stream captured byte-for-byte either side of the change: **61 bytes, identical**, and `GET /` identical at `200 text/html; charset=utf-8`. |
+
+⛔ **AND THIS IS THE CASE THAT SHOWS WHY THE ARTIFACT TEST IS THE WRONG ONE,
+from the opposite direction to the pre-work's.** D79's own accidental
+demonstration was a COMMENT that dirtied 11 artifacts across 7 spells while
+changing nothing. This change is the mirror: **executable code genuinely MOVED
+into five `dist/server.js` files** — `git diff --numstat` says 6 insertions / 3
+deletions each, and a `sourceMappingURL` grep separates the sourcemap line from
+the four real lines — **and the wire did not move at all.** A comment can look
+like a seven-spell widening and a real code change can be inert on every wire.
+Only (a) and (b) tell them apart.
+
+⚠ **The rejection that did not reach this case, checked rather than inherited.**
+D32's not-taken carries _"a `sseResponse` hook that hands the caller a raw
+`send` … the caller then has to keep its own collection of them"_. That was
+argued against glamour's presence **broadcast**, which pushes to already-open
+streams from outside and does need a collection. This is **one frame, on one
+stream, at open**, and the caller keeps no collection. **Read what a not-taken
+was argued AGAINST before treating it as settled.**
+
+**The second LOSSY-COPY property went the other way and needed nothing.** The
+mandatory epoch is **KEEP-LOCAL**: mind-mapper passes
+`createEventLog({ epoch: crypto.randomUUID() })` at its one construction site
+and re-tightens `epoch` to required in its own frame type. Kit bytes zero.
+Making the kit's `epoch` mandatory would reverse D39, D48 and D70, so it was not
+proposed. **L6 is closed for the two spells that ask and open, by opt-out, for
+the three that decline** — and both kit headers now say so, which is the half
+that survives the session (D68 requirement 2).
+
+**Not taken:**
+
+- _KEEP-LOCAL for the frame too, keeping mind-mapper's own `sseResponse`._
+  Available and it was the fallback if either number came back non-zero. It
+  costs the module the spell is the SOURCE of: the once-only teardown funnel,
+  the `req.signal` wiring and the measured dead-socket account are all
+  mind-mapper's own body, and declining would have left the last port as the one
+  spell running a private copy of its own design.
+- _Widen `onOpen` to receive `{ send }` instead._ Same capability, and it
+  changes an existing signature five daemons already pass — a widening by this
+  entry's own test, where a new optional field is not.
+- _Let the caller push through `clients` from `onOpen` and accept the ordering._
+  This is the near-miss, and accepting it is accepting the loss: the grounding
+  line lands after the backlog, and `cli.ts`'s `grounded` flag forwards the
+  first grounding it sees.
+
+## D86 · `tail.test.ts`'s FAKE SERVER is a WRITER of the wire, so D82 and D81 collide — and the oracle's fixture schema is what moves
+
+**Found at mind-mapper's port, 2026-09-09, at the moment of the swap.**
+
+D82 ruled `tail.test.ts` the port's **oracle**: left ALONE, assertions
+untouched, green before chapter 2 and green after, on the reasoning that **"a
+test whose subject is what the PROCESS writes does not care which module wrote
+it."** D81 ruled, separately, that adopting `createEventLog` **renames the
+cursor field on the wire** (`seq` → `id`, FORCED) and priced the rename by
+counting its READERS — 173 occurrences across 5 surface files, ~209 across ~30
+backend files, plus every JSONL line the tail writes into an agent's pipe.
+
+⛔ **The two rulings are in direct conflict at exactly one point, and neither
+pre-work document noticed.** D82's reasoning is true of the CLIENT module and
+silent about the SERVER SCHEMA. This suite is not only a reader of the envelope:
+its scripted fake **WRITES** it, standing in for the daemon. `tail.test.ts:104`
+is `function event(seq, epoch)` building `{ seq, epoch, kind, payload }`, and
+six assertions read that field back off a forwarded frame. Left unmodified
+against a CLI whose `cursorOf` reads `id`:
+
+- `cursorOf` answers `undefined`, so the cursor never advances;
+- `expect(sinces[1]).toBe(3)` sees **0**, and `toBe(5)` in the epoch cell sees
+  **0**.
+
+⚠ **CORRECTED 2026-09-10 — this list originally carried a third row that
+conflates two states.** It read _"the two `toMatchObject({ seq: N })` rows fail
+on a frame that now carries `id`"_. **They do not fail in the unmodified
+oracle**, because the fixture is the WRITER: an untouched `event()` emits `seq`,
+the CLI forwards the frame verbatim, so a forwarded frame still carries `seq`
+and both rows pass. They fail only in the **PARTIAL-EDIT state** — fixture moved
+to `id`, assertions not yet moved — a state that existed for about a minute
+during the swap and is not what "left unmodified" describes. The conclusion is
+unaffected: the fixture's schema still has to move, and the first two rows are
+what force it. But a defect account that names a failure the described state
+does not produce is a worse instrument than one that names fewer. ⛔ **And the
+mis-statement is this entry's own error one layer down — attributing to the
+READER a failure that belongs to the WRITER.**
+
+**The ruling: the four cells' SUBJECTS are untouched and the FIXTURE'S SCHEMA
+moves.** `event()` emits `id`; the six assertions that read a forwarded frame's
+cursor read `id`; every deadline, every window, every count and every cell name
+is unchanged. Nothing was weakened, no cell was dropped, and the whole conflict
+is written into the file's own header where the next reader meets it.
+
+⛔ **AND THE GENERAL SHAPE IS THE FINDING, NOT THE EDIT: a wire-schema delta has
+WRITERS, and D81's required output only counts READERS.** A fixture, a recorded
+`acc` surface, a committed golden file and a mock server are all writers of a
+schema, and every one of them is invisible to "count the sites that read this
+field". D81's own sharpest line — _"count the readers of the MEANING, not the
+occurrences of the token"_ — is one level too shallow: **count the writers too,
+and a fixture that stands in for the renamed component is the one most likely to
+be missed, because it is the one that looks like a test rather than a
+consumer.**
+
+⚠ **The oracle earned its keep a second time in the same chapter, and this is
+the argument for having one at all.** Adopting `errors.ts` deleted a
+module-level `CURRENT_COMMAND` and left two references to it — one in a template
+literal inside `passOrThrow`, on the daemon-refusal path. Measured on what would
+have caught it: **`bunx biome check` PASSES** (no rule flags an undeclared
+identifier here), **`bun run build` exits 0**, and only `tsc --noEmit` names it
+— **and `tsc` is not in the gate** (`gate = build && biome check && bun test`).
+So the gate's only reach on an undefined identifier is a test that runs the
+PROCESS, which is exactly what this file is. It reported
+`{"kind":"internal","message":"CURRENT_COMMAND is not defined"}` at exit 1 on
+all four cells, twice (the second time for a `getCurrentCommand` import that a
+formatter's import-sort had silently displaced from a `python` anchor).
+
+**Not taken:**
+
+- _Read both spellings (`ev.id ?? ev.seq`)._ Two spellings of one field is how
+  one rots (D71), and it would have left the oracle green over a daemon that
+  emitted neither.
+- _Keep `cursorOf: (ev) => ev.seq` so the fixture need not move._ It compiles
+  and runs — `cursorOf` is caller-supplied, which is D81's own "the CLI half
+  forces nothing" — and it reads a field the daemon no longer emits, so the
+  cursor never advances and **every reconnect re-requests `since=0`: the whole
+  replay window into an agent's pipe, silently, forever.** ⛔ **A
+  caller-supplied accessor is where a wire rename goes wrong QUIETLY.**
+- _Decline `eventLog` and keep `seq`._ D81's own not-taken; it costs the three
+  things the kit genuinely fixed.
+- _Rewrite the four cells as `tailEvents` unit cells._ D82's not-taken, and it
+  would delete the repo's only end-to-end tail specification.
+
+## D87 · The two closing items of the roll — the lifecycle ward is KEPT, and the source-shipping population reaching zero retires an argument nothing reddens over
+
+**Decided 2026-09-09, at the last port.**
+
+### The lifecycle ward asked for its own deletion. It is kept, per clause.
+
+`grimoire/daemon-lifecycle-ward.test.ts:29-33` reads: _"THIS IS A STOPGAP AND
+SHOULD BE DELETED, NOT GROWN … **When the backends build and share a spine,
+these properties become true by construction and this file's whole job
+disappears.**"_ Register F2 carried the deletion as **a deliverable of the roll,
+not a side effect of it**, and mind-mapper's port is the commit that makes the
+stated condition true: all eight backends now build.
+
+⛔ **It is not deleted, because the condition as WRITTEN and the condition as
+REASONED disagree, and the reasoned one governs.** The request rests on "these
+properties become true by construction". Measured, clause by clause, at the last
+port:
+
+| clause                                   | by construction now?                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 · `idleTimeout` is set**             | ⛔ **NO — and it is the clause whose last violation was the real bug.** Seven daemons pass the option at their OWN `Bun.serve` call and **no kit module owns it**: `kit/wire/heartbeat.ts` supplies the constant, the parse and the clamp, and it cannot supply the option, because the kit never calls `Bun.serve`. A ninth daemon that omits it still drops every SSE client at ten seconds. |
+| **2 · the pointer write is atomic**      | ✅ **YES** — all seven pointer-writing daemons call `writeFileAtomic`. ⚠ Which makes the clause's population **EMPTY**: its predicate (`writeFileSync(sessionFile\|latestFile)`) matches nothing anywhere, so absence of a finding is now spelled exactly like absence of a subject — D42's own shape, inside an instrument D42 built cells for.                                               |
+| **3 · `readSession` branches on ENOENT** | ⛔ **NO** — four CLIs still carry their own `readSession` (bounty, glamour, imago, magpie) and the kit has no session reader at all. Nothing converged, so nothing became true by construction.                                                                                                                                                                                                |
+
+**One of three.** So the ward stays and the reason is written into its own
+header, where the next reader meets the request. What changed is what the
+deletion is now pending ON: not "the backends build" — they do — but **clause 1
+finding a home that owns the `Bun.serve` options**, which is a kit question and
+not a port's. Clause 2's empty population wants a coverage cell or a deletion
+and is **FILED**, because D44 forbids the instrument that guards a port being
+repaired by that port, and removing an assertion is more than repairing one.
+
+⚠ **The transferable half: a stopgap's deletion condition is usually written as
+an EVENT ("when X lands") and meant as a PROPERTY ("when this is true by
+construction"). Check the property.** The event arrived and two thirds of the
+property did not, and a port that read only the sentence would have deleted a
+live guard on the roll's last commit — with nothing to red, because deleting a
+ward removes the thing that would have complained.
+
+### The source-shipping population reached zero, and nothing reddened
+
+`import-boundary-wards.test.ts` clause 3 of the `BUILTIN_EXACT` argument read
+_"THE POPULATION IS NOT CLOSED. Three spells still ship their daemons as SOURCE
+(digestify, grapevine, mind-mapper)."_ Digestify landed in Phase 5, grapevine in
+Phase 6, and **mind-mapper takes that population to zero.** The clause is
+retired in place, with what survives it stated separately: the day any spell
+needs a VALUE import of `Bun`'s own API the row comes back, and **that is a
+claim about the language rather than about a roster.** The exemption is
+untouched, because D50 had already moved its liveness proof OFF the roster and
+into a synthetic cell precisely so that reaching zero would cost nothing —
+**this is that design being paid out.**
+
+Two more roster sentences expired at the same commit and are corrected:
+`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set)
+and its _"`mind-mapper/scripts/cli.ts` is a real unported CLI, not a launcher"_.
+
+⛔ **CORRECTED 2026-09-10 — THE REPLACEMENT SENTENCE WAS FALSE TOO, WHICH IS
+D90.** This entry and `src/build.ts` both went on to say _"only magpie is a
+one-aspect spell (a backend, its surface still shipping inside the plugin
+subtree) … Seven of the eight have both."_ `src/magpie/surface/index.html` had
+already moved into the tree at `c6a6e9a1`, BEFORE this port, and the plugin
+subtree ships no surface source. **All eight have both.** The docstring that
+warns "a roster sentence in a docstring is a claim nothing reds over" was, in
+the same breath, writing a new one — so the census is now DERIVED rather than
+restated. See D90.
+
+⚠ **And this is the class the last port owns all of at once.** Every landing
+made some other file's roster sentence false, and no port owned it, because the
+sweep that finds a moved PATH does not find a moved MEMBERSHIP. The instruction
+that works is B7's second grep — read every hit that is a LIST OF SPELL NAMES
+rather than a path — and the reason it belongs in a playbook rather than a
+backlog item is that it is un-ownable one port at a time.
+
+**Not taken:**
+
+- _Delete the lifecycle ward, since its stated condition is met._ Above.
+- _Grow it a fourth clause._ Its own header says a fourth clause is the signal
+  to go build the thing instead.
+- _Delete clause 2 now that its population is empty._ D44. Filed.
+- _Delete `bun` from `BUILTIN_EXACT` now that nobody writes it._ Clause 2 of its
+  own argument: it would narrow the ward by exactly one specifier and tidy
+  nothing else away, and clause 1 never rested on the roster.
+
+## D88 · The gate was blind to an undefined identifier on any UNCOVERED path — closed with two lines of `biome.json`, and NOT with `tsc`
+
+**Decided 2026-09-10, in the repair chapter, driven end to end before it was
+proposed.**
+
+D86 recorded that `bunx biome check` passes and `bun run build` exits 0 over a
+`ReferenceError`, and that **"only `tsc --noEmit` names it."** That sentence is
+true and it is the wrong conclusion, twice over: it understates the hole and it
+misprices the repair.
+
+### The hole, measured
+
+Planted on the path D86's own defect lived on — `versionInfo`'s `catch`, which
+no cell reaches — one undeclared identifier gave:
+
+| instrument      | verdict                                          |
+| --------------- | ------------------------------------------------ |
+| `bun run build` | **exit 0**, and the bug ships into `dist/cli.js` |
+| `bun run check` | **exit 0**                                       |
+| `bun test`      | **2,019 pass / 0 fail**                          |
+
+⛔ **The whole gate green over a latent `ReferenceError` in a committed
+artifact**, which reaches a caller as `{"kind":"internal","exit_code":1}`. D86's
+own case was caught only because it sat on a path `tail.test.ts` runs — so the
+reach of "a test that runs the process" is exactly the covered statements, and
+**the hole is every uncovered statement in all eight backends.** A coverage
+threshold is the other repair and it is a far larger argument; this one is two
+lines.
+
+### The repair, with the denominator asserted
+
+`correctness/noUndeclaredVariables` is a real Biome rule at default severity
+**error** and is **NOT in `recommended`**, which is why 556 files of house code
+never met it. Turned on, plus `javascript.globals: ["Bun"]`:
+
+| configuration                         | violations across the tree                                      |
+| ------------------------------------- | --------------------------------------------------------------- |
+| rule on, `globals: ["Bun"]`           | **0** — 563 files checked, exit 0                               |
+| rule on, no `globals`                 | **272**, every one of them `Bun`                                |
+| rule on, `globals`, **plant applied** | **1 — the plant**, `src/mind-mapper/backend/cli.ts:568`, exit 1 |
+
+**Zero pre-existing debt, and no `knownFailures` ledger.** The second row is the
+whole reason this needed driving rather than believing: Biome truncates at
+`--max-diagnostics=20`, so a first look at the un-globalled configuration shows
+twenty `Bun` diagnostics and reads as "hundreds of pre-existing violations, this
+route is closed." It is one missing global. ⚠ **Never read a violation count off
+a truncated diagnostic list — raise `--max-diagnostics` and count.**
+
+### Calibrated in both directions
+
+**planted → `bun run gate` exit 1**, naming
+`src/mind-mapper/backend/cli.ts:568:10 lint/correctness/noUndeclaredVariables × The plantedUndeclaredIdentifier variable is undeclared`
+· **restored → `bun run gate` exit 0**, 2,019 pass / 0 fail / 6,181 assertions /
+180.1 s. The old configuration over the same plant: `bun run check` **exit 0** —
+the before half of the measurement, taken rather than assumed.
+
+### ⛔ What this deliberately is NOT: adding `tsc` to the gate
+
+**A typecheck gate is a standing Cole ruling — "ruled out of sprint 05" —
+recorded at `scripts/instruments/type-sentinel-probe.ts:30` as a SCOPE FENCE on
+the one instrument in the tree that reads `tsc`'s type information at all.** It
+is also 584 pre-existing errors. So the biome route is not merely the cheaper of
+two options: **framing this repair as "add `tsc`" would re-litigate a ruling
+that is already made**, and it is said here explicitly so that nobody reads
+D86's "only `tsc` names it" as a recommendation. That sentence is accurate about
+_reach_ and misleading about _cost_ — Biome names it too, for two lines and zero
+debt, because an undeclared identifier is a **scope** question and not a type
+question.
+
+### ⚠ What the new rule still does not catch
+
+It is **not a type checker**, and the boundary is worth stating so the next
+reader does not over-read the green:
+
+- **A wrong TYPE still passes.** `versionInfo()` returning `{name, version: 3}`,
+  a `string` handed an `ErrKind`, a misspelled _property_ (`pkg.verison`) — all
+  green. The rule reads bindings in scope, not their shapes.
+- **Anything not in `files.includes`** — `dist/` is excluded (correctly: it is
+  generated), as is `.anthill/`.
+- **Dynamic reach** — `globalThis["someName"]`, `eval`, a property access on a
+  declared object.
+- **A declared-but-wrong binding** — importing the right name from the wrong
+  module resolves and passes.
+
+What it DOES catch is the exact class that bit twice in one chapter: an adoption
+deletes a module-level binding and leaves references to it. Both of D86's
+instances (`CURRENT_COMMAND` in a template literal, and a `getCurrentCommand`
+import an import-sort displaced) are in that class, and both would now red at
+`bun run check` in under a second instead of at whichever cell happened to run
+the process.
+
+**Not taken:**
+
+- _Add `tsc --noEmit` to the gate._ The standing ruling above, plus 584
+  pre-existing errors that would need a suppression ledger the biome route does
+  not need at all.
+- _Leave it, and rely on `tail.test.ts`._ That is what was relied on, and it
+  works only where a cell runs the process. It is a coverage-shaped guarantee
+  wearing a correctness-shaped claim.
+- _A coverage floor instead._ It would catch this class and much else, and it is
+  a real argument with a real cost — a threshold, a per-file exemption policy,
+  and a fight about which statements deserve a cell. Filed as the larger
+  question; it is not a reason to decline two lines that cost nothing.
+- _`javascript.globals` with more names than `Bun` (pre-emptively adding `Deno`,
+  `process`, …)._ Every other global the tree uses is already in Biome's own
+  environment sets — measured, not assumed: adding only `Bun` takes 272 to 0. A
+  speculative global is an unfalsifiable suppression.
+- _Severity `warn`._ `bun run check` runs `--error-on-warnings`, so `warn` and
+  `error` are the same verdict here and `error` says what is meant. It also
+  survives someone dropping that flag.
+
+## D89 · Live team canon misdocumented the wire this port renamed — and a sweep that finds a moved PATH finds neither a moved MEMBERSHIP nor a moved WIRE FIELD
+
+**Found by the verify pass after the roll was declared done, 2026-09-10.**
+
+`.anthill/dev/seams.md` is authoritative team canon and nothing in `.anthill/`
+is under a ward. **The records commit for this port edited that very file — for
+a moved PATH — and left two wire facts in it stale, both of them rows in this
+port's own wire-delta table:**
+
+| file                       | said                                                                   | is                                         |
+| -------------------------- | ---------------------------------------------------------------------- | ------------------------------------------ |
+| `seams.md` Contract 9      | "Events carry `{seq, epoch}`"                                          | the cursor field is **`id`** (FORCED, D81) |
+| `seams.md` Contract 9 V1.x | "server sends `: keepalive` comment frames ~15s"                       | **`: hb`** (`sse.ts`); interval unchanged  |
+| `daedalus.md`              | "An SSE data frame is the FULL BusEvent `{seq, epoch, kind, payload}`" | `{id, kind, payload, epoch}`               |
+
+All three are corrected in place, each carrying the sha that moved it so the
+next reader can date the claim.
+
+⛔ **THE GENERALISATION IS D87'S LESSON ONE LEVEL OVER, AND THE TWO TOGETHER
+MAKE THE PATTERN.** D87 recorded that _"the sweep that finds a moved PATH does
+not find a moved MEMBERSHIP."_ It does not find a moved **WIRE FIELD** either.
+Three populations, three different kinds of token, three greps:
+
+1. a **path** you moved — `git grep` the old path;
+2. a **list of spell names** you are a member of — `git grep <spell>` and read
+   every hit that is a roster rather than a path (D87);
+3. a **field name** your adoption renamed — and **the input to this grep already
+   existed**: B8 requires a wire-schema delta table (D81), and every row of it
+   is a token to sweep for.
+
+**The delta you were already required to write is the input to the sweep you
+were not.** That is the transferable half, and it is why this belongs in the
+playbook rather than in a backlog item.
+
+⚠ **And the wire-field population is the worst of the three to leave, because
+its readers are not readers.** A stale path misinforms whoever follows it. A
+stale roster sentence misleads. **A stale field name in a document a test author
+reads as a SHAPE SPEC mints a failing assertion** — which is precisely how D86's
+fixture defect arose, one document further out. `daedalus.md`'s entry exists to
+tell the next inbound-test author what to assert on; left alone it would have
+taught `frame.seq`.
+
+**Not taken:**
+
+- _Put a ward on `.anthill/dev/**`._ Tempting and wrong at this grain: the
+  contract text is prose whose subject is a negotiated agreement, and a ward
+  that greps it for field names would red on every historical sentence that
+  correctly records what the wire USED to be. The sweep is the instrument; the
+  delta table is what makes it cheap.
+- _Leave the historical spellings and add a "was `seq`" footnote elsewhere._ Two
+  spellings of one field is how one rots (D71). The correction states the
+  current fact FIRST and dates the change inline, which is the same shape the
+  kit headers adopted at D87.
+- _Fix `seams.md` only, since `daedalus.md` is one seat's living doc._
+  Backwards. A seat doc that carries a SHAPE SPEC is read by whoever writes the
+  next test, which is the population most likely to act on it.
+
+## D90 · The roster sentence written to replace a false roster sentence was also false — so the census is DERIVED, not restated
+
+**Found by the verify pass, 2026-09-10.**
+
+`src/build.ts:113-126` was rewritten by this port to correct a roster claim that
+had expired. **The correction was false on the day it was written:**
+
+> "only magpie is a one-aspect spell (a backend, its surface still shipping
+> inside the plugin subtree). Seven of the eight have both."
+
+`src/magpie/surface/index.html` exists — moved into the tree at `c6a6e9a1`,
+**before** this port — and the plugin subtree ships no surface source. **All
+eight spells have both aspects.** Measured directly:
+
+```
+for s in astrolabe bounty digestify glamour grapevine imago magpie mind-mapper;
+  do test -f src/$s/surface/index.html; done      ✅ 8/8
+```
+
+⛔ **AND THE SAME DOCSTRING CARRIES THE WARNING IT WAS VIOLATING.** Its own next
+sentence is _"**A roster sentence in a docstring is a claim nothing reds
+over**"_ — written about the sentence it had just replaced, while the
+replacement was already wrong. D87 repeats the error in prose. Two consecutive
+attempts to keep the sentence true, both false, **is the argument for not
+keeping it at all.**
+
+### The ruling: derive it, and it already IS derived — twice
+
+The question the verify pass asked was whether the sentence should be derived
+rather than written. It should, and **the derivation exists and always did:**
+
+1. **The predicate immediately below the docstring** computes membership from
+   the tree (`hasSurface(e.name) || hasBackend(e.name)`). The docstring's roster
+   was never the source of anything — it was a _narration_ of what the code
+   beneath it computes, which is the purest form of a claim nothing reds over.
+2. **`grimoire/launcher-pairing-ward.test.ts` PRINTS the per-spell census on
+   every gate run** — `surface=[index-…js] backend=[cli.js, server.js]`, eight
+   rows. A live, dated, self-updating answer to exactly the question the prose
+   was trying to answer from memory.
+
+So the docstring now owns **only the rule** — the two aspects are independent
+and the `||` is the whole contract — and points at the ward's output for the
+census. The prose keeps the _history_ (both wrong versions, named, with why),
+because the history is the argument and does not rot: a sentence about what a
+document once claimed stays true.
+
+⚠ **The transferable half: "a roster sentence is a claim nothing reds over" is
+not a warning to write the sentence more carefully. It is an instruction to
+delete the sentence and cite the instrument.** The two failed attempts here were
+both careful. Carefulness is not the missing ingredient — a reader is.
+
+**Not taken:**
+
+- _Just correct it to "all eight have both."_ It is true today and it is the
+  third instance of the same sentence class. It goes false the moment a ninth
+  spell arrives with one aspect, which is the _normal_ way a spell arrives (a
+  surface before its backend, or the reverse).
+- _Build a new instrument that prints the aspect census._ It already exists, in
+  the ward whose subject is exactly this pairing, and `src/build.ts`'s docstring
+  already points at that ward for the pairing question. Adding a second printer
+  would be two denominators for one population.
+- _Assert the census in a test (`expect(oneAspect).toEqual([])`)._ That pins a
+  contingent fact as a contract and would red on a legitimately half-built spell
+  — inverting the docstring's actual rule, which is that one aspect is ENOUGH.
+- _Delete the history along with the claim._ D17: the ruling includes what it
+  left behind. Two wrong versions with their shas are what make the third
+  attempt unnecessary.
+
+## D91 · `daemon-lifecycle-ward`'s zero-population guard cannot see C9 — a population guard at FILE-SCAN grain is blind to a per-clause subject count reaching zero
+
+**Recorded, not fixed, 2026-09-10.** Filed alongside C9; no repair is proposed
+here.
+
+The ward opens with a cell whose whole job is to refuse a vacuous green:
+
+```
+test("the ward has a population — an empty scan is not a pass", () => {
+  expect(daemons().length).toBeGreaterThanOrEqual(7);
+  expect(clis().length).toBeGreaterThanOrEqual(7);
+});
+```
+
+⛔ **It counts the FILE SCAN, not the SUBJECTS of any clause — so C9 is
+invisible to the one cell built to catch exactly C9's shape.** D87 measured
+clause 2 (the atomic pointer write) as having an **empty population**: its
+predicate `writeFileSync(sessionFile|latestFile)` now matches nothing anywhere,
+because all seven pointer-writing daemons call `writeFileAtomic`. The guard is
+unmoved by that — eight daemon files still exist, so `daemons().length >= 7`
+passes — and clause 2 goes on reporting green over zero subjects. **The guard
+and the vacuity it was written to prevent are at different grains.**
+
+⚠ **The transferable half: "does this ward have a population" and "does this
+CLAUSE have a subject" are different questions, and a guard at the scan grain
+answers only the first.** A ward whose clauses each `.filter()` the scan down to
+their own subject set has one population per clause, and the shared scan being
+non-empty licenses none of them. The general instruction is D42's, one level
+finer: **assert the denominator where the finding is made** — per clause, not
+per file scan.
+
+⚠ **And the reason this is recorded rather than repaired is the same as C9's.**
+D44 forbids the instrument that guards a port being repaired by that port, and
+the fix here is not a repair but a redesign — either a per-clause denominator
+assertion (which changes what every clause licenses) or clause 2's deletion
+(which removes an assertion rather than mending one). Both are larger than a
+verify pass, and clause 2's disposition is C9's to settle.
+
+**Not taken:**
+
+- _Raise the guard's lower bound._ It measures the wrong quantity; a bigger
+  wrong number is not closer.
+- _Add `expect(offenders.length + compliant.length).toBeGreaterThan(0)` to each
+  clause now._ The correct shape, and it is C9's decision to make with clause
+  2's disposition rather than a side effect of noticing it. Filing it separately
+  would also split one finding across two register rows.
+- _Treat this as a defect in D87._ It is not: D87 measured clause 2's empty
+  population correctly and filed it. What is new is that the ward's OWN guard
+  cannot see what D87 found by hand — which is a fact about the instrument, not
+  a correction to the entry.
