@@ -189,6 +189,73 @@ type SubmitBody = {
 };
 type DoneResult = { code: number; data: SubmitBody | null };
 
+/** b4 — what the surface told us about the human's departure. A RECORD, not a
+ *  resolution: `POST /left` never ends the session. */
+type Departure = {
+  engaged: boolean;
+  elapsedMs: number | null;
+  answered: number | null;
+  commented: number | null;
+  /** True when the beacon named a session that is not this one — a tab left
+   *  over from a review this daemon replaced on the same re-bound port. The
+   *  fact is still worth recording; it just must not end the session. */
+  stale: boolean;
+};
+
+/** The four things that can be OBSERVED about a review nobody submitted, and
+ *  the exact reason this is a function taking two parameters rather than four
+ *  lines inside `runReview`.
+ *
+ * ⛔ **IT WAS A TYPE ERROR THAT WAS NOT A TYPE ERROR — AND THE FEATURE IS NOT
+ * DEAD.** As an inline ternary this read `departure.engaged` and `tsc` said
+ * *"Property 'engaged' does not exist on type `never`"*. `never` normally means
+ * a branch cannot be taken. Here it means something else, and the difference is
+ * worth the paragraph: `departure` is a `let` initialised to `null` and assigned
+ * ONLY from inside `Bun.serve`'s `fetch` closure. TypeScript's control-flow
+ * analysis does not model writes made by a closure when the READ is in the
+ * enclosing function, so it still held `null` from the initialiser, and
+ * `!== null` left `never`. Minimal repro, both halves: the same read moved
+ * INSIDE a nested function type-checks clean, because a nested reference
+ * restores the declared type. **The compiler was describing its own blind spot,
+ * not this code.**
+ *
+ * ⭐ **DRIVEN, because the compiler's claim had to be refuted by the running
+ * daemon and not by an argument.** Release launcher, `POST /left {engaged:true}`
+ * then `POST /cancel`:
+ * `{"observed":"engaged-then-left", … "departure":{"engaged":true,"elapsedMs":4242,…}}`
+ * at exit **130**. The property TypeScript said does not exist is read, and its
+ * value reaches stdout.
+ *
+ * ⛔ **AND `pageServed` IS THE SILENT TWIN — the same blindness, with NO
+ * diagnostic.** It is a `let` initialised to `false` and written only in the
+ * `GET /` handler, so at the read site the compiler holds the literal type
+ * `false` (probed: `const t: never = pageServed` fails with *"Type 'false' is
+ * not assignable"*). By the compiler's model `observed` is ALWAYS
+ * `"never-opened"` and the other three arms are dead. Nothing reddens, because
+ * a boolean that is always `false` is not a type error — it is only a wrong
+ * belief. **The `never` on `departure` was the audible half of a two-variable
+ * problem, and the inaudible half is the one that would have mattered had this
+ * been fixed with a cast.** A parameter boundary fixes both at once: inside
+ * here, `pageServed` is a `boolean` because a caller said so.
+ *
+ * ⚠ **The arm the compiler pointed at is the one arm no test drove.** Three
+ * end-to-end cells cover `never-opened`, `opened-then-silent` and
+ * `read-then-left`; `engaged-then-left` had none. It does now, as a unit cell
+ * over all four arms.
+ *
+ * Clock-free, fs-free and pure, on `shouldIdleClose`'s model (`src/kit/wire/
+ * housekeeping.ts`) — the idiom this file already uses for a decision worth
+ * testing without a daemon.
+ */
+export function classifyDeparture(
+  pageServed: boolean,
+  departure: Departure | null,
+): "never-opened" | "opened-then-silent" | "engaged-then-left" | "read-then-left" {
+  if (!pageServed) return "never-opened";
+  if (departure === null) return "opened-then-silent";
+  return departure.engaged ? "engaged-then-left" : "read-then-left";
+}
+
 const QBLOCK_RE = /^:::\s*question([^\n]*)\n([\s\S]*?)\n:::\s*$/gm;
 const ID_RE = /\bid\s*=\s*([A-Za-z0-9_-]*)/;
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
@@ -235,7 +302,28 @@ function parsePortFromSessionId(sid: string): number | null {
   if (!sid) return null;
   const m = sid.match(PORT_SUFFIX_RE);
   if (!m) return null;
-  const port = parseInt(m[1], 10);
+  // ⚠ `digits` IS UNREACHABLY UNDEFINED, AND IT IS STILL A BRANCH AND NOT AN `!`.
+  // `PORT_SUFFIX_RE` is `/-p(\d{2,5})$/` — ONE alternative, ONE group, not
+  // optional — so a match always sets group 1 (type-debt Phase 1's "regex
+  // MANDATORY group" shape, nine sites there, none reachable). The compiler
+  // cannot see that, and `noUncheckedIndexedAccess` is right to say so.
+  //
+  // ⛔ THE CHOICE IS NOT BETWEEN `m[1]!` AND A FALLBACK VALUE — this function
+  // ALREADY PUBLISHES AN ANSWER for "that is not a port": `null`, at two other
+  // returns. So the impossible case takes the answer the contract already gives
+  // it. That is why a THROW would be wrong here and is right in a ward: a ward
+  // that crashes gets repaired within the hour, whereas a daemon that dies
+  // because a caller passed a strange `--session-id` has turned a recoverable
+  // recovery hint into an outage. `run()`'s own comment says this path is a
+  // HINT — the port is re-bound if it parses and freely chosen if it does not.
+  //
+  // ⚠ AND IT COSTS NOTHING BEHAVIOURALLY, WHICH IS WHY IT IS SAFE: `parseInt`
+  // of `undefined` is `NaN`, `NaN >= 1` is false, so the range check already
+  // returned `null` on this input. Nothing moves. If the regex ever gains an
+  // alternation, the branch is the one line that says which answer that is.
+  const digits = m[1];
+  if (digits === undefined) return null;
+  const port = parseInt(digits, 10);
   return port >= 1 && port <= 65535 ? port : null;
 }
 
@@ -557,17 +645,8 @@ async function runReview(argv: string[]): Promise<number> {
   let heartbeatAt = performance.now();
   // b4 — what the surface told us about the human's departure, and whether the
   // page was ever served at all. Both are RECORDS, not resolutions: neither ends
-  // the session (see POST /left).
-  type Departure = {
-    engaged: boolean;
-    elapsedMs: number | null;
-    answered: number | null;
-    commented: number | null;
-    /** True when the beacon named a session that is not this one — a tab left
-     *  over from a review this daemon replaced on the same re-bound port. The
-     *  fact is still worth recording; it just must not end the session. */
-    stale: boolean;
-  };
+  // the session (see POST /left). The type and the classifier both live at
+  // module scope — see `classifyDeparture`, which is where the reason is.
   let departure: Departure | null = null;
   let pageServed = false;
 
@@ -845,13 +924,7 @@ async function runReview(argv: string[]): Promise<number> {
     // genuinely cannot separate a crashed tab from a walked-away human, and
     // `elapsedMs: null` means the beacon arrived malformed rather than
     // instantaneous.
-    const observed = !pageServed
-      ? "never-opened"
-      : departure === null
-        ? "opened-then-silent"
-        : departure.engaged
-          ? "engaged-then-left"
-          : "read-then-left";
+    const observed = classifyDeparture(pageServed, departure);
     process.stdout.write(
       `${JSON.stringify({
         submitted: false,
