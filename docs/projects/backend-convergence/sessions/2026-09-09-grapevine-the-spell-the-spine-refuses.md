@@ -65,7 +65,13 @@ the defect is actually met.
 boot. `sse` is `Set<{close, send}>` against
 `Map<symbol, {alias, human, lurk, send}>` whose metadata **six routes** read —
 counted, with file and line, because "they are different" is an assertion and
-"six routes read this field" is a measurement. `housekeeping` splits per export.
+"six routes read this field" is a measurement. ⚠ **And the measurement was WRONG
+when this was written** — four of the six citations pointed at swapped lines, at
+writers, or at sites reading only `s.send`/`.size`, which is exactly what the
+kit's type CAN express. Six is still the number; the list is corrected in
+`phase-6-journal.md` and in `sse.ts`'s header (D78, repair chapter). The lesson
+is this section's own claim turned back on it: a count is only a measurement if
+it was re-derived from the tree. `housekeeping` splits per export.
 
 **The kit was not widened**, and the reason is a count rather than a preference:
 a widening lands in every spell that bundles the module — six artifacts across
@@ -93,10 +99,11 @@ it — and the field already existed, and the answer was **checked rather than
 assumed**: glamour is CONFORMANT L0 and publishes its accepted set as `choices`.
 (D71.)
 
-**And the contract was two contracts.** A grep for `die(` reports 46 sites.
-There were 46 **plus four** parser rejections writing their own prose and
-returning 2 — the ones an agent meets first. Digestify's port taught "look for
-the raise, not for the helper"; grapevine is where a spell had both.
+**And the contract was two contracts.** A grep for `die(` **on `develop`**
+reports 46 sites (the ported `backend/cli.ts` has 38 — two trees, not a
+contradiction). There were 46 **plus four** parser rejections writing their own
+prose and returning 2 — the ones an agent meets first. Digestify's port taught
+"look for the raise, not for the helper"; grapevine is where a spell had both.
 
 ---
 

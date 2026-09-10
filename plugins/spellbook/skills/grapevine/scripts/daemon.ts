@@ -61,8 +61,9 @@
 //
 // ⚠ AND THE PORT FILE IS NOT THE DISCRIMINATOR IT LOOKS LIKE. "Cause 1 creates
 // the port file, cause 2 never does" is true and nearly unobservable: the CLI's
-// `readDaemonPort()` pings the orphan and UNLINKS it in its first 50 ms poll.
-// Driven: six `ls` at 500 ms across the window never saw it, and a busy loop
+// `readDaemonPort()` pings the orphan and UNLINKS it in its first 50 ms poll —
+// deterministic, at `backend/cli.ts:364-387`. Sampled by the verify pass that
+// found this: six `ls` at 500 ms across the window never saw it, and a busy loop
 // caught it in 1.0 % of samples. The observable that actually separates them is
 // `channels/`: `ensureDirs()` runs on the boot path, so a daemon that BOUND and
 // died leaves the directory behind, while a spawn that never ran and an import

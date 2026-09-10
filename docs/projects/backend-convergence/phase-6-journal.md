@@ -3,17 +3,26 @@
 **Branch:** `feat/grapevine-backend-port` · **From:** `240d8c1` · **Date:**
 2026-09-09
 
-| chapter                | sha        | contract                                            |
-| ---------------------- | ---------- | --------------------------------------------------- |
-| **1 · the relocation** | `c2ac1dc1` | behaviour unchanged — nothing the caller sees moves |
-| **2 · the adoption**   | `ec543bfb` | behaviour changes, and each change is named         |
+| chapter                | sha        | contract                                                    |
+| ---------------------- | ---------- | ----------------------------------------------------------- |
+| **1 · the relocation** | `c2ac1dc1` | behaviour unchanged — nothing the caller sees moves         |
+| **2 · the adoption**   | `ec543bfb` | behaviour changes, and each change is named                 |
+| **3 · the repair**     | `aa844b2`  | the beat's watchdog, and a floor under the knob             |
+| **4 · the prose**      | `0c5f12b`  | the shipped copy: a miscounted refusal and two false claims |
 
-**There was no third chapter.** Phase B budgets one as a MAYBE — an instrument
-the port itself breaks. Three were checked as they were reached and all three
-were already right: `spawn-path-ward` produced grapevine's coverage rows off the
-DISK with nothing staged (D42), `launcher-pairing-ward` derived grapevine's row
-with no edit, and `dist-check` ARM 1b names `daemon.js` in its own comment
-(D49). The class the paragraph records did not fire; the paragraph stays.
+**There was no third chapter _of the kind Phase B budgets_** — one for an
+instrument the port itself breaks. **There WERE chapters 3 and 4, and they are a
+different animal: a repair, driven out of an independent verify pass.** The
+distinction matters, because what they repaired is not an instrument going red;
+it is a live defect and three false claims that every green in this project
+passed over. Their account is at the end of this file.
+
+As for the budgeted one: three instruments were checked as they were reached and
+all three were already right: `spawn-path-ward` produced grapevine's coverage
+rows off the DISK with nothing staged (D42), `launcher-pairing-ward` derived
+grapevine's row with no edit, and `dist-check` ARM 1b names `daemon.js` in its
+own comment (D49). The class the paragraph records did not fire; the paragraph
+stays.
 
 ---
 
@@ -60,11 +69,11 @@ naming grapevine and the reason — is in
 `src/kit/wire/{eventLog,sse,housekeeping}.ts` and is the half that survives this
 session.
 
-| module         | the KIT's shape, as a type                                                                                                                                                                               | GRAPEVINE's shape, as a type                                                                                                     | the READER that makes them incompatible (measured)                                                                                                                                                                                                                                                                                                                                                                                                                                                  | the widening NOT done, and its cost                                                                                                                                                                                                                                                              |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `eventLog`     | one process-wide `Frame<T>[]` capped at `REPLAY_BUFFER_SIZE = 1000`, one monotonic `seq`; its own header says it is "a REPLAY window for reconnects within one daemon's lifetime, **not a durable log**" | **N** durable append-only `.jsonl` files, one per named channel, each with its own `next_id`, replayed off disk by `readBacklog` | `loadChannel()` derives `next_id` as a **high-water mark over every parseable line of the file on boot** (`next_id = Math.max(maxId, lines.length) + 1`). There is no array to be that mark of, and no cap that would not discard history a caller can still request by id.                                                                                                                                                                                                                         | Widening `createEventLog`'s storage and its `subscribe` contract to admit a per-channel durable store changes what **five other daemons compile against** and re-emits **six artifacts across five spells**, each owed a drive.                                                                  |
-| `sse`          | `SseClients = Set<SseClient>`, `SseClient = {close, send}` — anonymous closers; `size` is all any adopter reads                                                                                          | `Map<symbol, {alias, human, lurk, send}>`, per channel                                                                           | **SIX routes read the metadata**, counted: `GET /presence` (`daemon.ts:419-421`), `GET /channels/:name/subscribers` (739-747), the roll/clear broadcast (909-921), the archive live-guard (981), the watch-presence registration (1111-1117), and the tail's own registration (1307-1314). `alias` is a name a human reads in a roster, `human` tells an agent it is talking to a person, `lurk` excludes a connection from every count. **There is no way to put an alias into a set of closers.** | Same six artifacts across five spells — and `sse.ts`'s own header records the endpoint: _"A signature wide enough to absorb those stops being a file server and becomes a router."_ A module widened for the one spell that shares nothing is eight copies again with a union type over the top. |
-| `housekeeping` | `shouldIdleClose` + `startHousekeeping` (idle sweep + debounced snapshot) + `drainAndStop`                                                                                                               | **no timer of that kind exists**; teardown is `Promise.race([server.stop(true), 200 ms])`                                        | — (see the split below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                |
+| module         | the KIT's shape, as a type                                                                                                                                                                               | GRAPEVINE's shape, as a type                                                                                                     | the READER that makes them incompatible (measured)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | the widening NOT done, and its cost                                                                                                                                                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `eventLog`     | one process-wide `Frame<T>[]` capped at `REPLAY_BUFFER_SIZE = 1000`, one monotonic `seq`; its own header says it is "a REPLAY window for reconnects within one daemon's lifetime, **not a durable log**" | **N** durable append-only `.jsonl` files, one per named channel, each with its own `next_id`, replayed off disk by `readBacklog` | `loadChannel()` derives `next_id` as a **high-water mark over every parseable line of the file on boot** (`next_id = Math.max(maxId, lines.length) + 1`). There is no array to be that mark of, and no cap that would not discard history a caller can still request by id.                                                                                                                                                                                                                                                                                                                                                                                                                                     | Widening `createEventLog`'s storage and its `subscribe` contract to admit a per-channel durable store changes what **five other daemons compile against** and re-emits **six artifacts across five spells**, each owed a drive.                                                                  |
+| `sse`          | `SseClients = Set<SseClient>`, `SseClient = {close, send}` — anonymous closers; `size` is all any adopter reads                                                                                          | `Map<symbol, {alias, human, lurk, send}>`, per channel                                                                           | **SIX routes read `alias`/`human`/`lurk`**, RE-COUNTED in the repair chapter (the first count was right by coincidence — see the correction below): `GET /channels` via `listChannels`→`visibleSubs` (`daemon.ts:421`), `GET /presence` (739-747), `POST /channels` (826), `POST /announce` (886-887), `POST /channels/:name/messages` (1049-1054), `GET /channels/:name/subscribers` (1182-1188). Two WRITERS are not readers: `/wait`'s presence registration (1111-1112) and the tail's own (1307). `alias` is a name a human reads in a roster, `human` tells an agent it is talking to a person, `lurk` excludes a connection from every count. **There is no way to put an alias into a set of closers.** | Same six artifacts across five spells — and `sse.ts`'s own header records the endpoint: _"A signature wide enough to absorb those stops being a file server and becomes a router."_ A module widened for the one spell that shares nothing is eight copies again with a union type over the top. |
+| `housekeeping` | `shouldIdleClose` + `startHousekeeping` (idle sweep + debounced snapshot) + `drainAndStop`                                                                                                               | **no timer of that kind exists**; teardown is `Promise.race([server.stop(true), 200 ms])`                                        | — (see the split below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                |
 
 **`housekeeping` is SPLIT and ruled per export**, because a row is a module:
 
@@ -149,8 +158,9 @@ spelled the same way.
 
 **Before:** `process.stderr.write(\`grapevine: ${msg}\n\`);
 process.exit(code)`— prose at exit **2** for every failure the spell could produce, with two rare internal faults at 1. ⚠ **And`die`was only half of it.** Four rejections in the parser wrote their own prose and`return
-2`— a second contract, with its own wording and its own markers, and the one an agent meets FIRST. A grep for`die(`
-would have reported the contract as 46 sites; it was 46 plus those.
+2`— a second contract, with its own wording and its own markers, and the one an agent meets FIRST. A grep for`die(`would have reported the contract as 46 sites **on`develop`**; it was 46 plus those. ⚠ **46 AND 38 ARE TWO TREES, NOT A CONTRADICTION** — `develop`'s pre-port `scripts/cli.ts`has 46`die(`sites; the ported`backend/cli.ts` has **38** (`die`is the kit's`raise`now, and the conversion folded, merged and deleted sites — three`process.exit`sites left with`tailEvents`, `errors`and`drainAndStop`).
+Counted in both trees during the repair chapter. Every count in these records
+means ONE tree; say which.
 
 **After:** one JSON envelope on stderr, stdout empty, and the acc taxonomy.
 Driven, on the real launcher:
@@ -291,16 +301,210 @@ Every daemon had its own home under the session scratchpad and was torn down.
 
 ## What was NOT verified
 
-- **`GRAPEVINE_IDLE_TIMEOUT_SEC` / `GRAPEVINE_HEARTBEAT_MS`** — the env
-  overrides arrive with the kit's parsers and are NEW; the clamp is unit-tested
-  in `src/kit/wire/heartbeat.test.ts` but neither variable was driven against a
-  live daemon here, and neither is documented in SKILL.md.
-- **The tail's idle watchdog firing.** 9,000 ms of silence against a wedged
-  half-open socket is not reproducible in a drive without a proxy that accepts
-  and stops sending; the kit's own suite covers the mechanism. Gotcha 9 says the
+- ~~**`GRAPEVINE_IDLE_TIMEOUT_SEC` / `GRAPEVINE_HEARTBEAT_MS`** — never driven
+  against a live daemon.~~ **DRIVEN in the repair chapter, and the drive found
+  the defect** (D75, below). Still undocumented in SKILL.md — register row A13
+  keeps that half, because it is a roster-wide question about every adopter's
+  prefix rather than this spell's.
+- **The tail's idle watchdog firing** against a WEDGED socket — still not
+  driven: it needs a proxy that accepts and stops sending, and the kit's own
+  suite covers the mechanism. ⚠ **But the watchdog itself is no longer
+  unobserved**: the repair chapter watched it fire three times in 30 s against a
+  perfectly healthy daemon, which is exactly the defect D75 repaired. The
+  mechanism works; what is untested is the case it exists for. Gotcha 9 says the
   reconnect rows need a fixed-port proxy, and that was not built here.
 - **A `roll` under a live tail.** `resolve` re-spawning across a daemon
   replacement is the property `tailEvents` was adopted for; the suite covers
   reconnect but not the roll specifically.
 - **acc.** No `acc.config.json` (D37), so there is nothing to run and nothing to
   regrade. Said explicitly rather than left unticked.
+
+---
+
+# ⛔ THE REPAIR CHAPTER — what an independent verify pass found, and what it cost
+
+**Chapters 3 (`aa844b2`) and 4 (`0c5f12b`), 2026-09-09.** Everything below was
+DRIVEN before it was written. The chapter exists because the port shipped a live
+defect **in the file that exists to prevent it**, and because the measurement
+holding up its central refusal was wrong.
+
+## 1 · The beat was tunable and the watchdog was not (D75)
+
+`daemon.ts:112` resolved `HEARTBEAT_MS` from `GRAPEVINE_HEARTBEAT_MS`;
+`heartbeat.ts:71` derived `TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS)` from the
+LITERAL 3,000. **Any value above 3,000 broke every tail** — and this is the
+exact scar `heartbeat.ts`'s own header cites (astrolabe's 45 s watchdog against
+an env-tuned beat, reconnects at +47.4 s / +92.6 s / +137.9 s against a healthy
+daemon), re-created inside the file that documents it.
+
+Driven through the real launcher and a real `cli.ts tail`, 30 s window, each
+daemon in its own scratch home:
+
+| `GRAPEVINE_HEARTBEAT_MS=20000`    | before    | after     |
+| --------------------------------- | --------- | --------- |
+| `# subscribed to wd`              | **4**     | **1**     |
+| `# stream closed, reconnecting…`  | **3**     | **0**     |
+| `: grapevine-keepalive`           | **0**     | **1**     |
+| `count` / `connections` / `named` | 2 / 2 / 2 | 1 / 1 / 1 |
+
+⚠ **Two lies for the price of one.** The reconnect churn is visible; the
+presence rot is not. `/channels/wd/subscribers` reported **two** subscribers for
+ONE live tail, because an abandoned stream is only reaped when the beat fails to
+enqueue — and the beat was now 20 s away. Raising this knob makes presence
+STALER, which is the thing grapevine's beat exists to keep honest; that sentence
+is now at the interval itself. And **zero keepalives arrived in 30 s**: the
+watchdog fired at 9 s, three times, before a single 20 s beat could land.
+
+At the 3 s default, after the repair: 1 subscribe, 0 reconnects, 9 keepalives,
+`count 1`. Unregressed.
+
+**The repair is bounty's shape, not a new one.**
+`src/grapevine/backend/heartbeat.ts` — the seam both halves already import —
+resolves BOTH env knobs, and `daemon.ts` imports the resolved values at their
+own names. `GRAPEVINE_IDLE_TIMEOUT_SEC` had the same split, and its half was
+worse than a split: the seam file SAID grapevine "does not env-tune it" ten
+lines from where `daemon.ts` env-tuned it.
+
+## 2 · And there was no floor on the input (D76)
+
+`intOr` falls back safely on everything that LOOKS hostile — `""`, `"0"`,
+`"-1"`, `"abc"`, `"NaN"`, `"Infinity"`. It reads **`"1e9"` as 1**, because
+`parseInt` stops at the `e`. Driven against the pre-fix artifact, one SSE
+client, 1 s window:
+
+| `GRAPEVINE_HEARTBEAT_MS=1e9` | before     | after   |
+| ---------------------------- | ---------- | ------- |
+| `: hb` comments              | **767**    | **1**   |
+| bytes                        | **15,462** | **142** |
+
+`"3.9"` → 3 ms and `"5abc"` → 5 ms arrive by the same route. **The floor is
+`MIN_HEARTBEAT_MS = 500` in the kit's `heartbeatMs`, beside the ceiling it can
+never cross — not in `intOr`.** Four spells env-tune a beat through this
+derivation (astrolabe, bounty, imago, grapevine) and all four had the flood, so
+this is a shared derivation's defect and not one spell's. The reasoning, and the
+two options not taken, are D76.
+
+**Cost, counted the way D68 asks:** 12 artifacts re-emitted across 6 spells —
+**8 carry the real two-line clamp** (the four env-tuning spells, cli + server
+each), 4 are sourcemap-only.
+
+## 3 · ⛔ The measurement behind the refusal was wrong — in the kit's own header
+
+D68 requires the refusal to be written where the next reader meets it. The claim
+— _six routes read the subscriber alias_ — was **right by coincidence**, and
+four of its six citations were wrong:
+
+| as first written                            | what is actually there                                                                                                                   |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `/presence` (`419-421`)                     | **the labels are swapped onto each other's lines.** 421 is `listChannels()`, the `GET /channels` helper                                  |
+| `/channels/:name/subscribers` (739-747)     | 739-747 **is** `/presence`                                                                                                               |
+| the roll/clear broadcast (909-921)          | that is `DELETE /channels/:name`, and it reads **only `s.send`** — which the kit's type HAS                                              |
+| the archive live-guard (981)                | that is `POST /channels/:name/reset`, and it reads **`ch.subscribers.size`** — which `sse.ts`'s own header says is all any adopter reads |
+| the watch-presence registration (1111-1117) | a **writer**                                                                                                                             |
+| the tail's own registration (1307-1314)     | a **writer**                                                                                                                             |
+
+**Two of the cited "readers" are exactly what the kit's type CAN express**,
+which weakened the argument where it is meant to be strongest.
+
+**The true set, counted independently in `develop`'s pre-port daemon
+(`plugins/spellbook/skills/grapevine/scripts/daemon.ts`) by enumerating every
+site that touches `visibleSubs` / `subscriberAliases` / `subscriberHumans` /
+`.subscribers` and then reading what each one takes off the record:**
+
+| #   | route                             | line      | what it reads                               |
+| --- | --------------------------------- | --------- | ------------------------------------------- |
+| 1   | `GET /channels`                   | 421       | `lurk` (via `listChannels` → `visibleSubs`) |
+| 2   | `GET /presence`                   | 739-747   | `lurk`, `alias`, `human`                    |
+| 3   | `POST /channels`                  | 826       | `lurk`                                      |
+| 4   | `POST /announce`                  | 886-887   | `lurk`, then `sub.alias !== body.from`      |
+| 5   | `POST /channels/:name/messages`   | 1049-1054 | `alias` (receipt roster + recipient count)  |
+| 6   | `GET /channels/:name/subscribers` | 1182-1188 | `lurk`, `alias`, `human`                    |
+
+Writers, named because a writer is not evidence: `/wait`'s presence registration
+(1111-1112) and the tail's (1307). Sites that read only what the kit's type
+already expresses, named for the same reason: the fan-out at 486 (`s.send`),
+`DELETE /channels/:name` at 909-921 (`s.send`), and the two `.size` guards —
+`POST /channels`'s `--fresh` at 787 and `POST /:name/reset` at 981.
+
+Corrected in all three places D68 requires: `phase-6-prework.md`, this journal,
+and **`src/kit/wire/sse.ts`'s header** — the half that survives the session,
+which is also the copy that was most wrong.
+
+⚠ **AND WRITING THAT PROSE RE-EMITTED ARTIFACTS, WHICH IS WORTH SAYING BECAUSE
+THE DECISION WAS JUSTIFIED ON THAT NUMBER.** A comment-only edit to `sse.ts`
+re-emitted **five artifacts across five spells** (astrolabe, bounty, glamour,
+imago, magpie — one line each, the inline sourcemap; the code is identical).
+Measured per module, the fan-out D68 priced at "six artifacts across five
+spells" is: `sse` **5 / 5**, `eventLog` **6 / 5** (astrolabe ships cli AND
+server), `housekeeping` **7 / 7** (digestify and grapevine import it too). D68's
+"six artifacts across five spells" is `eventLog`'s fan-out exactly; the other
+two rows are one smaller and one larger. Harmless — and it is the same mechanism
+as a widening, at one line instead of a type.
+
+## 4 · The discriminators did not discriminate, and one shipped in a header
+
+- _"The port file is never created"_ separates causes 1 and 2 **only in
+  theory.** `readDaemonPort()` pings the orphan and **`unlinkSync`s it in its
+  first 50 ms poll** (`cli.ts:364-387`), so the window is unobservable in
+  practice: six `ls` at 500 ms across it never saw the file, and a busy loop
+  caught it in **1.0 % of samples**. **The observable that actually separates
+  them is `channels/`:** `ensureDirs()` runs on the boot path
+  (`daemon.ts:1473`), so a daemon that BOUND and then died leaves the directory
+  behind, while a spawn that never ran and an import that died before
+  `ensureDirs()` both leave `GRAPEVINE_HOME` completely empty.
+  `release-serve.test.ts`'s forced-dev cell already asserts exactly that for
+  cause 3, and the teardown drive above observed exactly that for cause 1
+  (`channels/` and nothing else).
+- _"Run the daemon launcher alone; if it returns to your shell, it is this and
+  nothing else"_ is a **false biconditional** — cause 3's launcher also returns
+  to your shell, at exit 1 with a module error. The sound form is _returns to
+  your shell **having printed `listening on …`, at exit 0**_. That claim shipped
+  in `scripts/daemon.ts`'s header; it now carries all three outcomes. The
+  runtime `hint` was fine (it only said to run the launcher alone) and gained
+  the two observables anyway, because that is where the defect is actually met.
+
+## 5 · Three prose defects, one of which lied
+
+- `cli.ts` carried a four-line block explaining the `recognized flags:` marker
+  shape, stranded above `const bodyHint` and contradicted eight lines below by
+  _"⛔ THE SET IS `choices` NOW."_ **Deleted.**
+- ⛔ **D71's forcing argument was FALSE.** It said a prose marker inside a JSON
+  document is a substring of an escaped string, so the enumeration HAD to move
+  into `choices`. acc explicitly walks `stringValuesOf(document)` and runs the
+  same prose MARKER regex over every string in the envelope, for exactly that
+  case — `agent-cli-conformance/src/acc/kit/surface.ts:653-656`, whose doc
+  comment names anthill's `"Valid flags: --format"` inside an `error` string.
+  **The move is still right** (the envelope's own field; an array cannot be
+  truncated; one spelling cannot drift from another) **but the recorded reason
+  was not true.** Corrected in D71 and at `cli.ts`'s own comment.
+- `daemon.ts`'s keepalive comment said _"every `SSE_HEARTBEAT_MS` (3s)"_ over an
+  interval that had become `HEARTBEAT_MS`. It now names the knob and says what
+  raising it costs.
+
+## 6 · The `die` count is two counts (E)
+
+The brief and D71 say **46** `die` sites; this journal's audit says **38**. Both
+are right about different trees — **46 on `develop`, 38 on the branch after the
+conversion** — and no document said so. Fixed in place at both sentences; a
+number without its tree reads as a contradiction to the next reader.
+
+## 7 · Filed, not fixed: the spawn-path ward went blind to a whole family (C8)
+
+`spawn-path-ward`'s grapevine count falling 5→4 was recorded at `35655e5` as
+C4's counting half. **Re-measured, it under-stated the finding — what was lost
+is COVERAGE, not a number.** Of grapevine's four surviving pins in
+`dist/daemon.js`, the only one naming `dist/` is `daemon.js:500`, and it is
+`join2(DIST_DIR, "index.html")` **inside a `details:` string in a 500-response
+body** — decorative, not a read. The daemon's two real reads are `daemon.js:98`
+(the kit's `resolveMode`) and `daemon.js:135` (the whitelist derivation), both
+anchored on the **parameter** `distDir`, which `JOIN_CALL` cannot register.
+Deleting one line of error prose would make grapevine's `dist/` resolution
+wholly invisible with nothing red.
+
+⛔ **And it is roster-wide, not grapevine's.** Every `serveFromDist` /
+`resolveModeIn` adopter has moved its `dist/` reads behind that parameter:
+`join(distDir, …)` appears **four times in each of seven emitted files**, and
+**not one of those 28 reads is in any coverage row.** Filed as register **C8**
+rather than repaired — D44: the ward is the instrument guarding the one
+remaining port, and a chapter that repairs its own instrument is a chapter that
+cannot be checked.

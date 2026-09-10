@@ -2904,9 +2904,26 @@ reads left-to-right and stops at the first token that is not a `--long` flag.
 That shape came out of grapevine's own acc registry work and it was not
 incidental.
 
-**Inside a JSON document a prose marker is a substring of an escaped string.**
+~~**Inside a JSON document a prose marker is a substring of an escaped string.**
 So the adoption had to either keep the markers beside the envelope, or move the
-enumeration into the envelope's own field.
+enumeration into the envelope's own field.~~
+
+⛔ **THAT FORCING ARGUMENT IS FALSE, AND IT WAS THE HEADLINE OF THIS ENTRY**
+(corrected in the repair chapter, 2026-09-09; the same sentence was corrected at
+`cli.ts`'s own comment, where a reader meets it). **acc reads markers inside the
+envelope.** `readStream` parses the whole document, tries `keyedSets` first, and
+then walks **`stringValuesOf(document)`**, running the same prose `MARKER` regex
+over every string inside it —
+`agent-cli-conformance/src/acc/kit/surface.ts:653-656`, whose doc comment names
+anthill's `"Valid flags: --format"` **inside an `error` string** as the case it
+is there for. A marker embedded in the envelope would still have been read.
+Nothing forced the move.
+
+**The ruling stands on the reasons below, which survive the correction** — and
+that is why this entry is corrected rather than reversed. ⚠ A decision recorded
+with a false forcing argument is more fragile than one recorded with a
+preference: the next agent who checks the claim learns the record cannot be
+trusted, and re-opens a question that was actually settled.
 
 **It moves.** The house answer already existed and was CHECKED rather than
 assumed: glamour is **CONFORMANT L0** and publishes its accepted set as
@@ -2919,8 +2936,12 @@ Four rejections moved with it, and they are the finding underneath: **grapevine
 had a SECOND error contract beside `die`** — the parser's
 `process.stderr.write(...); return 2` sites (bare invocation, unknown root flag,
 unknown verb, arity) — with their own wording, their own markers and no `kind`
-on the wire. A grep for `die(` reports the contract as 46 sites. It was 46 plus
-those four, and those four are the ones an agent meets first.
+on the wire. A grep for `die(` **on `develop`, in the pre-port
+`scripts/cli.ts`** reports the contract as 46 sites. It was 46 plus those four,
+and those four are the ones an agent meets first. ⚠ **D72 and the journal's
+audit say 38, and both numbers are right**: 46 is `develop`, 38 is the ported
+`backend/cli.ts` after the conversion. Neither document said which tree it
+meant, which is how one count reads as two (corrected in the repair chapter).
 
 ⚠ **The sort is KEPT even though an array cannot be truncated by a left-to-right
 reader.** It is free, and it is still right for any consumer that flattens
@@ -3028,3 +3049,168 @@ returns.
 itself_ — that puts the process's ending back inside a verb, one phase after the
 adoption took it out. _Give `CommandSpec` a second optional field_ — a field
 exactly one verb sets, which every reader then has to rule out for the other 31.
+
+## D75 · a spell's env knobs are resolved in the SEAM FILE, because a derivation only one half of a pair can see is not a derivation
+
+**Driven and repaired 2026-09-09, grapevine's repair chapter (`aa844b2`), after
+an independent verify pass found it shipped.**
+
+Grapevine's port put the beat's env resolution in `daemon.ts`
+(`HEARTBEAT_MS = heartbeatMs(process.env.GRAPEVINE_HEARTBEAT_MS, …)`) and left
+`heartbeat.ts` deriving the tail's watchdog from the **literal** default
+(`tailIdleMs(SSE_HEARTBEAT_MS)`, 9,000 ms). **The daemon's beat was tunable and
+the CLI's watchdog was not, so any value above 3,000 broke every tail.**
+
+⛔ **THIS IS THE EXACT SCAR `heartbeat.ts`'S OWN HEADER CITES**, re-created in
+the file that documents it: astrolabe's hard-coded 45 s watchdog against an
+env-tuned beat, reconnects at +47.4 s / +92.6 s / +137.9 s against a healthy
+daemon. The port copied the RULE ("derive, never copy") and broke its
+PRECONDITION — a derivation from a value that is not the one that shipped
+derives nothing.
+
+**Driven**, real launcher, real `cli.ts tail`, `GRAPEVINE_HEARTBEAT_MS=20000`,
+30 s: **4 subscribes / 3 reconnects / 0 keepalives**, and
+`/channels/wd/subscribers` reporting **`count 2, connections 2, named 2` for ONE
+live tail** — presence rots with the churn, because an abandoned stream is only
+reaped when the beat fails to enqueue. After: **1 / 0 / 1**, and `count 1`.
+
+**The ruling: `<spell>/backend/heartbeat.ts` is where `process.env` is read.**
+It is the one module BOTH halves import (it is the seam's whole reason for
+existing), and `process.env` is ambient in both — unlike `daemon.ts`, which the
+CLI cannot import without dragging the server graph into `dist/cli.js`. Bounty
+already had this shape; grapevine now matches it. ⚠ Generalised, and it is the
+half worth carrying to the remaining port: **an env knob must be resolved at the
+LOWEST point every consumer of the derived value can see. Resolving it any
+higher splits the pair silently, and the split is invisible at the default.**
+
+⚠ **`GRAPEVINE_IDLE_TIMEOUT_SEC` had the same split, and worse:** the seam file
+said grapevine "does not env-tune it" ten lines from where `daemon.ts` env-tuned
+it. Same repair.
+
+**Cells:** `src/grapevine/backend/heartbeat.test.ts` runs a fresh `bun` per
+case. These constants resolve `process.env` at MODULE LOAD, so an in-process
+`process.env.X = …` proves nothing — **the defect shipped green under every
+in-process assertion there was**, and only a subprocess could have caught it.
+
+**Not taken:** _do not ship the knob_ — a real option, and rejected because the
+knob is not the defect: `idleTimeoutSec` has to be resolved somewhere both
+halves agree on regardless, and a spell that cannot be slowed down for a slow
+link is worse than one that can. It would also have left A13's roster-wide
+question ("adopting a kit derivation adopts a knob nobody chose") answered for
+one spell by deletion. _Resolve in `daemon.ts` and export the resolved value_ —
+impossible in the direction that matters: the CLI cannot import the daemon,
+which is why the seam file exists. _Let `cli.ts` read the env itself and derive_
+— two spellings of one rule, in two files, which is the drift `tailIdleMs` was
+written to end. _Keep local `IDLE_SEC` / `HEARTBEAT_MS` aliases in `daemon.ts`_
+— two names for one value at the two sites a reader follows; the imported names
+are kept all the way to `Bun.serve` and the interval.
+
+## D76 · the heartbeat's FLOOR lives at the derivation, not in the kit's `intOr`
+
+**Driven 2026-09-09, same chapter.**
+
+`intOr` falls back safely on everything that LOOKS hostile — `""`, `"0"`,
+`"-1"`, `"abc"`, `"NaN"`, `"Infinity"`. It reads **`"1e9"` — the most plausible
+spelling of "make it huge" — as `1`**, because `parseInt` stops at the `e`.
+`"3.9"` gives 3 ms; `"5abc"` gives 5 ms.
+
+**Driven against the pre-fix artifact:** `GRAPEVINE_HEARTBEAT_MS=1e9` put **767
+`: hb` comments (15,462 bytes) into one SSE client in a 1 s window**. After the
+floor: **1**.
+
+**The floor is `MIN_HEARTBEAT_MS = 500`, applied inside `heartbeatMs`** — beside
+the ceiling (`idleTimeout / 2`) it can never cross, because that ceiling is
+itself `Math.max(500, …)` and 500 was therefore already the smallest beat this
+module would compute. **Four spells env-tune a beat through this derivation
+(astrolabe, bounty, imago, grapevine) and all four had the flood**, so it is a
+shared derivation's defect, not one spell's.
+
+⚠ **This is a kit change, and D68 rules kit widenings out as the default repair
+— so the distinction matters.** D68 is about widening a TYPE to fit one spell's
+shape. This narrows a shared FUNCTION's output to the range it already claimed,
+for every adopter, and it fixes a defect none of them could have seen locally.
+**Cost, counted the way D68 asks: 12 artifacts across 6 spells — 8 carrying the
+real two-line clamp, 4 sourcemap-only.**
+
+**Not taken:** _tighten `intOr` to reject `1e9` / `5abc` outright_ — it is the
+general parser behind every env knob in the kit (ports, counts, timeouts,
+seconds), there is no single roster-correct minimum for "a positive integer",
+and changing what it ACCEPTS changes behaviour for knobs nobody in this chapter
+audited. The bug is not that `intOr` parsed loosely; it is that a beat had no
+minimum. _Clamp in `grapevine/backend/heartbeat.ts` only_ — the honest local
+fix, 2 artifacts instead of 12, and rejected because it leaves the identical
+flood reachable at `BOUNTY_HEARTBEAT_MS`, `IMAGO_HEARTBEAT_MS` and
+`ASTROLABE_HEARTBEAT_MS`, with the repair recorded in the one spell that
+happened to be looked at. _Validate and REFUSE at the daemon (die on a bad
+value)_ — a daemon that will not boot because an env var is spelled oddly is a
+worse failure than a clamped beat, and the kit's whole convention here is
+fall-back-and-run.
+
+## D77 · a discriminator is a claim about an OBSERVABLE, and both of grapevine's were untestable as written
+
+**Corrected 2026-09-09, same chapter. Both claims shipped; one shipped in a
+header.**
+
+`daemon failed to start within 3s` has three causes (D69), and the port gave
+each pair a way to be told apart. Neither worked:
+
+- _"The port file is never created (cause 2), where cause 1 creates it and
+  orphans it"_ — **true, and unobservable.** `readDaemonPort()` pings the orphan
+  and `unlinkSync`s it in its first 50 ms poll (`cli.ts:364-387`) — a
+  deterministic mechanism, re-read in the source here. The sampling is the
+  verify pass's: six `ls` at 500 ms across the window never saw the file, and a
+  busy loop caught it in **1.0 % of samples** (~35 ms of 3,000). Attributed
+  rather than re-claimed, which is D78's own rule applied to this entry. ⛔
+  **The observable that actually separates them is `channels/`** —
+  `ensureDirs()` runs on the boot path, so a daemon that BOUND and died leaves
+  the directory, while a spawn that never ran and an import that died before
+  `ensureDirs()` both leave `GRAPEVINE_HOME` completely empty.
+- _"Run the daemon launcher alone; if it returns to your shell, it is this and
+  nothing else"_ — **a false biconditional**, shipped in `scripts/daemon.ts`'s
+  header. Cause 3's launcher also returns to your shell, at exit 1 with a module
+  error. The sound form is _returns to your shell **having printed
+  `listening on …`, at exit 0**_.
+
+**The ruling, which is the general half:** a discriminator is worth writing only
+if a reader can RUN it, so it must name (a) the observable, (b) the value it
+takes in each case, and (c) how long it is observable for. A state that exists
+for 35 ms inside a 3 s window is not an observable; a one-way implication
+written as an "if and only if" is not a discriminator. **Drive the discriminator
+itself, not only the defect it discriminates.**
+
+**Not taken:** _delete the port-file sentence_ — the mechanism is real and worth
+knowing (it is why the symptom looks like a stale daemon); it is demoted to the
+mechanism and followed by the observable. _Leave the runtime `hint` alone_ — it
+was not wrong (it only said to run the launcher alone), but it is the copy an
+agent actually meets, and it had room for both observables.
+
+## D78 · the MEASUREMENT under a refusal is load-bearing, and D68's "write it where the reader meets it" is what makes a wrong one expensive
+
+**Corrected 2026-09-09, same chapter.**
+
+D68 requires a REJECT-STRUCTURAL verdict to name "the READER that makes them
+incompatible — a measurement, where 'they are different' is only an assertion",
+and to write it into the kit module's own header. Grapevine's port did both.
+**The measurement was wrong**: of the six cited readers of
+`alias`/`human`/`lurk`, two labels were swapped onto each other's lines, two
+cited sites read only `s.send` or `subscribers.size` — **exactly what the kit's
+type CAN express** — and two were WRITERS. The true set is six other routes; the
+count survived by coincidence.
+
+The corrected list, and the sites deliberately named as NOT evidence, are in
+`phase-6-journal.md` and now in `sse.ts`'s header.
+
+**The ruling:** when a verdict's justification is a count, **re-derive the count
+from the tree before it ships**, and name the near-misses — the sites that read
+only what the kit's type already has — inside the same paragraph. A refusal
+whose strongest-looking evidence dissolves under a five-minute check is worse
+than a refusal with three examples and an honest boundary, because D68 puts it
+in front of the next adopter rather than in a journal. ⚠ And a count without its
+TREE is the same failure in miniature: `46` and `38` `die` sites were both
+right, about `develop` and about the branch, and no document said which.
+
+**Not taken:** _fix the header and leave the journal's original list_ — three
+copies is the shape D68 asked for precisely so a reader can cross-check; two
+right and one wrong is worse than one wrong. _Drop the line numbers and keep the
+route names_ — line numbers rot, but they are what made this checkable at all;
+they are kept and now say which tree they are of.
