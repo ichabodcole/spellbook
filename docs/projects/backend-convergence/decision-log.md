@@ -2696,3 +2696,197 @@ caught it at the gate; the CSS churn had already been diagnosed by rebuilding
 with the sources reverted, which is the same answer the ward gives for free.
 **The finding is that the ward is right and worth reading before writing kit
 prose, not after.**
+
+## D68 · A fourth verdict at B8 — REJECT-STRUCTURAL — and widening the kit is ruled OUT as the default repair
+
+**Decided 2026-09-09, in pre-work for grapevine. No spell was ported.** The
+account is `phase-6-prework.md`.
+
+Phase B had exactly one way to refuse a kit module: **NO SUBJECT** (D56), gated
+on **question 4** — is the entry long-running or single-shot. It was written
+from digestify, where the four absent modules are absent because there is no
+standing daemon at all. **Grapevine answers question 4 "long-running", so every
+one of B8's eight rows reads as applicable** — and three of them are wrong for
+it, for a reason the phase had no word for.
+
+**Measured, in the tree:**
+
+| module         | the kit's shape                                                            | grapevine's shape                                                                                                 |
+| -------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `eventLog`     | one process-wide in-memory array, capped at 1000, one monotonic `seq`      | **N durable append-only `.jsonl` files**, one per channel, each with its own `next_id`, replayed from disk        |
+| `sse`          | `Set<SseClient>` where `SseClient = {close, send}`; `size` is all it reads | **`Map<symbol, {alias, human, lurk, send}>`**, whose metadata is read by **six routes**                           |
+| `housekeeping` | `shouldIdleClose` + `startHousekeeping` (idle sweep + debounced snapshot)  | **neither exists** — grapevine runs no timer of that kind; `drainAndStop`'s server-stop race, however, is its own |
+
+`eventLog` and `sse` are not "no subject" — grapevine HAS an event log and HAS
+an SSE registry, and they are the busiest things in the spell. **They cannot be
+expressed in the kit's types**: there is no way to put an alias into a set of
+anonymous closers, and `eventLog`'s own header says in as many words that it is
+_"a REPLAY window for reconnects within one daemon's lifetime, not a durable
+log"_ — the thing grapevine's bus is. So the verdict is a fourth one, named
+**REJECT-STRUCTURAL**: _the spell HAS the thing the module is about, and the
+module cannot express it._
+
+**Its discriminator against NO SUBJECT is one question — could you construct the
+kit's type from what the spell holds?** — and the practical difference is what
+adoption would cost: adopting a NO-SUBJECT module is dead code, adopting a
+REJECT-STRUCTURAL one is a rewrite of the spell.
+
+### ⛔ And the house precedent points the wrong way
+
+**The established repair for a kit/spell mismatch is WIDEN THE KIT** — B10, D31,
+and `sse.ts`'s own `send`, which arrived from its third consumer for exactly
+that reason. Applied here it is ruled **out as the default**, and the reason is
+a count rather than a preference:
+
+**A widening lands in every spell that bundles the module.** The kit is a leaf
+six spells build INTO their artifacts. Widening `eventLog`'s storage, `sse`'s
+client record and `housekeeping`'s timer pair to admit grapevine changes the
+types five other daemons compile against and re-emits **six artifacts across
+five spells**, each owed a drive, paid by ports already finished and by agents
+not in the room. **The cost of a widening is measured in artifacts across
+spells, not in lines.** And `sse.ts`'s header already records what the wide
+signature becomes: _"A signature wide enough to absorb those stops being a file
+server and becomes a router."_ A module widened to fit the one spell that shares
+nothing with the other seven is eight copies again with a union type over the
+top — precisely the drift the shared registry exists to prevent.
+
+**So the spell keeps its own, and a widening is available only as a separate,
+argued decision with its own blast-radius count — never a step inside a port.**
+
+### The required output, because a refusal reads as a skip
+
+D56 and D42: an absence that is reasoned must not be spelled the same way as one
+that was skipped. This verdict is the likeliest of the four to read as laziness,
+because the honest outcome is "I adopted nothing here". So it has a **required
+written output in two places**, and the port is not done until both exist:
+
+1. **In the journal / decision-log entry**, per rejected module: the kit's shape
+   as a type, the spell's shape as a type, **the READER that makes them
+   incompatible** (six routes read the alias — a measurement, where "they are
+   different" is only an assertion), and **the widening not done with its
+   counted cost**.
+2. **In the kit module's OWN header**, a line naming the spell and the reason it
+   does not adopt. This is the half that survives the session: the next agent
+   opens `sse.ts` in order to adopt it, and that file is where they will look
+   for whether it is a good idea. A ruling that lives only in a port's journal
+   gets re-litigated by every spell after grapevine. The precedent is why these
+   headers are trustworthy — `serveDist.ts` records the router boundary it
+   refuses, `housekeeping.ts` records that bounty's watchdog is deliberately
+   absent, `sse.ts` records `send`'s third-consumer origin. **D17: what a module
+   refused is part of the ruling.**
+
+Plus the count out loud in the port's report, in B7's and B8's shape: _"three of
+eight kit modules are REJECT-STRUCTURAL for grapevine, and the kit was not
+widened."_
+
+**Not taken:**
+
+- _Widen the kit_ — the default, ruled out above on the artifact count and on
+  `sse.ts`'s own recorded boundary. It stays available as its own decision.
+- _Call these rows NO SUBJECT and move on_ — false, and destructively so: it
+  says grapevine has no event log. The next reader would then wonder what the
+  `.jsonl` files are.
+- _Skip grapevine's B8 entirely / mark the spell out of scope for the kit_ —
+  three of eight modules are structural refusals; `errors`, `discovery`,
+  `serveDist`, `tailEvents` and `heartbeat` all have real subjects there. A
+  blanket exemption would lose five genuine adoptions to protect three refusals.
+- _Record the verdict only in the playbook_ — the playbook is read at port time
+  by the porting agent; the kit header is read at every other time by everyone
+  else. Requirement 2 exists because the two audiences are different.
+- _Add a ward that checks a rejected module is not imported_ — a ward would see
+  the absence of an import, which is exactly what a SKIP also looks like. The
+  distinction this decision draws is in prose because it is about a reason, and
+  Gotcha 12 records what happens when a ward reads prose.
+
+## D69 · B2's launcher shape is keyed on whether `main()` returns while the process must keep living — not on "daemon vs CLI"
+
+**Measured 2026-09-09, driven both ways.**
+
+B2 prescribed two launcher shapes and dispatched on what the entry IS, naming
+grapevine's `daemon.ts` as "a daemon shape" —
+`const exitCode = await run(); process.exit(exitCode)`. **That launcher kills
+grapevine's daemon.**
+
+`daemon.ts`'s `main()` resolves as soon as `Bun.serve` has bound: it writes the
+port and pid files, prints `listening`, registers `SIGINT`/`SIGTERM`, and
+returns `undefined`. **The process is held up by the event loop, not by the
+promise**, and the exit codes are not `main`'s return value at all — they live
+at in-body `process.exit` calls and inside `shutdown()`, reached only from a
+signal.
+
+**Driven**, on a copy of the shipped `daemon.ts` with `run()` exported exactly
+as the port will emit it (copy in `scripts/`, driven, removed — never in the
+repo):
+
+| launcher shape                                    | result                                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `const exitCode = await run(); process.exit(...)` | prints `listening on http://127.0.0.1:56250 (pid 18450, mode release)`, writes `daemon.port` + `daemon.pid`, **exits 0** |
+| `process.exitCode = await run();`                 | stays up; `GET /` answers `{"ok":true,"pid":…}`                                                                          |
+
+**And the symptom is another step's signature, which is the expensive half.**
+The port file is written before the exit, so `cli.ts`'s `readDaemonPort()` finds
+it, pings it, gets nothing, deletes it as stale, and the poll loop times out:
+**`daemon failed to start within 3s`** — the exact string B4's glamour
+spawn-path scar produces, and the exact string `cli.ts:348-352`'s own comment
+attributes to a dev-mode surface import dying. **Three different defect classes,
+one sentence.**
+
+The repair: the discriminator becomes **does this entry's `main()` return while
+the process must keep living?**, asked before the load-bearing-exit question
+(bounty's case), with both existing scars kept as worked instances. The old
+comment `"a daemon's teardown already ran inside main()"` was read as a
+description of daemons; it is a **precondition**, and it is false for at least
+one of them.
+
+**Not taken:** _add grapevine as a third named case_ — that is what produced the
+defect; four spells' `main` happening to await their own teardown made "daemon"
+look like the property. _Change `daemon.ts` so `main()` awaits a shutdown
+promise, then keep the prescribed launcher_ — a real improvement and the wrong
+phase for it: the port's contract is that nothing the caller sees moves, and
+this would rewrite the daemon's lifecycle inside a relocation. File it
+separately. _Rely on B2's existing "DRIVE the shape you picked"_ — it is there
+and it is what catches this, but it was written from bounty and reads as being
+about an entry that will not EXIT; the grapevine case is an entry that exits
+when it must not, and the instruction now says so in both directions.
+
+## D70 · The epoch criterion is "are ids recovered across a restart?", not singleton-vs-session — grapevine stamps NONE
+
+**Measured 2026-09-09.**
+
+B8's epoch ruling offered session-scoped (no epoch) vs singleton (stamp one) and
+closed with a list of spell names that put **grapevine under SINGLETON**. It is
+the wrong answer for grapevine, and the list was the mechanism: singleton-ness
+was a proxy for the real property and holds only for the seven spells whose
+event logs are in-memory arrays.
+
+**The property:** an epoch exists because, after a restart, an in-memory log's
+ids start again at 1 and a resuming client cannot tell a stale watermark from a
+fresh one. **Grapevine's ids are recovered from durable storage** —
+`loadChannel()` derives `next_id` as a high-water mark over every parseable line
+of `~/.grapevine/channels/<name>.jsonl`
+(`next_id = Math.max(maxId, lines.length) + 1`) — so ids ascend across every
+restart and a reconnecting tail's cursor is still valid. The condition the epoch
+detects **cannot occur**.
+
+**And stamping one anyway is a regression with a mechanism, not a harmless
+extra.** `tailEvents`'s `onEpochChange` sets **`cursor = 0`**; grapevine's tail
+route answers `since=0` with `readBacklog(name, 0)` — the whole channel log off
+disk. Epoch + `tailEvents` therefore makes **every `grapevine roll` replay every
+message of every tailed channel into every tail's stdout**, which is an agent's
+pipe. Generalised: _the epoch's client-side action is "your cursor is worthless,
+start over", and that is safe only where starting over costs a bounded in-memory
+replay window._
+
+So grapevine's row is: **no epoch; L6 does not arise** — neither closed nor
+narrowed, because the condition it names cannot occur. That is a **second shape
+of not-applicable** for this ruling (digestify's, D60/D56, was "no log at all";
+grapevine's is "a log that does not forget"), and D56 requires it be written
+rather than omitted.
+
+**Not taken:** _move grapevine from the SINGLETON list to the SESSION-SCOPED
+list_ — right answer, wrong reason, and it would leave the next durable-log
+spell to rediscover this; the list is deleted in favour of the property. _Stamp
+an epoch and simply not wire `epochOf` on the CLI side_ — a field nothing reads,
+and the next agent to wire `tailEvents` properly would arm the replay without
+knowing it. _Keep the epoch and cap the backlog replay_ — that changes
+`tail --from-start`'s contract to fix a problem grapevine does not have.
