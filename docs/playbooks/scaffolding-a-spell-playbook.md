@@ -312,8 +312,8 @@ spawn-path defect and a dev-anchor defect all report
 picture: if it returns to your shell when it should be serving, it is this class
 and nothing else.
 
-**Copy the body, not the comment.** The 3 code lines are settled; the comment is
-where each launcher records what it must not be tidied into. Two things in it
+**Copy the body, not the comment.** The 3–4 code lines are settled; the comment
+is where each launcher records what it must not be tidied into. Two things in it
 are load-bearing rather than decorative:
 
 - `run()` takes **no arguments**, because a forwarder that read the argument
@@ -713,14 +713,14 @@ built to, and it would be the third document to describe a world that had moved.
 **What it should generate, when it is written** — the mechanical parts only, and
 the test of "mechanical" is that the roster is unanimous:
 
-| it generates                                                                  | because                                                      |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `src/<spell>/{backend,surface}/`, `build.ts` delegator, `bunfig.toml`         | 8/8 identical                                                |
-| a launcher of the chosen shape                                                | 16/16 are 3 code lines and byte-identical within shape       |
-| the two `.gitignore` un-ignore lines                                          | the only hand-kept list, and forgetting it is silent         |
-| a CLI entry that already imports `errors.ts` and raises with `choices`        | closes register A1 by construction, which is the whole prize |
-| a `SKILL.md` skeleton with the exit-code table already in it                  | no ward reads that table; a generator is the only guard      |
-| the eight questions as a comment block **to be answered, never pre-answered** | they are the design, not the boilerplate                     |
+| it generates                                                                  | because                                                                                      |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/<spell>/{backend,surface}/`, `build.ts` delegator, `bunfig.toml`         | 8/8 identical                                                                                |
+| a launcher of the chosen shape                                                | 16/16 are 3–4 code lines (3 natural-return, 4 terminal-exit) and byte-identical within shape |
+| the two `.gitignore` un-ignore lines                                          | the only hand-kept list, and forgetting it is silent                                         |
+| a CLI entry that already imports `errors.ts` and raises with `choices`        | closes register A1 by construction, which is the whole prize                                 |
+| a `SKILL.md` skeleton with the exit-code table already in it                  | no ward reads that table; a generator is the only guard                                      |
+| the eight questions as a comment block **to be answered, never pre-answered** | they are the design, not the boilerplate                                                     |
 
 **What makes it worth building:** one real spell walking this playbook and
 reporting which steps were mechanical and which needed judgment. **What would
@@ -733,23 +733,23 @@ document exists to end.
 
 **ROSTER-GROUNDED** (a count over all eight, measured 2026-09-10):
 
-| rule                                                                                      | grounding                                                                                                        |
-| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| A new spell builds; the criterion fires on the error import                               | 8/8 import `src/kit/wire/errors.ts`, which is outside every skill folder                                         |
-| `src/<spell>/{backend,surface}/` is the authored layout                                   | 8/8, no naming deviation                                                                                         |
-| `dist/` is generated AND committed                                                        | 8/8, 40 tracked files                                                                                            |
-| A launcher is 3 code lines with no logic and no `import.meta.main`                        | 16/16; bodies byte-identical within shape                                                                        |
-| The launcher's path is the build's entry predicate                                        | `src/build.ts:117-125`                                                                                           |
-| Two launcher shapes, decided by "does `main()` return while the process must keep living" | 9 natural-return · 7 terminal-exit; the two name/shape exceptions are both measured (D69, bounty's 15 s timeout) |
-| `errors` / `serveDist` / `housekeeping` are the universal three                           | 8/8 each                                                                                                         |
-| Four wire modules have no subject in a single-shot spell                                  | digestify: `eventLog`, `sse`, `tailEvents`, `discovery`                                                          |
-| Two discovery conventions, plus "none"                                                    | 4 session-JSON · 3 singleton · 1 none                                                                            |
-| `choices` is the skipped half of the error contract                                       | 3 spells at 0, a 4th at 1; `hint` present nearly everywhere (D94)                                                |
-| No backend source under `scripts/`                                                        | 1 violator (astrolabe, 775 lines), open as register D11 — debt, not pattern                                      |
-| `.gitignore` is the one hand-kept list **for the artifact**                               | 8 spells un-ignored one at a time, with a duplicate                                                              |
-| Twelve instruments carry a pin a new spell must join; the rest derive                     | inventoried by file:line 2026-09-10 across `grimoire/` (17 gate-collected tests + 4 libraries) and `scripts/`    |
-| A not-yet-buildable spell is absent from three instruments at once                        | all three take their population from `buildableSpells()`                                                         |
-| `package.json`'s `workspaces` array is unwarded                                           | 3 entries (`src/bounty`, `src/digestify`, `src/grapevine`); no instrument reads it                               |
+| rule                                                                                      | grounding                                                                                                                     |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| A new spell builds; the criterion fires on the error import                               | 8/8 import `src/kit/wire/errors.ts`, which is outside every skill folder                                                      |
+| `src/<spell>/{backend,surface}/` is the authored layout                                   | 8/8, no naming deviation                                                                                                      |
+| `dist/` is generated AND committed                                                        | 8/8, 40 tracked files                                                                                                         |
+| A launcher is 3–4 code lines with no logic and no `import.meta.main`                      | 16/16; **9 are 3 lines (natural-return), 7 are 4 (terminal-exit)** — recounted 2026-09-10; bodies byte-identical within shape |
+| The launcher's path is the build's entry predicate                                        | `src/build.ts:117-125`                                                                                                        |
+| Two launcher shapes, decided by "does `main()` return while the process must keep living" | 9 natural-return · 7 terminal-exit; the two name/shape exceptions are both measured (D69, bounty's 15 s timeout)              |
+| `errors` / `serveDist` / `housekeeping` are the universal three                           | 8/8 each                                                                                                                      |
+| Four wire modules have no subject in a single-shot spell                                  | digestify: `eventLog`, `sse`, `tailEvents`, `discovery`                                                                       |
+| Two discovery conventions, plus "none"                                                    | 4 session-JSON · 3 singleton · 1 none                                                                                         |
+| `choices` is the skipped half of the error contract                                       | 3 spells at 0, a 4th at 1; `hint` present nearly everywhere (D94)                                                             |
+| No backend source under `scripts/`                                                        | 1 violator (astrolabe, 775 lines), open as register D11 — debt, not pattern                                                   |
+| `.gitignore` is the one hand-kept list **for the artifact**                               | 8 spells un-ignored one at a time, with a duplicate                                                                           |
+| Twelve instruments carry a pin a new spell must join; the rest derive                     | inventoried by file:line 2026-09-10 across `grimoire/` (17 gate-collected tests + 4 libraries) and `scripts/`                 |
+| A not-yet-buildable spell is absent from three instruments at once                        | all three take their population from `buildableSpells()`                                                                      |
+| `package.json`'s `workspaces` array is unwarded                                           | 3 entries (`src/bounty`, `src/digestify`, `src/grapevine`); no instrument reads it                                            |
 
 **⚑ UNVALIDATED — awaiting its first spell:**
 
