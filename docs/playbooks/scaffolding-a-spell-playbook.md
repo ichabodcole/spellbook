@@ -399,37 +399,91 @@ The taxonomy is `usage: 2 · internal: 1 · not_found: 5 · conflict: 6`. And �
 on a pipe and an explicit exit discards what has not drained, measured at
 exactly 65,536 bytes.
 
-⛔ ⭐ **AND HERE IS REGISTER A1, WHICH IS THE REASON THIS PHASE IS WRITTEN AS A
-PROHIBITION RATHER THAN AS AN IMPORT.** Adopting the module is 8/8. **Using its
-machine-readable half is not.** Remeasured 2026-09-10 (D94), counting literal
-`hint:` and `choices:` properties on the CLI-failure raise path, reported as
-**hint / choices**:
+⛔ ⭐ **AND HERE IS REGISTER A1 — CLOSED 2026-09-10, WHICH IS WHY THIS PHASE IS
+WRITTEN AS A PROHIBITION RATHER THAN AS AN IMPORT.** Adopting the module was
+already 8/8. **Using its machine-readable half was not**, and closing the row
+took nineteen conversions across eight spells. A new spell inherits the finished
+rule instead of the gap.
 
-| spell   | astrolabe | bounty | digestify | glamour | grapevine | imago | magpie | mind-mapper |
-| ------- | --------- | ------ | --------- | ------- | --------- | ----- | ------ | ----------- |
-| hint    | 0         | 3      | 4         | 9       | 6         | 2     | 3      | 9           |
-| choices | **0**     | **0**  | **1**     | 6       | 4         | **0** | 3      | 11          |
+⚠ **The row was measured THREE times and no two agreed**, which is itself the
+lesson for a scaffolded spell: the two prose methods (the original figures, then
+D94's stated grep) were not runnable, and the derived one is. **Do not re-count
+by hand — run the instrument:**
 
-**`choices` — the field an agent actually ROUTES on — is absent from three
-spells and near-absent from a fourth, while `hint`, which is prose for a human,
-is present nearly everywhere. The half that is machine-readable is the half that
-was skipped.** And astrolabe, at 0/0 across 15 raise sites, is **the spell the
-shared error contract was extracted from.**
+```bash
+bun test grimoire/error-choices-census.test.ts
+```
+
+It prints every spell's raise sites, `choices` and `hint` and pins all of them
+by exact equality, so a new spell joining the roster shows up as a red cell with
+its own numbers rather than as a silence. **A grep cannot do this job**: eight
+spells raise eight ways (an aliased `die`, a `usageError` factory, a `dieApi`
+HTTP shim, a `reportUsage` envelope writer, a bare `throw new CliError`, and two
+spells writing `errorEnvelope` to stderr with no throw at all), which is exactly
+what made D94's stated method under-count.
 
 > ### ⛔ THE RULE, AND IT IS THE ONE A SCAFFOLDED SPELL MOST NEEDS
 >
-> **Every `usage` raise whose rejection has an enumerable accepted set MUST
-> carry `choices`.** `hint` is prose and is never a substitute for it — a spell
-> with nine hints and zero choices has told the human nine times and the agent
-> never. Write both where both apply: `choices` is _what would have been
-> accepted_, `hint` is _the runnable recovery_. **Never emit the set twice** in
-> two spellings; that is how one rots.
+> The full ruling, with its five refinements and its options not taken, is
+> [A1's ruling in the register](../architecture/house-conformance-register.md#a1s-ruling--when-choices-is-required-and-when-hint-is-not).
+> The operative half:
+>
+> **`choices` is REQUIRED wherever a closed set of valid inputs exists AND IS IN
+> HAND at the raise** — an absent or unknown verb, an unknown flag, an invalid
+> value of an enumerable type, a named member of a collection the code has
+> ALREADY loaded, and a required-input disjunction of two or more members.
+>
+> **`hint` is required wherever there is a next act the caller can take, and
+> deliberately NOT where there is none.** 260 raise sites against 47 hints is
+> the argument: "a hint on every failure" adds ~200 strings saying "run help",
+> and it makes the hints that carry real recovery indistinguishable from filler.
+> ⛔ **So write an absent `hint` as a DECISION, in a comment, not as an
+> oversight** — digestify's flag rejection carries none because digestify
+> answers no `help` and no `--help`, so `choices` IS the recovery.
+>
+> ⛔ **AND `choices` MUST BE THE ACTUAL SET, derived at the site that accepts
+> it.** A hand-typed list that drifts from the dispatch table is worse than no
+> list: prose a reader can check, `choices` nobody can. Concretely, at genesis:
+>
+> - **Lift the flag map out of the `parseArgs` call** into a named
+>   `CLI_OPTIONS`, and build the rejection's set with
+>   `Object.keys(CLI_OPTIONS)`. Inline, the accepted set exists only inside the
+>   invocation that consumes it — which is how bounty and imago BOTH ended up
+>   with a hand-kept flag roster inside a message string.
+> - **Prefer a verb->flags REGISTRY** (`VERB_SPEC`, magpie and mind-mapper) over
+>   a bare `switch`: the help text, the parser and every rejection's `choices`
+>   then read one object. If you keep a switch, the verb list is a DECLARATION
+>   and it needs a cell that parses the case labels and asserts set equality —
+>   magpie's, now in astrolabe, bounty and imago too. **A case label is not a
+>   value**, so the type system cannot do it for you.
+> - **Derive an enumerated type FROM its array**, not the other way round:
+>   `export const ALPHA_POLICIES = [...] as const; export type AlphaPolicy = (typeof ALPHA_POLICIES)[number];`
+>   — then `choices: [...ALPHA_POLICIES]` cannot drift from the type, and a
+>   member added to the type does not compile. magpie had three copies of that
+>   set before this.
+> - **Include the ALIASES** in a verb roster. A roster built from the verbs
+>   alone understates the accepted set by exactly the alias spellings —
+>   `--help`/`-h`, or mind-mapper's `message`, which acc flagged as
+>   recorded-but-never-advertised.
+> - **Route on node's error CODE, not its prose.** Attach `choices` only for
+>   `ERR_PARSE_ARGS_UNKNOWN_OPTION`; the other parse rejections mean a
+>   recognised flag got a value from an open set, and the flag roster would name
+>   the half that was right.
+> - **Never emit the set twice** in two spellings; that is how one rots. Where a
+>   roster is already in a message, MOVE it.
+> - **`choices` enumerates COMMAND TOKENS.** Not environment variables — an env
+>   name in that array is a "choice" the caller cannot type. It rides `hint`.
 >
 > ⚠ **And check the CONFORMANT sibling rather than assuming.** glamour is
 > CONFORMANT L0 and publishes `choices` where another spell would engineer a
 > marker into its prose — grapevine's rejections carried flag-set extractor
 > markers, sorted long-flags-first, and the adoption moved the enumeration into
 > `choices` rather than replacing it (D71).
+>
+> ⚠ **A test that matches on a rejection's PROSE is the caller `errors.ts`
+> forbids.** mind-mapper's own suite asserted `stderr` contained
+> `"received|thinking|idle"`; the conversion broke it, and the repair was to
+> assert `choices` instead. Assert the field, never the sentence.
 
 **Three more things the ports learned, all of which apply on day one:**
 
@@ -713,14 +767,14 @@ built to, and it would be the third document to describe a world that had moved.
 **What it should generate, when it is written** — the mechanical parts only, and
 the test of "mechanical" is that the roster is unanimous:
 
-| it generates                                                                  | because                                                                                      |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/<spell>/{backend,surface}/`, `build.ts` delegator, `bunfig.toml`         | 8/8 identical                                                                                |
-| a launcher of the chosen shape                                                | 16/16 are 3–4 code lines (3 natural-return, 4 terminal-exit) and byte-identical within shape |
-| the two `.gitignore` un-ignore lines                                          | the only hand-kept list, and forgetting it is silent                                         |
-| a CLI entry that already imports `errors.ts` and raises with `choices`        | closes register A1 by construction, which is the whole prize                                 |
-| a `SKILL.md` skeleton with the exit-code table already in it                  | no ward reads that table; a generator is the only guard                                      |
-| the eight questions as a comment block **to be answered, never pre-answered** | they are the design, not the boilerplate                                                     |
+| it generates                                                                                 | because                                                                                      |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/<spell>/{backend,surface}/`, `build.ts` delegator, `bunfig.toml`                        | 8/8 identical                                                                                |
+| a launcher of the chosen shape                                                               | 16/16 are 3–4 code lines (3 natural-return, 4 terminal-exit) and byte-identical within shape |
+| the two `.gitignore` un-ignore lines                                                         | the only hand-kept list, and forgetting it is silent                                         |
+| a CLI entry that already imports `errors.ts`, names `CLI_OPTIONS`, and raises with `choices` | keeps register A1 closed by construction, which is the whole prize                           |
+| a `SKILL.md` skeleton with the exit-code table already in it                                 | no ward reads that table; a generator is the only guard                                      |
+| the eight questions as a comment block **to be answered, never pre-answered**                | they are the design, not the boilerplate                                                     |
 
 **What makes it worth building:** one real spell walking this playbook and
 reporting which steps were mechanical and which needed judgment. **What would
@@ -733,23 +787,23 @@ document exists to end.
 
 **ROSTER-GROUNDED** (a count over all eight, measured 2026-09-10):
 
-| rule                                                                                      | grounding                                                                                                                     |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| A new spell builds; the criterion fires on the error import                               | 8/8 import `src/kit/wire/errors.ts`, which is outside every skill folder                                                      |
-| `src/<spell>/{backend,surface}/` is the authored layout                                   | 8/8, no naming deviation                                                                                                      |
-| `dist/` is generated AND committed                                                        | 8/8, 40 tracked files                                                                                                         |
-| A launcher is 3–4 code lines with no logic and no `import.meta.main`                      | 16/16; **9 are 3 lines (natural-return), 7 are 4 (terminal-exit)** — recounted 2026-09-10; bodies byte-identical within shape |
-| The launcher's path is the build's entry predicate                                        | `src/build.ts:117-125`                                                                                                        |
-| Two launcher shapes, decided by "does `main()` return while the process must keep living" | 9 natural-return · 7 terminal-exit; the two name/shape exceptions are both measured (D69, bounty's 15 s timeout)              |
-| `errors` / `serveDist` / `housekeeping` are the universal three                           | 8/8 each                                                                                                                      |
-| Four wire modules have no subject in a single-shot spell                                  | digestify: `eventLog`, `sse`, `tailEvents`, `discovery`                                                                       |
-| Two discovery conventions, plus "none"                                                    | 4 session-JSON · 3 singleton · 1 none                                                                                         |
-| `choices` is the skipped half of the error contract                                       | 3 spells at 0, a 4th at 1; `hint` present nearly everywhere (D94)                                                             |
-| No backend source under `scripts/`                                                        | 1 violator (astrolabe, 775 lines), open as register D11 — debt, not pattern                                                   |
-| `.gitignore` is the one hand-kept list **for the artifact**                               | 8 spells un-ignored one at a time, with a duplicate                                                                           |
-| Twelve instruments carry a pin a new spell must join; the rest derive                     | inventoried by file:line 2026-09-10 across `grimoire/` (17 gate-collected tests + 4 libraries) and `scripts/`                 |
-| A not-yet-buildable spell is absent from three instruments at once                        | all three take their population from `buildableSpells()`                                                                      |
-| `package.json`'s `workspaces` array is unwarded                                           | 3 entries (`src/bounty`, `src/digestify`, `src/grapevine`); no instrument reads it                                            |
+| rule                                                                                      | grounding                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A new spell builds; the criterion fires on the error import                               | 8/8 import `src/kit/wire/errors.ts`, which is outside every skill folder                                                                                                                                                                                                                                        |
+| `src/<spell>/{backend,surface}/` is the authored layout                                   | 8/8, no naming deviation                                                                                                                                                                                                                                                                                        |
+| `dist/` is generated AND committed                                                        | 8/8, 40 tracked files                                                                                                                                                                                                                                                                                           |
+| A launcher is 3–4 code lines with no logic and no `import.meta.main`                      | 16/16; **9 are 3 lines (natural-return), 7 are 4 (terminal-exit)** — recounted 2026-09-10; bodies byte-identical within shape                                                                                                                                                                                   |
+| The launcher's path is the build's entry predicate                                        | `src/build.ts:117-125`                                                                                                                                                                                                                                                                                          |
+| Two launcher shapes, decided by "does `main()` return while the process must keep living" | 9 natural-return · 7 terminal-exit; the two name/shape exceptions are both measured (D69, bounty's 15 s timeout)                                                                                                                                                                                                |
+| `errors` / `serveDist` / `housekeeping` are the universal three                           | 8/8 each                                                                                                                                                                                                                                                                                                        |
+| Four wire modules have no subject in a single-shot spell                                  | digestify: `eventLog`, `sse`, `tailEvents`, `discovery`                                                                                                                                                                                                                                                         |
+| Two discovery conventions, plus "none"                                                    | 4 session-JSON · 3 singleton · 1 none                                                                                                                                                                                                                                                                           |
+| `choices` is REQUIRED where a closed set is in hand; `hint` only where a next act exists  | register **A1, closed 2026-09-10**: 260 raise sites / 42 `choices` / 47 `hint`, derived and pinned by `grimoire/error-choices-census.test.ts`                                                                                                                                                                   |
+| No backend source under `scripts/`                                                        | 1 violator (astrolabe, 775 lines), open as register D11 — debt, not pattern                                                                                                                                                                                                                                     |
+| `.gitignore` is the one hand-kept list **for the artifact**                               | 8 spells un-ignored one at a time, with a duplicate                                                                                                                                                                                                                                                             |
+| Thirteen instruments carry a pin a new spell must join; the rest derive                   | inventoried by file:line 2026-09-10 across `grimoire/` (18 gate-collected tests + 5 libraries) and `scripts/`; the thirteenth is the `choices` census, which A1's close added — its `EXPECTED` table is hand-declared per spell (D27), so a new spell is a RED cell there until someone writes its numbers down |
+| A not-yet-buildable spell is absent from three instruments at once                        | all three take their population from `buildableSpells()`                                                                                                                                                                                                                                                        |
+| `package.json`'s `workspaces` array is unwarded                                           | 3 entries (`src/bounty`, `src/digestify`, `src/grapevine`); no instrument reads it                                                                                                                                                                                                                              |
 
 **⚑ UNVALIDATED — awaiting its first spell:**
 
