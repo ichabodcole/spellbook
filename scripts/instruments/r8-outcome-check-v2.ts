@@ -52,6 +52,25 @@ const CAPTURE = /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?([A-Za-
 const ESCAPE_FNS =
   "emitEvent|emit|broadcast\\w*|reply|respond|Response|send\\w*|printJson|console\\.log";
 
+// ⛔ R3, MADE LOCAL: READ THE POSSIBLY-UNDEFINED, AND DIE NAMING THE INVARIANT.
+// `x!` and `?? fallback` both make the type error vanish and only one of those
+// is honest. In an INSTRUMENT `?? fallback` is the worse one, and
+// `if (!x) continue` is worse still: a skipped element lowers a DENOMINATOR
+// with nothing said, which is D64's defect exactly — a coverage count going
+// down is not a failure, so nothing reds and a shipped number is quietly false.
+// An instrument that crashes gets repaired; one that counts less ships a lie.
+//
+// ⚠ THIS HELPER IS DUPLICATED PER INSTRUMENT ON PURPOSE. Every file under
+// `scripts/instruments/` imports node builtins and nothing else — each is
+// runnable and copyable on its own — and the three r8 files are CALIBRATED
+// SPECIMENS whose independence is their evidentiary value (c4d669eb verified
+// each byte-identical to its own baseline). A shared module would let one edit
+// move all three specimens at once, silently.
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 type Hit = { file: string; verb: string; local: string; callee: string; reason: string };
 
 const files = walk(SKILLS);
@@ -66,7 +85,12 @@ for (const f of files) {
   for (const m of src.matchAll(MARK)) {
     marks.push({
       disc: m[1] ?? "«case»",
-      verb: m[2] ?? m[3],
+      // MARK is two alternatives; group 2 rides the `if` form and group 3 the
+      // `case` form, so a match sets exactly one. (`disc: m[1] ?? "«case»"`
+      // above is NOT this shape — group 1 is genuinely absent for `case`, and
+      // that sentinel is an honest alternative, which is why it never typed as
+      // an error.)
+      verb: must(m[2] ?? m[3], "MARK matched with neither verb group set"),
       start: m.index,
       end: m.index + m[0].length,
     });
@@ -74,18 +98,34 @@ for (const f of files) {
   // Group CONSECUTIVE marks sharing a discriminant — that is a dispatcher.
   let i = 0;
   while (i < marks.length) {
+    // ⚠ `head` IS `group[0]` BY CONSTRUCTION — `marks.slice(i, …)[0]` is
+    // `marks[i]` — so naming it once removes the indexed read at both sites
+    // WITHOUT hiding one behind a parameter (D64's route). The grouping walk is
+    // rewritten as a `for(;;)` so the end-of-array case is a NAMED terminal
+    // (`next === undefined`, past the last mark) rather than a length
+    // comparison the type system cannot connect to the read.
+    const head = must(marks[i], `marks[${i}] absent inside 0..${marks.length}`);
     let j = i;
-    while (j + 1 < marks.length && marks[j + 1].disc === marks[i].disc) j++;
+    for (;;) {
+      const next = marks[j + 1];
+      if (next === undefined || next.disc !== head.disc) break;
+      j++;
+    }
     const group = marks.slice(i, j + 1);
     if (group.length >= 3) {
-      dispatchers.push({ file: f.replace(`${SKILLS}/`, ""), disc: group[0].disc, n: group.length });
+      dispatchers.push({ file: f.replace(`${SKILLS}/`, ""), disc: head.disc, n: group.length });
       for (let k = 0; k < group.length; k++) {
+        const g = must(group[k], `group[${k}] absent inside 0..${group.length}`);
+        // ⚠ `group[k + 1]` IS legitimately absent on the last branch of the
+        // dispatcher — the `?? src.length` is that terminal case, and it stays.
         const hardEnd = group[k + 1]?.start ?? src.length;
-        const body = blockAfter(src, group[k].end, hardEnd);
+        const body = blockAfter(src, g.end, hardEnd);
         branchCount++;
         CAPTURE.lastIndex = 0;
         for (const c of body.matchAll(CAPTURE)) {
-          const [, local, callee] = c;
+          // CAPTURE is ONE alternative with two MANDATORY groups.
+          const local = must(c[1], "CAPTURE matched without its `local` group");
+          const callee = must(c[2], "CAPTURE matched without its `callee` group");
           const esc = new RegExp(`(?:${ESCAPE_FNS})\\s*\\([^;]{0,300}?\\b${local}\\b`, "s");
           const ret = new RegExp(`return[^;]{0,200}?\\b${local}\\b`, "s");
           if (esc.test(body) || ret.test(body)) continue;
@@ -97,7 +137,7 @@ for (const f of files) {
             );
           hits.push({
             file: f.replace(`${SKILLS}/`, ""),
-            verb: group[k].verb,
+            verb: g.verb,
             local,
             callee,
             reason: mutator ? "MUTATOR-DROPPED" : "dropped(non-mutator)",

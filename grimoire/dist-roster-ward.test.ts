@@ -217,6 +217,23 @@ describe("dist roster ward", () => {
     expect(trackedDistFiles("no-such-spell-6f3a1c")).toEqual([]);
     // …and a real one must not, in the SAME run, so the instrument is shown
     // discriminating rather than merely capable of returning empty.
-    expect(trackedDistFiles(rows[0].spell).length).toBeGreaterThan(0);
+    // ⛔ THE PRECONDITION IS ASSERTED IN THIS CELL, NOT BORROWED FROM ANOTHER.
+    // `rows.length > 0` is checked in ARM 1, a DIFFERENT cell, so the read
+    // below is unguarded here.
+    //
+    // ⚠ AND THE HONEST SIZE OF THIS CHANGE, MEASURED RATHER THAN ASSUMED: it is
+    // a MESSAGE, not new conviction. Driven under a forced-empty roster, the
+    // previous `rows[0].spell` ALREADY failed — `TypeError: undefined is not an
+    // object (evaluating 'rows[0].spell')` — so the vacuity this comment first
+    // claimed to close was never open. What the named throw buys is that the
+    // cell says WHY it cannot run instead of dying on a property access, which
+    // is worth having and is not worth overstating. Recorded because a ward
+    // comment that overclaims is the same defect as a ward that overclaims.
+    const anyRealSpell = rows[0];
+    if (anyRealSpell === undefined)
+      throw new Error(
+        "PRECONDITION — the dist roster is EMPTY, so this positive control cannot discriminate",
+      );
+    expect(trackedDistFiles(anyRealSpell.spell).length).toBeGreaterThan(0);
   });
 });

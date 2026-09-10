@@ -9,6 +9,7 @@ import {
   SKILLS_DIR as SKILLS,
   spellsOf,
 } from "./lib/entry-points";
+import { must } from "./lib/must.ts";
 
 // The SKILL.md flag invariant — a roster-wide ward, owned by the grimoire seat.
 //
@@ -213,8 +214,15 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
       });
 
       const documented = new Set(
+        // ⛔ FIXED AT THE ROOT, WHICH IS WHY ONE EDIT CLOSES TWO ERRORS. The
+        // bare `.map((m) => m[1])` made `documented` a `Set<string | undefined>`
+        // and both downstream reads (`isForeign(spell, f)` here and
+        // `all.has(f)` below) inherited it. One MANDATORY group in a
+        // single-alternative regex: a match always sets it. The alternative —
+        // filtering the undefined out — would have silently shrunk the
+        // DOCUMENTED denominator this cell asserts is non-empty.
         [...skill.matchAll(/--([a-z][a-z0-9-]*)/g)]
-          .map((m) => m[1])
+          .map((m) => must(m[1], "flag matcher matched without its name group"))
           .filter((f) => !isForeign(spell, f)),
       );
 

@@ -91,6 +91,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { must } from "./must.ts";
 
 export const SKILLS_DIR = join(import.meta.dir, "..", "..", "plugins", "spellbook", "skills");
 
@@ -278,8 +279,13 @@ export function recognizedFlags(src: string): string[] | null {
         block = braceBlock(src, src.indexOf("{", regDecl));
       }
     }
+    // Two alternatives — a quoted key and a bare identifier — with ONE capture
+    // group each, so a match always sets exactly one. Asserted rather than
+    // assumed: a third alternative added without a group would otherwise put
+    // the string "undefined" into the flag name set, and this enumerator is
+    // what `flag-invariant` and `exit-site-inventory` both count.
     for (const k of block.matchAll(/(?:"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*\{\s*type\s*:/g))
-      names.add(k[1] ?? k[2]);
+      names.add(must(k[1] ?? k[2], "flag-map key matcher matched with neither group set"));
   }
   return sawMap ? [...names] : null;
 }

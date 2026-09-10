@@ -126,13 +126,49 @@ import { join } from "node:path";
 //     reproduce exactly. `docs` (4 files) and `(generated)` (24 bundles) are in
 //     tsc's program and in no row of the table at all — both are clean, which
 //     is why nobody noticed.
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 1, `grimoire` 14 -> 0 and `scripts` 27 -> 0,
+// total 584 -> 543. THE FALL WAS A FIX AND NOT A SILENCING, and here is the
+// account this ward's own FELL sentence demands, route by route:
+//
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback` STANDING IN
+//     FOR AN INVARIANT. Every one of the 41 reads was replaced by a `must(v,
+//     "<the invariant>")` that THROWS naming the invariant, or by an explicitly
+//     named terminal branch where the absence is real. `grimoire/lib/must.ts`
+//     carries the argument; `scripts/instruments/*` holds its own copies
+//     on purpose (each instrument imports node builtins only).
+//   • ⛔ NO FILE WAS DELETED. The phase opened by asking whether
+//     `r8-outcome-check-v{1,2}.ts` were dead and could be removed instead of
+//     typed. They are NOT: all three are live-logic instruments whose hardcoded
+//     root went stale in the backend convergence, and all three were re-driven
+//     against `src/` before a line was touched. See T10.
+//   • NO DE-DUPLICATION HID AN INDEXED READ BEHIND A PARAMETER (D64). Two edits
+//     came close and both are argued in T12: `head` replaces `marks[i]`/
+//     `group[0]` in v2/v3, and it is `group[0]` BY CONSTRUCTION rather than by
+//     assumption; the four `rel.split("/")[0]` reads in
+//     `daemon-lifecycle-ward.test.ts` were left as four reads for that reason.
+//   • ⭐ ONE FILE WAS ADDED — `grimoire/lib/must.ts` — so `grimoire`'s
+//     `filesInTree` goes 20 -> 21 and the repo's 544 -> 545. The new file is
+//     clean, which is why the area still lands on 0 rather than on a residue.
+//
+// AND THE FALLS WERE VERIFIED AS FIXES BY MUTATION, NOT BY THE COUNT: every
+// ward whose types moved was driven red and restored green, and the three
+// r8 specimens reproduce their pre-change reports BYTE-FOR-BYTE against both
+// their real root and `src/`. `phase-1-journal.md` records eleven drives.
+//
+// ⚠ THE COUNT ALONE WOULD NOT HAVE CAUGHT THE ONE REAL ACCIDENT OF THIS PHASE,
+// AND THIS WARD DID. A measurement harness `git checkout --`'d
+// `daemon-lifecycle-ward.test.ts` and destroyed four finished edits; the direct
+// `tsc | grep` run that had already said ZERO was stale, and it was THIS cell's
+// arithmetic (547 against a declared 543) that surfaced the loss. A fix can be
+// lost as silently as it can be faked.
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
   docs: 0,
-  grimoire: 14,
+  grimoire: 0,
   plugins: 21,
-  scripts: 27,
+  scripts: 0,
   src: 0,
   "src/astrolabe": 0,
   "src/astrolabe/backend": 19,
@@ -165,7 +201,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 584;
+const DECLARED_TOTAL = 543;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and

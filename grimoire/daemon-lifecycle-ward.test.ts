@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { Glob } from "bun";
+import { must } from "./lib/must.ts";
 
 // ── THE SIXTH EDIT WARD ──────────────────────────────────────────────────────
 //
@@ -95,14 +96,27 @@ function daemons(): { spell: string; file: string; text: string }[] {
     if (rel.endsWith(".test.ts")) continue;
     const text = read(rel);
     if (!text.includes("Bun.serve(")) continue;
-    out.push({ spell: rel.split("/")[0], file: `skills/${rel}`, text });
+    // `String.split` always yields at least one element, so index 0 is a
+    // `noUncheckedIndexedAccess` artifact rather than a real absence — stated
+    // here instead of silenced with `!`, because if the glob ever hands back a
+    // shape with no leading segment this ward must die rather than attribute a
+    // daemon to the spell named `undefined`.
+    out.push({
+      spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
+      file: `skills/${rel}`,
+      text,
+    });
   }
   const srcRoot = join(import.meta.dir, "..", "src");
   for (const rel of new Glob("*/backend/*.ts").scanSync(srcRoot)) {
     if (rel.endsWith(".test.ts")) continue;
     const text = readFileSync(join(srcRoot, rel), "utf8");
     if (!text.includes("Bun.serve(")) continue;
-    out.push({ spell: rel.split("/")[0], file: `src/${rel}`, text });
+    out.push({
+      spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
+      file: `src/${rel}`,
+      text,
+    });
   }
   return out.sort((a, b) => a.file.localeCompare(b.file));
 }
@@ -113,12 +127,16 @@ function daemons(): { spell: string; file: string; text: string }[] {
 function clis(): { spell: string; file: string; text: string }[] {
   const out: { spell: string; file: string; text: string }[] = [];
   for (const rel of new Glob("*/scripts/cli.ts").scanSync(SKILLS)) {
-    out.push({ spell: rel.split("/")[0], file: `skills/${rel}`, text: read(rel) });
+    out.push({
+      spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
+      file: `skills/${rel}`,
+      text: read(rel),
+    });
   }
   const srcRoot = join(import.meta.dir, "..", "src");
   for (const rel of new Glob("*/backend/cli.ts").scanSync(srcRoot)) {
     out.push({
-      spell: rel.split("/")[0],
+      spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `src/${rel}`,
       text: readFileSync(join(srcRoot, rel), "utf8"),
     });
