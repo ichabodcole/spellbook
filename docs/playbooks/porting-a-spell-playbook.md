@@ -2089,6 +2089,35 @@ port too — each landing makes some other file's roster sentence false, and no
 port owns it. ⚠ **The last port owns all of them at once**, which is the only
 reason this is written here rather than in a backlog item.
 
+⛔ ⭐ **mind-mapper — AND A THIRD POPULATION, FOUND BY THE VERIFY PASS AFTER THE
+ROLL WAS DECLARED DONE: PROSE THAT STATES A WIRE FIELD YOUR ADOPTION RENAMED.**
+The records commit for this port EDITED `.anthill/dev/seams.md` — for a moved
+PATH — and left two wire facts in the same file stale, both of them rows in this
+port's own wire-delta table: _"Events carry `{seq, epoch}`"_ (the cursor is
+`id`) and _"server sends `: keepalive` comment frames"_ (it is `: hb`). A third
+sat in `.anthill/dev/daedalus.md` as a SHAPE SPEC — _"an SSE data frame is the
+FULL BusEvent `{seq, epoch, kind, payload}` — assert on `payload.x`"_.
+
+**This is the same failure one level over, and the three together are the
+pattern:** a sweep that finds a moved PATH does not find a moved MEMBERSHIP, and
+neither of them finds a moved WIRE FIELD. Each population needs its own grep,
+because each is a different kind of token — a path, a list of spell names, a
+field name.
+
+⚠ **And the wire-field population is the WORST of the three to leave, because
+its readers are not readers.** A stale path misinforms whoever follows it; a
+stale roster sentence misleads; a stale field name in a document a test author
+reads as a SHAPE SPEC **mints a failing assertion** — which is exactly how D86's
+fixture defect happened, one document further out.
+
+**So the instruction is three greps, not one.** Once you have produced B8's
+required wire-schema delta (D81), the delta table IS the grep list: for every
+row in it, `git grep -n` the OLD spelling across `.anthill/`, `grimoire/`,
+`scripts/` and `src/`, and read every prose hit. **The delta you were already
+required to write is the input to the sweep you were not** — and authoritative
+team canon (`.anthill/dev/**`) is the first place to look, not the last, because
+nothing in it is under a ward.
+
 #### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
 
 All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,

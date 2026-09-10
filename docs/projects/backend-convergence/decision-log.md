@@ -4163,3 +4163,60 @@ the process.
 - _Severity `warn`._ `bun run check` runs `--error-on-warnings`, so `warn` and
   `error` are the same verdict here and `error` says what is meant. It also
   survives someone dropping that flag.
+
+## D89 · Live team canon misdocumented the wire this port renamed — and a sweep that finds a moved PATH finds neither a moved MEMBERSHIP nor a moved WIRE FIELD
+
+**Found by the verify pass after the roll was declared done, 2026-09-10.**
+
+`.anthill/dev/seams.md` is authoritative team canon and nothing in `.anthill/`
+is under a ward. **The records commit for this port edited that very file — for
+a moved PATH — and left two wire facts in it stale, both of them rows in this
+port's own wire-delta table:**
+
+| file                       | said                                                                   | is                                         |
+| -------------------------- | ---------------------------------------------------------------------- | ------------------------------------------ |
+| `seams.md` Contract 9      | "Events carry `{seq, epoch}`"                                          | the cursor field is **`id`** (FORCED, D81) |
+| `seams.md` Contract 9 V1.x | "server sends `: keepalive` comment frames ~15s"                       | **`: hb`** (`sse.ts`); interval unchanged  |
+| `daedalus.md`              | "An SSE data frame is the FULL BusEvent `{seq, epoch, kind, payload}`" | `{id, kind, payload, epoch}`               |
+
+All three are corrected in place, each carrying the sha that moved it so the
+next reader can date the claim.
+
+⛔ **THE GENERALISATION IS D87'S LESSON ONE LEVEL OVER, AND THE TWO TOGETHER
+MAKE THE PATTERN.** D87 recorded that _"the sweep that finds a moved PATH does
+not find a moved MEMBERSHIP."_ It does not find a moved **WIRE FIELD** either.
+Three populations, three different kinds of token, three greps:
+
+1. a **path** you moved — `git grep` the old path;
+2. a **list of spell names** you are a member of — `git grep <spell>` and read
+   every hit that is a roster rather than a path (D87);
+3. a **field name** your adoption renamed — and **the input to this grep already
+   existed**: B8 requires a wire-schema delta table (D81), and every row of it
+   is a token to sweep for.
+
+**The delta you were already required to write is the input to the sweep you
+were not.** That is the transferable half, and it is why this belongs in the
+playbook rather than in a backlog item.
+
+⚠ **And the wire-field population is the worst of the three to leave, because
+its readers are not readers.** A stale path misinforms whoever follows it. A
+stale roster sentence misleads. **A stale field name in a document a test author
+reads as a SHAPE SPEC mints a failing assertion** — which is precisely how D86's
+fixture defect arose, one document further out. `daedalus.md`'s entry exists to
+tell the next inbound-test author what to assert on; left alone it would have
+taught `frame.seq`.
+
+**Not taken:**
+
+- _Put a ward on `.anthill/dev/**`._ Tempting and wrong at this grain: the
+  contract text is prose whose subject is a negotiated agreement, and a ward
+  that greps it for field names would red on every historical sentence that
+  correctly records what the wire USED to be. The sweep is the instrument; the
+  delta table is what makes it cheap.
+- _Leave the historical spellings and add a "was `seq`" footnote elsewhere._ Two
+  spellings of one field is how one rots (D71). The correction states the
+  current fact FIRST and dates the change inline, which is the same shape the
+  kit headers adopted at D87.
+- _Fix `seams.md` only, since `daedalus.md` is one seat's living doc._
+  Backwards. A seat doc that carries a SHAPE SPEC is read by whoever writes the
+  next test, which is the population most likely to act on it.
