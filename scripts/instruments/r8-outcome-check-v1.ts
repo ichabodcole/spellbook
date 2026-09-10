@@ -17,9 +17,27 @@
 //   never by filename. Printed, and asserted non-zero, before any verdict.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-const SKILLS = "/Users/colereed/Projects/Spellbook/plugins/spellbook/skills";
+// ⛔ THE ROOT: AN ENV OVERRIDE WITH A DERIVED DEFAULT, AND IT USED TO BE A
+// HARDCODED ABSOLUTE PATH TO ONE MACHINE'S CHECKOUT — pointed, moreover, at
+// `plugins/spellbook/skills`, which the backend convergence emptied of
+// dispatchers. Every one of the three r8 copies therefore exited 1 with
+// `ZERO-DENOMINATOR — verdict withheld` (type-debt Phase 1, T10): live,
+// self-calibrating logic aimed at a tree that had moved out from under it, and
+// unrunnable on any other machine besides.
+//
+// The default is DERIVED from this file's own location, so the instrument runs
+// wherever the checkout is; `R8_ROOT` is the house override idiom
+// (`gate-blind-set.ts` takes `ROOT_DIR`, `type-debt-census.ts`
+// `TYPE_DEBT_ROOT`, `canon-ledger-ward.ts` `CANON_DIR`) and is what points it
+// at the OLD tree, or at a fixture, without editing a specimen.
+//
+// ⚠ AND THE REPORT IS BYTE-IDENTICAL TO THE PRE-CHANGE FILE RUN AGAINST THE
+// SAME ROOT — verified for all three copies before and after `biome --write`,
+// which is `c4d669eb`'s own discipline for touching these files. The only thing
+// that changed is which tree the instrument can find.
+const ROOT = resolve(process.env.R8_ROOT ?? join(import.meta.dir, "..", "..", "src"));
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -69,7 +87,7 @@ type Hit = {
   reason: string;
 };
 
-const files = walk(SKILLS);
+const files = walk(ROOT);
 const dispatchFiles: string[] = [];
 const hits: Hit[] = [];
 let branchCount = 0;
@@ -114,7 +132,7 @@ for (const f of files) {
       const escapes = esc.test(body) || ret.test(body);
       // objField alone is weak evidence; recorded but not treated as escape.
       hits.push({
-        file: f.replace(`${SKILLS}/`, ""),
+        file: f.replace(`${ROOT}/`, ""),
         verb: mark.verb,
         local,
         callee,
@@ -146,7 +164,7 @@ if (dispatchFiles.length === 0 || branchCount === 0) {
   process.exit(1);
 }
 console.log("\ndispatch files:");
-for (const f of dispatchFiles) console.log(`  ${f.replace(`${SKILLS}/`, "")}`);
+for (const f of dispatchFiles) console.log(`  ${f.replace(`${ROOT}/`, "")}`);
 
 const dropped = hits.filter((h) => !h.escapes);
 console.log(

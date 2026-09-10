@@ -29,6 +29,37 @@ afterAll(async () => {
   rmSync(home, { recursive: true, force: true });
 });
 
+/** ⛔ THE DEADLINE FOR A CELL THAT WAITS ON A DAEMON BOOT — DERIVED FROM THE
+ *  BOOT BUDGET, NOT RAISED TO SURVIVE A BUSY MACHINE.
+ *
+ *  `cli.ts`'s `ensureDaemon` spawns the daemon and then polls discovery **100
+ *  times at 100 ms**, and says so in its own failure: "daemon did not come up
+ *  within 10s". Every cell here that spawns one ran at `bun test`'s DEFAULT
+ *  5,000 ms — so for five of those ten seconds the CLI was still legitimately
+ *  waiting while the framework had already decided the test was broken. That is
+ *  not a slow test; it is two deadlines disagreeing, with the shorter one owned
+ *  by a default that never measured anything.
+ *
+ *  ⚠ WHAT THIS IS NOT. It is not a peer's timeout raised to hide the ratchet's
+ *  CPU. That mechanism was FILED (type-debt T13 #6) and does not hold: `bun
+ *  test` runs test FILES sequentially in one process, `grimoire/` sorts before
+ *  `src/`, and the ratchet awaits its `tsc` child — measured, a run of the
+ *  ratchet plus this file takes 9.87 s against 7.6 + 2.5 alone, i.e. the sum.
+ *  There is no overlap to nice or serialise. What one gate run actually caught
+ *  was this cell at **5004.19 ms** — a boot that had not finished inside HALF
+ *  its allowance.
+ *
+ *  ⚠ AND IT DOES NOT MAKE A DEAD DAEMON PASS. `ensureDaemon` still gives up at
+ *  10 s and throws a message that NAMES the failure, which is what this cell
+ *  now fails with — instead of a timeout that names nothing and sends the next
+ *  reader to the wrong file. Driven both ways (see the branch's decision log).
+ *
+ *  ⚠ THE HOUSE ALREADY DOES THIS EVERYWHERE ELSE. astrolabe's `ensureDaemon`
+ *  budgets 45 s ("glamour uses the same ~45s budget") and its CLI cells carry
+ *  explicit 20–30 s deadlines; digestify's review cells carry 10–15 s. This
+ *  file was the one that spawned daemons at the framework default. */
+const DAEMON_BOOT_MS = 15_000;
+
 async function runCli(
   ...args: string[]
 ): Promise<{ code: number; stdout: string; stderr: string }> {
@@ -45,11 +76,15 @@ async function runCli(
   return { code, stdout, stderr };
 }
 
-test("open spawns the daemon and prints its url", async () => {
-  const { code, stdout } = await runCli("open", "--no-open");
-  expect(code).toBe(0);
-  expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-});
+test(
+  "open spawns the daemon and prints its url",
+  async () => {
+    const { code, stdout } = await runCli("open", "--no-open");
+    expect(code).toBe(0);
+    expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+  },
+  DAEMON_BOOT_MS,
+);
 
 test("state on a projectless store exits 6 with the needs-project shape under error.server (no auto-mint)", async () => {
   // acc L0 lane B: a daemon refusal is ONE JSON envelope on stderr, stdout
@@ -67,11 +102,15 @@ test("state on a projectless store exits 6 with the needs-project shape under er
   expect(envelope.error.server).toEqual({ error: "needs-project", projects: [] });
 });
 
-test("open --project refuses an unknown id — open never mints a project", async () => {
-  const { code, stderr } = await runCli("open", "--no-open", "--project", "never-was");
-  expect(code).toBe(2);
-  expect(stderr).toContain("unknown project: never-was");
-});
+test(
+  "open --project refuses an unknown id — open never mints a project",
+  async () => {
+    const { code, stderr } = await runCli("open", "--no-open", "--project", "never-was");
+    expect(code).toBe(2);
+    expect(stderr).toContain("unknown project: never-was");
+  },
+  DAEMON_BOOT_MS,
+);
 
 test("projects --create Default makes the store usable unscoped (the legacy default shape)", async () => {
   const created = await runCli("projects", "--create", "Default");
@@ -83,11 +122,15 @@ test("projects --create Default makes the store usable unscoped (the legacy defa
   expect(JSON.parse(stdout).project.id).toBe("default");
 });
 
-test("open --project appends ?project= to the printed url", async () => {
-  const { code, stdout } = await runCli("open", "--no-open", "--project", "default");
-  expect(code).toBe(0);
-  expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?project=default$/);
-});
+test(
+  "open --project appends ?project= to the printed url",
+  async () => {
+    const { code, stdout } = await runCli("open", "--no-open", "--project", "default");
+    expect(code).toBe(0);
+    expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?project=default$/);
+  },
+  DAEMON_BOOT_MS,
+);
 
 test("ingest + propose + ratify seed the dataset the read-path verbs use", async () => {
   const ingest = Bun.spawn(
@@ -809,37 +852,44 @@ test("job verb: create/update/claim/subtask/list/delete round-trip the body shap
 // the daemon's spawn args; the server binds it and writes N to daemon.port.
 // Uses its own fresh HOME so no live daemon short-circuits the port (the
 // live-daemon-ignores-N wrinkle) — and its own daemon teardown.
-test("open --port N binds the daemon to N (forwarded through ensureDaemon)", async () => {
-  // Grab a free port by opening an ephemeral server, reading its port, closing.
-  const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") });
-  const wanted = probe.port; // Bun.serve().port is number | undefined — narrow once
-  probe.stop(true);
-  if (wanted === undefined) throw new Error("probe server did not report a port");
+test(
+  "open --port N binds the daemon to N (forwarded through ensureDaemon)",
+  async () => {
+    // Grab a free port by opening an ephemeral server, reading its port, closing.
+    const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") });
+    const wanted = probe.port; // Bun.serve().port is number | undefined — narrow once
+    probe.stop(true);
+    if (wanted === undefined) throw new Error("probe server did not report a port");
 
-  const portHome = mkdtempSync(join(tmpdir(), "mind-mapper-cli-port-test-"));
-  try {
-    const proc = Bun.spawn(
-      [process.execPath, "run", CLI_SCRIPT, "open", "--no-open", "--port", String(wanted)],
-      { env: { ...process.env, MIND_MAPPER_HOME: portHome }, stdout: "pipe", stderr: "pipe" },
-    );
-    const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
-    expect(code).toBe(0);
-    // The printed url carries the requested port, and so does the discovery file.
-    expect(JSON.parse(stdout).url).toBe(`http://127.0.0.1:${wanted}`);
-    const { readFileSync } = await import("node:fs");
-    const written = Number.parseInt(readFileSync(join(portHome, "daemon.port"), "utf8").trim(), 10);
-    expect(written).toBe(wanted);
-  } finally {
+    const portHome = mkdtempSync(join(tmpdir(), "mind-mapper-cli-port-test-"));
     try {
+      const proc = Bun.spawn(
+        [process.execPath, "run", CLI_SCRIPT, "open", "--no-open", "--port", String(wanted)],
+        { env: { ...process.env, MIND_MAPPER_HOME: portHome }, stdout: "pipe", stderr: "pipe" },
+      );
+      const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+      expect(code).toBe(0);
+      // The printed url carries the requested port, and so does the discovery file.
+      expect(JSON.parse(stdout).url).toBe(`http://127.0.0.1:${wanted}`);
       const { readFileSync } = await import("node:fs");
-      const pid = Number.parseInt(readFileSync(join(portHome, "daemon.pid"), "utf8").trim(), 10);
-      process.kill(pid, "SIGTERM");
-    } catch {
-      /* already gone */
+      const written = Number.parseInt(
+        readFileSync(join(portHome, "daemon.port"), "utf8").trim(),
+        10,
+      );
+      expect(written).toBe(wanted);
+    } finally {
+      try {
+        const { readFileSync } = await import("node:fs");
+        const pid = Number.parseInt(readFileSync(join(portHome, "daemon.pid"), "utf8").trim(), 10);
+        process.kill(pid, "SIGTERM");
+      } catch {
+        /* already gone */
+      }
+      rmSync(portHome, { recursive: true, force: true });
     }
-    rmSync(portHome, { recursive: true, force: true });
-  }
-});
+  },
+  DAEMON_BOOT_MS,
+);
 
 // ── Round 11 — the channel + the activity-message tie, at the CLI wire ───────
 // (the body-mirror scar: a field added to a shared route must be threaded into

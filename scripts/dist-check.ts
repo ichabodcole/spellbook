@@ -41,7 +41,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { isBackendArtifact as classifyBackendArtifact } from "../grimoire/lib/dist-artifacts.ts";
-import { buildableSpells } from "../src/build.ts";
+import { backendEntryNames, buildableSpells } from "../src/build.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
@@ -130,6 +130,39 @@ export function diskDistFiles(spell: string, root: string = REPO_ROOT): string[]
     .sort();
 }
 
+/** The BACKEND artifacts the build DECLARES for a spell, repo-relative — the
+ *  other direction of ARM 1b, and the one that was missing until 2026-09-10.
+ *
+ *  ⛔ THE OLD CLAUSE CONVICTED ONLY A TOTALLY EMPTY `dist/`. It was
+ *  `r.tracked > 0 && r.disk === 0`, so removing ONE of astrolabe's five
+ *  artifacts printed `astrolabe:5/4` in the ward's own output and reddened
+ *  nothing (type-debt Phase 1, T13 #2). A partial loss is the likelier loss: it
+ *  is what a failed or interrupted per-aspect emit leaves behind.
+ *
+ *  ⚠ THE DECLARATION IS `src/build.ts`'s OWN, IMPORTED, NEVER A NAME TEST. The
+ *  expected set is `backendEntryNames` — a backend module with a paired
+ *  launcher — so this cannot become the fourth copy of the `endsWith("/cli.js")`
+ *  hard-coding D43 removed from the build, D44 from the spawn-path ward and
+ *  2026-09-09 from `isBackendArtifact`.
+ *
+ *  ⚠ AND IT ASKS THE QUESTION IN THE ONLY DIRECTION THAT IS SAFE IN THE SUITE.
+ *  "Tracked but not on disk" would red on ordinary work in progress: `dist/` is
+ *  rm'd before every build (`src/build.ts:308`), so a rebuilt surface renames
+ *  its hashed chunk and the previously tracked name is legitimately gone until
+ *  it is staged — ARM 2's question, CI-only by Cole's 2026-09-01 ruling. A
+ *  DECLARED BACKEND ENTRY missing from the disk carries no such innocent
+ *  reading: the build either emitted it or did not. */
+export function expectedBackendArtifacts(spell: string): string[] {
+  return backendEntryNames(spell).map((name) => `${distRoot(spell)}/${name}.js`);
+}
+
+/** Declared by the build and NOT ON THE DISK. Named per path: the remedy is
+ *  `bun run build`, or finding out why that entry emitted nothing. */
+export function absentBackendArtifacts(spell: string): string[] {
+  const onDisk = new Set(diskDistFiles(spell));
+  return expectedBackendArtifacts(spell).filter((f) => !onDisk.has(f));
+}
+
 /** On the disk and not in the index — emitted, and not shipping. */
 export function untrackedDistFiles(spell: string, root: string = REPO_ROOT): string[] {
   const tracked = new Set(trackedFiles([distRoot(spell)], root));
@@ -196,6 +229,8 @@ export type Roster = {
   tracked: number;
   disk: number;
   untracked: string[];
+  /** Declared by `src/build.ts` and not on the disk — `absentBackendArtifacts`. */
+  absent: string[];
 }[];
 
 /** ARM 0's denominator, derived the way `src/build.ts` derives it — by importing
@@ -209,6 +244,7 @@ export function roster(): Roster {
     tracked: trackedDistFiles(spell).length,
     disk: diskDistFiles(spell).length,
     untracked: untrackedDistFiles(spell),
+    absent: absentBackendArtifacts(spell),
   }));
 }
 
@@ -294,6 +330,34 @@ function main(argv: string[]): number {
   console.log(
     `  looked at             ${rows.length} spell(s), ${diskTotal} file(s) on disk, ${untrackedTotal} untracked`,
   );
+
+  // ⛔ AND THE OTHER DIRECTION: A DECLARED BACKEND ENTRY THAT IS NOT ON THE DISK.
+  // The clause below this one (`tracked > 0 && disk === 0`) convicted only a
+  // TOTALLY empty `dist/`; a spell that lost ONE of five artifacts printed
+  // `5/4` and reddened nothing (T13 #2). The expected set is the build's own
+  // `backendEntryNames`, so this is a comparison against a declaration rather
+  // than against a name convention.
+  const expectedTotal = rows.reduce((n, r) => n + expectedBackendArtifacts(r.spell).length, 0);
+  const absentBackends = rows.flatMap((r) => r.absent);
+  console.log(
+    `  declared by the build ${expectedTotal} backend artifact(s), ${absentBackends.length} not on the disk`,
+  );
+  if (absentBackends.length > 0) {
+    console.log(
+      `  ⛔ FAIL — ${absentBackends.length} of ${expectedTotal} DECLARED backend artifact(s) are NOT ON THE DISK:`,
+    );
+    for (const f of absentBackends) console.log(`     ${f}`);
+    console.log("");
+    console.log("     `src/build.ts` declares one artifact per backend module with a paired");
+    console.log("     launcher. A declared entry missing from the disk is an emit that did not");
+    console.log(
+      "     happen — nothing about it is ordinary work in progress. Run `bun run build`;",
+    );
+    console.log("     if it comes back missing, that entry is failing to emit and the build is");
+    console.log("     saying so at exit 0.");
+    console.log("");
+    return 1;
+  }
 
   if (unstagedBackends.length > 0) {
     console.log(
