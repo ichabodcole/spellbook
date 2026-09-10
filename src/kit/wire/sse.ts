@@ -44,13 +44,29 @@
  *   grapevine    `Map<symbol, {alias, human, lurk, send}>`, per channel.
  *
  * **The readers that make them incompatible, counted rather than asserted: SIX
- * routes read the subscriber METADATA** — `GET /presence`,
- * `GET /channels/:name/subscribers`, the roll/clear broadcast, the archive
- * live-guard, the watch-presence registration, and the tail's own registration.
- * `alias` is a name a human sees in a roster, `human` tells an agent it is
- * talking to a person, and `lurk` excludes a connection from every presence
- * count. There is no way to put any of that into a set of closers. Adopting this
- * module would not be dead code; it would be a rewrite of what grapevine IS.
+ * routes read `alias`/`human`/`lurk`** — `GET /channels` (through
+ * `listChannels` → `visibleSubs`), `GET /presence`, `POST /channels`,
+ * `POST /announce`, `POST /channels/:name/messages`, and
+ * `GET /channels/:name/subscribers`. `alias` is a name a human sees in a roster,
+ * `human` tells an agent it is talking to a person, and `lurk` excludes a
+ * connection from every presence count. There is no way to put any of that into
+ * a set of closers. Adopting this module would not be dead code; it would be a
+ * rewrite of what grapevine IS.
+ *
+ * ⚠ **AND THE LIST IS DELIBERATELY NOT THE OBVIOUS ONE.** The port's first
+ * count named the `roll`/clear broadcast, the archive live-guard and two
+ * REGISTRATIONS — and every one of those is a site this module's type would
+ * serve perfectly: the broadcast reads only `s.send`, the live-guard only
+ * `subscribers.size` (which this header itself says is all any adopter reads),
+ * and a registration WRITES the record rather than reading it. The six above are
+ * the ones that read a field the kit's `SseClient` does not have; the writers
+ * (`/wait`'s presence registration and the tail's) are named separately because
+ * a writer is not evidence of anything. Counted in the pre-port daemon,
+ * `plugins/spellbook/skills/grapevine/scripts/daemon.ts` on `develop`:
+ * l.421, 739-747, 826, 886-887, 1049-1054, 1182-1188 — writers at 1111-1112 and
+ * 1307. (Corrected 2026-09-09 in the repair chapter; D68's requirement is that
+ * the refusal be written where the next reader meets it, which makes a
+ * mis-measured list worse than none.)
  *
  * ⚠ And grapevine's records carry no `close` at all — the per-stream teardown is
  * a closure stashed on the ReadableStream controller, reachable only from

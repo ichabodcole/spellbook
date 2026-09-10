@@ -43,8 +43,31 @@
 // too, `join(SCRIPT_DIR, "daemon.ts")`, fixed in the same chapter as this file
 // was written) and the exact string `backend/cli.ts`'s own comment attributes
 // to a dev-mode daemon dying at its surface import. Three defect classes, one
-// sentence. Discriminate by driving THIS launcher alone, with no CLI in the
-// picture: if it returns to your shell, it is this class and nothing else.
+// sentence.
+//
+// ⛔ DISCRIMINATE BY DRIVING THIS LAUNCHER ALONE, WITH NO CLI IN THE PICTURE —
+// and read the WHOLE outcome, not just "did I get my prompt back". The short
+// form this comment used to carry ("if it returns to your shell, it is this and
+// nothing else") is a FALSE BICONDITIONAL: a wrong spawn path is not reachable
+// this way at all, and the dev-mode import failure ALSO returns you to your
+// shell — at exit 1, with a module error. The sound test is:
+//
+//   returns to your shell HAVING PRINTED `listening on …`, AT EXIT 0
+//     → the launcher shape, and nothing else.
+//   returns at a NON-ZERO exit with a module/import error, nothing printed
+//     → the surface-import class (run from a source-free install, or in dev).
+//   stays up and answers `GET /`
+//     → the launcher is right; the defect is on the CLI side (the spawn path).
+//
+// ⚠ AND THE PORT FILE IS NOT THE DISCRIMINATOR IT LOOKS LIKE. "Cause 1 creates
+// the port file, cause 2 never does" is true and nearly unobservable: the CLI's
+// `readDaemonPort()` pings the orphan and UNLINKS it in its first 50 ms poll.
+// Driven: six `ls` at 500 ms across the window never saw it, and a busy loop
+// caught it in 1.0 % of samples. The observable that actually separates them is
+// `channels/`: `ensureDirs()` runs on the boot path, so a daemon that BOUND and
+// died leaves the directory behind, while a spawn that never ran and an import
+// that died before `ensureDirs()` both leave `GRAPEVINE_HOME` completely empty
+// (which is what `release-serve.test.ts`'s forced-dev cell asserts).
 //
 // `run()` takes NO ARGUMENTS on purpose: this daemon parses none, and a
 // forwarder that read the argument vector would match the roster enumerator's

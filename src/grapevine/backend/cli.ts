@@ -447,7 +447,9 @@ async function ensureDaemon(): Promise<number> {
     hint:
       "three unrelated causes report this one sentence: the daemon's launcher shape, " +
       "a wrong spawn path, and a dev-mode daemon dying at its surface import. " +
-      "Run the daemon launcher alone to tell them apart.",
+      "Run the daemon launcher alone to tell them apart — it is the launcher shape " +
+      "iff it prints `listening on …` and returns at exit 0. An empty " +
+      "GRAPEVINE_HOME (no `channels/`) means the daemon never bound at all.",
   });
 }
 
@@ -2409,10 +2411,6 @@ function parseFlags(
     };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    // "recognized flags:" with the colon straight after the noun — the exact
-    // marker shape flag-set extractors match ("Valid flags: --x" and kin; acc's
-    // MARKER regex is the measured consumer). A qualifier between the noun and
-    // the colon ("recognized flags for send:") reads as prose, not a set.
     const bodyHint =
       spec.name === "send" || spec.name === "announce"
         ? "for a message body containing dashes, use --stdin or --body-file, " +
@@ -2422,11 +2420,21 @@ function parseFlags(
       // ⛔ THE SET IS `choices` NOW, NOT A PROSE MARKER. It used to be a second
       // line reading `recognized flags: --a --b`, spelled with the colon
       // straight after the noun because that is the marker shape a flag-set
-      // extractor matches. Inside a JSON envelope a prose marker is a substring
-      // of an escaped string, so it does not survive as prose — and it does not
-      // need to: `choices` is the envelope's field for exactly this, it is what
-      // glamour publishes at CONFORMANT L0, and an array cannot be truncated by
-      // a reader that stops at the first token which is not a `--long` flag.
+      // extractor matches.
+      //
+      // ⚠ AND NOT BECAUSE THE MARKER WOULD HAVE STOPPED WORKING — that reason
+      // was written here and in D71, and it is FALSE. acc parses the whole
+      // envelope, then walks `stringValuesOf(document)` and runs the SAME prose
+      // MARKER regex over every string inside it, for exactly this case
+      // (`agent-cli-conformance/src/acc/kit/surface.ts:653-656`, whose doc
+      // comment names anthill's `"Valid flags: --format"` inside an `error`
+      // string). A marker embedded in the envelope would still have been read.
+      //
+      // The move is right for reasons that survive that correction: `choices` is
+      // the envelope's own field for the accepted set, it is what glamour
+      // publishes at CONFORMANT L0, an ARRAY cannot be truncated by a reader
+      // that stops at the first token which is not a `--long` flag, and one
+      // spelling of one set cannot drift from the other.
       choices: accepted.map((k) => `--${k}`),
       ...(bodyHint ? { hint: bodyHint } : {}),
     });
