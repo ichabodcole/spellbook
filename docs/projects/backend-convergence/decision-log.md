@@ -4032,9 +4032,18 @@ into a synthetic cell precisely so that reaching zero would cost nothing —
 **this is that design being paid out.**
 
 Two more roster sentences expired at the same commit and are corrected:
-`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set;
-only magpie is one-aspect now) and its _"`mind-mapper/scripts/cli.ts` is a real
-unported CLI, not a launcher"_.
+`src/build.ts`'s _"imago and mind-mapper have only a surface"_ (an empty set)
+and its _"`mind-mapper/scripts/cli.ts` is a real unported CLI, not a launcher"_.
+
+⛔ **CORRECTED 2026-09-10 — THE REPLACEMENT SENTENCE WAS FALSE TOO, WHICH IS
+D90.** This entry and `src/build.ts` both went on to say _"only magpie is a
+one-aspect spell (a backend, its surface still shipping inside the plugin
+subtree) … Seven of the eight have both."_ `src/magpie/surface/index.html` had
+already moved into the tree at `c6a6e9a1`, BEFORE this port, and the plugin
+subtree ships no surface source. **All eight have both.** The docstring that
+warns "a roster sentence in a docstring is a claim nothing reds over" was, in
+the same breath, writing a new one — so the census is now DERIVED rather than
+restated. See D90.
 
 ⚠ **And this is the class the last port owns all of at once.** Every landing
 made some other file's roster sentence false, and no port owned it, because the
@@ -4220,3 +4229,71 @@ taught `frame.seq`.
 - _Fix `seams.md` only, since `daedalus.md` is one seat's living doc._
   Backwards. A seat doc that carries a SHAPE SPEC is read by whoever writes the
   next test, which is the population most likely to act on it.
+
+## D90 · The roster sentence written to replace a false roster sentence was also false — so the census is DERIVED, not restated
+
+**Found by the verify pass, 2026-09-10.**
+
+`src/build.ts:113-126` was rewritten by this port to correct a roster claim that
+had expired. **The correction was false on the day it was written:**
+
+> "only magpie is a one-aspect spell (a backend, its surface still shipping
+> inside the plugin subtree). Seven of the eight have both."
+
+`src/magpie/surface/index.html` exists — moved into the tree at `c6a6e9a1`,
+**before** this port — and the plugin subtree ships no surface source. **All
+eight spells have both aspects.** Measured directly:
+
+```
+for s in astrolabe bounty digestify glamour grapevine imago magpie mind-mapper;
+  do test -f src/$s/surface/index.html; done      ✅ 8/8
+```
+
+⛔ **AND THE SAME DOCSTRING CARRIES THE WARNING IT WAS VIOLATING.** Its own next
+sentence is _"**A roster sentence in a docstring is a claim nothing reds
+over**"_ — written about the sentence it had just replaced, while the
+replacement was already wrong. D87 repeats the error in prose. Two consecutive
+attempts to keep the sentence true, both false, **is the argument for not
+keeping it at all.**
+
+### The ruling: derive it, and it already IS derived — twice
+
+The question the verify pass asked was whether the sentence should be derived
+rather than written. It should, and **the derivation exists and always did:**
+
+1. **The predicate immediately below the docstring** computes membership from
+   the tree (`hasSurface(e.name) || hasBackend(e.name)`). The docstring's roster
+   was never the source of anything — it was a _narration_ of what the code
+   beneath it computes, which is the purest form of a claim nothing reds over.
+2. **`grimoire/launcher-pairing-ward.test.ts` PRINTS the per-spell census on
+   every gate run** — `surface=[index-…js] backend=[cli.js, server.js]`, eight
+   rows. A live, dated, self-updating answer to exactly the question the prose
+   was trying to answer from memory.
+
+So the docstring now owns **only the rule** — the two aspects are independent
+and the `||` is the whole contract — and points at the ward's output for the
+census. The prose keeps the _history_ (both wrong versions, named, with why),
+because the history is the argument and does not rot: a sentence about what a
+document once claimed stays true.
+
+⚠ **The transferable half: "a roster sentence is a claim nothing reds over" is
+not a warning to write the sentence more carefully. It is an instruction to
+delete the sentence and cite the instrument.** The two failed attempts here were
+both careful. Carefulness is not the missing ingredient — a reader is.
+
+**Not taken:**
+
+- _Just correct it to "all eight have both."_ It is true today and it is the
+  third instance of the same sentence class. It goes false the moment a ninth
+  spell arrives with one aspect, which is the _normal_ way a spell arrives (a
+  surface before its backend, or the reverse).
+- _Build a new instrument that prints the aspect census._ It already exists, in
+  the ward whose subject is exactly this pairing, and `src/build.ts`'s docstring
+  already points at that ward for the pairing question. Adding a second printer
+  would be two denominators for one population.
+- _Assert the census in a test (`expect(oneAspect).toEqual([])`)._ That pins a
+  contingent fact as a contract and would red on a legitimately half-built spell
+  — inverting the docstring's actual rule, which is that one aspect is ENOUGH.
+- _Delete the history along with the claim._ D17: the ruling includes what it
+  left behind. Two wrong versions with their shas are what make the third
+  attempt unnecessary.

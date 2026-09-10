@@ -119,14 +119,24 @@ const hasBackend = (spell: string) => backendEntryNames(spell).length > 0;
  *  rather than from a hand-kept list, so relocating a spell is the only step
  *  needed to put it in the build.
  *
- *  The two aspects are INDEPENDENT, and ⛔ THIS DOCSTRING'S ROSTER OF WHICH
- *  SPELL HAS WHICH EXPIRED AT THE BACKEND CONVERGENCE. It read "imago and
- *  mind-mapper have only a surface"; imago ported in Phase 3 and mind-mapper in
- *  Phase 7, so that set is now EMPTY and only magpie is a one-aspect spell (a
- *  backend, its surface still shipping inside the plugin subtree). Seven of the
- *  eight have both. **A roster sentence in a docstring is a claim nothing reds
- *  over** — this one was wrong about imago for six days before the last port
- *  came looking for it. */
+ *  The two aspects are INDEPENDENT: the `||` above is the whole contract, and a
+ *  one-aspect spell is admitted by construction rather than by exception.
+ *
+ *  ⛔ **AND THIS DOCSTRING NO LONGER NAMES WHICH SPELL HAS WHICH, BECAUSE IT WAS
+ *  WRONG BOTH TIMES IT TRIED.** It first read "imago and mind-mapper have only a
+ *  surface" (imago had ported in Phase 3). The correction written at the last
+ *  port — "only magpie is a one-aspect spell … Seven of the eight have both" —
+ *  was ALSO false on the day it was written: `src/magpie/surface/index.html` had
+ *  moved into the tree at `c6a6e9a1`, before the port, and the plugin subtree
+ *  ships no surface source. **All eight have both.** Two consecutive attempts to
+ *  keep the sentence true, both wrong, is the argument for not keeping it.
+ *
+ *  **A roster sentence in a docstring is a claim nothing reds over** — and the
+ *  answer is not a better sentence, it is DERIVATION, which already exists
+ *  twice: the predicate below computes membership from the tree, and
+ *  `grimoire/launcher-pairing-ward.test.ts` PRINTS the per-spell census
+ *  (`surface=[…] backend=[…]`) on every gate run. Read the ward's output for the
+ *  census; this docstring owns only the rule. */
 function buildableSpells(): string[] {
   return readdirSync(SRC_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name)))
