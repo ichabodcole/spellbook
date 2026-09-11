@@ -384,6 +384,34 @@ import { join } from "node:path";
 // 125 / 104 for both backends. CALIBRATED: a fixture workspace with an `@/`
 // import is clean under its own config and RISES on a real error; `ownerOf`
 // forced to "root" -> that cell reds. Cost: ~1 s per workspace run.
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 4b, BOUNTY: `src/bounty/backend` 125 -> 0
+// (its surface already read 0 once T32 measured it under its own config).
+// Total 232 -> 107 (-125, exactly what was fixed). Route by route:
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback`, NO file
+//     deleted or added, NO de-duplication; TWO pre-existing `as
+//     RegExpExecArray` casts in the test file were REMOVED.
+//   • ⭐ 58 FELL TO ONE LINE (T33): `const die = kitDie;` re-bound the kit's
+//     `die` without a type annotation, and TypeScript honours a callee's
+//     `never` for control flow only when it is declared with an explicit
+//     type. After every `die(...)` the compiler believed execution continued:
+//     53 "used before being assigned", one missing return, one lost
+//     `Session | null` narrowing, three narrowings on `flags.on`. `die` is now
+//     imported directly; runtime identical. CALIBRATED: the alias restored ->
+//     exactly 58 errors back. The census's alias branch
+//     (`grimoire/lib/error-sites.ts`) loses its only subject and says so;
+//     bounty's A1 census row is unchanged (32 sites).
+//   • 1 was the TYPE catching up with the WIRE: `ApplyResult` never declared
+//     `tasksDropped`, which `init` has returned since b8 (T34).
+//   • 2 were a check made in ANOTHER FUNCTION: `validateTask` relied on
+//     `taskRejection` having refused a non-string id/title. RESTATED where it
+//     is read — the inverse of the FELL sentence's function-boundary route,
+//     and the honest direction (T34).
+//   • 9 shipped reads take their function's own answer or become total by
+//     construction (T22); 1 is `Bun.Server<undefined>` (T27).
+//   • 54 test errors are LOCAL `must`/`at` reads, one stdout union narrowed by
+//     a named throw, and two casts replaced by `must(m?.[1], …)`.
+//   (58 + 1 + 2 + 9 + 1 + 54 = 125.)
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -396,7 +424,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/astrolabe/backend": 0,
   "src/astrolabe/surface": 0,
   "src/bounty": 0,
-  "src/bounty/backend": 125,
+  "src/bounty/backend": 0,
   "src/bounty/surface": 0,
   "src/digestify": 0,
   "src/digestify/backend": 0,
@@ -423,7 +451,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 232;
+const DECLARED_TOTAL = 107;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and

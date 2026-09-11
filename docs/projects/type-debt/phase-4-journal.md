@@ -73,3 +73,44 @@ but missing from the registry.
 - `bun test src/imago plugins/spellbook/skills/imago`: **125 pass / 0 fail**
   before the premise cell; the cell passes on its own.
 - `imageOptimize.test.ts` after the `sharp` bump: 2 pass.
+
+---
+
+## Between 4a and 4b · the census measures workspaces under their own config (T32)
+
+Grapevine's surface would not add up: 37 errors under the root config, 0 under
+`src/grapevine/tsconfig.json`. The census had scoped workspace configs out on
+bounty's 126-vs-128 evidence. It now measures each `src/<dir>/tsconfig.json`
+workspace with its own run, each file owned by exactly one run. Landed as its
+own change before bounty: total 272 → 232, entirely the two surfaces, no source
+file touched. Bounty's first pass had rewritten two `@/` imports to satisfy the
+root config; that was reverted when the instrument moved instead.
+
+## 4b · bounty — 125 → 0
+
+**Branch:** `feat/type-debt-phase-4-bounty-v2` · `src/bounty/backend` 125 → 0 ·
+total 232 → 107.
+
+| errors | shape                                                                     | fix                                                      |
+| ------ | ------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **58** | ⭐ `const die = kitDie;` — an un-annotated alias hid `die`'s `never`      | import `die` directly (T33); calibrated: alias back → 58 |
+| 1      | `ApplyResult` missing `tasksDropped`, which the wire has carried since b8 | the type completed (T34)                                 |
+| 2      | `validateTask` relying on a check made in `taskRejection`                 | restated where read (T34)                                |
+| 9      | impossible absences / index reads in loops                                | own-answer branches and `.entries()` (T22)               |
+| 1      | `ReturnType<typeof Bun.serve>`                                            | `Bun.Server<undefined>` (T27; no `ws.data`)              |
+| 54     | test reads, a `Bun.spawn` stdout union, two `as RegExpExecArray` casts    | local `must`/`at`; a named throw; the casts removed      |
+
+**No reachable `undefined`.** Almost half of bounty's debt was one line that
+stopped the compiler seeing the error contract.
+
+### Process and verify pass
+
+- First built in the imago branch's working tree while imago's verifier ran;
+  parked in the scratchpad by shasum, restored byte-identical after imago
+  landed. Then rebuilt as `-v2` on top of T32, cherry-picking the fix and test
+  commits and restoring the two `@/` imports.
+- The no-stake verifier found **no behaviour change and no weakened assertion**
+  (327 pass; census 32 sites before and after, raiser set minus the dead
+  `kitDie` name). It corrected three documentation claims, all fixed:
+  `tasksDropped` came from **b8**, not "#b7"; "two missing return" was one
+  missing return and one narrowing; and T34's first-draft grapevine figures.

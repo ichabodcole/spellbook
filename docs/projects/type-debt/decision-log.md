@@ -1559,3 +1559,50 @@ of the code.
   types unchecked — the residue would be a blindness with a label on it.
 - _A root `paths` fallback list._ Resolves `@/` to the first matching spell
   regardless of the importer, and Bun honours root `paths` at run time.
+
+## T33 · ⭐ An un-annotated alias of a `never` function hides the `never` — 58 errors from one line
+
+**Decided:** lead, 2026-09-10, Phase 4b (bounty).
+
+`src/bounty/backend/cli.ts` imported the kit's `die` as `kitDie` and re-bound
+it: `const die = kitDie;`. TypeScript treats a call as `never`-returning for
+control-flow analysis **only when the callee is declared with an explicit
+type**. An inferred `const` is not, so after every `die(...)` the compiler
+believed execution fell through: 53 × TS2454 "used before being assigned" on
+`pos`/`flags`/`raw` (assigned in a `try` whose `catch` ends in `die`), one
+missing return (TS2366), one lost `Session | null` narrowing (TS2322), and three
+narrowings on `flags.on` that `die` never got to make.
+
+**Fix: import `die` directly.** Runtime identical — the rebuilt bundle differs
+only by `die2(` → `die(` and the dropped `var die2 = die`. **Calibrated:**
+restoring the alias brings back exactly 58 errors (and the verify pass confirmed
+the annotated form, `const die: typeof kitDie = kitDie`, also yields 0).
+
+⚠ **Why not the annotated alias.** It would drop bounty out of the A1 census —
+measured by the verify pass at **32 → 9** sites — because the census's alias
+recogniser (`grimoire/lib/error-sites.ts`) matches `const name = raiser;` and
+not an annotated form. That branch now has no subject and says so, rather than
+being deleted, so a future alias is still counted.
+
+**For grapevine:** grep for `const \w+ = \w+;` re-bindings of any `never`
+function before reading TS2454s one by one.
+
+## T34 · Two directions of the function-boundary route, and a type that lagged its wire
+
+**Decided:** lead, 2026-09-10, Phase 4b.
+
+The FELL sentence names moving a value **into** a non-optional parameter as a
+laundering route. Bounty's `validateTask` had the **inverse** shape — it relied
+on a check made in **another** function (`taskRejection`) that the compiler
+cannot carry across. The honest fix is to **restate the check where the value is
+read**
+(`const { id, title } = cand; if (typeof id !== "string" || …) return null;`),
+not to assert it.
+
+And `ApplyResult` lacked `tasksDropped`, which `init` has returned since **b8**
+(`cb251464`): the wire was right and the type was stale — Phase 3c's fixtures,
+one level up. The type was completed.
+
+(A first draft of this phase also rewrote bounty's two `@/ui/button` imports to
+`./button`; T32 superseded that before it landed, and the imports are
+unchanged.)
