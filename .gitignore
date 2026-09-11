@@ -27,6 +27,8 @@ dist
 !plugins/spellbook/skills/grapevine/dist/**
 !plugins/spellbook/skills/digestify/dist
 !plugins/spellbook/skills/digestify/dist/**
+!plugins/spellbook/skills/scriptorium/dist
+!plugins/spellbook/skills/scriptorium/dist/**
 
 # code coverage
 coverage
