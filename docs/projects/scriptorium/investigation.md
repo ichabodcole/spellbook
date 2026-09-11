@@ -1,4 +1,4 @@
-# Document editor spell — investigation: editor, undo, save, diff, watching
+# Scriptorium — investigation: editor, undo, save, diff, watching
 
 **Date:** 2026-09-11 · **Method:** a read-only read of Operator's editor code
 (`~/Projects/Barkdown-editor/operator-mono`), sourced web research, and two

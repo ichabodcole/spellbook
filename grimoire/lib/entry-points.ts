@@ -217,6 +217,9 @@ export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
   "glamour/backend/server.ts",
   "imago/backend/server.ts",
   "mind-mapper/backend/server.ts",
+  // scriptorium (2026-09-11): the daemon's private argv (--port --restore
+  // --timeout) is spawned by its own CLI, never typed by a caller.
+  "scriptorium/backend/server.ts",
 ]);
 
 export const isCallerFacing = (rel: string) => !INTERNAL_ENTRY_POINTS.has(rel);

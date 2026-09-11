@@ -752,6 +752,12 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // was false, in the same commit, which is why the port repaired the spawn
       // to up-and-back-down in the same breath.
       "plugins/spellbook/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
+      // scriptorium's `SURFACE_CWD` — the first spell SCAFFOLDED after the
+      // convergence rather than ported, and the escape arrives by design, not
+      // archaeology: the dev daemon's cwd must be `src/scriptorium/` for its
+      // bunfig (Contract 5), and the ward resolves the five-level climb from
+      // the EMITTED `dist/cli.js` onto exactly that directory.
+      "plugins/spellbook/skills/scriptorium/dist/cli.js -> src/scriptorium",
     ]);
   });
 

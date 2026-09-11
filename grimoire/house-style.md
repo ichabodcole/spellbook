@@ -515,6 +515,17 @@ registry uses the registry's `cn` throughout, one semantics per spell.
 - **Repeal when:** a component the house needs cannot be built on these four and
   a ruling names the fifth. Record the ruling here, with the name, before
   `bun add`.
+- **Ruled exceptions:**
+  - **scriptorium** (Cole, 2026-09-11 — "I'm fine with adding whatever we need
+    for this spell"): `react-resizable-panels` (shadcn `resizable`),
+    `@headless-tree/core` + `@headless-tree/react` (the context tree),
+    `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`,
+    `@codemirror/language`, `@codemirror/lang-markdown`, and later
+    `@codemirror/merge` (the diff view). Declared in
+    `src/scriptorium/package.json` only. ⚠ `react-resizable-panels` was added
+    before this ruling was recorded — the rule's "before `bun add`" was missed
+    and is recorded here as such. The ruling is scoped to scriptorium: another
+    spell wanting one of these still needs its own.
 
 ### Honor the exit-code contract.
 

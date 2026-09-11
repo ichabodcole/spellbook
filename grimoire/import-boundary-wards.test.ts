@@ -282,6 +282,12 @@ const DECLARED_EMITTED_ROOTS: string[] = [
   // forget. The cell "EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE" reds
   // the moment `src/mind-mapper/backend/server.ts` exists and this row does not.
   "plugins/spellbook/skills/mind-mapper/dist",
+  // ⚠ AND THEN A NINTH, which the paragraph above said could not exist: it
+  // was true of PORTS, whose population closed with mind-mapper. scriptorium
+  // (2026-09-11) is the first spell SCAFFOLDED onto the build, and the cell
+  // below named it red on arrival — the hazard is latent again for every new
+  // spell, and that cell, not this list, is what keeps it from being silent.
+  "plugins/spellbook/skills/scriptorium/dist",
 ];
 
 /** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
@@ -544,6 +550,14 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     file: "plugins/spellbook/skills/mind-mapper/dist/server.js",
     spec: "../../../../../src/mind-mapper/surface/index.html",
     resolved: "src/mind-mapper/surface/index.html",
+  },
+  // scriptorium (2026-09-11) — the ninth, and the first written at genesis:
+  // the daemon's dev-mode surface import, glamour's specifier with the spell
+  // renamed, executed only on the dev branch and inert in release.
+  {
+    file: "plugins/spellbook/skills/scriptorium/dist/server.js",
+    spec: "../../../../../src/scriptorium/surface/index.html",
+    resolved: "src/scriptorium/surface/index.html",
   },
 ];
 

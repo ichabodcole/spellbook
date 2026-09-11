@@ -323,6 +323,13 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/glamour/bunfig.toml": 2,
   "src/imago/bunfig.toml": 2,
   "src/magpie/bunfig.toml": 2,
+  // scriptorium (2026-09-11), the first spell SCAFFOLDED onto the build —
+  // membership 26 -> 29, three hand-authored non-gated files, +126 lines:
+  // the dev-serve bunfig, the surface entry (its pre-paint theme script) and
+  // the token stylesheet. Declared in the chapter that writes them.
+  "src/scriptorium/bunfig.toml": 2,
+  "src/scriptorium/surface/index.html": 40,
+  "src/scriptorium/surface/styles.css": 84,
 };
 
 type BlindReport = {
