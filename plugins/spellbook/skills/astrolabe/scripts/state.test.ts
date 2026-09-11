@@ -13,6 +13,22 @@ import {
   slugify,
 } from "./state.ts";
 
+/**
+ * Read a value the reducer under test is contracted to have created, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy, because
+ * a test in a shipped folder imports nothing from `grimoire/`).
+ *
+ * ⚠ NOT `?.`. `expect(s.status.imago?.question).toBeUndefined()` would PASS
+ * with no status entry at all — the cell would stop testing "clearing drops the
+ * question" and start testing "there is no question", which an absent entry
+ * satisfies for free. `must` turns that absence into a red naming the reducer
+ * contract that broke.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 const proj = (over: Partial<Project> = {}): Project => ({
   id: "imago",
   name: "Imago Layers",
@@ -82,12 +98,16 @@ describe("applyProjectAdd", () => {
 
   test("seeds a deterministic fallback avatar when none is given", () => {
     const { state } = applyProjectAdd(emptyState(), proj({ avatar: undefined }));
-    expect(state.projects[0].avatar).toBe(fallbackAvatar("Imago Layers"));
+    expect(
+      must(state.projects[0], "the add applied, so the registry holds its one project").avatar,
+    ).toBe(fallbackAvatar("Imago Layers"));
   });
 
   test("keeps an explicitly provided avatar", () => {
     const { state } = applyProjectAdd(emptyState(), proj({ avatar: "🦊" }));
-    expect(state.projects[0].avatar).toBe("🦊");
+    expect(
+      must(state.projects[0], "the add applied, so the registry holds its one project").avatar,
+    ).toBe("🦊");
   });
 
   test("derives the id from the name when none is given (slugified)", () => {
@@ -96,7 +116,9 @@ describe("applyProjectAdd", () => {
       { name: "Imago Layers", path: "~/imago" } as Project, // no id
     );
     expect(applied).toBe(true);
-    expect(state.projects[0].id).toBe("imago-layers");
+    expect(
+      must(state.projects[0], "the add applied, so the registry holds its one project").id,
+    ).toBe("imago-layers");
     expect(state.presence["imago-layers"]).toEqual({ connected: false });
   });
 });
@@ -142,9 +164,15 @@ describe("presence", () => {
   test("connect flips connected true; disconnect flips it false", () => {
     let s = seeded();
     s = applySetPresence(s, "imago", true).state;
-    expect(s.presence.imago.connected).toBe(true);
+    expect(
+      must(s.presence.imago, "applyProjectAdd seeds presence for every registered project")
+        .connected,
+    ).toBe(true);
     s = applySetPresence(s, "imago", false).state;
-    expect(s.presence.imago.connected).toBe(false);
+    expect(
+      must(s.presence.imago, "applyProjectAdd seeds presence for every registered project")
+        .connected,
+    ).toBe(false);
   });
 
   test("setting the same presence is a no-op (applied:false, no error)", () => {
@@ -174,17 +202,42 @@ describe("applyStatus", () => {
     let s = seeded();
     s = applyStatus(s, "imago", { summary: "first", phase: "a" }, 100).state;
     s = applyStatus(s, "imago", { summary: "second" }, 200).state;
-    expect(s.status.imago.summary).toBe("second");
-    expect(s.status.imago.phase).toBeUndefined(); // replace, not merge
-    expect(s.status.imago.lastUpdated).toBe(200);
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).summary,
+    ).toBe("second");
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).phase,
+    ).toBeUndefined(); // replace, not merge
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).lastUpdated,
+    ).toBe(200);
   });
 
   test("preserves a raised attention flag across a status post", () => {
     let s = seeded();
     s = applyAttention(s, "imago", true, "which merge strategy?", 100).state;
     s = applyStatus(s, "imago", { summary: "still paused" }, 200).state;
-    expect(s.status.imago.needsAttention).toBe(true);
-    expect(s.status.imago.question).toBe("which merge strategy?");
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).needsAttention,
+    ).toBe(true);
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).question,
+    ).toBe("which merge strategy?");
   });
 
   test("rejects an unknown project", () => {
@@ -196,10 +249,22 @@ describe("applyAttention", () => {
   test("raises the gate with a question, creating a status entry if none", () => {
     const { state, applied } = applyAttention(seeded(), "imago", true, "approve delete?", 500);
     expect(applied).toBe(true);
-    expect(state.status.imago.needsAttention).toBe(true);
-    expect(state.status.imago.question).toBe("approve delete?");
-    expect(state.status.imago.summary).toBe(""); // no prior status
-    expect(state.status.imago.lastUpdated).toBe(500);
+    expect(
+      must(state.status.imago, "applyAttention on a registered project creates its status entry")
+        .needsAttention,
+    ).toBe(true);
+    expect(
+      must(state.status.imago, "applyAttention on a registered project creates its status entry")
+        .question,
+    ).toBe("approve delete?");
+    expect(
+      must(state.status.imago, "applyAttention on a registered project creates its status entry")
+        .summary,
+    ).toBe(""); // no prior status
+    expect(
+      must(state.status.imago, "applyAttention on a registered project creates its status entry")
+        .lastUpdated,
+    ).toBe(500);
   });
 
   test("b2/#85: a benign no-op carries an outcome NOUN and no error", () => {
@@ -244,10 +309,30 @@ describe("applyAttention", () => {
     s = applyStatus(s, "imago", { summary: "working", phase: "2" }, 100).state;
     s = applyAttention(s, "imago", true, "blocked on X", 200).state;
     s = applyAttention(s, "imago", false, undefined, 300).state;
-    expect(s.status.imago.needsAttention).toBe(false);
-    expect(s.status.imago.question).toBeUndefined();
-    expect(s.status.imago.summary).toBe("working");
-    expect(s.status.imago.phase).toBe("2");
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).needsAttention,
+    ).toBe(false);
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).question,
+    ).toBeUndefined();
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).summary,
+    ).toBe("working");
+    expect(
+      must(
+        s.status.imago,
+        "a status or attention post to a registered project leaves a status entry",
+      ).phase,
+    ).toBe("2");
   });
 
   test("re-raising the identical gate is a no-op", () => {

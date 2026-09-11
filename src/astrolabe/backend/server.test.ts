@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ProjectCard } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { validateProject } from "./server.ts";
 
 // Daemon coverage (folded in from the t3 verification harness). The cli↔daemon
@@ -59,7 +60,10 @@ async function waitForPort(home: string): Promise<number> {
 const post = (base: string, body: unknown) =>
   fetch(`${base}/cmd`, { method: "POST", body: JSON.stringify(body) }).then((r) => r.json());
 const getState = (base: string) => fetch(`${base}/state`).then((r) => r.json());
-const cardOf = (s: { state: { projects: Array<{ id: string }> } }, id: string) =>
+// Typed as the wire type the daemon's projection is annotated with
+// (`projectCards(): ProjectCard[]` in server.ts). Each cell still asserts the
+// values; the type only stops the compiler reading every field as absent.
+const cardOf = (s: { state: { projects: ProjectCard[] } }, id: string) =>
   s.state.projects.find((p) => p.id === id);
 
 describe("the relocation's path arithmetic — asserted, not reasoned about", () => {
