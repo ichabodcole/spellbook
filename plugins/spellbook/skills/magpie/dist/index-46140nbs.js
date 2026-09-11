@@ -18539,7 +18539,7 @@ function RemoveGallery({
     const m = chosenModelOf(el);
     modelCounts[m] = (modelCounts[m] ?? 0) + 1;
   }
-  const filterModels = Object.keys(modelCounts).sort((a, b) => a === "crop" ? 1 : b === "crop" ? -1 : a.localeCompare(b));
+  const filterModels = Object.entries(modelCounts).sort(([a], [b]) => a === "crop" ? 1 : b === "crop" ? -1 : a.localeCompare(b));
   const activeFilter = modelFilter && modelCounts[modelFilter] ? modelFilter : null;
   const shown = activeFilter ? live.filter((el) => chosenModelOf(el) === activeFilter) : live;
   const select = (id) => {
@@ -18628,9 +18628,9 @@ function RemoveGallery({
             active: !activeFilter,
             onClick: () => setModelFilter(null)
           }, undefined, false, undefined, this),
-          filterModels.map((m) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FilterChip, {
+          filterModels.map(([m, count]) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FilterChip, {
             label: m,
-            count: modelCounts[m],
+            count,
             active: activeFilter === m,
             onClick: () => setModelFilter(m)
           }, m, false, undefined, this))

@@ -116,7 +116,13 @@ const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);
   if (!m) return null;
-  const port = parseInt(m[1], 10);
+  // One alternative, one mandatory group, so a match always sets it. `null` is
+  // this function's answer for "not a port" at its other two returns, so an
+  // impossible absence takes it too — digestify's T22 worked example, byte for
+  // byte (the four-way duplicate is a backlog item, not this commit's).
+  const digits = m[1];
+  if (digits === undefined) return null;
+  const port = parseInt(digits, 10);
   return port >= 1 && port <= 65535 ? port : null;
 }
 
@@ -696,7 +702,10 @@ async function main(argv: string[]): Promise<number> {
       : undefined;
   const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
-  let server: ReturnType<typeof Bun.serve>;
+  // `Bun.Server<undefined>`, not `ReturnType<typeof Bun.serve>`, which resolves
+  // the generic's `WebSocketData` to `unknown` and makes `srv.upgrade(req)`
+  // demand a `data` option. No handler here reads `ws.data` (T27).
+  let server: Bun.Server<undefined>;
   try {
     server = Bun.serve({
       port,

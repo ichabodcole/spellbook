@@ -81,7 +81,9 @@ export function RemoveGallery({
     modelCounts[m] = (modelCounts[m] ?? 0) + 1;
   }
   // crop (not-removed) sorts last; the rest alphabetical.
-  const filterModels = Object.keys(modelCounts).sort((a, b) =>
+  // Entries, not keys: each chip gets its count from the same pair, so there is
+  // no second lookup that the compiler (rightly) cannot prove present.
+  const filterModels = Object.entries(modelCounts).sort(([a], [b]) =>
     a === "crop" ? 1 : b === "crop" ? -1 : a.localeCompare(b),
   );
   // a stale filter (its model no longer chosen anywhere) falls back to "All"
@@ -172,11 +174,11 @@ export function RemoveGallery({
             active={!activeFilter}
             onClick={() => setModelFilter(null)}
           />
-          {filterModels.map((m) => (
+          {filterModels.map(([m, count]) => (
             <FilterChip
               key={m}
               label={m}
-              count={modelCounts[m]}
+              count={count}
               active={activeFilter === m}
               onClick={() => setModelFilter(m)}
             />

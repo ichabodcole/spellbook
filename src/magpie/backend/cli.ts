@@ -1087,10 +1087,15 @@ async function dispatch(argv: string[]): Promise<number> {
         text: pos.slice(1).join(" "),
       });
       break;
-    case "source":
-      if (!pos.length) die("usage: source <imagePath>");
-      await cmdSource(session, pos[0]);
+    case "source": {
+      // Guard the value it reads, not the array's length: `die` narrows only
+      // what the condition names. Same refusal set as before (an empty
+      // positional still passes through to cmdSource, as it always did).
+      const imagePath = pos[0];
+      if (imagePath === undefined) die("usage: source <imagePath>");
+      await cmdSource(session, imagePath);
       break;
+    }
     case "discover":
       await cmdDiscover(session);
       break;

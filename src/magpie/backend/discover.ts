@@ -68,15 +68,17 @@ export class DiscoverError extends Error {}
 // the Python original's parse_bboxes.
 export function parseBboxes(content: string): unknown[] {
   let s = content.trim();
-  const fence = /```(?:json)?\s*([\s\S]*?)\s*```/.exec(s);
-  if (fence) s = fence[1];
+  // The capture group is mandatory, so a match always sets it: `inner` is
+  // undefined exactly when no fence was found, and the text is parsed as-is.
+  const inner = /```(?:json)?\s*([\s\S]*?)\s*```/.exec(s)?.[1];
+  if (inner !== undefined) s = inner;
   return JSON.parse(s);
 }
 
 // Convert Gemini's [y_min, x_min, y_max, x_max] (0..1000) to source pixels
 // [x1, y1, x2, y2], clamped to image bounds. Replicates the Python original's
 // normalized_to_pixel formula exactly.
-export function normalizedToPixel(box: number[], width: number, height: number): Bbox {
+export function normalizedToPixel(box: Box2d, width: number, height: number): Bbox {
   const [y1, x1, y2, x2] = box;
   const px1 = Math.max(0, Math.round((x1 / 1000) * width));
   const py1 = Math.max(0, Math.round((y1 / 1000) * height));
@@ -85,8 +87,33 @@ export function normalizedToPixel(box: number[], width: number, height: number):
   return [px1, py1, px2, py2];
 }
 
+/** Gemini's `box_2d`: `[y_min, x_min, y_max, x_max]`, each 0..1000. */
+export type Box2d = [number, number, number, number];
+
+/**
+ * Is `v` a usable `box_2d` — exactly four finite numbers?
+ *
+ * ⛔ THIS WAS A REACHABLE `undefined`, found by the type-debt project (Phase 3b).
+ * The filter below used to check only `Array.isArray(box)`, so a model reply
+ * with a short box (`[100, 200]`), an empty one, or string coordinates reached
+ * `normalizedToPixel`, whose destructuring read `undefined` — and `NaN`
+ * coordinates then serialised as `null` into the manifest's `bbox_pixel`, the
+ * board's proposed bboxes and `discover`'s stdout listing. Strings were worse:
+ * `"100" / 1000` coerces, so a partly-numeric box produced a plausible-looking
+ * wrong rectangle. The model's output is external input; it is validated here,
+ * at the boundary, and a malformed box is skipped exactly as a missing one is.
+ */
+export function isBox2d(v: unknown): v is Box2d {
+  return (
+    Array.isArray(v) &&
+    v.length === 4 &&
+    v.every((n) => typeof n === "number" && Number.isFinite(n))
+  );
+}
+
 // Build the manifest `elements[]` from the model's parsed array + image size.
-// Skips entries missing a name or box (matches the Python original's filter).
+// Skips entries missing a name or a usable box — the Python original's filter,
+// plus the box-shape check it never had (see `isBox2d`).
 export function elementsFromRaw(raw: unknown[], width: number, height: number): ManifestElement[] {
   const elements: ManifestElement[] = [];
   for (const entry of raw) {
@@ -95,12 +122,12 @@ export function elementsFromRaw(raw: unknown[], width: number, height: number): 
     const name = e.name;
     const kind = (typeof e.type === "string" ? e.type : "other") as ElementType;
     const box = e.box_2d;
-    if (!name || typeof name !== "string" || !Array.isArray(box)) continue;
+    if (!name || typeof name !== "string" || !isBox2d(box)) continue;
     elements.push({
       name,
       type: kind,
-      box_2d: box as number[],
-      bbox_pixel: normalizedToPixel(box as number[], width, height),
+      box_2d: box,
+      bbox_pixel: normalizedToPixel(box, width, height),
     });
   }
   return elements;

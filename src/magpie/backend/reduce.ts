@@ -184,7 +184,11 @@ export function setBackdrop(s: MagpieState, backdrop: Backdrop): boolean {
 export function advancePhase(s: MagpieState): PhaseKey | null {
   const i = PHASES.indexOf(s.phase);
   if (i < 0 || i >= PHASES.length - 1) return null;
-  s.phase = PHASES[i + 1];
+  // Unreachable after the guard above; `null` is this function's own answer
+  // for "no next phase", so an impossible absence takes it too (T22).
+  const next = PHASES[i + 1];
+  if (next === undefined) return null;
+  s.phase = next;
   return s.phase;
 }
 
