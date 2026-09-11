@@ -47,7 +47,16 @@
  */
 
 import { spawn } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
@@ -61,6 +70,7 @@ import {
 } from "../../kit/wire/errors";
 import { tailEvents } from "../../kit/wire/tailEvents";
 import { TAIL_IDLE_MS } from "./heartbeat";
+import { DOC_EXTENSIONS, isDocName } from "./tree";
 
 // ⚠ DECLARED FIRST, ABOVE EVERY OTHER FUNCTION, ON PURPOSE. The `choices`
 // census's raiser rule (a) (`grimoire/lib/error-sites.ts`) matches
@@ -224,6 +234,20 @@ export function parseArgs(args: string[]): {
   }
 }
 
+/**
+ * `--since` is an event id: an integer, -1 for "everything". Verify-pass fix
+ * 9: `--since abc` parsed to NaN, which the log reads as "from the start", so
+ * a typo replayed the whole buffer into the agent's pipe at exit 0.
+ */
+export function parseSince(token: string): number {
+  if (!/^-?\d+$/.test(token.trim()))
+    die(
+      `--since: "${token}" is not an event id — give an integer (the id of the last line you saw)`,
+      "usage",
+    );
+  return Number.parseInt(token, 10);
+}
+
 /** `v2` or `2` → 2. A version number is an open set, so the rejection carries a hint, not choices. */
 export function parseVersion(token: string, what: string): number {
   const m = /^v?(\d+)$/.exec(token.trim());
@@ -236,9 +260,63 @@ export function parseVersion(token: string, what: string): number {
 
 // ── verbs ──────────────────────────────────────────────────────────────
 
-async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
+/**
+ * ⛔ VERIFY-PASS FIX 5: every path is checked HERE, before any daemon exists.
+ * `open doc.md pic.png` used to spawn a session, then fail on the second path
+ * inside it — leaving a running daemon and a live pointer behind a failed
+ * command. A folder or a document is accepted; a missing path is not_found, a
+ * non-document file is usage with the accepted extensions as `choices`.
+ */
+function contextPaths(pos: string[]): string[] {
   const paths = pos.map((p) => resolve(p));
-  for (const p of paths) if (!existsSync(p)) die(`no such file or folder: ${p}`, "not_found");
+  for (const p of paths) {
+    let st: ReturnType<typeof statSync>;
+    try {
+      st = statSync(p);
+    } catch {
+      die(`no such file or folder: ${p}`, "not_found");
+    }
+    if (!st.isDirectory() && !isDocName(p))
+      die(`not a document scriptorium opens: ${p}`, "usage", {
+        hint: "add a folder, or a file with one of these extensions",
+        choices: [...DOC_EXTENSIONS],
+      });
+  }
+  return paths;
+}
+
+/**
+ * `--doc` as the CLI's caller meant it (verify-pass fix 8): a token with a path
+ * separator, or one naming a file in THIS process's cwd, is resolved here to an
+ * absolute path — the daemon's cwd is not the caller's. Anything else (a slug,
+ * a unique file name) goes as typed.
+ */
+export function docArg(token: string): string {
+  if (token.includes("/") || existsSync(resolve(token))) return resolve(token);
+  return token;
+}
+
+/** Keep the newest `LOG_KEEP - 1` daemon logs, so the one about to be written makes `LOG_KEEP`. */
+const LOG_KEEP = 10;
+function pruneLogs(logDir: string): void {
+  let names: string[] = [];
+  try {
+    names = readdirSync(logDir).filter((n) => /^daemon-\d+-\d+\.log$/.test(n));
+  } catch {
+    return;
+  }
+  const byAge = names.sort((a, b) => Number(a.split("-")[1]) - Number(b.split("-")[1]));
+  for (const n of byAge.slice(0, Math.max(0, byAge.length - (LOG_KEEP - 1)))) {
+    try {
+      unlinkSync(join(logDir, n));
+    } catch {
+      /* already gone */
+    }
+  }
+}
+
+async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
+  const paths = contextPaths(pos);
 
   if (typeof flags.restore === "string") {
     const home = scriptoriumHome();
@@ -290,7 +368,10 @@ async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
   // A file holds no pipe, and a start failure below quotes its tail.
   const logDir = join(scriptoriumHome(), "logs");
   mkdirSync(logDir, { recursive: true });
+  // Verify-pass fix 6: the logs used to pile up, one per `open`, forever.
+  pruneLogs(logDir);
   const logPath = join(logDir, `daemon-${Date.now()}-${process.pid}.log`);
+  daemonArgs.push("--log", logPath);
   const logFd = openSync(logPath, "a");
   const child = spawn("bun", daemonArgs, {
     cwd,
@@ -386,8 +467,7 @@ async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
 }
 
 async function cmdAdd(pos: string[], session: string | undefined) {
-  const paths = pos.map((p) => resolve(p));
-  for (const p of paths) if (!existsSync(p)) die(`no such file or folder: ${p}`, "not_found");
+  const paths = contextPaths(pos);
   printJson(await postCmd(session, { type: "context.add", paths }));
 }
 
@@ -518,7 +598,7 @@ const COMMANDS: CommandSpec[] = [
     describe:
       "the human's messages (with selection + active path) as JSON lines — wrap with Monitor",
     run: (_pos, flags, session) =>
-      cmdTail(session, typeof flags.since === "string" ? Number.parseInt(flags.since, 10) : -1),
+      cmdTail(session, typeof flags.since === "string" ? parseSince(flags.since) : -1),
   },
   {
     name: "version-new",
@@ -530,7 +610,7 @@ const COMMANDS: CommandSpec[] = [
       printJson(
         await postCmd(session, {
           type: "version.new",
-          ...(typeof flags.doc === "string" ? { doc: flags.doc } : {}),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
           ...(from !== undefined ? { from } : {}),
           ...(typeof flags.label === "string" ? { label: flags.label } : {}),
         }),
@@ -556,7 +636,7 @@ const COMMANDS: CommandSpec[] = [
         await postCmd(session, {
           type: "activate",
           version: parseVersion(pos[0] ?? "", "activate"),
-          ...(typeof flags.doc === "string" ? { doc: flags.doc } : {}),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );
     },

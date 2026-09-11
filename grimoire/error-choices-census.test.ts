@@ -126,7 +126,10 @@ const EXPECTED: Record<
   // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
   // row is a design, not an archaeology: every enumerable usage rejection
   // carries `choices` from day one (A1 inherited, not converted into).
-  scriptorium: { sites: 26, choices: 8, verbRoster: true, flagMap: true },
+  // 26/8 -> 27/9 (verify pass, 2026-09-11): `open`/`add` validate every path
+  // before a daemon exists (a non-document file names the accepted extensions
+  // as `choices`), and `tail --since` refuses a non-integer.
+  scriptorium: { sites: 27, choices: 9, verbRoster: true, flagMap: true },
 };
 
 /**

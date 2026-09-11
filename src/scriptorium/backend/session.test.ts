@@ -291,7 +291,7 @@ describe("admission — only a document in the context is opened or saved (verif
   });
 });
 
-describe("symlinks (verify-pass fix 3)", () => {
+describe("symlinks and relative keys (verify-pass fixes 3 and 8)", () => {
   test("a symlinked original is watched at its REAL directory and its events map back to the doc", () => {
     mkdirSync(join(root, "real"), { recursive: true });
     writeFileSync(join(root, "real", "target.md"), "T\n");
@@ -314,6 +314,13 @@ describe("symlinks (verify-pass fix 3)", () => {
     const docsRoot = s.watchRoots()[0];
     expect(docsRoot?.path).toBe(join(root, "linkhome", "sessions", s.id, "docs"));
     expect(docsRoot?.watch).toBe(realpathSync(join(root, "realhome", "sessions", s.id, "docs")));
+  });
+
+  test("a RELATIVE key is never resolved against the daemon's cwd", () => {
+    const s = inContext();
+    s.openPath(join(docs, "set", "a.md"));
+    expect(s.findDoc("set/a.md")?.slug).toBe("a"); // the rel form, not a cwd path
+    expect(s.findDoc("./nowhere/a.md")).toBeUndefined();
   });
 });
 

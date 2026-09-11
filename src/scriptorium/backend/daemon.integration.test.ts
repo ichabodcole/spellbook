@@ -361,4 +361,30 @@ describe("verify-pass fixes, through the launchers", () => {
     const st = JSON.parse((await cli("state")).out) as PublicState;
     expect(st.docs.map((d) => d.original)).toEqual([]);
   });
+
+  test("fix 7/8 — version-new --doc <relative path> opens a context doc implicitly, resolved against the CLI's cwd", async () => {
+    const r = await cliIn(join(docs, "set"), "version-new", "--doc", "part/b.md");
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const v = JSON.parse(r.out) as { doc: string; version: number; path: string };
+    expect(v).toMatchObject({ doc: "b", version: 2 });
+    const st = JSON.parse((await cli("state")).out) as PublicState;
+    expect(st.openDoc).toBeNull(); // the human's open document did not move
+    // ...and a path outside the context is still refused through the same door.
+    const bad = await cliIn(outside, "version-new", "--doc", "stray.md");
+    expect(bad.code).toBe(2);
+  });
+
+  test("fix 6 — open prunes the daemon logs to ten, and a clean close deletes its empty log", async () => {
+    const logs = join(root, "home", "logs");
+    for (let i = 0; i < 14; i++) writeFileSync(join(logs, `daemon-${1000 + i}-1.log`), "old\n");
+    const r = await cli("open", "--no-open");
+    const sid = (JSON.parse(r.out) as { session_id: string }).session_id;
+    const { readdirSync } = await import("node:fs");
+    expect(readdirSync(logs).filter((n) => n.startsWith("daemon-")).length).toBeLessThanOrEqual(10);
+    const before = readdirSync(logs).length;
+    expect((await cli("close", "--session", sid)).code).toBe(0);
+    await Bun.sleep(600);
+    expect(readdirSync(logs).length).toBe(before - 1);
+  }, 60_000);
 });

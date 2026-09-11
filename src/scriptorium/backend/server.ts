@@ -51,9 +51,9 @@
  * leaves a window in which a verb resolves a session that will refuse it.
  */
 
-import { type FSWatcher, unlinkSync, watch } from "node:fs";
+import { type FSWatcher, statSync, unlinkSync, watch } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
@@ -425,6 +425,21 @@ export async function startDaemon(opts: StartOpts) {
         return { entries: added.map((a) => ({ ...a.entry, added: a.added })) };
       }
       case "version.new": {
+        // ⛔ VERIFY-PASS FIX 7: the agent may name a doc the human has not
+        // opened, by ABSOLUTE path (the CLI resolves it against its own cwd);
+        // it is opened implicitly under the same admission rule as the
+        // surface's `open` — a doc-type file inside a context entry — without
+        // moving the human's open document.
+        if (cmd.doc && isAbsolute(cmd.doc) && !session.findDoc(cmd.doc)) {
+          const o = session.openPath(cmd.doc, { focus: false });
+          if (o.created)
+            log.emit({
+              type: "doc.opened",
+              doc: o.slug,
+              path: session.activePath(o.slug),
+              by: "agent",
+            });
+        }
         const r = session.newVersion({
           doc: cmd.doc,
           from: cmd.from,
@@ -683,6 +698,7 @@ function expandHome(p: string): string {
 
 /** The daemon's private argv — the CLI spawns it with exactly these. */
 const DAEMON_OPTIONS = {
+  log: { type: "string" },
   port: { type: "string" },
   restore: { type: "string" },
   timeout: { type: "string" },
@@ -726,6 +742,14 @@ export async function main(argv: string[]): Promise<number> {
   );
   const res = await d.done;
   await d.shutdown;
+  // Verify-pass fix 6: a clean close leaves no empty log behind.
+  if (res.code === 0 && flags.log) {
+    try {
+      if (statSync(flags.log).size === 0) unlinkSync(flags.log);
+    } catch {
+      /* already gone */
+    }
+  }
   return res.code;
 }
 
