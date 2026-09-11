@@ -1,7 +1,8 @@
-// Add a file or folder to the context BY PATH, with completion from the
-// daemon's directory listing. By path, not by drop: a web page never learns a
-// dropped file's filesystem path, and E1 needs the real file (E14 tracks the
-// drop-to-link spike).
+// A path box with completion from the daemon's directory listing. Its main
+// use adds a file or folder to the context BY PATH — the way to link the REAL
+// file (E1): a web page never learns a dropped file's path, which is why a drop
+// is a copy into the workspace instead (E23). The same box, folders only, sets
+// the workspace.
 import { cn } from "cn";
 import { CornerDownLeftIcon, FileTextIcon, FolderIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -31,11 +32,26 @@ export function splitForCompletion(typed: string): { dir: string; prefix: string
 export function AddPath({
   listDir,
   onAdd,
+  placeholder = "Add a file or folder by path…",
+  verb = "adds",
+  foldersOnly = false,
+  initialValue = "",
+  autoFocus = false,
+  onCancel,
 }: {
   listDir: (path: string) => Promise<Listing>;
   onAdd: (path: string) => void;
+  placeholder?: string;
+  /** What Enter does, for the hint line ("adds", "sets"). */
+  verb?: string;
+  /** Offer folders only (setting the workspace). */
+  foldersOnly?: boolean;
+  initialValue?: string;
+  autoFocus?: boolean;
+  /** Escape on an already-empty box, or blur: the caller closes it. */
+  onCancel?: () => void;
 }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
   // The suggestions carry the value they were computed FOR: a Tab or Enter
   // inside the debounce would otherwise complete from the previous keystroke's
   // list (verify pass: `/` then `Us`+Tab gave `/Applications/`).
@@ -64,7 +80,7 @@ export function AddPath({
       setListed({
         forValue: value,
         entries: listing.entries
-          .filter((e) => e.name.toLowerCase().startsWith(p))
+          .filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p))
           .slice(0, MAX_SUGGESTIONS),
       });
       setError(
@@ -73,7 +89,7 @@ export function AddPath({
       setHighlight(-1);
     }, 120);
     return () => clearTimeout(t);
-  }, [value, listDir]);
+  }, [value, listDir, foldersOnly]);
 
   const complete = (e: FsListEntry) => {
     // Build on the directory as TYPED — a leading `~` stays a `~`, never expanded on them.
@@ -93,8 +109,13 @@ export function AddPath({
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Add a file or folder by path…"
-        aria-label="Add a file or folder by path"
+        placeholder={placeholder}
+        aria-label={placeholder.replace(/…$/, "")}
+        // Autofocus only when opened by an explicit "Change" click, which asks for the box.
+        autoFocus={autoFocus}
+        onBlur={() => {
+          if (onCancel && !suggestions.length) onCancel();
+        }}
         aria-autocomplete="list"
         aria-controls={listId}
         aria-activedescendant={highlight >= 0 ? `${listId}-${highlight}` : undefined}
@@ -122,7 +143,8 @@ export function AddPath({
             if (suggestions.length || error) {
               setListed({ forValue: "", entries: [] });
               setError(null);
-            } else setValue("");
+            } else if (onCancel) onCancel();
+            else setValue("");
           }
         }}
       />
@@ -164,7 +186,7 @@ export function AddPath({
             ))}
           </div>
           <p className="flex items-center gap-1 px-2 pt-1 text-[10px] text-ink-faint">
-            <CornerDownLeftIcon aria-hidden className="size-3" /> adds · Tab completes
+            <CornerDownLeftIcon aria-hidden className="size-3" /> {verb} · Tab completes
           </p>
         </div>
       )}

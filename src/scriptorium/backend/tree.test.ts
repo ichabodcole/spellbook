@@ -2,7 +2,16 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { docPaths, entryForPath, isDocName, listDir, locate, scanTree } from "./tree";
+import { DOC_EXTENSIONS as SURFACE_DOC_EXTENSIONS } from "../surface/components/context/model";
+import {
+  DOC_EXTENSIONS,
+  docPaths,
+  entryForPath,
+  isDocName,
+  listDir,
+  locate,
+  scanTree,
+} from "./tree";
 
 const root = mkdtempSync(join(tmpdir(), "scriptorium-tree-"));
 mkdirSync(join(root, "set", "g1", "deep"), { recursive: true });
@@ -18,6 +27,10 @@ writeFileSync(join(root, "set", "node_modules", "x", "readme.md"), "no");
 writeFileSync(join(root, "set", ".hidden", "h.md"), "no");
 writeFileSync(join(root, "set", "pic.png"), "no");
 afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+test("the surface's copy of the document extensions is this list (it cannot import node:fs)", () => {
+  expect([...SURFACE_DOC_EXTENSIONS]).toEqual([...DOC_EXTENSIONS]);
+});
 
 test("documents are recognised by extension, case-insensitively", () => {
   expect(["a.md", "B.MD", "c.markdown", "d.mdx", "e.txt"].every(isDocName)).toBe(true);

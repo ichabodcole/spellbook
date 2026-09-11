@@ -61,12 +61,11 @@ export function docsIn(nodes: readonly ContextNode[]): ContextNode[] {
 /**
  * E15: ONE entry type, rendered two ways. A `listed` entry holding exactly one
  * document renders as that document; anything else renders as a tree you drill
- * into — a set that grew, and ANY `mirrored` folder, even one holding a single
- * file, because the human added a FOLDER and a folder should stay one (verify
- * pass: a one-file folder shown as its file lost the folder's name, and "Remove"
- * on that row silently removed the whole folder). `membership` is the entry's
- * sourcing mode, not a doc/set kind: promoting a single document adds nodes to
- * the same listed entry and this answer changes with no migration.
+ * into — ANY `mirrored` folder, even one holding a single file, because the
+ * human added a FOLDER and a folder should stay one (verify pass: a one-file
+ * folder shown as its file lost the folder's name, and "Remove" on that row
+ * silently removed the whole folder). Turning a document into a set (E22) makes
+ * the entry a mirrored folder, so this answer follows with no special case.
  */
 export function singleDoc(entry: ContextEntry): ContextNode | null {
   if (entry.membership !== "listed") return null;
@@ -112,4 +111,66 @@ export function ancestorsOf(rel: string): string[] {
   const out: string[] = [];
   for (let i = 1; i < parts.length; i++) out.push(parts.slice(0, i).join("/"));
   return out;
+}
+
+/**
+ * What scriptorium opens as a document — the daemon's `DOC_EXTENSIONS`
+ * (`backend/tree.ts`, which imports `node:fs` and so cannot be bundled here).
+ * A test holds the two lists equal.
+ */
+export const DOC_EXTENSIONS = [".md", ".markdown", ".mdx", ".txt"] as const;
+
+export function isDocName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+/** The parent of a POSIX-relative path: "" for the top level. */
+export function parentRel(rel: string): string {
+  const i = rel.lastIndexOf("/");
+  return i === -1 ? "" : rel.slice(0, i);
+}
+
+/** An absolute path's parent directory. */
+export function dirOf(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i <= 0 ? "/" : path.slice(0, i);
+}
+
+/**
+ * A place a document or folder can be moved to, for the "Move to" menu: the
+ * workspace and every set's own folder, less where the item already is and —
+ * for a folder — itself and anything under it.
+ */
+export type MoveTarget = { label: string; path: string };
+
+export function moveTargets(
+  entries: readonly ContextEntry[],
+  workspace: string,
+  item: string,
+  home: string | null,
+): MoveTarget[] {
+  const here = dirOf(item);
+  const out: MoveTarget[] = [];
+  const push = (label: string, path: string) => {
+    if (path === here || path === item || path.startsWith(`${item}/`)) return;
+    if (!out.some((t) => t.path === path)) out.push({ label, path });
+  };
+  push(`Workspace · ${shortPath(workspace, home)}`, workspace);
+  for (const e of entries) if (e.membership === "mirrored") push(e.label, e.root);
+  return out;
+}
+
+/** The files a drop carries, split into documents to import and names to refuse. */
+export function splitDropped(files: readonly { name: string }[]): {
+  docs: number[];
+  skipped: string[];
+} {
+  const docs: number[] = [];
+  const skipped: string[] = [];
+  files.forEach((f, i) => {
+    if (isDocName(f.name)) docs.push(i);
+    else skipped.push(f.name);
+  });
+  return { docs, skipped };
 }

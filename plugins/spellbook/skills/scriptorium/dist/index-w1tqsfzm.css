@@ -378,6 +378,10 @@
     pointer-events: none;
   }
 
+  .visible {
+    visibility: visible;
+  }
+
   .absolute {
     position: absolute;
   }
@@ -424,6 +428,10 @@
 
   .my-1\.5 {
     margin-block: calc(var(--spacing) * 1.5);
+  }
+
+  .mr-1\.5 {
+    margin-right: calc(var(--spacing) * 1.5);
   }
 
   .mb-1 {
@@ -551,6 +559,14 @@
     min-height: calc(var(--spacing) * 0);
   }
 
+  .min-h-8 {
+    min-height: calc(var(--spacing) * 8);
+  }
+
+  .min-h-full {
+    min-height: 100%;
+  }
+
   .w-1 {
     width: calc(var(--spacing) * 1);
   }
@@ -566,6 +582,10 @@
 
   .w-px {
     width: 1px;
+  }
+
+  .max-w-64 {
+    max-width: calc(var(--spacing) * 64);
   }
 
   .max-w-sm {
@@ -765,6 +785,16 @@
     border-color: var(--color-input);
   }
 
+  .border-ring\/60 {
+    border-color: #d0704f99;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-ring\/60 {
+      border-color: color-mix(in oklab, var(--color-ring) 60%, transparent);
+    }
+  }
+
   .border-transparent {
     border-color: #0000;
   }
@@ -835,6 +865,16 @@
     background-color: var(--color-primary);
   }
 
+  .bg-rubric\/8 {
+    background-color: #d0704f14;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-rubric\/8 {
+      background-color: color-mix(in oklab, var(--color-rubric) 8%, transparent);
+    }
+  }
+
   .bg-rubric\/12 {
     background-color: #d0704f1f;
   }
@@ -842,6 +882,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-rubric\/12 {
       background-color: color-mix(in oklab, var(--color-rubric) 12%, transparent);
+    }
+  }
+
+  .bg-rubric\/15 {
+    background-color: #d0704f26;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-rubric\/15 {
+      background-color: color-mix(in oklab, var(--color-rubric) 15%, transparent);
     }
   }
 
@@ -891,6 +941,10 @@
     padding: calc(var(--spacing) * 2);
   }
 
+  .p-3 {
+    padding: calc(var(--spacing) * 3);
+  }
+
   .p-6 {
     padding: calc(var(--spacing) * 6);
   }
@@ -933,6 +987,10 @@
 
   .pt-1 {
     padding-top: calc(var(--spacing) * 1);
+  }
+
+  .pt-1\.5 {
+    padding-top: calc(var(--spacing) * 1.5);
   }
 
   .pr-2 {
@@ -1002,6 +1060,11 @@
   .leading-normal {
     --tw-leading: var(--leading-normal);
     line-height: var(--leading-normal);
+  }
+
+  .leading-relaxed {
+    --tw-leading: var(--leading-relaxed);
+    line-height: var(--leading-relaxed);
   }
 
   .font-medium {
@@ -1131,6 +1194,26 @@
     }
   }
 
+  .ring-rubric\/40 {
+    --tw-ring-color: #d0704f66;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-rubric\/40 {
+      --tw-ring-color: color-mix(in oklab, var(--color-rubric) 40%, transparent);
+    }
+  }
+
+  .ring-rubric\/50 {
+    --tw-ring-color: #d0704f80;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-rubric\/50 {
+      --tw-ring-color: color-mix(in oklab, var(--color-rubric) 50%, transparent);
+    }
+  }
+
   .ring-offset-background {
     --tw-ring-offset-color: var(--color-background);
   }
@@ -1192,6 +1275,10 @@
   .select-none {
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  .ring-inset {
+    --tw-ring-inset: inset;
   }
 
   .group-focus\/context-menu-item\:text-accent-foreground:is(:where(.group\/context-menu-item):focus *) {
@@ -1712,6 +1799,28 @@
 
   .data-\[variant\=destructive\]\:focus\:text-destructive[data-variant="destructive"]:focus {
     color: var(--color-destructive);
+  }
+
+  .data-\[who\=agent\]\:bg-surface-raised[data-who="agent"] {
+    background-color: var(--color-surface-raised);
+  }
+
+  .data-\[who\=agent\]\:text-ink[data-who="agent"] {
+    color: var(--color-ink);
+  }
+
+  .data-\[who\=human\]\:bg-rubric\/10[data-who="human"] {
+    background-color: #d0704f1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .data-\[who\=human\]\:bg-rubric\/10[data-who="human"] {
+      background-color: color-mix(in oklab, var(--color-rubric) 10%, transparent);
+    }
+  }
+
+  .data-\[who\=human\]\:text-ink[data-who="human"] {
+    color: var(--color-ink);
   }
 
   @media (min-width: 48rem) {

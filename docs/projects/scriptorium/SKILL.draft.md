@@ -84,27 +84,40 @@ and saves when they are happy.
 | `version-new [--doc <d>] [--from <vN>] [--label <t>]` | copy a version (default: the active one) to a new file; prints its `path`; a context doc's path opens it |
 | `say <text…>` · `say --body-file <p>` · `say --stdin` | a chat message from you                                                                                  |
 | `activate <vN> [--doc <d>]`                           | make a version the active one                                                                            |
+| `new-doc <path>` · `new-folder <path>`                | make an empty document or a folder — in a set, or in the workspace (a folder there is a new set)         |
+| `move <path> <into>` · `rename <path> <name>`         | a real move or rename on disk; opened documents keep their versions                                      |
+| `hide <path>` · `unhide <entry>`                      | take a document, folder or set out of Scriptorium — the file stays on disk · bring a set's hidden back   |
+| `make-set <path>`                                     | a single document becomes a set: a folder named for it, the document moved in                            |
+| `import <file> [--into <dir>]`                        | copy a document in (default: into the workspace) and show the copy                                       |
+| `workspace [<dir>]`                                   | print the workspace — where drops and new top-level documents land — or set it                           |
 | `info` · `close` · `schema` · `help` · `--version`    | discovery JSON · end the session (the manifest stays) · acc declaration                                  |
 
 `--session <id>` targets a session other than the most recent. `--doc` accepts a
 slug (`state` lists them), a path (resolved against YOUR cwd), or a unique file
 name. Put every flag to the LEFT of `--`: after it, a flag is text.
 
+**Reorganize through the verbs, not `mv`.** The human reorganizes with menus and
+dragging; the verbs are your half of the same operations (E24), and they tell
+the human what you did in the conversation. A plain `mv` inside a folder set
+still shows up (the folder is watched), but nobody is told, and a moved open
+document loses track of its versions. The workspace starts as the directory
+`open` ran in.
+
 **Prose goes through `--body-file`** (or `--stdin` from a quoted heredoc), never
 as arguments from an unquoted heredoc — the shell eats backticks first.
 
 ## Tail events
 
-| `type`                             | when                                                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `grounding`                        | first line: which session and port the tail bound to                                                     |
-| `ready`                            | the daemon booted (`restored: true` after `open --restore`)                                              |
-| `message`                          | the human sent a message: `text`, `selection`, `active {doc, version, path}`                             |
-| `doc.opened`                       | the human opened a document for the first time (`path` is its v1)                                        |
-| `saved` · `reverted` · `activated` | the human (or you) changed which text is where                                                           |
-| `system`                           | an announcement: `fact` is `active.outside`, `original.reloaded`, `original.conflict`, `version.created` |
-| `epoch.changed`                    | the daemon restarted; refetch `state`                                                                    |
-| `closed`                           | the session ended; `tail` exits 0                                                                        |
+| `type`                             | when                                                                                                                                                                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grounding`                        | first line: which session and port the tail bound to                                                                                                                                                                       |
+| `ready`                            | the daemon booted (`restored: true` after `open --restore`)                                                                                                                                                                |
+| `message`                          | the human sent a message: `text`, `selection`, `active {doc, version, path}`                                                                                                                                               |
+| `doc.opened`                       | the human opened a document for the first time (`path` is its v1)                                                                                                                                                          |
+| `saved` · `reverted` · `activated` | the human (or you) changed which text is where                                                                                                                                                                             |
+| `system`                           | an announcement: `fact` is `active.outside`, `original.reloaded`, `original.conflict`, `version.created` — or a structure op (`move`, `rename`, `hide`, `doc.create`, …) with `by` (`human` or `agent`) and the new `path` |
+| `epoch.changed`                    | the daemon restarted; refetch `state`                                                                                                                                                                                      |
+| `closed`                           | the session ended; `tail` exits 0                                                                                                                                                                                          |
 
 ## Exit codes and the error envelope
 
@@ -136,4 +149,4 @@ The surface is the empty three-pane layout; the context sidebar, the document
 viewer/editor and the chat pane arrive in the next slices (E16). Save and Revert
 are surface acts (the daemon has them; there is no CLI verb for them, because
 saving is the human's decision — E7). Split-screen diff, annotations, saved
-prompts and drag-and-drop are later slices (E9, E11, E14).
+prompts are later slices (E9, E11).

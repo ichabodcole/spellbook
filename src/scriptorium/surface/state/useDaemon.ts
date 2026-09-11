@@ -6,7 +6,13 @@
 // carry: version TEXTS (`version.text` frames, keyed doc@version) and directory
 // listings for the path box (`fs.list`, a request answered by path).
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientMsg, FsListEntry, PublicState, ServerMsg } from "../../backend/protocol";
+import type {
+  ClientMsg,
+  FsListEntry,
+  PublicState,
+  ServerMsg,
+  StructureOpType,
+} from "../../backend/protocol";
 
 export type Connection = "connecting" | "open" | "closed";
 
@@ -14,12 +20,16 @@ export const textKey = (doc: string, version: number) => `${doc}@${version}`;
 
 export type Listing = { entries: FsListEntry[]; error?: string };
 
+/** The last structure op THIS viewer sent that landed — `seq` makes a repeat a new value. */
+export type Done = { op: StructureOpType; path: string; seq: number };
+
 export function useDaemon(): {
   state: PublicState | null;
   connection: Connection;
   lastError: string | null;
   clearError: () => void;
   texts: ReadonlyMap<string, string>;
+  done: Done | null;
   send: (msg: ClientMsg) => void;
   listDir: (path: string) => Promise<Listing>;
 } {
@@ -27,6 +37,7 @@ export function useDaemon(): {
   const [connection, setConnection] = useState<Connection>("connecting");
   const [lastError, setLastError] = useState<string | null>(null);
   const [texts, setTexts] = useState<ReadonlyMap<string, string>>(() => new Map());
+  const [done, setDone] = useState<Done | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
@@ -61,6 +72,8 @@ export function useDaemon(): {
             next.set(key, msg.text);
             return next;
           });
+        } else if (msg.type === "structure.done") {
+          setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
@@ -112,5 +125,5 @@ export function useDaemon(): {
 
   const clearError = useCallback(() => setLastError(null), []);
 
-  return { state, connection, lastError, clearError, texts, send, listDir };
+  return { state, connection, lastError, clearError, texts, done, send, listDir };
 }

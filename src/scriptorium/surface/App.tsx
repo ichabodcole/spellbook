@@ -9,7 +9,7 @@ import { useDefaultLayout } from "react-resizable-panels";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
-import type { ContextEntry, DocView, PublicState } from "../backend/protocol";
+import type { ChatMessage, ContextEntry, DocView, PublicState } from "../backend/protocol";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane } from "./components/DocumentPane";
@@ -103,7 +103,7 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, listDir, lastError, clearError } = daemon;
+  const { send, texts, listDir, lastError, clearError, done } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -137,6 +137,13 @@ function Workspace({
     [send],
   );
 
+  // A new document this viewer made opens at once (and the sidebar puts it in
+  // rename mode); a new folder only renames.
+  const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
+  useEffect(() => {
+    if (created?.op === "doc.create") send({ type: "open", path: created.path });
+  }, [created, send]);
+
   return (
     <ResizablePanelGroup
       orientation="horizontal"
@@ -155,10 +162,12 @@ function Workspace({
           entries={state.context}
           activeDoc={activeDoc}
           userHome={state.userHome}
+          workspace={state.workspace}
           onOpenDoc={onOpenDoc}
           onAddPath={(path) => send({ type: "context.add", path })}
-          onRemoveEntry={(entry) => send({ type: "context.remove", id: entry.id })}
+          onStructure={send}
           listDir={listDir}
+          created={created}
           notice={lastError}
           onDismissNotice={clearError}
         />
@@ -170,20 +179,55 @@ function Workspace({
       <ResizableHandle withHandle />
       <ResizablePanel id="chat" defaultSize="28" minSize="15" className="flex flex-col bg-surface">
         <PaneHeading>Conversation</PaneHeading>
-        <Empty className="h-full">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <MessagesSquareIcon />
-            </EmptyMedia>
-            <EmptyTitle>
-              {state.chat.length === 0
-                ? "No messages yet"
-                : `${state.chat.length} ${state.chat.length === 1 ? "message" : "messages"}`}
-            </EmptyTitle>
-            <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        {state.chat.length === 0 ? (
+          <Empty className="h-full">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <MessagesSquareIcon />
+              </EmptyMedia>
+              <EmptyTitle>No messages yet</EmptyTitle>
+              <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ActivityLog chat={state.chat} />
+        )}
       </ResizablePanel>
     </ResizablePanelGroup>
+  );
+}
+
+/**
+ * A READ-ONLY stand-in for the conversation (chat is a later piece, E16): the
+ * session's lines, newest last, so what either party did — "Agent moved …",
+ * "You created …" (E24) — is visible where the conversation will be.
+ */
+function ActivityLog({ chat }: { chat: readonly ChatMessage[] }) {
+  const end = useRef<HTMLDivElement>(null);
+  const last = chat.at(-1)?.id;
+  // Scroll when a NEW line arrives, keyed by its id.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [last]);
+  return (
+    <div
+      role="log"
+      aria-label="Activity"
+      className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3"
+    >
+      {chat.slice(-200).map((m) => (
+        <div
+          key={m.id}
+          data-who={m.who}
+          className="rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink"
+        >
+          <span className="mr-1.5 font-medium text-ink-faint">
+            {m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"}
+          </span>
+          {m.text}
+        </div>
+      ))}
+      <div ref={end} />
+    </div>
   );
 }

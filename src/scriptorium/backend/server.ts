@@ -53,7 +53,7 @@
 
 import { type FSWatcher, readFileSync, statSync, unlinkSync, watch } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
@@ -384,7 +384,7 @@ export async function startDaemon(opts: StartOpts) {
       case "set.make": {
         const m = session.makeSet(op.path);
         r = m;
-        line = `${who} turned ${shown(m.path)} into a set (the folder ${m.folder}).`;
+        line = `${who} turned ${basename(m.path)} into a set: ${shown(m.folder)}.`;
         break;
       }
       case "import":

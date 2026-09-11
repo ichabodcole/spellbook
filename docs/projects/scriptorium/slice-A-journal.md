@@ -226,3 +226,40 @@ so it was re-run as `f-origin-v2.ts`, which reports each layer.
 
 _(The surface-dep-cap question raised above was since ruled by the lead in
 house-style as E19, `de48e841`.)_
+
+## The organizing slice (E22–E24), 2026-09-11
+
+Cole drove the sidebar and asked for right-click on tree children, "remove" that
+never deletes, new documents and folders, turning a document into a set, moving
+files into folders, drops from Finder — and for the agent to do the same through
+the daemon so both parties get the same result. Built as ONE vocabulary,
+`StructureOp`, sent by the surface over the WebSocket and posted by nine new CLI
+verbs; the daemon does the real change on disk and announces it under the name
+of whoever did it.
+
+Found while building, each fixed before landing:
+
+- **A new empty folder vanished the instant it was made.** The mirror left out
+  every folder without documents (to keep asset folders out of a docs tree). It
+  now keeps a TRULY empty folder and still leaves out folders of non-documents.
+- **The tree crashed on the render after a rename.** `@headless-tree`'s sync
+  loader throws on a falsy item ("sync dataLoader returned undefined" — it
+  checks `!data`, so `null` counts), and the renamed item's old id is asked for
+  once before `rebuildTree` runs. The root and a stale id now get real
+  placeholder nodes; a stale row renders as nothing.
+- **A rebuilt `dist/` needs a daemon restart to be served.** The daemon derives
+  its served-file whitelist once per process (`serveDist.ts`), so a rebuild
+  under a running session 404s the new bundle. Correct by design (a dist does
+  not change under a release daemon); worth knowing when driving a dev loop —
+  `close` then `open --restore <id>`.
+
+Driven in Chromium against a scratch home: turn a document into a set; new
+document from a folder's menu (opens, arrives in rename mode, stem selected);
+rename via the menu (the open document follows, its versions kept); drag a
+document into a folder; a synthetic Finder drop into a folder (copied; a `.png`
+in the same drop refused with a notice); a drop on the list (copied into the
+workspace); drag a list row onto a set (moved, its entry folded into the set);
+the agent's `new-folder`, `move`, `hide` while the page was open (the tree
+updated live, the log named "Agent"); Show hidden from the tree's background
+menu. A real Finder drag was not driven — Playwright cannot originate one — so
+Brave's side of it is Cole's to confirm.

@@ -17575,23 +17575,61 @@ var createLucideIcon = (iconName, iconNode) => {
   return Component;
 };
 
-// node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
+// node_modules/lucide-react/dist/esm/icons/house.mjs
 var __iconNode = [
+  ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
+  [
+    "path",
+    {
+      d: "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+      key: "r6nss1"
+    }
+  ]
+];
+var House = createLucideIcon("house", __iconNode);
+// node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
+var __iconNode2 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode2);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode2 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode2);
+var __iconNode3 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode3);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode3 = [
+var __iconNode4 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode3);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/eye.mjs
+var __iconNode5 = [
+  [
+    "path",
+    {
+      d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
+      key: "1nclc0"
+    }
+  ],
+  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
+];
+var Eye = createLucideIcon("eye", __iconNode5);
+// node_modules/lucide-react/dist/esm/icons/file-plus.mjs
+var __iconNode6 = [
+  [
+    "path",
+    {
+      d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+      key: "1oefj6"
+    }
+  ],
+  ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }],
+  ["path", { d: "M9 15h6", key: "cctwl0" }],
+  ["path", { d: "M12 18v-6", key: "17g6i2" }]
+];
+var FilePlus = createLucideIcon("file-plus", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode4 = [
+var __iconNode7 = [
   [
     "path",
     {
@@ -17604,9 +17642,22 @@ var __iconNode4 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode4);
+var FileText = createLucideIcon("file-text", __iconNode7);
+// node_modules/lucide-react/dist/esm/icons/folder-input.mjs
+var __iconNode8 = [
+  [
+    "path",
+    {
+      d: "M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1",
+      key: "fm4g5t"
+    }
+  ],
+  ["path", { d: "M2 13h10", key: "pgb2dq" }],
+  ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
+];
+var FolderInput = createLucideIcon("folder-input", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode5 = [
+var __iconNode9 = [
   [
     "path",
     {
@@ -17615,9 +17666,22 @@ var __iconNode5 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode5);
+var FolderOpen = createLucideIcon("folder-open", __iconNode9);
+// node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
+var __iconNode10 = [
+  ["path", { d: "M12 10v6", key: "1bos4e" }],
+  ["path", { d: "M9 13h6", key: "1uhe8q" }],
+  [
+    "path",
+    {
+      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+      key: "1kt360"
+    }
+  ]
+];
+var FolderPlus = createLucideIcon("folder-plus", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode6 = [
+var __iconNode11 = [
   [
     "path",
     {
@@ -17635,9 +17699,9 @@ var __iconNode6 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode6);
+var FolderTree = createLucideIcon("folder-tree", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode7 = [
+var __iconNode12 = [
   [
     "path",
     {
@@ -17646,9 +17710,9 @@ var __iconNode7 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode7);
+var Folder = createLucideIcon("folder", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode8 = [
+var __iconNode13 = [
   [
     "path",
     {
@@ -17664,9 +17728,9 @@ var __iconNode8 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode8);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode9 = [
+var __iconNode14 = [
   [
     "path",
     {
@@ -17675,9 +17739,21 @@ var __iconNode9 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode9);
+var Moon = createLucideIcon("moon", __iconNode14);
+// node_modules/lucide-react/dist/esm/icons/pencil.mjs
+var __iconNode15 = [
+  [
+    "path",
+    {
+      d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+      key: "1a8usu"
+    }
+  ],
+  ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
+];
+var Pencil = createLucideIcon("pencil", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode10 = [
+var __iconNode16 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -17688,13 +17764,13 @@ var __iconNode10 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode10);
+var Sun = createLucideIcon("sun", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode11 = [
+var __iconNode17 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode11);
+var X = createLucideIcon("x", __iconNode17);
 // src/scriptorium/surface/App.tsx
 var import_react17 = __toESM(require_react(), 1);
 
@@ -32958,10 +33034,50 @@ function ContextMenuItem({
     ...props
   }, undefined, false, undefined, this);
 }
+function ContextMenuSub({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.SubmenuRoot, {
+    "data-slot": "context-menu-sub",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuSubTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.SubmenuTrigger, {
+    "data-slot": "context-menu-sub-trigger",
+    "data-inset": inset,
+    className: cn("flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", className),
+    ...props,
+    children: [
+      children,
+      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(ChevronRight, {
+        className: "ml-auto"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ContextMenuSubContent({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(ContextMenuContent, {
+    "data-slot": "context-menu-sub-content",
+    className: "shadow-lg",
+    side: "right",
+    ...props
+  }, undefined, false, undefined, this);
+}
 function ContextMenuSeparator({ className, ...props }) {
   return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Separator, {
     "data-slot": "context-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuShortcut({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+    "data-slot": "context-menu-shortcut",
+    className: cn("ml-auto text-xs tracking-widest text-muted-foreground group-focus/context-menu-item:text-accent-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
@@ -34369,9 +34485,15 @@ function splitForCompletion(typed) {
 }
 function AddPath({
   listDir,
-  onAdd
+  onAdd,
+  placeholder = "Add a file or folder by path…",
+  verb = "adds",
+  foldersOnly = false,
+  initialValue = "",
+  autoFocus = false,
+  onCancel
 }) {
-  const [value, setValue] = import_react7.useState("");
+  const [value, setValue] = import_react7.useState(initialValue);
   const [listed, setListed] = import_react7.useState({
     forValue: "",
     entries: []
@@ -34396,13 +34518,13 @@ function AddPath({
       const p = split.prefix.toLowerCase();
       setListed({
         forValue: value,
-        entries: listing.entries.filter((e) => e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS)
+        entries: listing.entries.filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS)
       });
       setError(listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null);
       setHighlight(-1);
     }, 120);
     return () => clearTimeout(t);
-  }, [value, listDir]);
+  }, [value, listDir, foldersOnly]);
   const complete = (e) => {
     const dir = splitForCompletion(value)?.dir ?? "";
     setValue(`${dir === "/" ? "" : dir}/${e.name}${e.dir ? "/" : ""}`);
@@ -34420,8 +34542,13 @@ function AddPath({
       /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
         value,
         onChange: (e) => setValue(e.target.value),
-        placeholder: "Add a file or folder by path…",
-        "aria-label": "Add a file or folder by path",
+        placeholder,
+        "aria-label": placeholder.replace(/…$/, ""),
+        autoFocus,
+        onBlur: () => {
+          if (onCancel && !suggestions.length)
+            onCancel();
+        },
         "aria-autocomplete": "list",
         "aria-controls": listId,
         "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
@@ -34448,7 +34575,9 @@ function AddPath({
             if (suggestions.length || error2) {
               setListed({ forValue: "", entries: [] });
               setError(null);
-            } else
+            } else if (onCancel)
+              onCancel();
+            else
               setValue("");
           }
         }
@@ -34504,7 +34633,9 @@ function AddPath({
                 "aria-hidden": true,
                 className: "size-3"
               }, undefined, false, undefined, this),
-              " adds · Tab completes"
+              " ",
+              verb,
+              " · Tab completes"
             ]
           }, undefined, true, undefined, this)
         ]
@@ -35434,6 +35565,408 @@ var syncDataLoaderFeature = {
     hasLoadedData: () => true
   }
 };
+var isOrderedDragTarget = (dragTarget) => ("childIndex" in dragTarget);
+var canDrop = (dataTransfer, target, tree) => {
+  var _a, _b, _c;
+  const draggedItems = (_a = tree.getState().dnd) == null ? undefined : _a.draggedItems;
+  const config = tree.getConfig();
+  if (draggedItems && !((_c = (_b = config.canDrop) == null ? undefined : _b.call(config, draggedItems, target)) != null ? _c : true)) {
+    return false;
+  }
+  if (draggedItems && draggedItems.some((draggedItem) => target.item.getId() === draggedItem.getId() || target.item.isDescendentOf(draggedItem.getId()))) {
+    return false;
+  }
+  if (!draggedItems && dataTransfer && config.canDropForeignDragObject && !config.canDropForeignDragObject(dataTransfer, target)) {
+    return false;
+  }
+  return true;
+};
+var getItemDropCategory = (item) => {
+  if (item.isExpanded()) {
+    return 1;
+  }
+  const parent = item.getParent();
+  if (parent && item.getIndexInParent() === item.getItemMeta().setSize - 1) {
+    return 2;
+  }
+  return 0;
+};
+var getInsertionIndex = (children, childIndex, draggedItems) => {
+  var _a;
+  const numberOfDragItemsBeforeTarget = (_a = children.slice(0, childIndex).reduce((counter, child) => child && (draggedItems == null ? undefined : draggedItems.some((i) => i.getId() === child.getId())) ? ++counter : counter, 0)) != null ? _a : 0;
+  return childIndex - numberOfDragItemsBeforeTarget;
+};
+var getTargetPlacement = (e, item, tree, canMakeChild) => {
+  var _a, _b, _c, _d, _e2;
+  const config = tree.getConfig();
+  if (!config.canReorder) {
+    return canMakeChild ? { type: 2 } : { type: 1 };
+  }
+  const bb = (_a = item.getElement()) == null ? undefined : _a.getBoundingClientRect();
+  const topPercent = bb ? (e.clientY - bb.top) / bb.height : 0.5;
+  const leftPixels = bb ? e.clientX - bb.left : 0;
+  const targetDropCategory = getItemDropCategory(item);
+  const reorderAreaPercentage = !canMakeChild ? 0.5 : (_b = config.reorderAreaPercentage) != null ? _b : 0.3;
+  const indent = (_c = config.indent) != null ? _c : 20;
+  const makeChildType = canMakeChild ? 2 : 1;
+  if (targetDropCategory === 1) {
+    if (topPercent < reorderAreaPercentage) {
+      return { type: 0 };
+    }
+    return { type: makeChildType };
+  }
+  if (targetDropCategory === 2) {
+    if (leftPixels < item.getItemMeta().level * indent) {
+      if (topPercent < 0.5) {
+        return { type: 0 };
+      }
+      const minLevel = (_e2 = (_d = item.getItemBelow()) == null ? undefined : _d.getItemMeta().level) != null ? _e2 : 0;
+      return {
+        type: 3,
+        reparentLevel: Math.max(minLevel, Math.floor(leftPixels / indent))
+      };
+    }
+  }
+  if (topPercent < reorderAreaPercentage) {
+    return { type: 0 };
+  }
+  if (topPercent > 1 - reorderAreaPercentage) {
+    return { type: 1 };
+  }
+  return { type: makeChildType };
+};
+var getDragCode = (item, placement) => {
+  return [
+    item.getId(),
+    placement.type,
+    placement.type === 3 ? placement.reparentLevel : 0
+  ].join("__");
+};
+var getNthParent = (item, n) => {
+  if (n === item.getItemMeta().level) {
+    return item;
+  }
+  return getNthParent(item.getParent(), n);
+};
+var getReparentTarget = (item, reparentLevel, draggedItems) => {
+  const itemMeta = item.getItemMeta();
+  const reparentedTarget = getNthParent(item, reparentLevel - 1);
+  const targetItemAbove = getNthParent(item, reparentLevel);
+  const targetIndex = targetItemAbove.getIndexInParent() + 1;
+  return {
+    item: reparentedTarget,
+    childIndex: targetIndex,
+    insertionIndex: getInsertionIndex(reparentedTarget.getChildren(), targetIndex, draggedItems),
+    dragLineIndex: itemMeta.index + 1,
+    dragLineLevel: reparentLevel
+  };
+};
+var getDragTarget = (e, item, tree, hasDataTransferPayload, canReorder = tree.getConfig().canReorder) => {
+  var _a;
+  const dataTransfer = hasDataTransferPayload ? e.dataTransfer : null;
+  const draggedItems = (_a = tree.getState().dnd) == null ? undefined : _a.draggedItems;
+  const itemMeta = item.getItemMeta();
+  const parent = item.getParent();
+  const itemTarget = { item };
+  const parentTarget = parent ? { item: parent } : null;
+  const canBecomeSibling = parentTarget && canDrop(dataTransfer, parentTarget, tree);
+  const canMakeChild = canDrop(dataTransfer, itemTarget, tree);
+  const placement = getTargetPlacement(e, item, tree, canMakeChild);
+  if (!canReorder && parent && canBecomeSibling && placement.type !== 2) {
+    if (draggedItems == null ? undefined : draggedItems.some((item2) => item2.isDescendentOf(parent.getId()))) {
+      return itemTarget;
+    }
+    return parentTarget;
+  }
+  if (placement.type === 2) {
+    return itemTarget;
+  }
+  if (!canReorder && parent && !canBecomeSibling) {
+    return getDragTarget(e, parent, tree, hasDataTransferPayload, false);
+  }
+  if (!parent) {
+    return itemTarget;
+  }
+  if (!canBecomeSibling) {
+    return getDragTarget(e, parent, tree, hasDataTransferPayload, false);
+  }
+  if (placement.type === 3) {
+    return getReparentTarget(item, placement.reparentLevel, draggedItems);
+  }
+  const maybeAddOneForBelow = placement.type === 0 ? 0 : 1;
+  const childIndex = item.getIndexInParent() + maybeAddOneForBelow;
+  return {
+    item: parent,
+    dragLineIndex: itemMeta.index + maybeAddOneForBelow,
+    dragLineLevel: itemMeta.level,
+    childIndex,
+    insertionIndex: getInsertionIndex(parent.getChildren(), childIndex, draggedItems)
+  };
+};
+var handleAutoOpenFolder = (dataRef, tree, item, placement) => {
+  const { openOnDropDelay } = tree.getConfig();
+  const dragCode = dataRef.current.lastDragCode;
+  if (!openOnDropDelay || !item.isFolder() || item.isExpanded() || placement.type !== 2) {
+    return;
+  }
+  clearTimeout(dataRef.current.autoExpandTimeout);
+  dataRef.current.autoExpandTimeout = setTimeout(() => {
+    if (dragCode !== dataRef.current.lastDragCode || !dataRef.current.lastAllowDrop)
+      return;
+    item.expand();
+  }, openOnDropDelay);
+};
+var defaultCanDropForeignDragObject = () => false;
+var dragAndDropFeature = {
+  key: "drag-and-drop",
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    canDrop: (_, target) => target.item.isFolder(),
+    canDropForeignDragObject: defaultCanDropForeignDragObject,
+    canDragForeignDragObjectOver: defaultConfig.canDropForeignDragObject !== defaultCanDropForeignDragObject ? (dataTransfer) => dataTransfer.effectAllowed !== "none" : () => false,
+    setDndState: makeStateUpdater("dnd", tree),
+    canReorder: true,
+    openOnDropDelay: 800,
+    draggedItemOverwritesSelection: true
+  }, defaultConfig),
+  stateHandlerNames: {
+    dnd: "setDndState"
+  },
+  onTreeMount: (tree) => {
+    const listener = () => {
+      tree.applySubStateUpdate("dnd", null);
+    };
+    tree.getDataRef().current.windowDragEndListener = listener;
+    window.addEventListener("dragend", listener);
+  },
+  onTreeUnmount: (tree) => {
+    const { windowDragEndListener } = tree.getDataRef().current;
+    if (!windowDragEndListener)
+      return;
+    window.removeEventListener("dragend", windowDragEndListener);
+  },
+  treeInstance: {
+    getDragTarget: ({ tree }) => {
+      var _a, _b;
+      return (_b = (_a = tree.getState().dnd) == null ? undefined : _a.dragTarget) != null ? _b : null;
+    },
+    getDragLineData: ({ tree }) => {
+      var _a, _b, _c, _d, _e2, _f;
+      const target = tree.getDragTarget();
+      const indent = ((_a = target == null ? undefined : target.item.getItemMeta().level) != null ? _a : 0) + 1;
+      const treeBb = (_b = tree.getElement()) == null ? undefined : _b.getBoundingClientRect();
+      if (!target || !treeBb || !isOrderedDragTarget(target))
+        return null;
+      const leftOffset = target.dragLineLevel * ((_c = tree.getConfig().indent) != null ? _c : 1);
+      const targetItem = tree.getItems()[target.dragLineIndex];
+      if (!targetItem) {
+        const bb2 = (_e2 = (_d = tree.getItems()[target.dragLineIndex - 1]) == null ? undefined : _d.getElement()) == null ? undefined : _e2.getBoundingClientRect();
+        if (bb2) {
+          return {
+            indent,
+            top: bb2.bottom - treeBb.top,
+            left: bb2.left + leftOffset - treeBb.left,
+            width: bb2.width - leftOffset
+          };
+        }
+      }
+      const bb = (_f = targetItem == null ? undefined : targetItem.getElement()) == null ? undefined : _f.getBoundingClientRect();
+      if (bb) {
+        return {
+          indent,
+          top: bb.top - treeBb.top,
+          left: bb.left + leftOffset - treeBb.left,
+          width: bb.width - leftOffset
+        };
+      }
+      return null;
+    },
+    getDragLineStyle: ({ tree }, topOffset = -1, leftOffset = -8) => {
+      const dragLine = tree.getDragLineData();
+      return dragLine ? {
+        position: "absolute",
+        top: `${dragLine.top + topOffset}px`,
+        left: `${dragLine.left + leftOffset}px`,
+        width: `${dragLine.width - leftOffset}px`,
+        pointerEvents: "none"
+      } : { display: "none" };
+    },
+    getContainerProps: ({ prev, tree }, treeLabel) => {
+      const prevProps = prev == null ? undefined : prev(treeLabel);
+      return __spreadProps(__spreadValues({}, prevProps), {
+        onDragOver: (e) => {
+          e.preventDefault();
+        },
+        onDrop: (e) => __async(null, null, function* () {
+          var _a, _b, _c;
+          const dataRef = tree.getDataRef();
+          const target = { item: tree.getRootItem() };
+          if (!canDrop(e.dataTransfer, target, tree)) {
+            return;
+          }
+          e.preventDefault();
+          const config = tree.getConfig();
+          const draggedItems = (_a = tree.getState().dnd) == null ? undefined : _a.draggedItems;
+          dataRef.current.lastDragCode = undefined;
+          if (draggedItems) {
+            yield (_b = config.onDrop) == null ? undefined : _b.call(config, draggedItems, target);
+          } else if (e.dataTransfer) {
+            yield (_c = config.onDropForeignDragObject) == null ? undefined : _c.call(config, e.dataTransfer, target);
+          }
+        }),
+        style: __spreadProps(__spreadValues({}, prevProps == null ? undefined : prevProps.style), {
+          position: "relative"
+        })
+      });
+    }
+  },
+  itemInstance: {
+    getProps: ({ tree, item, prev }) => __spreadProps(__spreadValues(__spreadValues({}, prev == null ? undefined : prev()), tree.getConfig().seperateDragHandle ? {} : item.getDragHandleProps()), {
+      onDragEnter: (e) => e.preventDefault(),
+      onDragOver: (e) => {
+        var _a, _b, _c;
+        e.stopPropagation();
+        const dataRef = tree.getDataRef();
+        const placement = getTargetPlacement(e, item, tree, true);
+        const nextDragCode = getDragCode(item, placement);
+        if (nextDragCode === dataRef.current.lastDragCode) {
+          if (dataRef.current.lastAllowDrop) {
+            e.preventDefault();
+          }
+          return;
+        }
+        dataRef.current.lastDragCode = nextDragCode;
+        dataRef.current.lastDragEnter = Date.now();
+        handleAutoOpenFolder(dataRef, tree, item, placement);
+        const target = getDragTarget(e, item, tree, false);
+        if (!((_a = tree.getState().dnd) == null ? undefined : _a.draggedItems) && (!e.dataTransfer || !((_c = (_b = tree.getConfig()).canDragForeignDragObjectOver) == null ? undefined : _c.call(_b, e.dataTransfer, target)))) {
+          dataRef.current.lastAllowDrop = false;
+          return;
+        }
+        if (!canDrop(null, target, tree)) {
+          dataRef.current.lastAllowDrop = false;
+          return;
+        }
+        tree.applySubStateUpdate("dnd", (state) => __spreadProps(__spreadValues({}, state), {
+          dragTarget: target,
+          draggingOverItem: item
+        }));
+        dataRef.current.lastAllowDrop = true;
+        e.preventDefault();
+      },
+      onDragLeave: () => {
+        setTimeout(() => {
+          var _a;
+          const dataRef = tree.getDataRef();
+          if (((_a = dataRef.current.lastDragEnter) != null ? _a : 0) + 100 >= Date.now())
+            return;
+          dataRef.current.lastDragCode = "no-drag";
+          tree.applySubStateUpdate("dnd", (state) => __spreadProps(__spreadValues({}, state), {
+            draggingOverItem: undefined,
+            dragTarget: undefined
+          }));
+        }, 100);
+      },
+      onDrop: (e) => __async(null, null, function* () {
+        var _a, _b, _c;
+        e.stopPropagation();
+        const dataRef = tree.getDataRef();
+        const target = getDragTarget(e, item, tree, true);
+        const draggedItems = (_a = tree.getState().dnd) == null ? undefined : _a.draggedItems;
+        const isValidDrop = canDrop(e.dataTransfer, target, tree);
+        tree.applySubStateUpdate("dnd", {
+          draggedItems: undefined,
+          draggingOverItem: undefined,
+          dragTarget: undefined
+        });
+        if (!isValidDrop) {
+          return;
+        }
+        e.preventDefault();
+        const config = tree.getConfig();
+        dataRef.current.lastDragCode = undefined;
+        if (draggedItems) {
+          yield (_b = config.onDrop) == null ? undefined : _b.call(config, draggedItems, target);
+          draggedItems[0].setFocused();
+        } else if (e.dataTransfer) {
+          yield (_c = config.onDropForeignDragObject) == null ? undefined : _c.call(config, e.dataTransfer, target);
+        }
+        tree.applySubStateUpdate("dnd", null);
+        tree.updateDomFocus();
+      })
+    }),
+    getDragHandleProps: ({ tree, item, prev }) => __spreadProps(__spreadValues({}, prev == null ? undefined : prev()), {
+      draggable: true,
+      onDragStart: (e) => {
+        var _a, _b, _c, _d;
+        const { draggedItemOverwritesSelection } = tree.getConfig();
+        const selectedItems = tree.getSelectedItems ? tree.getSelectedItems() : [tree.getFocusedItem()];
+        const overwriteSelection = !selectedItems.includes(item) && draggedItemOverwritesSelection;
+        const items = overwriteSelection ? [item] : selectedItems;
+        const config = tree.getConfig();
+        if (overwriteSelection) {
+          (_a = tree.setSelectedItems) == null || _a.call(tree, [item.getItemMeta().itemId]);
+        }
+        if (!((_c = (_b = config.canDrag) == null ? undefined : _b.call(config, items)) != null ? _c : true)) {
+          e.preventDefault();
+          return;
+        }
+        if (config.setDragImage) {
+          const { imgElement, xOffset, yOffset } = config.setDragImage(items);
+          (_d = e.dataTransfer) == null || _d.setDragImage(imgElement, xOffset != null ? xOffset : 0, yOffset != null ? yOffset : 0);
+        }
+        if (config.createForeignDragObject && e.dataTransfer) {
+          const { format, data, dropEffect, effectAllowed } = config.createForeignDragObject(items);
+          e.dataTransfer.setData(format, data);
+          if (dropEffect)
+            e.dataTransfer.dropEffect = dropEffect;
+          if (effectAllowed)
+            e.dataTransfer.effectAllowed = effectAllowed;
+        }
+        tree.applySubStateUpdate("dnd", {
+          draggedItems: items,
+          draggingOverItem: tree.getFocusedItem()
+        });
+      },
+      onDragEnd: (e) => {
+        var _a, _b;
+        const { onCompleteForeignDrop, canDragForeignDragObjectOver } = tree.getConfig();
+        const draggedItems = (_a = tree.getState().dnd) == null ? undefined : _a.draggedItems;
+        if (((_b = e.dataTransfer) == null ? undefined : _b.dropEffect) === "none" || !draggedItems) {
+          return;
+        }
+        const target = getDragTarget(e, item, tree, false);
+        if (canDragForeignDragObjectOver && e.dataTransfer && !canDragForeignDragObjectOver(e.dataTransfer, target)) {
+          return;
+        }
+        onCompleteForeignDrop == null || onCompleteForeignDrop(draggedItems);
+      }
+    }),
+    isDragTarget: ({ tree, item }) => {
+      const target = tree.getDragTarget();
+      return target ? target.item.getId() === item.getId() : false;
+    },
+    isUnorderedDragTarget: ({ tree, item }) => {
+      const target = tree.getDragTarget();
+      return target ? !isOrderedDragTarget(target) && target.item.getId() === item.getId() : false;
+    },
+    isDragTargetAbove: ({ tree, item }) => {
+      const target = tree.getDragTarget();
+      if (!target || !isOrderedDragTarget(target) || target.item !== item.getParent())
+        return false;
+      return target.childIndex === item.getItemMeta().posInSet;
+    },
+    isDragTargetBelow: ({ tree, item }) => {
+      const target = tree.getDragTarget();
+      if (!target || !isOrderedDragTarget(target) || target.item !== item.getParent())
+        return false;
+      return target.childIndex - 1 === item.getItemMeta().posInSet;
+    },
+    isDraggingOver: ({ tree, item }) => {
+      var _a, _b;
+      return ((_b = (_a = tree.getState().dnd) == null ? undefined : _a.draggingOverItem) == null ? undefined : _b.getId()) === item.getId();
+    }
+  }
+};
 var searchFeature = {
   key: "search",
   getInitialState: (initialState) => __spreadValues({
@@ -35549,6 +36082,97 @@ var searchFeature = {
     }
   }
 };
+var renamingFeature = {
+  key: "renaming",
+  overwrites: ["drag-and-drop"],
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    setRenamingItem: makeStateUpdater("renamingItem", tree),
+    setRenamingValue: makeStateUpdater("renamingValue", tree),
+    canRename: () => true
+  }, defaultConfig),
+  stateHandlerNames: {
+    renamingItem: "setRenamingItem",
+    renamingValue: "setRenamingValue"
+  },
+  treeInstance: {
+    getRenamingItem: ({ tree }) => {
+      const itemId = tree.getState().renamingItem;
+      return itemId ? tree.getItemInstance(itemId) : null;
+    },
+    getRenamingValue: ({ tree }) => tree.getState().renamingValue || "",
+    abortRenaming: ({ tree }) => {
+      tree.applySubStateUpdate("renamingItem", null);
+      tree.updateDomFocus();
+    },
+    completeRenaming: ({ tree }) => {
+      var _a;
+      const config = tree.getConfig();
+      const item = tree.getRenamingItem();
+      if (item) {
+        (_a = config.onRename) == null || _a.call(config, item, tree.getState().renamingValue || "");
+      }
+      tree.applySubStateUpdate("renamingItem", null);
+      tree.updateDomFocus();
+    },
+    isRenamingItem: ({ tree }) => !!tree.getState().renamingItem
+  },
+  itemInstance: {
+    startRenaming: ({ tree, item, itemId }) => {
+      if (!item.canRename()) {
+        return;
+      }
+      tree.applySubStateUpdate("renamingItem", itemId);
+      tree.applySubStateUpdate("renamingValue", item.getItemName());
+    },
+    getRenameInputProps: ({ tree }) => ({
+      ref: (r2) => r2 == null ? undefined : r2.focus(),
+      onBlur: () => tree.abortRenaming(),
+      value: tree.getRenamingValue(),
+      onChange: (e) => {
+        var _a;
+        tree.applySubStateUpdate("renamingValue", (_a = e.target) == null ? undefined : _a.value);
+      }
+    }),
+    canRename: ({ tree, item }) => {
+      var _a, _b, _c;
+      return (_c = (_b = (_a = tree.getConfig()).canRename) == null ? undefined : _b.call(_a, item)) != null ? _c : true;
+    },
+    isRenaming: ({ tree, item }) => item.getId() === tree.getState().renamingItem,
+    getProps: ({ prev, item }) => {
+      var _a;
+      const isRenaming = item.isRenaming();
+      const prevProps = (_a = prev == null ? undefined : prev()) != null ? _a : {};
+      return isRenaming ? __spreadProps(__spreadValues({}, prevProps), {
+        draggable: false,
+        onDragStart: () => {}
+      }) : prevProps;
+    }
+  },
+  hotkeys: {
+    renameItem: {
+      hotkey: "F2",
+      handler: (e, tree) => {
+        tree.getFocusedItem().startRenaming();
+      }
+    },
+    abortRenaming: {
+      hotkey: "Escape",
+      allowWhenInputFocused: true,
+      isEnabled: (tree) => tree.isRenamingItem(),
+      handler: (e, tree) => {
+        tree.abortRenaming();
+      }
+    },
+    completeRenaming: {
+      hotkey: "Enter",
+      allowWhenInputFocused: true,
+      isEnabled: (tree) => tree.isRenamingItem(),
+      handler: (e, tree) => {
+        tree.completeRenaming();
+      }
+    }
+  }
+};
 
 // node_modules/@headless-tree/react/dist/chunk-FWCSY2DS.mjs
 var __defProp3 = Object.defineProperty;
@@ -35597,6 +36221,50 @@ var useTree = (config) => {
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
 var import_react11 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/components/context/menus.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+function MoveToMenu({
+  targets,
+  onMove
+}) {
+  if (targets.length === 0)
+    return null;
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSub, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSubTrigger, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderInput, {}, undefined, false, undefined, this),
+          "Move to"
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSubContent, {
+        children: targets.map((t) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuItem, {
+          onClick: () => onMove(t.path),
+          title: t.path,
+          children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+            className: "max-w-64 truncate",
+            children: t.label
+          }, undefined, false, undefined, this)
+        }, t.path, false, undefined, this))
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+var carriesFiles = (dt) => !!dt && Array.from(dt.types).includes("Files");
+function droppedFiles(dt) {
+  const files = [];
+  const folders = [];
+  const items = Array.from(dt.items ?? []);
+  Array.from(dt.files).forEach((f, i) => {
+    const entry = items[i]?.webkitGetAsEntry?.();
+    if (entry?.isDirectory)
+      folders.push(f.name);
+    else
+      files.push(f);
+  });
+  return { files, folders };
+}
 
 // src/scriptorium/surface/components/context/model.ts
 function baseName(rel) {
@@ -35668,109 +36336,365 @@ function ancestorsOf(rel) {
     out.push(parts.slice(0, i).join("/"));
   return out;
 }
+var DOC_EXTENSIONS = [".md", ".markdown", ".mdx", ".txt"];
+function isDocName(name) {
+  const lower = name.toLowerCase();
+  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+function dirOf(path) {
+  const i = path.lastIndexOf("/");
+  return i <= 0 ? "/" : path.slice(0, i);
+}
+function moveTargets(entries, workspace, item, home) {
+  const here = dirOf(item);
+  const out = [];
+  const push = (label, path) => {
+    if (path === here || path === item || path.startsWith(`${item}/`))
+      return;
+    if (!out.some((t) => t.path === path))
+      out.push({ label, path });
+  };
+  push(`Workspace · ${shortPath(workspace, home)}`, workspace);
+  for (const e of entries)
+    if (e.membership === "mirrored")
+      push(e.label, e.root);
+  return out;
+}
+function splitDropped(files) {
+  const docs = [];
+  const skipped = [];
+  files.forEach((f, i) => {
+    if (isDocName(f.name))
+      docs.push(i);
+    else
+      skipped.push(f.name);
+  });
+  return { docs, skipped };
+}
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
 var INDENT_PX = 14;
+var ROOT_NODE = { kind: "group", rel: ROOT_ID, children: [] };
+var staleNode = (id) => ({ kind: "doc", rel: id });
+function selectStem(input) {
+  const dot = input.value.lastIndexOf(".");
+  input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
+}
 function EntryTree({
   entry,
   activeRel,
-  onOpenDoc
+  onOpenDoc,
+  onStructure,
+  onImportFiles,
+  moveTargetsFor,
+  renamePath,
+  onRenameStarted,
+  onMenuKey
 }) {
   const index3 = import_react11.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = import_react11.useRef(index3);
   indexRef.current = index3;
+  const pathOf = (id) => id === ROOT_ID ? entry.root : joinPath(entry.root, id);
+  const dirFor = (id) => {
+    if (id === ROOT_ID)
+      return entry.root;
+    const node = indexRef.current.byId.get(id);
+    return node?.kind === "group" ? joinPath(entry.root, id) : dirOf(joinPath(entry.root, id));
+  };
   const tree = useTree({
     rootItemId: ROOT_ID,
     initialState: { expandedItems: activeRel ? ancestorsOf(activeRel) : [] },
-    getItemName: (item) => {
-      const node = item.getItemData();
-      return node ? baseName(node.rel) : entry.label;
-    },
-    isItemFolder: (item) => {
-      const node = item.getItemData();
-      return node === null || node.kind === "group";
-    },
+    getItemName: (item) => item.getId() === ROOT_ID ? entry.label : baseName(item.getItemData().rel),
+    isItemFolder: (item) => item.getItemData().kind === "group",
     dataLoader: {
-      getItem: (id) => id === ROOT_ID ? null : indexRef.current.byId.get(id) ?? null,
+      getItem: (id) => id === ROOT_ID ? ROOT_NODE : indexRef.current.byId.get(id) ?? staleNode(id),
       getChildren: (id) => indexRef.current.children.get(id) ?? []
     },
     indent: INDENT_PX,
-    features: [syncDataLoaderFeature, selectionFeature, hotkeysCoreFeature]
+    canReorder: false,
+    canDrop: (items2, target) => {
+      const into = target.item.getId();
+      return !items2.some((i) => into === i.getId() || into.startsWith(`${i.getId()}/`));
+    },
+    onDrop: (items2, target) => {
+      const into = dirFor(target.item.getId());
+      for (const i of items2) {
+        const path = pathOf(i.getId());
+        if (dirOf(path) !== into)
+          onStructure({ type: "move", path, into });
+      }
+    },
+    canDragForeignDragObjectOver: (dt) => carriesFiles(dt),
+    canDropForeignDragObject: (dt) => carriesFiles(dt),
+    onDropForeignDragObject: (dt, target) => onImportFiles(dt, dirFor(target.item.getId())),
+    openOnDropDelay: 600,
+    canRename: (item) => item.getId() !== ROOT_ID,
+    onRename: (item, value) => {
+      const name = value.trim();
+      if (name && name !== item.getItemName())
+        onStructure({ type: "rename", path: pathOf(item.getId()), name });
+    },
+    features: [
+      syncDataLoaderFeature,
+      selectionFeature,
+      hotkeysCoreFeature,
+      dragAndDropFeature,
+      renamingFeature
+    ]
   });
   import_react11.useEffect(() => {
     tree.rebuildTree();
   }, [index3, tree]);
+  import_react11.useEffect(() => {
+    if (!renamePath?.startsWith(`${entry.root}/`))
+      return;
+    const rel = renamePath.slice(entry.root.length + 1);
+    if (!index3.byId.has(rel))
+      return;
+    for (const a of ancestorsOf(rel))
+      tree.getItemInstance(a)?.expand();
+    tree.getItemInstance(rel)?.startRenaming();
+    onRenameStarted();
+  }, [renamePath, index3, entry.root, tree, onRenameStarted]);
+  const [menuFor, setMenuFor] = import_react11.useState(null);
+  const [bgDrop, setBgDrop] = import_react11.useState(false);
+  const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
+  const hiddenCount = entry.hidden?.length ?? 0;
+  const onBgDragOver = (e) => {
+    if (e.target.closest('[role="treeitem"]'))
+      return setBgDrop(false);
+    if (!carriesFiles(e.dataTransfer) && !tree.getState().dnd?.draggedItems?.length)
+      return;
+    e.preventDefault();
+    setBgDrop(true);
+  };
+  const onBgDrop = (e) => {
+    setBgDrop(false);
+    if (e.target.closest('[role="treeitem"]'))
+      return;
+    e.preventDefault();
+    if (carriesFiles(e.dataTransfer))
+      return onImportFiles(e.dataTransfer, entry.root);
+    for (const i of tree.getState().dnd?.draggedItems ?? []) {
+      const path = pathOf(i.getId());
+      if (dirOf(path) !== entry.root)
+        onStructure({ type: "move", path, into: entry.root });
+    }
+  };
   const items = tree.getItems();
-  if (items.length === 0) {
-    return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
-      className: "px-3 py-4 text-xs text-ink-dim",
-      children: "This folder has no documents yet."
-    }, undefined, false, undefined, this);
-  }
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
-    ...tree.getContainerProps(`${entry.label} documents`),
-    className: "flex flex-col py-1 outline-none",
-    children: items.map((item) => {
-      const node = item.getItemData();
-      if (!node)
-        return null;
-      const level = item.getItemMeta().level;
-      const isGroup = node.kind === "group";
-      const isActive = !isGroup && node.rel === activeRel;
-      const props = item.getProps();
-      return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("button", {
-        ...props,
-        type: "button",
-        onClick: (e) => {
-          props.onClick?.(e);
-          if (!isGroup)
-            onOpenDoc(node.rel);
-        },
-        style: { paddingLeft: `${8 + level * INDENT_PX}px` },
-        "data-active": isActive || undefined,
-        className: cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-rubric/12 font-medium text-ink"),
+  const menuPath = menuFor ? pathOf(menuFor.rel) : entry.root;
+  const menuDir = menuFor?.kind === "group" ? menuPath : menuFor ? dirOf(menuPath) : entry.root;
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenu, {
+    onOpenChange: (open) => {
+      if (!open)
+        setMenuFor(null);
+    },
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+          onDragOver: onBgDragOver,
+          onDragLeave: () => setBgDrop(false),
+          onDrop: onBgDrop,
+          className: cn("flex min-h-full flex-col rounded-md", bgDrop && "bg-rubric/8 ring-1 ring-rubric/40 ring-inset")
+        }, undefined, false, undefined, this),
         children: [
-          isGroup ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(jsx_dev_runtime7.Fragment, {
+          items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("p", {
+            className: "px-3 py-4 text-xs text-ink-dim",
+            children: "This folder has no documents yet — right-click to make one, or drop files here."
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+            ...tree.getContainerProps(`${entry.label} documents`),
+            className: "flex flex-col py-1 outline-none",
+            children: items.map((item) => /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Row, {
+              item,
+              stale: !index3.byId.has(item.getId()),
+              activeRel,
+              onOpenDoc,
+              onMenu: setMenuFor,
+              onMenuKey
+            }, item.getId(), false, undefined, this))
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+            className: "min-h-8 flex-1"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuContent, {
+        children: [
+          menuFor?.kind === "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+            onClick: () => onOpenDoc(menuFor.rel),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ChevronRight, {
-                "aria-hidden": true,
-                className: cn("size-3.5 shrink-0 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
-              }, undefined, false, undefined, this),
-              item.isExpanded() ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderOpen, {
-                "aria-hidden": true,
-                className: "size-4 shrink-0 text-ink-faint"
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Folder, {
-                "aria-hidden": true,
-                className: "size-4 shrink-0 text-ink-faint"
-              }, undefined, false, undefined, this)
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {}, undefined, false, undefined, this),
+              "Open"
             ]
-          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(jsx_dev_runtime7.Fragment, {
+          }, undefined, true, undefined, this),
+          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
-                "aria-hidden": true,
-                className: "size-3.5 shrink-0"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FileText, {
-                "aria-hidden": true,
-                className: cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                onClick: () => onStructure({ type: "doc.create", dir: menuDir }),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+                  "New document"
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                onClick: () => onStructure({ type: "folder.create", dir: menuDir }),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
+                  "New folder"
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          menuFor && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                onClick: () => renameItem(menuFor.rel),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+                  "Rename",
+                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuShortcut, {
+                    children: "F2"
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(MoveToMenu, {
+                targets: moveTargetsFor(menuPath),
+                onMove: (into) => onStructure({ type: "move", path: menuPath, into })
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
-            className: "truncate",
-            children: item.getItemName()
-          }, undefined, false, undefined, this)
+          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "workspace.set", path: menuDir }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(House, {}, undefined, false, undefined, this),
+              "Use as workspace"
+            ]
+          }, undefined, true, undefined, this),
+          !menuFor && hiddenCount > 0 && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "unhide", entry: entry.id }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Eye, {}, undefined, false, undefined, this),
+              "Show ",
+              hiddenCount,
+              " hidden ",
+              hiddenCount === 1 ? "item" : "items"
+            ]
+          }, undefined, true, undefined, this),
+          menuFor && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                variant: "destructive",
+                onClick: () => onStructure({ type: "hide", path: menuPath }),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(X, {}, undefined, false, undefined, this),
+                  "Remove from Scriptorium"
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
         ]
-      }, item.getId(), true, undefined, this);
-    })
-  }, undefined, false, undefined, this);
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function Row({
+  item,
+  stale,
+  activeRel,
+  onOpenDoc,
+  onMenu,
+  onMenuKey
+}) {
+  if (stale)
+    return null;
+  const node = item.getItemData();
+  const level = item.getItemMeta().level;
+  const isGroup = node.kind === "group";
+  const isActive = !isGroup && node.rel === activeRel;
+  const props = item.getProps();
+  const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-rubric/12 font-medium text-ink", item.isDragTarget() && "bg-rubric/15 text-ink ring-1 ring-rubric/50 ring-inset");
+  const icon = isGroup ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ChevronRight, {
+        "aria-hidden": true,
+        className: cn("size-3.5 shrink-0 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
+      }, undefined, false, undefined, this),
+      item.isExpanded() ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderOpen, {
+        "aria-hidden": true,
+        className: "size-4 shrink-0 text-ink-faint"
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Folder, {
+        "aria-hidden": true,
+        className: "size-4 shrink-0 text-ink-faint"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+        "aria-hidden": true,
+        className: "size-3.5 shrink-0"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {
+        "aria-hidden": true,
+        className: cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+  const style = { paddingLeft: `${8 + level * INDENT_PX}px` };
+  if (item.isRenaming()) {
+    const input = item.getRenameInputProps();
+    return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+      style,
+      className: rowClass,
+      children: [
+        icon,
+        /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("input", {
+          ...input,
+          autoFocus: true,
+          onFocus: (e) => selectStem(e.currentTarget),
+          "aria-label": `Rename ${item.getItemName()}`,
+          spellCheck: false,
+          className: "h-6 min-w-0 flex-1 rounded-sm border border-ring/60 bg-bg px-1 font-sans text-sm text-ink outline-none"
+        }, undefined, false, undefined, this)
+      ]
+    }, undefined, true, undefined, this);
+  }
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("button", {
+    ...props,
+    type: "button",
+    onClick: (e) => {
+      props.onClick?.(e);
+      if (!isGroup)
+        onOpenDoc(node.rel);
+    },
+    onContextMenu: () => {
+      item.setFocused();
+      onMenu(node);
+    },
+    onKeyDown: (e) => {
+      props.onKeyDown?.(e);
+      onMenuKey(e);
+    },
+    style,
+    "data-active": isActive || undefined,
+    className: rowClass,
+    children: [
+      icon,
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+        className: "truncate",
+        children: item.getItemName()
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var ROW_MIME = "application/x-scriptorium-path";
 function TruncatedBadge() {
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
     className: "shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention",
     title: "This folder has more files than the sidebar lists — the scan stopped at its cap.",
     children: "partial"
@@ -35788,215 +36712,564 @@ function openMenuOnShiftF10(e) {
     clientY: r2.top + r2.height / 2
   }));
 }
+var entryPath = (entry) => {
+  const only = singleDoc(entry);
+  return only ? joinPath(entry.root, only.rel) : entry.root;
+};
 function ContextSidebar({
   entries,
   activeDoc,
   userHome,
+  workspace,
   onOpenDoc,
   onAddPath,
-  onRemoveEntry,
+  onStructure,
   listDir,
+  created,
   notice,
   onDismissNotice
 }) {
   const [drilled, setDrilled] = import_react12.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
+  const [renamePath, setRenamePath] = import_react12.useState(null);
+  const [localNotice, setLocalNotice] = import_react12.useState(null);
+  const [editingWorkspace, setEditingWorkspace] = import_react12.useState(false);
   import_react12.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+  const entriesRef = import_react12.useRef(entries);
+  entriesRef.current = entries;
+  import_react12.useEffect(() => {
+    if (!created)
+      return;
+    const all = entriesRef.current;
+    const inSet = all.find((e) => e.membership === "mirrored" && created.path.startsWith(`${e.root}/`));
+    if (all.some((e) => entryPath(e) === created.path))
+      setDrilled(null);
+    else if (inSet)
+      setDrilled(inSet.id);
+    setRenamePath(created.path);
+  }, [created]);
+  const renameStarted = import_react12.useCallback(() => setRenamePath(null), []);
+  const moveTargetsFor = import_react12.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
+  const importFiles = import_react12.useCallback((dt, into) => {
+    const { files, folders } = droppedFiles(dt);
+    const { docs, skipped } = splitDropped(files);
+    for (const i of docs) {
+      const f = files[i];
+      f.text().then((text) => onStructure({ type: "import", name: f.name, text, into }), () => setLocalNotice(`Could not read ${f.name}.`));
+    }
+    const said = [];
+    if (skipped.length)
+      said.push(`Not documents, so not copied: ${skipped.join(", ")}.`);
+    if (folders.length)
+      said.push(`Folders are not copied (${folders.join(", ")}) — add a folder by path below to link it.`);
+    setLocalNotice(said.length ? said.join(" ") : null);
+  }, [onStructure]);
+  const shown = localNotice ?? notice ?? null;
+  const dismiss = () => {
+    if (localNotice)
+      setLocalNotice(null);
+    else
+      onDismissNotice?.();
+  };
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      drilledEntry ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(SetView, {
+      drilledEntry ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SetView, {
         entry: drilledEntry,
         activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
         userHome,
         onBack: () => setDrilled(null),
-        onOpenDoc: (rel) => onOpenDoc(drilledEntry, rel)
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ListView, {
+        onOpenDoc: (rel) => onOpenDoc(drilledEntry, rel),
+        onStructure,
+        onImportFiles: importFiles,
+        moveTargetsFor,
+        renamePath,
+        onRenameStarted: renameStarted
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ListView, {
         entries,
         activeDoc,
         userHome,
+        workspace,
         onOpenDoc,
         onDrill: (e) => setDrilled(e.id),
-        onRemoveEntry
+        onStructure,
+        onImportFiles: importFiles,
+        moveTargetsFor,
+        renamePath,
+        onRenameStarted: renameStarted
       }, undefined, false, undefined, this),
-      notice && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+      shown && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         role: "alert",
         className: "mx-2 mb-1 flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
             className: "min-w-0 flex-1 break-words",
-            children: notice
+            children: shown
           }, undefined, false, undefined, this),
-          onDismissNotice && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
             type: "button",
-            onClick: onDismissNotice,
+            onClick: dismiss,
             "aria-label": "Dismiss",
             className: "shrink-0 text-ink-dim hover:text-ink",
-            children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {
               className: "size-3.5"
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(AddPath, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+        className: "flex items-center gap-1.5 border-t border-edge px-2.5 pt-1.5 text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {
+            "aria-hidden": true,
+            className: "size-3 shrink-0 text-ink-faint"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+            className: "shrink-0",
+            children: "Workspace"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+            className: "min-w-0 flex-1 truncate font-mono",
+            title: workspace,
+            children: shortPath(workspace, userHome, 3)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
+            type: "button",
+            onClick: () => setEditingWorkspace((v) => !v),
+            className: "shrink-0 rounded-sm px-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
+            title: "Where dropped files are copied and new top-level documents are made",
+            children: editingWorkspace ? "Cancel" : "Change"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
+        listDir,
+        placeholder: "Set the workspace folder…",
+        verb: "sets",
+        foldersOnly: true,
+        autoFocus: true,
+        initialValue: `${tildify(workspace, userHome)}/`,
+        onAdd: (path) => {
+          onStructure({ type: "workspace.set", path: expand(path, userHome) });
+          setEditingWorkspace(false);
+        },
+        onCancel: () => setEditingWorkspace(false)
+      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
         listDir,
         onAdd: onAddPath
-      }, undefined, false, undefined, this)
+      }, "add", false, undefined, this)
     ]
   }, undefined, true, undefined, this);
+}
+function expand(path, home) {
+  if (!home)
+    return path;
+  if (path === "~")
+    return home;
+  return path.startsWith("~/") ? `${home}${path.slice(1)}` : path;
+}
+function ToolButton({
+  label,
+  onClick,
+  children
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+    variant: "ghost",
+    size: "icon-sm",
+    onClick,
+    "aria-label": label,
+    title: label,
+    children
+  }, undefined, false, undefined, this);
+}
+function RenameBox({
+  initial: initial2,
+  onDone
+}) {
+  const [value, setValue] = import_react12.useState(initial2);
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("input", {
+    value,
+    onChange: (e) => setValue(e.target.value),
+    autoFocus: true,
+    onFocus: (e) => {
+      const dot = value.lastIndexOf(".");
+      e.currentTarget.setSelectionRange(0, dot > 0 ? dot : value.length);
+    },
+    onKeyDown: (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter")
+        onDone(value.trim() && value !== initial2 ? value.trim() : null);
+      else if (e.key === "Escape")
+        onDone(null);
+    },
+    onBlur: () => onDone(null),
+    "aria-label": `Rename ${initial2}`,
+    spellCheck: false,
+    className: "h-6 min-w-0 flex-1 rounded-sm border border-ring/60 bg-bg px-1 text-sm text-ink outline-none"
+  }, undefined, false, undefined, this);
 }
 function ListView({
   entries,
   activeDoc,
   userHome,
+  workspace,
   onOpenDoc,
   onDrill,
-  onRemoveEntry
+  onStructure,
+  onImportFiles,
+  moveTargetsFor,
+  renamePath,
+  onRenameStarted
 }) {
-  if (entries.length === 0) {
-    return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Empty, {
-      className: "flex-1",
-      children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyHeader, {
+  const [menuFor, setMenuFor] = import_react12.useState(null);
+  const [renaming, setRenaming] = import_react12.useState(null);
+  const [dropOn, setDropOn] = import_react12.useState(null);
+  import_react12.useEffect(() => {
+    if (!renamePath)
+      return;
+    if (entries.some((e) => entryPath(e) === renamePath)) {
+      setRenaming(renamePath);
+      onRenameStarted();
+    }
+  }, [renamePath, entries, onRenameStarted]);
+  const dropInto = (e, into) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropOn(null);
+    if (carriesFiles(e.dataTransfer))
+      return onImportFiles(e.dataTransfer, into);
+    const path = e.dataTransfer.getData(ROW_MIME);
+    if (path && path !== into && dirOf(path) !== into)
+      onStructure({ type: "move", path, into });
+  };
+  const acceptsDrag = (e) => carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
+  const toolbar = /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+    className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+        className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
+        children: "Drop files here to copy them in"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+        label: "New document in the workspace",
+        onClick: () => onStructure({ type: "doc.create", dir: workspace }),
+        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+        label: "New set (a folder in the workspace)",
+        onClick: () => onStructure({ type: "folder.create", dir: workspace }),
+        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+  const menu = /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuContent, {
+    children: [
+      menuFor && singleDoc(menuFor) ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyMedia, {
-            variant: "icon",
-            children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderTree, {}, undefined, false, undefined, this)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyTitle, {
-            children: "No context yet"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyDescription, {
-            children: "Add a markdown file or a folder by path below — or ask the agent to add one."
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onOpenDoc(menuFor, singleDoc(menuFor)?.rel),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {}, undefined, false, undefined, this),
+              "Open"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => setRenaming(entryPath(menuFor)),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+              "Rename"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "set.make", path: entryPath(menuFor) }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+              "Turn into a set"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
+            targets: moveTargetsFor(entryPath(menuFor)),
+            onMove: (into) => onStructure({ type: "move", path: entryPath(menuFor), into })
           }, undefined, false, undefined, this)
         ]
+      }, undefined, true, undefined, this) : menuFor ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onDrill(menuFor),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+              "Open set"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "doc.create", dir: menuFor.root }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+              "New document in set"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => setRenaming(menuFor.root),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+              "Rename"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
+            targets: moveTargetsFor(menuFor.root),
+            onMove: (into) => onStructure({ type: "move", path: menuFor.root, into })
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "workspace.set", path: menuFor.root }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {}, undefined, false, undefined, this),
+              "Use as workspace"
+            ]
+          }, undefined, true, undefined, this),
+          (menuFor.hidden?.length ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "unhide", entry: menuFor.id }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Eye, {}, undefined, false, undefined, this),
+              "Show ",
+              menuFor.hidden?.length,
+              " hidden"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "doc.create", dir: workspace }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+              "New document"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            onClick: () => onStructure({ type: "folder.create", dir: workspace }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
+              "New set"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      menuFor && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+            variant: "destructive",
+            onClick: () => onStructure({ type: "hide", path: entryPath(menuFor) }),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this),
+              "Remove from Scriptorium"
+            ]
+          }, undefined, true, undefined, this)
+        ]
       }, undefined, true, undefined, this)
-    }, undefined, false, undefined, this);
-  }
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("ul", {
-    className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1.5",
-    "aria-label": "Context",
-    children: entries.map((entry) => {
-      const only = singleDoc(entry);
-      const holdsActive = activeDoc?.entryId === entry.id;
-      const isActiveDoc = only !== null && holdsActive && activeDoc?.rel === only.rel;
-      const count = only ? 1 : docsIn(entry.nodes).length;
-      const full = only ? joinPath(entry.root, only.rel) : entry.root;
-      const where = shortPath(entry.root, userHome);
-      return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("li", {
-        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenu, {
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuTrigger3, {
-              render: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("button", {
-                type: "button",
-                onClick: () => only ? onOpenDoc(entry, only.rel) : onDrill(entry),
-                onKeyDown: openMenuOnShiftF10,
-                title: tildify(full, userHome),
-                className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-rubric/12")
-              }, undefined, false, undefined, this),
+    ]
+  }, undefined, true, undefined, this);
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenu, {
+    onOpenChange: (open) => {
+      if (!open)
+        setMenuFor(null);
+    },
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+          onDragOver: (e) => {
+            if (!acceptsDrag(e))
+              return;
+            e.preventDefault();
+            setDropOn("");
+          },
+          onDragLeave: (e) => {
+            if (!e.currentTarget.contains(e.relatedTarget))
+              setDropOn(null);
+          },
+          onDrop: (e) => dropInto(e, workspace),
+          className: cn("flex min-h-0 flex-1 flex-col", dropOn === "" && "bg-rubric/8 ring-1 ring-rubric/40 ring-inset")
+        }, undefined, false, undefined, this),
+        children: [
+          toolbar,
+          entries.length === 0 ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Empty, {
+            className: "flex-1",
+            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyHeader, {
               children: [
-                only ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {
-                  "aria-hidden": true,
-                  className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderTree, {
-                  "aria-hidden": true,
-                  className: cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")
+                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyMedia, {
+                  variant: "icon",
+                  children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
-                  className: "flex min-w-0 flex-1 flex-col",
+                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyTitle, {
+                  children: "No context yet"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyDescription, {
+                  children: "Add a markdown file or a folder by path below, drop files here to copy them into the workspace — or ask the agent to add one."
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("ul", {
+            className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1.5",
+            "aria-label": "Context",
+            children: entries.map((entry) => {
+              const only = singleDoc(entry);
+              const holdsActive = activeDoc?.entryId === entry.id;
+              const isActiveDoc = only !== null && holdsActive && activeDoc?.rel === only.rel;
+              const count = only ? 1 : docsIn(entry.nodes).length;
+              const full = entryPath(entry);
+              const where = shortPath(entry.root, userHome);
+              const name = only ? only.rel.split("/").pop() : entry.label;
+              const icon = only ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {
+                "aria-hidden": true,
+                className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {
+                "aria-hidden": true,
+                className: cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")
+              }, undefined, false, undefined, this);
+              if (renaming === full) {
+                return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("li", {
+                  className: "flex items-center gap-2 rounded-md bg-surface-raised px-2 py-1.5",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
-                      className: cn("truncate text-sm", isActiveDoc ? "font-medium text-ink" : "text-ink"),
-                      children: only ? only.rel.split("/").pop() : entry.label
-                    }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
-                      className: "flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim",
+                    icon,
+                    /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(RenameBox, {
+                      initial: name,
+                      onDone: (next) => {
+                        setRenaming(null);
+                        if (next)
+                          onStructure({ type: "rename", path: full, name: next });
+                      }
+                    }, undefined, false, undefined, this)
+                  ]
+                }, entry.id, true, undefined, this);
+              }
+              return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("li", {
+                children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
+                  type: "button",
+                  draggable: true,
+                  onDragStart: (e) => {
+                    e.dataTransfer.setData(ROW_MIME, full);
+                    e.dataTransfer.effectAllowed = "move";
+                  },
+                  onDragOver: (e) => {
+                    if (only || !acceptsDrag(e))
+                      return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDropOn(entry.id);
+                  },
+                  onDrop: only ? undefined : (e) => dropInto(e, entry.root),
+                  onClick: () => only ? onOpenDoc(entry, only.rel) : onDrill(entry),
+                  onContextMenu: () => setMenuFor(entry),
+                  onKeyDown: (e) => {
+                    openMenuOnShiftF10(e);
+                    if (e.key === "F2") {
+                      e.preventDefault();
+                      setRenaming(full);
+                    }
+                  },
+                  title: tildify(full, userHome),
+                  className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-rubric/12", dropOn === entry.id && "bg-rubric/15 ring-1 ring-rubric/50 ring-inset"),
+                  children: [
+                    icon,
+                    /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                      className: "flex min-w-0 flex-1 flex-col",
                       children: [
-                        entry.truncated && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
-                          className: "truncate",
-                          children: only ? where : `${count} ${count === 1 ? "document" : "documents"} · ${where}`
-                        }, undefined, false, undefined, this)
+                        /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                          className: cn("truncate text-sm", isActiveDoc ? "font-medium text-ink" : "text-ink"),
+                          children: name
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                          className: "flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim",
+                          children: [
+                            entry.truncated && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
+                            /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                              className: "truncate",
+                              children: only ? where : `${count} ${count === 1 ? "document" : "documents"} · ${where}`
+                            }, undefined, false, undefined, this)
+                          ]
+                        }, undefined, true, undefined, this)
                       ]
                     }, undefined, true, undefined, this)
                   ]
                 }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuContent, {
-              children: [
-                !only && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
-                  children: [
-                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
-                      onClick: () => onDrill(entry),
-                      children: "Open set"
-                    }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this)
-                  ]
-                }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
-                  variant: "destructive",
-                  onClick: () => onRemoveEntry(entry),
-                  children: [
-                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(X, {}, undefined, false, undefined, this),
-                    "Remove from context"
-                  ]
-                }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this)
-          ]
-        }, undefined, true, undefined, this)
-      }, entry.id, false, undefined, this);
-    })
-  }, undefined, false, undefined, this);
+              }, entry.id, false, undefined, this);
+            })
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      menu
+    ]
+  }, undefined, true, undefined, this);
 }
 function SetView({
   entry,
   activeRel,
   userHome,
   onBack,
-  onOpenDoc
+  onOpenDoc,
+  onStructure,
+  onImportFiles,
+  moveTargetsFor,
+  renamePath,
+  onRenameStarted
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         className: "flex shrink-0 items-center gap-1 border-b border-edge px-1.5 py-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: onBack,
             "aria-label": "Back to the context list",
-            children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ArrowLeft, {}, undefined, false, undefined, this)
+            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ArrowLeft, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
-            className: "flex min-w-0 flex-col",
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+            className: "flex min-w-0 flex-1 flex-col",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "truncate text-sm font-medium text-ink",
                 children: entry.label
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "flex min-w-0 items-center gap-1.5 truncate font-mono text-[11px] text-ink-dim",
                 title: entry.root,
                 children: [
-                  entry.truncated && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
+                  entry.truncated && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
                   shortPath(entry.root, userHome)
                 ]
               }, undefined, true, undefined, this)
             ]
-          }, undefined, true, undefined, this)
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+            label: "New document in this set",
+            onClick: () => onStructure({ type: "doc.create", dir: entry.root }),
+            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+            label: "New folder in this set",
+            onClick: () => onStructure({ type: "folder.create", dir: entry.root }),
+            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
-        className: "min-h-0 flex-1 overflow-auto px-1",
-        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EntryTree, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+        className: "flex min-h-0 flex-1 flex-col overflow-auto px-1",
+        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EntryTree, {
           entry,
           activeRel,
-          onOpenDoc
+          onOpenDoc,
+          onStructure,
+          onImportFiles,
+          moveTargetsFor,
+          renamePath,
+          onRenameStarted,
+          onMenuKey: openMenuOnShiftF10
         }, entry.id, false, undefined, this)
       }, undefined, false, undefined, this)
     ]
@@ -46671,7 +47944,7 @@ GutterMarker.prototype.point = true;
 
 // src/scriptorium/surface/components/DocumentView.tsx
 var import_react13 = __toESM(require_react(), 1);
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 var scriptoriumTheme = EditorView.theme({
   "&": {
     height: "100%",
@@ -46752,7 +48025,7 @@ function DocumentView({ docKey, text }) {
       }
     });
   }, [text]);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     ref: host,
     className: "min-h-0 flex-1 overflow-hidden",
     "data-slot": "document-view"
@@ -46762,9 +48035,9 @@ function DocumentView({ docKey, text }) {
 // src/scriptorium/surface/components/StatusStrip.tsx
 var import_react14 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -46773,27 +48046,27 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(import_react14.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(import_react14.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -46805,7 +48078,7 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 function useDebouncedStats(text, ms = 300) {
   const [stats, setStats] = import_react15.useState(() => contentStats(text ?? ""));
   import_react15.useEffect(() => {
@@ -46842,55 +48115,55 @@ function DocumentPane({ doc: doc2, text }) {
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
               className: "ml-auto shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint",
               children: "read-only"
             }, undefined, false, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown
       }, undefined, false, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(StatusStrip, {
+      doc2 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this)
     ]
@@ -46931,6 +48204,7 @@ function useDaemon() {
   const [connection, setConnection] = import_react16.useState("connecting");
   const [lastError, setLastError] = import_react16.useState(null);
   const [texts, setTexts] = import_react16.useState(() => new Map);
+  const [done, setDone] = import_react16.useState(null);
   const wsRef = import_react16.useRef(null);
   const pending = import_react16.useRef(new Map);
   import_react16.useEffect(() => {
@@ -46966,6 +48240,8 @@ function useDaemon() {
             next.set(key, msg.text);
             return next;
           });
+        } else if (msg.type === "structure.done") {
+          setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
@@ -47013,11 +48289,11 @@ function useDaemon() {
     ws.send(JSON.stringify({ type: "fs.list", path }));
   }), []);
   const clearError = import_react16.useCallback(() => setLastError(null), []);
-  return { state, connection, lastError, clearError, texts, send, listDir };
+  return { state, connection, lastError, clearError, texts, done, send, listDir };
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var CONNECTION_LABEL = {
@@ -47026,7 +48302,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -47049,41 +48325,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -47094,7 +48370,7 @@ function Workspace({
   state,
   daemon
 }) {
-  const { send, texts, listDir, lastError, clearError } = daemon;
+  const { send, texts, listDir, lastError, clearError, done } = daemon;
   const prefsRef = import_react17.useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = import_react17.useMemo(() => ({
@@ -47116,84 +48392,121 @@ function Workspace({
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text, send]);
   const onOpenDoc = import_react17.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanelGroup, {
+  const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
+  import_react17.useEffect(() => {
+    if (created?.op === "doc.create")
+      send({ type: "open", path: created.path });
+  }, [created, send]);
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanelGroup, {
     orientation: "horizontal",
     className: "min-h-0 flex-1",
     defaultLayout: layout.defaultLayout,
     onLayoutChanged: layout.onLayoutChanged,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
         id: "context",
         defaultSize: "22",
         minSize: "12",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PaneHeading, {
             children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ContextSidebar, {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ContextSidebar, {
             entries: state.context,
             activeDoc,
             userHome: state.userHome,
+            workspace: state.workspace,
             onOpenDoc,
             onAddPath: (path) => send({ type: "context.add", path }),
-            onRemoveEntry: (entry) => send({ type: "context.remove", id: entry.id }),
+            onStructure: send,
             listDir,
+            created,
             notice: lastError,
             onDismissNotice: clearError
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
         id: "document",
         defaultSize: "50",
         minSize: "25",
         className: "flex flex-col bg-bg",
-        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(DocumentPane, {
+        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(DocumentPane, {
           doc: open,
           text
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
         id: "chat",
         defaultSize: "28",
         minSize: "15",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PaneHeading, {
             children: "Conversation"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Empty, {
+          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
             className: "h-full",
-            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyTitle, {
-                  children: state.chat.length === 0 ? "No messages yet" : `${state.chat.length} ${state.chat.length === 1 ? "message" : "messages"}`
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyTitle, {
+                  children: "No messages yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
                   children: "The conversation with the agent lives here."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ActivityLog, {
+            chat: state.chat
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
+function ActivityLog({ chat }) {
+  const end = import_react17.useRef(null);
+  const last2 = chat.at(-1)?.id;
+  import_react17.useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [last2]);
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+    role: "log",
+    "aria-label": "Activity",
+    className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
+    children: [
+      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+        "data-who": m.who,
+        className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            className: "mr-1.5 font-medium text-ink-faint",
+            children: m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"
+          }, undefined, false, undefined, this),
+          m.text
+        ]
+      }, m.id, true, undefined, this)),
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+        ref: end
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime14.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime15.jsxDEV(App, {}, undefined, false, undefined, this));

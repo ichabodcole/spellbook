@@ -770,13 +770,19 @@ export class Session {
     return { path: abs };
   }
 
-  /** How a path reads in a chat line: `set/rel` inside an entry, else `~/…`. */
+  /**
+   * How a path reads in a chat line: `set/rel` inside a set, a single
+   * document's file name, `workspace/…` in the workspace, else `~/…`.
+   */
   display(abs: string): string {
     for (const e of this.m.context) {
-      if (abs === e.root) return e.label;
-      if (e.membership === "mirrored" && abs.startsWith(e.root + sep))
-        return `${e.label}/${toPosix(relative(e.root, abs))}`;
+      if (e.membership === "mirrored") {
+        if (abs === e.root) return e.label;
+        if (abs.startsWith(e.root + sep)) return `${e.label}/${toPosix(relative(e.root, abs))}`;
+      } else if (e.nodes.some((n) => join(e.root, n.rel) === abs)) return e.label;
     }
+    if (abs.startsWith(this.workspace + sep))
+      return `workspace/${toPosix(relative(this.workspace, abs))}`;
     const home = homedir();
     return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
   }

@@ -3,13 +3,17 @@ import type { ContextEntry, ContextNode } from "../../../backend/protocol";
 import {
   ancestorsOf,
   baseName,
+  dirOf,
   docsIn,
   indexTree,
   joinPath,
+  moveTargets,
+  parentRel,
   ROOT_ID,
   shortPath,
   singleDoc,
   sortNodes,
+  splitDropped,
   tildify,
 } from "./model";
 
@@ -124,5 +128,37 @@ describe("paths", () => {
         (n) => n.rel,
       ),
     ).toEqual(["a.md", "g/b.md", "g/h/c.md"]);
+  });
+});
+
+describe("organizing helpers (E22–E24)", () => {
+  test("parentRel and dirOf", () => {
+    expect(parentRel("a/b/c.md")).toBe("a/b");
+    expect(parentRel("c.md")).toBe("");
+    expect(dirOf("/x/y/z.md")).toBe("/x/y");
+    expect(dirOf("/z.md")).toBe("/");
+  });
+  test("moveTargets offers the workspace and each set, never where it is or inside itself", () => {
+    const set = (id: string, root: string): ContextEntry => ({
+      id,
+      label: root.split("/").pop() as string,
+      root,
+      membership: "mirrored",
+      nodes: [],
+    });
+    const entries = [set("a", "/w/notes"), set("b", "/w/notes/inner"), set("c", "/p/other")];
+    expect(moveTargets(entries, "/w", "/w/notes/x.md", "/h").map((t) => t.path)).toEqual([
+      "/w",
+      "/w/notes/inner",
+      "/p/other",
+    ]);
+    // A folder cannot go into itself or below itself.
+    expect(moveTargets(entries, "/w", "/w/notes", null).map((t) => t.path)).toEqual(["/p/other"]);
+  });
+  test("splitDropped keeps documents and names the rest", () => {
+    expect(splitDropped([{ name: "a.md" }, { name: "pic.png" }, { name: "B.TXT" }])).toEqual({
+      docs: [0, 2],
+      skipped: ["pic.png"],
+    });
   });
 });

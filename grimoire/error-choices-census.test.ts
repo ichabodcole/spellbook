@@ -129,7 +129,10 @@ const EXPECTED: Record<
   // 26/8 -> 27/9 (verify pass, 2026-09-11): `open`/`add` validate every path
   // before a daemon exists (a non-document file names the accepted extensions
   // as `choices`), and `tail --since` refuses a non-integer.
-  scriptorium: { sites: 27, choices: 9, verbRoster: true, flagMap: true },
+  // 27/9 -> 30/10 (organizing slice, E24): `import <file>` refuses a missing
+  // file (not_found) and a non-document (usage, the extensions as `choices`),
+  // and `workspace` reports a daemon refusal on its `/state` read.
+  scriptorium: { sites: 30, choices: 10, verbRoster: true, flagMap: true },
 };
 
 /**
