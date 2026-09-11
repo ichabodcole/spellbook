@@ -144,6 +144,13 @@ what it did, and the human can ask for a v3.
 5. **Right-click context menu** for quick actions — pre-canned messages.
 6. **Saved prompts** (E9).
 
+**Layout — resizable, not fixed sidebars** (Cole, same day): the context and
+chat panes are drag-resizable, so a deep file tree or a long conversation can
+take the room it needs. In shadcn/React terms that is the `resizable` component
+(a panel group with drag handles) rather than `sidebar` (a fixed-width,
+collapsible nav); the two can combine, but the three-pane split is a resizable
+group. Pane sizes are a per-viewer convenience worth remembering across reloads.
+
 **Deferred:** the split-screen diff and granular merge, annotations, rendered
 view, links. The version model (E2/E8) is still built into the daemon from the
 start — it is how the agent edits — so the diff UI arrives later as a view over
