@@ -192,6 +192,15 @@ describe("a session, end to end through the launchers", () => {
       string
     >;
     expect(onDisk["panes:test"]).toBe('{"context":40}');
+    // Another session sharing this home wrote a key since this daemon booted:
+    // a write must not erase it (prefs are read fresh — verify pass).
+    const file = join(root, "home", "prefs.json");
+    writeFileSync(file, JSON.stringify({ ...onDisk, "other:session": "kept" }));
+    surface.send({ type: "prefs.set", key: "theme", value: "light" });
+    await surface.waitFor((m) => m.type === "state" && m.state.prefs.theme === "light");
+    const merged = JSON.parse(readFileSync(file, "utf8")) as Record<string, string>;
+    expect(merged["other:session"]).toBe("kept");
+    expect(merged["panes:test"]).toBe('{"context":40}');
     surface.send({ type: "prefs.set", key: "../../etc/passwd", value: "x" });
     const err = await surface.waitFor(
       (m) => m.type === "error" && m.message.includes("refused pref"),

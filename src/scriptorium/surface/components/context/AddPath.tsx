@@ -11,6 +11,14 @@ import type { Listing } from "../../state/useDaemon";
 
 const MAX_SUGGESTIONS = 8;
 
+/** A daemon listing error in words (the raw text is `ENOENT: no such file or directory, scandir …`). */
+export function friendlyListError(raw: string, dir: string): string {
+  if (/ENOENT/.test(raw)) return `No folder at ${dir}`;
+  if (/EACCES|EPERM/.test(raw)) return `Not allowed to read ${dir}`;
+  if (/ENOTDIR/.test(raw)) return `${dir} is a file, not a folder`;
+  return raw;
+}
+
 /** Split a typed path into the directory to list and the name prefix to match. */
 export function splitForCompletion(typed: string): { dir: string; prefix: string } | null {
   if (!typed.startsWith("/") && !typed.startsWith("~")) return null;
@@ -28,7 +36,14 @@ export function AddPath({
   onAdd: (path: string) => void;
 }) {
   const [value, setValue] = useState("");
-  const [suggestions, setSuggestions] = useState<FsListEntry[]>([]);
+  // The suggestions carry the value they were computed FOR: a Tab or Enter
+  // inside the debounce would otherwise complete from the previous keystroke's
+  // list (verify pass: `/` then `Us`+Tab gave `/Applications/`).
+  const [listed, setListed] = useState<{ forValue: string; entries: FsListEntry[] }>({
+    forValue: "",
+    entries: [],
+  });
+  const suggestions = listed.forValue === value ? listed.entries : [];
   const [error, setError] = useState<string | null>(null);
   const [highlight, setHighlight] = useState(-1);
   const listId = useId();
@@ -37,7 +52,7 @@ export function AddPath({
   useEffect(() => {
     const split = splitForCompletion(value);
     if (!split) {
-      setSuggestions([]);
+      setListed({ forValue: value, entries: [] });
       setError(null);
       return;
     }
@@ -46,10 +61,15 @@ export function AddPath({
       const listing = await listDir(split.dir);
       if (mine !== seq.current) return; // a newer keystroke owns the list
       const p = split.prefix.toLowerCase();
-      setSuggestions(
-        listing.entries.filter((e) => e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS),
+      setListed({
+        forValue: value,
+        entries: listing.entries
+          .filter((e) => e.name.toLowerCase().startsWith(p))
+          .slice(0, MAX_SUGGESTIONS),
+      });
+      setError(
+        listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null,
       );
-      setError(listing.error && split.prefix === "" ? listing.error : null);
       setHighlight(-1);
     }, 120);
     return () => clearTimeout(t);
@@ -66,7 +86,6 @@ export function AddPath({
     if (!p) return;
     onAdd(p);
     setValue("");
-    setSuggestions([]);
   };
 
   return (
@@ -99,7 +118,11 @@ export function AddPath({
             const pick = highlight >= 0 ? suggestions[highlight] : undefined;
             submit(pick ? pick.path : value);
           } else if (e.key === "Escape") {
-            setValue("");
+            // First Escape closes the suggestions; only a second clears the path.
+            if (suggestions.length || error) {
+              setListed({ forValue: "", entries: [] });
+              setError(null);
+            } else setValue("");
           }
         }}
       />

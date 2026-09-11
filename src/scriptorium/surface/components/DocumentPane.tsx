@@ -1,7 +1,7 @@
 // The centre pane: the open document's header, the read-only view, and the
 // status strip under it with real values (E18).
 import { FileTextIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import type { DocView } from "../../backend/protocol";
 import { contentStats, relativeTime } from "../state/stats";
@@ -29,18 +29,28 @@ function useNow(everyMs = 30_000) {
 }
 
 export function DocumentPane({ doc, text }: { doc: DocView | null; text: string | undefined }) {
-  const stats = useDebouncedStats(text);
+  // While a newly active version's text is on its way, keep showing the last
+  // text of THIS document rather than blanking the pane (verify pass).
+  const lastShown = useRef<{ slug: string; text: string } | null>(null);
+  if (doc && text !== undefined) lastShown.current = { slug: doc.slug, text };
+  const shown =
+    text ?? (doc && lastShown.current?.slug === doc.slug ? lastShown.current.text : undefined);
+  const stats = useDebouncedStats(shown);
   const now = useNow();
   const active = doc?.versions.find((v) => v.n === doc.active);
 
   const segments: StatusSegment[] = doc
     ? [
         { label: "Version", value: `v${doc.active}${active?.label ? ` · ${active.label}` : ""}` },
-        { label: "Author", value: active?.author === "agent" ? "Agent" : "Human" },
-        { label: "Updated", value: active ? relativeTime(active.createdAt, now) : "—" },
+        { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
+        {
+          label: "Updated",
+          value: active ? relativeTime(active.createdAt, now) : "—",
+          priority: "low",
+        },
         { value: doc.outsideChanged ? "Changed on disk" : doc.dirty ? "Unsaved" : "Saved" },
         { label: "Words", value: stats.words.toLocaleString() },
-        { label: "Characters", value: stats.characters.toLocaleString() },
+        { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" },
       ]
     : [];
 
@@ -73,10 +83,10 @@ export function DocumentPane({ doc, text }: { doc: DocView | null; text: string 
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : text === undefined ? (
+      ) : shown === undefined ? (
         <div className="flex-1" aria-busy="true" />
       ) : (
-        <DocumentView docKey={`${doc.slug}@${doc.active}`} text={text} />
+        <DocumentView docKey={doc.slug} text={shown} />
       )}
       {doc && <StatusStrip segments={segments} />}
     </>

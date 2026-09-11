@@ -18,6 +18,7 @@ export function useDaemon(): {
   state: PublicState | null;
   connection: Connection;
   lastError: string | null;
+  clearError: () => void;
   texts: ReadonlyMap<string, string>;
   send: (msg: ClientMsg) => void;
   listDir: (path: string) => Promise<Listing>;
@@ -109,5 +110,7 @@ export function useDaemon(): {
     [],
   );
 
-  return { state, connection, lastError, texts, send, listDir };
+  const clearError = useCallback(() => setLastError(null), []);
+
+  return { state, connection, lastError, clearError, texts, send, listDir };
 }

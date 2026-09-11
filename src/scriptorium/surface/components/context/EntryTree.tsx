@@ -33,8 +33,6 @@ export function EntryTree({
   const index = useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = useRef<TreeIndex>(index);
   indexRef.current = index;
-  const openRef = useRef(onOpenDoc);
-  openRef.current = onOpenDoc;
 
   const tree = useTree<ContextNode | null>({
     rootItemId: ROOT_ID,
@@ -52,11 +50,9 @@ export function EntryTree({
       getItem: (id) => (id === ROOT_ID ? null : (indexRef.current.byId.get(id) ?? null)),
       getChildren: (id) => indexRef.current.children.get(id) ?? [],
     },
-    // Enter / double-click on a document opens it; on a group it toggles.
-    onPrimaryAction: (item) => {
-      const node = item.getItemData();
-      if (node?.kind === "doc") openRef.current(node.rel);
-    },
+    // Opening is the row's own click (below), which a <button> also fires on
+    // Enter and Space. Opening here TOO sent `open` twice per keypress (verify
+    // pass), so the library's primary action is left to toggle groups only.
     indent: INDENT_PX,
     features: [syncDataLoaderFeature, selectionFeature, hotkeysCoreFeature],
   });
@@ -68,7 +64,7 @@ export function EntryTree({
 
   const items = tree.getItems();
   if (items.length === 0) {
-    return <p className="px-3 py-4 text-xs text-ink-faint">This folder has no documents yet.</p>;
+    return <p className="px-3 py-4 text-xs text-ink-dim">This folder has no documents yet.</p>;
   }
 
   return (
@@ -85,8 +81,8 @@ export function EntryTree({
         const props = item.getProps();
         return (
           <button
-            {...props}
             key={item.getId()}
+            {...props}
             type="button"
             onClick={(e) => {
               props.onClick?.(e);
@@ -101,7 +97,7 @@ export function EntryTree({
               "hover:bg-surface-raised hover:text-ink",
               "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset",
               item.isFocused() && "bg-surface-raised/60",
-              isActive && "bg-surface-raised font-medium text-ink",
+              isActive && "bg-rubric/12 font-medium text-ink",
             )}
           >
             {isGroup ? (

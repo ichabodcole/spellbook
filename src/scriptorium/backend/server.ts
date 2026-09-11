@@ -114,18 +114,30 @@ export async function startDaemon(opts: StartOpts) {
   const prefsFile = join(home, "prefs.json");
   const PREF_KEY = /^[a-z][a-z0-9:._-]{0,63}$/;
   const PREF_VALUE_MAX = 4096;
-  let prefs: Record<string, string> = {};
-  try {
-    const raw = JSON.parse(readFileSync(prefsFile, "utf8")) as unknown;
-    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-      for (const [k, v] of Object.entries(raw))
-        if (PREF_KEY.test(k) && typeof v === "string" && v.length <= PREF_VALUE_MAX) prefs[k] = v;
+  const PREF_KEYS_MAX = 64;
+  /**
+   * Read the home's prefs FRESH. Several sessions can share one home (E13), each
+   * its own daemon, so a copy loaded once at boot and written back whole would
+   * erase a key another session wrote since (verify pass). Every write is
+   * therefore read → set one key → write, and every snapshot reads the file.
+   * Only well-formed entries survive a read; a bad file reads as empty and is
+   * replaced by the next write.
+   */
+  const readPrefs = (): Record<string, string> => {
+    const out: Record<string, string> = {};
+    try {
+      const raw = JSON.parse(readFileSync(prefsFile, "utf8")) as unknown;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        for (const [k, v] of Object.entries(raw))
+          if (PREF_KEY.test(k) && typeof v === "string" && v.length <= PREF_VALUE_MAX) out[k] = v;
+      }
+    } catch {
+      /* no prefs yet, or unreadable — empty */
     }
-  } catch {
-    /* no prefs yet, or unreadable — start empty; a bad file is replaced on the next write */
-  }
+    return out;
+  };
   const userHome = homedir();
-  const viewState = () => ({ ...session.view(mode, selection), prefs, userHome });
+  const viewState = () => ({ ...session.view(mode, selection), prefs: readPrefs(), userHome });
 
   // --- channels ---------------------------------------------------------------
   const sockets = new Set<import("bun").ServerWebSocket<unknown>>();
@@ -433,9 +445,16 @@ export async function startDaemon(opts: StartOpts) {
           msg.value.length > PREF_VALUE_MAX
         )
           throw new Error(`refused pref ${JSON.stringify(msg.key)}`);
-        if (prefs[msg.key] === msg.value) return;
-        prefs = { ...prefs, [msg.key]: msg.value };
-        writeFileAtomic(prefsFile, `${JSON.stringify(prefs, null, 2)}\n`);
+        const current = readPrefs();
+        if (current[msg.key] === msg.value) return;
+        if (!(msg.key in current) && Object.keys(current).length >= PREF_KEYS_MAX)
+          throw new Error(
+            `refused pref ${JSON.stringify(msg.key)}: ${PREF_KEYS_MAX} keys already kept`,
+          );
+        writeFileAtomic(
+          prefsFile,
+          `${JSON.stringify({ ...current, [msg.key]: msg.value }, null, 2)}\n`,
+        );
         broadcastState();
         return;
       }

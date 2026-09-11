@@ -39,13 +39,25 @@ const prefKey = (key: string) => key.replace(/^react-resizable-panels:/, "panes:
 
 export function App() {
   const daemon = useDaemon();
-  const { state, connection } = daemon;
+  const { state, connection, send } = daemon;
   const [theme, setTheme] = useState<Theme>(readAppliedTheme);
+
+  // ONE global theme, last choice wins (Cole, E21): kept in the HOME's prefs so
+  // every session — each on its own port, where browser storage cannot follow —
+  // opens in it. The browser copy only lets the pre-paint script avoid a flash.
+  const savedTheme = state?.prefs.theme;
+  useEffect(() => {
+    if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
+      applyTheme(savedTheme);
+      setTheme(savedTheme);
+    }
+  }, [savedTheme]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     applyTheme(next);
     setTheme(next);
+    send({ type: "prefs.set", key: "theme", value: next });
   };
 
   return (
@@ -91,7 +103,7 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, listDir } = daemon;
+  const { send, texts, listDir, lastError, clearError } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -147,6 +159,8 @@ function Workspace({
           onAddPath={(path) => send({ type: "context.add", path })}
           onRemoveEntry={(entry) => send({ type: "context.remove", id: entry.id })}
           listDir={listDir}
+          notice={lastError}
+          onDismissNotice={clearError}
         />
       </ResizablePanel>
       <ResizableHandle withHandle />

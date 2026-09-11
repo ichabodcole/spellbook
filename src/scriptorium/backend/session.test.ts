@@ -73,6 +73,27 @@ describe("the context model (E15) — one type for a document and a set", () => 
     expect(Object.keys(entry).sort()).toEqual(["id", "label", "membership", "nodes", "root"]);
   });
 
+  test("removing the entry that holds the open document closes it — its versions stay", () => {
+    const s = Session.create(home);
+    const set = s.addContext(join(docs, "set"));
+    s.addContext(join(docs, "solo.md"));
+    const { slug } = s.openPath(join(docs, "set", "a.md"));
+    expect(s.openDocSlug).toBe(slug);
+    s.removeContext(set.entry.id);
+    expect(s.openDocSlug).toBeNull();
+    // Nothing deleted: the doc and its v1 are still in the session.
+    expect(s.view("release", null).docs.map((d) => d.slug)).toContain(slug);
+  });
+
+  test("removing an entry that does NOT hold the open document leaves it open", () => {
+    const s = Session.create(home);
+    const set = s.addContext(join(docs, "set"));
+    s.addContext(join(docs, "solo.md"));
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.removeContext(set.entry.id);
+    expect(s.openDocSlug).toBe(slug);
+  });
+
   test("adding the same path twice is idempotent", () => {
     const s = Session.create(home);
     const first = s.addContext(join(docs, "set"));

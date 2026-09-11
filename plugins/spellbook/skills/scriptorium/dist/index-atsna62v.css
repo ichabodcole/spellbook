@@ -368,6 +368,10 @@
 }
 
 @layer utilities {
+  .\@container {
+    container-type: inline-size;
+  }
+
   .pointer-events-none {
     pointer-events: none;
   }
@@ -408,6 +412,10 @@
     margin-inline: calc(var(--spacing) * -1);
   }
 
+  .mx-2 {
+    margin-inline: calc(var(--spacing) * 2);
+  }
+
   .my-1 {
     margin-block: calc(var(--spacing) * 1);
   }
@@ -438,6 +446,10 @@
 
   .flex {
     display: flex;
+  }
+
+  .hidden {
+    display: none;
   }
 
   .inline {
@@ -619,6 +631,10 @@
     align-items:  center;
   }
 
+  .items-start {
+    align-items:  flex-start;
+  }
+
   .justify-center {
     justify-content: center;
   }
@@ -729,6 +745,16 @@
     border-color: var(--color-border);
   }
 
+  .border-danger\/40 {
+    border-color: #e5675a66;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-danger\/40 {
+      border-color: color-mix(in oklab, var(--color-danger) 40%, transparent);
+    }
+  }
+
   .border-edge {
     border-color: var(--color-edge);
   }
@@ -741,6 +767,16 @@
     border-color: #0000;
   }
 
+  .bg-attention\/15 {
+    background-color: #e2a94b26;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-attention\/15 {
+      background-color: color-mix(in oklab, var(--color-attention) 15%, transparent);
+    }
+  }
+
   .bg-background {
     background-color: var(--color-background);
   }
@@ -751,6 +787,16 @@
 
   .bg-border {
     background-color: var(--color-border);
+  }
+
+  .bg-danger\/10 {
+    background-color: #e5675a1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-danger\/10 {
+      background-color: color-mix(in oklab, var(--color-danger) 10%, transparent);
+    }
   }
 
   .bg-destructive\/10 {
@@ -781,6 +827,16 @@
 
   .bg-primary {
     background-color: var(--color-primary);
+  }
+
+  .bg-rubric\/12 {
+    background-color: #d0704f1f;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-rubric\/12 {
+      background-color: color-mix(in oklab, var(--color-rubric) 12%, transparent);
+    }
   }
 
   .bg-secondary {
@@ -964,6 +1020,10 @@
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  .break-words {
+    overflow-wrap: break-word;
   }
 
   .whitespace-nowrap {
@@ -1648,6 +1708,18 @@
     .md\:text-sm {
       font-size: var(--text-sm);
       line-height: var(--tw-leading, var(--text-sm--line-height));
+    }
+  }
+
+  @container (width >= 44rem) {
+    .\@\[44rem\]\:block {
+      display: block;
+    }
+  }
+
+  @container (width >= 44rem) {
+    .\@\[44rem\]\:flex {
+      display: flex;
     }
   }
 

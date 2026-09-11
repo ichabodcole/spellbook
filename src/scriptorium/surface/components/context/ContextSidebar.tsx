@@ -26,6 +26,18 @@ import { AddPath } from "./AddPath";
 import { EntryTree } from "./EntryTree";
 import { docsIn, joinPath, shortPath, singleDoc, tildify } from "./model";
 
+/** Said up front, not ellipsed away at the end of a subtitle (verify pass). */
+function TruncatedBadge() {
+  return (
+    <span
+      className="shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention"
+      title="This folder has more files than the sidebar lists — the scan stopped at its cap."
+    >
+      partial
+    </span>
+  );
+}
+
 export type ContextSidebarProps = {
   entries: readonly ContextEntry[];
   /** The open document, located by its entry and rel — or null. */
@@ -36,6 +48,9 @@ export type ContextSidebarProps = {
   onAddPath: (path: string) => void;
   onRemoveEntry: (entry: ContextEntry) => void;
   listDir: (path: string) => Promise<Listing>;
+  /** A refusal to show the human (a path that could not be added, …), or null. */
+  notice?: string | null;
+  onDismissNotice?: () => void;
 };
 
 /** macOS has no native key for a context menu, so Shift+F10 is synthesised (grapevine's ChannelRail). */
@@ -61,6 +76,8 @@ export function ContextSidebar({
   onAddPath,
   onRemoveEntry,
   listDir,
+  notice,
+  onDismissNotice,
 }: ContextSidebarProps) {
   const [drilled, setDrilled] = useState<string | null>(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
@@ -89,6 +106,24 @@ export function ContextSidebar({
           onDrill={(e) => setDrilled(e.id)}
           onRemoveEntry={onRemoveEntry}
         />
+      )}
+      {notice && (
+        <div
+          role="alert"
+          className="mx-2 mb-1 flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-xs text-ink"
+        >
+          <span className="min-w-0 flex-1 break-words">{notice}</span>
+          {onDismissNotice && (
+            <button
+              type="button"
+              onClick={onDismissNotice}
+              aria-label="Dismiss"
+              className="shrink-0 text-ink-dim hover:text-ink"
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          )}
+        </div>
       )}
       <AddPath listDir={listDir} onAdd={onAddPath} />
     </div>
@@ -149,7 +184,7 @@ function ListView({
                     className={cn(
                       "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none",
                       "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
-                      (isActiveDoc || (holdsActive && !only)) && "bg-surface-raised",
+                      (isActiveDoc || (holdsActive && !only)) && "bg-rubric/12",
                     )}
                   />
                 }
@@ -180,9 +215,13 @@ function ListView({
                   >
                     {only ? only.rel.split("/").pop() : entry.label}
                   </span>
-                  <span className="truncate font-mono text-[11px] text-ink-faint">
-                    {only ? where : `${count} ${count === 1 ? "document" : "documents"} · ${where}`}
-                    {entry.truncated ? " · truncated" : ""}
+                  <span className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim">
+                    {entry.truncated && <TruncatedBadge />}
+                    <span className="truncate">
+                      {only
+                        ? where
+                        : `${count} ${count === 1 ? "document" : "documents"} · ${where}`}
+                    </span>
                   </span>
                 </span>
               </ContextMenuTrigger>
@@ -232,7 +271,11 @@ function SetView({
         </Button>
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium text-ink">{entry.label}</span>
-          <span className="truncate font-mono text-[11px] text-ink-faint" title={entry.root}>
+          <span
+            className="flex min-w-0 items-center gap-1.5 truncate font-mono text-[11px] text-ink-dim"
+            title={entry.root}
+          >
+            {entry.truncated && <TruncatedBadge />}
             {shortPath(entry.root, userHome)}
           </span>
         </div>

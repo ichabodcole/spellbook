@@ -19,11 +19,14 @@ const group = (rel: string, children: ContextNode[]): ContextNode => ({
   rel,
   children,
 });
-const entry = (nodes: ContextNode[]): ContextEntry => ({
+const entry = (
+  nodes: ContextNode[],
+  membership: ContextEntry["membership"] = "listed",
+): ContextEntry => ({
   id: "e1",
   label: "notes",
   root: "/r",
-  membership: "mirrored",
+  membership,
   nodes,
 });
 
@@ -66,6 +69,9 @@ describe("singleDoc (E15 — one type, rendered two ways)", () => {
   test("a folder with one document inside a group is a tree, not a document", () => {
     expect(singleDoc(entry([group("g", [doc("g/x.md")])]))).toBeNull();
   });
+  test("a MIRRORED folder holding one file stays a folder (the human added a folder)", () => {
+    expect(singleDoc(entry([doc("only.md")], "mirrored"))).toBeNull();
+  });
   test("two documents, or none, is a tree", () => {
     expect(singleDoc(entry([doc("a.md"), doc("b.md")]))).toBeNull();
     expect(singleDoc(entry([]))).toBeNull();
@@ -82,6 +88,11 @@ describe("indexTree", () => {
   });
   test("an empty group has an empty child list, not a missing one", () => {
     expect(indexTree([group("empty", [])]).children.get("empty")).toEqual([]);
+  });
+  test("ROOT_ID cannot collide with any node id, since rels are relative", () => {
+    expect(ROOT_ID).toBe("/");
+    const idx = indexTree([group("root", [doc("root/x.md")]), doc("_root.md")]);
+    expect(idx.byId.has(ROOT_ID)).toBe(false);
   });
 });
 

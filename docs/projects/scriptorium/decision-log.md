@@ -289,3 +289,40 @@ written, which the house rule says must come first — a gap in brief A, noted.
   read-only view without a highlight style gained nothing from it, so it and its
   two sibling packages were removed; the editing slice brings them back and must
   settle the ward's string-literal reading and the bundle weight.
+
+## E21 · One global theme, last choice wins — and the sidebar's verify-pass fixes
+
+**Ruled:** Cole, 2026-09-11 — the theme need not follow a session; flipping it
+should simply be what every session opens in next. It lives in the home's
+`prefs.json` beside the pane sizes (browser storage cannot follow a new port);
+the browser keeps a copy only so the pre-paint script avoids a flash. Driven:
+set dark in one session, a fresh session on a new port opened dark.
+
+**The verify pass on the sidebar slice, and what changed:**
+
+- **Scroll was lost** when the agent's version became active (the view remounted
+  per version and replaced the whole text). Now one view per document and the
+  smallest change is applied, with the scroll restored; the pane keeps the last
+  text while a new version's arrives. Driven: 60,000 px down, `version-new` →
+  edit the top line → `activate` — still at 60,000 px.
+- **`ROOT_ID` held a NUL byte**, so git showed `model.ts` as binary. It is "/".
+- **Two sessions sharing a home erased each other's prefs** (each wrote back a
+  copy loaded at boot). Prefs are now read fresh for every snapshot and write;
+  there is a 64-key cap.
+- **Tab could complete from a stale list** inside the debounce. Suggestions now
+  carry the value they were computed for.
+- **A failed add was silent.** Daemon refusals now show under the path box.
+- **A mirrored folder holding one file rendered as that file** — losing the
+  folder's name, and "Remove" on the row removed the folder. E15's rendering
+  rule is refined: only a `listed` entry with one document renders as a
+  document; a folder the human added stays a folder. (`membership` is a sourcing
+  mode, not a doc/set kind — promotion still adds nodes to the same entry.)
+- **Removing the entry that holds the open document** now closes it in the view;
+  its versions stay in the session.
+- **Enter on a tree document sent `open` twice**; the library's primary action
+  no longer opens.
+- Smaller: the status strip hides its low-priority segments in a narrow pane;
+  faint subtitle text raised to `ink-dim` for contrast; the active row is tinted
+  with the rubric; "partial" (a truncated folder) is a badge up front, not an
+  ellipsed suffix; listing errors read as words; the first Escape closes the
+  suggestions and only the second clears the path.

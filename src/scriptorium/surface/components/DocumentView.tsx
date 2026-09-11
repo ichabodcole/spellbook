@@ -1,9 +1,12 @@
 // The centre pane's document, READ-ONLY for now (E16: view before edit).
 // CodeMirror 6, hand-wrapped (investigation §1: the spell must dispatch its own
 // transactions — remote changes, later the human's edits — so the view's
-// lifecycle is ours, not a wrapper library's). One view per mounted document;
-// a new text for the same document is applied as a change, not a remount, so
-// scroll position survives an agent rewriting the version underneath.
+// lifecycle is ours, not a wrapper library's). ONE view per document — not per
+// version — so a new text (the agent's version made active, the original
+// reloaded from disk) is applied as the SMALLEST change that turns the old text
+// into the new, and the reader keeps their place. (It first remounted per
+// version and replaced the whole text, which put a reader 300,000px down back at
+// the top — the verify pass drove it.)
 //
 // ⚠ NO MARKDOWN LANGUAGE YET, deliberately. `@codemirror/lang-markdown` imports
 // `@codemirror/lang-html` at module scope (for inline HTML), which drags the
@@ -42,6 +45,24 @@ const scriptoriumTheme = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "transparent" },
 });
 
+/** The smallest single replacement turning `a` into `b`: common prefix and suffix kept. */
+export function minimalChange(
+  a: string,
+  b: string,
+): { from: number; to: number; insert: string } | null {
+  if (a === b) return null;
+  let start = 0;
+  const max = Math.min(a.length, b.length);
+  while (start < max && a.charCodeAt(start) === b.charCodeAt(start)) start++;
+  let endA = a.length;
+  let endB = b.length;
+  while (endA > start && endB > start && a.charCodeAt(endA - 1) === b.charCodeAt(endB - 1)) {
+    endA--;
+    endB--;
+  }
+  return { from: start, to: endA, insert: b.slice(start, endB) };
+}
+
 export function DocumentView({ docKey, text }: { docKey: string; text: string }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -70,12 +91,22 @@ export function DocumentView({ docKey, text }: { docKey: string; text: string })
     };
   }, [docKey]);
 
-  // The same document's text changed (the agent wrote it, an original reloaded):
-  // apply it as a change so the view — and the reader's place in it — stays.
+  // The document's text changed: apply the minimal change, then put the scroll
+  // back where it was — a change above the viewport would otherwise push the
+  // reader's place down the page.
   useEffect(() => {
     const v = view.current;
-    if (!v || v.state.doc.toString() === text) return;
-    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: text } });
+    if (!v) return;
+    const change = minimalChange(v.state.doc.toString(), text);
+    if (!change) return;
+    const top = v.scrollDOM.scrollTop;
+    v.dispatch({ changes: change });
+    v.requestMeasure({
+      read: () => null,
+      write: () => {
+        v.scrollDOM.scrollTop = top;
+      },
+    });
   }, [text]);
 
   return <div ref={host} className="min-h-0 flex-1 overflow-hidden" data-slot="document-view" />;

@@ -338,6 +338,11 @@ export class Session {
       );
     this.m.context.splice(i, 1);
     this.relink();
+    // The open document left the context with its entry: close it in the view.
+    // Its versions stay in the session (nothing is deleted); re-adding the
+    // entry and opening it again finds them.
+    const open = this.m.openDoc ? this.m.docs.find((d) => d.slug === this.m.openDoc) : undefined;
+    if (open && open.entryId === null) this.m.openDoc = null;
     this.persist();
   }
 
