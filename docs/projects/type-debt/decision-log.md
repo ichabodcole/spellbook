@@ -1446,3 +1446,67 @@ reds. `unknown` never meets the second half.
 - _Make every handler return `0` explicitly._ Seventeen edits to state what
   dispatch already does, and the next verb would regress it.
 - _`Promise<unknown> | unknown`._ Accepts a string code silently.
+
+## T30 · ⭐ Imago's label-less pin is reachable FROM THE WIRE (not from its own UI), and `?? ""` is honest there
+
+**Decided:** lead, 2026-09-10, Phase 4a (imago). The project's second reachable
+`undefined` (T28 was the first).
+
+`Mark.label` is optional on every tool, and `mark.add` validates only an id and
+a known tool — **so a pin with no label is accepted over the WebSocket**.
+(`mark.add` is a browser-message command only; `handleAgentMsg` has no mark
+commands, so an agent's `/cmd` cannot reach it — corrected by the verify pass;
+the first draft said it could.) ⚠ **And the shipped surface never creates one:**
+its only pin creator is fed by `PinEditor`'s submit, which cancels on an empty
+label. So the reachable paths are a **non-surface WebSocket client** and a
+**hand-made or restored snapshot** — the wire, not the UI. The integration
+suite's `pin()` helper builds exactly that shape over a raw WebSocket, and a new
+cell now names it. "Edit note" on such a pin rendered
+`<PinEditor initialLabel={editing.label}>` — `undefined` into a `string` prop —
+and the editor's commit runs `value.trim()`. A blur or Enter without typing
+threw.
+
+**The fix is `editing.label ?? ""`, and R3's objection to `?? fallback` does not
+apply**, because R3 refuses a fallback that STANDS IN FOR AN INVARIANT. Here the
+absence is legitimate — the type says `label?:` — and `""` is not an invented
+value: it is the editor's own documented empty-draft case ("Empty draft → end ==
+0"). The test is the one T22 already states: when the absence is real, give the
+answer the domain already has for it.
+
+**Not driven in a browser.** The daemon half is driven (the new cell); the
+component half is argued from the code. A React harness for one prop was not
+built.
+
+⚠ **The same class stays open, and it is not a type error:** `mark.update`
+accepts any number as a patch value, so `{label: 5}` stores a numeric label,
+which `?? ""` passes through and which crashes the same `.trim()` and
+`svgMark.ts`'s `.split`. Found by the verify pass; filed as
+`docs/backlog/2026-09-10-imago-mark-update-accepts-a-non-string-label.md` rather
+than fixed in a type commit.
+
+## T31 · A dependency's missing types are fixed at the dependency when upstream already has
+
+**Decided:** lead, 2026-09-10, Phase 4a.
+
+`imageOptimize.test.ts`'s `await import("sharp")` was TS7016. `sharp` 0.35.0
+ships `lib/index.d.ts` and names it in `"types"`, but its `exports` map has no
+`types` condition, and under `moduleResolution: "bundler"` TypeScript reads
+`exports` only. **Upstream fixed it in 0.35.4**, inside the declared `^0.35`
+range; `bun update sharp` moved the lockfile — the sharp family,
+`@emnapi/runtime` and `semver` 7.8.4 → 7.8.5 (a sharp-only transitive) — and
+raised `package.json`'s floor to `^0.35.4`, in a commit of its own. (The first
+draft said "the sharp family plus `@emnapi/runtime`, nothing else"; the verify
+pass found `semver`.)
+
+The test keeps `sharp` deliberately: it is an **independent oracle** — the
+shipped optimiser uses `Bun.Image`, and the test builds its input and reads the
+output's dimensions with a different library.
+
+**Not taken:**
+
+- _tsconfig `paths` onto `sharp/lib/index.d.ts`._ Bun honours `paths` at run
+  time too and would try to import a `.d.ts`.
+- _An ambient `declare module "sharp"`._ Ambient declarations cannot re-export
+  from a relative path, so it would have to be hand-written types — `any` with
+  extra steps.
+- _Rewrite the test onto `Bun.Image`._ Loses the independent oracle.

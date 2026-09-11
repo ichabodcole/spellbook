@@ -331,6 +331,44 @@ import { join } from "node:path";
 //     `toContain` against a literal-union list type-checks — and would now
 //     fail to compile if the event type were ever removed.
 //   (17 + 4 + 1 + 3 + 20 + 3 + 1 + 1 = 50.)
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 4a, IMAGO: `src/imago/backend` 99 -> 0,
+// `src/imago/surface` 36 -> 0. Total 407 -> 272 (-135, exactly what was
+// fixed). Route by route:
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO file deleted or added,
+//     NO de-duplication (`parsePortFromSessionId` fixed in place, T22).
+//   • ⭐ ONE `undefined` REACHABLE FROM THE WIRE (T30): `mark.add` accepts a
+//     pin with no `label` over the WebSocket (never from the shipped UI), so
+//     "Edit note" handed `PinEditor` `undefined` and its submit ran
+//     `undefined.trim()`. A pin with no note now opens as an EMPTY DRAFT
+//     (`?? ""` — the editor's own documented empty case, not a stand-in for an
+//     invariant). A new integration cell pins the premise.
+//   • ⭐ ONE DEAD READ, and the type error was the only thing that knew:
+//     `res.conflicts` in `context.add`'s 409 detail, from 5e6aacde, which no
+//     failure path ever produced and the result type never declared. Removed;
+//     no response byte changes because it could not fire.
+//   • ⚠ ONE WAS A DEPENDENCY, NOT CODE: `sharp` 0.35.0's `exports` map had no
+//     `types` condition, so under bundler resolution it was untyped (TS7016).
+//     Upstream fixed it in 0.35.4; the lockfile moved to it (plus a sharp-only
+//     `semver` bump) and the declared floor rose to `^0.35.4` (its own commit). Only a test imports sharp — as an
+//     INDEPENDENT oracle for `Bun.Image` — so no shipped artifact moves.
+//   • 3 are a HAND-KEPT PAIR MADE ONE: `TOOL_ORDER` is now `ToolId[]`,
+//     derived from the registry's keys, so an id in the order and not the
+//     registry — a render-time crash before — is a compile error.
+//     CALIBRATED: "text" added to the order -> TS2322.
+//   • 8 in `Canvas.tsx` fell to a guard that now NAMES `batch`, which
+//     `variant` implies but the compiler cannot see. Same states reach the
+//     empty view.
+//   • 10 shipped reads became TOTAL BY CONSTRUCTION — `findLast`,
+//     `.entries()`, `Object.entries`, a carried `prev` — so no index needs
+//     proving; 12 more take each function's own answer (T22).
+//   • 1 is `Bun.Server<undefined>` (T27; no handler reads `ws.data`).
+//   • 97 test errors are LOCAL throwing readers (`must`, `first`, `marksOf`,
+//     `layersOf`, `focusOf`, `at`). ⚠ A FIRST MECHANICAL PASS ALSO WRAPPED
+//     reads inside `waitForState` predicates and four ABSENCE assertions
+//     (`toBeUndefined()`, `?? []`), where a throwing reader would have crashed
+//     the poll or inverted the cell; all were restored before any test ran.
+//   (Shipped 1 + 2 + 3 + 8 + 10 + 12 + 1 = 37; tests 97 + sharp 1 = 98; 135.)
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -355,8 +393,8 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/grapevine/backend": 104,
   "src/grapevine/surface": 37,
   "src/imago": 0,
-  "src/imago/backend": 99,
-  "src/imago/surface": 36,
+  "src/imago/backend": 0,
+  "src/imago/surface": 0,
   "src/kit": 1,
   "src/magpie": 0,
   "src/magpie/backend": 0,
@@ -370,7 +408,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 407;
+const DECLARED_TOTAL = 272;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
