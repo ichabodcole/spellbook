@@ -52,20 +52,42 @@ original (Operator's model, where the store is a database). An autosave option �
 "every N seconds" — may follow after the MVP. **Reference:** VS Code's default
 is the same (`files.autoSave` off); Obsidian autosaves.
 
-## E8 · A working copy the agent can read — proposed, awaiting Cole
+## E8 · The daemon owns the session; every version is a file the agent edits
 
-**Proposed:** lead, 2026-09-11, as E7's consequence. If unsaved edits lived only
-in the editor buffer, the agent — which reads files — would not see them, and a
-selection could quote text that is in no file it can open. So: the human's
-current version is mirrored to a **working copy** in the spell's session folder
-(debounced as they type), which is what the agent reads; the agent's versions
-sit beside it (E2); **Save** copies the active version over the original;
-**Revert** copies the original back over the working copy. Unsaved edits also
-survive a crash. **External change to the original:** clean buffer → silent
-reload; dirty buffer → ask, through the diff view (VS Code's model — Obsidian's
-silent auto-merge is a standing complaint among its own users). **Not taken:**
-the agent only ever sees saved text (a selection could name text the agent
-cannot read).
+**Ruled:** Cole, 2026-09-11 — "I see this as a local app with local files" —
+after he asked whether an in-app store would be the better design. Two questions
+were separated: **where the user's document lives** (on disk, E1 — open and
+Save) and **what the agent's best editing medium is** during a session. The
+second decides it: the agent's own Read/Edit tools (exact-match find-and-replace
+that fails loudly, line-numbered reads of large documents) beat CLI edit verbs,
+which push replacement text through shell quoting — grapevine's `--body-file`
+rule is the scar — and drift toward whole-document rewrites.
+
+**The shape — the house's existing "materialized path" pattern (glamour, imago
+carry an on-disk `path` beside state the daemon owns):**
+
+- **Session state lives in the daemon** — the version list, which is active,
+  labels, annotations, selection, version-level undo — persisted as a small JSON
+  manifest in the spell's session folder. No database.
+- **Each version's text is a file** in that session folder (`v1.md`, `v2.md`…).
+  Opening a document writes `v1`; the human's edits reach it after a short
+  pause; the agent reads it and writes its own versions (E2) with its native
+  tools.
+- **Save** copies the active version over the original; **Revert** copies the
+  original back over the active version. Unsaved edits survive a crash.
+- **The watcher watches the spell-owned session folder** (plus originals for
+  outside changes: clean → reload, dirty → ask via the diff view). A write the
+  daemon did not make to the human's active version is an E2 violation it can
+  detect and refuse or re-label.
+
+**When this would flip:** an agent without local filesystem access (a cloud
+agent) or cross-device sync. Neither is in scope, and because the daemon already
+owns the session, moving version text into a store later changes where text
+lives, not the design.
+
+**Not taken:** an in-app store with the agent editing through CLI verbs (worse
+editing medium for the agent); the agent seeing only saved text (a selection
+could quote text in no file it can open).
 
 ## E9 · Saved prompts — user-authored shortcuts that persist across sessions
 

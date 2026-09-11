@@ -69,8 +69,9 @@ save.
 ## Open threads
 
 - **Editor engine and the buffer↔disk sync model** — researched in
-  [`investigation.md`](./investigation.md): CodeMirror 6, explicit save plus a
-  working copy (E7/E8), `@codemirror/merge`, `@parcel/watcher`.
+  [`investigation.md`](./investigation.md): CodeMirror 6, explicit save; the
+  daemon owns the session and every version is a file the agent edits (E7/E8),
+  `@codemirror/merge`, `@parcel/watcher`.
 - **Session save** — probably "reopen the same folder + a small manifest", since
   files are the store; to confirm in the prototype.
 - **Where versions live** — beside the file, or in a spell-owned session folder.
