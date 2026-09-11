@@ -134,8 +134,11 @@
 // every file under its directory; the root owns the rest. A file's `examined`
 // status and its errors come ONLY from its owner's run; the other runs'
 // diagnostics for it are discarded (and counted as discarded, so each run's
-// own total still cross-checks). One owner per file is what keeps the
-// `sumOfAreas` closure a closure rather than a double count. The build
+// own total still cross-checks). One owner per file is what PREVENTS a double
+// count — but ⚠ the closure and the per-run agreement cannot DETECT one (both
+// are computed from the kept lines), so a separate check does: no diagnostic may
+// be kept by two runs (`doubleCounted`, below). Found by the verify pass, which
+// removed the ownership filter and watched every other check stay green. The build
 // resolves `@/` the same way — per importing file, from the nearest tsconfig —
 // so this measures the tree the way it is built.
 //
@@ -346,6 +349,18 @@ type RunTally = {
 const examined = new Set<string>();
 const errorLines: { file: string; code: string }[] = [];
 const runs: RunTally[] = [];
+/** ⛔ THE DOUBLE-COUNT CHECK, AND IT HAD TO BE ADDED BECAUSE THE OTHERS CANNOT
+ *  SEE ONE. Each run's `agree` compares its summary with its OWN parsed lines,
+ *  and the combined total is those runs net of their discards — so if the
+ *  ownership filter ever stopped filtering, the same diagnostic would be kept by
+ *  two runs and EVERY other check here would still pass (the verify pass drove
+ *  exactly that: a root-owned error imported into a workspace, counted twice,
+ *  `errorsAgree` and `closureHolds` both true). This is the independent one: a
+ *  diagnostic's position (`file:line:col:code`) may be KEPT by one run only.
+ *  Within one run a repeat is legitimate (tsc reports two TS2532 at one column);
+ *  across runs it is a double count. */
+const keptBy = new Map<string, string>();
+const doubleCounted: string[] = [];
 for (const project of [".", ...WORKSPACES]) {
   const run = runTsc(project);
   const plain = run.stdout.replace(ANSI, "");
@@ -369,13 +384,18 @@ for (const project of [".", ...WORKSPACES]) {
   for (const line of lines) {
     const m = ERROR_LINE.exec(line);
     if (!m) continue;
-    const [, file, , , code] = m;
+    const [, file, lineNo, col, code] = m;
     if (file === undefined || code === undefined) continue;
     counted++;
     const posix = file.split(sep).join("/");
     if (ownerOf(posix) !== project) continue;
     kept++;
     errorLines.push({ file: posix, code });
+    const key = `${posix}:${lineNo}:${col}:${code}`;
+    const prior = keptBy.get(key);
+    if (prior !== undefined && prior !== project)
+      doubleCounted.push(`${key} (${prior} and ${project})`);
+    else keptBy.set(key, project);
   }
 
   const multi = SUMMARY_MULTI_FILE.exec(plain);
@@ -515,6 +535,7 @@ console.log(
         filesExamined: examined.size,
       },
       closureHolds,
+      doubleCounted,
       sumOfAreas,
       unassigned,
       byClass: Object.fromEntries([...byClass.entries()].sort((a, b) => b[1] - a[1])),
@@ -545,6 +566,11 @@ for (const r of runs) {
 if (!errorsAgree) {
   faults.push(
     `COUNT DISAGREEMENT — this instrument counted ${countedErrors} error line(s); tsc reports ${toolReportedErrors}. One of us is not seeing all of the output (a truncating flag, a diagnostic shape the parser cannot read, a double-counted related-information line). Every per-area number above is unusable.`,
+  );
+}
+if (doubleCounted.length > 0) {
+  faults.push(
+    `DOUBLE COUNT — ${doubleCounted.length} diagnostic(s) were kept by two runs: ${doubleCounted.slice(0, 5).join(", ")}. Each file has one owning run (T32); a diagnostic kept twice is in two rows, and no total above means anything.`,
   );
 }
 if (!closureHolds) {
