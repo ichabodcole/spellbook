@@ -633,8 +633,8 @@ async function dispatch(argv: string[]): Promise<number> {
       const models =
         typeof flags.models === "string" ? flags.models.split(",").map((m) => m.trim()) : [];
       const variants: Array<Record<string, unknown>> = [];
-      for (let i = 0; i < pos.length; i++) {
-        const v: Record<string, unknown> = { src: await resolveSrc(pos[i]) };
+      for (const [i, p] of pos.entries()) {
+        const v: Record<string, unknown> = { src: await resolveSrc(p) };
         if (models[i]) v.model = models[i];
         variants.push(v);
       }

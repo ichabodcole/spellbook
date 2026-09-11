@@ -398,7 +398,10 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   ) : null;
 
   // ── blank "new image" frame ──
-  if (!focus || !variant) {
+  // `batch` is implied by `variant` (it is found inside it), but the compiler
+  // cannot see that — naming it here narrows it for the render below, and the
+  // set of states that reach the empty view is unchanged.
+  if (!focus || !batch || !variant) {
     const d = frameDims(state.aspect);
     return (
       <section className="card relative h-full overflow-hidden workspace flex flex-col">
@@ -470,8 +473,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const sourceLabel = (() => {
     const sid = batch.editedFromVariantId;
     if (!sid) return "—";
-    for (let bi = 0; bi < state.batches.length; bi++) {
-      const sv = state.batches[bi].variants.findIndex((v) => v.id === sid);
+    for (const [bi, b] of state.batches.entries()) {
+      const sv = b.variants.findIndex((v) => v.id === sid);
       if (sv >= 0) return `Batch ${bi + 1} · variant ${variantLabel(sv)}`;
     }
     return sid;

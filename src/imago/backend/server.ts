@@ -110,7 +110,12 @@ const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);
   if (!m) return null;
-  const port = parseInt(m[1], 10);
+  // One alternative, one mandatory group, so a match always sets it; `null` is
+  // this function's answer for "not a port" at its other two returns (T22 —
+  // digestify's worked example; the four-way duplicate is a backlog item).
+  const digits = m[1];
+  if (digits === undefined) return null;
+  const port = parseInt(digits, 10);
   return port >= 1 && port <= 65535 ? port : null;
 }
 
@@ -178,14 +183,18 @@ const EXT_BY_MIME: Record<string, string> = {
 // vision needs real pixels). Returns the path, or "" on any failure.
 function saveDataUrl(dir: string, id: string, dataUrl: string): string {
   const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
-  if (!m || !dir) return "";
-  const ext = EXT_BY_MIME[m[1].toLowerCase()] ?? ".bin";
+  // Both groups are mandatory, so a match sets both; `""` is this function's
+  // answer for "not saved", so an impossible absence takes it too (T22).
+  const mime = m?.[1];
+  const payload = m?.[2];
+  if (mime === undefined || payload === undefined || !dir) return "";
+  const ext = EXT_BY_MIME[mime.toLowerCase()] ?? ".bin";
   // `id` can be agent-supplied (batch/ref ids) — sanitize so it can't traverse
   // out of the session files dir via `..` or absolute-path segments.
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
   const path = join(dir, `${safeId}${ext}`);
   try {
-    writeFileSync(path, Buffer.from(m[2], "base64"));
+    writeFileSync(path, Buffer.from(payload, "base64"));
     return path;
   } catch {
     return "";
@@ -234,10 +243,12 @@ const IMAGE_DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,(.*)$/is;
 // PNGs are the dominant state-bloat source). Non-data-url srcs (http, etc.) and
 // any failure pass through unchanged — optimization is best-effort.
 export async function optimizeSrc(src: string): Promise<string> {
-  const m = IMAGE_DATA_URL_RE.exec(src);
-  if (!m) return src;
+  // The payload group is mandatory; an unmatched src passes through unchanged,
+  // which is this function's answer for anything it will not optimise.
+  const payload = IMAGE_DATA_URL_RE.exec(src)?.[1];
+  if (payload === undefined) return src;
   try {
-    const input = new Uint8Array(Buffer.from(m[1], "base64"));
+    const input = new Uint8Array(Buffer.from(payload, "base64"));
     const { data } = await optimizeImageBuffer(input);
     return `data:image/webp;base64,${Buffer.from(data).toString("base64")}`;
   } catch {
@@ -322,9 +333,10 @@ async function main(argv: string[]): Promise<number> {
   const ensureDrawLayer = (vid: string): string => {
     if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
     const layers = state.layersByVariant[vid];
-    for (let i = layers.length - 1; i >= 0; i--) {
-      if (layers[i].kind !== "image") return layers[i].id;
-    }
+    // The topmost non-image layer; `findLast` returns the element itself, so
+    // there is no index read to prove in range.
+    const top = layers.findLast((l) => l.kind !== "image");
+    if (top) return top.id;
     const layer: Layer = { id: newId("layer"), name: "Annotations", kind: "annotation" };
     layers.push(layer);
     return layer.id;
@@ -596,8 +608,9 @@ async function main(argv: string[]): Promise<number> {
   const findBatch = (id: string) => state.batches.find((b) => b.id === id);
   function findVariant(id: string): { batch: Batch; variant: Variant; index: number } | null {
     for (const b of state.batches) {
-      const index = b.variants.findIndex((x) => x.id === id);
-      if (index >= 0) return { batch: b, variant: b.variants[index], index };
+      for (const [index, variant] of b.variants.entries()) {
+        if (variant.id === id) return { batch: b, variant, index };
+      }
     }
     return null;
   }
@@ -743,7 +756,10 @@ async function main(argv: string[]): Promise<number> {
         batchId,
       });
       // Show the first result on the canvas if nothing is focused yet.
-      if (!state.focus) state.focus = { batchId, variantId: variants[0].id };
+      // `variants` is non-empty here (the `variants.length === 0` return above);
+      // `first` is read once so the focus can never name `undefined`.
+      const first = variants[0];
+      if (!state.focus && first) state.focus = { batchId, variantId: first.id };
       broadcastState();
     } else if (t === "focus") {
       const b = findBatch(msg.batchId as string);
@@ -780,10 +796,11 @@ async function main(argv: string[]): Promise<number> {
           ok: false,
           status: 409,
           error: res.error,
-          detail: {
-            ...(res.id ? { id: res.id } : {}),
-            ...(res.conflicts ? { conflicts: res.conflicts } : {}),
-          },
+          // ⛔ A `conflicts` spread stood here from 5e6aacde and was DEAD FROM
+          // BIRTH: no failure path of `addContextEntry` ever produced one, and
+          // its result type never declared one (TS2339 — the only thing that
+          // knew). Removed; no response byte changes, since it could not fire.
+          detail: res.id ? { id: res.id } : {},
         };
       if (msg.link) linkContext(res.id, msg.link as ContextSet);
       // `already-recorded` wrote nothing, so there is nothing to broadcast —
@@ -1127,7 +1144,10 @@ async function main(argv: string[]): Promise<number> {
       const to = Math.max(0, Math.min(layers.length - 1, Math.trunc(msg.toIndex)));
       if (to === idx) return;
       pushHistory(vid);
+      // `idx` was range-checked above; a splice of one in-range element always
+      // yields it. The branch takes this handler's own answer (a no-op return).
       const [l] = layers.splice(idx, 1);
+      if (l === undefined) return;
       layers.splice(to, 0, l);
       broadcastState();
     } else if (t === "layer.remove") {
@@ -1257,7 +1277,10 @@ async function main(argv: string[]): Promise<number> {
       const idx = sorted.findIndex((m) => m.id === msg.id);
       if (idx < 0) return;
       pushHistory(vid); // state.marksByVariant[vid] is still the pre-reorder array
+      // `idx` is in range (checked above), so the splice yields the mark; the
+      // branch takes this handler's own answer, a no-op return (T22).
       const [m] = sorted.splice(idx, 1);
+      if (m === undefined) return;
       const target =
         msg.direction === "front"
           ? sorted.length
@@ -1378,7 +1401,10 @@ async function main(argv: string[]): Promise<number> {
       : undefined;
   const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
-  let server: ReturnType<typeof Bun.serve>;
+  // `Bun.Server<undefined>`, not `ReturnType<typeof Bun.serve>`, which resolves
+  // the generic's `WebSocketData` to `unknown` and makes `srv.upgrade(req)`
+  // demand a `data` option. No handler here reads `ws.data` (T27).
+  let server: Bun.Server<undefined>;
   try {
     server = Bun.serve({
       port,
@@ -1666,8 +1692,7 @@ async function main(argv: string[]): Promise<number> {
     }
     state.marksByVariant ??= {};
     state.layersByVariant ??= {};
-    for (const vid of Object.keys(state.marksByVariant)) {
-      const marks = state.marksByVariant[vid];
+    for (const [vid, marks] of Object.entries(state.marksByVariant)) {
       // Backfill the container model: wrap pre-layer marks into one default
       // "Annotations" layer, then stamp layerId + normalize zOrder by position.
       let layers = state.layersByVariant[vid];

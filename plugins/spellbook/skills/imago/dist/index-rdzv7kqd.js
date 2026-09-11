@@ -17918,12 +17918,13 @@ function rotatePoint(p, deg, c, aspect = 1) {
   };
 }
 function pointsBounds(points) {
-  if (points.length === 0)
+  const first = points[0];
+  if (first === undefined)
     return { x: 0, y: 0, w: 0, h: 0 };
-  let minX = points[0].x;
-  let maxX = points[0].x;
-  let minY = points[0].y;
-  let maxY = points[0].y;
+  let minX = first.x;
+  let maxX = first.x;
+  let minY = first.y;
+  let maxY = first.y;
   for (const p of points) {
     if (p.x < minX)
       minX = p.x;
@@ -17971,14 +17972,16 @@ function hitTest(p, m, threshold = HIT_THRESHOLD, pinSize, aspect = 1) {
       return dx * dx + dy * dy <= 1;
     }
     case "draw": {
-      const pts = m.points;
-      if (pts.length === 0)
+      const [first, ...rest] = m.points;
+      if (first === undefined)
         return false;
-      if (pts.length === 1)
-        return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= threshold;
-      for (let i = 1;i < pts.length; i++) {
-        if (pointToSegment(p, pts[i - 1], pts[i]) <= threshold)
+      if (rest.length === 0)
+        return Math.hypot(p.x - first.x, p.y - first.y) <= threshold;
+      let prev = first;
+      for (const cur of rest) {
+        if (pointToSegment(p, prev, cur) <= threshold)
           return true;
+        prev = cur;
       }
       return false;
     }
@@ -18776,7 +18779,7 @@ function SelectionOverlay({
       editing?.tool === "pin" && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(PinEditor, {
         x: editing.x,
         y: editing.y,
-        initialLabel: editing.label,
+        initialLabel: editing.label ?? "",
         fontSize: (editing.fontSize ?? DEFAULT_TEXT_SIZE) * scale,
         onSubmit: (label) => {
           send({ type: "mark.update", id: editing.id, patch: { label } });
@@ -19117,7 +19120,7 @@ var RectTool = {
 };
 
 // src/imago/surface/components/annotations/tools/registry.ts
-var TOOL_REGISTRY = {
+var TOOLS = {
   arrow: ArrowTool,
   line: LineTool,
   pin: PinTool,
@@ -19125,6 +19128,10 @@ var TOOL_REGISTRY = {
   ellipse: EllipseTool,
   draw: DrawTool
 };
+var TOOL_REGISTRY = TOOLS;
+function toolPlugin(id) {
+  return TOOLS[id];
+}
 var TOOL_ORDER = ["arrow", "line", "pin", "rect", "ellipse", "draw"];
 
 // src/imago/surface/components/annotations/AnnotationLayer.tsx
@@ -19314,7 +19321,7 @@ function AnnotationToolbar({
   const tools = [
     { id: "select", icon: MousePointer, title: "Select / pan" },
     ...TOOL_ORDER.map((id) => {
-      const p = TOOL_REGISTRY[id];
+      const p = toolPlugin(id);
       return { id: p.id, icon: p.icon, title: p.title };
     })
   ];
@@ -19472,9 +19479,9 @@ function colorResolver() {
   const root = typeof getComputedStyle === "function" ? getComputedStyle(document.documentElement) : null;
   return (c, fallback = "") => {
     const v = c ?? fallback;
-    const m = v.match(/^var\((--[\w-]+)\)$/);
-    if (m && root)
-      return root.getPropertyValue(m[1]).trim() || fallback || v;
+    const token = v.match(/^var\((--[\w-]+)\)$/)?.[1];
+    if (token !== undefined && root)
+      return root.getPropertyValue(token).trim() || fallback || v;
     return v;
   };
 }
@@ -20299,7 +20306,7 @@ function Canvas({ state, send }) {
       children: "drop to add as a layer"
     }, undefined, false, undefined, this)
   }, undefined, false, undefined, this) : null;
-  if (!focus || !variant) {
+  if (!focus || !batch || !variant) {
     const d = frameDims(state.aspect);
     return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("section", {
       className: "card relative h-full overflow-hidden workspace flex flex-col",
@@ -20380,8 +20387,8 @@ function Canvas({ state, send }) {
     const sid = batch.editedFromVariantId;
     if (!sid)
       return "—";
-    for (let bi = 0;bi < state.batches.length; bi++) {
-      const sv = state.batches[bi].variants.findIndex((v) => v.id === sid);
+    for (const [bi, b] of state.batches.entries()) {
+      const sv = b.variants.findIndex((v) => v.id === sid);
       if (sv >= 0)
         return `Batch ${bi + 1} · variant ${variantLabel(sv)}`;
     }

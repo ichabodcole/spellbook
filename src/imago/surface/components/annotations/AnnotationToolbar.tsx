@@ -8,7 +8,7 @@
 import { ChevronRight, MousePointer, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { COLORS, TEXT_SIZES, WIDTHS } from "./style";
-import { TOOL_ORDER, TOOL_REGISTRY } from "./tools/registry";
+import { TOOL_ORDER, toolPlugin } from "./tools/registry";
 
 export function AnnotationToolbar({
   tool,
@@ -59,7 +59,7 @@ export function AnnotationToolbar({
   const tools = [
     { id: "select", icon: MousePointer, title: "Select / pan" },
     ...TOOL_ORDER.map((id) => {
-      const p = TOOL_REGISTRY[id];
+      const p = toolPlugin(id);
       return { id: p.id, icon: p.icon, title: p.title };
     }),
   ];

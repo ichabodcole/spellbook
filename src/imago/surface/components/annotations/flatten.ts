@@ -29,8 +29,9 @@ function colorResolver(): (c: string | undefined, fallback?: string) => string {
     typeof getComputedStyle === "function" ? getComputedStyle(document.documentElement) : null;
   return (c, fallback = "") => {
     const v = c ?? fallback;
-    const m = v.match(/^var\((--[\w-]+)\)$/);
-    if (m && root) return root.getPropertyValue(m[1]).trim() || fallback || v;
+    // The token group is mandatory, so it is set exactly when `v` is a var().
+    const token = v.match(/^var\((--[\w-]+)\)$/)?.[1];
+    if (token !== undefined && root) return root.getPropertyValue(token).trim() || fallback || v;
     return v;
   };
 }

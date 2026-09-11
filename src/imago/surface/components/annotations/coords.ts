@@ -135,11 +135,12 @@ export function rotatePoint(p: Point, deg: number, c: Point, aspect = 1): Point 
 
 // Bounding box of a freeform stroke's points (empty → a 0×0 point at origin).
 function pointsBounds(points: Point[]): Box {
-  if (points.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
-  let minX = points[0].x;
-  let maxX = points[0].x;
-  let minY = points[0].y;
-  let maxY = points[0].y;
+  const first = points[0];
+  if (first === undefined) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = first.x;
+  let maxX = first.x;
+  let minY = first.y;
+  let maxY = first.y;
   for (const p of points) {
     if (p.x < minX) minX = p.x;
     if (p.x > maxX) maxX = p.x;
@@ -206,11 +207,15 @@ export function hitTest(
     }
     case "draw": {
       // on the stroke = near any of its segments (or its single point)
-      const pts = m.points;
-      if (pts.length === 0) return false;
-      if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= threshold;
-      for (let i = 1; i < pts.length; i++) {
-        if (pointToSegment(p, pts[i - 1], pts[i]) <= threshold) return true;
+      const [first, ...rest] = m.points;
+      if (first === undefined) return false;
+      if (rest.length === 0) return Math.hypot(p.x - first.x, p.y - first.y) <= threshold;
+      // Walk consecutive pairs by carrying the previous point, so no index read
+      // has to be proven in range.
+      let prev = first;
+      for (const cur of rest) {
+        if (pointToSegment(p, prev, cur) <= threshold) return true;
+        prev = cur;
       }
       return false;
     }

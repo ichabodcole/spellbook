@@ -559,7 +559,12 @@ export function SelectionOverlay({
           key={editing.id}
           x={editing.x}
           y={editing.y}
-          initialLabel={editing.label}
+          // ⛔ A REACHABLE undefined (type-debt Phase 4a): `label` is optional on
+          // every mark and `mark.add` accepts a pin without one, so "Edit note"
+          // on such a pin handed the editor `undefined`, and its submit ran
+          // `undefined.trim()`. A pin with no note starts as an EMPTY DRAFT —
+          // the editor's own documented empty case.
+          initialLabel={editing.label ?? ""}
           fontSize={(editing.fontSize ?? DEFAULT_TEXT_SIZE) * scale}
           onSubmit={(label) => {
             send({ type: "mark.update", id: editing.id, patch: { label } });
