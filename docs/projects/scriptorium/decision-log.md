@@ -364,3 +364,20 @@ agent's own `mv`) still appear live for mirrored folders through the watcher,
 but the verbs are the path that keeps both sides informed. **Remove from
 Scriptorium hides; it never deletes a file.** There is no Delete action (Cole:
 "I don't necessarily even know if we need a delete action").
+
+## E25 · The native picker and Reveal in Finder — the daemon's local hands
+
+**Ruled:** Cole, 2026-09-11, asking for a file-picker button and "Reveal in
+Finder", and twice wondering whether a web app can do either. It can, because
+the daemon is a LOCAL PROCESS: the surface asks, and the daemon runs the OS's
+own dialog (`osascript`'s `choose file` / `choose folder`, zenity on Linux) or
+`open -R`. **Why not the browser's own picker:** `<input type="file">` and
+`showOpenFilePicker()` hand back CONTENT and a name, never a path — all a page
+can do with that is copy, which a drop already does (E23) — and Brave, Cole's
+browser, disables the File System Access API. A picked path is therefore a real
+LINK to the real file (E1), not a copy. Guards: one dialog at a time (a second
+request is refused in words, never queued), a chosen path is admitted like a
+typed one, `reveal` only accepts a path the context already shows, and the path
+is passed as an argv, never a shell string. **Both are HUMAN affordances** with
+no CLI verb: the agent has the paths already, and E24's rule is equal
+capabilities with different controls.

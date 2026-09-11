@@ -4,8 +4,9 @@
 // is a copy into the workspace instead (E23). The same box, folders only, sets
 // the workspace.
 import { cn } from "cn";
-import { CornerDownLeftIcon, FileTextIcon, FolderIcon } from "lucide-react";
+import { CornerDownLeftIcon, FileTextIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import type { FsListEntry } from "../../../backend/protocol";
 import type { Listing } from "../../state/useDaemon";
@@ -39,6 +40,7 @@ export function AddPath({
   autoFocus = false,
   onCancel,
   className,
+  onPick,
 }: {
   listDir: (path: string) => Promise<Listing>;
   onAdd: (path: string) => void;
@@ -52,6 +54,11 @@ export function AddPath({
   /** Escape on an already-empty box, or blur: the caller closes it. */
   onCancel?: () => void;
   className?: string;
+  /**
+   * Open the OS's own picker (the daemon does it — a browser picker gives
+   * content and a name, never a path). Absent: no button.
+   */
+  onPick?: (kind: "file" | "folder") => void;
 }) {
   const [value, setValue] = useState(initialValue);
   // The suggestions carry the value they were computed FOR: a Tab or Enter
@@ -107,7 +114,7 @@ export function AddPath({
   };
 
   return (
-    <div className={cn("relative border-t border-edge p-2", className)}>
+    <div className={cn("relative flex items-center gap-1 border-t border-edge p-2", className)}>
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -122,7 +129,7 @@ export function AddPath({
         aria-controls={listId}
         aria-activedescendant={highlight >= 0 ? `${listId}-${highlight}` : undefined}
         spellCheck={false}
-        className="h-8 font-mono text-xs"
+        className="h-8 min-w-0 flex-1 font-mono text-xs"
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" && suggestions.length) {
             e.preventDefault();
@@ -150,6 +157,28 @@ export function AddPath({
           }
         }}
       />
+      {onPick && !foldersOnly && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onPick("file")}
+          aria-label="Choose documents in Finder"
+          title="Choose documents in Finder"
+        >
+          <FileTextIcon />
+        </Button>
+      )}
+      {onPick && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onPick("folder")}
+          aria-label="Choose a folder in Finder"
+          title="Choose a folder in Finder"
+        >
+          <FolderOpenIcon />
+        </Button>
+      )}
       {(suggestions.length > 0 || error) && (
         <div className="absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg">
           {error && <p className="px-2 py-1 text-xs text-attention">{error}</p>}

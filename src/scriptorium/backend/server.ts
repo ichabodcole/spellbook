@@ -62,6 +62,7 @@ import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts"
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
+import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type { AgentCmd, ClientMsg, Selection, ServerMsg, StructureOp } from "./protocol";
 import { type FileEvent, Session, SessionError } from "./session";
 import { listDir, PathError } from "./tree";
@@ -525,6 +526,10 @@ export async function startDaemon(opts: StartOpts) {
         Bun.spawn([cmd as string, ...args], { stdio: ["ignore", "ignore", "ignore"] }).unref();
         return;
       }
+      case "pick": {
+        void openPicker(ws, msg.want);
+        return;
+      }
       case "context.remove":
         session.removeContext(msg.id);
         syncWatchers();
@@ -574,6 +579,68 @@ export async function startDaemon(opts: StartOpts) {
         }
         return;
       }
+    }
+  };
+
+  // ── the native picker (one dialog at a time) ───────────────────────────────
+  //
+  // A modal dialog owns the human's attention, and a second one behind the
+  // first cannot be seen or dismissed — so a request while one is open is
+  // refused in words rather than queued.
+  let pickerOpen = false;
+  const zenity = process.platform === "linux" ? Bun.which("zenity") : null;
+  const openPicker = async (
+    ws: import("bun").ServerWebSocket<unknown>,
+    want: "context-file" | "context-folder" | "workspace",
+  ) => {
+    if (pickerOpen) {
+      reply(ws, { type: "error", message: "a file picker is already open" });
+      return;
+    }
+    const kind: PickKind = want === "context-file" ? "file" : "folder";
+    const prompt =
+      want === "workspace"
+        ? "Choose the workspace folder for scriptorium"
+        : want === "context-folder"
+          ? "Choose a folder to add to scriptorium"
+          : "Choose documents to add to scriptorium";
+    const cmd = pickerCommand(process.platform, kind, prompt, zenity);
+    if (!cmd) {
+      reply(ws, {
+        type: "error",
+        message: `no file picker on this system (${process.platform}) — type the path instead`,
+      });
+      return;
+    }
+    pickerOpen = true;
+    try {
+      const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe", stdin: "ignore" });
+      const [out, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+      touch(); // a human stood at a dialog; the session is not idle
+      const paths = parsePickerOutput(out);
+      if (paths.length === 0) {
+        // Cancelled: nothing chosen, nothing said. A real failure is said.
+        if (!wasCancelled(code, out))
+          reply(ws, { type: "error", message: `the file picker failed (exit ${code})` });
+        return;
+      }
+      // What was chosen is admitted like any other path — a picked file that
+      // scriptorium does not open is refused in the sidebar's own words, and
+      // that refusal must not read as "the picker failed".
+      try {
+        if (want === "workspace")
+          structure({ type: "workspace.set", path: paths[0] as string }, "human");
+        else addPaths(paths);
+      } catch (e) {
+        reply(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
+      }
+    } catch (e) {
+      reply(ws, {
+        type: "error",
+        message: `could not open the file picker: ${e instanceof Error ? e.message : String(e)}`,
+      });
+    } finally {
+      pickerOpen = false;
     }
   };
 

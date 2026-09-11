@@ -177,6 +177,12 @@ export type ClientMsg =
   | { type: "prefs.set"; key: string; value: string }
   /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
   | { type: "reveal"; path: string }
+  /**
+   * Open the OS's own file picker and act on what comes back: add it to the
+   * context, or make a folder the workspace. The daemon is a local process, so
+   * it gets a real PATH — which a browser picker never gives (E23's note).
+   */
+  | { type: "pick"; want: "context-file" | "context-folder" | "workspace" }
   | StructureOp;
 
 /** Daemon → surface, over the WebSocket. */

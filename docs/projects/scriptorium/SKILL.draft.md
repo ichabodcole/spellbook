@@ -103,6 +103,10 @@ still shows up (the folder is watched), but nobody is told, and a moved open
 document loses track of its versions. The workspace starts as the directory
 `open` ran in.
 
+**The human has two affordances you do not**, and by design (E24 is equal
+CAPABILITIES, not equal controls): the OS file picker and "Reveal in Finder".
+Both are local dialogs; you have the paths already.
+
 **Prose goes through `--body-file`** (or `--stdin` from a quoted heredoc), never
 as arguments from an unquoted heredoc — the shell eats backticks first.
 

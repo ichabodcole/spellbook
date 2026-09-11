@@ -167,6 +167,7 @@ function Workspace({
           onAddPath={(path) => send({ type: "context.add", path })}
           onStructure={send}
           onReveal={(path) => send({ type: "reveal", path })}
+          onPick={(want) => send({ type: "pick", want })}
           listDir={listDir}
           created={created}
           notice={lastError}

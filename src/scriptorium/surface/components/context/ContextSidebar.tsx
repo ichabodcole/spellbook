@@ -88,6 +88,8 @@ export type ContextSidebarProps = {
   onStructure: (op: StructureOp) => void;
   /** Show a path in the OS file manager. */
   onReveal: (path: string) => void;
+  /** Open the OS's own picker and add (or set as the workspace) what comes back. */
+  onPick: (want: "context-file" | "context-folder" | "workspace") => void;
   listDir: (path: string) => Promise<Listing>;
   /** A new document or folder this viewer just made: shown in rename mode. `seq` makes a repeat new. */
   created?: { path: string; seq: number } | null;
@@ -126,6 +128,7 @@ export function ContextSidebar({
   onAddPath,
   onStructure,
   onReveal,
+  onPick,
   listDir,
   created,
   notice,
@@ -275,9 +278,16 @@ export function ContextSidebar({
           }}
           onCancel={() => setEditingWorkspace(false)}
           className="border-t-0 pt-0"
+          onPick={() => onPick("workspace")}
         />
       ) : (
-        <AddPath key="add" listDir={listDir} onAdd={onAddPath} className="border-t-0 pt-0" />
+        <AddPath
+          key="add"
+          listDir={listDir}
+          onAdd={onAddPath}
+          className="border-t-0 pt-0"
+          onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
+        />
       )}
     </div>
   );

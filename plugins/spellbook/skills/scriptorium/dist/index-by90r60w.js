@@ -34517,7 +34517,8 @@ function AddPath({
   initialValue = "",
   autoFocus = false,
   onCancel,
-  className
+  className,
+  onPick
 }) {
   const [value, setValue] = import_react7.useState(initialValue);
   const [listed, setListed] = import_react7.useState({
@@ -34563,7 +34564,7 @@ function AddPath({
     setValue("");
   };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-    className: cn("relative border-t border-edge p-2", className),
+    className: cn("relative flex items-center gap-1 border-t border-edge p-2", className),
     children: [
       /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
         value,
@@ -34579,7 +34580,7 @@ function AddPath({
         "aria-controls": listId,
         "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
         spellCheck: false,
-        className: "h-8 font-mono text-xs",
+        className: "h-8 min-w-0 flex-1 font-mono text-xs",
         onKeyDown: (e) => {
           if (e.key === "ArrowDown" && suggestions.length) {
             e.preventDefault();
@@ -34607,6 +34608,22 @@ function AddPath({
               setValue("");
           }
         }
+      }, undefined, false, undefined, this),
+      onPick && !foldersOnly && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
+        variant: "ghost",
+        size: "icon-sm",
+        onClick: () => onPick("file"),
+        "aria-label": "Choose documents in Finder",
+        title: "Choose documents in Finder",
+        children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FileText, {}, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      onPick && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
+        variant: "ghost",
+        size: "icon-sm",
+        onClick: () => onPick("folder"),
+        "aria-label": "Choose a folder in Finder",
+        title: "Choose a folder in Finder",
+        children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FolderOpen, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
       (suggestions.length > 0 || error2) && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
         className: "absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg",
@@ -36765,6 +36782,7 @@ function ContextSidebar({
   onAddPath,
   onStructure,
   onReveal,
+  onPick,
   listDir,
   created,
   notice,
@@ -36901,11 +36919,13 @@ function ContextSidebar({
           setEditingWorkspace(false);
         },
         onCancel: () => setEditingWorkspace(false),
-        className: "border-t-0 pt-0"
+        className: "border-t-0 pt-0",
+        onPick: () => onPick("workspace")
       }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
         listDir,
         onAdd: onAddPath,
-        className: "border-t-0 pt-0"
+        className: "border-t-0 pt-0",
+        onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder")
       }, "add", false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -48473,6 +48493,7 @@ function Workspace({
             onAddPath: (path) => send({ type: "context.add", path }),
             onStructure: send,
             onReveal: (path) => send({ type: "reveal", path }),
+            onPick: (want) => send({ type: "pick", want }),
             listDir,
             created,
             notice: lastError,
