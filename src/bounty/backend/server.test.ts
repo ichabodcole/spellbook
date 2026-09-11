@@ -70,6 +70,22 @@ import {
   validateTask,
 } from "./server.ts";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, or fail
+ * NAMING that contract (type-debt T11/T22: LOCAL copies — a test under `src/`
+ * imports nothing from `grimoire/`). Written as function declarations, never
+ * generic arrows: the import-boundary ward parses every file with Bun's
+ * transpiler, which reads `<T>(` as JSX (Phase 4a). Not `?.`:
+ * `expect(pokes[0]?.owner).toBeUndefined()` passes with no poke at all.
+ */
+function must<T>(v: T | null | undefined, invariant: string): T {
+  if (v === undefined || v === null) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+function at<T>(xs: readonly T[], i: number, what: string): T {
+  return must(xs[i], `${what} has an element ${i}`);
+}
+
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
 // ⛔ THE SPAWNED FILE IS THE LAUNCHER, NEVER THIS DIRECTORY'S SOURCE (playbook
@@ -133,7 +149,7 @@ describe("applyTaskAdd", () => {
     const s = freshState();
     expect(applyTaskAdd(s, { id: "a", title: "A", status: "todo" })).toBe(true);
     expect(s.tasks).toHaveLength(1);
-    expect(s.tasks[0].id).toBe("a");
+    expect(at(s.tasks, 0, "s.tasks").id).toBe("a");
   });
   test("rejects duplicate id", () => {
     const s = freshState();
@@ -148,21 +164,21 @@ describe("applyTaskUpdate", () => {
     const s = freshState();
     applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
     expect(applyTaskUpdate(s, "a", { status: "doing" })).toBe(true);
-    expect(s.tasks[0].status).toBe("doing");
-    expect(s.tasks[0].title).toBe("A");
+    expect(at(s.tasks, 0, "s.tasks").status).toBe("doing");
+    expect(at(s.tasks, 0, "s.tasks").title).toBe("A");
   });
   test("accepts the review status", () => {
     const s = freshState();
     applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
     expect(applyTaskUpdate(s, "a", { status: "review" })).toBe(true);
-    expect(s.tasks[0].status).toBe("review");
+    expect(at(s.tasks, 0, "s.tasks").status).toBe("review");
   });
   test("drops invalid status quietly", () => {
     const s = freshState();
     applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
     expect(applyTaskUpdate(s, "a", { status: "bogus" as TaskStatus, title: "B" })).toBe(true);
-    expect(s.tasks[0].status).toBe("todo");
-    expect(s.tasks[0].title).toBe("B");
+    expect(at(s.tasks, 0, "s.tasks").status).toBe("todo");
+    expect(at(s.tasks, 0, "s.tasks").title).toBe("B");
   });
   test("returns false for missing id", () => {
     expect(applyTaskUpdate(freshState(), "missing", { status: "done" })).toBe(false);
@@ -237,19 +253,19 @@ describe("status-transition timestamps", () => {
 
   test("applyTaskAdd stamps the initial status entry", () => {
     const s = seededAt(T0);
-    expect(s.tasks[0].enteredStatusAt).toBe(T0);
-    expect(s.tasks[0].statusHistory).toEqual([{ status: "todo", at: T0 }]);
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(T0);
+    expect(at(s.tasks, 0, "s.tasks").statusHistory).toEqual([{ status: "todo", at: T0 }]);
   });
   test("applyTaskAdd preserves a restored task's existing stamp", () => {
     const s = freshState();
     applyTaskAdd(s, { id: "r", title: "R", status: "doing", enteredStatusAt: 42 }, T0);
-    expect(s.tasks[0].enteredStatusAt).toBe(42); // not overwritten with T0
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(42); // not overwritten with T0
   });
   test("applyTaskUpdate re-stamps on a status change and appends history", () => {
     const s = seededAt(T0);
     applyTaskUpdate(s, "a", { status: "doing" }, T0 + 500);
-    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 500);
-    expect(s.tasks[0].statusHistory).toEqual([
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(T0 + 500);
+    expect(at(s.tasks, 0, "s.tasks").statusHistory).toEqual([
       { status: "todo", at: T0 },
       { status: "doing", at: T0 + 500 },
     ]);
@@ -257,19 +273,22 @@ describe("status-transition timestamps", () => {
   test("a non-status patch does NOT touch the transition stamp", () => {
     const s = seededAt(T0);
     applyTaskUpdate(s, "a", { notes: "hi" }, T0 + 500);
-    expect(s.tasks[0].enteredStatusAt).toBe(T0);
-    expect(s.tasks[0].statusHistory).toHaveLength(1);
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(T0);
+    expect(at(s.tasks, 0, "s.tasks").statusHistory).toHaveLength(1);
   });
   test("a same-status patch does NOT reset the stamp", () => {
     const s = seededAt(T0);
     applyTaskUpdate(s, "a", { status: "todo", notes: "x" }, T0 + 500);
-    expect(s.tasks[0].enteredStatusAt).toBe(T0); // no transition
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(T0); // no transition
   });
   test("applyTaskMove stamps a cross-column move", () => {
     const s = seededAt(T0);
     applyTaskMove(s, "a", "doing", 0, T0 + 900);
-    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 900);
-    expect(s.tasks[0].statusHistory?.map((h) => h.status)).toEqual(["todo", "doing"]);
+    expect(at(s.tasks, 0, "s.tasks").enteredStatusAt).toBe(T0 + 900);
+    expect(at(s.tasks, 0, "s.tasks").statusHistory?.map((h) => h.status)).toEqual([
+      "todo",
+      "doing",
+    ]);
   });
   test("an intra-column reorder is NOT a transition", () => {
     const s = freshState();
@@ -285,7 +304,7 @@ describe("status-transition timestamps", () => {
       now += 1;
       applyTaskUpdate(s, "a", { status: i % 2 === 0 ? "doing" : "todo" }, now);
     }
-    const hist = s.tasks[0].statusHistory ?? [];
+    const hist = at(s.tasks, 0, "s.tasks").statusHistory ?? [];
     expect(hist.length).toBeLessThanOrEqual(20);
     expect(hist.at(-1)?.at).toBe(now); // newest kept
   });
@@ -359,7 +378,7 @@ describe("computeDuePokes", () => {
     const { pokes, pokeState } = computeDuePokes([doing()], new Map(), 6 * MIN);
     expect(pokes).toHaveLength(1);
     expect(pokes[0]).toMatchObject({ taskId: "d", owner: "flint", expectedMinutes: 5 });
-    expect(pokes[0].overdueByMs).toBe(1 * MIN);
+    expect(at(pokes, 0, "pokes").overdueByMs).toBe(1 * MIN);
     expect(pokeState.get("d")).toBe(6 * MIN);
   });
   test("does not re-fire on the next sweep within the same interval", () => {
@@ -373,7 +392,7 @@ describe("computeDuePokes", () => {
   test("an unowned overdue task still pokes (owner undefined — caller toasts only)", () => {
     const { pokes } = computeDuePokes([doing({ owner: undefined })], new Map(), 6 * MIN);
     expect(pokes).toHaveLength(1);
-    expect(pokes[0].owner).toBeUndefined();
+    expect(at(pokes, 0, "pokes").owner).toBeUndefined();
   });
   test("a non-doing task is never poked", () => {
     expect(computeDuePokes([doing({ status: "todo" })], new Map(), 100 * MIN).pokes).toHaveLength(
@@ -1006,7 +1025,12 @@ async function collectStdout(
   predicate: (m: WireMsg) => boolean,
   maxMs: number,
 ): Promise<WireMsg[]> {
-  const reader = proc.stdout.getReader();
+  // `Bun.spawn`'s stdout is `number | ReadableStream` depending on the options;
+  // every caller of this helper spawns with `stdout: "pipe"`, and a caller that
+  // did not would read nothing, so it is refused by name rather than cast.
+  const out = proc.stdout;
+  if (!(out instanceof ReadableStream)) throw new Error('collectStdout needs stdout: "pipe"');
+  const reader = out.getReader();
   const dec = new TextDecoder();
   let buf = "";
   const seen: WireMsg[] = [];
@@ -1113,7 +1137,10 @@ describe("input validation from browser", () => {
       (m) => m.type === "task.update" && m.patch?.title !== undefined,
     );
     expect(titleUpdates).toHaveLength(1);
-    expect(titleUpdates[0].patch.title).toBe("updated");
+    expect(
+      must(at(titleUpdates, 0, "titleUpdates").patch, "the filter kept only updates with a patch")
+        .title,
+    ).toBe("updated");
   }, 15000);
 
   test("task.add from browser with missing fields is rejected", async () => {
@@ -1135,7 +1162,7 @@ describe("input validation from browser", () => {
 
     const adds = msgs.filter((m) => m.type === "task.add");
     expect(adds).toHaveLength(1);
-    expect(adds[0].task.id).toBe("ok");
+    expect(must(at(adds, 0, "adds").task, "a task.add frame carries its task").id).toBe("ok");
   }, 15000);
 });
 
@@ -1203,8 +1230,8 @@ describe("task.edit notes (card-detail #19)", () => {
     ws.close();
     proc.kill();
     await proc.exited;
-    expect(body.state.tasks[0].title).toBe("new title");
-    expect(body.state.tasks[0].notes).toBe("new notes");
+    expect(at(body.state.tasks, 0, "body.state.tasks").title).toBe("new title");
+    expect(at(body.state.tasks, 0, "body.state.tasks").notes).toBe("new notes");
   }, 15000);
 
   test("a notes-only edit leaves a non-empty title untouched", async () => {
@@ -1222,8 +1249,8 @@ describe("task.edit notes (card-detail #19)", () => {
     ws.close();
     proc.kill();
     await proc.exited;
-    expect(body.state.tasks[0].title).toBe("keep title");
-    expect(body.state.tasks[0].notes).toBe("added a note");
+    expect(at(body.state.tasks, 0, "body.state.tasks").title).toBe("keep title");
+    expect(at(body.state.tasks, 0, "body.state.tasks").notes).toBe("added a note");
   }, 15000);
 });
 
@@ -1287,22 +1314,28 @@ describe("POST /cmd", () => {
     proc.kill();
     await proc.exited;
 
-    expect(body.state.tasks[0].status).toBe("doing");
-    expect(body.state.tasks[0].title).toBe("first");
+    expect(at(body.state.tasks, 0, "body.state.tasks").status).toBe("doing");
+    expect(at(body.state.tasks, 0, "body.state.tasks").title).toBe("first");
   }, 15000);
 
   test("a status transition stamps enteredStatusAt + grows history (live path)", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
     await postCmd(ready.url, { type: "task.add", task: { id: "t1", title: "T", status: "todo" } });
-    const before = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
-      .state.tasks[0];
+    const before = at(
+      ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState }).state.tasks,
+      0,
+      "the board holds the task this test added",
+    );
     // Stamped on add.
     expect(typeof before.enteredStatusAt).toBe("number");
     expect(before.statusHistory).toHaveLength(1);
     await new Promise((r) => setTimeout(r, 5));
     await postCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } });
-    const after = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
-      .state.tasks[0];
+    const after = at(
+      ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState }).state.tasks,
+      0,
+      "the board holds the task this test added",
+    );
     proc.kill();
     await proc.exited;
 
@@ -1347,7 +1380,7 @@ describe("POST /cmd", () => {
     await proc.exited;
 
     expect(body.state.tasks).toHaveLength(1);
-    expect(body.state.tasks[0].id).toBe("good");
+    expect(at(body.state.tasks, 0, "body.state.tasks").id).toBe("good");
   }, 15000);
 
   test("task.add rejects a malformed task — nothing stored", async () => {
@@ -1661,7 +1694,7 @@ describe("ownership claim guard (Phase C)", () => {
     expect(res.data.applied).toBe(false);
     expect(String(res.data.error)).toContain("alice");
     // State is unchanged — no silent steal.
-    expect(s.state.tasks[0].owner).toBe("alice");
+    expect(at(s.state.tasks, 0, "s.state.tasks").owner).toBe("alice");
   }, 15000);
 
   test("claiming an unowned task succeeds", async () => {
@@ -1679,7 +1712,7 @@ describe("ownership claim guard (Phase C)", () => {
     await proc.exited;
 
     expect(res.data.applied).toBe(true);
-    expect(s.state.tasks[0].owner).toBe("bob");
+    expect(at(s.state.tasks, 0, "s.state.tasks").owner).toBe("bob");
   }, 15000);
 
   test("lead update --owner always wins (no claim flag) — reassignment", async () => {
@@ -1700,7 +1733,7 @@ describe("ownership claim guard (Phase C)", () => {
     await proc.exited;
 
     expect(res.data.applied).toBe(true);
-    expect(s.state.tasks[0].owner).toBe("bob");
+    expect(at(s.state.tasks, 0, "s.state.tasks").owner).toBe("bob");
   }, 15000);
 });
 
@@ -1758,7 +1791,7 @@ describe("cli.ts ↔ daemon parity", () => {
       const s2 = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
         state: BoardState;
       };
-      expect(s2.state.tasks[0].status).toBe("doing");
+      expect(at(s2.state.tasks, 0, "s2.state.tasks").status).toBe("doing");
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -1809,7 +1842,7 @@ describe("cli.ts ↔ daemon parity", () => {
         state: BoardState;
       };
       // Character-for-character — no shell truncation, no escaping artifacts.
-      expect(s.state.tasks[0].title).toBe(nasty);
+      expect(at(s.state.tasks, 0, "s.state.tasks").title).toBe(nasty);
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -1853,7 +1886,7 @@ describe("cli.ts ↔ daemon parity", () => {
       const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
         state: BoardState;
       };
-      return s.state.tasks[0];
+      return at(s.state.tasks, 0, "the board holds the task this test added");
     };
     try {
       await runCli(["add", "sized", "--id", "t1", "--size", "m", "--session", session], { env });
@@ -2340,8 +2373,8 @@ describe("dependencies (Phase D)", () => {
 
     const unblocked = events.filter((e) => e.type === "unblocked");
     expect(unblocked).toHaveLength(1); // not on B1, only when B2 (the last) clears; fired once
-    expect(unblocked[0].taskId).toBe("X");
-    expect(unblocked[0].owner).toBe("worker1"); // targeted via owner-on-frame
+    expect(at(unblocked, 0, "unblocked").taskId).toBe("X");
+    expect(at(unblocked, 0, "unblocked").owner).toBe("worker1"); // targeted via owner-on-frame
   }, 15000);
 
   test("removing the last remaining blocker edge also unblocks", async () => {
@@ -3256,7 +3289,7 @@ describe("join.ts", () => {
     const seen = await collectStdout(joiner, (m) => m.type === "joined", 5000);
     const joined = seen.find((m) => m.type === "joined");
     expect(joined).toBeDefined();
-    expect(joined.session_id).toBe(ready.session_id);
+    expect(must(joined, "the joiner printed a joined frame").session_id).toBe(ready.session_id);
 
     // Cleanup
     joiner.kill();
@@ -3281,7 +3314,7 @@ describe("join.ts", () => {
     const seen = await collectStdout(joiner, (m) => m.type === "disconnected", 5000);
     const disc = seen.find((m) => m.type === "disconnected");
     expect(disc).toBeDefined();
-    expect(disc.reason).toBe("timeout");
+    expect(must(disc, "the joiner printed a disconnected frame").reason).toBe("timeout");
 
     hostProc.kill();
     await hostProc.exited;
@@ -4216,7 +4249,7 @@ test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", a
   const src = codeLines(await Bun.file(CLI_SRC).text());
   const m = /spawn\(process\.execPath, args, \{([\s\S]*?)\}\);/.exec(src);
   expect(m).not.toBeNull();
-  const call = (m as RegExpExecArray)[1];
+  const call = must(m?.[1], "the spawn call's options body was captured");
 
   // The daemon must be detached — that is what makes it a grandchild of any
   // harness driving the CLI, and therefore what makes its stdio load-bearing.
@@ -4224,7 +4257,9 @@ test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", a
 
   const stdio = /stdio:\s*\[([^\]]*)\]/.exec(call);
   expect(stdio).not.toBeNull();
-  const [stdin, stdout] = (stdio as RegExpExecArray)[1].split(",").map((x) => x.trim());
+  const [stdin, stdout] = must(stdio?.[1], "the stdio array was captured")
+    .split(",")
+    .map((x) => x.trim());
 
   // stdin + stdout must be "ignore". stderr is deliberately NOT constrained to
   // "ignore" — it is an opened fd to daemon.log (#64), which is a FILE and not
