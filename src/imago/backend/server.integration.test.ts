@@ -40,8 +40,33 @@ import type {
 // The state as observed over /state: ImagoState, but the lean projection drops
 // some blob fields and a restored snapshot may temporarily carry a legacy
 // top-level `marks` array (migrated away on boot) — both modeled as optional.
-type ObservedState = ImagoState & { marks?: Mark[] };
-const ids = (marks: Mark[]): string[] => marks.map((m) => m.id);
+// `marks` and `refs` are LEGACY keys this suite asserts a restore migrates
+// AWAY; they are declared so the absence can be asserted against the real JSON.
+type ObservedState = ImagoState & { marks?: Mark[]; refs?: unknown };
+const ids = (xs: readonly { id: string }[]): string[] => xs.map((x) => x.id);
+
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Null-aware, because
+ * `ImagoState.focus` is `null` when nothing is focused. Not `?.`: an optional
+ * read turns "the mark is on layer X" into "there is no mark", which a falsy
+ * or `toBeUndefined()` assertion then passes for free.
+ */
+function must<T>(v: T | null | undefined, invariant: string): T {
+  if (v === undefined || v === null) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+// A function declaration, not a generic arrow: the import-boundary ward parses
+// every file with Bun's transpiler, which reads `<T>(` as JSX.
+function first<T>(xs: readonly T[], what: string): T {
+  return must(xs[0], `${what} is non-empty`);
+}
+const marksOf = (st: ObservedState, vid: string): Mark[] =>
+  must(st.marksByVariant[vid], `variant ${vid} has a marks bucket`);
+const layersOf = (st: ObservedState, vid: string) =>
+  must(st.layersByVariant[vid], `variant ${vid} has a layers bucket`);
+const focusOf = (st: ObservedState) => must(st.focus, "a variant is focused");
 
 // ⛔ EVERY PATH IS DERIVED FROM AN EXPLICIT SKILL ROOT, NEVER BY COUNTING `..`
 // FROM WHEREVER THIS FILE HAPPENS TO SIT (playbook B6). This suite used to live
@@ -265,7 +290,7 @@ async function seedFocusedVariant(s: Spawned): Promise<{ batchId: string; varian
     variants: [{ src: PNG_1x1, id: "vSEED" }],
   });
   const st = await waitForState(s, (x) => x.focus != null);
-  return { batchId: st.focus.batchId, variantId: st.focus.variantId };
+  return { batchId: focusOf(st).batchId, variantId: focusOf(st).variantId };
 }
 
 const pin = (id: string, x = 0.5, y = 0.5): Record<string, unknown> => ({
@@ -287,10 +312,27 @@ describe("marks lifecycle", () => {
     ws.send({ type: "mark.add", mark: pin("m2", 0.3, 0.3) });
     const st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 2);
 
-    const marks = st.marksByVariant[variantId];
+    const marks = marksOf(st, variantId);
     expect(ids(marks)).toEqual(["m1", "m2"]);
     // server is authoritative for z-order: assigned by insertion position
     expect(marks.map((m) => m.zOrder)).toEqual([0, 1]);
+    ws.close();
+  });
+
+  test("a pin with NO label is accepted and stored without one", async () => {
+    // Type-debt Phase 4a: this is the premise of the SelectionOverlay fix. `label`
+    // is optional and nothing requires it on a pin, so "Edit note" can open on a
+    // label-less pin — which handed PinEditor `undefined` and made its submit
+    // throw. If the daemon ever starts refusing label-less pins, this cell reds
+    // and the surface guard can be revisited; until then it is reachable.
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+    ws.send({ type: "mark.add", mark: pin("bare") });
+    const st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
+    const bare = first(marksOf(st, variantId), "the pin this test added");
+    expect(bare.tool).toBe("pin");
+    expect("label" in bare).toBe(false);
     ws.close();
   });
 
@@ -303,7 +345,7 @@ describe("marks lifecycle", () => {
     await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 1);
     ws.send({ type: "marks.clear" });
     const st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 0);
-    expect(st.marksByVariant[variantId]).toEqual([]);
+    expect(marksOf(st, variantId)).toEqual([]);
     ws.close();
   });
 
@@ -319,15 +361,15 @@ describe("marks lifecycle", () => {
     // bring in a second image (auto-focuses it) and mark it
     ws.send({ type: "image.import", image: { src: PNG_1x1, name: "second" } });
     const st2 = await waitForState(s, (x) => x.focus?.variantId !== first.variantId);
-    const second = { batchId: st2.focus.batchId, variantId: st2.focus.variantId };
+    const second = { batchId: focusOf(st2).batchId, variantId: focusOf(st2).variantId };
     ws.send({ type: "mark.add", mark: pin("mB") });
     await waitForState(s, (x) => x.marksByVariant[second.variantId]?.length === 1);
 
     // focus back to the first — its mark must still be there
     ws.send({ type: "focus.set", batchId: first.batchId, variantId: first.variantId });
     const back = await waitForState(s, (x) => x.focus?.variantId === first.variantId);
-    expect(ids(back.marksByVariant[first.variantId])).toEqual(["mA"]);
-    expect(ids(back.marksByVariant[second.variantId])).toEqual(["mB"]);
+    expect(ids(marksOf(back, first.variantId))).toEqual(["mA"]);
+    expect(ids(marksOf(back, second.variantId))).toEqual(["mB"]);
     ws.close();
   });
 
@@ -363,7 +405,7 @@ describe("marks lifecycle", () => {
 
     // marks are durable: NOT cleared by commit
     const st = await getState(s);
-    expect(ids(st.marksByVariant[variantId])).toEqual(["m1"]);
+    expect(ids(marksOf(st, variantId))).toEqual(["m1"]);
     ws.close();
   });
 });
@@ -379,11 +421,11 @@ describe("container model — layers", () => {
     ws.send({ type: "mark.add", mark: pin("m1") });
     const st = await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 1);
 
-    const layers = st.layersByVariant[variantId];
+    const layers = layersOf(st, variantId);
     expect(layers).toHaveLength(1);
-    expect(layers[0].kind).toBe("annotation");
+    expect(first(layers, "layers").kind).toBe("annotation");
     // the element points at the container it landed in
-    expect(st.marksByVariant[variantId][0].layerId).toBe(layers[0].id);
+    expect(first(marksOf(st, variantId), "the bucket").layerId).toBe(first(layers, "layers").id);
     ws.close();
   });
 
@@ -426,9 +468,9 @@ describe("container model — layers", () => {
       (x.layersByVariant[variantId] ?? []).some((l) => l.kind === "image"),
     );
 
-    const imgLayer = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    const imgLayer = layersOf(st, variantId).find((l) => l.kind === "image");
     expect(imgLayer?.name).toBe("clip");
-    const imgMark = st.marksByVariant[variantId].find((m) => m.tool === "image") as
+    const imgMark = marksOf(st, variantId).find((m) => m.tool === "image") as
       | (Mark & { src?: string })
       | undefined;
     expect(imgMark).toBeDefined();
@@ -439,7 +481,7 @@ describe("container model — layers", () => {
 
     // lean projection strips the image-mark src (agent reads the flattened composite)
     const lean = await getState(s, true);
-    const leanImg = lean.marksByVariant[variantId].find((m) => m.tool === "image") as
+    const leanImg = marksOf(lean, variantId).find((m) => m.tool === "image") as
       | (Mark & { src?: string })
       | undefined;
     expect(leanImg).toBeDefined();
@@ -460,7 +502,7 @@ describe("container model — layer ops", () => {
 
     ws.send({ type: "mark.add", mark: pin("m1") }); // auto-creates "Annotations"
     let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
-    const layerId = st.layersByVariant[variantId][0].id;
+    const layerId = first(layersOf(st, variantId), "the bucket").id;
 
     ws.send({ type: "layer.rename", id: layerId, name: "Hero" });
     st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Hero");
@@ -469,7 +511,7 @@ describe("container model — layer ops", () => {
     // a cosmetic layer op is undoable (widened {marks,layers} history)
     ws.send({ type: "undo" });
     st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Annotations");
-    expect(st.layersByVariant[variantId][0].name).toBe("Annotations");
+    expect(first(layersOf(st, variantId), "the bucket").name).toBe("Annotations");
     ws.close();
   });
 
@@ -480,7 +522,7 @@ describe("container model — layer ops", () => {
 
     ws.send({ type: "mark.add", mark: pin("m1") });
     let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
-    const layerId = st.layersByVariant[variantId][0].id;
+    const layerId = first(layersOf(st, variantId), "the bucket").id;
 
     ws.send({ type: "layer.setHidden", id: layerId, hidden: true });
     st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.hidden === true);
@@ -497,12 +539,12 @@ describe("container model — layer ops", () => {
     ws.send({ type: "mark.add", mark: pin("m1") }); // [Annotations]
     ws.send({ type: "layer.addImage", src: PNG_1x1, name: "clip" }); // [Annotations, clip]
     let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
-    const clip = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    const clip = layersOf(st, variantId).find((l) => l.kind === "image");
     if (!clip) throw new Error("no image layer");
 
     ws.send({ type: "layer.reorder", id: clip.id, toIndex: 0 }); // image to the back
     st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.id === clip.id);
-    expect(st.layersByVariant[variantId].map((l) => l.kind)).toEqual(["image", "annotation"]);
+    expect(layersOf(st, variantId).map((l) => l.kind)).toEqual(["image", "annotation"]);
     ws.close();
   });
 
@@ -513,7 +555,7 @@ describe("container model — layer ops", () => {
 
     ws.send({ type: "mark.add", mark: pin("m1") });
     let st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
-    const layerId = st.layersByVariant[variantId][0].id;
+    const layerId = first(layersOf(st, variantId), "the bucket").id;
 
     ws.send({ type: "layer.remove", id: layerId });
     st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 0);
@@ -536,10 +578,10 @@ describe("container model — layer ops", () => {
       (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Pair") ?? false,
     );
     // the default "Annotations" layer was emptied by the move → pruned; only the group remains
-    expect(st.layersByVariant[variantId]).toHaveLength(1);
-    const group = st.layersByVariant[variantId][0];
+    expect(layersOf(st, variantId)).toHaveLength(1);
+    const group = first(layersOf(st, variantId), "the bucket");
     expect(group.name).toBe("Pair");
-    const marks = st.marksByVariant[variantId];
+    const marks = marksOf(st, variantId);
     expect(marks.every((m) => m.layerId === group.id)).toBe(true);
     expect(marks.map((m) => m.zOrder)).toEqual([0, 1]);
     ws.close();
@@ -557,7 +599,7 @@ describe("container model — layer ops", () => {
       s,
       (x) => (x.marksByVariant[variantId] ?? []).filter((m) => m.tool === "image").length === 2,
     );
-    const imgIds = before.marksByVariant[variantId]
+    const imgIds = marksOf(before, variantId)
       .filter((m) => m.tool === "image")
       .map((m) => m.id);
 
@@ -566,7 +608,7 @@ describe("container model — layer ops", () => {
       s,
       (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Collage") ?? false,
     );
-    const group = st.layersByVariant[variantId].find((l) => l.name === "Collage");
+    const group = layersOf(st, variantId).find((l) => l.name === "Collage");
     // a pure-image group MUST stay an image layer (else ensureDrawLayer would pick it
     // as a draw target and the panel would show a shapes icon, not the thumbnail)
     expect(group?.kind).toBe("image");
@@ -584,14 +626,14 @@ describe("container model — layer ops", () => {
     ws.send({ type: "group", markIds: ["m1", "m2"], name: "G" });
     // wait on the named group (length is 1 BOTH before and after the move → race)
     let st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "G");
-    const groupId = st.layersByVariant[variantId][0].id;
+    const groupId = first(layersOf(st, variantId), "the bucket").id;
 
     ws.send({ type: "ungroup", id: groupId });
     st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
     // each pin now owns a single-element layer; ids are distinct and re-zeroed
-    const layers = st.layersByVariant[variantId];
+    const layers = layersOf(st, variantId);
     expect(layers.every((l) => l.name === "Pin" && l.kind === "annotation")).toBe(true);
-    const marks = st.marksByVariant[variantId];
+    const marks = marksOf(st, variantId);
     expect(new Set(marks.map((m) => m.layerId)).size).toBe(2);
     expect(marks.every((m) => m.zOrder === 0)).toBe(true);
     ws.close();
@@ -609,8 +651,8 @@ describe("container model — layer ops", () => {
     const st = await waitForState(s, (x) =>
       (x.marksByVariant[variantId] ?? []).some((m) => m.tool === "pin"),
     );
-    const pinMark = st.marksByVariant[variantId].find((m) => m.tool === "pin");
-    const pinLayer = st.layersByVariant[variantId].find((l) => l.id === pinMark?.layerId);
+    const pinMark = marksOf(st, variantId).find((m) => m.tool === "pin");
+    const pinLayer = layersOf(st, variantId).find((l) => l.id === pinMark?.layerId);
     expect(pinLayer?.kind).toBe("annotation"); // NOT the image layer
     ws.close();
   });
@@ -622,13 +664,13 @@ describe("container model — layer ops", () => {
 
     ws.send({ type: "layer.add", name: "Sketch", kind: "sketch" });
     let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
-    const activeId = st.layersByVariant[variantId][0].id;
+    const activeId = first(layersOf(st, variantId), "the bucket").id;
 
     ws.send({ type: "mark.add", mark: { ...pin("m1"), layerId: activeId } });
     st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
-    expect(st.marksByVariant[variantId][0].layerId).toBe(activeId);
+    expect(first(marksOf(st, variantId), "the bucket").layerId).toBe(activeId);
     // no extra default layer was created — the client's choice was honored
-    expect(st.layersByVariant[variantId]).toHaveLength(1);
+    expect(layersOf(st, variantId)).toHaveLength(1);
     ws.close();
   });
 });
@@ -649,13 +691,13 @@ describe("undo/redo of mark edits", () => {
     // undo → one mark left, redo now available
     ws.send({ type: "undo" });
     st = await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 1);
-    expect(ids(st.marksByVariant[variantId])).toEqual(["m1"]);
+    expect(ids(marksOf(st, variantId))).toEqual(["m1"]);
     expect(st.history.canRedo).toBe(true);
 
     // redo → m2 back
     ws.send({ type: "redo" });
     st = await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 2);
-    expect(ids(st.marksByVariant[variantId])).toEqual(["m1", "m2"]);
+    expect(ids(marksOf(st, variantId))).toEqual(["m1", "m2"]);
     expect(st.history.canRedo).toBe(false);
 
     // undo once, then a fresh add forks the timeline → redo gone
@@ -668,7 +710,7 @@ describe("undo/redo of mark edits", () => {
         x.marksByVariant[variantId]?.length === 2 &&
         x.marksByVariant[variantId].some((m) => m.id === "m3"),
     );
-    expect(ids(st.marksByVariant[variantId])).toEqual(["m1", "m3"]);
+    expect(ids(marksOf(st, variantId))).toEqual(["m1", "m3"]);
     expect(st.history.canRedo).toBe(false);
     ws.close();
   });
@@ -726,10 +768,13 @@ describe("agent event contract", () => {
     const withRef = await waitForState(s, (x) =>
       x.batches.flatMap((b) => b.variants).some((v) => v.refSelected),
     );
-    const refId = withRef.batches
-      .flatMap((b) => b.variants)
-      .filter((v) => v.refSelected)
-      .map((v) => v.id)[0];
+    const refId = first(
+      withRef.batches
+        .flatMap((b) => b.variants)
+        .filter((v) => v.refSelected)
+        .map((v) => v.id),
+      "the ref.add this test sent flagged one variant refSelected — the list",
+    );
 
     const cursor = (await fetchCursor(s)) - 1;
     const evP = collectEvents(s, cursor, (e) => e.type === "say");
@@ -1074,15 +1119,17 @@ describe("restore backfills newer fields from an old snapshot", () => {
     expect(st.library.filter((e) => e.kind === "style" && e.name === "anime")).toHaveLength(1);
     // marksByVariant present; legacy global marks folded into the focused variant
     expect(st.marksByVariant).toBeDefined();
-    expect(ids(st.marksByVariant.v1)).toEqual(["legacy1"]);
+    expect(ids(marksOf(st, "v1"))).toEqual(["legacy1"]);
     // zOrder normalized during migration (was undefined in the snapshot)
-    expect(st.marksByVariant.v1[0].zOrder).toBe(0);
+    expect(first(marksOf(st, "v1"), "the bucket").zOrder).toBe(0);
     // container-model backfill: marks wrapped in a default "Annotations" layer,
     // and the legacy mark stamped with that layer's id
-    expect(st.layersByVariant.v1).toHaveLength(1);
-    expect(st.layersByVariant.v1[0].name).toBe("Annotations");
-    expect(st.layersByVariant.v1[0].kind).toBe("annotation");
-    expect(st.marksByVariant.v1[0].layerId).toBe(st.layersByVariant.v1[0].id);
+    expect(layersOf(st, "v1")).toHaveLength(1);
+    expect(first(layersOf(st, "v1"), "the bucket").name).toBe("Annotations");
+    expect(first(layersOf(st, "v1"), "the bucket").kind).toBe("annotation");
+    expect(first(marksOf(st, "v1"), "the bucket").layerId).toBe(
+      first(layersOf(st, "v1"), "the bucket").id,
+    );
     // the old top-level `marks` array is gone (deleted by the migration)
     expect(st.marks).toBeUndefined();
     expect(st.title).toBe("resumed");
@@ -1196,7 +1243,7 @@ describe("restore backfills newer fields from an old snapshot", () => {
 
     const refVars = st.batches.flatMap((b) => b.variants).filter((v) => v.id === "ref1");
     expect(refVars).toHaveLength(1); // not duplicated by a re-run migration
-    expect(refVars[0].refSelected).toBe(true);
+    expect(first(refVars, "refVars").refSelected).toBe(true);
     expect(st.batches).toHaveLength(1); // no extra "references" batch synthesized
 
     rmSync(home, { recursive: true, force: true });
@@ -1300,13 +1347,13 @@ describe("variant.remove", () => {
       ],
     });
     const seeded = await waitForState(s, (x) => x.batches.length === 1);
-    const batchId = seeded.batches[0].id;
+    const batchId = first(seeded.batches, "seeded.batches").id;
     const ws = await openWs(s);
 
     ws.send({ type: "variant.remove", batchId, variantId: "vA" });
     const st = await waitForState(s, (x) => x.batches[0]?.variants.length === 1);
-    expect(ids(st.batches[0].variants)).toEqual(["vB"]); // the other survives
-    expect(st.batches[0].id).toBe(batchId); // batch kept (not empty)
+    expect(ids(first(st.batches, "st.batches").variants)).toEqual(["vB"]); // the other survives
+    expect(first(st.batches, "st.batches").id).toBe(batchId); // batch kept (not empty)
     ws.close();
   });
 
@@ -1322,7 +1369,7 @@ describe("variant.remove", () => {
       ],
     });
     const seeded = await waitForState(s, (x) => x.focus?.variantId === "vA");
-    const batchId = seeded.batches[0].id;
+    const batchId = first(seeded.batches, "seeded.batches").id;
     const ws = await openWs(s);
 
     ws.send({ type: "variant.remove", batchId, variantId: "vB" }); // the non-focused one

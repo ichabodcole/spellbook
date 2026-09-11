@@ -14,6 +14,18 @@ import {
 } from "../../../plugins/spellbook/skills/imago/shared/types";
 import { leanState, optimizeSrc } from "./server.ts";
 
+/**
+ * Element `i` of a list this test's own setup is contracted to have filled, or a
+ * failure NAMING that contract (type-debt T11/T22: a LOCAL copy — a test under
+ * `src/` imports nothing from `grimoire/`). Not `?.`: `expect(xs[1]?.src)
+ * .toBeUndefined()` passes when there is no element at all.
+ */
+function at<T>(xs: readonly T[] | undefined, i: number, what: string): T {
+  const v = xs?.[i];
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${what} has an element ${i}`);
+  return v;
+}
+
 // ── defaultState shape ─────────────────────────────────────────────────────
 
 test("defaultState carries the title and empty artifact collections", () => {
@@ -74,9 +86,9 @@ test("defaultState seeds the situational/derived flags the toolbar reads", () =>
 test("defaultState returns fresh (non-shared) library per call", () => {
   const a = defaultState("a");
   const b = defaultState("b");
-  a.library[0].name = "mutated";
+  at(a.library, 0, "the cloned library").name = "mutated";
   a.quickPromptIds.push("x");
-  expect(b.library[0].name).not.toBe("mutated");
+  expect(at(b.library, 0, "the clone source library").name).not.toBe("mutated");
   expect(b.quickPromptIds).toEqual(["describe", "palette", "lighting"]);
 });
 
@@ -142,7 +154,10 @@ function fixtureWithBlobs(): ImagoState {
 
 test("leanState strips variant.src but keeps path + metadata", () => {
   const lean = leanState(fixtureWithBlobs());
-  const v = lean.batches[0].variants[0] as Record<string, unknown>;
+  const v = at(at(lean.batches, 0, "the lean batches").variants, 0, "the lean batch") as Record<
+    string,
+    unknown
+  >;
   expect(v.src).toBeUndefined();
   expect(v.path).toBe("/tmp/files/v1.webp");
   expect(v.analysis).toBe("warm dusk light");
@@ -150,8 +165,8 @@ test("leanState strips variant.src but keeps path + metadata", () => {
   expect(v.seed).toBe(42);
   expect(v.model).toBe("nano-banana");
   // Batch-level provenance survives intact.
-  expect(lean.batches[0].prompt).toBe("a fox under an oak");
-  expect(lean.batches[0].tag).toBe("fox");
+  expect(at(lean.batches, 0, "the lean batches").prompt).toBe("a fox under an oak");
+  expect(at(lean.batches, 0, "the lean batches").tag).toBe("fox");
 });
 
 test("leanState strips a ref variant's src but keeps refSelected/name/hash/analysis", () => {
@@ -213,14 +228,14 @@ test("leanState strips the bitmap from image-layer marks (keeps geometry + other
   const lean = leanState(src);
   const marks = lean.marksByVariant.v1 as Array<Record<string, unknown>>;
   // the pin passes through verbatim
-  expect(marks[0]).toEqual(src.marksByVariant.v1[0]);
+  expect(marks[0]).toEqual(at(src.marksByVariant.v1, 0, "the source v1 marks"));
   // the image mark loses its src but keeps geometry/tool/layerId
-  expect(marks[1].src).toBeUndefined();
-  expect(marks[1].tool).toBe("image");
-  expect(marks[1].x).toBe(0.1);
-  expect(marks[1].layerId).toBe("L2");
+  expect(at(marks, 1, "the lean marks").src).toBeUndefined();
+  expect(at(marks, 1, "the lean marks").tool).toBe("image");
+  expect(at(marks, 1, "the lean marks").x).toBe(0.1);
+  expect(at(marks, 1, "the lean marks").layerId).toBe("L2");
   // canonical state untouched (the browser still gets the bitmap)
-  expect((src.marksByVariant.v1[1] as Record<string, unknown>).src).toBe(
+  expect((at(src.marksByVariant.v1, 1, "the source v1 marks") as Record<string, unknown>).src).toBe(
     "data:image/webp;base64,LAYERBLOB",
   );
 });
@@ -228,8 +243,10 @@ test("leanState strips the bitmap from image-layer marks (keeps geometry + other
 test("leanState does not mutate the source state (no blob loss in canonical)", () => {
   const src = fixtureWithBlobs();
   leanState(src);
-  expect(src.batches[0].variants[0].src).toBe("data:image/webp;base64,VARIANTBLOB");
-  expect(src.batches.find((b) => b.id === "bref")?.variants[0].src).toBe(
+  expect(at(at(src.batches, 0, "the source batches").variants, 0, "the first batch").src).toBe(
+    "data:image/webp;base64,VARIANTBLOB",
+  );
+  expect(at(src.batches.find((b) => b.id === "bref")?.variants, 0, "the bref batch").src).toBe(
     "data:image/webp;base64,REFBLOB",
   );
   expect(src.library.find((e) => e.id === "ctx-ghibli")?.image).toBe(

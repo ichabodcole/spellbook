@@ -44,8 +44,10 @@ test("byEffectiveZ DESCENDING: the topHit inversion picks the higher-layer mark 
   const cmp = byEffectiveZ(layers);
   const onBg = pin("onBg", "bg", 99); // bottom layer, high zOrder
   const onImg = pin("onImg", "img", 0); // top layer, low zOrder
+  // A two-element sort's head; read with `?.` is safe HERE because `toBe`
+  // against a concrete id reds on `undefined` — there is no vacuous pass.
   const topmost = [onBg, onImg].sort((a, b) => cmp(b, a))[0];
-  expect(topmost.id).toBe("onImg");
+  expect(topmost?.id).toBe("onImg");
 });
 
 test("byEffectiveZ: single (or empty) layer set reduces to zOrder-only — no-op vs today", () => {
