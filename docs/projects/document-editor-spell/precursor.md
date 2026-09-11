@@ -43,6 +43,9 @@ a channel into the chat (conversation-primary surfaces).
 - Select text → talk about it; shortcuts for common asks.
 - **Annotations:** mark several passages, each with a note, and send them to the
   agent together (or not).
+- **Saved prompts:** reusable instructions (e.g. "format this transcript my
+  way") saved once, available in every session; picking one fills the composer
+  with the selection as context (E9).
 - **Versions:** the agent's edits arrive as a new version; any number of
   versions are kept, **two shown at once**, side by side with a visual diff.
 - **Merge:** accept a whole version as the active one, or pull in individual

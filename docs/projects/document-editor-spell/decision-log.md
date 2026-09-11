@@ -66,3 +66,27 @@ reload; dirty buffer → ask, through the diff view (VS Code's model — Obsidia
 silent auto-merge is a standing complaint among its own users). **Not taken:**
 the agent only ever sees saved text (a selection could name text the agent
 cannot read).
+
+## E9 · Saved prompts — user-authored shortcuts that persist across sessions
+
+**Asked for:** Cole, 2026-09-11 — e.g. a formatting instruction to run over a
+messy speech-to-text document, saved once and reused. **Shape (proposed, from
+the house precedents):**
+
+- **Picking one fills the composer; it does not fire.** Imago's quick prompts
+  work this way ("shortcuts WRITE into [the composer]"), so a prompt can be
+  tweaked before it is sent — and it remains an ordinary chat message, per the
+  message-surface paradigm. The current selection and any annotations ride with
+  it as context, exactly as with a typed message.
+- **Persisted in the spell's home directory** (`~/.<spell>/prompts…`), so it
+  survives every session — glamour's style tray (`GLAMOUR_HOME`) is the
+  precedent; imago's library is session-scoped, which is the part not copied.
+- **Two authoring paths:** the surface ("save this message as a prompt") and a
+  CLI verb for the agent (imago's `context prompt … --link quickPrompts`), so
+  "save that as a prompt" works in conversation.
+- **Placement:** the slice after E5, alongside annotations — both ride the same
+  send-with-context path.
+
+**Open, deliberately:** global vs per-folder/project scoping — start global.
+**Not taken:** a prompt that auto-sends on click (removes the chance to adjust,
+and imago's experience chose against it).
