@@ -259,6 +259,43 @@ import { join } from "node:path";
 //     `zone` mutated to `"idle"` -> TS2322 at the projection, i.e. a ROSE here.
 //     Before this change that drift type-checked. The FELL sentence now names
 //     this route.
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 3b, MAGPIE: `src/magpie/backend` 38 -> 0,
+// `src/magpie/surface` 1 -> 0. Total 496 -> 457 (-39, exactly what was fixed).
+// Route by route:
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback`, NO file
+//     deleted or added, NO de-duplication (`parsePortFromSessionId` keeps its
+//     copy, fixed with digestify's T22 branch byte for byte — the four-way
+//     duplicate stays a backlog item).
+//   • ⭐ FOUR ERRORS, ONE SITE, WERE REACHABLE — the project's real
+//     deliverable (T28).
+//     `normalizedToPixel` destructured `box_2d` as four numbers while
+//     `elementsFromRaw` checked only `Array.isArray`. A model reply with a
+//     short, empty, over-long or string box produced `NaN` -> `null`
+//     coordinates in the manifest, the board's proposed bboxes and the stdout
+//     listing (DRIVEN before the fix: `[200,80,null,null]`). Fixed at the
+//     boundary by `isBox2d`, a TYPE PREDICATE WHOSE RUNTIME CLAUSE IS THE FIX —
+//     four finite numbers — so the FELL sentence's predicate route does not
+//     apply. A malformed box is now skipped as a missing one always was. A new
+//     cell pins it; CALIBRATED: `isBox2d` reduced to `Array.isArray` -> that
+//     cell reds.
+//   • 27 test errors are LOCAL `must(v, "<invariant>")` reads (T22), one copy
+//     in each of three test files.
+//   • 2 casts were REPLACED, not re-cast: `(async () => …) as typeof fetch`
+//     was refused because Bun's `fetch` carries `preconnect`. `fakeFetch` now
+//     builds a real `typeof fetch` with `Object.assign` — the mock has the
+//     member rather than being cast past it. No `as unknown as`.
+//   • 3 shipped reads are EXPLICIT NAMED BRANCHES taking the function's own
+//     answer (T22): `advancePhase` -> `null`, `parsePortFromSessionId` ->
+//     `null`, `parseBboxes`'s mandatory fence group -> parse the text as-is.
+//   • 1 is `Bun.Server<undefined>` (T27; no handler reads `ws.data`; the
+//     integration suite's WebSocket cells drive the upgrade).
+//   • 1 is `cli.ts source`: the guard now reads the value it narrows
+//     (`pos[0] === undefined`) instead of `pos.length`. Same refusal set —
+//     DRIVEN: `source` with no argument still exits 2 with `kind: "usage"`.
+//   • 1 surface read: `RemoveGallery` iterates `Object.entries`, so each chip's
+//     count comes from the same pair and there is no second lookup.
+//   (4 reachable + 27 test + 2 casts + 3 branches + 1 + 1 + 1 = 39.)
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -287,8 +324,8 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/imago/surface": 36,
   "src/kit": 1,
   "src/magpie": 0,
-  "src/magpie/backend": 38,
-  "src/magpie/surface": 1,
+  "src/magpie/backend": 0,
+  "src/magpie/surface": 0,
   "src/mind-mapper": 0,
   "src/mind-mapper/backend": 1,
   "src/mind-mapper/surface": 0,
@@ -298,7 +335,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 496;
+const DECLARED_TOTAL = 457;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and

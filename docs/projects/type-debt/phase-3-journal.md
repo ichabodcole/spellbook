@@ -52,3 +52,38 @@ drift is a ROSE.
   `ROSE — area "src/astrolabe/backend" 0 -> 1 (+1)`.
 - `bun test src/astrolabe plugins/spellbook/skills/astrolabe`: **70 pass / 0
   fail**. Ratchet **13 pass / 0 fail** at 496.
+
+---
+
+## 3b · magpie — 39 → 0
+
+**Branch:** `feat/type-debt-phase-3-magpie` · `src/magpie/backend` 38 → 0 ·
+`src/magpie/surface` 1 → 0 · total 496 → 457.
+
+| errors | where                                                              | shape                                                              | fix                                                        |
+| ------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| **4**  | `discover.ts` `normalizedToPixel`                                  | ⭐ **REACHABLE** — a model's malformed `box_2d`                    | `isBox2d` at the boundary; a pinned, calibrated cell (T28) |
+| 27     | `reduce.test.ts`, `daemon.integration.test.ts`, `discover.test.ts` | a test's own setup read as possibly-undefined                      | LOCAL `must()` per file (T22)                              |
+| 2      | `discover.test.ts`                                                 | `(async () => …) as typeof fetch` — Bun's `fetch` has `preconnect` | `fakeFetch` builds a real `typeof fetch`; no re-cast       |
+| 3      | `reduce.ts`, `server.ts`, `discover.ts`                            | impossible absences in functions with their own answer             | explicit named branches (T22)                              |
+| 1      | `server.ts`                                                        | `ReturnType<typeof Bun.serve>`                                     | `Bun.Server<undefined>` (T27)                              |
+| 1      | `cli.ts` `source`                                                  | guard read `pos.length`, not the value it narrows                  | `pos[0] === undefined`; same refusal set                   |
+| 1      | `surface/RemoveGallery.tsx`                                        | a second lookup into a record the keys came from                   | iterate `Object.entries`                                   |
+
+### Drives and calibrations
+
+- **The reachable defect, before the fix:** `elementsFromRaw` on four shapes
+  printed `[200,80,null,null]`, `[null,null,null,null]` and a coerced string box
+  (T28's table).
+- **The new cell, calibrated:** `isBox2d` reduced to `Array.isArray` → the
+  malformed-box cell reds; restored by sha. ⚠ **The first attempt did not
+  apply** — biome had reflowed the function, the anchor matched nothing, and the
+  edit script refused; the green run after it was void. Second time this phase
+  that an anchor-count assertion is what separated a real drive from a vacuous
+  one.
+- **`source` with no argument**, built launcher: exit 2, `kind: "usage"`,
+  unchanged.
+- **acc** from the skill directory (`bunx acc check scripts/cli.ts`): exit 0,
+  L0, 18 pass / 5 unverified.
+- `bun test src/magpie plugins/spellbook/skills/magpie`: **93 pass / 0 fail**
+  (the integration suite drives the `/ws` upgrade).

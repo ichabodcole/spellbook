@@ -1369,3 +1369,47 @@ reads `ws.data`. **Driven:** the built daemon answers `/ws` with a `state`
 frame. Each of the other three must check that its own handlers read no
 `ws.data` before copying the line; the fix is per-spell in its own phase, not a
 roster sweep.
+
+## T28 · ⭐ Magpie's `box_2d` was a REACHABLE `undefined`, and the fix is a boundary check, not a type change
+
+**Decided:** lead, 2026-09-10, Phase 3b (magpie). **The first reachable
+`undefined` this project has found** — Phases 1 and 2 found none in 49 reads
+(T14), and astrolabe's 20 in Phase 3a were all impossible.
+
+`normalizedToPixel(box: number[], …)` destructured
+`const [y1, x1, y2, x2] = box`. Its only caller, `elementsFromRaw`, admitted an
+entry if `Array.isArray(e.box_2d)` — and `e` is the parsed reply of a **vision
+model**, i.e. external input. **Driven before the fix:**
+
+| `box_2d` from the model   | `bbox_pixel` emitted                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `[100, 200, 300, 400]`    | `[200, 80, 400, 240]` ✅                                                                         |
+| `[100, 200]`              | `[200, 80, null, null]`                                                                          |
+| `[]`                      | `[null, null, null, null]`                                                                       |
+| `["100","200","x","400"]` | `[200, 80, 400, null]` — and a fully-numeric string box coerces into a plausible wrong rectangle |
+
+Those values reach the manifest file, the board (`cli.ts` posts each element's
+`bbox_pixel` as its proposed `bbox`) and `discover`'s stdout listing.
+
+**Fix: `isBox2d(v): v is Box2d` — four finite numbers — at the boundary, and
+`normalizedToPixel` now takes the tuple.** A malformed box is skipped exactly as
+a missing one already was. The type predicate is honest because **its runtime
+clause is the fix itself**; this is the FELL sentence's predicate route taken
+the right way round (Phase 2's `.filter()` predicate was honest because its
+clause already existed; this one's clause is new and is the point). A new cell
+pins seven shapes; calibrated by reducing `isBox2d` to `Array.isArray` → that
+cell reds.
+
+**Behaviour change, stated:** a detection with a malformed box used to reach the
+board as a broken element; it is now dropped silently, like a detection with no
+name. Surfacing a count of skipped entries was not done — the existing skip
+never reported either, and changing `discover`'s output is a CLI change for its
+own row, not a type commit.
+
+**Not taken:**
+
+- _`const [y1 = 0, …] = box`._ Invents a coordinate; a wrong rectangle is worse
+  than no rectangle.
+- _`must()` in `normalizedToPixel`._ The absence is not impossible — it is the
+  model's to produce — and a throw would kill a whole `discover` over one bad
+  entry among many good ones.
