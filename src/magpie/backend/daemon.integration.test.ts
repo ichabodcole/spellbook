@@ -17,6 +17,18 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the element has status X" into "there is no element", which a
+ * `toBeUndefined()` or a falsy check then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "magpie");
 
@@ -255,7 +267,9 @@ test("POST /cmd source.set + elements.set mutate state; readback over /state", a
   expect(st.source?.size).toEqual([1408, 768]);
   // elements.set defaults a missing status to "proposed"
   expect(st.elements.map((e) => e.status)).toEqual(["proposed", "proposed"]);
-  expect(st.elements[0].name).toBe("icon_mammoth");
+  expect(must(st.elements[0], "waitForState returned only once this element existed").name).toBe(
+    "icon_mammoth",
+  );
 });
 
 test("POST /cmd status round-trips", async () => {
@@ -318,8 +332,12 @@ test("WS element.add materializes a region + logs a gesture, but emits NO agent 
   ws.send({ type: "element.add", element: { bbox: [10, 20, 30, 40] } });
 
   const st = await waitForState(s, (x) => x.elements.length === 1);
-  expect(st.elements[0].name).toBe("region_1");
-  expect(st.elements[0].status).toBe("confirmed");
+  expect(must(st.elements[0], "waitForState returned only once this element existed").name).toBe(
+    "region_1",
+  );
+  expect(must(st.elements[0], "waitForState returned only once this element existed").status).toBe(
+    "confirmed",
+  );
   expect(st.conversation.some((m) => m.role === "user" && m.text.startsWith("drew "))).toBe(true);
 
   expect((await evP).filter((e) => e.type === "element.add")).toEqual([]);
@@ -407,8 +425,15 @@ test("POST /cmd element.addVersion appends a version + sets chosen; no agent eve
     version: { id: "vC", model: "crop", path: "/tmp/f/icon.png", rev: 0 },
   });
   const st = await waitForState(s, (x) => (x.elements[0]?.versions?.length ?? 0) === 1);
-  expect(st.elements[0].versions?.[0].model).toBe("crop");
-  expect(st.elements[0].chosenVersionId).toBe("vC");
+  expect(
+    must(
+      must(st.elements[0], "waitForState returned only once this element existed").versions?.[0],
+      "the one addVersion this test sent is the element's only version",
+    ).model,
+  ).toBe("crop");
+  expect(
+    must(st.elements[0], "waitForState returned only once this element existed").chosenVersionId,
+  ).toBe("vC");
 });
 
 test("WS removeBg IS an imperative — flips busy + emits an agent event with ids", async () => {

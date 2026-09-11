@@ -29,6 +29,18 @@ import {
   updateElement,
 } from "./reduce";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the element has status X" into "there is no element", which a
+ * `toBeUndefined()` or a falsy check then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 function el(id: string, status: Element["status"] = "proposed"): Element {
   return { id, name: id, type: "icon", bbox: [0, 0, 10, 10], status };
 }
@@ -54,7 +66,7 @@ test("pushMessage appends a message with an id + ts", () => {
   expect(s.conversation).toHaveLength(1);
   expect(m.id).toBeTruthy();
   expect(typeof m.ts).toBe("number");
-  expect(s.conversation[0].text).toBe("hi");
+  expect(must(s.conversation[0], "pushMessage appended one message").text).toBe("hi");
 });
 
 test("setStatus / setSource set the canonical fields", () => {
@@ -68,14 +80,14 @@ test("setStatus / setSource set the canonical fields", () => {
 test("setElements defaults a missing status to 'proposed'", () => {
   const s = defaultState("t");
   setElements(s, [{ id: "e1", name: "x", type: "icon", bbox: [0, 0, 1, 1] } as Element]);
-  expect(s.elements[0].status).toBe("proposed");
+  expect(must(s.elements[0], "the element this test put in state").status).toBe("proposed");
 });
 
 test("setElements backfills an id for an element posted without one", () => {
   const s = defaultState("t");
   setElements(s, [{ name: "x", type: "icon", bbox: [0, 0, 1, 1], status: "proposed" } as Element]);
-  expect(s.elements[0].id).toBeTruthy();
-  expect(s.elements[0].name).toBe("x");
+  expect(must(s.elements[0], "the element this test put in state").id).toBeTruthy();
+  expect(must(s.elements[0], "the element this test put in state").name).toBe("x");
 });
 
 test("addElement mints an id and defaults name/type/status; numbers region_<n>", () => {
@@ -111,7 +123,7 @@ test("judgeElement flips status and reports change; no-op returns false", () => 
   const s = defaultState("t");
   s.elements = [el("e1")];
   expect(judgeElement(s, "e1", "confirmed")).toBe(true);
-  expect(s.elements[0].status).toBe("confirmed");
+  expect(must(s.elements[0], "the element this test put in state").status).toBe("confirmed");
   // same status again → no change
   expect(judgeElement(s, "e1", "confirmed")).toBe(false);
   // unknown id → false
@@ -122,8 +134,8 @@ test("updateElement partial-merges but never overwrites id", () => {
   const s = defaultState("t");
   s.elements = [el("e1")];
   expect(updateElement(s, "e1", { name: "renamed", id: "HACK" } as Partial<Element>)).toBe(true);
-  expect(s.elements[0].name).toBe("renamed");
-  expect(s.elements[0].id).toBe("e1"); // id is protected
+  expect(must(s.elements[0], "the element this test put in state").name).toBe("renamed");
+  expect(must(s.elements[0], "the element this test put in state").id).toBe("e1"); // id is protected
   expect(updateElement(s, "missing", { name: "x" })).toBe(false);
 });
 
@@ -131,10 +143,10 @@ test("flagElement flags/unflags an element, reports change; unknown id → false
   const s = defaultState("t");
   s.elements = [el("e1")];
   expect(flagElement(s, "e1", true)).toBe(true);
-  expect(s.elements[0].flagged).toBe(true);
+  expect(must(s.elements[0], "the element this test put in state").flagged).toBe(true);
   expect(flagElement(s, "e1", true)).toBe(false); // no-op
   expect(flagElement(s, "e1", false)).toBe(true);
-  expect(s.elements[0].flagged).toBe(false);
+  expect(must(s.elements[0], "the element this test put in state").flagged).toBe(false);
   expect(flagElement(s, "nope", true)).toBe(false);
 });
 
@@ -144,16 +156,16 @@ test("addVersion appends a new model, upserts (bumps rev) on the same model, set
   // first crop
   const crop = addVersion(s, "e1", { id: "vC", model: "crop", path: "/f/crop.png", rev: 0 });
   expect(crop?.id).toBe("vC");
-  expect(s.elements[0].versions).toHaveLength(1);
-  expect(s.elements[0].chosenVersionId).toBe("vC");
-  expect(s.elements[0].flagged).toBe(false); // a fresh result clears the flag
+  expect(must(s.elements[0], "the element this test put in state").versions).toHaveLength(1);
+  expect(must(s.elements[0], "the element this test put in state").chosenVersionId).toBe("vC");
+  expect(must(s.elements[0], "the element this test put in state").flagged).toBe(false); // a fresh result clears the flag
   // re-run the SAME model → upsert in place, bump rev, keep the id, stay chosen
-  s.elements[0].flagged = true;
+  must(s.elements[0], "the element this test put in state").flagged = true;
   const crop2 = addVersion(s, "e1", { id: "ignored", model: "crop", path: "/f/crop.png", rev: 0 });
-  expect(s.elements[0].versions).toHaveLength(1);
+  expect(must(s.elements[0], "the element this test put in state").versions).toHaveLength(1);
   expect(crop2?.id).toBe("vC"); // stable id on upsert
   expect(crop2?.rev).toBe(1); // bumped
-  expect(s.elements[0].flagged).toBe(false);
+  expect(must(s.elements[0], "the element this test put in state").flagged).toBe(false);
   // a different model → append, become chosen
   const rembg = addVersion(s, "e1", {
     id: "vR",
@@ -163,11 +175,11 @@ test("addVersion appends a new model, upserts (bumps rev) on the same model, set
     kind: "local",
   });
   expect(rembg?.id).toBe("vR");
-  expect(s.elements[0].versions).toHaveLength(2);
-  expect(s.elements[0].chosenVersionId).toBe("vR");
+  expect(must(s.elements[0], "the element this test put in state").versions).toHaveLength(2);
+  expect(must(s.elements[0], "the element this test put in state").chosenVersionId).toBe("vR");
   // choose:false keeps the current chosen
   addVersion(s, "e1", { id: "vB", model: "bria", path: "/f/bria.png", rev: 0 }, { choose: false });
-  expect(s.elements[0].chosenVersionId).toBe("vR");
+  expect(must(s.elements[0], "the element this test put in state").chosenVersionId).toBe("vR");
   // unknown id → null
   expect(addVersion(s, "nope", { id: "x", model: "crop", path: "/p", rev: 0 })).toBeNull();
 });
@@ -178,7 +190,7 @@ test("chooseVersion sets chosenVersionId when the version exists; reports change
   addVersion(s, "e1", { id: "vC", model: "crop", path: "/f/crop.png", rev: 0 });
   addVersion(s, "e1", { id: "vR", model: "rembg", path: "/f/rembg.png", rev: 0 });
   expect(chooseVersion(s, "e1", "vC")).toBe(true);
-  expect(s.elements[0].chosenVersionId).toBe("vC");
+  expect(must(s.elements[0], "the element this test put in state").chosenVersionId).toBe("vC");
   expect(chooseVersion(s, "e1", "vC")).toBe(false); // no-op
   expect(chooseVersion(s, "e1", "ghost")).toBe(false); // unknown version
   expect(chooseVersion(s, "nope", "vC")).toBe(false); // unknown element

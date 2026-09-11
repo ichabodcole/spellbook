@@ -10,9 +10,22 @@ import {
   DiscoverError,
   discover,
   elementsFromRaw,
+  isBox2d,
   normalizedToPixel,
   parseBboxes,
 } from "./discover";
+
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the element has status X" into "there is no element", which a
+ * `toBeUndefined()` or a falsy check then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
 
 // ── normalizedToPixel ────────────────────────────────────────────────────────
 
@@ -75,9 +88,31 @@ test("elementsFromRaw skips entries missing a name or box (matches the Python or
   expect(els.map((e) => e.name)).toEqual(["ok"]);
 });
 
+test("elementsFromRaw skips a malformed box_2d instead of emitting NaN coordinates", () => {
+  // Type-debt Phase 3b: a REACHABLE undefined. Before `isBox2d`, a short box
+  // produced bbox_pixel [200,80,null,null], an empty one [null,null,null,null],
+  // and string coordinates were coerced into a plausible wrong rectangle.
+  const raw = [
+    { name: "ok", type: "icon", box_2d: [100, 200, 300, 400] },
+    { name: "short", type: "icon", box_2d: [100, 200] },
+    { name: "empty", type: "icon", box_2d: [] },
+    { name: "five", type: "icon", box_2d: [1, 2, 3, 4, 5] },
+    { name: "strings", type: "icon", box_2d: ["100", "200", "300", "400"] },
+    { name: "nan", type: "icon", box_2d: [1, 2, Number.NaN, 4] },
+    { name: "inf", type: "icon", box_2d: [1, 2, Number.POSITIVE_INFINITY, 4] },
+  ];
+  const els = elementsFromRaw(raw, 1000, 800);
+  expect(els.map((e) => e.name)).toEqual(["ok"]);
+  expect(must(els[0], "the one well-formed entry survived").bbox_pixel).toEqual([
+    200, 80, 400, 240,
+  ]);
+  expect(isBox2d([0, 0, 1, 1])).toBe(true);
+  expect(isBox2d([0, 0, 1])).toBe(false);
+});
+
 test("elementsFromRaw defaults a missing type to 'other'", () => {
   const els = elementsFromRaw([{ name: "x", box_2d: [0, 0, 1, 1] }], 10, 10);
-  expect(els[0].type).toBe("other");
+  expect(must(els[0], "elementsFromRaw kept the one well-formed entry").type).toBe("other");
 });
 
 // ── discover() end-to-end over a mocked fetch ────────────────────────────────
@@ -86,6 +121,14 @@ const realFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = realFetch;
 });
+
+// A `typeof fetch` stand-in that answers every call with `respond()`. Bun's
+// `fetch` also carries `preconnect`, which is why casting a bare async arrow to
+// `typeof fetch` was refused (TS2352); the mock now HAS the member instead of
+// being cast past it. `discover` never calls it.
+function fakeFetch(respond: () => Response): typeof fetch {
+  return Object.assign(async () => respond(), { preconnect: realFetch.preconnect });
+}
 
 // A tiny 2×2 PNG so Bun.Image can read real metadata (discover measures the
 // source itself). 2×2 keeps the pixel math trivial to assert.
@@ -100,25 +143,28 @@ async function writeTempPng(): Promise<string> {
 
 test("discover assembles a manifest from a mocked OpenRouter response", async () => {
   const path = await writeTempPng();
-  globalThis.fetch = (async () =>
-    new Response(
-      JSON.stringify({
-        choices: [
-          {
-            message: {
-              content: '```json\n[{"name":"logo","type":"wordmark","box_2d":[0,0,500,1000]}]\n```',
+  globalThis.fetch = fakeFetch(
+    () =>
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content:
+                  '```json\n[{"name":"logo","type":"wordmark","box_2d":[0,0,500,1000]}]\n```',
+              },
             },
+          ],
+          usage: {
+            cost: 0.0123,
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            completion_tokens_details: { reasoning_tokens: 20 },
           },
-        ],
-        usage: {
-          cost: 0.0123,
-          prompt_tokens: 100,
-          completion_tokens: 50,
-          completion_tokens_details: { reasoning_tokens: 20 },
-        },
-      }),
-      { status: 200, headers: { "content-type": "application/json" } },
-    )) as typeof fetch;
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+  );
 
   try {
     const manifest = await discover(path, { apiKey: "test-key" });
@@ -129,7 +175,9 @@ test("discover assembles a manifest from a mocked OpenRouter response", async ()
     expect(manifest.tokens).toEqual({ prompt: 100, completion: 50, reasoning: 20 });
     expect(manifest.elements).toHaveLength(1);
     // box [0,0,500,1000] on a 2×2 image → x:[0..2], y:[0..1]
-    expect(manifest.elements[0].bbox_pixel).toEqual([0, 0, 2, 1]);
+    expect(
+      must(manifest.elements[0], "the mocked reply carried one well-formed element").bbox_pixel,
+    ).toEqual([0, 0, 2, 1]);
   } finally {
     await Bun.file(path)
       .delete()
@@ -153,7 +201,7 @@ test("discover fails fast (DiscoverError) when OPENROUTER_API_KEY is unset", asy
 
 test("discover surfaces an HTTP error as a DiscoverError", async () => {
   const path = await writeTempPng();
-  globalThis.fetch = (async () => new Response("rate limited", { status: 429 })) as typeof fetch;
+  globalThis.fetch = fakeFetch(() => new Response("rate limited", { status: 429 }));
   try {
     await expect(discover(path, { apiKey: "k" })).rejects.toBeInstanceOf(DiscoverError);
   } finally {
