@@ -114,3 +114,81 @@ stopped the compiler seeing the error contract.
   `kitDie` name). It corrected three documentation claims, all fixed:
   `tasksDropped` came from **b8**, not "#b7"; "two missing return" was one
   missing return and one narrowing; and T34's first-draft grapevine figures.
+
+---
+
+## 4c · grapevine — 105 → 0
+
+**Branch:** `feat/type-debt-phase-4-grapevine` · `src/grapevine/backend` 104 → 0
+· `plugins` 1 → 0 · total 107 → 2. (`src/grapevine/surface` already read 0 once
+T32 measured it under its own config.)
+
+| errors | shape                                                                          | fix                                                          |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **47** | ⭐ the channel router's `chMatch[1]`, read inside `if (chMatch)`               | read once as `chMatch?.[1]`; the branch requires it (T35)    |
+| 18     | fourteen `cmd*` functions guard `if (!name) die(…)` yet declare `name: string` | `name: string \| undefined` — the signature tells the truth  |
+| 1      | the launcher typed by the bundle's `return;`                                   | `run()` returns `0`; exit behaviour identical (T35)          |
+| 8      | index reads / mandatory regex groups                                           | `.at(-1)`, `for…of`, an `indexOf` slice, own-answer branches |
+| 31     | test reads; a `.find()` result read after a `toBeDefined()`                    | local `must`/`at`; the `find` wrapped where it is assigned   |
+
+**No reachable `undefined`.** One near-miss worth recording: `who`'s positional
+is optional in the registry, so `grapevine who` passes `undefined` into
+`cmdWho(name: string)` — reachable, and already handled by its first line. The
+bug was only ever in the type.
+
+### Drives
+
+Built launcher, isolated `GRAPEVINE_HOME`: `who` (no args) → exit 2 usage;
+`open drivechan` → ok; `send` → ok; `pull` → 2 messages, cursor 2;
+`mark drivechan 1` → exit 2 "missing required <disposition>" (dispatch, before
+the command function's own guard); `who drivechan` → ok; `stop` → no daemon
+left. `bun test src/grapevine plugins/spellbook/skills/grapevine`: **219 pass /
+0 fail**.
+
+### The verify pass
+
+No behaviour regression; 219 pass; the shipped `dist/` matches a fresh build.
+Two real corrections, both fixed before landing:
+
+- **`requiredArg()` rested on a false premise.** All five functions it guarded
+  already refuse a missing name on their first line, so they got the widened
+  signature like the other nine and `requiredArg` was removed (A1 pin back to
+  58). "Nine functions" was fourteen.
+- **The T32 census could not detect a double count** — the verifier removed the
+  ownership filter and watched a root-owned error count twice with every check
+  green. A cross-run `doubleCounted` check now refuses it, the fixture cell has
+  the import that exposes it, and that mutation now exits `DOUBLE COUNT`.
+
+And one found after it: the comment that replaced `requiredArg` quoted a usage
+refusal literally, and the A1 census counted it as a raise site (58 → 59) until
+it was reworded — filed as
+`docs/backlog/2026-09-10-a1-census-counts-a-raise-site-quoted-in-a-comment.md`.
+
+Smaller: two `(line as string)` casts were removed, not one; T32's cascade count
+was 10 implicit-any plus 1 missing-property.
+
+### ⚠ One mechanical slip, caught before anything ran
+
+A regex replacement string containing `\n` was written into the test file as a
+real newline, splitting three `split("\n")` literals across lines. `tsc` would
+have caught it; a grep for the rewritten pattern caught it first. Python's
+`re.sub` interprets backslash escapes in the REPLACEMENT, not just the pattern.
+
+---
+
+## Phase 4 · close
+
+**Three spells, 405 errors — 365 fixed in code, 40 removed by measuring two
+surfaces correctly (T32) — 407 → 2.** Imago 135, bounty 128 (3 of them by
+measurement), grapevine 142 (37 by measurement). Two `undefined`s reachable from
+the wire, both imago's (T30) — and, in magpie's Phase 3b, the project's one
+reachable from real input (T28).
+
+**The phase's lesson is about concentration, not volume.** 58 of bounty's errors
+were one alias (T33); 47 of grapevine's daemon were one read (T35); 37 of
+grapevine's surface were one instrument scope (T32). Reading errors one at a
+time would have produced three hundred local fixes and missed all three causes.
+
+**The repo total is 2**: `src/kit/wire/serveDist.ts:153` and one in
+`src/mind-mapper/backend`, both outside Phase 4's areas. They are the last row
+of "Done means".

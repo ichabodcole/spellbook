@@ -375,7 +375,8 @@ import { join } from "node:path";
 // 272 -> 232. NO SOURCE FILE MOVED. The census now measures every
 // `src/<dir>/tsconfig.json` WORKSPACE under its own config (each file has
 // exactly one owning run), because under the root config those spells' `@/`
-// imports did not resolve: 29 TS2307 and 11 implicit-any cascades that were
+// imports did not resolve: 29 TS2307 plus 11 cascades (10 implicit-any, 1
+// missing-property) that were
 // not type debt in the code but blindness in the instrument — every shadcn
 // component in those surfaces read as `any`. Route by route, against the FELL
 // sentence: no file deleted, added or edited; no assertion added; the fall is
@@ -412,12 +413,42 @@ import { join } from "node:path";
 //   • 54 test errors are LOCAL `must`/`at` reads, one stdout union narrowed by
 //     a named throw, and two casts replaced by `must(m?.[1], …)`.
 //   (58 + 1 + 2 + 9 + 1 + 54 = 125.)
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 4c, GRAPEVINE: `src/grapevine/backend`
+// 104 -> 0 and `plugins` 1 -> 0 (its launcher). Total 107 -> 2 (-105, exactly
+// what was fixed). Route by route:
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO file deleted or added,
+//     NO de-duplication; TWO pre-existing `(line as string)` casts REMOVED
+//     (one more, not on an error line, remains).
+//   • ⭐ 47 FELL TO ONE READ (T35): the daemon's channel router read
+//     `chMatch[1]` inside `if (chMatch)`, so every handler below received
+//     `string | undefined`. Read once, `chMatch?.[1]`, and the branch requires
+//     it — the mandatory group makes the two conditions the same.
+//   • 18 (in 14 functions) were TYPES THAT LIED ABOUT THEIR OWN FIRST LINE:
+//     every `cmd*` the dispatcher calls begins `if (!name) die("usage: …")`
+//     (or `!name || …`) yet declared `name: string`. Now `string | undefined`;
+//     the guard narrows. No raise site added — a first draft put a
+//     `requiredArg()` refusal in front of five of them, on the false premise
+//     that they did not guard; the verify pass read their first lines. DRIVEN:
+//     `who` with no argument still exits 2 with its usage envelope. `mark`'s
+//     missing id is NaN, exactly as `parseInt(undefined)` was, and `cmdMark`
+//     refuses a non-finite id itself.
+//   • 1 was the LAUNCHER reading a GENERATED file: the bundler emits
+//     `return undefined` as `return;`, so the launcher saw `void`. `run()`
+//     now returns `0`; the daemon never sets `process.exitCode`, so the exit is
+//     the same (T35). DRIVEN: the built daemon stays up and serves.
+//   • 8 shipped reads become total by construction (`.at(-1)`, `for…of`, an
+//     `indexOf` slice) or take their function's own answer (T22).
+//   • 31 test errors are LOCAL `must`/`at` reads; the `line` a `.find()`
+//     produces is wrapped where it is assigned, so later reads narrow.
+//   (47 + 18 + 8 + 31 = 104 in the backend, plus the launcher's plugins
+//   error = 105.)
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
   docs: 0,
   grimoire: 0,
-  plugins: 1,
+  plugins: 0,
   scripts: 0,
   src: 0,
   "src/astrolabe": 0,
@@ -433,7 +464,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/glamour/backend": 0,
   "src/glamour/surface": 0,
   "src/grapevine": 0,
-  "src/grapevine/backend": 104,
+  "src/grapevine/backend": 0,
   "src/grapevine/surface": 0,
   "src/imago": 0,
   "src/imago/backend": 0,
@@ -451,7 +482,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 107;
+const DECLARED_TOTAL = 2;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
@@ -496,6 +527,8 @@ type Census = {
     filesExamined: number;
   };
   closureHolds: boolean;
+  /** Diagnostics kept by two runs — must be empty (T32). */
+  doubleCounted: string[];
   sumOfAreas: number;
   unassigned: string[];
   byClass: Record<string, number>;
@@ -606,7 +639,7 @@ describe("type debt ratchet", () => {
       console.warn(
         [
           "",
-          `  TYPE DEBT — \`tsc --noEmit\` reports ${c.tsc.countedErrors} error(s) in ${c.tsc.countedFilesWithErrors} file(s) (tsc's own total: ${c.tsc.toolReportedErrors}).`,
+          `  TYPE DEBT — \`tsc --noEmit\` reports ${c.tsc.countedErrors} error(s) in ${c.tsc.countedFilesWithErrors} file(s) (the runs' own totals, net of lines another run owns: ${c.tsc.toolReportedErrors}).`,
           `  ⛔ NOTHING ELSE IN THE GATE READS THEM — the build is a bundler, \`check\` is biome, and \`bun test\` reaches only executed statements.`,
           `     areas: ${c.population.areasMeasured} measured of ${c.population.areasInTree} in the tree · files: ${c.population.filesExamined} examined of ${c.population.filesInTree}`,
           `     runs: ${c.runs.map((r) => `${r.project} (${r.kept} kept, ${r.discarded} discarded)`).join(" · ")} — each file counted by its OWNING run only (T32)`,
@@ -709,6 +742,9 @@ describe("type debt ratchet", () => {
       expect(c.tsc.errorsAgree).toBe(true);
       expect(c.closureHolds).toBe(true);
       expect(c.unassigned).toEqual([]);
+      // The ONE check that can see a double count (T32): the closure and the
+      // per-run agreement are both computed from the kept lines.
+      expect(c.doubleCounted).toEqual([]);
       expect(c.sumOfAreas).toBe(c.tsc.countedErrors);
       // 0 (clean) or 2 (errors found) and nothing else. A 1 — a rejected flag —
       // arriving here as "no errors" would be the silent green this ward is about.
@@ -878,6 +914,20 @@ describe("type debt ratchet — calibration", () => {
         const risen = await censusIn(dir);
         expect(errorsFor(risen)).toEqual({ ...CLEAN, "src/alpha/surface": 1 });
         expect(risen.closureHolds).toBe(true);
+
+        // ⛔ AND A ROOT-OWNED ERROR THAT A WORKSPACE IMPORTS IS COUNTED ONCE. Both
+        // runs report it; only its owner keeps it. This is the arm the first
+        // version of this cell lacked — with the ownership filter removed, the
+        // error counted twice and every other check stayed green (verify pass).
+        writeFileSync(join(dir, "src", "lib", "c.ts"), "export const c: number = 'x';\n");
+        writeFileSync(
+          join(dir, "src", "alpha", "surface", "x.ts"),
+          'import { b } from "@/b";\nimport { c } from "../../lib/c";\nexport const x: number = b + c;\n',
+        );
+        const shared = await censusIn(dir);
+        expect(errorsFor(shared)).toEqual({ ...CLEAN, "src/lib": 1 });
+        expect(shared.doubleCounted).toEqual([]);
+        expect(shared.runs.find((r) => r.project === "src/alpha")?.discarded).toBe(1);
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

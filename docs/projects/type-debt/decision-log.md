@@ -1544,6 +1544,17 @@ run against a 6 s root run.
 config and rises by exactly one on a real error; forcing `ownerOf` to the root
 reds that cell.
 
+⚠ **And the first version could not detect a double count — found by the
+grapevine verify pass, fixed before grapevine landed.** One owner per file
+PREVENTS a double count, but the closure and the per-run agreement are both
+computed from the kept lines, so neither can SEE one: with the ownership filter
+removed, a root-owned error imported into a workspace counted twice and every
+check stayed green. The census now refuses a diagnostic (`file:line:col:code`)
+kept by two runs (`doubleCounted`), the fixture cell gained exactly that import,
+and the mutation that fooled it now exits `DOUBLE COUNT`. The combined "tool
+total" is also relabelled: it is the runs' own totals net of discards, not a
+number tsc printed.
+
 ⚠ **This supersedes a fix made first.** Bounty's first pass (not landed) rewrote
 its two `@/ui/button` imports to `./button` to satisfy the root config. That
 went against the house convention the playbook documents (shadcn spells alias
@@ -1606,3 +1617,44 @@ one level up. The type was completed.
 (A first draft of this phase also rewrote bounty's two `@/ui/button` imports to
 `./button`; T32 superseded that before it landed, and the imports are
 unchanged.)
+
+## T35 · Grapevine: one read, nine signatures that lied, and a launcher typed by its build output
+
+**Decided:** lead, 2026-09-10, Phase 4c (grapevine).
+
+**One read was 47 errors.** The daemon's channel router matched
+`/^\/channels\/(name)(\/.*)?$/` and, inside `if (chMatch)`, read
+`const name = chMatch[1]` — `string | undefined` under
+`noUncheckedIndexedAccess`, and every handler below took it. The group is
+mandatory, so "the route matched" and "`name` is set" are one condition: the
+read moved out as `chMatch?.[1]` and the branch requires both. T33's lesson in a
+different costume — look for the one read before the forty-seven.
+
+**Fourteen command functions lied about their own first line.** Every `cmd*` the
+dispatcher calls with a name begins `if (!name) die("usage: …")` (or
+`!name || …`) and declared `name: string`. The honest fix is the signature —
+`string | undefined` — which states what the guard already does and adds no
+raise site. Driven: `who` with no argument (its positional is OPTIONAL in the
+registry) still answers its usage envelope at exit 2. ⚠ **The first draft got
+five of them wrong:** it put a new `requiredArg()` refusal in front of `send`,
+`read`, `tail`, `grep` and `mark`/`reopen` on the premise that their functions
+did not guard. They all do; the no-stake verify pass read their first lines.
+`requiredArg` was removed and the A1 pin stays at 58. `mark`'s id is `NaN` when
+missing, exactly as `parseInt(undefined)` was, and `cmdMark` refuses it itself.
+
+**The launcher was typed by the bundle.** `scripts/daemon.ts` does
+`process.exitCode = await run()` and imports `../dist/daemon.js` — the ONLY
+thing a launcher may import. `run()` declared `Promise<undefined>` and ended
+`return undefined`, which the bundler emits as a bare `return;`, and TypeScript
+infers `void` from that JavaScript. `run()` now returns `0`. The daemon never
+sets `process.exitCode`, so `0` and `undefined` exit identically at a natural
+end; every real code still comes from the in-body `process.exit` calls and
+`shutdown()`. The launcher's pinned natural-return shape (D69) is untouched.
+Driven: the built daemon stays up and serves `open`/`send`/`pull`.
+
+**Not taken:**
+
+- _Change the launcher to a bare `await run();`._ A third launcher shape, for a
+  type fact about generated output.
+- _Leave the launcher error as a named residue._ The fix is one line and
+  behaviour-neutral.
