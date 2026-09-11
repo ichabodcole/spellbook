@@ -1413,3 +1413,36 @@ own row, not a type commit.
 - _`must()` in `normalizedToPixel`._ The absence is not impossible — it is the
   model's to produce — and a throw would kill a whole `discover` over one bad
   entry among many good ones.
+
+## T29 · A WIDENING that matches its consumer is a fix, and the calibration is what proves it
+
+**Decided:** lead, 2026-09-10, Phase 3c (glamour).
+
+Seventeen of glamour's 49 errors fell to one edit: `CommandSpec.run`'s return
+type went from `Promise<number | undefined> | number | undefined` to
+`Promise<number> | Promise<void> | number | void`. **A widening is exactly the
+edit that launders** — make the type accept more and the errors disappear with
+nothing fixed. So the question is not "did the count fall" but **"is the new
+accepted set the consumer's set?"**
+
+It is. The comment on the field already said _"`void` therefore has to mean
+'0'"_, and the dispatcher reads `typeof code === "number" ? code : 0`. The old
+type was narrower than its own contract, which is why every `postCmd(...)`
+handler — `Promise<void>` — was refused. **Calibrated:** a handler returning a
+string is still `TS2322` at the table, so the widening stops at the consumer's
+boundary rather than at `unknown`.
+
+⚠ **Spelled as two `Promise`s** because biome's `noConfusingVoidType` refuses
+`void` inside a union type ARGUMENT (`Promise<number | void>`) while accepting
+it in a return-type union and as a lone argument. The accepted set is identical;
+the spelling is the linter's.
+
+**The rule, for Phase 4:** a widening is honest when the consumer's accepted set
+can be quoted and the widened type equals it, and a mutation outside it still
+reds. `unknown` never meets the second half.
+
+**Not taken:**
+
+- _Make every handler return `0` explicitly._ Seventeen edits to state what
+  dispatch already does, and the next verb would regress it.
+- _`Promise<unknown> | unknown`._ Accepts a string code silently.

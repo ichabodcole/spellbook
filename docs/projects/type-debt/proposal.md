@@ -1,7 +1,9 @@
 # Type debt — a ratchet, not a sweep
 
-**Created:** 2026-09-10 · **Status:** scoped, not started · **Ruled by:** Cole
-**Measured:** 2026-09-10, at `221c13b` (the convergence's last merge)
+**Created:** 2026-09-10 · **Status:** Phases 0–3 complete (2026-09-10) — 584 →
+**407**; Phase 4 (bounty, imago, grapevine) not started. Journals: `phase-0` …
+`phase-3-journal.md` · **Ruled by:** Cole **Measured:** 2026-09-10, at `221c13b`
+(the convergence's last merge)
 
 ## The problem, stated once
 

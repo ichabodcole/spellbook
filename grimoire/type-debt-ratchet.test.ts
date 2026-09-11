@@ -296,12 +296,47 @@ import { join } from "node:path";
 //   • 1 surface read: `RemoveGallery` iterates `Object.entries`, so each chip's
 //     count comes from the same pair and there is no second lookup.
 //   (4 reachable + 27 test + 2 casts + 3 branches + 1 + 1 + 1 = 39.)
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 3c, GLAMOUR: `src/glamour/backend` 49 -> 0
+// and `plugins` 2 -> 1 (glamour's `tests/types.test.ts`; the 1 left is
+// grapevine's launcher, for Phase 4). Total 457 -> 407 (-50, exactly what was
+// fixed). Route by route:
+//   • NO `!` ADDED — and one REMOVED: `child.stdout!.unref()` and the lint
+//     suppression beside it are gone. NO `as any`, NO `@ts-expect-error`, NO
+//     `?? fallback`, NO file deleted or added, NO de-duplication.
+//   • ⚠ 17 fell to ONE TYPE CHANGE (T29): `CommandSpec.run` returned
+//     `… | undefined` while its own comment and its dispatcher both say "`void`
+//     means 0", and every `postCmd` handler is `Promise<void>`. Now `…| void`
+//     (spelled `Promise<number> | Promise<void> | number | void` for biome).
+//     A widening, so it is exactly the kind of edit that could launder — it
+//     does not, because the accepted set IS dispatch's (`typeof code ===
+//     "number" ? code : 0`). CALIBRATED: a handler returning a string -> TS2322.
+//   • 4 CLI builder reads of `pos[0]`: arity dispatch guarantees them; the
+//     builders are exported, so the absence is a NAMED USAGE THROW via a local
+//     `positional()` (T22's third row). A new cell pins it; CALIBRATED:
+//     the throw removed -> that cell reds.
+//   • 1 `unref`: measured, Bun's pipe is a `Readable` (not a `net.Socket`)
+//     that carries `unref`. A Socket guard would silently skip it and restore
+//     the documented 91 s hang, so the check is for the METHOD, with a named
+//     throw. DRIVEN: `open --no-open` returns in under a second.
+//   • 3 mandatory regex groups in `*.server.ts`: explicit branches taking each
+//     function's own answer (a throw; `""`).
+//   • 20 test reads are LOCAL `must()` (T22), one copy per file.
+//   • 3 were STALE FIXTURES, not reads: two `LibraryItem`s missing `canonical`
+//     and `canon`, one `StyleSection` missing `colors` — fields the types
+//     gained after the tests were written. Completed, not cast.
+//   • 1 `Set<Flag>.has(string)`: the set is widened to `ReadonlySet<string>`,
+//     because the cell's question IS whether an arbitrary spelling is owned.
+//   • 1 `["item.add"] as const`: a literal typed as its literal, so the
+//     `toContain` against a literal-union list type-checks — and would now
+//     fail to compile if the event type were ever removed.
+//   (17 + 4 + 1 + 3 + 20 + 3 + 1 + 1 = 50.)
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
   docs: 0,
   grimoire: 0,
-  plugins: 2,
+  plugins: 1,
   scripts: 0,
   src: 0,
   "src/astrolabe": 0,
@@ -314,7 +349,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/digestify/backend": 0,
   "src/digestify/surface": 0,
   "src/glamour": 0,
-  "src/glamour/backend": 49,
+  "src/glamour/backend": 0,
   "src/glamour/surface": 0,
   "src/grapevine": 0,
   "src/grapevine/backend": 104,
@@ -335,7 +370,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 457;
+const DECLARED_TOTAL = 407;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
