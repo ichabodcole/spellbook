@@ -530,7 +530,10 @@ async function requireChannel(port: number, name: string): Promise<void> {
   if (status >= 400) dieApi(data, status);
 }
 
-async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
+async function cmdOpen(
+  name: string | undefined,
+  opts: { topic?: string; from?: string; fresh?: boolean },
+) {
   if (!name) die("usage: grapevine open <name> [--topic <text>] [--fresh]");
   const port = await ensureDaemon();
   const body: Record<string, string | boolean> = { name, explicit: true };
@@ -542,7 +545,11 @@ async function cmdOpen(name: string, opts: { topic?: string; from?: string; fres
   printJson({ ok: true, channel: data });
 }
 
-async function cmdTopic(name: string, text: string | undefined, from: string | undefined) {
+async function cmdTopic(
+  name: string | undefined,
+  text: string | undefined,
+  from: string | undefined,
+) {
   if (!name) die("usage: grapevine topic <channel> [<text>]");
   const port = await ensureDaemon();
   if (text === undefined) {
@@ -580,7 +587,7 @@ async function cmdList() {
 }
 
 async function cmdSend(
-  name: string,
+  name: string | undefined,
   from: string,
   text: string,
   opts: { quiet?: boolean; verbose?: boolean; inReplyTo?: number },
@@ -650,7 +657,7 @@ async function cmdAnnounce(
   printJson(out);
 }
 
-async function cmdPull(name: string, since: number, opts: { status?: string } = {}) {
+async function cmdPull(name: string | undefined, since: number, opts: { status?: string } = {}) {
   if (!name) die("usage: grapevine pull <channel> [--since <id>] [--status <value>]");
   const port = await ensureDaemon();
 
@@ -667,7 +674,7 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
         ? m.kind === "message" && isOpen(dispArg)
         : m.disposition === opts.status;
     });
-    const lastId = filtered.length ? filtered[filtered.length - 1].id : 0;
+    const lastId = filtered.at(-1)?.id ?? 0;
     printJson({ ok: true, messages: filtered, cursor: lastId });
     return;
   }
@@ -680,7 +687,7 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
   );
   if (status >= 400) dieApi(data, status);
   const rawMsgs = data?.messages ?? [];
-  const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
+  const cursor = rawMsgs.at(-1)?.id ?? since;
   const disp = foldDispositions(name);
   const annotated = rawMsgs
     // Disposition frames only — a lifecycle frame (archive/unarchive) stays in
@@ -693,7 +700,7 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
   printJson({ ok: true, messages: annotated, cursor });
 }
 
-async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
+async function cmdRead(name: string | undefined, id: number, opts: { text?: boolean }) {
   if (!name || !Number.isFinite(id)) die("usage: grapevine read <channel> <id> [--text]");
   const port = await ensureDaemon();
   // Built on the existing range fetch — `since=id-1` returns id and beyond;
@@ -726,7 +733,12 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
   printJson({ ok: true, message: annotatedMsg });
 }
 
-async function cmdWait(name: string, since: number, timeoutS: number, alias: string | undefined) {
+async function cmdWait(
+  name: string | undefined,
+  since: number,
+  timeoutS: number,
+  alias: string | undefined,
+) {
   if (!name) die("usage: grapevine wait <channel> [--as <alias>] [--since <id>] [--timeout <s>]");
   const port = await ensureDaemon();
   // Give the HTTP fetch a slightly higher abort timeout than the daemon's
@@ -751,7 +763,7 @@ async function cmdWait(name: string, since: number, timeoutS: number, alias: str
   });
 }
 
-async function cmdWho(name: string) {
+async function cmdWho(name: string | undefined) {
   if (!name) die("usage: grapevine who <channel>");
   const port = await readDaemonPort();
   if (!port) {
@@ -843,7 +855,7 @@ async function cmdAlias(name: string | undefined) {
  * Checked at the adoption rather than assumed (playbook B9 step 5).
  */
 async function cmdTail(
-  name: string,
+  name: string | undefined,
   opts: {
     since?: number;
     fromStart?: boolean;
@@ -1116,7 +1128,10 @@ function renderTriageHuman(
   const line = (m: BadgedMessage) => {
     const ts = new Date(m.ts).toISOString().slice(0, 16).replace("T", " ");
     const reopen = m.reopens && m.reopens > 0 ? ` ↻${m.reopens}` : "";
-    const head = m.text.split("\n")[0];
+    // The first line, without an index read `split` would make the compiler
+    // doubt: `split` never returns an empty array, and this says the same thing.
+    const nl = m.text.indexOf("\n");
+    const head = nl === -1 ? m.text : m.text.slice(0, nl);
     const preview = head.length > 100 ? `${head.slice(0, 99)}…` : head;
     return `  [${m.id}${reopen}] ${m.from} · ${ts} · ${preview}`;
   };
@@ -1128,7 +1143,7 @@ function renderTriageHuman(
   return `${sections.join("\n")}\n`;
 }
 
-async function cmdTriage(name: string, opts: { human?: boolean } = {}) {
+async function cmdTriage(name: string | undefined, opts: { human?: boolean } = {}) {
   if (!name) die("usage: grapevine triage <channel> [--human]");
   const port = await ensureDaemon();
   // triage reads the log file, not a route, so it cannot 404 on its own — and
@@ -1159,7 +1174,11 @@ async function cmdTriage(name: string, opts: { human?: boolean } = {}) {
   printJson({ ok: true, open, by_status });
 }
 
-async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean; from?: string }) {
+async function cmdGrep(
+  name: string | undefined,
+  pattern: string,
+  opts: { literal?: boolean; from?: string },
+) {
   if (!name || !pattern)
     die("usage: grapevine grep <channel> <pattern> [--literal|-F] [--from <alias>]");
   const logPath = join(DATA_DIR, "channels", `${name}.jsonl`);
@@ -1198,7 +1217,7 @@ async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean;
   printJson({ ok: true, messages });
 }
 
-async function cmdClose(name: string) {
+async function cmdClose(name: string | undefined) {
   if (!name) die("usage: grapevine close <name>");
   const port = await readDaemonPort();
   if (!port) die("no daemon running", "not_found");
@@ -1207,7 +1226,7 @@ async function cmdClose(name: string) {
   printJson({ ok: true });
 }
 
-async function cmdReset(name: string, opts: { force?: boolean }) {
+async function cmdReset(name: string | undefined, opts: { force?: boolean }) {
   if (!name) die("usage: grapevine reset <name> [--force]");
   const port = await ensureDaemon();
   const body: Record<string, boolean> = {};
@@ -1232,7 +1251,7 @@ async function cmdReset(name: string, opts: { force?: boolean }) {
 // alternative to close: history is preserved, sends are rejected, and the name
 // is locked from re-open until unarchived.
 async function cmdMark(
-  name: string,
+  name: string | undefined,
   id: number,
   disposition: string,
   from: string,
@@ -1248,7 +1267,7 @@ async function cmdMark(
   printJson(data);
 }
 
-async function cmdArchive(name: string, unarchive: boolean, from?: string) {
+async function cmdArchive(name: string | undefined, unarchive: boolean, from?: string) {
   const verb = unarchive ? "unarchive" : "archive";
   if (!name) die(`usage: grapevine ${verb} <channel>`);
   const port = await ensureDaemon();
@@ -1661,9 +1680,10 @@ async function listGrapevineDaemonPids(): Promise<number[]> {
     for (const line of out.split("\n")) {
       if (!line.includes("daemon.ts")) continue;
       if (!line.toLowerCase().includes("grapevine")) continue;
-      const m = line.match(/^\s*(\d+)\s+/);
-      if (!m) continue;
-      const pid = parseInt(m[1], 10);
+      // The pid group is mandatory; an unmatched line is skipped, as before.
+      const digits = line.match(/^\s*(\d+)\s+/)?.[1];
+      if (digits === undefined) continue;
+      const pid = parseInt(digits, 10);
       if (pid) pids.push(pid);
     }
   } catch {
@@ -1680,10 +1700,11 @@ async function lsofListenPort(pid: number): Promise<number | null> {
     const chunks: Buffer[] = [];
     proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
     await new Promise<void>((r) => proc.on("exit", () => r()));
-    const m = Buffer.concat(chunks)
+    // The port group is mandatory; no match is this function's own `null`.
+    const digits = Buffer.concat(chunks)
       .toString("utf-8")
-      .match(/127\.0\.0\.1:(\d+)/);
-    return m ? parseInt(m[1], 10) : null;
+      .match(/127\.0\.0\.1:(\d+)/)?.[1];
+    return digits === undefined ? null : parseInt(digits, 10);
   } catch {
     return null;
   }
@@ -1994,6 +2015,11 @@ const identityRequired = (verb: string): never =>
     choices: GLOBAL_FLAGS.map((f) => `--${f}`),
   });
 
+// ⚠ EVERY COMMAND FUNCTION BELOW REFUSES A MISSING POSITIONAL ON ITS OWN FIRST
+// LINE (a usage refusal when the name is falsy), and each now declares that parameter
+// `string | undefined` so its signature says what that line does (type-debt
+// T35). Arity dispatch refuses a missing required positional before any of
+// them runs, so the guards are the second line of defence, not the first.
 const COMMANDS: CommandSpec[] = [
   {
     name: "open",
@@ -2183,7 +2209,9 @@ const COMMANDS: CommandSpec[] = [
     run: async (positional, flags) => {
       await cmdMark(
         positional[0],
-        parseInt(positional[1], 10),
+        // NaN for a missing id, exactly what `parseInt(undefined)` gave — and
+        // `cmdMark` refuses a non-finite id on its first line.
+        positional[1] === undefined ? Number.NaN : parseInt(positional[1], 10),
         positional.slice(2).join(" "),
         resolveAlias(flags) ?? identityRequired("mark"),
         { note: flags.note as string | undefined },
@@ -2200,7 +2228,9 @@ const COMMANDS: CommandSpec[] = [
     run: async (positional, flags) => {
       await cmdMark(
         positional[0],
-        parseInt(positional[1], 10),
+        // NaN for a missing id, exactly what `parseInt(undefined)` gave — and
+        // `cmdMark` refuses a non-finite id on its first line.
+        positional[1] === undefined ? Number.NaN : parseInt(positional[1], 10),
         "open",
         resolveAlias(flags) ?? identityRequired("reopen"),
         { note: flags.note as string | undefined },

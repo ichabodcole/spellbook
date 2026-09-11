@@ -345,10 +345,10 @@ function loadChannel(name: string): Channel {
       // present instead of restarting at 1 — over-report, never under-report,
       // because under-reporting here is what reuses an id.
       let maxId = 0;
-      for (let i = 0; i < lines.length; i++) {
+      for (const line of lines) {
         let m: Message;
         try {
-          m = JSON.parse(lines[i]) as Message;
+          m = JSON.parse(line) as Message;
         } catch {
           continue; // a corrupt line is skipped for RECOVERY, never for COUNTING
         }
@@ -933,8 +933,11 @@ async function handle(req: Request): Promise<Response> {
   const chMatch = path.match(
     /^\/channels\/([a-zA-Z0-9_-](?:[a-zA-Z0-9_.-]{0,62}[a-zA-Z0-9_-])?)(\/.*)?$/,
   );
-  if (chMatch) {
-    const name = chMatch[1];
+  // Group 1 is mandatory, so `name` is set exactly when the route matched. Read
+  // once, outside the branch, so every handler below sees a `string` — this one
+  // read was ~45 of this file's errors under `noUncheckedIndexedAccess`.
+  const name = chMatch?.[1];
+  if (chMatch && name !== undefined) {
     const sub = chMatch[2] ?? "";
 
     if (sub === "" && method === "DELETE") {
@@ -1154,8 +1157,10 @@ async function handle(req: Request): Promise<Response> {
       // them back right away. Mirrors the codex `wait` UX — long-poll only
       // when you're truly current.
       const immediate = readBacklog(name, since);
-      const cursorOf = (msgs: Message[]) =>
-        msgs.length ? msgs[msgs.length - 1].id : Math.max(since, ch.next_id - 1);
+      // The last message's id, or — for an empty batch — the channel's cursor.
+      // `.at(-1)` returns the element or `undefined`, so the empty case is the
+      // one branch rather than a length check plus an index read.
+      const cursorOf = (msgs: Message[]) => msgs.at(-1)?.id ?? Math.max(since, ch.next_id - 1);
       if (immediate.length) {
         cleanupPresence();
         return json({
@@ -1560,7 +1565,16 @@ async function main() {
 // after it bound (D69, driven both ways). The reason lives in full at
 // `plugins/spellbook/skills/grapevine/scripts/daemon.ts`; it is named here too
 // because this is the file whose shape makes it true.
-export async function run(): Promise<undefined> {
+//
+// ⚠ IT RETURNS `0`, AND `0` IS NOT AN EXIT CODE THIS DAEMON CHOSE (type-debt
+// Phase 4c). It used to return `undefined`, which the bundler emits as a bare
+// `return;` — and the launcher, which can only import the BUILT file, then saw
+// `void` (TS2322 on `process.exitCode = await run()`). This daemon never sets
+// `process.exitCode` itself, so `0` and `undefined` exit the same way at a
+// natural end; every real code still comes from the in-body `process.exit`
+// calls above and from `shutdown()`. `0` here means "the launch had nothing
+// to report", which is what `undefined` meant.
+export async function run(): Promise<number> {
   await main();
-  return undefined;
+  return 0;
 }
