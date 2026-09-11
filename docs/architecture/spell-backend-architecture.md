@@ -487,7 +487,7 @@ grimoire ward. **Run the gate unpiped** and read its exit code from a file:
 `bun run gate | tail` reports `tail`'s exit code, which is always 0. **Type
 errors block the gate** (Cole, 2026-09-10, once the repo reached zero —
 type-debt T37), through `type-check-ward` rather than a bare `tsc`: see below
-and [the type-debt project](../projects/type-debt/proposal.md).
+and [the type-debt project](../projects/_archive/type-debt/proposal.md).
 
 | guards                   | instrument                                                                                | what it holds                                                                                                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |

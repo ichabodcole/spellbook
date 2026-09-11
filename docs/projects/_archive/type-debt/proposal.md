@@ -1,5 +1,22 @@
 # Type debt — a ratchet, not a sweep
 
+> **ARCHIVED 2026-09-10.** The repo went from **584 `tsc --noEmit` errors to 0**
+> in one day, across five phases, and the per-area ratchet that held the count
+> while it fell was retired at zero: **type errors now block the gate** through
+> `grimoire/type-check-ward.test.ts` (Cole's ruling, T37, superseding R2).
+>
+> **The deliverable the proposal named — every reachable `undefined`, with its
+> sha — is two sites** (magpie `box_2d`, `546e5ce9`; imago's label-less pin,
+> `2b9b1f64`); see "Closing" at the end. **Three findings outlived the
+> project:** the census now measures each `src/<spell>/tsconfig.json` workspace
+> under its own config (T32), refuses a diagnostic counted by two runs, and most
+> of the debt traced to a handful of single causes (an un-annotated `die` alias,
+> one router read, one instrument scope — T32/T33/T35).
+>
+> Open follow-ups live outside this folder: the backlog items it filed
+> (`parsePortFromSessionId` four-way duplicate, imago's numeric `label`, the A1
+> census counting a comment) and the stricter-flags project it scoped out.
+
 **Created:** 2026-09-10 · **Status:** ✅ **COMPLETE (2026-09-10) — 584 → 0.**
 Every area declares 0; see "Closing" at the end. Journals: `phase-0` …
 `phase-4-journal.md` · **Ruled by:** Cole **Measured:** 2026-09-10, at `221c13b`

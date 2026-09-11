@@ -19,7 +19,7 @@
 // re-declaration account for every fall (proposal R1). At zero a count can only
 // rise, so that machinery guarded a direction that no longer exists and was
 // removed; the accounts live in git history (as
-// `grimoire/type-debt-ratchet.test.ts`) and in `docs/projects/type-debt/`.
+// `grimoire/type-debt-ratchet.test.ts`) and in `docs/projects/_archive/type-debt/`.
 //
 // ⛔ IT CONSUMES `scripts/instruments/type-debt-census.ts` BY INVOKING IT and
 // does not re-implement its predicate — `gate-honesty.test.ts`'s relationship to
