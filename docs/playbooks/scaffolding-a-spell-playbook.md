@@ -825,8 +825,10 @@ document exists to end.
   — the other half; **its population is closed.** Phase B is the source of most
   of the material above.
 - [Spell backends — how a spell is built, shipped and spawned](../architecture/spell-backend-architecture.md)
-  — the per-spell caveats table is the evidence base for this document's counts.
-  Its prose is unwritten and unassigned.
+  — the WHY behind this playbook's steps: what a spell is, the layout, the
+  build/run-time seam (with diagrams), the spine, discovery, the contracts and
+  the instruments. Its per-spell caveats table is the evidence base for this
+  document's counts.
 - [The house conformance register](../architecture/house-conformance-register.md)
   — **Section A is the specification of what a new spell must not repeat**; F1
   is this document's row.
