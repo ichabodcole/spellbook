@@ -123,6 +123,10 @@ const EXPECTED: Record<
   imago: { sites: 24, choices: 3, verbRoster: true, flagMap: true },
   magpie: { sites: 32, choices: 4, verbRoster: true, flagMap: true },
   "mind-mapper": { sites: 66, choices: 14, verbRoster: true, flagMap: true },
+  // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
+  // row is a design, not an archaeology: every enumerable usage rejection
+  // carries `choices` from day one (A1 inherited, not converted into).
+  scriptorium: { sites: 26, choices: 8, verbRoster: true, flagMap: true },
 };
 
 /**
@@ -144,6 +148,7 @@ const LAUNCHER: Record<string, string> = {
   imago: "imago/scripts/cli.ts",
   magpie: "magpie/scripts/cli.ts",
   "mind-mapper": "mind-mapper/scripts/cli.ts",
+  scriptorium: "scriptorium/scripts/cli.ts",
 };
 
 /** The argv that hits each root set. A verb every spell has is not assumable, so
@@ -158,6 +163,7 @@ const UNKNOWN_FLAG_ARGS: Record<string, string[]> = {
   imago: ["state", "--acc-not-a-flag"],
   magpie: ["state", "--acc-not-a-flag"],
   "mind-mapper": ["state", "--acc-not-a-flag"],
+  scriptorium: ["state", "--acc-not-a-flag"],
 };
 
 function run(spell: string, args: string[]): { code: number; stderr: string; stdout: string } {
@@ -189,6 +195,7 @@ function tempHome(spell: string): Record<string, string> {
     IMAGO_HOME: dir,
     MAGPIE_HOME: dir,
     MIND_MAPPER_HOME: dir,
+    SCRIPTORIUM_HOME: dir,
   };
 }
 

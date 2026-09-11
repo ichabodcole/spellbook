@@ -298,10 +298,21 @@ describe("daemon lifecycle ward", () => {
     };
     console.log(`  daemon lifecycle: clause subjects ${JSON.stringify(census)}`);
     expect(census).toEqual({
-      daemons: 8,
-      clis: 14,
+      // +1 daemon and +2 CLI files: scriptorium (2026-09-11), the first spell
+      // SCAFFOLDED onto the build — a per-session daemon, so it joins all three
+      // clause lists below.
+      daemons: 9,
+      clis: 16,
       // clause 1 — the SSE/socket holders. digestify and mind-mapper are out.
-      holdsConnection: ["astrolabe", "bounty", "glamour", "grapevine", "imago", "magpie"],
+      holdsConnection: [
+        "astrolabe",
+        "bounty",
+        "glamour",
+        "grapevine",
+        "imago",
+        "magpie",
+        "scriptorium",
+      ],
       // clause 2 — every pointer writer. All seven go through the kit today,
       // which is why the clause's OFFENDER list is empty (C9); the subjects are
       // pinned here so that empty list cannot come to mean "nobody writes a
@@ -314,9 +325,11 @@ describe("daemon lifecycle ward", () => {
         "imago",
         "magpie",
         "mind-mapper",
+        "scriptorium",
       ],
-      // clause 3 — the four CLIs that still carry their own reader.
-      readSession: ["bounty", "glamour", "imago", "magpie"],
+      // clause 3 — the CLIs that still carry their own reader (scriptorium's is
+      // glamour's ENOENT-only shape, written at genesis).
+      readSession: ["bounty", "glamour", "imago", "magpie", "scriptorium"],
     });
   });
 

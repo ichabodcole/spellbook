@@ -78,6 +78,11 @@ const HAZARD_APPLIES: Record<string, string> = {
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/backend/cli.ts": "caller-facing; send bodies are prose positionals",
+  // An ADDITION, and loud as promised (2026-09-11): scriptorium's `say` takes
+  // its text as positionals, and `open`/`add` take paths. Prose goes through
+  // --body-file by SKILL.md's rule, which sidesteps the hazard; the parser
+  // still has it.
+  "scriptorium/backend/cli.ts": "caller-facing; say text and open/add paths are positionals",
 };
 
 describe("ward — the `--` terminator silently demotes flags to free text", () => {
@@ -157,14 +162,15 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
       callSitesCallerFacing: sitesCallerFacing,
       guardsVerified: 1, // bounty only — cassandra drove it, #1006 §4. 6 of 7 UNVERIFIED.
     }).toEqual({
-      filesAll: 8,
-      filesCallerFacing: 7,
+      // +1 file / +1 call site each: scriptorium (2026-09-11), caller-facing.
+      filesAll: 9,
+      filesCallerFacing: 8,
       // 23/22 → 9/8: mind-mapper's acc L0 lane C consolidated its ~15
       // positional-accepting inline parses into the one registry-driven
       // invocation (plus the doc-path probe) — call sites shrank, files did
       // not. The unit line below still names what is counted.
-      callSitesAll: 9,
-      callSitesCallerFacing: 8,
+      callSitesAll: 10,
+      callSitesCallerFacing: 9,
       // Driven A/B on bounty: `add -- --session-key` is byte-identical to
       // `add -- ordinaryword`, exit 0, valuesIgnored:null, and the flag becomes
       // the card's TITLE. No guard. The other six are not driven and this number

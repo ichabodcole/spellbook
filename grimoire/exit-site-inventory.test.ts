@@ -263,6 +263,10 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // become the spell's pinned internal entry point. It is the LAST of the eight
   // spells to make this move, which closes this map's relocation population.
   { file: "mind-mapper/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
+  // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build. Its
+  // daemon's `main` awaits the session's end and its own drain, glamour's shape,
+  // so the launcher is terminal-exit by design (playbook N3) and was driven so.
+  { file: "scriptorium/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   // F — live: an in-function exit with stdout pending upstream of it.
   // (imago's F-live site left with the rest — `tailEvents`'s `onUnresolved`
   //  returns "stop" and the tail RETURNS 0 instead of exiting from inside the

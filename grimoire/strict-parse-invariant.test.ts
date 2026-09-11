@@ -86,9 +86,11 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // registry-driven two-stage parse (CLI_OPTIONS + VERB_SPEC), leaving that
     // CLI with two invocations (parseVerbArgs stage 1 + the doc-path probe).
     // The pin moves WITH the population — both directions are the ward working.
+    // 17 → 19: scriptorium (2026-09-11) arrives with two, both strict — the
+    // CLI's registry parse and the daemon's private-argv parse.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 17,
+      invocationsChecked: 19,
     });
   });
 
