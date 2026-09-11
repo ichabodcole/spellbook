@@ -16,6 +16,20 @@ import { dirname, join } from "node:path";
 import { looksShellRisky, probeVersion } from "./cli.ts";
 
 /**
+ * Read a value this test's own setup is contracted to have produced, or fail
+ * NAMING that contract (type-debt T11/T22: LOCAL copies — a test under `src/`
+ * imports nothing from `grimoire/`). Function declarations, not generic arrows:
+ * the import-boundary ward's transpiler reads `<T>(` as JSX (Phase 4a).
+ */
+function must<T>(v: T | null | undefined, invariant: string): T {
+  if (v === undefined || v === null) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+function at<T>(xs: readonly T[], i: number, what: string): T {
+  return must(xs[i], `${what} has an element ${i}`);
+}
+
+/**
  * ⛔ THE SKILL ROOT IS FOUND BY A MARKER, NEVER BY COUNTING `..` (playbook B6).
  * This suite now lives at `src/grapevine/backend/` and the process it spawns
  * lives at `plugins/spellbook/skills/grapevine/scripts/` — different trees, so
@@ -238,7 +252,7 @@ describe("grapevine cli", () => {
       .split("\n")
       .filter((l) => l);
     expect(lines.length).toBe(1);
-    const m = JSON.parse(lines[0]);
+    const m = JSON.parse(at(lines, 0, "lines"));
     expect(m.from).toBe("bob");
     expect(m.text).toBe("live ping");
   });
@@ -255,8 +269,8 @@ describe("grapevine cli", () => {
       .split("\n")
       .filter((l) => l);
     expect(lines.length).toBe(2);
-    expect(JSON.parse(lines[0]).text).toBe("msg1");
-    expect(JSON.parse(lines[1]).text).toBe("msg2");
+    expect(JSON.parse(at(lines, 0, "lines")).text).toBe("msg1");
+    expect(JSON.parse(at(lines, 1, "lines")).text).toBe("msg2");
   });
 
   test("--last N backfills only the most recent N, then goes live (#68)", async () => {
@@ -318,7 +332,7 @@ describe("grapevine cli", () => {
       .filter((l) => l);
     expect(aLines.length).toBe(1);
     expect(bLines.length).toBe(1);
-    expect(JSON.parse(aLines[0]).id).toBe(JSON.parse(bLines[0]).id);
+    expect(JSON.parse(at(aLines, 0, "aLines")).id).toBe(JSON.parse(at(bLines, 0, "bLines")).id);
   });
 
   test("close removes the channel and its log", async () => {
@@ -702,11 +716,14 @@ describe("grapevine cli", () => {
     const longBody = "x".repeat(2500); // > the raised ~2000 default threshold
     await bunRun(["send", "test_trunc", "--from", "talker", longBody]);
     await sleep(400);
-    const line = t
-      .output()
-      .split("\n")
-      .filter(Boolean)
-      .find((l) => l.includes('"text"'));
+    const line = must(
+      t
+        .output()
+        .split("\n")
+        .filter(Boolean)
+        .find((l) => l.includes('"text"')),
+      "a stdout line carrying the message text",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(2500);
@@ -729,11 +746,14 @@ describe("grapevine cli", () => {
     // raised threshold means no hint. Proves the default was actually raised.
     await bunRun(["send", "test_short", "--from", "talker", "z".repeat(1000)]);
     await sleep(400);
-    const line = t
-      .output()
-      .split("\n")
-      .filter(Boolean)
-      .find((l) => l.includes('"text"'));
+    const line = must(
+      t
+        .output()
+        .split("\n")
+        .filter(Boolean)
+        .find((l) => l.includes('"text"')),
+      "a stdout line carrying the message text",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.truncation_hint).toBeUndefined();
@@ -748,11 +768,14 @@ describe("grapevine cli", () => {
     // still clip it, and without a front-loaded pointer its trailing id is lost.
     await bunRun(["send", "test_ref", "--from", "talker", "short one"]);
     await sleep(400);
-    const line = t
-      .output()
-      .split("\n")
-      .filter(Boolean)
-      .find((l) => l.includes('"text"'));
+    const line = must(
+      t
+        .output()
+        .split("\n")
+        .filter(Boolean)
+        .find((l) => l.includes('"text"')),
+      "a stdout line carrying the message text",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.truncation_hint).toBeUndefined(); // short → no "+N chars" alarm
@@ -779,7 +802,11 @@ describe("grapevine cli", () => {
     // 100 chars > 50-char override → should get hint.
     await bunRun(["send", "test_thresh", "--from", "talker", "y".repeat(100)]);
     await sleep(400);
-    const line = Buffer.concat(buf).toString("utf-8").split("\n").filter(Boolean)[0];
+    const line = at(
+      Buffer.concat(buf).toString("utf-8").split("\n").filter(Boolean),
+      0,
+      "the tail's stdout lines",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.truncation_hint).toBeDefined();
@@ -793,11 +820,14 @@ describe("grapevine cli", () => {
     await sleep(400);
     await bunRun(["send", "test_max", "--from", "talker", "m".repeat(2500)]);
     await sleep(400);
-    const line = t
-      .output()
-      .split("\n")
-      .filter(Boolean)
-      .find((l) => l.includes('"text"'));
+    const line = must(
+      t
+        .output()
+        .split("\n")
+        .filter(Boolean)
+        .find((l) => l.includes('"text"')),
+      "a stdout line carrying the message text",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(200); // inline body capped to --max
@@ -815,11 +845,14 @@ describe("grapevine cli", () => {
     await sleep(400);
     await bunRun(["send", "test_max_big", "--from", "talker", "k".repeat(2500)]);
     await sleep(400);
-    const line = t
-      .output()
-      .split("\n")
-      .filter(Boolean)
-      .find((l) => l.includes('"text"'));
+    const line = must(
+      t
+        .output()
+        .split("\n")
+        .filter(Boolean)
+        .find((l) => l.includes('"text"')),
+      "a stdout line carrying the message text",
+    );
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(2500); // full inline — consumer opted into a high cap
@@ -1028,7 +1061,7 @@ describe("grapevine cli", () => {
       .split("\n")
       .filter((l) => l);
     expect(lines.length).toBe(1);
-    expect(JSON.parse(lines[0]).from).toBe("other");
+    expect(JSON.parse(at(lines, 0, "lines")).from).toBe("other");
     t.proc.kill("SIGTERM");
   });
 
@@ -2305,7 +2338,7 @@ describe("tail creates — and says so", () => {
     const { proc, output } = spawnTail("mistyped-channel", ["--as", "watcher"]);
     await sleep(1200);
     proc.kill("SIGTERM");
-    const grounding = JSON.parse(output().trim().split("\n")[0]) as {
+    const grounding = JSON.parse(must(output().trim().split("\n")[0], "the first stdout line")) as {
       kind: string;
       channel: string;
       created?: boolean;
@@ -2324,7 +2357,9 @@ describe("tail creates — and says so", () => {
     const { proc, output } = spawnTail("already-open");
     await sleep(1200);
     proc.kill("SIGTERM");
-    const grounding = JSON.parse(output().trim().split("\n")[0]) as { created?: boolean };
+    const grounding = JSON.parse(must(output().trim().split("\n")[0], "the first stdout line")) as {
+      created?: boolean;
+    };
     expect(grounding.created).toBeUndefined();
   });
 });
@@ -2385,9 +2420,9 @@ describe("archive and unarchive announce themselves", () => {
     expect(frames.map((f) => f.event)).toEqual(["archived", "unarchived"]);
     // Attribution rides the globally-accepted --as; without it the daemon signs
     // "system" rather than guessing.
-    expect(frames[0].from).toBe("cole");
-    expect(frames[0].text).toContain("read-only");
-    expect(frames[1].from).toBe("system");
+    expect(at(frames, 0, "frames").from).toBe("cole");
+    expect(at(frames, 0, "frames").text).toContain("read-only");
+    expect(at(frames, 1, "frames").from).toBe("system");
   });
 
   test("pull replays them — an agent that was not connected still learns", async () => {
@@ -2541,7 +2576,8 @@ describe("a late joiner is told the channel is archived", () => {
     created?: boolean;
     hint?: string;
   };
-  const groundingOf = (out: string) => JSON.parse(out.trim().split("\n")[0]) as Grounding;
+  const groundingOf = (out: string) =>
+    JSON.parse(must(out.trim().split("\n")[0], "the first stdout line")) as Grounding;
 
   test("the subscribe event carries `archived`, and tail surfaces it", async () => {
     await bunRun(["open", "late-arch", "--topic", "r"]);
@@ -2603,11 +2639,11 @@ describe("the recovery a refusal names is runnable (verify ⚠6)", () => {
     // CLI happens to write "try: " before it.
     const line = errorOf(refused.stderr).hint?.replace(/^try: /, "");
     expect(line).toBeDefined();
-    const [runner, ...rest] = (line as string).split(" ");
+    const [runner, ...rest] = must(line, "the hint names a recovery command").split(" ");
     expect(runner).toBe("bun");
     expect(rest[0]).toBe(CLI);
     const recovered = await new Promise<number>((resolve) => {
-      const proc = spawn(runner, rest, {
+      const proc = spawn(must(runner, "the recovery command names a program"), rest, {
         env: { ...process.env, GRAPEVINE_HOME: HOME },
         stdio: ["ignore", "ignore", "ignore"],
       });
@@ -2648,9 +2684,9 @@ describe("a retired channel's refusal names its recovery too (verify ⚠7)", () 
     const refused = await bunRun(["topic", "hinted-run", "after the thaw"]);
     const line = errorOf(refused.stderr).hint?.replace(/^try: /, "");
     expect(line).toBeDefined();
-    const [runner, ...rest] = (line as string).split(" ");
+    const [runner, ...rest] = must(line, "the hint names a recovery command").split(" ");
     const recovered = await new Promise<number>((resolve) => {
-      const proc = spawn(runner, rest, {
+      const proc = spawn(must(runner, "the recovery command names a program"), rest, {
         env: { ...process.env, GRAPEVINE_HOME: HOME },
         stdio: ["ignore", "ignore", "ignore"],
       });
