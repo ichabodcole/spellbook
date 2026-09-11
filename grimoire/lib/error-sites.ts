@@ -201,7 +201,11 @@ export function raisersOf(src: string, classes: Set<string>): Set<string> {
         grew = true;
       }
     }
-    // (b) `const name = <raiser>;` — a bare alias (bounty's `const die = kitDie`).
+    // (b) `const name = <raiser>;` — a bare alias. ⚠ NO CURRENT SUBJECT: its only
+    // instance was bounty's `const die = kitDie`, removed 2026-09-10 (type-debt
+    // Phase 4b) because an un-annotated alias hides `die`'s `never` from
+    // control-flow analysis. Kept: the shape is legal and cheap to recognise,
+    // and dropping it would make a future alias silently un-counted.
     for (const m of src.matchAll(
       /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\s*;/g,
     )) {

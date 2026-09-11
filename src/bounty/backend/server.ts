@@ -309,6 +309,13 @@ type ApplyResult = {
   applied?: boolean;
   error?: string;
   kind?: "usage" | "not_found" | "conflict";
+  // `init`'s drop report (b8): present-and-null when nothing was dropped. The
+  // handler has returned this since it was added; the type never said so
+  // (TS2353, type-debt Phase 4b) — the wire was right and the type caught up.
+  tasksDropped?: {
+    requested: number;
+    dropped: { index: number; reason: string }[];
+  } | null;
 };
 
 type BrowserMsg =
@@ -325,7 +332,12 @@ const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);
   if (!m) return null;
-  const port = parseInt(m[1], 10);
+  // One alternative, one mandatory group, so a match always sets it; `null` is
+  // this function's answer for "not a port" at its other two returns (T22 —
+  // digestify's worked example; the four-way duplicate is a backlog item).
+  const digits = m[1];
+  if (digits === undefined) return null;
+  const port = parseInt(digits, 10);
   return port >= 1 && port <= 65535 ? port : null;
 }
 
@@ -434,6 +446,11 @@ function taskRejection(t: unknown): string | null {
 function validateTask(t: unknown): Task | null {
   if (taskRejection(t) !== null) return null;
   const cand = t as Record<string, unknown>;
+  // `taskRejection` has already refused a non-string id or title, but in a
+  // DIFFERENT function, so the compiler cannot carry that here. Restated rather
+  // than asserted: one line, and the invariant now holds where it is read.
+  const { id, title } = cand;
+  if (typeof id !== "string" || typeof title !== "string") return null;
   const tags = cleanTags(cand.tags);
   // Transition substrate is server-generated; on restore we preserve it
   // leniently — drop a malformed value rather than reject the whole task, so a
@@ -456,8 +473,8 @@ function validateTask(t: unknown): Task | null {
       : undefined;
   const expect = typeof cand.expect === "number" && cand.expect > 0 ? cand.expect : undefined;
   return {
-    id: cand.id,
-    title: cand.title,
+    id,
+    title,
     status: cand.status as TaskStatus,
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
@@ -499,6 +516,9 @@ function applyTaskUpdate(
     patch = rest;
   }
   const prev = state.tasks[idx];
+  // `idx` came from findIndex and was checked above; `false` is this
+  // function's own answer for "no such task" (T22).
+  if (prev === undefined) return false;
   const merged: Task = { ...prev, ...patch };
   // Stamp only on an actual status CHANGE (a transition) — not a notes/title
   // patch, and not a same-status patch (a guarded doing->doing never reaches
@@ -531,6 +551,9 @@ function applyTaskMove(
   const fromIdx = state.tasks.findIndex((t) => t.id === id);
   if (fromIdx === -1) return -1;
   const [task] = state.tasks.splice(fromIdx, 1);
+  // `fromIdx` is in range (checked above); -1 is this function's own answer
+  // for "not found", so the impossible absence takes it too (T22).
+  if (task === undefined) return -1;
   // A cross-column move is a transition; an intra-column reorder is not.
   if (task.status !== status) {
     Object.assign(task, { status }, transitionStamp(task.statusHistory, status, now));
@@ -541,8 +564,8 @@ function applyTaskMove(
   const clamped = Math.max(0, Math.floor(index));
   let seen = 0;
   let insertAt = state.tasks.length;
-  for (let i = 0; i < state.tasks.length; i++) {
-    if (state.tasks[i].status !== status) continue;
+  for (const [i, t] of state.tasks.entries()) {
+    if (t.status !== status) continue;
     if (seen === clamped) {
       insertAt = i;
       break;
@@ -1382,7 +1405,10 @@ async function main(argv: string[]): Promise<number> {
     return { ok: true, applied: false, kind: "usage", error: "unknown command type" };
   }
 
-  let server: ReturnType<typeof Bun.serve>;
+  // `Bun.Server<undefined>`, not `ReturnType<typeof Bun.serve>`, which resolves
+  // the generic's `WebSocketData` to `unknown` and makes `srv.upgrade(req)`
+  // demand a `data` option. No handler here reads `ws.data` (T27).
+  let server: Bun.Server<undefined>;
   try {
     server = Bun.serve({
       port,

@@ -57,9 +57,9 @@ import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import {
   CliError,
+  die,
   type ErrExtra,
   type ErrKind,
-  die as kitDie,
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
@@ -133,7 +133,15 @@ type Session = {
 // ever fetches, so the same stale pointer raises deliberately. Driven, both
 // verbs, before the change — recorded because a prediction that holds four
 // times and fails the fifth is worth more than one that was never checked.
-const die = kitDie;
+//
+// ⛔ `die` IS IMPORTED DIRECTLY, AND THAT IS A TYPE FIX, NOT A TIDY (type-debt
+// Phase 4b). It used to be re-bound here as `const die = kitDie;`, and
+// TypeScript only honours a callee's `never` for control flow when the callee is
+// declared with an EXPLICIT type — an un-annotated `const` alias is not. So
+// after every `die(...)` the compiler still believed execution continued: 53
+// "used before being assigned" errors on `pos`/`flags`/`raw`, one "missing
+// return", one lost `Session | null` narrowing and three on `flags.on` — 58,
+// all from this one line (type-debt T33). Runtime is identical.
 
 /** The one remedy for a missing board, named once so the two raise sites cannot
  *  drift. It rides `hint`, which is a field of the envelope rather than prose
