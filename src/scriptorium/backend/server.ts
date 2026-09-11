@@ -476,6 +476,15 @@ export async function startDaemon(opts: StartOpts) {
     fetch(req, srv) {
       const url = new URL(req.url);
       const path = url.pathname;
+      // ⛔ VERIFY-PASS FIX 1a — A FOREIGN ORIGIN IS REFUSED. Any web page the
+      // human visits can open a WebSocket or POST to 127.0.0.1; the browser
+      // sends its Origin, and only this daemon's own page may drive it. The
+      // CLI's fetch sends no Origin at all, so it is unaffected.
+      if (
+        (path === "/ws" || path === "/cmd" || path.startsWith("/fs/")) &&
+        !sameOrigin(req, srv.port)
+      )
+        return Response.json({ ok: false, error: "foreign origin refused" }, { status: 403 });
       if (path === "/ws")
         return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 426 });
       if (req.method === "GET" && path === "/state") {
@@ -635,6 +644,13 @@ export async function startDaemon(opts: StartOpts) {
   done.then(() => close());
 
   return { port: boundPort, sessionId, mode, dir: session.dir, close, done, shutdown };
+}
+
+/** An absent Origin (the CLI, curl) or this daemon's own page; nothing else. */
+export function sameOrigin(req: Request, port: number | undefined): boolean {
+  const origin = req.headers.get("origin");
+  if (origin === null) return true;
+  return origin === `http://127.0.0.1:${port}` || origin === `http://localhost:${port}`;
 }
 
 function expandHome(p: string): string {

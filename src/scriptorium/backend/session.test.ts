@@ -25,6 +25,14 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
+/** A session whose context is the whole temp docs folder — the admission rule
+ *  (verify-pass fix 1b) means a document must be in context to be opened. */
+const inContext = (): Session => {
+  const s = Session.create(home);
+  s.addContext(docs);
+  return s;
+};
+
 const refusal = (fn: () => unknown): SessionError => {
   try {
     fn();
@@ -87,7 +95,7 @@ describe("the context model (E15) — one type for a document and a set", () => 
 
 describe("documents and versions (E8)", () => {
   test("opening writes v1 from the original and names its path", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug, created } = s.openPath(join(docs, "set", "a.md"));
     expect(created).toBe(true);
     const doc = s.doc(slug);
@@ -98,7 +106,7 @@ describe("documents and versions (E8)", () => {
   });
 
   test("an edit reaches the active version's file and never the original (E7)", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     s.edit(slug, 1, "# Solo\n\nedited\n");
     expect(readFileSync(s.readVersion(slug, 1).path, "utf8")).toBe("# Solo\n\nedited\n");
@@ -107,14 +115,14 @@ describe("documents and versions (E8)", () => {
   });
 
   test("only the active version is editable", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     s.newVersion({ doc: slug, author: "agent" });
     expect(refusal(() => s.edit(slug, 2, "x")).status).toBe(409);
   });
 
   test("version-new copies the active version to the next number, with provenance", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     s.edit(slug, 1, "# Solo\n\nunsaved\n");
     const { version } = s.newVersion({ doc: slug, label: "tighten", author: "agent" });
@@ -123,7 +131,7 @@ describe("documents and versions (E8)", () => {
   });
 
   test("save writes the ACTIVE version over the original; revert copies the original back", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const { version } = s.newVersion({ doc: slug, author: "agent" });
     writeFileSync(version.path, "# Solo, by the agent\n");
@@ -140,7 +148,7 @@ describe("documents and versions (E8)", () => {
   });
 
   test("unknown doc and version refusals carry the set in hand as choices (A1)", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const noDoc = refusal(() => s.newVersion({ doc: "missing", author: "agent" }));
     expect(noDoc.status).toBe(404);
@@ -151,7 +159,7 @@ describe("documents and versions (E8)", () => {
   });
 
   test("a doc is found by slug, by original path, or by a unique basename", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "set", "a.md"));
     expect(s.findDoc(slug)?.slug).toBe(slug);
     expect(s.findDoc(join(docs, "set", "a.md"))?.slug).toBe(slug);
@@ -161,7 +169,7 @@ describe("documents and versions (E8)", () => {
 
 describe("self-write suppression — whose write was that?", () => {
   test("the daemon's own writes classify as nothing", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     s.edit(slug, 1, "mine\n");
     expect(s.onFileEvent(s.readVersion(slug, 1).path)).toBeNull();
@@ -170,7 +178,7 @@ describe("self-write suppression — whose write was that?", () => {
   });
 
   test("an outside write to the ACTIVE version is detected (E2), once", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const path = s.readVersion(slug, 1).path;
     writeFileSync(path, "the agent wrote here\n");
@@ -180,7 +188,7 @@ describe("self-write suppression — whose write was that?", () => {
   });
 
   test("an outside write to a NON-active version is a change to push, not a violation", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const { version } = s.newVersion({ doc: slug, author: "agent" });
     writeFileSync(version.path, "# agent draft\n");
@@ -192,7 +200,7 @@ describe("self-write suppression — whose write was that?", () => {
   });
 
   test("a version file the agent writes by hand is adopted as an agent version", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const p = join(s.dir, "docs", slug, "v5.md");
     writeFileSync(p, "hand-made\n");
@@ -204,7 +212,7 @@ describe("self-write suppression — whose write was that?", () => {
   });
 
   test("an outside change to the original: clean buffer → reload; dirty → ask, once", () => {
-    const s = Session.create(home);
+    const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     writeFileSync(join(docs, "solo.md"), "# Solo, changed elsewhere\n");
     expect(s.onFileEvent(join(docs, "solo.md"))).toMatchObject({ kind: "original.reloaded" });
@@ -219,9 +227,38 @@ describe("self-write suppression — whose write was that?", () => {
   });
 });
 
+describe("admission — only a document in the context is opened or saved (verify-pass fix 1)", () => {
+  test("a document outside every context entry is refused", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(refusal(() => s.openPath(join(docs, "solo.md"))).status).toBe(400);
+    expect(s.view("release", null).docs).toHaveLength(0);
+  });
+
+  test("a non-document file is refused even inside a context folder", () => {
+    const s = inContext();
+    expect(refusal(() => s.openPath(join(docs, "set", "skip.png"))).status).toBe(400);
+  });
+
+  test("save refuses an original that was not admitted by openPath", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const mpath = join(s.dir, "manifest.json");
+    const m = JSON.parse(readFileSync(mpath, "utf8"));
+    const victim = join(root, "victim.rc");
+    writeFileSync(victim, "export SAFE=1\n");
+    m.docs[0].original = victim;
+    delete m.docs[0].admitted;
+    writeFileSync(mpath, JSON.stringify(m));
+    const r = Session.restore(home, s.id);
+    expect(refusal(() => r.save(slug)).status).toBe(409);
+    expect(readFileSync(victim, "utf8")).toBe("export SAFE=1\n");
+  });
+});
+
 describe("the manifest survives a restart (--restore)", () => {
   test("context, docs, versions, active and chat come back", () => {
-    const s = Session.create(home);
+    const s = inContext();
     s.addContext(join(docs, "set"));
     const { slug } = s.openPath(join(docs, "set", "a.md"));
     s.newVersion({ doc: slug, author: "agent", label: "draft" });

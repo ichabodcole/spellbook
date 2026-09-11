@@ -39,13 +39,16 @@ writeFileSync(join(docs, "set", "a.md"), "# A\n\nline two\nline three\n");
 writeFileSync(join(docs, "set", "part", "b.md"), "# B\n");
 writeFileSync(join(docs, "solo.md"), "# Solo\n");
 
-async function cli(...args: string[]): Promise<{ code: number; out: string; err: string }> {
+async function cliIn(
+  cwd: string,
+  ...args: string[]
+): Promise<{ code: number; out: string; err: string }> {
   const p = Bun.spawn(["bun", CLI, ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: "ignore",
     env,
-    cwd: root,
+    cwd,
   });
   const [out, err, code] = await Promise.all([
     new Response(p.stdout).text(),
@@ -54,6 +57,9 @@ async function cli(...args: string[]): Promise<{ code: number; out: string; err:
   ]);
   return { code, out, err };
 }
+const cli = (...args: string[]) => cliIn(root, ...args);
+
+afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 /** A minimal stand-in for the surface: every frame it receives, and a way to wait for one. */
 class FakeSurface {
@@ -117,7 +123,6 @@ describe("a session, end to end through the launchers", () => {
     surface.close();
     if (existsSync(join(root, "tmp", `scriptorium-${sessionId}.json`))) await cli("close");
     tail?.kill();
-    rmSync(root, { recursive: true, force: true });
   });
 
   const tailLines = () =>
@@ -253,4 +258,86 @@ describe("a session, end to end through the launchers", () => {
     expect(st.docs[0]?.active).toBe(2);
     expect((await cli("close")).code).toBe(0);
   }, 60_000);
+});
+
+describe("verify-pass fixes, through the launchers", () => {
+  let port = 0;
+  let sid0 = "";
+  const outside = join(root, "outside");
+  mkdirSync(outside, { recursive: true });
+  const victim = join(outside, "victim.rc");
+  const stray = join(outside, "stray.md");
+
+  beforeAll(async () => {
+    writeFileSync(victim, "export SAFE=1\n");
+    writeFileSync(stray, "# not in the context\n");
+    const r = await cli("open", "--no-open", join(docs, "set"));
+    expect(r.code).toBe(0);
+    const hs = JSON.parse(r.out) as { port: number; session_id: string };
+    port = hs.port;
+    sid0 = hs.session_id;
+  }, 60_000);
+
+  afterAll(async () => {
+    await cli("close", "--session", sid0);
+  });
+
+  const upgrade = (origin?: string) =>
+    fetch(`http://127.0.0.1:${port}/ws`, {
+      headers: {
+        Connection: "Upgrade",
+        Upgrade: "websocket",
+        "Sec-WebSocket-Version": "13",
+        "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+        ...(origin ? { Origin: origin } : {}),
+      },
+    });
+
+  test("fix 1a — a WebSocket upgrade from a FOREIGN origin is refused (403)", async () => {
+    expect((await upgrade("https://evil.example")).status).toBe(403);
+    expect((await upgrade(`http://localhost:${port + 1}`)).status).toBe(403);
+  });
+
+  test("fix 1a — the daemon's own page may still connect", async () => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+      // @ts-expect-error Bun's WebSocket accepts headers
+      headers: { Origin: `http://127.0.0.1:${port}` },
+    });
+    const opened = await new Promise<boolean>((r) => {
+      ws.onopen = () => r(true);
+      ws.onerror = () => r(false);
+    });
+    ws.close();
+    expect(opened).toBe(true);
+  });
+
+  test("fix 1a — a /cmd POST from a foreign origin is refused and changes nothing", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json", Origin: "https://evil.example" },
+      body: JSON.stringify({ type: "say", text: "pwned" }),
+    });
+    expect(res.status).toBe(403);
+    const st = JSON.parse((await cli("state", "--full")).out) as PublicState;
+    expect(st.chat.some((m) => m.text === "pwned")).toBe(false);
+  });
+
+  test("fix 1b/1c — open and save of a path outside the context are refused; the file is untouched", async () => {
+    const s = new FakeSurface();
+    await s.connect(port);
+    for (const path of [victim, stray]) {
+      s.send({ type: "open", path });
+      s.send({ type: "save", doc: "victim" });
+      s.send({ type: "save", doc: "stray" });
+    }
+    await s.waitFor(
+      (m) => m.type === "error" && m.message.includes("not in this session's context"),
+    );
+    await Bun.sleep(200);
+    s.close();
+    expect(readFileSync(victim, "utf8")).toBe("export SAFE=1\n");
+    expect(readFileSync(stray, "utf8")).toBe("# not in the context\n");
+    const st = JSON.parse((await cli("state")).out) as PublicState;
+    expect(st.docs.map((d) => d.original)).toEqual([]);
+  });
 });

