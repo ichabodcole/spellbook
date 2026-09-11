@@ -45,6 +45,10 @@
   --color-border: var(--color-edge);
   --color-input: var(--color-edge);
   --color-ring: var(--color-rubric);
+  /* Menus and popovers (context-menu) — without these the popup rendered with
+     NO background, transparent over the page (Cole, 2026-09-11). */
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-ink);
 }
 
 /* L3 — the light palette, written once as token overrides. Unlayered, so it

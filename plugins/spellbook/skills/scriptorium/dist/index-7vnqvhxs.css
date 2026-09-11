@@ -57,6 +57,8 @@
     --color-border: var(--color-edge);
     --color-input: var(--color-edge);
     --color-ring: var(--color-rubric);
+    --color-popover: var(--color-surface-raised);
+    --color-popover-foreground: var(--color-ink);
   }
 }
 
@@ -825,6 +827,10 @@
     background-color: var(--color-muted);
   }
 
+  .bg-popover {
+    background-color: var(--color-popover);
+  }
+
   .bg-primary {
     background-color: var(--color-primary);
   }
@@ -1060,6 +1066,10 @@
 
   .text-muted-foreground {
     color: var(--color-muted-foreground);
+  }
+
+  .text-popover-foreground {
+    color: var(--color-popover-foreground);
   }
 
   .text-primary {
