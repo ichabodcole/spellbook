@@ -249,3 +249,43 @@ scoped exception: `react-resizable-panels`, `@headless-tree/core` and
 direction to prefer well-supported libraries over hand-built components (the
 tree study). `react-resizable-panels` landed in slice A before the ruling was
 written, which the house rule says must come first — a gap in brief A, noted.
+
+## E20 · The context sidebar, first build — the choices made while building it
+
+**Made:** lead, 2026-09-11, building the sidebar with Cole's direction
+(E15–E17).
+
+- **Library:** `@headless-tree/react` 1.7 for a set's tree (the tree study's
+  pick): it owns focus, expansion, selection and the ARIA keyboard pattern and
+  renders nothing, so rows are ours. Drag-and-drop, rename and new group /
+  document are left for the slice that adds the daemon verbs that make them real
+  moves (the library carries all three; `canReorder: false` per E17).
+- **Two views of one entry type:** the LIST of entries, and a SET drilled into
+  with a back button (mind-mapper's breadcrumb pattern, reduced to one level).
+  An entry holding exactly one document renders as that document and opens on
+  click; anything else drills in. The decision reads the nodes (`singleDoc`),
+  never a stored kind — E15 holds in the UI too.
+- **A single click opens a document** from the tree or the list (a sidebar, not
+  a file manager); Enter does the same from the keyboard.
+- **Sort:** groups first, then documents, by natural case-insensitive name (E17;
+  `sortNodes`, unit-tested).
+- **Paths are cut from the FRONT** (`…/drafts/notes`) because the end tells two
+  paths apart; the full path is the tooltip.
+- **Add by path** with completion from the daemon's directory listing
+  (`fs.list`), Tab completes and Enter adds — drag-and-drop still waits on E14's
+  spike.
+- **The sidebar's boundary is props-only** (entries, open doc, callbacks,
+  `listDir`), so it can move to `src/kit/` when a second app wants it (E16).
+- **Pane sizes live in the HOME's `prefs.json`**, not the browser: every session
+  is a new port and browser storage is keyed by origin, port included, so sizes
+  in localStorage reset at every `open` (slice-A finding). Driven: resized in
+  one session, a second session opened at those sizes. ⚠ **The theme still lives
+  in localStorage** (its pre-paint script reads it to avoid a flash), so it does
+  not yet carry across sessions — a follow-up, not done here.
+- **The read-only viewer carries no markdown language yet.**
+  `@codemirror/lang-markdown` pulls HTML, CSS and JavaScript languages in at
+  module scope, and the JavaScript language's snippet strings tripped the
+  import-boundary ward's text scan (a string literal read as an import). A
+  read-only view without a highlight style gained nothing from it, so it and its
+  two sibling packages were removed; the editing slice brings them back and must
+  settle the ward's string-literal reading and the bundle weight.
