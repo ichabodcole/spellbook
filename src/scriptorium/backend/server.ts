@@ -51,7 +51,7 @@
  * leaves a window in which a verb resolves a session that will refuse it.
  */
 
-import { type FSWatcher, statSync, unlinkSync, watch } from "node:fs";
+import { type FSWatcher, readFileSync, statSync, unlinkSync, watch } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -107,6 +107,26 @@ export async function startDaemon(opts: StartOpts) {
   const sessionId = session.id;
   let selection: Selection | null = null;
 
+  // --- prefs: per-viewer conveniences that outlive a session's port ------------
+  // Browser storage is keyed by origin, port included, and every session gets a
+  // new port — so a pane size kept in localStorage resets at the next `open`.
+  // They live in the home instead, shared by every session of this home.
+  const prefsFile = join(home, "prefs.json");
+  const PREF_KEY = /^[a-z][a-z0-9:._-]{0,63}$/;
+  const PREF_VALUE_MAX = 4096;
+  let prefs: Record<string, string> = {};
+  try {
+    const raw = JSON.parse(readFileSync(prefsFile, "utf8")) as unknown;
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      for (const [k, v] of Object.entries(raw))
+        if (PREF_KEY.test(k) && typeof v === "string" && v.length <= PREF_VALUE_MAX) prefs[k] = v;
+    }
+  } catch {
+    /* no prefs yet, or unreadable — start empty; a bad file is replaced on the next write */
+  }
+  const userHome = homedir();
+  const viewState = () => ({ ...session.view(mode, selection), prefs, userHome });
+
   // --- channels ---------------------------------------------------------------
   const sockets = new Set<import("bun").ServerWebSocket<unknown>>();
   const log = createEventLog<LogEvent>({ epoch: crypto.randomUUID() });
@@ -126,7 +146,7 @@ export async function startDaemon(opts: StartOpts) {
       }
     }
   };
-  const broadcastState = () => send({ type: "state", state: session.view(mode, selection) });
+  const broadcastState = () => send({ type: "state", state: viewState() });
 
   /** A system line in the chat — and, because the agent must know it too, on the tail. */
   const announce = (text: string, fact: Record<string, unknown> = {}) => {
@@ -300,6 +320,18 @@ export async function startDaemon(opts: StartOpts) {
         const r = session.openPath(msg.path);
         syncWatchers();
         broadcastState();
+        // The opener gets the active version's text straight away — the state
+        // snapshot carries no texts, and a viewer must not wait on a second ask.
+        {
+          const d = session.doc(r.slug);
+          reply(ws, {
+            type: "version.text",
+            doc: r.slug,
+            version: d.active,
+            text: session.readVersion(r.slug, d.active).text,
+            origin: "load",
+          });
+        }
         if (r.created)
           log.emit({ type: "doc.opened", doc: r.slug, path: session.activePath(r.slug) });
         return;
@@ -384,6 +416,29 @@ export async function startDaemon(opts: StartOpts) {
         syncWatchers();
         broadcastState();
         return;
+      case "read": {
+        reply(ws, {
+          type: "version.text",
+          doc: msg.doc,
+          version: msg.version,
+          text: session.readVersion(msg.doc, msg.version).text,
+          origin: "load",
+        });
+        return;
+      }
+      case "prefs.set": {
+        if (
+          !PREF_KEY.test(msg.key) ||
+          typeof msg.value !== "string" ||
+          msg.value.length > PREF_VALUE_MAX
+        )
+          throw new Error(`refused pref ${JSON.stringify(msg.key)}`);
+        if (prefs[msg.key] === msg.value) return;
+        prefs = { ...prefs, [msg.key]: msg.value };
+        writeFileAtomic(prefsFile, `${JSON.stringify(prefs, null, 2)}\n`);
+        broadcastState();
+        return;
+      }
       case "fs.list": {
         const path = expandHome(msg.path);
         try {
@@ -518,7 +573,7 @@ export async function startDaemon(opts: StartOpts) {
         return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 426 });
       if (req.method === "GET" && path === "/state") {
         touch();
-        const state = session.view(mode, selection);
+        const state = viewState();
         const full = url.searchParams.get("full") === "1";
         return Response.json({
           ...state,
@@ -573,7 +628,7 @@ export async function startDaemon(opts: StartOpts) {
       open(ws) {
         sockets.add(ws);
         touch();
-        ws.send(JSON.stringify({ type: "state", state: session.view(mode, selection) }));
+        ws.send(JSON.stringify({ type: "state", state: viewState() }));
       },
       message(ws, raw) {
         touch();

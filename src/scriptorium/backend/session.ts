@@ -748,7 +748,11 @@ export class Session {
     return this.docView(this.docOrDie(slug));
   }
 
-  view(mode: "dev" | "release", selection: Selection | null): PublicState {
+  /** The session's half of `PublicState`; the daemon adds the home-level `prefs` and `userHome`. */
+  view(
+    mode: "dev" | "release",
+    selection: Selection | null,
+  ): Omit<PublicState, "prefs" | "userHome"> {
     return {
       sessionId: this.m.sessionId,
       home: this.home,

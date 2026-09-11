@@ -168,6 +168,37 @@ describe("a session, end to end through the launchers", () => {
     expect(readFileSync(join(docs, "set", "a.md"), "utf8")).not.toContain("edited");
   });
 
+  test("the opener gets the active version's text; a later `read` asks for any version (sidebar slice)", async () => {
+    // `open` answered the surface with v1's text straight away (the snapshot carries no texts).
+    const loaded = surface.frames.find(
+      (m) => m.type === "version.text" && m.doc === "a" && m.version === 1 && m.origin === "load",
+    );
+    expect(loaded?.type === "version.text" && loaded.text.startsWith("# A")).toBe(true);
+    surface.send({ type: "read", doc: "a", version: 1 });
+    const again = await surface.waitFor(
+      (m) => m.type === "version.text" && m.doc === "a" && m.origin === "load" && m !== loaded,
+    );
+    expect(again.type === "version.text" && again.text).toContain("edited");
+  });
+
+  test("prefs.set persists in the HOME (not the browser) and rides the state; a bad key is refused", async () => {
+    surface.send({ type: "prefs.set", key: "panes:test", value: '{"context":40}' });
+    const st = await surface.waitFor(
+      (m) => m.type === "state" && m.state.prefs["panes:test"] === '{"context":40}',
+    );
+    expect(st.type === "state" && typeof st.state.userHome).toBe("string");
+    const onDisk = JSON.parse(readFileSync(join(root, "home", "prefs.json"), "utf8")) as Record<
+      string,
+      string
+    >;
+    expect(onDisk["panes:test"]).toBe('{"context":40}');
+    surface.send({ type: "prefs.set", key: "../../etc/passwd", value: "x" });
+    const err = await surface.waitFor(
+      (m) => m.type === "error" && m.message.includes("refused pref"),
+    );
+    expect(err.type).toBe("error");
+  });
+
   test("Save writes the original — and only then", async () => {
     surface.send({ type: "save", doc: "a" });
     await waitTail((l) => l.type === "saved");

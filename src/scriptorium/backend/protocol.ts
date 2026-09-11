@@ -107,6 +107,16 @@ export type PublicState = {
   openDoc: string | null;
   selection: Selection | null;
   chat: ChatMessage[];
+  /**
+   * Per-viewer conveniences (pane sizes, …), kept in `$SCRIPTORIUM_HOME/prefs.json`
+   * rather than the browser's storage: every session is a new port, and browser
+   * storage is keyed by origin — port included — so sizes kept there reset at
+   * every `open` (slice-A journal finding). String values only; the surface owns
+   * their meaning.
+   */
+  prefs: Record<string, string>;
+  /** The user's home directory, so the surface can show `~/notes` for a path. */
+  userHome: string;
 };
 
 export type FsListEntry = { name: string; path: string; dir: boolean };
@@ -123,7 +133,10 @@ export type ClientMsg =
   | { type: "revert"; doc: string }
   | { type: "context.add"; path: string }
   | { type: "context.remove"; id: string }
-  | { type: "fs.list"; path: string };
+  | { type: "fs.list"; path: string }
+  /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
+  | { type: "read"; doc: string; version: number }
+  | { type: "prefs.set"; key: string; value: string };
 
 /** Daemon → surface, over the WebSocket. */
 export type ServerMsg =
