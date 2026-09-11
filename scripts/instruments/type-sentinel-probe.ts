@@ -28,7 +28,10 @@
 //
 // ⚠ SCOPE FENCE (prospero, #991): this reads tsc's type INFORMATION as an
 // instrument. Any use of tsc that would FAIL A BUILD is the typecheck gate, which
-// Cole ruled out of sprint 05. Do not grow this into one.
+// Cole ruled out of sprint 05. Do not grow this into one. (Superseded 2026-09-10:
+// once the repo reached zero, Cole ruled the typecheck gate IN — type-debt T37,
+// `grimoire/type-check-ward.test.ts`. The fence still stands for THIS file: the
+// gate is that ward, not a grown version of this probe.)
 //
 // ⛔ MACHINE-BOUND ON PURPOSE, AND SAYING SO RATHER THAN LEAVING IT TO BE FOUND.
 // This file hardcodes an absolute path to this checkout (the `typescript` import

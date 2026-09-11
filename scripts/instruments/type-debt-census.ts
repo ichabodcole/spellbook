@@ -8,16 +8,15 @@
 // ⛔ DELIBERATELY NOT A `.test.ts`, for both of `gate-blind-set.ts`'s reasons.
 // A test file is COLLECTED the moment it exists, so an in-progress instrument
 // turns a peer's live gate red. And IT REPORTS, IT DOES NOT GATE: the only thing
-// that exits non-zero here is its OWN arithmetic breaking. 584 errors is a
-// finding to report; `grimoire/type-debt-ratchet.test.ts` is what gates on it,
-// exactly as that ward gates on this instrument's sibling.
+// that exits non-zero here is its OWN arithmetic breaking.
+// `grimoire/type-check-ward.test.ts` is what gates on it.
 //
-// ⛔ AND IT IS NOT A BLOCKING WHOLE-REPO TYPECHECK. Sprint 05 ruled that out
-// (`scripts/instruments/type-sentinel-probe.ts:30`) and the proposal's R2 keeps
-// the ruling. This runs tsc to COUNT, and the count is compared against a
-// declared per-area baseline that may only move when someone says so. A repo
-// with 584 errors cannot have a red-on-any-error gate, and pretending otherwise
-// would mean the gate is disabled within a day.
+// ⛔ AND THE GATE IT FEEDS IS NOW A BLOCKING WHOLE-REPO TYPECHECK — by Cole's
+// ruling, 2026-09-10 (type-debt T37), once the repo reached zero. Sprint 05 had
+// ruled one out (`scripts/instruments/type-sentinel-probe.ts:30`) because a repo
+// with 584 errors cannot have a red-on-any-error gate; the type-debt project
+// removed the reason, and with it the per-area ratchet that stood in for the
+// gate while the count was non-zero.
 //
 // ── THE QUESTION, STATED FIRST, BECAUSE THE QUESTION PICKS THE UNIT ─────────
 // Of the hand-authored TypeScript in this repo, HOW MANY `tsc --noEmit` errors
@@ -361,6 +360,9 @@ const runs: RunTally[] = [];
  *  across runs it is a double count. */
 const keptBy = new Map<string, string>();
 const doubleCounted: string[] = [];
+/** The kept diagnostics' own first lines (`path:line:col - error TSxxxx: …`),
+ *  so a failing gate prints tsc's words rather than a per-area count. */
+const diagnostics: string[] = [];
 for (const project of [".", ...WORKSPACES]) {
   const run = runTsc(project);
   const plain = run.stdout.replace(ANSI, "");
@@ -391,6 +393,7 @@ for (const project of [".", ...WORKSPACES]) {
     if (ownerOf(posix) !== project) continue;
     kept++;
     errorLines.push({ file: posix, code });
+    diagnostics.push(line.trim());
     const key = `${posix}:${lineNo}:${col}:${code}`;
     const prior = keptBy.get(key);
     if (prior !== undefined && prior !== project)
@@ -536,6 +539,7 @@ console.log(
       },
       closureHolds,
       doubleCounted,
+      diagnostics,
       sumOfAreas,
       unassigned,
       byClass: Object.fromEntries([...byClass.entries()].sort((a, b) => b[1] - a[1])),

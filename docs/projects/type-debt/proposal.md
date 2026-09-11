@@ -63,7 +63,10 @@ possibly undefined"_, _"used before being assigned"_. The rest: TS2345 ×114
 - **R1 — Per-area baseline, monotone down** (Cole, 2026-09-10). Each area
   declares its count; the check fails if the count RISES. Debt is recorded, not
   waived — the house's existing `knownFailures` idiom.
-- **R2 — Not a blocking whole-repo typecheck.** Sprint 05's ruling stands.
+- **R2 — Not a blocking whole-repo typecheck.** Sprint 05's ruling stands. ⛔
+  **Superseded at zero (Cole, 2026-09-10, T37):** type errors now block the
+  gate, through `grimoire/type-check-ward.test.ts`; the per-area ratchet was
+  retired because at zero it could only rise.
 - **R3 — Read every possibly-undefined; do not silence it.** `arr[i]!` and
   `?? fallback` both make the error disappear and only one is honest. **The
   valuable output is the handful of sites where the undefined was reachable**,
@@ -133,10 +136,10 @@ one branch each. By this point the pattern is known and the surprises are spent.
 - **The gate's reach, stated honestly:**
   - **biome** (`bun run check`): lint and format over hand-authored source,
     including `noUndeclaredVariables`. It does not type-check.
-  - **the ratchet** (`grimoire/type-debt-ratchet.test.ts`, inside `bun test`):
-    every `tsc --noEmit` error in every area, each workspace under its own
-    config. At zero, **any new type error reds the gate** — see T36 for why that
-    is a question for Cole.
+  - **the type check** (`grimoire/type-check-ward.test.ts`, inside `bun test`,
+    so inside `bun run gate` — deliberately not the pre-commit hook): every
+    `tsc --noEmit` error in every area, each workspace under its own config, and
+    every file on disk examined. **Any type error reds the gate** (T37).
   - **still unchecked:** the stricter flags `tsconfig.json` leaves off
     (`noUnusedLocals`, `noUnusedParameters`,
     `noPropertyAccessFromIndexSignature` — a second project, as scoped above);

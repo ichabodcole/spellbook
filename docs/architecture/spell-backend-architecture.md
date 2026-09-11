@@ -484,25 +484,25 @@ shape a spell's backend, stated by what they make you do:
 type-checks nothing. `check` is biome, which includes `noUndeclaredVariables`
 with `Bun` declared as a global. `test` is `bun test`, and it runs every
 grimoire ward. **Run the gate unpiped** and read its exit code from a file:
-`bun run gate | tail` reports `tail`'s exit code, which is always 0. **`tsc` is
-deliberately not in the gate** (Cole's sprint-05 ruling). Type debt is held by a
-ratchet instead: see below and
-[the type-debt project](../projects/type-debt/proposal.md).
+`bun run gate | tail` reports `tail`'s exit code, which is always 0. **Type
+errors block the gate** (Cole, 2026-09-10, once the repo reached zero —
+type-debt T37), through `type-check-ward` rather than a bare `tsc`: see below
+and [the type-debt project](../projects/type-debt/proposal.md).
 
-| guards                   | instrument                                                                                | what it holds                                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| the artifact             | `scripts/dist-check.ts`                                                                   | Contract 18: the committed `dist/` reproduces byte for byte. Not in the gate: it rebuilds in place, so it is CI's (§2) |
-|                          | `dist-roster-ward`                                                                        | every spell's `dist/` is un-ignored, so it doesn't silently ship absent                                                |
-|                          | `launcher-pairing-ward`                                                                   | backend entry ⇄ launcher, both directions; prints the per-spell `surface=[…] backend=[…]` census                       |
-|                          | `spawn-path-ward`                                                                         | every path a bundle pins resolves from the **emitted** location, including through kit resolvers (C8)                  |
-| the boundaries           | `import-boundary-wards`                                                                   | nothing in the plugin subtree resolves outside it; the kit imports nothing outside itself                              |
-|                          | `kit-adoption-ward`, `kit-prose-ward`, `kit-styling-ward`, `spell-css-scope-ward`         | the surface-side kit rules (Contract 21), including Tailwind's habit of scanning comments as classes                   |
-| the CLI contract         | `exit-site-inventory`, `terminator-invariant`, `strict-parse-invariant`, `flag-invariant` | how each entry ends; that unknown flags refuse; that free text never becomes a flag; that `SKILL.md` flags exist       |
-|                          | `error-choices-census`                                                                    | a rejection that has a closed set of valid answers in hand names it in `choices` (register A1)                         |
-| the daemon               | `daemon-lifecycle-ward`                                                                   | an exact-equality census of lifecycle clauses, per spell (C11)                                                         |
-| the roster and the canon | `roster-drift`, `rule-id`, `gate-honesty`                                                 | every shipped spell is declared; every house rule is addressable; the gate states what it cannot read                  |
-| types                    | `type-debt-ratchet` (with `scripts/instruments/type-debt-census.ts`)                      | a per-area exact-equality baseline: a count that rises **or** falls fails, with an instruction                         |
-| agent conformance        | `acc` per skill (`acc.config.json`)                                                       | the CLI's declared surface; **run it from the skill directory** — its config discovery is cwd-based                    |
+| guards                   | instrument                                                                                | what it holds                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the artifact             | `scripts/dist-check.ts`                                                                   | Contract 18: the committed `dist/` reproduces byte for byte. Not in the gate: it rebuilds in place, so it is CI's (§2)                                         |
+|                          | `dist-roster-ward`                                                                        | every spell's `dist/` is un-ignored, so it doesn't silently ship absent                                                                                        |
+|                          | `launcher-pairing-ward`                                                                   | backend entry ⇄ launcher, both directions; prints the per-spell `surface=[…] backend=[…]` census                                                               |
+|                          | `spawn-path-ward`                                                                         | every path a bundle pins resolves from the **emitted** location, including through kit resolvers (C8)                                                          |
+| the boundaries           | `import-boundary-wards`                                                                   | nothing in the plugin subtree resolves outside it; the kit imports nothing outside itself                                                                      |
+|                          | `kit-adoption-ward`, `kit-prose-ward`, `kit-styling-ward`, `spell-css-scope-ward`         | the surface-side kit rules (Contract 21), including Tailwind's habit of scanning comments as classes                                                           |
+| the CLI contract         | `exit-site-inventory`, `terminator-invariant`, `strict-parse-invariant`, `flag-invariant` | how each entry ends; that unknown flags refuse; that free text never becomes a flag; that `SKILL.md` flags exist                                               |
+|                          | `error-choices-census`                                                                    | a rejection that has a closed set of valid answers in hand names it in `choices` (register A1)                                                                 |
+| the daemon               | `daemon-lifecycle-ward`                                                                   | an exact-equality census of lifecycle clauses, per spell (C11)                                                                                                 |
+| the roster and the canon | `roster-drift`, `rule-id`, `gate-honesty`                                                 | every shipped spell is declared; every house rule is addressable; the gate states what it cannot read                                                          |
+| types                    | `type-check-ward` (with `scripts/instruments/type-debt-census.ts`)                        | zero `tsc --noEmit` errors, each `src/<spell>/tsconfig.json` workspace under its own config, and every file examined — an unexamined area is red, never a zero |
+| agent conformance        | `acc` per skill (`acc.config.json`)                                                       | the CLI's declared surface; **run it from the skill directory** — its config discovery is cwd-based                                                            |
 
 ### The rule the instruments taught
 

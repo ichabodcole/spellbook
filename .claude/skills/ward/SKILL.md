@@ -107,8 +107,7 @@ Then confirm that exact set appears in each listing above.
 - [ ] **The pinned instruments name the spell.** Expect reds and edit the pins
       deliberately: `roster-drift`, `flag-invariant`
       (`SPELLS_WITHOUT_SKILL_MD`), `dist-roster-ward`, `launcher-pairing-ward`,
-      `gate-honesty` (`DECLARED_BLIND`), `type-debt-ratchet`
-      (`DECLARED_BASELINE` + total), `exit-site-inventory` (a terminal-exit
+      `gate-honesty` (`DECLARED_BLIND`), `exit-site-inventory` (a terminal-exit
       launcher is a pinned `E-terminal` row), `daemon-lifecycle-ward` (**five
       pins**), `import-boundary-wards` (`PINNED_DYNAMIC_ESCAPES`),
       `kit-styling-ward` (`KIT_CONSUMERS`), `terminator-invariant`

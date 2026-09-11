@@ -1684,3 +1684,37 @@ with an account beside the pin — so it is a gate with a documented override, n
 an absolute one. Whether that is the gate Cole wants is his call (cost and
 process are his lane); the alternative is to let the ratchet stand and re-read
 R2 explicitly. Nothing was changed to force either answer.
+
+## T37 · Type errors block the gate — the ratchet becomes a type check
+
+**Ruled by Cole, 2026-09-10**, answering T36's question: "yep, your
+recommendation sounds good to me."
+
+At zero the per-area ratchet could only move up, so its baseline, its
+re-declaration accounts and its FELL/ARRIVED/DEPARTED/MOVED sentences guarded a
+direction that no longer existed. `grimoire/type-debt-ratchet.test.ts` became
+`grimoire/type-check-ward.test.ts`. (Git records it as a delete plus an add —
+the file changed by more than half — so the ratchet's history is read under its
+old name, e.g. `git log -- grimoire/type-debt-ratchet.test.ts`, not via
+`--follow`.)
+
+- **kept:** the census invocation; **ZERO** — no error in any area, the red
+  printing tsc's own first line for each (the census now carries `diagnostics`);
+  **coverage** — every area measured and every file on disk examined, so an
+  `exclude` or an unreached spell is red and never a zero; the census's
+  arithmetic, including the double-count check; and the calibration cells that
+  still discriminate (control, workspace, a backend error, the surface/backend
+  split, NOT LOOKED AT, the multi-line diagnostic).
+- **removed:** `DECLARED_BASELINE`, `DECLARED_TOTAL`, `movements()`, the
+  re-declaration comment blocks, and the FALL/ARRIVING/MOVED cells. The accounts
+  live in git history and in this project's journals.
+
+**Why not a bare `tsc --noEmit` in the gate:** the root config reports ~40 false
+errors for the two `@/`-aliased workspaces (T32), and an exit code cannot tell
+clean from unexamined (D42). **Calibrated:** one planted error in `src/kit` reds
+the ward and prints `src/kit/lib/cn.ts:12:14 - error TS2322: …`.
+
+**Placement:** `bun test`, hence `bun run gate` and CI — **not** the husky
+pre-commit hook, because tsc checks the whole program (~9 s) rather than the
+staged files. The sprint-05 fence in `type-sentinel-probe.ts` now names this
+supersession, and still fences that probe.
