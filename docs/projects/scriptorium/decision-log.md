@@ -238,3 +238,14 @@ pane, modelled on Operator's `StatusBar.vue`: the active version and its author
 (human or agent), updated time, saved or unsaved state, and word and character
 counts (debounced, per Operator's `useContentStats`). Placed in the layout now
 because it takes vertical space; values arrive with the viewer.
+
+## E19 · Scriptorium's surface may take the libraries it needs
+
+**Ruled:** Cole, 2026-09-11 — "I'm fine with adding whatever we need for this
+spell." Recorded against `grimoire/house-style.md`'s surface dependency cap as a
+scoped exception: `react-resizable-panels`, `@headless-tree/core` and
+`@headless-tree/react`, and the CodeMirror 6 packages (`state`, `view`,
+`commands`, `language`, `lang-markdown`, later `merge`). This follows Cole's
+direction to prefer well-supported libraries over hand-built components (the
+tree study). `react-resizable-panels` landed in slice A before the ruling was
+written, which the house rule says must come first — a gap in brief A, noted.
