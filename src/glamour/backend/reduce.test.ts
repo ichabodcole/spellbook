@@ -23,6 +23,18 @@ import {
   updateSection,
 } from "./reduce";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the item has property X" into "there is no item", which a falsy or
+ * `toBeUndefined()` assertion then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 const img = () =>
   makeItem({
     id: "a",
@@ -61,7 +73,7 @@ test("setStar / setLike toggle and report unknown ids", () => {
   const s = defaultState("t", "");
   addItem(s, img());
   expect(setStar(s, "a", true)).toBe(true);
-  expect(s.library[0].starred).toBe(true);
+  expect(must(s.library[0], "the item this test added is in the library").starred).toBe(true);
   expect(setLike(s, "a", true)).toBe(true);
   expect(setStar(s, "zzz", true)).toBe(false);
 });
@@ -71,7 +83,7 @@ test("annotate writes the right side", () => {
   addItem(s, img());
   expect(annotate(s, "a", "agent", "warm palette")).toBe(true);
   expect(annotate(s, "a", "human", "love this")).toBe(true);
-  expect(s.library[0].annotations).toEqual({
+  expect(must(s.library[0], "the item this test added is in the library").annotations).toEqual({
     agent: "warm palette",
     human: "love this",
   });
@@ -105,9 +117,9 @@ test("setItemArchived sets archived and returns false for unknown id", () => {
   const s = defaultState("t", "");
   addItem(s, img());
   expect(setItemArchived(s, "a", true)).toBe(true);
-  expect(s.library[0].archived).toBe(true);
+  expect(must(s.library[0], "the item this test added is in the library").archived).toBe(true);
   expect(setItemArchived(s, "a", false)).toBe(true);
-  expect(s.library[0].archived).toBe(false);
+  expect(must(s.library[0], "the item this test added is in the library").archived).toBe(false);
   expect(setItemArchived(s, "zzz", true)).toBe(false);
 });
 
@@ -120,7 +132,9 @@ test("applyAgentMsg mutates state", () => {
   applyAgentMsg(s, { type: "intent", text: "icons" });
   expect(s.intent).toBe("icons");
   applyAgentMsg(s, { type: "item.annotate", id: "a", agent: "cool blues" });
-  expect(s.library[0].annotations.agent).toBe("cool blues");
+  expect(must(s.library[0], "the item this test added is in the library").annotations.agent).toBe(
+    "cool blues",
+  );
   applyAgentMsg(s, { type: "status", busy: true, text: "generating" });
   expect(s.status).toEqual({ busy: true, text: "generating" });
 });
@@ -144,7 +158,9 @@ test("addMessage appends in order", () => {
     ts: 2,
   });
   expect(s.messages.map((m) => m.id)).toEqual(["m1", "m2"]);
-  expect(s.messages[0].ground).toEqual(["ref-1"]);
+  expect(must(s.messages[0], "the message this test pushed is the first").ground).toEqual([
+    "ref-1",
+  ]);
 });
 
 test("updateSection patches only provided fields and returns true", () => {
@@ -235,6 +251,8 @@ describe("focus + gen-cost reducers", () => {
       starred: false,
       liked: false,
       annotations: { agent: "", human: "" },
+      canonical: false,
+      canon: [],
       archived: false,
       createdAt: 1,
       gen: {
@@ -247,7 +265,7 @@ describe("focus + gen-cost reducers", () => {
       },
     });
     expect(setGenCost(s, "gen-1", 0.011)).toBe(true);
-    expect(s.library[0].gen?.cost).toBe(0.011);
+    expect(must(s.library[0], "the item this test added is in the library").gen?.cost).toBe(0.011);
     expect(setGenCost(s, "nope", 0.5)).toBe(false);
   });
 
@@ -265,18 +283,27 @@ describe("focus + gen-cost reducers", () => {
       starred: false,
       liked: false,
       annotations: { agent: "", human: "" },
+      canonical: false,
+      canon: [],
       archived: false,
       createdAt: 1,
       gen: { model: "m", prompt: "label", seed: null, cost: null, custom: { a: "1" }, round: 1 },
     });
     // direct helper
     expect(setGenMeta(s, "gen-2", { prompt: "the real prompt", custom: { refs: "x" } })).toBe(true);
-    expect(s.library[0].gen?.prompt).toBe("the real prompt");
-    expect(s.library[0].gen?.custom).toEqual({ a: "1", refs: "x" });
+    expect(must(s.library[0], "the item this test added is in the library").gen?.prompt).toBe(
+      "the real prompt",
+    );
+    expect(must(s.library[0], "the item this test added is in the library").gen?.custom).toEqual({
+      a: "1",
+      refs: "x",
+    });
     expect(setGenMeta(s, "nope", { prompt: "x" })).toBe(false);
     // routed through applyAgentMsg
     applyAgentMsg(s, { type: "gen.meta", id: "gen-2", prompt: "via cmd" });
-    expect(s.library[0].gen?.prompt).toBe("via cmd");
+    expect(must(s.library[0], "the item this test added is in the library").gen?.prompt).toBe(
+      "via cmd",
+    );
   });
 
   test("applyAgentMsg routes focus.push and gen.cost", () => {
@@ -320,7 +347,7 @@ describe("styles tray + canonical reducers", () => {
       gen: null,
     });
     expect(setCanonical(s, "ref-1", true)).toBe(true);
-    expect(s.library[0].canonical).toBe(true);
+    expect(must(s.library[0], "the item this test added is in the library").canonical).toBe(true);
     expect(setCanonical(s, "nope", true)).toBe(false);
   });
 
@@ -328,7 +355,7 @@ describe("styles tray + canonical reducers", () => {
     const s = defaultState("t", "i");
     s.tray.push({ ...sampleStyle });
     expect(archiveTrayStyle(s, "s1", true)).toBe(true);
-    expect(s.tray[0].archived).toBe(true);
+    expect(must(s.tray[0], "the style this test saved is in the tray").archived).toBe(true);
     expect(archiveTrayStyle(s, "nope", true)).toBe(false);
   });
 
@@ -354,6 +381,6 @@ describe("styles tray + canonical reducers", () => {
     const s = defaultState("t", "i");
     s.tray.push({ ...sampleStyle });
     applyAgentMsg(s, { type: "style.archive", id: "s1", archived: true });
-    expect(s.tray[0].archived).toBe(true);
+    expect(must(s.tray[0], "the style this test saved is in the tray").archived).toBe(true);
   });
 });

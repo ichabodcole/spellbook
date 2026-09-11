@@ -4,6 +4,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "./server";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the item has property X" into "there is no item", which a falsy or
+ * `toBeUndefined()` assertion then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 let d: Awaited<ReturnType<typeof startDaemon>>;
 let base: string;
 
@@ -104,7 +116,7 @@ test("POST /cmd item.annotate mutates state; agent annotations emit no event", a
     state: { library: { id: string }[] };
   };
   expect(s1.state.library.length).toBe(1);
-  const id = s1.state.library[0].id;
+  const id = must(s1.state.library[0], "the add this test posted is in the library").id;
 
   await fetch(`${base}/cmd`, {
     method: "POST",
@@ -114,7 +126,9 @@ test("POST /cmd item.annotate mutates state; agent annotations emit no event", a
   const s2 = (await (await fetch(`${base}/state`)).json()) as {
     state: { library: { annotations: { agent: string } }[] };
   };
-  expect(s2.state.library[0].annotations.agent).toBe("cute-occult");
+  expect(
+    must(s2.state.library[0], "the add this test posted is in the library").annotations.agent,
+  ).toBe("cute-occult");
   ws.close();
 });
 
@@ -164,7 +178,7 @@ test("message.send appends a grounded user message and emits message.user", asyn
   const s1 = (await (await fetch(`${base}/state`)).json()) as {
     state: { library: { id: string }[] };
   };
-  const id = s1.state.library[0].id;
+  const id = must(s1.state.library[0], "the add this test posted is in the library").id;
   ws.send(JSON.stringify({ type: "item.select", ids: [id] }));
   await Bun.sleep(50);
 
@@ -364,7 +378,7 @@ test("style.bringIn adds a kind:style item and emits item.add", async () => {
   const s0 = (await (await fetch(`${base}/state`)).json()) as {
     state: { tray: { id: string }[] };
   };
-  const styleId = s0.state.tray[0].id;
+  const styleId = must(s0.state.tray[0], "the style this test saved is in the tray").id;
   const ws = new WebSocket(`ws://127.0.0.1:${d.port}/ws`);
   await new Promise((res) => (ws.onopen = () => res(null)));
   ws.send(JSON.stringify({ type: "style.bringIn", id: styleId }));

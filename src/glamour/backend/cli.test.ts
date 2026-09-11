@@ -27,6 +27,7 @@ import {
   buildStyleSaveCmd,
   parseArgs,
   parseCustom,
+  UsageError,
 } from "./cli";
 
 describe("cli command construction", () => {
@@ -128,6 +129,15 @@ describe("slice 3 cli builders", () => {
       model: "m",
       round: 1,
     });
+  });
+
+  test("a builder called without the positional dispatch guarantees refuses as usage", () => {
+    // Impossible through the CLI (arity dispatch refuses first); the builders
+    // are exported, so the absence is a named usage refusal rather than a
+    // command posted with `id: undefined` (type-debt Phase 3c, T22's third row).
+    expect(() => buildGenCostCmd([], {})).toThrow(UsageError);
+    expect(() => buildSectionCmd([], {})).toThrow("missing <key>");
+    expect(() => buildStyleArchiveCmd([], {})).toThrow("missing <id>");
   });
 
   test("buildGenCostCmd parses id + numeric cost", () => {

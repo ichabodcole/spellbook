@@ -10,6 +10,18 @@ import {
   setStyleArchived,
 } from "./styles.server";
 
+/**
+ * Read a value this test's own setup is contracted to have produced, and fail
+ * NAMING that contract if it did not (type-debt T11/T22: a LOCAL copy — a test
+ * under `src/` imports nothing from `grimoire/`). Not `?.`: an optional read
+ * turns "the item has property X" into "there is no item", which a falsy or
+ * `toBeUndefined()` assertion then passes for free.
+ */
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
+}
+
 let HOME: string;
 beforeAll(() => {
   HOME = mkdtempSync(join(tmpdir(), "glamour-styles-"));
@@ -42,6 +54,7 @@ test("saveStyle copies canonical blobs + writes the record; loadTray reads it ba
         status: "agreed",
         content: "indigo",
         prompts: [],
+        colors: [],
       },
     ],
     canonicalItems: [
@@ -86,8 +99,12 @@ test("materializeCanon returns data-URLs for the copied blobs", () => {
   if (!style) throw new Error("style not found");
   const canon = materializeCanon(HOME, key, style);
   expect(canon).toHaveLength(1);
-  expect(canon[0].title).toBe("hero");
-  expect(canon[0].src.startsWith("data:image/webp;base64,")).toBe(true);
+  expect(must(canon[0], "the one canonical image this test saved").title).toBe("hero");
+  expect(
+    must(canon[0], "the one canonical image this test saved").src.startsWith(
+      "data:image/webp;base64,",
+    ),
+  ).toBe(true);
 });
 
 test("setStyleArchived flips the flag on disk", () => {

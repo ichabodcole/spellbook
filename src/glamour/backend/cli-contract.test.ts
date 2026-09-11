@@ -205,7 +205,9 @@ test("a parser rejection's envelope still names the verb that was being run", ()
 test("VERB_SPEC and VERBS name the same verbs, and every registry flag belongs to some verb", () => {
   expect(Object.keys(VERB_SPEC).sort()).toEqual([...VERBS].sort());
   // A registry flag no verb accepts is dead surface the parser still reads.
-  const owned = new Set(Object.values(VERB_SPEC).flatMap((row) => [...row]));
+  // Widened to `string` on purpose: the question is whether an arbitrary
+  // registry spelling is owned, and `Set<Flag>.has` refuses to be asked it.
+  const owned: ReadonlySet<string> = new Set(Object.values(VERB_SPEC).flatMap((row) => [...row]));
   const orphans = RECOGNIZED_FLAGS.filter((f) => !owned.has(f.slice(2)));
   expect(orphans).toEqual([]);
 });
