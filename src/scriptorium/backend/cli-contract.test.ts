@@ -8,8 +8,8 @@
 // failure, exactly one JSON envelope on stderr, its exit_code equal to the
 // process's, `choices` wherever the valid set is in hand (register A1).
 
-import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { afterAll, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync as mkdtempRaw, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +27,18 @@ const SKILL_ROOT = join(
   "scriptorium",
 );
 const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
+
+// Every temp dir a cell makes is removed after the file — the contract cells
+// must not litter the machine's temp directory with pointer stubs.
+const made: string[] = [];
+const mkdtempSync = (prefix: string): string => {
+  const d = mkdtempRaw(prefix);
+  made.push(d);
+  return d;
+};
+afterAll(() => {
+  for (const d of made) rmSync(d, { recursive: true, force: true });
+});
 
 // An empty TMPDIR (no session pointer) and an empty home: no cell here can
 // reach a live scriptorium on this machine.
