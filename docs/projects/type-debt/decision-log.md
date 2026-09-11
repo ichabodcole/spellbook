@@ -1304,3 +1304,68 @@ the new zero convicts.
   did, and the reason Phase 2 met the same sentence.
 - _Apply #3 as well._ There is no code that can hold "prefer the census over a
   grep"; the honest place is the journal, where it now appears twice.
+
+---
+
+## T25 · The unassigned `plugins/` area is split BY SPELL and folded into each spell's phase
+
+**Decided:** lead, 2026-09-10, opening Phase 3.
+
+The proposal's measurement table lists `plugins/` at **21** errors, and its
+phase list assigns that area to **no phase** — Phases 1–4 name `grimoire/`,
+`scripts/`, and the eight `src/<spell>` trees. Measured at Phase 3's start, the
+21 are **19 in astrolabe's own `scripts/state.ts` + `state.test.ts`**, one in
+`glamour/tests/types.test.ts`, and one in grapevine's `scripts/daemon.ts`
+launcher. They are each spell's own shipped files, so they go with the spell:
+astrolabe's 19 land in Phase 3a, glamour's 1 in Phase 3c, grapevine's 1 in
+Phase 4.
+
+**Not taken:**
+
+- _A separate `plugins/` phase._ It would split one spell's fixes across two
+  branches and re-read the same types twice.
+- _Make `plugins/<spell>` its own ratchet area._ Defensible, and a change to the
+  instrument's area derivation (T3) for three files. Not worth it while the area
+  is about to be two errors.
+
+## T26 · ⚠ An ANNOTATION OVER AN `any` SOURCE is a silencing route — honest only when the producer is held to the same type
+
+**Decided:** lead, 2026-09-10, Phase 3a (astrolabe).
+
+Seventeen of astrolabe's errors fell to one line: `cardOf`'s parameter in
+`server.test.ts` went from `Array<{ id: string }>` to `ProjectCard[]`. Its
+argument is `fetch(...).then((r) => r.json())` — **`any`**. Annotating an `any`
+is a cast by another name: it would assert a field present that the wire never
+carries exactly as confidently as one that it does.
+
+**It is honest here because the producing end was tightened in the same
+change.** The daemon's `projectCards()` had no return annotation, so the wire
+type `ProjectCard` in `state.ts` described the board to the SURFACE and bound
+nothing in the DAEMON. It is now `projectCards(): ProjectCard[]` and
+`projectState(): ObservatoryView`. **Calibrated:** the projection's `zone`
+mutated from `"quiet"` to `"idle"` → `TS2322` at the projection → the ratchet
+printed `ROSE — area "src/astrolabe/backend" 0 -> 1 (+1)`. **Before this change
+that drift type-checked**, so the phase added a check rather than only removing
+errors.
+
+The route is now in the FELL sentence (the eighth). Phase 2's journal said the
+sentence should become a pointer to a ROUTES block once an eighth was taken; it
+has been, and that refactor is left for its own change rather than folded into a
+type commit.
+
+## T27 · `ReturnType<typeof Bun.serve>` is a WRONG ANNOTATION in four spells, and each fixes it in its own phase
+
+**Decided:** lead, 2026-09-10, Phase 3a.
+
+`let server: ReturnType<typeof Bun.serve>;` resolves the generic's
+`WebSocketData` to `unknown`, and that annotation flows back into the assignment
+as the call's contextual type — so `srv.upgrade(req)` demands a `data` option
+(TS2554). Glamour writes `const server = Bun.serve(...)` with no annotation and
+has no error. **Astrolabe, bounty, imago and magpie** all carry the annotated
+line and all four report TS2554 at their `upgrade`.
+
+Astrolabe's fix is `let server: Bun.Server<undefined>;` — true, since no handler
+reads `ws.data`. **Driven:** the built daemon answers `/ws` with a `state`
+frame. Each of the other three must check that its own handlers read no
+`ws.data` before copying the line; the fix is per-spell in its own phase, not a
+roster sweep.

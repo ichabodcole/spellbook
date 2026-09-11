@@ -221,17 +221,55 @@ import { join } from "node:path";
 // passed green against a mutated source because the cell spawns the LAUNCHER,
 // which reads `dist/`. Contract 18 governs committing the artifact; nothing
 // warned that CALIBRATION reads it too.
+//
+// ⛔ RE-DECLARED 2026-09-10 — PHASE 3a, ASTROLABE: `src/astrolabe/backend`
+// 19 -> 0, `src/astrolabe/surface` 1 -> 0, and `plugins` 21 -> 2 (astrolabe's
+// own `scripts/state.ts` + `state.test.ts`, which the proposal measured under
+// `plugins/` and assigned to no phase — folded in here as the spell's own
+// files; the 2 left are glamour's and grapevine's, for their phases). Total
+// 535 -> 496 (-39, exactly what was fixed). Route by route:
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback`, NO file
+//     deleted or added, NO de-duplication (the two `hashString` copies in
+//     `state.ts` and `board.ts` were left alone — D64).
+//   • 18 test reads are LOCAL `must(v, "<invariant>")` throws in the shipped
+//     `state.test.ts` (T22's test-file row). CALIBRATED: `applyAttention` made
+//     to DROP the status entry on clear -> the "clearing drops the question"
+//     cell reds with `INVARIANT VIOLATED — a status or attention post …`.
+//     `?.` was refused because `expect(s.status.imago?.question)
+//     .toBeUndefined()` passes with no entry at all.
+//   • 2 shipped reads (`fallbackAvatar`, `avatarRing`) are EXPLICIT NAMED
+//     BRANCHES (T22's shipped-code row): a non-empty literal indexed modulo
+//     its own length, impossible today, each branch naming its answer.
+//   • 1 was a WRONG ANNOTATION, not a missing check: `ReturnType<typeof
+//     Bun.serve>` resolves the generic's `WebSocketData` to `unknown` and fed
+//     that back into the call, so `srv.upgrade(req)` demanded a `data` option.
+//     Now `Bun.Server<undefined>` — true, since no handler reads `ws.data`.
+//     DRIVEN: the built daemon answers `/ws` with a `state` frame.
+//     (bounty, imago and magpie carry the same line; their phases, not here.)
+//   • 1 was a DOM-vs-Bun lib clash: `for await` over `Bun.stdin.stream()`.
+//     Replaced with `Bun.stdin.text()` (the house shape). DRIVEN: multibyte
+//     UTF-8, an embedded newline and the trim all arrive intact via `--stdin`.
+//   • ⚠ 17 test errors fell to an ANNOTATION OVER AN `any` SOURCE — `cardOf`'s
+//     parameter now says `ProjectCard[]` for a `.json()` result. That is a cast
+//     by another name and would launder a genuinely-absent field just as well.
+//     It is honest HERE only because the other end was tightened in the same
+//     change: the daemon's `projectCards()` is now annotated `ProjectCard[]`
+//     (and `projectState()` `ObservatoryView`), so the type the test assumes is
+//     the type the compiler holds the daemon to. CALIBRATED: the projection's
+//     `zone` mutated to `"idle"` -> TS2322 at the projection, i.e. a ROSE here.
+//     Before this change that drift type-checked. The FELL sentence now names
+//     this route.
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
   docs: 0,
   grimoire: 0,
-  plugins: 21,
+  plugins: 2,
   scripts: 0,
   src: 0,
   "src/astrolabe": 0,
-  "src/astrolabe/backend": 19,
-  "src/astrolabe/surface": 1,
+  "src/astrolabe/backend": 0,
+  "src/astrolabe/surface": 0,
   "src/bounty": 0,
   "src/bounty/backend": 125,
   "src/bounty/surface": 3,
@@ -260,7 +298,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 535;
+const DECLARED_TOTAL = 496;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
@@ -378,7 +416,7 @@ function movements(areas: AreaRow[], declared: Record<string, number>): string[]
       );
     } else if (delta < 0) {
       out.push(
-        `FELL — area "${area}" ${was} -> ${row.errors} (${delta}). Good news, and THE BASELINE IS NOW STALE: lower it to ${row.errors}, AND WRITE THE ACCOUNT IN THE COMMENT BLOCK ABOVE \`DECLARED_BASELINE\` — a "RE-DECLARED <date>" paragraph answering this sentence route by route, beside the integer you are about to edit. ⛔ First establish that ${-delta} error(s) were FIXED and not silenced. Every one of these lowers the number with nothing fixed: an \`arr[i]!\`, an \`as any\`, a \`@ts-expect-error\`, a deleted file, a de-duplication that hid an indexed read behind a parameter (D64), a \`.filter()\` TYPE PREDICATE (\`(x): x is T =>\`) added without the runtime clause that makes it true, or a value moved ACROSS A FUNCTION BOUNDARY into a non-optional parameter — an extracted helper launders a genuinely-absent value exactly as well as it launders a false narrowing.`,
+        `FELL — area "${area}" ${was} -> ${row.errors} (${delta}). Good news, and THE BASELINE IS NOW STALE: lower it to ${row.errors}, AND WRITE THE ACCOUNT IN THE COMMENT BLOCK ABOVE \`DECLARED_BASELINE\` — a "RE-DECLARED <date>" paragraph answering this sentence route by route, beside the integer you are about to edit. ⛔ First establish that ${-delta} error(s) were FIXED and not silenced. Every one of these lowers the number with nothing fixed: an \`arr[i]!\`, an \`as any\`, a \`@ts-expect-error\`, a deleted file, a de-duplication that hid an indexed read behind a parameter (D64), a \`.filter()\` TYPE PREDICATE (\`(x): x is T =>\`) added without the runtime clause that makes it true, or a value moved ACROSS A FUNCTION BOUNDARY into a non-optional parameter — an extracted helper launders a genuinely-absent value exactly as well as it launders a false narrowing — or an ANNOTATION OVER AN \`any\` SOURCE (a \`.json()\` result typed as a wire type), which is a cast by another name unless the producing end is held to the same type.`,
       );
     }
   }
