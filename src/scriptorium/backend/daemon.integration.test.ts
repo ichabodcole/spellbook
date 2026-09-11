@@ -31,10 +31,6 @@ const env = {
   ...process.env,
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
-  // Until the surface chapter lands a built index.html, the daemon would
-  // resolve DEV mode and import a surface that does not exist yet; forcing
-  // release keeps this chapter's cells about the backend alone.
-  SPELLBOOK_SURFACE_MODE: "release",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const docs = join(root, "docs");
@@ -138,7 +134,10 @@ describe("a session, end to end through the launchers", () => {
     throw new Error(`tail never printed the line; got ${tailOut}`);
   };
 
-  test("open knows both entries (E15)", async () => {
+  test("open serves the built surface (release mode) and knows both entries (E15)", async () => {
+    const page = await fetch(`http://127.0.0.1:${port}/`);
+    expect(page.status).toBe(200);
+    expect(await page.text()).toContain("<title>scriptorium</title>");
     const st = JSON.parse((await cli("state")).out) as PublicState;
     expect(st.mode).toBe("release");
     expect(st.context.map((e) => [e.label, e.membership])).toEqual([
