@@ -26,7 +26,16 @@
  * lets the unit cells drive the whole model with a temp home.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import type {
@@ -52,7 +61,9 @@ type DocRecord = {
   ext: string;
   versions: Omit<Version, "path">[];
   active: number;
-  /** Hash of the original as we last read or wrote it. */
+  /** Hash of the original as we last read or wrote it — at open, save, revert
+   *  and reload — so a restore can tell that it changed while no daemon was
+   *  watching (verify-pass fix 2). */
   originalHash: string;
   /** Set only by `openPath`, which admits a doc-type file INSIDE a context
    *  entry. `save` writes no original that lacks it (verify-pass fix 1c). */
@@ -90,10 +101,27 @@ const randHex = (n: number) =>
 
 export const newSessionId = (): string => randHex(4);
 
+/** A path's realpath, or the path itself when it cannot be resolved (gone). */
+export function realOr(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+}
+
 /** What a watcher event turned out to be. `null` = nothing (ours, or no change). */
 export type FileEvent =
   | { kind: "version.changed"; doc: string; version: number; text: string; active: false }
-  | { kind: "active.outside"; doc: string; version: number; text: string; path: string }
+  | {
+      kind: "active.outside";
+      doc: string;
+      version: number;
+      path: string;
+      /** The new agent version the outside text was preserved as. */
+      preservedAs: number;
+      preservedPath: string;
+    }
   | { kind: "version.created"; doc: string; version: number; path: string }
   | { kind: "original.reloaded"; doc: string; version: number; text: string; original: string }
   | { kind: "original.conflict"; doc: string; original: string }
@@ -106,6 +134,11 @@ export class Session {
   private owned = new Map<string, string>();
   /** slug → hash of the active version's current text. */
   private activeHash = new Map<string, string>();
+  /** slug → the active version's text as the daemon last wrote (or adopted)
+   *  it — what an outside write to the active version is reverted to. */
+  private lastActiveText = new Map<string, string>();
+  /** What a restore found changed on disk while no daemon was watching. */
+  restoreFindings: { doc: string; original: string; missing: boolean }[] = [];
 
   private constructor(
     readonly home: string,
@@ -144,8 +177,25 @@ export class Session {
     for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
     for (const d of s.m.docs) {
       const p = s.versionPath(d, d.active);
-      s.activeHash.set(d.slug, existsSync(p) ? contentHash(readFileSync(p, "utf8")) : "");
+      const text = existsSync(p) ? readFileSync(p, "utf8") : "";
+      s.adoptActive(d, text);
+      // ⛔ VERIFY-PASS FIX 2: an original changed while the session was closed
+      // was invisible here, so the next Save overwrote it unannounced. The
+      // manifest holds the original's hash as of the last open/save/revert/
+      // reload; a different hash now is an outside change, marked exactly as a
+      // live one with a dirty buffer is — asked, never merged or reloaded.
+      let now: string | null = null;
+      try {
+        now = contentHash(readFileSync(d.original, "utf8"));
+      } catch {
+        now = null;
+      }
+      if (now === null || now !== d.originalHash) {
+        d.outsideChanged = true;
+        s.restoreFindings.push({ doc: d.slug, original: d.original, missing: now === null });
+      }
     }
+    if (s.restoreFindings.length > 0) s.persist();
     return s;
   }
 
@@ -175,18 +225,38 @@ export class Session {
     return this.m.context;
   }
 
-  /** Every directory the watcher must see: the session's docs, and each entry root. */
-  watchRoots(): { path: string; recursive: boolean; entryId?: string }[] {
-    const roots: { path: string; recursive: boolean; entryId?: string }[] = [
-      { path: this.docsDir, recursive: true },
+  /**
+   * Every directory the watcher must see: the session's docs, each entry root,
+   * and the REAL directory of every opened original.
+   *
+   * ⛔ VERIFY-PASS FIX 3: each root is watched at its REALPATH (`watch`), and
+   * an event is reported under the path form the session stores (`path`). A
+   * watch on a symlinked directory — a symlinked home, a symlinked folder
+   * entry — or on the link's own directory for a symlinked original saw
+   * nothing when the TARGET changed (FSEvents reports real paths). A symlinked
+   * original is matched back to its doc by realpath in `onFileEvent`.
+   */
+  watchRoots(): { path: string; watch: string; recursive: boolean; entryId?: string }[] {
+    const roots: { path: string; watch: string; recursive: boolean; entryId?: string }[] = [
+      { path: this.docsDir, watch: realOr(this.docsDir), recursive: true },
     ];
     for (const e of this.m.context)
-      roots.push({ path: e.root, recursive: e.membership === "mirrored", entryId: e.id });
-    // An opened original outside every entry (its entry was removed) still
-    // needs its outside changes seen.
-    for (const d of this.m.docs)
-      if (!roots.some((r) => r.path === dirname(d.original)))
-        roots.push({ path: dirname(d.original), recursive: false });
+      roots.push({
+        path: e.root,
+        watch: realOr(e.root),
+        recursive: e.membership === "mirrored",
+        entryId: e.id,
+      });
+    for (const d of this.m.docs) {
+      const realDir = dirname(realOr(d.original));
+      if (
+        !roots.some((r) => r.watch === realDir && r.recursive === false) &&
+        !roots.some(
+          (r) => r.recursive && (realDir === r.watch || realDir.startsWith(r.watch + sep)),
+        )
+      )
+        roots.push({ path: realDir, watch: realDir, recursive: false });
+    }
     return roots;
   }
 
@@ -203,6 +273,35 @@ export class Session {
     // function returns, and it must find the hash already there.
     this.owned.set(path, contentHash(text));
     writeFileSync(path, text);
+  }
+
+  private adoptActive(d: DocRecord, text: string): void {
+    const p = this.versionPath(d, d.active);
+    this.owned.set(p, contentHash(text));
+    this.activeHash.set(d.slug, contentHash(text));
+    this.lastActiveText.set(d.slug, text);
+  }
+
+  private writeActive(d: DocRecord, text: string): void {
+    this.writeOwned(this.versionPath(d, d.active), text);
+    this.activeHash.set(d.slug, contentHash(text));
+    this.lastActiveText.set(d.slug, text);
+  }
+
+  /** Keep an outside write to the active version as a NEW agent version. */
+  private preserveOutside(d: DocRecord, text: string): Version {
+    const n = Math.max(...d.versions.map((v) => v.n)) + 1;
+    const rec: Omit<Version, "path"> = {
+      n,
+      author: "agent",
+      from: d.active,
+      createdAt: Date.now(),
+      label: `outside write to v${d.active}`,
+    };
+    d.versions.push(rec);
+    this.writeOwned(this.versionPath(d, n), text);
+    this.persist();
+    return { ...rec, path: this.versionPath(d, n) };
   }
 
   /** True iff `text` at `path` is exactly what the daemon last wrote there. */
@@ -361,8 +460,7 @@ export class Session {
       admitted: true,
     };
     this.m.docs.push(d);
-    this.writeOwned(this.versionPath(d, 1), text);
-    this.activeHash.set(d.slug, contentHash(text));
+    this.writeActive(d, text);
     this.m.openDoc = d.slug;
     this.persist();
     return { slug: d.slug, created: true };
@@ -386,7 +484,21 @@ export class Session {
   }
 
   /** The human's buffer reaches the ACTIVE version's file (debounced by the surface). */
-  edit(slug: string, n: number, text: string): { dirtyChanged: boolean } {
+  /**
+   * ⛔ VERIFY-PASS FIX 4 — CHECK BEFORE WRITE. Before the human's edit is
+   * written, the file on disk is hashed: if it is not the daemon's own last
+   * write, someone else wrote the active version (E2). That text is kept as a
+   * NEW agent version, and only then is the edit written. Detection used to
+   * depend on the watcher's 60 ms settle timer firing before the next
+   * keystroke; a burst of edits at 30 ms clobbered an outside write
+   * unannounced. Now nothing is lost whatever the timing — the one window left
+   * is the microseconds between this read and this write.
+   */
+  edit(
+    slug: string,
+    n: number,
+    text: string,
+  ): { dirtyChanged: boolean; preserved: Version | null } {
     const d = this.docOrDie(slug);
     if (n !== d.active)
       throw new SessionError(
@@ -394,9 +506,28 @@ export class Session {
         409,
       );
     const before = this.isDirty(d);
-    this.writeOwned(this.versionPath(d, n), text);
+    const path = this.versionPath(d, n);
+    // The edit is staged in a sibling file FIRST, so the check below and the
+    // rename that lands the edit are adjacent syscalls: the window in which an
+    // outside write could slip between them is microseconds, not the length of
+    // a multi-megabyte write — and a write landing AFTER the rename goes to the
+    // new file, where the watcher finds it and preserves it too.
+    const staged = `${path}.${process.pid}.edit`;
+    writeFileSync(staged, text);
+    let preserved: Version | null = null;
+    let onDisk: string | null = null;
+    try {
+      onDisk = readFileSync(path, "utf8");
+    } catch {
+      onDisk = null;
+    }
+    if (onDisk !== null && !this.isOwnWrite(path, onDisk))
+      preserved = this.preserveOutside(d, onDisk);
+    this.owned.set(path, contentHash(text));
+    renameSync(staged, path);
     this.activeHash.set(d.slug, contentHash(text));
-    return { dirtyChanged: before !== this.isDirty(d) };
+    this.lastActiveText.set(d.slug, text);
+    return { dirtyChanged: before !== this.isDirty(d), preserved };
   }
 
   /** Copy a version to a new file; the agent then edits that file with its own tools. */
@@ -427,8 +558,9 @@ export class Session {
     this.versionOrDie(d, opts.version);
     const previous = d.active;
     d.active = opts.version;
-    const p = this.versionPath(d, d.active);
-    this.activeHash.set(d.slug, contentHash(readFileSync(p, "utf8")));
+    // The new active version's text AS IT IS NOW is the baseline the next
+    // check-before-write compares against.
+    this.adoptActive(d, readFileSync(this.versionPath(d, d.active), "utf8"));
     this.persist();
     return { slug: d.slug, previous };
   }
@@ -459,8 +591,7 @@ export class Session {
     const text = readFileSync(d.original, "utf8");
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
-    this.writeOwned(this.versionPath(d, d.active), text);
-    this.activeHash.set(d.slug, contentHash(text));
+    this.writeActive(d, text);
     this.persist();
     return { version: d.active, text };
   }
@@ -501,16 +632,28 @@ export class Session {
         this.persist();
         return { kind: "version.created", doc: d.slug, version: n, path: abs };
       }
-      this.owned.set(abs, contentHash(text));
       if (n === d.active) {
-        this.activeHash.set(d.slug, contentHash(text));
-        return { kind: "active.outside", doc: d.slug, version: n, text, path: abs };
+        // E2, refused and RE-LABELLED: the outside text becomes a new agent
+        // version, and the active version goes back to the daemon's own last
+        // text — so the active version only ever holds what the human typed,
+        // and nothing anyone wrote is lost (verify-pass fix 4, watcher half).
+        const kept = this.preserveOutside(d, text);
+        this.writeActive(d, this.lastActiveText.get(d.slug) ?? text);
+        return {
+          kind: "active.outside",
+          doc: d.slug,
+          version: n,
+          path: abs,
+          preservedAs: kept.n,
+          preservedPath: kept.path,
+        };
       }
+      this.owned.set(abs, contentHash(text));
       return { kind: "version.changed", doc: d.slug, version: n, text, active: false };
     }
 
-    // An opened original?
-    const d = this.m.docs.find((x) => x.original === abs);
+    // An opened original — by its stored path, or by realpath for a symlink?
+    const d = this.m.docs.find((x) => x.original === abs || realOr(x.original) === abs);
     if (d) {
       let text: string;
       try {
@@ -523,21 +666,20 @@ export class Session {
       const clean = !this.isDirty(d);
       if (clean) {
         d.originalHash = h;
-        this.writeOwned(this.versionPath(d, d.active), text);
-        this.activeHash.set(d.slug, h);
+        this.writeActive(d, text);
         this.persist();
         return {
           kind: "original.reloaded",
           doc: d.slug,
           version: d.active,
           text,
-          original: abs,
+          original: d.original,
         };
       }
       if (d.outsideChanged) return null; // already asked
       d.outsideChanged = true;
       this.persist();
-      return { kind: "original.conflict", doc: d.slug, original: abs };
+      return { kind: "original.conflict", doc: d.slug, original: d.original };
     }
 
     // Something under a mirrored root: the tree may have changed.

@@ -168,7 +168,7 @@ export async function startDaemon(opts: StartOpts) {
   };
   const syncWatchers = () => {
     const want = new Map(
-      session.watchRoots().map((r) => [`${r.recursive ? "R" : "F"}:${r.path}`, r]),
+      session.watchRoots().map((r) => [`${r.recursive ? "R" : "F"}:${r.watch}>${r.path}`, r]),
     );
     for (const [key, w] of watchers)
       if (!want.has(key)) {
@@ -178,7 +178,9 @@ export async function startDaemon(opts: StartOpts) {
     for (const [key, r] of want) {
       if (watchers.has(key)) continue;
       try {
-        const w = watch(r.path, { recursive: r.recursive }, (_event, name) => {
+        // Watched at the REALPATH, reported under the stored path form
+        // (verify-pass fix 3 — see Session.watchRoots).
+        const w = watch(r.watch, { recursive: r.recursive }, (_event, name) => {
           if (name) onFs(join(r.path, name.toString()));
           else if (r.entryId) onFs(r.path);
         });
@@ -212,20 +214,11 @@ export async function startDaemon(opts: StartOpts) {
         });
         return;
       case "active.outside":
-        // E2: the agent never writes the version the human is editing. It is
-        // detected, ANNOUNCED, and adopted — the file is the truth now, and the
-        // surface applies it as a remote change outside the human's undo.
-        send({
-          type: "version.text",
-          doc: ev.doc,
-          version: ev.version,
-          text: ev.text,
-          origin: "remote",
-        });
-        announce(
-          `v${ev.version} of ${ev.doc} is the ACTIVE version and was written from outside the editor. Agent edits belong in a new version (version-new).`,
-          { fact: "active.outside", doc: ev.doc, version: ev.version, path: ev.path },
-        );
+        // E2: the agent never writes the version the human is editing. The
+        // outside text is KEPT as a new agent version and the active version
+        // keeps the human's text — nothing is lost, and the human's buffer is
+        // not touched (verify-pass fix 4).
+        announceOutside(ev.doc, ev.version, ev.path, ev.preservedAs, ev.preservedPath);
         return;
       case "original.reloaded":
         send({
@@ -251,6 +244,18 @@ export async function startDaemon(opts: StartOpts) {
         return;
     }
   };
+
+  const announceOutside = (
+    doc: string,
+    version: number,
+    path: string,
+    preservedAs: number,
+    preservedPath: string,
+  ) =>
+    announce(
+      `v${version} of ${doc} is the ACTIVE version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
+      { fact: "active.outside", doc, version, path, preservedAs, preservedPath },
+    );
 
   // --- shared acts (surface and agent reach the same code) ---------------------
   const addPaths = (paths: string[]) => {
@@ -305,7 +310,16 @@ export async function startDaemon(opts: StartOpts) {
         return;
       case "edit": {
         const r = session.edit(msg.doc, msg.version, msg.text);
-        if (r.dirtyChanged) broadcastState();
+        if (r.preserved) {
+          const d = session.doc(msg.doc);
+          announceOutside(
+            d.slug,
+            msg.version,
+            session.activePath(d.slug) ?? "",
+            r.preserved.n,
+            r.preserved.path,
+          );
+        } else if (r.dirtyChanged) broadcastState();
         return;
       }
       case "select":
@@ -593,6 +607,14 @@ export async function startDaemon(opts: StartOpts) {
 
   syncWatchers();
   log.emit({ type: "ready", mode, session_id: sessionId, restored: !!opts.restore });
+  // Verify-pass fix 2: what changed on disk while no daemon was watching.
+  for (const f of session.restoreFindings)
+    announce(
+      f.missing
+        ? `${f.original} is gone from disk since this session was last open. Save would recreate it; Revert cannot run.`
+        : `${f.original} changed on disk while this session was closed. Save overwrites it with the active version; Revert takes the file's version.`,
+      { fact: "original.conflict", doc: f.doc, whileClosed: true },
+    );
 
   const stopHousekeeping = startHousekeeping({
     subscriberCount: () => sockets.size + sseClients.size,

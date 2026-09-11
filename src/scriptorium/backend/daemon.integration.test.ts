@@ -219,11 +219,17 @@ describe("a session, end to end through the launchers", () => {
     expect(readFileSync(st.docs[0]?.versions[1]?.path ?? "", "utf8")).toContain("edited");
   });
 
-  test("a write to the ACTIVE version from outside is announced (E2)", async () => {
+  test("a write to the ACTIVE version from outside is announced AND kept as a new version (E2)", async () => {
     const st = JSON.parse((await cli("state")).out) as PublicState;
-    writeFileSync(st.docs[0]?.versions[1]?.path ?? "", "the agent broke the rule\n");
+    const activePath = st.docs[0]?.versions[1]?.path ?? "";
+    const before = readFileSync(activePath, "utf8");
+    writeFileSync(activePath, "the agent broke the rule\n");
     const line = await waitTail((l) => l.type === "system" && l.fact === "active.outside");
     expect(String(line.text)).toContain("ACTIVE version");
+    expect(line.preservedAs).toBe(3);
+    expect(readFileSync(String(line.preservedPath), "utf8")).toBe("the agent broke the rule\n");
+    // The active version keeps the human's text.
+    expect(readFileSync(activePath, "utf8")).toBe(before);
     const s2 = JSON.parse((await cli("state", "--full")).out) as PublicState;
     expect(s2.chat.some((m) => m.who === "system" && m.text.includes("ACTIVE version"))).toBe(true);
   });
@@ -254,8 +260,23 @@ describe("a session, end to end through the launchers", () => {
     expect(r.code).toBe(0);
     const st = JSON.parse((await cli("state")).out) as PublicState & { epoch: string };
     expect(st.sessionId).toBe(sessionId);
-    expect(st.docs[0]?.versions.map((v) => v.n)).toEqual([1, 2]);
+    expect(st.docs[0]?.versions.map((v) => v.n)).toEqual([1, 2, 3]);
     expect(st.docs[0]?.active).toBe(2);
+    expect(st.docs[0]?.outsideChanged).toBe(false);
+    expect((await cli("close")).code).toBe(0);
+  }, 60_000);
+
+  test("an original changed WHILE CLOSED is flagged and announced on restore (verify-pass fix 2)", async () => {
+    writeFileSync(join(docs, "set", "a.md"), "# changed while the session was closed\n");
+    expect((await cli("open", "--no-open", "--restore", sessionId)).code).toBe(0);
+    const st = JSON.parse((await cli("state", "--full")).out) as PublicState;
+    expect(st.docs[0]?.outsideChanged).toBe(true);
+    expect(
+      st.chat.some((m) => m.who === "system" && m.text.includes("while this session was closed")),
+    ).toBe(true);
+    expect(readFileSync(join(docs, "set", "a.md"), "utf8")).toBe(
+      "# changed while the session was closed\n",
+    );
     expect((await cli("close")).code).toBe(0);
   }, 60_000);
 });

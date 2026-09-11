@@ -3,7 +3,15 @@
 // Every cell runs against a fresh temp home and temp originals; nothing here
 // spawns a process or opens a socket.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { contentHash, Session, SessionError } from "./session";
@@ -177,14 +185,41 @@ describe("self-write suppression — whose write was that?", () => {
     expect(s.onFileEvent(join(docs, "solo.md"))).toBeNull();
   });
 
-  test("an outside write to the ACTIVE version is detected (E2), once", () => {
+  test("an outside write to the ACTIVE version is kept as a new agent version, and the active text restored (E2)", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.edit(slug, 1, "what the human typed\n");
+    const path = s.readVersion(slug, 1).path;
+    writeFileSync(path, "the agent wrote here\n");
+    expect(s.onFileEvent(path)).toMatchObject({
+      kind: "active.outside",
+      doc: slug,
+      version: 1,
+      preservedAs: 2,
+    });
+    expect(s.readVersion(slug, 2).text).toBe("the agent wrote here\n");
+    expect(s.readVersion(slug, 1).text).toBe("what the human typed\n");
+    expect(s.doc(slug).versions[1]).toMatchObject({
+      author: "agent",
+      label: "outside write to v1",
+    });
+    // The restore is the daemon's own write: a second event is nothing.
+    expect(s.onFileEvent(path)).toBeNull();
+  });
+
+  test("CHECK BEFORE WRITE: an outside write the watcher has not seen yet is preserved by the next edit", () => {
     const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
     const path = s.readVersion(slug, 1).path;
-    writeFileSync(path, "the agent wrote here\n");
-    expect(s.onFileEvent(path)).toMatchObject({ kind: "active.outside", doc: slug, version: 1 });
-    // The same bytes seen again (a second watcher event) are not a second write.
-    expect(s.onFileEvent(path)).toBeNull();
+    writeFileSync(path, "outside, a moment before the keystroke\n");
+    // No onFileEvent: the settle timer has not fired. The edit must not clobber it.
+    const r = s.edit(slug, 1, "the keystroke\n");
+    expect(r.preserved?.n).toBe(2);
+    expect(s.readVersion(slug, 2).text).toBe("outside, a moment before the keystroke\n");
+    expect(s.readVersion(slug, 1).text).toBe("the keystroke\n");
+    // ...and the daemon's own edits never trip it.
+    expect(s.edit(slug, 1, "more typing\n").preserved).toBeNull();
+    expect(s.doc(slug).versions).toHaveLength(2);
   });
 
   test("an outside write to a NON-active version is a change to push, not a violation", () => {
@@ -256,6 +291,32 @@ describe("admission — only a document in the context is opened or saved (verif
   });
 });
 
+describe("symlinks (verify-pass fix 3)", () => {
+  test("a symlinked original is watched at its REAL directory and its events map back to the doc", () => {
+    mkdirSync(join(root, "real"), { recursive: true });
+    writeFileSync(join(root, "real", "target.md"), "T\n");
+    symlinkSync(join(root, "real", "target.md"), join(docs, "link.md"));
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "link.md"));
+    const realDir = realpathSync(join(root, "real"));
+    expect(s.watchRoots().some((r) => r.watch === realDir)).toBe(true);
+    writeFileSync(join(root, "real", "target.md"), "changed at the target\n");
+    expect(s.onFileEvent(join(realDir, "target.md"))).toMatchObject({
+      kind: "original.reloaded",
+      doc: slug,
+    });
+  });
+
+  test("a symlinked home is watched at its realpath and reported under the stored path", () => {
+    mkdirSync(join(root, "realhome"), { recursive: true });
+    symlinkSync(join(root, "realhome"), join(root, "linkhome"));
+    const s = Session.create(join(root, "linkhome"));
+    const docsRoot = s.watchRoots()[0];
+    expect(docsRoot?.path).toBe(join(root, "linkhome", "sessions", s.id, "docs"));
+    expect(docsRoot?.watch).toBe(realpathSync(join(root, "realhome", "sessions", s.id, "docs")));
+  });
+});
+
 describe("the manifest survives a restart (--restore)", () => {
   test("context, docs, versions, active and chat come back", () => {
     const s = inContext();
@@ -269,6 +330,25 @@ describe("the manifest survives a restart (--restore)", () => {
     expect(r.doc(slug)).toEqual(s.doc(slug));
     expect(r.view("release", null).chat.map((m) => m.text)).toEqual(["hello"]);
     expect(Session.listSaved(home)).toEqual([s.id]);
+  });
+
+  test("an original changed WHILE CLOSED is marked and reported on restore (verify-pass fix 2)", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    writeFileSync(join(docs, "solo.md"), "# changed while no daemon watched\n");
+    const r = Session.restore(home, s.id);
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.restoreFindings).toEqual([
+      { doc: slug, original: join(docs, "solo.md"), missing: false },
+    ]);
+    // The active version was not touched — asked, not merged.
+    expect(r.readVersion(slug, 1).text).toBe("# Solo\n");
+  });
+
+  test("an unchanged original restores with nothing to report", () => {
+    const s = inContext();
+    s.openPath(join(docs, "solo.md"));
+    expect(Session.restore(home, s.id).restoreFindings).toEqual([]);
   });
 
   test("restoring an unknown session is not_found", () => {
