@@ -181,3 +181,60 @@ convention can express (D3; playbook N6): `scriptorium-<sessionId>.json` plus
 `scriptorium-latest.json` in tmpdir, through the kit's `writeFileAtomic` /
 `unlinkIfMatches`. Glamour is the nearest per-session reference. **Not taken:**
 a singleton standing daemon (mind-mapper's shape).
+
+## E14 · Drag-and-drop onto the context pane — wanted; approach pending a spike
+
+**Asked for:** Cole, 2026-09-11 — dropping a markdown or text file over the
+context pane adds it as a context entry. **Constraint:** a web page never learns
+a dropped file's filesystem path, so it cannot be linked to its original by
+path. **Candidate:** Chromium's File System Access API
+(`DataTransferItem.getAsFileSystemHandle()`) returns a handle the page can read,
+and write after a permission prompt, so a dropped file could stay linked, with
+Save written through the handle by the surface while the agent works on the
+session's version files (E8). Chromium-only; to be verified by a spike in Cole's
+browser. **Fallback:** import as an unlinked copy whose Save is "save as". Not
+in slice A.
+
+## E15 · One context model for a single document and a structured set
+
+**Asked for:** Cole, 2026-09-11, as a future direction to design against: a
+document that starts alone can become a structured set, where the human adds
+groups (real folders) and new documents under it. **Ruled shape:** one type, a
+`ContextEntry` with a `root` directory and a tree of `doc` / `group` nodes. A
+folder entry mirrors its directory; a single-file entry is rooted at the file's
+parent and holds one doc node. "Single document" versus "set" is rendering, not
+a type, so promotion later adds nodes without migrating anything. Built in slice
+A as the model only; the promotion UX is future work.
+
+## E16 · Build the surface one piece at a time, with the context sidebar first
+
+**Ruled:** Cole, 2026-09-11. Surface build order: layout, then the context
+sidebar (single documents and structured sets, navigation), then viewing a
+selected document in the centre pane (read-only first), and only then editing
+and chat. Backend and CLI foundations proceed in full. **Why:** the sidebar is
+foundational, and Cole wants a context sidebar reusable across apps, so it is
+built with a props-driven boundary (no daemon coupling inside) to be extracted
+once a second app needs it. Its file-tree behaviour (drag-and-drop, reorder,
+move) gets a dedicated design pass informed by Operator's file tree and the
+other spells' sidebars.
+
+## E17 · Tree order is sort-based; drag-and-drop means nesting, not ordering
+
+**Ruled:** Cole, 2026-09-11. No manually maintained order, in real folders or in
+assembled sets. Children display sorted, by name by default and optionally by
+last-updated (Zed's and most file trees' convention). Drag-and-drop exists to
+change NESTING: move a document into a group, between groups, or out to the
+root, and create a group then drag files into it. **Not taken:** a manifest-held
+order overlay for real folders; array order for assembled sets. Operator is the
+same: its "reorder" only ever changes the parent, and the display comes from a
+sort setting. The tree library (`@headless-tree/react`, lead's pick) is used
+with `canReorder: false`, so drops resolve to "inside this group" rather than a
+position among siblings.
+
+## E18 · A status strip under the editor
+
+**Asked for:** Cole, 2026-09-11. A thin strip along the bottom of the centre
+pane, modelled on Operator's `StatusBar.vue`: the active version and its author
+(human or agent), updated time, saved or unsaved state, and word and character
+counts (debounced, per Operator's `useContentStats`). Placed in the layout now
+because it takes vertical space; values arrive with the viewer.
