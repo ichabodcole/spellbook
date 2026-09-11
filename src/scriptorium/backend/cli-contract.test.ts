@@ -121,6 +121,15 @@ test("the brief's verb roster is exactly the table's", () => {
       "state",
       "tail",
       "version-new",
+      "new-doc",
+      "new-folder",
+      "move",
+      "rename",
+      "hide",
+      "unhide",
+      "make-set",
+      "import",
+      "workspace",
     ].sort(),
   );
 });

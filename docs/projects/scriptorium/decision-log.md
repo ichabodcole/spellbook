@@ -326,3 +326,41 @@ set dark in one session, a fresh session on a new port opened dark.
   with the rubric; "partial" (a truncated folder) is a badge up front, not an
   ellipsed suffix; listing errors read as words; the first Escape closes the
   suggestions and only the second clears the path.
+
+## E22 · A set is a folder
+
+**Ruled:** Cole, 2026-09-11 — "set as a folder … simplest"; a virtual grouping
+can come later if this stops working. "Turn a document into a set" creates a
+folder named for the document beside it and MOVES the document into it; the
+entry becomes that folder. Every group is a real directory and every move is a
+real move on disk (E15 already said so for groups). **Not taken:** a set as a
+group Scriptorium tracks around files that stay where they are (two meanings for
+"set" and "folder"; combining documents from different folders gets messy).
+
+## E23 · The workspace folder — where drops and new top-level documents land
+
+**Ruled:** Cole, 2026-09-11, answering E14. A session has a **workspace**: the
+folder it was started from (the CLI's working directory at `open` — the project
+folder, for a released spell the consumer's project), changeable by the human
+and the agent. **Dropping a file onto the sidebar COPIES it into the workspace**
+(or into the folder it was dropped on) and adds the copy as an ordinary linked
+document — duplication accepted for simplicity. New top-level documents are
+created there too. **Why not link the dropped original:** a web page never
+learns a dropped file's path, and Cole uses Brave, which disables the File
+System Access API that could have held a writable handle — so the copy is the
+one route that works everywhere. **Named "workspace"**, not "session home",
+because `SCRIPTORIUM_HOME` already names where the spell keeps its own state.
+
+## E24 · Equal capabilities, different affordances — structure changes go through the daemon
+
+**Ruled:** Cole, 2026-09-11 — the house principle: the human and the agent can
+do the same things and get the same result, though they see and do them
+differently. Every structure change — new document, new folder, move, rename,
+remove from Scriptorium, turn into a set, import a drop, set the workspace — is
+a daemon operation the surface reaches by menus and dragging and the agent
+reaches by CLI verbs. The daemon performs the real change on disk, updates every
+viewer, and posts a chat line naming who did it. Changes made outside (the
+agent's own `mv`) still appear live for mirrored folders through the watcher,
+but the verbs are the path that keeps both sides informed. **Remove from
+Scriptorium hides; it never deletes a file.** There is no Delete action (Cole:
+"I don't necessarily even know if we need a delete action").

@@ -9,6 +9,8 @@ mkdirSync(join(root, "set", "g1", "deep"), { recursive: true });
 mkdirSync(join(root, "set", "node_modules", "x"), { recursive: true });
 mkdirSync(join(root, "set", ".hidden"), { recursive: true });
 mkdirSync(join(root, "set", "empty"), { recursive: true });
+mkdirSync(join(root, "set", "assets"), { recursive: true });
+writeFileSync(join(root, "set", "assets", "logo.png"), "no");
 writeFileSync(join(root, "set", "z.md"), "z");
 writeFileSync(join(root, "set", "a.txt"), "a");
 writeFileSync(join(root, "set", "g1", "deep", "d.markdown"), "d");
@@ -22,10 +24,12 @@ test("documents are recognised by extension, case-insensitively", () => {
   expect(isDocName("f.png")).toBe(false);
 });
 
-test("a scan mirrors documents only, skips hidden and noise directories and empty groups", () => {
+test("a scan mirrors documents only; skips dot and noise directories and folders of non-documents; keeps an empty folder", () => {
   const { nodes, truncated } = scanTree(join(root, "set"));
   expect(truncated).toBe(false);
   expect(nodes).toEqual([
+    // Kept: somebody just made it to put documents in (E24's "New folder").
+    { kind: "group", rel: "empty", children: [] },
     {
       kind: "group",
       rel: "g1",
@@ -36,6 +40,11 @@ test("a scan mirrors documents only, skips hidden and noise directories and empt
     { kind: "doc", rel: "a.txt" },
     { kind: "doc", rel: "z.md" },
   ]);
+});
+
+test("hidden rels are skipped — a hidden folder with everything under it", () => {
+  const { nodes } = scanTree(join(root, "set"), undefined, ["g1", "z.md"]);
+  expect(nodes.map((n) => n.rel)).toEqual(["empty", "a.txt"]);
 });
 
 test("a scan that hits its cap says so rather than presenting a short list as whole", () => {
@@ -54,6 +63,7 @@ test("docPaths and locate agree on where a document lives", () => {
 
 test("listDir offers directories first, then documents, and nothing else", () => {
   expect(listDir(join(root, "set")).map((e) => [e.name, e.dir])).toEqual([
+    ["assets", true],
     ["empty", true],
     ["g1", true],
     ["node_modules", true],

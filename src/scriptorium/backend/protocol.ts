@@ -14,13 +14,13 @@
  * renders an entry holding one doc as a document and anything else as a tree;
  * that is a rendering choice, not a second type.
  *
- * ⚠ `membership` IS NOT A FILE/FOLDER DISCRIMINANT, and the difference is the
- * whole point of E15. It answers one question the watcher must ask — "a new
- * file appeared under this root: is it mine?" — and it does not change when a
- * single document is later promoted into a structured set: promotion adds
- * nodes (and creates their real folders and files) to a `listed` entry, and
- * nothing already written has to be rewritten. `mirrored` = everything under
- * the root that is a document; `listed` = exactly the nodes written down.
+ * `membership` answers the one question the watcher must ask — "a new file
+ * appeared under this root: is it mine?" `mirrored` = everything under the root
+ * that is a document (less what the human hid); `listed` = exactly the nodes
+ * written down, which in practice is ONE document. E22 settled what promotion
+ * is: a set is a real folder, so "turn into a set" makes the folder, moves the
+ * document into it, and the entry becomes a `mirrored` entry rooted there —
+ * same id, so nothing that named the entry breaks.
  *
  * ⚠ NODE ORDER CARRIES NO MEANING (E17). There is no manual order anywhere:
  * the surface sorts children for display (by name, or by last-updated). The
@@ -44,6 +44,12 @@ export type ContextEntry = {
   nodes: ContextNode[];
   /** Set when a mirrored scan stopped at its node cap — said, not silent. */
   truncated?: boolean;
+  /**
+   * Mirrored only: rels the human took out of Scriptorium ("Remove from
+   * Scriptorium", E24). The files stay on disk; the mirror skips them, and a
+   * hidden folder hides everything under it.
+   */
+  hidden?: string[];
 };
 
 export type VersionAuthor = "human" | "agent";
@@ -117,7 +123,39 @@ export type PublicState = {
   prefs: Record<string, string>;
   /** The user's home directory, so the surface can show `~/notes` for a path. */
   userHome: string;
+  /**
+   * The session's WORKSPACE (E23): where a dropped file is copied and a new
+   * top-level document or set is made. Defaults to the directory `open` ran
+   * in; either party can change it.
+   */
+  workspace: string;
 };
+
+/**
+ * Structure changes (E24) — ONE vocabulary for both parties: the surface sends
+ * these over the WebSocket (menus, drag and drop), the agent posts them through
+ * the CLI's verbs, and the daemon does the same real change on disk either way.
+ * Every path is ABSOLUTE. A folder named as a destination must be a context
+ * folder (a mirrored entry's root, or a folder under it) or the workspace.
+ * Nothing here deletes a file: `hide` takes a node out of Scriptorium only.
+ */
+export type StructureOp =
+  /** A new empty document in `dir`; `name` defaults to a free "Untitled.md". */
+  | { type: "doc.create"; dir: string; name?: string }
+  /** A new folder in `dir`; in the workspace it becomes a new set. */
+  | { type: "folder.create"; dir: string; name?: string }
+  | { type: "move"; path: string; into: string }
+  | { type: "rename"; path: string; name: string }
+  | { type: "hide"; path: string }
+  /** Bring back everything hidden in a mirrored entry. */
+  | { type: "unhide"; entry: string }
+  /** A single document becomes a set: a folder named for it, the document moved in (E22). */
+  | { type: "set.make"; path: string }
+  /** A COPY of a file's text, written into `into` (default: the workspace) — E23's drop. */
+  | { type: "import"; name: string; text: string; into?: string }
+  | { type: "workspace.set"; path: string };
+
+export type StructureOpType = StructureOp["type"];
 
 export type FsListEntry = { name: string; path: string; dir: boolean };
 
@@ -136,13 +174,16 @@ export type ClientMsg =
   | { type: "fs.list"; path: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { type: "read"; doc: string; version: number }
-  | { type: "prefs.set"; key: string; value: string };
+  | { type: "prefs.set"; key: string; value: string }
+  | StructureOp;
 
 /** Daemon → surface, over the WebSocket. */
 export type ServerMsg =
   | { type: "state"; state: PublicState }
   | { type: "version.text"; doc: string; version: number; text: string; origin: "load" | "remote" }
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
+  /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
+  | { type: "structure.done"; op: StructureOpType; path: string }
   | { type: "error"; message: string };
 
 /** Agent → daemon, over `POST /cmd` (the CLI's verbs). */
@@ -151,4 +192,5 @@ export type AgentCmd =
   | { type: "version.new"; doc?: string; from?: number; label?: string }
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
-  | { type: "close" };
+  | { type: "close" }
+  | StructureOp;

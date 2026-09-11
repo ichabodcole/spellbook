@@ -62,7 +62,7 @@ import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts"
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
-import type { AgentCmd, ClientMsg, Selection, ServerMsg } from "./protocol";
+import type { AgentCmd, ClientMsg, Selection, ServerMsg, StructureOp } from "./protocol";
 import { type FileEvent, Session, SessionError } from "./session";
 import { listDir, PathError } from "./tree";
 
@@ -84,7 +84,13 @@ export function scriptoriumHome(): string {
   return resolve(process.env.SCRIPTORIUM_HOME ?? join(homedir(), ".scriptorium"));
 }
 
-export type StartOpts = { port?: number; restore?: string; timeoutS?: number };
+export type StartOpts = {
+  port?: number;
+  restore?: string;
+  timeoutS?: number;
+  /** E23: a NEW session's workspace — the directory `open` ran in. A restore keeps its own. */
+  workspace?: string;
+};
 
 /** A tail frame's payload. The log stamps `id` and `epoch`. */
 type LogEvent = Record<string, unknown> & { type: string };
@@ -103,7 +109,9 @@ export async function startDaemon(opts: StartOpts) {
       : undefined;
   const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
-  const session = opts.restore ? Session.restore(home, opts.restore) : Session.create(home);
+  const session = opts.restore
+    ? Session.restore(home, opts.restore)
+    : Session.create(home, undefined, opts.workspace);
   const sessionId = session.id;
   let selection: Selection | null = null;
 
@@ -317,6 +325,82 @@ export async function startDaemon(opts: StartOpts) {
     return { doc: r.slug, version, previous: r.previous, path };
   };
 
+  /**
+   * E24: one structure change, from either party — the same session method, the
+   * same announcement (naming who did it), the same tail fact. Returns the path
+   * the change landed at, which the surface uses to open or rename it.
+   */
+  const STRUCTURE_OPS = new Set<string>([
+    "doc.create",
+    "folder.create",
+    "move",
+    "rename",
+    "hide",
+    "unhide",
+    "set.make",
+    "import",
+    "workspace.set",
+  ] satisfies StructureOp["type"][]);
+  const isStructureOp = (m: { type: string }): m is StructureOp => STRUCTURE_OPS.has(m.type);
+
+  const structure = (op: StructureOp, by: "human" | "agent"): Record<string, unknown> => {
+    const who = by === "agent" ? "Agent" : "You";
+    const shown = (p: string) => session.display(p);
+    let r: Record<string, unknown> & { path?: string };
+    let line: string;
+    switch (op.type) {
+      case "doc.create":
+        r = session.createDoc(op.dir, op.name);
+        line = `${who} created ${shown(r.path as string)}.`;
+        break;
+      case "folder.create":
+        r = session.createFolder(op.dir, op.name);
+        line = `${who} created the folder ${shown(r.path as string)}.`;
+        break;
+      case "move": {
+        const m = session.move(op.path, op.into);
+        r = m;
+        line = `${who} moved ${shown(m.from)} to ${shown(m.path)}.`;
+        break;
+      }
+      case "rename": {
+        const m = session.rename(op.path, op.name);
+        r = m;
+        line = `${who} renamed ${shown(m.from)} to ${shown(m.path)}.`;
+        break;
+      }
+      case "hide": {
+        const h = session.hide(op.path);
+        r = h;
+        line = `${who} removed ${shown(h.path)} from Scriptorium (the file is still on disk).`;
+        break;
+      }
+      case "unhide": {
+        const u = session.unhide(op.entry);
+        r = u;
+        line = `${who} brought back ${u.restored} hidden item${u.restored === 1 ? "" : "s"}.`;
+        break;
+      }
+      case "set.make": {
+        const m = session.makeSet(op.path);
+        r = m;
+        line = `${who} turned ${shown(m.path)} into a set (the folder ${m.folder}).`;
+        break;
+      }
+      case "import":
+        r = session.importText(op.name, op.text, op.into);
+        line = `${who} copied ${op.name} in as ${shown(r.path as string)}.`;
+        break;
+      case "workspace.set":
+        r = session.setWorkspace(op.path);
+        line = `${who} set the workspace to ${shown(r.path as string)}.`;
+        break;
+    }
+    syncWatchers();
+    announce(line, { fact: op.type, by, ...r });
+    return r;
+  };
+
   // --- surface messages (WebSocket) --------------------------------------------
   const reply = (ws: import("bun").ServerWebSocket<unknown>, msg: ServerMsg) => {
     try {
@@ -327,6 +411,12 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   const handleClientMsg = (ws: import("bun").ServerWebSocket<unknown>, msg: ClientMsg) => {
+    if (isStructureOp(msg)) {
+      const r = structure(msg, "human");
+      if (typeof r.path === "string")
+        reply(ws, { type: "structure.done", op: msg.type, path: r.path });
+      return;
+    }
     switch (msg.type) {
       case "open": {
         const r = session.openPath(msg.path);
@@ -493,6 +583,7 @@ export async function startDaemon(opts: StartOpts) {
   });
 
   const handleAgentCmd = (cmd: AgentCmd): Record<string, unknown> => {
+    if (isStructureOp(cmd)) return structure(cmd, "agent");
     switch (cmd.type) {
       case "context.add": {
         const added = addPaths(cmd.paths);
@@ -540,7 +631,7 @@ export async function startDaemon(opts: StartOpts) {
         throw new SessionError(
           `unrecognised command type ${JSON.stringify((cmd as { type?: unknown }).type)} — nothing was applied`,
           400,
-          ["context.add", "version.new", "say", "activate", "close"],
+          ["context.add", "version.new", "say", "activate", "close", ...STRUCTURE_OPS],
         );
     }
   };
@@ -776,6 +867,7 @@ const DAEMON_OPTIONS = {
   port: { type: "string" },
   restore: { type: "string" },
   timeout: { type: "string" },
+  workspace: { type: "string" },
 } as const;
 
 /** Parse the daemon's argv, boot, print the handshake, wait for the end. Returns the exit code. */
@@ -802,6 +894,7 @@ export async function main(argv: string[]): Promise<number> {
       port: flags.port ? Number(flags.port) : 0,
       restore: flags.restore,
       timeoutS: flags.timeout ? Number(flags.timeout) : undefined,
+      workspace: flags.workspace,
     });
   } catch (e) {
     // The handshake line is JSON either way, so the CLI reads ONE shape.

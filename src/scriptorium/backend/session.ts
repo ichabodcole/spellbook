@@ -36,6 +36,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import type {
@@ -48,7 +49,16 @@ import type {
   Version,
   VersionAuthor,
 } from "./protocol";
-import { entryForPath, isDocName, locate, scanTree } from "./tree";
+import {
+  DOC_EXTENSIONS,
+  entryForPath,
+  findNode,
+  isDocName,
+  locate,
+  MIRROR_NODE_CAP,
+  scanTree,
+  toPosix,
+} from "./tree";
 
 export const MANIFEST_FORMAT = 1;
 
@@ -79,6 +89,8 @@ export type Manifest = {
   docs: DocRecord[];
   openDoc: string | null;
   chat: ChatMessage[];
+  /** E23's workspace. Absent in a manifest written before it existed: the user's home. */
+  workspace?: string;
 };
 
 /** A refusal the daemon turns into an HTTP status — `choices` when the set is in hand (A1). */
@@ -148,7 +160,7 @@ export class Session {
     this.dir = join(home, "sessions", manifest.sessionId);
   }
 
-  static create(home: string, sessionId: string = newSessionId()): Session {
+  static create(home: string, sessionId: string = newSessionId(), workspace?: string): Session {
     const s = new Session(home, {
       format: MANIFEST_FORMAT,
       sessionId,
@@ -157,6 +169,7 @@ export class Session {
       docs: [],
       openDoc: null,
       chat: [],
+      ...(workspace ? { workspace: resolve(workspace) } : {}),
     });
     mkdirSync(join(s.dir, "docs"), { recursive: true });
     s.persist();
@@ -338,19 +351,25 @@ export class Session {
       );
     this.m.context.splice(i, 1);
     this.relink();
-    // The open document left the context with its entry: close it in the view.
-    // Its versions stay in the session (nothing is deleted); re-adding the
-    // entry and opening it again finds them.
+    this.closeOrphanedOpenDoc();
+    this.persist();
+  }
+
+  /**
+   * The open document left the context (its entry removed, or the document
+   * hidden): close it in the view. Its versions stay in the session — nothing
+   * is deleted — and bringing it back and opening it again finds them.
+   */
+  private closeOrphanedOpenDoc(): void {
     const open = this.m.openDoc ? this.m.docs.find((d) => d.slug === this.m.openDoc) : undefined;
     if (open && open.entryId === null) this.m.openDoc = null;
-    this.persist();
   }
 
   /** Re-mirror a folder entry. Returns whether its nodes changed. */
   rescan(entryId: string): boolean {
     const e = this.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
-    const { nodes, truncated } = scanTree(e.root);
+    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, e.hidden);
     const changed =
       JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
     e.nodes = nodes;
@@ -720,6 +739,384 @@ export class Session {
     return null;
   }
 
+  // ── structure (E22–E24): real changes on disk, one path for both parties ──
+  //
+  // Every method below does the change ON DISK and then brings the context
+  // model back in line with it. The surface reaches them through menus and
+  // drag and drop, the agent through CLI verbs; the daemon announces each one
+  // under the name of whoever did it. Two rules hold throughout:
+  //
+  // - NOTHING IS DELETED. `hide` takes a node out of Scriptorium; the file stays.
+  // - NOTHING IS OVERWRITTEN. A destination that exists is refused (an explicit
+  //   name) or given a free name (a default one, a drop); files are created
+  //   with the exclusive flag, so a race cannot clobber either.
+
+  /** E23: where drops and new top-level documents land. */
+  get workspace(): string {
+    return this.m.workspace ?? homedir();
+  }
+
+  setWorkspace(rawPath: string): { path: string } {
+    const abs = resolve(rawPath);
+    let isDir = false;
+    try {
+      isDir = statSync(abs).isDirectory();
+    } catch {
+      throw new SessionError(`no such folder: ${abs}`, 404);
+    }
+    if (!isDir) throw new SessionError(`the workspace must be a folder: ${abs}`, 400);
+    this.m.workspace = abs;
+    this.persist();
+    return { path: abs };
+  }
+
+  /** How a path reads in a chat line: `set/rel` inside an entry, else `~/…`. */
+  display(abs: string): string {
+    for (const e of this.m.context) {
+      if (abs === e.root) return e.label;
+      if (e.membership === "mirrored" && abs.startsWith(e.root + sep))
+        return `${e.label}/${toPosix(relative(e.root, abs))}`;
+    }
+    const home = homedir();
+    return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
+  }
+
+  /**
+   * `abs` spelled the way the context spells it. A caller whose cwd is a
+   * realpath (/private/var/… for /var/…, a symlinked folder) names the same
+   * place differently, and it must land on the same node.
+   */
+  private spell(abs: string): string {
+    if (this.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep))) return abs;
+    const real = realOr(abs);
+    for (const e of this.m.context) {
+      const realRoot = realOr(e.root);
+      if (real === realRoot) return e.root;
+      if (real.startsWith(realRoot + sep)) return join(e.root, relative(realRoot, real));
+    }
+    return abs;
+  }
+
+  private isWorkspace(abs: string): boolean {
+    return abs === this.workspace || realOr(abs) === realOr(this.workspace);
+  }
+
+  /** The mirrored entry that covers `abs` (its root, or anything under it), if any. */
+  private coveringEntry(abs: string, except?: string): ContextEntry | undefined {
+    return this.m.context.find(
+      (e) =>
+        e.id !== except &&
+        e.membership === "mirrored" &&
+        (abs === e.root || abs.startsWith(e.root + sep)),
+    );
+  }
+
+  /**
+   * A folder things may be made in or moved into: a mirrored entry's root, a
+   * visible folder under one, or the workspace. Returns the absolute folder;
+   * refuses anything else — the context stays the way in (verify-pass fix 1b).
+   */
+  private destinationOrDie(rawDir: string): string {
+    const abs = this.spell(resolve(rawDir));
+    for (const e of this.m.context) {
+      if (e.membership !== "mirrored") continue;
+      if (abs === e.root) return abs;
+      if (abs.startsWith(e.root + sep)) {
+        const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
+        if (node?.kind === "group") return abs;
+      }
+    }
+    if (this.isWorkspace(abs)) return this.workspace;
+    throw new SessionError(
+      `${abs} is not a folder in this session — name a set, a folder inside one, or the workspace (${this.workspace})`,
+      400,
+    );
+  }
+
+  /** A document or folder shown in the context, with where it is shown. */
+  private itemOrDie(rawPath: string): {
+    abs: string;
+    entry: ContextEntry;
+    /** The whole entry (a set's own folder, a listed document), or a node inside a set. */
+    whole: boolean;
+    dir: boolean;
+  } {
+    const abs = this.spell(resolve(rawPath));
+    for (const e of this.m.context) {
+      if (e.membership === "listed") {
+        const only = e.nodes[0];
+        if (e.nodes.length === 1 && only?.kind === "doc" && join(e.root, only.rel) === abs)
+          return { abs, entry: e, whole: true, dir: false };
+        continue;
+      }
+      if (abs === e.root) return { abs, entry: e, whole: true, dir: true };
+      if (abs.startsWith(e.root + sep)) {
+        const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
+        if (node) return { abs, entry: e, whole: false, dir: node.kind === "group" };
+      }
+    }
+    throw new SessionError(`${abs} is not shown in this session's context`, 404);
+  }
+
+  /** Refuse a name that is not one plain file or folder name. */
+  private nameOrDie(name: string): string {
+    const n = name.trim();
+    if (
+      n === "" ||
+      n === "." ||
+      n === ".." ||
+      n.startsWith(".") ||
+      /[/\\\0]/.test(n) ||
+      n.length > 255
+    )
+      throw new SessionError(
+        `"${name}" is not a usable name — one plain name, no slashes, not starting with a dot`,
+        400,
+      );
+    return n;
+  }
+
+  /** A document name: a name without a document extension gets `.md`. */
+  private docNameOrDie(name: string): string {
+    const n = this.nameOrDie(name);
+    return isDocName(n) ? n : `${n}.md`;
+  }
+
+  /**
+   * After something moved on disk from `from` to `to`, bring the model with it:
+   * opened documents keep their versions under the new path, entries rooted at
+   * or holding the moved thing follow it, and every mirror is re-read. An entry
+   * that now sits inside another set is dropped — the set shows it already.
+   */
+  private followMove(from: string, to: string): void {
+    const moved = (p: string): string | null =>
+      p === from ? to : p.startsWith(from + sep) ? to + p.slice(from.length) : null;
+    for (const d of this.m.docs) {
+      const now = moved(d.original);
+      if (now) {
+        d.original = now;
+        d.name = basename(now);
+      }
+    }
+    const drop = new Set<string>();
+    for (const e of this.m.context) {
+      if (e.membership === "listed") {
+        const only = e.nodes[0];
+        if (only?.kind !== "doc") continue;
+        const now = moved(join(e.root, only.rel));
+        if (!now) continue;
+        if (this.coveringEntry(now, e.id)) drop.add(e.id);
+        else {
+          e.root = dirname(now);
+          e.label = basename(now);
+          e.nodes = [{ kind: "doc", rel: basename(now) }];
+        }
+      } else {
+        const now = moved(e.root);
+        if (!now) continue;
+        if (this.coveringEntry(now, e.id)) drop.add(e.id);
+        else {
+          e.root = now;
+          e.label = basename(now) || now;
+        }
+      }
+    }
+    this.m.context = this.m.context.filter((e) => !drop.has(e.id));
+    for (const e of this.m.context) if (e.membership === "mirrored") this.rescan(e.id);
+    this.relink();
+  }
+
+  /** After a file or folder landed at `abs`: re-read the set it is in, or give it an entry. */
+  private adoptNew(abs: string): void {
+    const set = this.coveringEntry(abs);
+    if (set) this.rescan(set.id);
+    else this.m.context.push(entryForPath(abs, `c-${randHex(3)}`));
+    this.relink();
+  }
+
+  /** A name in `dir` that is free: `name`, else `stem 2.ext`, `stem 3.ext`, … */
+  private freeName(dir: string, name: string, isDir: boolean): string {
+    if (!existsSync(join(dir, name))) return name;
+    const ext = isDir ? "" : extname(name);
+    const stem = ext ? name.slice(0, -ext.length) : name;
+    for (let i = 2; ; i++) {
+      const n = `${stem} ${i}${ext}`;
+      if (!existsSync(join(dir, n))) return n;
+    }
+  }
+
+  private refuseExisting(abs: string): void {
+    if (existsSync(abs))
+      throw new SessionError(`${abs} already exists — nothing was overwritten`, 409);
+  }
+
+  createDoc(rawDir: string, name?: string): { path: string } {
+    const dir = this.destinationOrDie(rawDir);
+    const file =
+      name === undefined ? this.freeName(dir, "Untitled.md", false) : this.docNameOrDie(name);
+    const abs = join(dir, file);
+    this.refuseExisting(abs);
+    writeFileSync(abs, "", { flag: "wx" });
+    this.adoptNew(abs);
+    this.persist();
+    return { path: abs };
+  }
+
+  createFolder(rawDir: string, name?: string): { path: string } {
+    const dir = this.destinationOrDie(rawDir);
+    const folder =
+      name === undefined ? this.freeName(dir, "New folder", true) : this.nameOrDie(name);
+    const abs = join(dir, folder);
+    this.refuseExisting(abs);
+    mkdirSync(abs);
+    this.adoptNew(abs);
+    this.persist();
+    return { path: abs };
+  }
+
+  move(rawPath: string, rawInto: string): { path: string; from: string } {
+    const item = this.itemOrDie(rawPath);
+    const into = this.destinationOrDie(rawInto);
+    if (into === item.abs || into.startsWith(item.abs + sep))
+      throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
+    if (dirname(item.abs) === into)
+      throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
+    const to = join(into, basename(item.abs));
+    this.refuseExisting(to);
+    this.renameOrDie(item.abs, to);
+    this.followMove(item.abs, to);
+    if (!this.itemAt(to)) this.adoptNew(to);
+    this.persist();
+    return { path: to, from: item.abs };
+  }
+
+  rename(rawPath: string, name: string): { path: string; from: string } {
+    const item = this.itemOrDie(rawPath);
+    let next = this.nameOrDie(name);
+    // A document keeps a document extension: "notes" renames notes.md to
+    // notes.md, not to an extensionless file Scriptorium would stop showing.
+    if (!item.dir && !isDocName(next)) next += extname(item.abs) || ".md";
+    const to = join(dirname(item.abs), next);
+    if (to === item.abs) return { path: to, from: item.abs };
+    // A case-only rename on a case-insensitive disk finds "itself" existing.
+    if (to.toLowerCase() !== item.abs.toLowerCase()) this.refuseExisting(to);
+    this.renameOrDie(item.abs, to);
+    this.followMove(item.abs, to);
+    this.persist();
+    return { path: to, from: item.abs };
+  }
+
+  private renameOrDie(from: string, to: string): void {
+    try {
+      renameSync(from, to);
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code;
+      throw new SessionError(
+        code === "EXDEV"
+          ? `cannot move ${from} to another disk (${to}) — copy it instead`
+          : `cannot move ${from} to ${to}: ${code ?? String(e)}`,
+        409,
+      );
+    }
+  }
+
+  /** Whether `abs` is shown anywhere in the context now. */
+  private itemAt(abs: string): boolean {
+    try {
+      this.itemOrDie(abs);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** "Remove from Scriptorium" — never from disk (E24). */
+  hide(rawPath: string): { path: string; entry: string; removedEntry: boolean } {
+    const item = this.itemOrDie(rawPath);
+    if (item.whole) {
+      this.removeContext(item.entry.id);
+      return { path: item.abs, entry: item.entry.id, removedEntry: true };
+    }
+    const rel = toPosix(relative(item.entry.root, item.abs));
+    item.entry.hidden = [...(item.entry.hidden ?? []).filter((h) => h !== rel), rel];
+    this.rescan(item.entry.id);
+    this.relink();
+    this.closeOrphanedOpenDoc();
+    this.persist();
+    return { path: item.abs, entry: item.entry.id, removedEntry: false };
+  }
+
+  unhide(entryId: string): { entry: string; restored: number } {
+    const e = this.m.context.find((x) => x.id === entryId);
+    if (!e)
+      throw new SessionError(
+        `no context entry ${entryId}`,
+        404,
+        this.m.context.map((x) => x.id),
+      );
+    const restored = e.hidden?.length ?? 0;
+    delete e.hidden;
+    this.rescan(e.id);
+    this.relink();
+    this.persist();
+    return { entry: e.id, restored };
+  }
+
+  /**
+   * E22: a single document becomes a set — a folder named for it beside it, the
+   * document moved in, and the entry (same id) now mirrors that folder.
+   */
+  makeSet(rawPath: string): { path: string; folder: string; entry: string } {
+    const item = this.itemOrDie(rawPath);
+    if (item.entry.membership !== "listed" || item.dir)
+      throw new SessionError(
+        `${this.display(item.abs)} is already in a set — make a folder there instead`,
+        400,
+      );
+    const parent = dirname(item.abs);
+    const stem = basename(item.abs, extname(item.abs)) || "Untitled";
+    const folder = join(parent, this.freeName(parent, stem, true));
+    mkdirSync(folder);
+    const to = join(folder, basename(item.abs));
+    this.renameOrDie(item.abs, to);
+    const e = item.entry;
+    e.membership = "mirrored";
+    e.root = folder;
+    e.label = basename(folder);
+    e.nodes = [];
+    this.followMove(item.abs, to);
+    this.persist();
+    return { path: to, folder, entry: e.id };
+  }
+
+  /** The most text one import carries — a document, not a data dump. */
+  static readonly IMPORT_MAX_BYTES = 8 * 1024 * 1024;
+
+  /**
+   * E23's drop: a COPY of a file's text, written under a free name into `into`
+   * (default: the workspace), then shown like any other document.
+   */
+  importText(name: string, text: string, rawInto?: string): { path: string } {
+    const file = this.nameOrDie(name);
+    if (!isDocName(file))
+      throw new SessionError(
+        `not a document Scriptorium opens (${DOC_EXTENSIONS.join(" ")}): ${file}`,
+        400,
+        [...DOC_EXTENSIONS],
+      );
+    if (Buffer.byteLength(text) > Session.IMPORT_MAX_BYTES)
+      throw new SessionError(
+        `${file} is larger than ${Session.IMPORT_MAX_BYTES / 1024 / 1024} MB — not imported`,
+        400,
+      );
+    const dir = this.destinationOrDie(rawInto ?? this.workspace);
+    const abs = join(dir, this.freeName(dir, file, false));
+    writeFileSync(abs, text, { flag: "wx" });
+    this.adoptNew(abs);
+    this.persist();
+    return { path: abs };
+  }
+
   // ── chat ───────────────────────────────────────────────────────────────
 
   addMessage(
@@ -761,6 +1158,7 @@ export class Session {
     return {
       sessionId: this.m.sessionId,
       home: this.home,
+      workspace: this.workspace,
       mode,
       context: this.m.context,
       docs: this.m.docs.map((d) => this.docView(d)),

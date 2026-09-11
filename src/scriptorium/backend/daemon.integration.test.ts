@@ -7,7 +7,15 @@
 // One session per describe block, torn down in afterAll — every daemon this
 // file starts, it stops.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -272,6 +280,44 @@ describe("a session, end to end through the launchers", () => {
     expect(readFileSync(activePath, "utf8")).toBe(before);
     const s2 = JSON.parse((await cli("state", "--full")).out) as PublicState;
     expect(s2.chat.some((m) => m.who === "system" && m.text.includes("ACTIVE version"))).toBe(true);
+  });
+
+  test("E24 — the agent's verbs and the surface's messages are one path: same change, announced to both", async () => {
+    // E23: a new session's workspace is the directory `open` ran in (a cwd is a realpath).
+    expect((JSON.parse((await cli("workspace")).out) as { workspace: string }).workspace).toBe(
+      realpathSync(root),
+    );
+    // The agent makes a folder in the set and moves a new document into it.
+    const f = await cli("new-folder", join(docs, "set", "drafts"));
+    expect(f.code).toBe(0);
+    expect((await cli("new-doc", join(docs, "set", "idea.md"))).code).toBe(0);
+    expect(
+      (await cli("move", join(docs, "set", "idea.md"), join(docs, "set", "drafts"))).code,
+    ).toBe(0);
+    expect(existsSync(join(docs, "set", "drafts", "idea.md"))).toBe(true);
+    await waitTail((l) => l.fact === "move" && l.by === "agent");
+    // The surface sees it in the state, with the agent named in the chat.
+    const st = (await surface.waitFor(
+      (m) =>
+        m.type === "state" &&
+        m.state.chat.some((c) =>
+          c.text.startsWith("Agent moved set/idea.md to set/drafts/idea.md"),
+        ),
+    )) as Extract<ServerMsg, { type: "state" }>;
+    const set = st.state.context.find((e) => e.root === join(docs, "set"));
+    expect(JSON.stringify(set?.nodes)).toContain("drafts/idea.md");
+    // The human makes a document the same way; the sender is told where it landed.
+    surface.send({ type: "doc.create", dir: join(docs, "set", "drafts") });
+    const done = (await surface.waitFor((m) => m.type === "structure.done")) as Extract<
+      ServerMsg,
+      { type: "structure.done" }
+    >;
+    expect(done.path).toBe(join(docs, "set", "drafts", "Untitled.md"));
+    await waitTail((l) => l.fact === "doc.create" && l.by === "human");
+    // Outside the context AND the workspace: refused through the CLI's envelope.
+    const bad = await cli("new-doc", join(root, "home", "stray.md"));
+    expect(bad.code).toBe(2);
+    expect(existsSync(join(root, "home", "stray.md"))).toBe(false);
   });
 
   test("an unknown doc is not_found with the docs in hand as choices", async () => {

@@ -58,7 +58,7 @@ import {
   unlinkSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
 import { printJson } from "../../kit/lib/printJson";
 import {
@@ -191,6 +191,7 @@ const CLI_OPTIONS = {
   doc: { type: "string" },
   from: { type: "string" },
   full: { type: "boolean" },
+  into: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
   restore: { type: "string" },
@@ -351,6 +352,8 @@ async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
   const daemonArgs = ["run", SERVER_SCRIPT];
   if (typeof flags.timeout === "string") daemonArgs.push("--timeout", flags.timeout);
   if (typeof flags.restore === "string") daemonArgs.push("--restore", flags.restore);
+  // E23: a new session's workspace is where `open` ran. A restored one keeps its own.
+  else daemonArgs.push("--workspace", process.cwd());
 
   const cwd = daemonCwd();
   if (!existsSync(cwd))
@@ -550,6 +553,44 @@ function versionInfo(): { name: string; version: string } {
   return { name: "scriptorium", version: "unknown" };
 }
 
+/**
+ * E24's verbs: the agent's half of the structure ops the human reaches by menus
+ * and drag and drop. Each resolves its paths against THIS process's cwd and
+ * posts one op; the daemon does the change and announces it in the chat.
+ */
+async function structureCmd(session: string | undefined, op: Record<string, unknown>) {
+  printJson(await postCmd(session, op));
+}
+
+/** `import <file>`: the file's TEXT is sent, so the daemon writes a copy (E23). */
+async function cmdImport(file: string, into: string | undefined, session: string | undefined) {
+  const abs = resolve(file);
+  let st: ReturnType<typeof statSync>;
+  try {
+    st = statSync(abs);
+  } catch {
+    die(`no such file: ${abs}`, "not_found");
+  }
+  if (!st.isFile() || !isDocName(abs))
+    die(`not a document scriptorium opens: ${abs}`, "usage", { choices: [...DOC_EXTENSIONS] });
+  await structureCmd(session, {
+    type: "import",
+    name: abs.split("/").pop() as string,
+    text: readFileSync(abs, "utf8"),
+    ...(into !== undefined ? { into: resolve(into) } : {}),
+  });
+}
+
+/** `workspace` alone prints it; `workspace <dir>` sets it. */
+async function cmdWorkspace(dir: string | undefined, session: string | undefined) {
+  if (dir !== undefined)
+    return structureCmd(session, { type: "workspace.set", path: resolve(dir) });
+  const s = requireSession(session);
+  const { status, data } = await api(s.port, "GET", "/state");
+  if (status !== 200) daemonRefused("workspace", status, data);
+  printJson({ workspace: (data as { workspace?: unknown }).workspace });
+}
+
 // ── THE COMMAND TABLE — dispatch, help, `schema` and every `choices` walk it ──
 
 type Flag = keyof typeof CLI_OPTIONS;
@@ -640,6 +681,95 @@ const COMMANDS: CommandSpec[] = [
         }),
       );
     },
+  },
+  {
+    name: "new-doc",
+    flags: SESSION,
+    positionals: [{ name: "path", required: true }],
+    describe:
+      "create an empty document (its folder must be a set, a folder in one, or the workspace)",
+    run: (pos, _flags, session) => {
+      const abs = resolve(pos[0] as string);
+      return structureCmd(session, { type: "doc.create", dir: dirname(abs), name: basename(abs) });
+    },
+  },
+  {
+    name: "new-folder",
+    flags: SESSION,
+    positionals: [{ name: "path", required: true }],
+    describe: "create a folder — inside a set, or in the workspace as a new set",
+    run: (pos, _flags, session) => {
+      const abs = resolve(pos[0] as string);
+      return structureCmd(session, {
+        type: "folder.create",
+        dir: dirname(abs),
+        name: basename(abs),
+      });
+    },
+  },
+  {
+    name: "move",
+    flags: SESSION,
+    positionals: [
+      { name: "path", required: true },
+      { name: "into", required: true },
+    ],
+    describe: "move a document or folder into another folder (a real move on disk)",
+    run: (pos, _flags, session) =>
+      structureCmd(session, {
+        type: "move",
+        path: resolve(pos[0] as string),
+        into: resolve(pos[1] as string),
+      }),
+  },
+  {
+    name: "rename",
+    flags: SESSION,
+    positionals: [
+      { name: "path", required: true },
+      { name: "name", required: true },
+    ],
+    describe: "rename a document or folder in place",
+    run: (pos, _flags, session) =>
+      structureCmd(session, { type: "rename", path: resolve(pos[0] as string), name: pos[1] }),
+  },
+  {
+    name: "hide",
+    flags: SESSION,
+    positionals: [{ name: "path", required: true }],
+    describe: "remove a document, folder or set from Scriptorium — the files stay on disk",
+    run: (pos, _flags, session) =>
+      structureCmd(session, { type: "hide", path: resolve(pos[0] as string) }),
+  },
+  {
+    name: "unhide",
+    flags: SESSION,
+    positionals: [{ name: "entry", required: true }],
+    describe: "bring back everything hidden in a set (its entry id, from state)",
+    run: (pos, _flags, session) => structureCmd(session, { type: "unhide", entry: pos[0] }),
+  },
+  {
+    name: "make-set",
+    flags: SESSION,
+    positionals: [{ name: "path", required: true }],
+    describe: "turn a single document into a set: a folder named for it, the document moved in",
+    run: (pos, _flags, session) =>
+      structureCmd(session, { type: "set.make", path: resolve(pos[0] as string) }),
+  },
+  {
+    name: "import",
+    flags: [...SESSION, "into"],
+    positionals: [{ name: "file", required: true }],
+    describe: "copy a document in (default: into the workspace) and show the copy",
+    run: (pos, flags, session) =>
+      cmdImport(pos[0] as string, typeof flags.into === "string" ? flags.into : undefined, session),
+  },
+  {
+    name: "workspace",
+    flags: SESSION,
+    positionals: [{ name: "dir", required: false }],
+    describe: "print the workspace (where drops and new top-level documents land), or set it",
+    run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
   },
   {
     name: "info",

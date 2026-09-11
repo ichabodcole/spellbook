@@ -30,15 +30,21 @@ const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "out", "coverage"]);
  */
 export const MIRROR_NODE_CAP = 2000;
 
-const toPosix = (p: string) => p.split(sep).join("/");
+export const toPosix = (p: string) => p.split(sep).join("/");
 
-/** Mirror `root` into a sorted node tree: groups first, then docs, by name. */
+/**
+ * Mirror `root` into a sorted node tree: groups first, then docs, by name.
+ * `hidden` rels (E24's "Remove from Scriptorium") are skipped, a folder with
+ * everything under it.
+ */
 export function scanTree(
   root: string,
   cap = MIRROR_NODE_CAP,
+  hidden: readonly string[] = [],
 ): { nodes: ContextNode[]; truncated: boolean } {
   let count = 0;
   let truncated = false;
+  const skip = new Set(hidden);
   const walk = (dir: string): ContextNode[] => {
     let names: string[];
     try {
@@ -62,13 +68,16 @@ export function scanTree(
         continue;
       }
       const rel = toPosix(relative(root, abs));
+      if (skip.has(rel)) continue;
       if (st.isDirectory()) {
         if (SKIP_DIRS.has(name)) continue;
         count++;
         const children = walk(abs);
-        // An empty group is still a real directory, but a mirror of a docs
-        // folder is more useful without twenty empty asset folders in it.
-        if (children.length > 0) groups.push({ kind: "group", rel, children });
+        // A folder holding only non-documents (images, assets) is noise in a
+        // docs mirror and is left out. A TRULY EMPTY folder is kept: it is one
+        // somebody just made to put documents in ("New folder", E24), and
+        // leaving it out made it vanish the moment it was created.
+        if (children.length > 0 || isEmptyDir(abs)) groups.push({ kind: "group", rel, children });
       } else if (st.isFile() && isDocName(name)) {
         count++;
         docs.push({ kind: "doc", rel });
@@ -78,6 +87,24 @@ export function scanTree(
   };
   const nodes = walk(root);
   return { nodes, truncated };
+}
+
+/** Nothing in it but dotfiles (a `.DS_Store` does not make a folder full). */
+function isEmptyDir(dir: string): boolean {
+  try {
+    return readdirSync(dir).every((n) => n.startsWith("."));
+  } catch {
+    return false;
+  }
+}
+
+/** The node at `rel` in a tree, or undefined. */
+export function findNode(nodes: readonly ContextNode[], rel: string): ContextNode | undefined {
+  for (const n of nodes) {
+    if (n.rel === rel) return n;
+    if (n.kind === "group" && rel.startsWith(`${n.rel}/`)) return findNode(n.children, rel);
+  }
+  return undefined;
 }
 
 export class PathError extends Error {
