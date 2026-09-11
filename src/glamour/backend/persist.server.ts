@@ -15,9 +15,11 @@ const EXT_BY_MIME: Record<string, string> = {
 
 export function saveDataUrl(dir: string, id: string, dataUrl: string): string {
   const m = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(dataUrl);
-  if (!m || !dir) return "";
+  // `(.*)` is mandatory, so a match always sets `body`; `""` is this
+  // function's own answer for "not saved", so an impossible absence takes it.
+  const body = m?.[3];
+  if (!m || body === undefined || !dir) return "";
   const mime = (m[1] ?? "application/octet-stream").toLowerCase();
-  const body = m[3];
   const buf = m[2] ? Buffer.from(body, "base64") : Buffer.from(decodeURIComponent(body), "utf8");
   const ext = EXT_BY_MIME[mime] ?? "bin";
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "_");

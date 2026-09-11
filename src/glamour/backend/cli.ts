@@ -300,6 +300,19 @@ export function parseArgs(args: string[]): {
   }
 }
 
+/**
+ * Positional `i` of a verb whose ARITY DISPATCH HAS ALREADY ENFORCED — so this
+ * absence is impossible through the CLI. The builders are exported (cli.test.ts
+ * calls them directly), and "no such answer exists" for a command with no id,
+ * so an impossible absence gets the house's usage refusal (T22's third row)
+ * rather than a command posted to the daemon with `id: undefined`.
+ */
+function positional(pos: string[], i: number, name: string): string {
+  const v = pos[i];
+  if (v === undefined) throw new UsageError(`missing <${name}>`);
+  return v;
+}
+
 export function buildSayCmd(
   pos: string[],
   flags: Record<string, string | boolean>,
@@ -330,7 +343,7 @@ export function buildSectionCmd(
     content?: string;
     prompts?: string[];
     colors?: Array<{ hex: string; name?: string }>;
-  } = { type: "section", key: pos[0] };
+  } = { type: "section", key: positional(pos, 0, "key") };
   if (typeof flags.status === "string") cmd.status = flags.status;
   if (typeof flags.content === "string") cmd.content = flags.content;
   if (typeof flags.prompts === "string")
@@ -394,7 +407,7 @@ export function buildGenCostCmd(
 ): { type: "gen.cost"; id: string; cost: number } {
   return {
     type: "gen.cost",
-    id: pos[0],
+    id: positional(pos, 0, "id"),
     cost: typeof flags.cost === "string" ? Number.parseFloat(flags.cost) : Number.NaN,
   };
 }
@@ -405,7 +418,7 @@ export function buildGenMetaCmd(
 ): { type: "gen.meta"; id: string; prompt?: string; custom?: Record<string, string> } {
   const cmd: { type: "gen.meta"; id: string; prompt?: string; custom?: Record<string, string> } = {
     type: "gen.meta",
-    id: pos[0],
+    id: positional(pos, 0, "id"),
   };
   if (typeof flags.prompt === "string") cmd.prompt = flags.prompt;
   const custom = parseCustom(flags.custom);
@@ -426,7 +439,7 @@ export function buildStyleArchiveCmd(
 ): { type: "style.archive"; id: string; archived: boolean } {
   return {
     type: "style.archive",
-    id: pos[0],
+    id: positional(pos, 0, "id"),
     archived: !flags.unarchive,
   };
 }
@@ -610,8 +623,17 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   // `unref()` rather than `destroy()`: both measured clean, and unref is the
   // conservative one — it leaves the stream usable and only stops it holding the
   // loop. The handshake is the sole read, so nothing downstream needs it.
-  // biome-ignore lint/style/noNonNullAssertion: stdio "pipe" guarantees stdout
-  child.stdout!.unref();
+  // ⚠ NOT `instanceof Socket`. MEASURED under Bun: this pipe is a plain
+  // `Readable` (constructor `Readable`, `instanceof net.Socket` false) that
+  // nonetheless carries `unref` — node's typings declare it only on `Socket`,
+  // hence TS2339. A Socket guard would silently skip the unref and bring back
+  // the 91 s hang above, so the check is for the METHOD, and its absence is a
+  // named throw — the same crash the old `!` would have produced, now saying why.
+  const out = child.stdout;
+  if (!out || !("unref" in out) || typeof out.unref !== "function") {
+    throw new Error("glamour: the daemon's stdout pipe has no unref(); `open` would never exit");
+  }
+  out.unref();
 
   let parsed: { url: string; port: number; session_id: string };
   try {
@@ -764,7 +786,14 @@ type CommandSpec = {
     pos: string[],
     flags: Flags,
     session: string | undefined,
-  ) => Promise<number | undefined> | number | undefined;
+  ) => Promise<number> | Promise<void> | number | void;
+  // ⚠ `void`, not `undefined`, and that is the contract above rather than a
+  // loosening: every handler that returns `postCmd(...)` returns `Promise<void>`,
+  // and `undefined` refused all seventeen of them (type-debt Phase 3c). Dispatch
+  // maps any non-number to 0, so `void` is exactly the set it accepts — and a
+  // handler returning a string or an object is still a type error. Spelled as
+  // two `Promise`s because biome's noConfusingVoidType refuses `void` inside a
+  // union type argument; the accepted set is the same.
 };
 
 const SESSION = ["session"] as const satisfies readonly Flag[];

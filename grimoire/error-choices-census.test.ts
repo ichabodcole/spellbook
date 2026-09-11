@@ -114,7 +114,11 @@ const EXPECTED: Record<
   astrolabe: { sites: 15, choices: 4, verbRoster: true, flagMap: true },
   bounty: { sites: 32, choices: 2, verbRoster: true, flagMap: true },
   digestify: { sites: 8, choices: 2, verbRoster: false, flagMap: true },
-  glamour: { sites: 25, choices: 9, verbRoster: true, flagMap: true },
+  // 25 -> 26 on 2026-09-10, type-debt Phase 3c: `positional()` in cli.ts, a
+  // named usage throw for a builder called without the positional arity
+  // dispatch guarantees. No `choices` by A1's ruling — an id positional is not
+  // an enumerated set — so `choices` stays 9. Impossible through the CLI.
+  glamour: { sites: 26, choices: 9, verbRoster: true, flagMap: true },
   grapevine: { sites: 58, choices: 5, verbRoster: true, flagMap: true },
   imago: { sites: 24, choices: 3, verbRoster: true, flagMap: true },
   magpie: { sites: 32, choices: 4, verbRoster: true, flagMap: true },
