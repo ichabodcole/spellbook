@@ -1658,3 +1658,29 @@ Driven: the built daemon stays up and serves `open`/`send`/`pull`.
   type fact about generated output.
 - _Leave the launcher error as a named residue._ The fix is one line and
   behaviour-neutral.
+
+## T36 · The last two, and what zero means for the gate
+
+**Decided:** lead, 2026-09-10, closing the project.
+
+- `src/kit/wire/serveDist.ts:153` — the `.filter()` over a regex's captures
+  became a type predicate, `(ref): ref is string =>`, **taken with its clause**:
+  `!!ref` was already the filter's first condition. The absence it guards is
+  impossible (the regex's only group is mandatory), so removing `!!ref` reddens
+  nothing — driven, 15 pass either way. That is the correct result for an
+  impossible absence, recorded so it is not mistaken for a vacuous calibration.
+  Phase 2's journal had said this fix was "already written, one file over".
+- `src/mind-mapper/backend/cli.ts:823` — an async `onHttpError` returned
+  `"retry"`, which an async arrow widens to `Promise<string>` without a stated
+  return type; it now states `Promise<"retry">`.
+
+⚠ **What zero does to the gate — a question for Cole, not a ruling made here.**
+Proposal R2 kept sprint 05's ruling that `tsc` is **not a blocking whole-repo
+typecheck**, and the reason was the count: _"a repo with 584 errors cannot have
+a red-on-any-error gate"_. **At zero that reason is gone, and the ratchet now
+behaves as one:** any new type error in any area is a ROSE, and ROSE is red. The
+escape hatch is the one the ratchet always had — a deliberate re-declaration
+with an account beside the pin — so it is a gate with a documented override, not
+an absolute one. Whether that is the gate Cole wants is his call (cost and
+process are his lane); the alternative is to let the ratchet stand and re-read
+R2 explicitly. Nothing was changed to force either answer.

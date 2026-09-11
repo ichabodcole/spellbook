@@ -1,8 +1,8 @@
 # Type debt — a ratchet, not a sweep
 
-**Created:** 2026-09-10 · **Status:** Phases 0–3 complete (2026-09-10) — 584 →
-**407**; Phase 4 (bounty, imago, grapevine) not started. Journals: `phase-0` …
-`phase-3-journal.md` · **Ruled by:** Cole **Measured:** 2026-09-10, at `221c13b`
+**Created:** 2026-09-10 · **Status:** ✅ **COMPLETE (2026-09-10) — 584 → 0.**
+Every area declares 0; see "Closing" at the end. Journals: `phase-0` …
+`phase-4-journal.md` · **Ruled by:** Cole **Measured:** 2026-09-10, at `221c13b`
 (the convergence's last merge)
 
 ## The problem, stated once
@@ -109,3 +109,38 @@ one branch each. By this point the pattern is known and the surprises are spent.
 - The surface's 78 errors are in scope but last: they are the least
   agent-facing.
 - Re-litigating sprint 05.
+
+## Closing — against "Done means", 2026-09-10
+
+- **Every area's baseline is 0.** 32 areas, 548 files, each examined by exactly
+  one `tsc` run (T32). No residue was needed.
+- **The ratchet is green from a clean checkout and calibrated by mutation** —
+  ROSE, FELL, NOT LOOKED AT, ARRIVED, DEPARTED, the surface/backend split, the
+  workspace measurement and the double count each have a fixture cell that reds
+  under its mutation.
+- **Every site where `undefined` was genuinely reachable, with its sha:**
+
+  | where                               | reachable from                                                                    | sha        | decision |
+  | ----------------------------------- | --------------------------------------------------------------------------------- | ---------- | -------- |
+  | magpie `elementsFromRaw` / `box_2d` | a vision model's reply — real external input                                      | `546e5ce9` | T28      |
+  | imago `PinEditor` via "Edit note"   | the WebSocket (a non-surface client or a restored snapshot); never the shipped UI | `2b9b1f64` | T30      |
+
+  Two, among the 584 errors the project cleared. Every other absence was
+  impossible and is now either total by construction or a named branch. Their
+  siblings that are not type errors are backlog items (imago's numeric `label`;
+  the A1 census counting a comment).
+
+- **The gate's reach, stated honestly:**
+  - **biome** (`bun run check`): lint and format over hand-authored source,
+    including `noUndeclaredVariables`. It does not type-check.
+  - **the ratchet** (`grimoire/type-debt-ratchet.test.ts`, inside `bun test`):
+    every `tsc --noEmit` error in every area, each workspace under its own
+    config. At zero, **any new type error reds the gate** — see T36 for why that
+    is a question for Cole.
+  - **still unchecked:** the stricter flags `tsconfig.json` leaves off
+    (`noUnusedLocals`, `noUnusedParameters`,
+    `noPropertyAccessFromIndexSignature` — a second project, as scoped above);
+    anything a type cannot express, such as the numeric-label and wire-shape
+    cases the backlog now names; and the untyped seams where JSON enters
+    (`.json()`, `JSON.parse`), which are typed by annotation and held honest
+    only where the producer is held to the same type (T26).

@@ -192,3 +192,12 @@ time would have produced three hundred local fixes and missed all three causes.
 **The repo total is 2**: `src/kit/wire/serveDist.ts:153` and one in
 `src/mind-mapper/backend`, both outside Phase 4's areas. They are the last row
 of "Done means".
+
+---
+
+## Zero · `src/kit` and mind-mapper — 2 → 0
+
+**Branch:** `feat/type-debt-to-zero`. One `.filter()` type predicate taken with
+its existing clause (`serveDist.ts`), one stated return type (mind-mapper's
+`onHttpError`). T36. Every dist rebuilt, since `serveDist.ts` is bundled into
+every daemon. The ratchet reads **0 errors in 0 files**.

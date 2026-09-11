@@ -443,6 +443,20 @@ import { join } from "node:path";
 //     produces is wrapped where it is assigned, so later reads narrow.
 //   (47 + 18 + 8 + 31 = 104 in the backend, plus the launcher's plugins
 //   error = 105.)
+//
+// ⛔ RE-DECLARED 2026-09-10 — ZERO: `src/kit` 1 -> 0 and
+// `src/mind-mapper/backend` 1 -> 0. Total 2 -> 0. Route by route (T36):
+//   • `src/kit/wire/serveDist.ts`: a `.filter()` TYPE PREDICATE, taken WITH
+//     its clause — `!!ref` was already the filter's first condition. And the
+//     absence it guards is impossible: the regex's only group is mandatory, so
+//     removing `!!ref` reddens nothing (DRIVEN — 15 pass either way). That is
+//     the right result for an impossible absence, not a vacuous calibration.
+//   • `src/mind-mapper/backend/cli.ts`: an async `onHttpError` whose
+//     `return "retry"` widened to `Promise<string>`; its return type is now
+//     stated as `Promise<"retry">`. Type-only.
+//   • NO `!`, NO `as any`, NO `@ts-expect-error`, NO `?? fallback`.
+//   Every area of this repo now declares 0. From here the ratchet's only
+//   movement is ROSE, and every ROSE is new debt.
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -469,12 +483,12 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/imago": 0,
   "src/imago/backend": 0,
   "src/imago/surface": 0,
-  "src/kit": 1,
+  "src/kit": 0,
   "src/magpie": 0,
   "src/magpie/backend": 0,
   "src/magpie/surface": 0,
   "src/mind-mapper": 0,
-  "src/mind-mapper/backend": 1,
+  "src/mind-mapper/backend": 0,
   "src/mind-mapper/surface": 0,
 };
 
@@ -482,7 +496,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 2;
+const DECLARED_TOTAL = 0;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
