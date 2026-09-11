@@ -1,4 +1,4 @@
-# Document editor spell — decision log
+# Scriptorium — decision log
 
 Series **E**. Decisions and the options not taken, logged live.
 
@@ -163,3 +163,21 @@ version from outside was detected and announced; `@parcel/watcher` on the
 session folder caught the agent's Edit-tool writes; the SSE tail needs a
 heartbeat and a resuming reconnect (the first run lost its stream to the idle
 timeout — the kit's `heartbeat` + `tailEvents` already solve both).
+
+## E12 · The name is `scriptorium`
+
+**Ruled:** Cole, 2026-09-11 — "it represents the kind of space to do this work
+in well." A scriptorium is the room where scribes wrote, copied and corrected
+manuscripts together: an artifact-noun you open and an agent joins, per the
+registry's conventions. **Not taken:** `folio` (the lead's pick — shorter),
+`palimpsest` (hard to say — the registry's astrolabe-over-orrery rule), `quill`
+(Quill.js is an established editor library). Long, but spoken easily.
+
+## E13 · Several sessions at once — session-JSON discovery
+
+**Ruled:** Cole, 2026-09-11 — usually one at a time, but working across projects
+should be possible. That is concurrent sessions, which only the **session-JSON**
+convention can express (D3; playbook N6): `scriptorium-<sessionId>.json` plus
+`scriptorium-latest.json` in tmpdir, through the kit's `writeFileAtomic` /
+`unlinkIfMatches`. Glamour is the nearest per-session reference. **Not taken:**
+a singleton standing daemon (mind-mapper's shape).
