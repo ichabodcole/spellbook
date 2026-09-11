@@ -115,11 +115,29 @@
 //     `noUnusedParameters`, `noPropertyAccessFromIndexSignature`). Every number
 //     here is measured against the flags as configured; turning one on is a
 //     different measurement and a different project.
-//   • THE THREE WORKSPACE `tsconfig.json`s (`src/bounty`, `src/digestify`,
-//     `src/grapevine`). This runs the ROOT config over the whole tree, which is
-//     what `bunx tsc --noEmit` at the root does. Measured before scoping: bounty
-//     is 126 under its own config against 128 under the root, so the root's
-//     answer is not an artifact of the aliases.
+//
+// ── ⛔ A WORKSPACE IS MEASURED UNDER ITS OWN `tsconfig.json` (type-debt T32) ──
+// This scope note used to say the census runs the ROOT config over the whole
+// tree and that the workspace configs (`src/<spell>/tsconfig.json`, which map
+// `@/*` to that spell's surface) were out of scope, because "bounty is 126
+// under its own config against 128 under the root, so the root's answer is not
+// an artifact of the aliases". That held for bounty and was FALSE for the spell
+// measured next: under its own config grapevine's surface is 0; under the root
+// it was 37 — 27 unresolved `@/` imports and 10 implicit-anys cascading from
+// them. Worse than inflated: every shadcn component there was `any` to the
+// root run, so a real prop-type error in that surface was INVISIBLE. The
+// playbook already said so ("`tsc -p src/<spell>` is the honest check").
+//
+// So: every directory `src/<dir>/` holding a `tsconfig.json` is a WORKSPACE,
+// derived from the tree like everything else here. The root run still runs
+// over everything, and then EACH FILE HAS EXACTLY ONE OWNER — a workspace owns
+// every file under its directory; the root owns the rest. A file's `examined`
+// status and its errors come ONLY from its owner's run; the other runs'
+// diagnostics for it are discarded (and counted as discarded, so each run's
+// own total still cross-checks). One owner per file is what keeps the
+// `sumOfAreas` closure a closure rather than a double count. The build
+// resolves `@/` the same way — per importing file, from the nearest tsconfig —
+// so this measures the tree the way it is built.
 //
 // ── ⛔ tsc EXAMINES `dist/`, AND THAT IS WHY `(generated)` EXISTS ───────────
 // `allowJs: true` and no `exclude` in `tsconfig.json` means the root program
@@ -152,6 +170,26 @@ const ROOT = realpathSync(process.env.TYPE_DEBT_ROOT ?? join(import.meta.dir, ".
  *  installs a second, unpinned compiler whose count would not be comparable. */
 const TSC =
   process.env.TYPE_DEBT_TSC ?? join(import.meta.dir, "..", "..", "node_modules", ".bin", "tsc");
+
+/** The WORKSPACES: every `src/<dir>/` that holds its own `tsconfig.json` (T32).
+ *  Derived from the tree — a named list would go blind on the next spell (D43).
+ *  Repo-relative, POSIX, sorted. */
+function workspaces(): string[] {
+  const src = join(ROOT, "src");
+  if (!existsSync(src)) return [];
+  return readdirSync(src, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(src, e.name, "tsconfig.json")))
+    .map((e) => `src/${e.name}`)
+    .sort();
+}
+const WORKSPACES = workspaces();
+
+/** The ONE run whose verdict on `rel` counts: the workspace whose directory
+ *  contains it, else the root (`.`). Total by construction — every path has an
+ *  owner — which is what keeps each file in exactly one run's tally. */
+function ownerOf(rel: string): string {
+  return WORKSPACES.find((w) => rel.startsWith(`${w}/`)) ?? ".";
+}
 
 /** Every extension tsc's program can admit under this `tsconfig.json`.
  *  ⛔ `.js` IS IN HERE BECAUSE `allowJs: true` IS, and leaving it out was this
@@ -264,11 +302,13 @@ const SUMMARY_ONE_FILE = /^Found (\d+) errors? in (?:the same file, starting at:
 
 type Run = { exitCode: number; stdout: string };
 
-function runTsc(): Run {
+function runTsc(project: string): Run {
   // `--listFiles` so the MEASUREMENT's population comes from tsc itself rather
   // than from a second guess at what tsc reads. Measured: it costs nothing
-  // (6.0s vs 6.2s wall on this repo).
-  const args = ["--noEmit", "--pretty", "true", "--listFiles"];
+  // (6.0s vs 6.2s wall on this repo). `-p` names the config; cwd stays ROOT so
+  // every run prints paths relative to the same place. A workspace run costs
+  // ~1s on this repo (T32).
+  const args = ["--noEmit", "--pretty", "true", "--listFiles", "-p", project];
   try {
     const stdout = execFileSync(TSC, args, {
       cwd: ROOT,
@@ -288,44 +328,90 @@ function runTsc(): Run {
   }
 }
 
-const run = runTsc();
-const plain = run.stdout.replace(ANSI, "");
-const lines = plain.split("\n");
+type RunTally = {
+  project: string;
+  exitCode: number;
+  /** Error lines this instrument parsed from the run — ALL of them, owned or not. */
+  counted: number;
+  /** The run's own summary total; `null` = unreadable (fatal below). */
+  toolReported: number | null;
+  toolReportedFiles: number | null;
+  /** Lines for files this run OWNS — the only ones that reach an area. */
+  kept: number;
+  /** Lines for files another run owns — measured there, discarded here. */
+  discarded: number;
+  agree: boolean;
+};
 
-// tsc's own file list is ABSOLUTE. Only files inside the census root and outside
-// `node_modules` are the subject; the lib.d.ts family and installed packages are
-// read by tsc and owned by nobody here.
 const examined = new Set<string>();
-for (const line of lines) {
-  if (!line.startsWith("/")) continue;
-  if (!SOURCE.test(line)) continue;
-  const rel = relative(ROOT, line);
-  if (rel.startsWith("..") || rel.includes("node_modules/")) continue;
-  examined.add(rel.split(sep).join("/"));
-}
-
 const errorLines: { file: string; code: string }[] = [];
-for (const line of lines) {
-  const m = ERROR_LINE.exec(line);
-  if (!m) continue;
-  const [, file, , , code] = m;
-  if (file === undefined || code === undefined) continue;
-  errorLines.push({ file: file.split(sep).join("/"), code });
+const runs: RunTally[] = [];
+for (const project of [".", ...WORKSPACES]) {
+  const run = runTsc(project);
+  const plain = run.stdout.replace(ANSI, "");
+  const lines = plain.split("\n");
+
+  // tsc's own file list is ABSOLUTE. Only files inside the census root and
+  // outside `node_modules` are the subject; the lib.d.ts family and installed
+  // packages are read by tsc and owned by nobody here. And a file counts as
+  // examined only by the run that OWNS it (T32).
+  for (const line of lines) {
+    if (!line.startsWith("/")) continue;
+    if (!SOURCE.test(line)) continue;
+    const rel = relative(ROOT, line);
+    if (rel.startsWith("..") || rel.includes("node_modules/")) continue;
+    const posix = rel.split(sep).join("/");
+    if (ownerOf(posix) === project) examined.add(posix);
+  }
+
+  let counted = 0;
+  let kept = 0;
+  for (const line of lines) {
+    const m = ERROR_LINE.exec(line);
+    if (!m) continue;
+    const [, file, , , code] = m;
+    if (file === undefined || code === undefined) continue;
+    counted++;
+    const posix = file.split(sep).join("/");
+    if (ownerOf(posix) !== project) continue;
+    kept++;
+    errorLines.push({ file: posix, code });
+  }
+
+  const multi = SUMMARY_MULTI_FILE.exec(plain);
+  const single = multi ? null : SUMMARY_ONE_FILE.exec(plain);
+  // Exit 0 means tsc found nothing and printed no summary — a real state, not a
+  // missing one. Any other exit with no readable summary leaves both `null`,
+  // which is the instrument being unable to read the tool, and is fatal below.
+  const toolReported = multi
+    ? Number(multi[1])
+    : single
+      ? Number(single[1])
+      : run.exitCode === 0
+        ? 0
+        : null;
+  const toolReportedFiles = multi ? Number(multi[2]) : single ? 1 : run.exitCode === 0 ? 0 : null;
+  runs.push({
+    project,
+    exitCode: run.exitCode,
+    counted,
+    toolReported,
+    toolReportedFiles,
+    kept,
+    discarded: counted - kept,
+    agree: toolReported === counted,
+  });
 }
 
-const multi = SUMMARY_MULTI_FILE.exec(plain);
-const single = multi ? null : SUMMARY_ONE_FILE.exec(plain);
-// Exit 0 means tsc found nothing and printed no summary — a real state, not a
-// missing one. Any other exit with no readable summary leaves both `null`, which
-// is the instrument being unable to read the tool, and is fatal below.
-const toolReportedErrors = multi
-  ? Number(multi[1])
-  : single
-    ? Number(single[1])
-    : run.exitCode === 0
-      ? 0
-      : null;
-const toolReportedFiles = multi ? Number(multi[2]) : single ? 1 : run.exitCode === 0 ? 0 : null;
+// ⛔ THE COMBINED "TOOL TOTAL" IS EACH RUN'S OWN SUMMARY MINUS WHAT IT DISCARDED.
+// Each run is cross-checked against ITSELF (`agree`: its summary vs its parsed
+// lines), so a parse that drops a line in any run is still caught there; the
+// subtraction only removes lines another run owns and measured.
+const toolReportedErrors = runs.some((r) => r.toolReported === null)
+  ? null
+  : runs.reduce((n, r) => n + (r.toolReported ?? 0) - r.discarded, 0);
+const rootRun = runs[0];
+if (rootRun === undefined) throw new Error("type-debt-census: the root run did not happen");
 
 const inTree = walkSources(ROOT);
 
@@ -400,21 +486,25 @@ const areas: AreaRow[] = [...new Set([...treeByArea.keys(), ...examinedByArea.ke
 const countedErrors = errorLines.length;
 const sumOfAreas = areas.reduce((n, a) => n + (a.errors ?? 0), 0);
 const measured = areas.filter((a) => a.errors !== null);
-const errorsAgree = toolReportedErrors === countedErrors;
+const errorsAgree = runs.every((r) => r.agree) && toolReportedErrors === countedErrors;
 const closureHolds = sumOfAreas === countedErrors && unassigned.length === 0;
-const exitUnderstood = run.exitCode === 0 || run.exitCode === 2;
+const exitUnderstood = runs.every((r) => r.exitCode === 0 || r.exitCode === 2);
+const exitCode = Math.max(...runs.map((r) => r.exitCode));
 
 console.log(
   JSON.stringify(
     {
       root: ROOT,
-      invocation: [TSC, "--noEmit", "--pretty", "true", "--listFiles"],
+      invocation: [TSC, "--noEmit", "--pretty", "true", "--listFiles", "-p", "<project>"],
+      workspaces: WORKSPACES,
+      runs,
       tsc: {
-        exitCode: run.exitCode,
+        exitCode,
         exitUnderstood,
         countedErrors,
         toolReportedErrors,
-        toolReportedFiles,
+        // The ROOT run's own file count; per-run counts are in `runs`.
+        toolReportedFiles: rootRun.toolReportedFiles,
         countedFilesWithErrors: new Set(errorLines.map((e) => e.file)).size,
         errorsAgree,
       },
@@ -440,10 +530,17 @@ console.log(
 // distinction is `gate-blind-set`'s remit and it is this one's too. What exits
 // non-zero is the instrument being unable to stand behind its own numbers.
 const faults: string[] = [];
-if (!exitUnderstood) {
-  faults.push(
-    `tsc exited ${run.exitCode}, which is neither 0 (clean) nor 2 (errors found). Every number above was parsed from the output of a run that did not do what was asked.`,
-  );
+for (const r of runs) {
+  if (r.exitCode !== 0 && r.exitCode !== 2) {
+    faults.push(
+      `tsc -p ${r.project} exited ${r.exitCode}, which is neither 0 (clean) nor 2 (errors found). Every number above was parsed from the output of a run that did not do what was asked.`,
+    );
+  }
+  if (!r.agree) {
+    faults.push(
+      `COUNT DISAGREEMENT in \`tsc -p ${r.project}\` — this instrument counted ${r.counted} error line(s); tsc reports ${r.toolReported}. Every per-area number above is unusable.`,
+    );
+  }
 }
 if (!errorsAgree) {
   faults.push(

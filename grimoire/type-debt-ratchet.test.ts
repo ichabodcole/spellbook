@@ -369,6 +369,21 @@ import { join } from "node:path";
 //     (`toBeUndefined()`, `?? []`), where a throwing reader would have crashed
 //     the poll or inverted the cell; all were restored before any test ran.
 //   (Shipped 1 + 2 + 3 + 8 + 10 + 12 + 1 = 37; tests 97 + sharp 1 = 98; 135.)
+//
+// ⛔ RE-DECLARED 2026-09-10 — THE MEASUREMENT CHANGED, NOT THE CODE (T32):
+// `src/bounty/surface` 3 -> 0 and `src/grapevine/surface` 37 -> 0. Total
+// 272 -> 232. NO SOURCE FILE MOVED. The census now measures every
+// `src/<dir>/tsconfig.json` WORKSPACE under its own config (each file has
+// exactly one owning run), because under the root config those spells' `@/`
+// imports did not resolve: 29 TS2307 and 11 implicit-any cascades that were
+// not type debt in the code but blindness in the instrument — every shadcn
+// component in those surfaces read as `any`. Route by route, against the FELL
+// sentence: no file deleted, added or edited; no assertion added; the fall is
+// the root run's diagnostics for workspace-owned files being DISCARDED in
+// favour of the owning run's, which reports 0 for both surfaces and the same
+// 125 / 104 for both backends. CALIBRATED: a fixture workspace with an `@/`
+// import is clean under its own config and RISES on a real error; `ownerOf`
+// forced to "root" -> that cell reds. Cost: ~1 s per workspace run.
 const DECLARED_BASELINE: Record<string, number> = {
   "(generated)": 0,
   "(repo root)": 0,
@@ -382,7 +397,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/astrolabe/surface": 0,
   "src/bounty": 0,
   "src/bounty/backend": 125,
-  "src/bounty/surface": 3,
+  "src/bounty/surface": 0,
   "src/digestify": 0,
   "src/digestify/backend": 0,
   "src/digestify/surface": 0,
@@ -391,7 +406,7 @@ const DECLARED_BASELINE: Record<string, number> = {
   "src/glamour/surface": 0,
   "src/grapevine": 0,
   "src/grapevine/backend": 104,
-  "src/grapevine/surface": 37,
+  "src/grapevine/surface": 0,
   "src/imago": 0,
   "src/imago/backend": 0,
   "src/imago/surface": 0,
@@ -408,7 +423,7 @@ const DECLARED_BASELINE: Record<string, number> = {
  *  above. ⛔ D27: a total computed by summing the pin would agree with the pin
  *  for any pin, which is a check that cannot fail in the failing case. This
  *  number is what `bunx tsc --noEmit` said, written by hand. */
-const DECLARED_TOTAL = 272;
+const DECLARED_TOTAL = 232;
 
 /** ⛔ `errors: null` MEANS NOT LOOKED AT — see the D42 note in the instrument's
  *  header. It is `number | null` here because it is `number | null` there, and
@@ -426,6 +441,17 @@ type AreaRow = {
 
 type Census = {
   root: string;
+  /** `src/<dir>/` directories with their own tsconfig, each measured by its own run (T32). */
+  workspaces: string[];
+  runs: {
+    project: string;
+    exitCode: number;
+    counted: number;
+    toolReported: number | null;
+    kept: number;
+    discarded: number;
+    agree: boolean;
+  }[];
   tsc: {
     exitCode: number;
     exitUnderstood: boolean;
@@ -555,6 +581,7 @@ describe("type debt ratchet", () => {
           `  TYPE DEBT — \`tsc --noEmit\` reports ${c.tsc.countedErrors} error(s) in ${c.tsc.countedFilesWithErrors} file(s) (tsc's own total: ${c.tsc.toolReportedErrors}).`,
           `  ⛔ NOTHING ELSE IN THE GATE READS THEM — the build is a bundler, \`check\` is biome, and \`bun test\` reaches only executed statements.`,
           `     areas: ${c.population.areasMeasured} measured of ${c.population.areasInTree} in the tree · files: ${c.population.filesExamined} examined of ${c.population.filesInTree}`,
+          `     runs: ${c.runs.map((r) => `${r.project} (${r.kept} kept, ${r.discarded} discarded)`).join(" · ")} — each file counted by its OWNING run only (T32)`,
           `     worst: ${worst.map((a) => `${a.area} (${a.errors})`).join(" · ")}`,
           `     clean: ${c.areas.filter((a) => a.errors === 0).length} area(s) at ZERO, listed in the pin so the day they move is loud`,
           `     top classes: ${Object.entries(c.byClass)
@@ -778,6 +805,51 @@ describe("type debt ratchet — calibration", () => {
           filesInTree: 5,
           filesExamined: 5,
         });
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+    CENSUS_TIMEOUT_MS,
+  );
+
+  test(
+    "WORKSPACE — a file under a `src/<dir>/tsconfig.json` is measured under THAT config, once (T32)",
+    async () => {
+      const dir = mintFixture();
+      try {
+        // A workspace whose config maps `@/*` — the house shape for a shadcn
+        // spell. Under the ROOT config the alias does not resolve (TS2307);
+        // under the workspace's own config it does, and that is the verdict
+        // that must count.
+        writeFileSync(
+          join(dir, "src", "alpha", "tsconfig.json"),
+          `${JSON.stringify({ extends: "../../tsconfig.json", compilerOptions: { paths: { "@/*": ["./surface/*"] } } })}\n`,
+        );
+        writeFileSync(
+          join(dir, "src", "alpha", "surface", "x.ts"),
+          'import { b } from "@/b";\nexport const x: number = b;\n',
+        );
+        const clean = await censusIn(dir);
+        expect(clean.workspaces).toEqual(["src/alpha"]);
+        // Measured by its own config: clean — and the root run's TS2307 for the
+        // same file was DISCARDED, not added to anyone's row.
+        expect(errorsFor(clean)).toEqual(CLEAN);
+        const root = clean.runs.find((r) => r.project === ".");
+        expect(root?.discarded).toBeGreaterThan(0);
+        expect(clean.tsc.errorsAgree).toBe(true);
+        expect(clean.closureHolds).toBe(true);
+        // Every file examined exactly once, by its owner.
+        expect(clean.population.filesExamined).toBe(clean.population.filesInTree);
+
+        // And a REAL error under the workspace config is still a rise — the
+        // workspace run is not a place errors go to disappear.
+        writeFileSync(
+          join(dir, "src", "alpha", "surface", "x.ts"),
+          'import { b } from "@/b";\nexport const x: string = b;\n',
+        );
+        const risen = await censusIn(dir);
+        expect(errorsFor(risen)).toEqual({ ...CLEAN, "src/alpha/surface": 1 });
+        expect(risen.closureHolds).toBe(true);
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

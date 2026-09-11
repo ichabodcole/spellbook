@@ -572,8 +572,9 @@ from one cwd). **Pin the linker:** a root `bunfig.toml` with
 taken: a nested package without the workspace (a second lockfile a root install
 never reads — every fresh clone reds); a root `components.json` (one spell per
 repo by construction). Then two consequences to know: root `tsc -p .` gains
-TS2307 per alias import plus TS7006 cascades (it is nobody's gate;
-`tsc -p src/<spell>` is the honest check, and it is 0), and **the `shadcn`
+TS2307 per alias import plus TS7006 cascades — which is why the type-debt census
+measures every `src/<spell>/tsconfig.json` workspace under its OWN config
+(type-debt T32); `tsc -p src/<spell>` is the honest check, and **the `shadcn`
 skill's probe fails from the repo root** from this commit on (`info` exits
 `monorepo_root`) — `cd src/<spell>` before invoking the skill and before every
 CLI command, or pass `-c src/<spell>`.

@@ -1510,3 +1510,52 @@ output's dimensions with a different library.
   from a relative path, so it would have to be hand-written types — `any` with
   extra steps.
 - _Rewrite the test onto `Bun.Image`._ Loses the independent oracle.
+
+## T32 · ⛔ A WORKSPACE is measured under its own `tsconfig.json` — the census had been blind to two surfaces
+
+**Decided:** lead, 2026-09-10, between Phases 4a and 4b, when grapevine's
+surface numbers would not add up.
+
+The census's own header scoped the workspace configs out: _"This runs the ROOT
+config over the whole tree … bounty is 126 under its own config against 128
+under the root, so the root's answer is not an artifact of the aliases."_ True
+for bounty's two errors, and **false for the next spell measured**: grapevine's
+surface is **37 under the root and 0 under its own config** — 27 unresolved `@/`
+imports and 10 implicit-anys cascading from them. And it was worse than an
+inflated number: to the root run every shadcn component in those surfaces was
+`any`, so **a real prop-type error there was invisible**. The porting playbook
+already said it — _"`tsc -p src/<spell>` is the honest check, and it is 0"_ —
+and the instrument had not listened.
+
+**What changed.** Every `src/<dir>/` with a `tsconfig.json` is a workspace,
+derived from the tree. The root run still covers everything; each file then has
+**exactly one owner** (its workspace, else the root), and its `examined` status
+and its errors come only from the owner's run. Other runs' lines for it are
+**discarded and counted as discarded**, so every run still cross-checks against
+its own summary, and the `sumOfAreas` closure stays a closure. This is also how
+the build resolves `@/` — per importing file, from the nearest tsconfig.
+
+**Measured:** 548 of 548 files examined, each once; total 272 → 232, the fall
+entirely `src/bounty/surface` 3 → 0 and `src/grapevine/surface` 37 → 0; both
+backends read the same under either config (125, 104). Cost: ~1 s per workspace
+run against a 6 s root run.
+
+**Calibrated:** a fixture workspace with an `@/` import is clean under its own
+config and rises by exactly one on a real error; forcing `ownerOf` to the root
+reds that cell.
+
+⚠ **This supersedes a fix made first.** Bounty's first pass (not landed) rewrote
+its two `@/ui/button` imports to `./button` to satisfy the root config. That
+went against the house convention the playbook documents (shadcn spells alias
+into `@/`, and `shadcn add` keeps writing it) and would have been undone by the
+next `add`. Reverted in the rebuilt bounty branch; the instrument moved instead
+of the code.
+
+**Not taken:**
+
+- _Relative imports in every shadcn surface._ Fights the convention and the
+  generator.
+- _A named residue ("37, ruled an artefact")._ Leaves the surface's component
+  types unchecked — the residue would be a blindness with a label on it.
+- _A root `paths` fallback list._ Resolves `@/` to the first matching spell
+  regardless of the importer, and Bun honours root `paths` at run time.
