@@ -1,23 +1,11 @@
 // E18 — the status strip under the editor, modelled on Operator's
 // `StatusBar.vue`: version + author, updated, saved/unsaved, words and
-// characters, separated by dividers. Slice A places it at its FINAL height with
-// example segments (it takes vertical space, so the layout owns it now); the
-// lead wires real values with the viewer — the counts debounced, per
-// Operator's `useContentStats`.
+// characters, separated by dividers. It renders what it is given; the values
+// come from DocumentPane (the counts debounced, per Operator's `useContentStats`).
 import { Fragment } from "react";
 import { Separator } from "@/ui/separator";
 
 export type StatusSegment = { label?: string; value: string };
-
-/** Example values until the viewer supplies real ones. */
-export const PLACEHOLDER_SEGMENTS: StatusSegment[] = [
-  { label: "Version", value: "v1" },
-  { label: "Author", value: "Human" },
-  { label: "Updated", value: "—" },
-  { value: "Saved" },
-  { label: "Words", value: "0" },
-  { label: "Characters", value: "0" },
-];
 
 export function StatusStrip({ segments }: { segments: StatusSegment[] }) {
   return (

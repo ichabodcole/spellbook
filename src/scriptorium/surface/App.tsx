@@ -1,19 +1,20 @@
-// The surface shell — three drag-resizable panes (E11's layout ruling:
-// `resizable`, not `sidebar`), their sizes remembered per viewer, and both
-// themes. Slice A stops here on the surface (E16, and the lead's split): the
-// panes are PLACEHOLDERS wired to the daemon's live state, so the context
-// sidebar and the read-only viewer that land next have a shell, a connection
-// and a state snapshot to render — and nothing to rip out.
-import { FileTextIcon, FolderTreeIcon, MessagesSquareIcon, MoonIcon, SunIcon } from "lucide-react";
-import { useState } from "react";
+// The surface: three drag-resizable panes (E11 — `resizable`, not `sidebar`),
+// the context sidebar on the left (E16 — built first, props-only so it can move
+// to the kit), the open document read-only in the centre with the status strip
+// under it (E18), and the conversation placeholder on the right (chat is a later
+// piece, E16).
+import { MessagesSquareIcon, MoonIcon, SunIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
-import { PLACEHOLDER_SEGMENTS, StatusStrip } from "./components/StatusStrip";
-import { safeStorage } from "./state/storage";
+import type { ContextEntry, DocView, PublicState } from "../backend/protocol";
+import { ContextSidebar } from "./components/context/ContextSidebar";
+import { joinPath } from "./components/context/model";
+import { DocumentPane } from "./components/DocumentPane";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
-import { type Connection, useDaemon } from "./state/useDaemon";
+import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
 /** The pane ids are the persisted layout's keys — renaming one forgets a viewer's sizes. */
 export const PANES = ["context", "document", "chat"] as const;
@@ -25,28 +26,6 @@ const CONNECTION_LABEL: Record<Connection, string> = {
   closed: "daemon unreachable — retrying",
 };
 
-function Placeholder({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: typeof FileTextIcon;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Empty className="h-full">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon />
-        </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  );
-}
-
 function PaneHeading({ children }: { children: string }) {
   return (
     <div className="flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase">
@@ -55,21 +34,19 @@ function PaneHeading({ children }: { children: string }) {
   );
 }
 
+/** The library's storage key, shortened to fit the daemon's pref-key rule. */
+const prefKey = (key: string) => key.replace(/^react-resizable-panels:/, "panes:").slice(0, 64);
+
 export function App() {
-  const { state, connection } = useDaemon();
+  const daemon = useDaemon();
+  const { state, connection } = daemon;
   const [theme, setTheme] = useState<Theme>(readAppliedTheme);
-  const layout = useDefaultLayout({ id: LAYOUT_ID, panelIds: [...PANES], storage: safeStorage });
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     applyTheme(next);
     setTheme(next);
   };
-
-  const entries = state?.context.length ?? 0;
-  const docs = state?.docs.length ?? 0;
-  const open = state?.docs.find((d) => d.slug === state.openDoc) ?? null;
-  const messages = state?.chat.length ?? 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -93,66 +70,106 @@ export function App() {
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </Button>
       </header>
-      <ResizablePanelGroup
-        orientation="horizontal"
-        className="min-h-0 flex-1"
-        defaultLayout={layout.defaultLayout}
-        onLayoutChanged={layout.onLayoutChanged}
-      >
-        <ResizablePanel
-          id="context"
-          defaultSize="22"
-          minSize="12"
-          className="flex flex-col bg-surface"
-        >
-          <PaneHeading>Context</PaneHeading>
-          <Placeholder
-            icon={FolderTreeIcon}
-            title={
-              !state
-                ? "Waiting for the session…"
-                : entries === 0
-                  ? "No context yet"
-                  : `${entries} context ${entries === 1 ? "entry" : "entries"}`
-            }
-            description="Files and folders added to this session appear here. Add one from the agent: cli.ts add <path>."
-          />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
-          <PaneHeading>Document</PaneHeading>
-          <Placeholder
-            icon={FileTextIcon}
-            title={!state ? "Waiting for the session…" : open ? open.name : "No document open"}
-            description={
-              docs === 0
-                ? "Pick a document from the context pane to read it here."
-                : `${docs} ${docs === 1 ? "document" : "documents"} in this session.`
-            }
-          />
-          <StatusStrip segments={PLACEHOLDER_SEGMENTS} />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel
-          id="chat"
-          defaultSize="28"
-          minSize="15"
-          className="flex flex-col bg-surface"
-        >
-          <PaneHeading>Conversation</PaneHeading>
-          <Placeholder
-            icon={MessagesSquareIcon}
-            title={
-              !state
-                ? "Waiting for the session…"
-                : messages === 0
-                  ? "No messages yet"
-                  : `${messages} ${messages === 1 ? "message" : "messages"}`
-            }
-            description="The conversation with the agent lives here."
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      {state ? (
+        <Workspace state={state} daemon={daemon} />
+      ) : (
+        <div className="flex-1" aria-busy="true" />
+      )}
     </div>
+  );
+}
+
+/**
+ * Mounted once the first snapshot has arrived, so the panes' saved sizes (kept
+ * in the HOME's prefs, not the browser — every session is a new port and
+ * browser storage is keyed by origin) are known before the group lays out.
+ */
+function Workspace({
+  state,
+  daemon,
+}: {
+  state: PublicState;
+  daemon: ReturnType<typeof useDaemon>;
+}) {
+  const { send, texts, listDir } = daemon;
+  const prefsRef = useRef(state.prefs);
+  prefsRef.current = state.prefs;
+  const storage = useMemo(
+    () => ({
+      getItem: (key: string) => prefsRef.current[prefKey(key)] ?? null,
+      setItem: (key: string, value: string) =>
+        send({ type: "prefs.set", key: prefKey(key), value }),
+    }),
+    [send],
+  );
+  const layout = useDefaultLayout({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+
+  const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
+  const activeDoc =
+    open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
+  const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
+
+  // A snapshot can name an open document whose text this viewer has never
+  // received (a reload, a reconnect, the agent activating a version): ask once.
+  const asked = useRef(new Set<string>());
+  useEffect(() => {
+    if (!open || text !== undefined) return;
+    const key = textKey(open.slug, open.active);
+    if (asked.current.has(key)) return;
+    asked.current.add(key);
+    send({ type: "read", doc: open.slug, version: open.active });
+  }, [open, text, send]);
+
+  const onOpenDoc = useCallback(
+    (entry: ContextEntry, rel: string) => send({ type: "open", path: joinPath(entry.root, rel) }),
+    [send],
+  );
+
+  return (
+    <ResizablePanelGroup
+      orientation="horizontal"
+      className="min-h-0 flex-1"
+      defaultLayout={layout.defaultLayout}
+      onLayoutChanged={layout.onLayoutChanged}
+    >
+      <ResizablePanel
+        id="context"
+        defaultSize="22"
+        minSize="12"
+        className="flex flex-col bg-surface"
+      >
+        <PaneHeading>Context</PaneHeading>
+        <ContextSidebar
+          entries={state.context}
+          activeDoc={activeDoc}
+          userHome={state.userHome}
+          onOpenDoc={onOpenDoc}
+          onAddPath={(path) => send({ type: "context.add", path })}
+          onRemoveEntry={(entry) => send({ type: "context.remove", id: entry.id })}
+          listDir={listDir}
+        />
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
+        <DocumentPane doc={open} text={text} />
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel id="chat" defaultSize="28" minSize="15" className="flex flex-col bg-surface">
+        <PaneHeading>Conversation</PaneHeading>
+        <Empty className="h-full">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <MessagesSquareIcon />
+            </EmptyMedia>
+            <EmptyTitle>
+              {state.chat.length === 0
+                ? "No messages yet"
+                : `${state.chat.length} ${state.chat.length === 1 ? "message" : "messages"}`}
+            </EmptyTitle>
+            <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

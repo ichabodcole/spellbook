@@ -31,6 +31,19 @@ var __toESM = (mod, isNodeMode, target) => {
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __returnValue = (v) => v;
+function __exportSetter(name, newValue) {
+  this[name] = __returnValue.bind(null, newValue);
+}
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+      configurable: true,
+      set: __exportSetter.bind(all, name)
+    });
+};
 
 // node_modules/scheduler/cjs/scheduler.development.js
 var require_scheduler_development = __commonJS(function(exports) {
@@ -1128,7 +1141,7 @@ var require_react = __commonJS(function(exports, module) {
 
 // node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS(function(exports) {
-  var React = __toESM(require_react());
+  var React2 = __toESM(require_react());
   (function() {
     function noop() {}
     function testStringCoercion(value) {
@@ -1189,7 +1202,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
       },
       p: 0,
       findDOMNode: null
-    }, REACT_PORTAL_TYPE = Symbol.for("react.portal"), ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    }, REACT_PORTAL_TYPE = Symbol.for("react.portal"), ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     typeof Map === "function" && Map.prototype != null && typeof Map.prototype.forEach === "function" && typeof Set === "function" && Set.prototype != null && typeof Set.prototype.clear === "function" && typeof Set.prototype.forEach === "function" || console.error("React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills");
     exports.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = Internals;
     exports.createPortal = function(children, container) {
@@ -1320,7 +1333,7 @@ var require_react_dom = __commonJS(function(exports, module) {
 // node_modules/react-dom/cjs/react-dom-client.development.js
 var require_react_dom_client_development = __commonJS(function(exports) {
   var Scheduler = __toESM(require_scheduler());
-  var React = __toESM(require_react());
+  var React2 = __toESM(require_react());
   var ReactDOM = __toESM(require_react_dom());
   (function() {
     function findHook(fiber, id) {
@@ -2608,7 +2621,7 @@ Error generating stack: ` + x.message + `
       type === "number" && getActiveElement(node.ownerDocument) === node || node.defaultValue === "" + value || (node.defaultValue = "" + value);
     }
     function validateOptionProps(element, props) {
-      props.value == null && (typeof props.children === "object" && props.children !== null ? React.Children.forEach(props.children, function(child) {
+      props.value == null && (typeof props.children === "object" && props.children !== null ? React2.Children.forEach(props.children, function(child) {
         child == null || typeof child === "string" || typeof child === "number" || typeof child === "bigint" || didWarnInvalidChild || (didWarnInvalidChild = true, console.error("Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."));
       }) : props.dangerouslySetInnerHTML == null || didWarnInvalidInnerHTML || (didWarnInvalidInnerHTML = true, console.error("Pass a `value` prop if you set dangerouslyInnerHTML so React knows which value should be selected.")));
       props.selected == null || didWarnSelectedSetOnOption || (console.error("Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>."), didWarnSelectedSetOnOption = true);
@@ -14158,7 +14171,7 @@ Check the render method of %s.`, getComponentNameFromFiber(current) || "Unknown"
     Symbol.for("react.tracing_marker");
     var REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
     Symbol.for("react.view_transition");
-    var MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+    var MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
       pending: false,
       data: null,
       method: null,
@@ -16793,7 +16806,7 @@ Check the top-level render call using <` + componentName2 + ">.");
       }
     };
     (function() {
-      var isomorphicReactPackageVersion = React.version;
+      var isomorphicReactPackageVersion = React2.version;
       if (isomorphicReactPackageVersion !== "19.2.7")
         throw Error(`Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:
   - react:      ` + (isomorphicReactPackageVersion + `
@@ -16895,7 +16908,7 @@ var require_client = __commonJS(function(exports, module) {
 
 // node_modules/react/cjs/react-jsx-runtime.development.js
 var require_react_jsx_runtime_development = __commonJS(function(exports) {
-  var React = __toESM(require_react());
+  var React2 = __toESM(require_react());
   (function() {
     function getComponentNameFromType(type) {
       if (type == null)
@@ -17087,17 +17100,17 @@ React keys must be passed directly to JSX without using spread:
     function isValidElement(object) {
       return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
     }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
       return null;
     };
-    React = {
+    React2 = {
       react_stack_bottom_frame: function(callStackForError) {
         return callStackForError();
       }
     };
     var specialPropKeyWarningShown;
     var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React.react_stack_bottom_frame.bind(React, UnknownOwner)();
+    var unknownOwnerDebugStack = React2.react_stack_bottom_frame.bind(React2, UnknownOwner)();
     var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
     var didWarnAboutKeySpread = {};
     exports.Fragment = REACT_FRAGMENT_TYPE;
@@ -17122,7 +17135,7 @@ var require_jsx_runtime = __commonJS(function(exports, module) {
 
 // node_modules/react/cjs/react-jsx-dev-runtime.development.js
 var require_react_jsx_dev_runtime_development = __commonJS(function(exports) {
-  var React11 = __toESM(require_react());
+  var React12 = __toESM(require_react());
   (function() {
     function getComponentNameFromType(type) {
       if (type == null)
@@ -17314,17 +17327,17 @@ React keys must be passed directly to JSX without using spread:
     function isValidElement3(object) {
       return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
     }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React12.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
       return null;
     };
-    React11 = {
+    React12 = {
       react_stack_bottom_frame: function(callStackForError) {
         return callStackForError();
       }
     };
     var specialPropKeyWarningShown;
     var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React11.react_stack_bottom_frame.bind(React11, UnknownOwner)();
+    var unknownOwnerDebugStack = React12.react_stack_bottom_frame.bind(React12, UnknownOwner)();
     var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
     var didWarnAboutKeySpread = {};
     exports.Fragment = REACT_FRAGMENT_TYPE;
@@ -17340,6 +17353,132 @@ var require_jsx_dev_runtime = __commonJS(function(exports, module) {
   var react_jsx_dev_runtime_development = __toESM(require_react_jsx_dev_runtime_development());
   if (false) {} else {
     module.exports = react_jsx_dev_runtime_development;
+  }
+});
+
+// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
+var require_use_sync_external_store_shim_development = __commonJS(function(exports) {
+  var React42 = __toESM(require_react());
+  (function() {
+    function is(x, y) {
+      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
+    }
+    function useSyncExternalStore$2(subscribe, getSnapshot) {
+      didWarnOld18Alpha || React42.startTransition === undefined || (didWarnOld18Alpha = true, console.error("You are using an outdated, pre-release alpha of React 18 that does not support useSyncExternalStore. The use-sync-external-store shim will not work correctly. Upgrade to a newer pre-release."));
+      var value = getSnapshot();
+      if (!didWarnUncachedGetSnapshot) {
+        var cachedValue = getSnapshot();
+        objectIs(value, cachedValue) || (console.error("The result of getSnapshot should be cached to avoid an infinite loop"), didWarnUncachedGetSnapshot = true);
+      }
+      cachedValue = useState10({
+        inst: { value, getSnapshot }
+      });
+      var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
+      useLayoutEffect4(function() {
+        inst.value = value;
+        inst.getSnapshot = getSnapshot;
+        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+      }, [subscribe, value, getSnapshot]);
+      useEffect10(function() {
+        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+        return subscribe(function() {
+          checkIfSnapshotChanged(inst) && forceUpdate({ inst });
+        });
+      }, [subscribe]);
+      useDebugValue2(value);
+      return value;
+    }
+    function checkIfSnapshotChanged(inst) {
+      var latestGetSnapshot = inst.getSnapshot;
+      inst = inst.value;
+      try {
+        var nextValue = latestGetSnapshot();
+        return !objectIs(inst, nextValue);
+      } catch (error2) {
+        return true;
+      }
+    }
+    function useSyncExternalStore$1(subscribe, getSnapshot) {
+      return getSnapshot();
+    }
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+    var objectIs = typeof Object.is === "function" ? Object.is : is, useState10 = React42.useState, useEffect10 = React42.useEffect, useLayoutEffect4 = React42.useLayoutEffect, useDebugValue2 = React42.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = typeof window === "undefined" || typeof window.document === "undefined" || typeof window.document.createElement === "undefined" ? useSyncExternalStore$1 : useSyncExternalStore$2;
+    exports.useSyncExternalStore = React42.useSyncExternalStore !== undefined ? React42.useSyncExternalStore : shim;
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+  })();
+});
+
+// node_modules/use-sync-external-store/shim/index.js
+var require_shim = __commonJS(function(exports, module) {
+  if (false) {} else {
+    module.exports = require_use_sync_external_store_shim_development();
+  }
+});
+
+// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
+var require_with_selector_development = __commonJS(function(exports) {
+  var React42 = __toESM(require_react());
+  (function() {
+    function is(x, y) {
+      return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
+    }
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+    var shim = require_shim(), objectIs = typeof Object.is === "function" ? Object.is : is, useSyncExternalStore = shim.useSyncExternalStore, useRef15 = React42.useRef, useEffect10 = React42.useEffect, useMemo12 = React42.useMemo, useDebugValue2 = React42.useDebugValue;
+    exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
+      var instRef = useRef15(null);
+      if (instRef.current === null) {
+        var inst = { hasValue: false, value: null };
+        instRef.current = inst;
+      } else
+        inst = instRef.current;
+      instRef = useMemo12(function() {
+        function memoizedSelector(nextSnapshot) {
+          if (!hasMemo) {
+            hasMemo = true;
+            memoizedSnapshot = nextSnapshot;
+            nextSnapshot = selector(nextSnapshot);
+            if (isEqual !== undefined && inst.hasValue) {
+              var currentSelection = inst.value;
+              if (isEqual(currentSelection, nextSnapshot))
+                return memoizedSelection = currentSelection;
+            }
+            return memoizedSelection = nextSnapshot;
+          }
+          currentSelection = memoizedSelection;
+          if (objectIs(memoizedSnapshot, nextSnapshot))
+            return currentSelection;
+          var nextSelection = selector(nextSnapshot);
+          if (isEqual !== undefined && isEqual(currentSelection, nextSelection))
+            return memoizedSnapshot = nextSnapshot, currentSelection;
+          memoizedSnapshot = nextSnapshot;
+          return memoizedSelection = nextSelection;
+        }
+        var hasMemo = false, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = getServerSnapshot === undefined ? null : getServerSnapshot;
+        return [
+          function() {
+            return memoizedSelector(getSnapshot());
+          },
+          maybeGetServerSnapshot === null ? undefined : function() {
+            return memoizedSelector(maybeGetServerSnapshot());
+          }
+        ];
+      }, [getSnapshot, getServerSnapshot, selector, isEqual]);
+      var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
+      useEffect10(function() {
+        inst.hasValue = true;
+        inst.value = value;
+      }, [value]);
+      useDebugValue2(value);
+      return value;
+    };
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop === "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+  })();
+});
+
+// node_modules/use-sync-external-store/shim/with-selector.js
+var require_with_selector = __commonJS(function(exports, module) {
+  if (false) {} else {
+    module.exports = require_with_selector_development();
   }
 });
 
@@ -17436,8 +17575,23 @@ var createLucideIcon = (iconName, iconNode) => {
   return Component;
 };
 
-// node_modules/lucide-react/dist/esm/icons/file-text.mjs
+// node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
 var __iconNode = [
+  ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
+  ["path", { d: "M19 12H5", key: "x3x0zl" }]
+];
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode);
+// node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
+var __iconNode2 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode2);
+// node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
+var __iconNode3 = [
+  ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
+  ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
+];
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode3);
+// node_modules/lucide-react/dist/esm/icons/file-text.mjs
+var __iconNode4 = [
   [
     "path",
     {
@@ -17450,9 +17604,20 @@ var __iconNode = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode);
+var FileText = createLucideIcon("file-text", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/folder-open.mjs
+var __iconNode5 = [
+  [
+    "path",
+    {
+      d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
+      key: "usdka0"
+    }
+  ]
+];
+var FolderOpen = createLucideIcon("folder-open", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode2 = [
+var __iconNode6 = [
   [
     "path",
     {
@@ -17470,9 +17635,20 @@ var __iconNode2 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode2);
+var FolderTree = createLucideIcon("folder-tree", __iconNode6);
+// node_modules/lucide-react/dist/esm/icons/folder.mjs
+var __iconNode7 = [
+  [
+    "path",
+    {
+      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+      key: "1kt360"
+    }
+  ]
+];
+var Folder = createLucideIcon("folder", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode3 = [
+var __iconNode8 = [
   [
     "path",
     {
@@ -17488,9 +17664,9 @@ var __iconNode3 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode3);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode4 = [
+var __iconNode9 = [
   [
     "path",
     {
@@ -17499,9 +17675,9 @@ var __iconNode4 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode4);
+var Moon = createLucideIcon("moon", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode5 = [
+var __iconNode10 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -17512,9 +17688,15 @@ var __iconNode5 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode5);
+var Sun = createLucideIcon("sun", __iconNode10);
+// node_modules/lucide-react/dist/esm/icons/x.mjs
+var __iconNode11 = [
+  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+];
+var X = createLucideIcon("x", __iconNode11);
 // src/scriptorium/surface/App.tsx
-var import_react8 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -18288,7 +18470,7 @@ function K(e, t) {
       return false;
   return true;
 }
-function X({
+function X2({
   layout: e,
   panelConstraints: t
 }) {
@@ -18414,7 +18596,7 @@ function at({
       panels: p.panels,
       prevLayout: z,
       derivedPanelConstraints: m
-    }), h = X({
+    }), h = X2({
       layout: d,
       panelConstraints: m
     });
@@ -18506,7 +18688,7 @@ function lt({
         groupSize: u,
         layout: a,
         separatorToPanels: r
-      } = t(), l = X({
+      } = t(), l = X2({
         layout: n,
         panelConstraints: i
       });
@@ -18532,7 +18714,7 @@ function B(e, t) {
     pivotIndices: u,
     prevLayout: r,
     trigger: "keyboard"
-  }), c = X({
+  }), c = X2({
     layout: l,
     panelConstraints: o.derivedPanelConstraints
   });
@@ -18873,7 +19055,7 @@ function Wt(e) {
             nextGroupSize: b,
             prevGroupSize: v.groupSize,
             prevLayout: w
-          }), L = X({
+          }), L = X2({
             layout: E,
             panelConstraints: g
           });
@@ -18897,7 +19079,7 @@ function Wt(e) {
   const u = ne({ group: e }), a = be(e), r = e.panels.map(({ id: f }) => f).join(",");
   let l = e.mutableState.defaultLayout;
   l && (Bt(e.panels, l) || (l = undefined));
-  const c = e.mutableState.layouts[r] ?? l ?? We(a), m = X({
+  const c = e.mutableState.layouts[r] ?? l ?? We(a), m = X2({
     layout: c,
     panelConstraints: a
   }), p = e.element.ownerDocument;
@@ -19393,7 +19575,7 @@ function tn({
   const u = e[n], a = t.find((r) => r.panelId === n);
   if (a) {
     const r = a.maxSize, l = a.collapsible ? a.collapsedSize : a.minSize, c = [o, o + 1];
-    s = X({
+    s = X2({
       layout: ae({
         delta: l - u,
         initialLayout: e,
@@ -19402,7 +19584,7 @@ function tn({
         prevLayout: e
       }),
       panelConstraints: t
-    })[n], i = X({
+    })[n], i = X2({
       layout: ae({
         delta: r - u,
         initialLayout: e,
@@ -19514,18 +19696,40 @@ function nn({
 nn.displayName = "Separator";
 
 // node_modules/@base-ui/react/button/Button.mjs
-var React10 = __toESM(require_react(), 1);
+var React11 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/use-button/useButton.mjs
-var React6 = __toESM(require_react(), 1);
+var React7 = __toESM(require_react(), 1);
 
 // node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
 function hasWindow() {
   return typeof window !== "undefined";
 }
+function getNodeName(node) {
+  if (isNode(node)) {
+    return (node.nodeName || "").toLowerCase();
+  }
+  return "#document";
+}
 function getWindow(node) {
   var _node$ownerDocument;
   return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? undefined : _node$ownerDocument.defaultView) || window;
+}
+function getDocumentElement(node) {
+  var _ref;
+  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null ? undefined : _ref.documentElement;
+}
+function isNode(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Node || value instanceof getWindow(value).Node;
+}
+function isElement(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Element || value instanceof getWindow(value).Element;
 }
 function isHTMLElement(value) {
   if (!hasWindow()) {
@@ -19533,19 +19737,131 @@ function isHTMLElement(value) {
   }
   return value instanceof HTMLElement || value instanceof getWindow(value).HTMLElement;
 }
+function isShadowRoot(value) {
+  if (!hasWindow() || typeof ShadowRoot === "undefined") {
+    return false;
+  }
+  return value instanceof ShadowRoot || value instanceof getWindow(value).ShadowRoot;
+}
+function isOverflowElement(element) {
+  const {
+    overflow,
+    overflowX,
+    overflowY,
+    display
+  } = getComputedStyle2(element);
+  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && display !== "inline" && display !== "contents";
+}
+function isTableElement(element) {
+  return /^(table|td|th)$/.test(getNodeName(element));
+}
+function isTopLayer(element) {
+  try {
+    if (element.matches(":popover-open")) {
+      return true;
+    }
+  } catch (_e2) {}
+  try {
+    return element.matches(":modal");
+  } catch (_e2) {
+    return false;
+  }
+}
+var willChangeRe = /transform|translate|scale|rotate|perspective|filter/;
+var containRe = /paint|layout|strict|content/;
+var isNotNone = (value) => !!value && value !== "none";
+var isWebKitValue;
+function isContainingBlock(elementOrCss) {
+  const css = isElement(elementOrCss) ? getComputedStyle2(elementOrCss) : elementOrCss;
+  return isNotNone(css.transform) || isNotNone(css.translate) || isNotNone(css.scale) || isNotNone(css.rotate) || isNotNone(css.perspective) || !isWebKit() && (isNotNone(css.backdropFilter) || isNotNone(css.filter)) || willChangeRe.test(css.willChange || "") || containRe.test(css.contain || "");
+}
+function getContainingBlock(element) {
+  let currentNode = getParentNode(element);
+  while (isHTMLElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    if (isContainingBlock(currentNode)) {
+      return currentNode;
+    } else if (isTopLayer(currentNode)) {
+      return null;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  return null;
+}
+function isWebKit() {
+  if (isWebKitValue == null) {
+    isWebKitValue = typeof CSS !== "undefined" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none");
+  }
+  return isWebKitValue;
+}
+function isLastTraversableNode(node) {
+  return /^(html|body|#document)$/.test(getNodeName(node));
+}
+function getComputedStyle2(element) {
+  return getWindow(element).getComputedStyle(element);
+}
+function getNodeScroll(element) {
+  if (isElement(element)) {
+    return {
+      scrollLeft: element.scrollLeft,
+      scrollTop: element.scrollTop
+    };
+  }
+  return {
+    scrollLeft: element.scrollX,
+    scrollTop: element.scrollY
+  };
+}
+function getParentNode(node) {
+  if (getNodeName(node) === "html") {
+    return node;
+  }
+  const result = node.assignedSlot || node.parentNode || isShadowRoot(node) && node.host || getDocumentElement(node);
+  return isShadowRoot(result) ? result.host : result;
+}
+function getNearestOverflowAncestor(node) {
+  const parentNode = getParentNode(node);
+  if (isLastTraversableNode(parentNode)) {
+    return (node.ownerDocument || node).body;
+  }
+  if (isHTMLElement(parentNode) && isOverflowElement(parentNode)) {
+    return parentNode;
+  }
+  return getNearestOverflowAncestor(parentNode);
+}
+function getOverflowAncestors(node, list, traverseIframes) {
+  var _node$ownerDocument2;
+  if (list === undefined) {
+    list = [];
+  }
+  if (traverseIframes === undefined) {
+    traverseIframes = true;
+  }
+  const scrollableAncestor = getNearestOverflowAncestor(node);
+  const isBody = scrollableAncestor === ((_node$ownerDocument2 = node.ownerDocument) == null ? undefined : _node$ownerDocument2.body);
+  const win = getWindow(scrollableAncestor);
+  if (isBody) {
+    const frameElement = getFrameElement(win);
+    return list.concat(win, win.visualViewport || [], isOverflowElement(scrollableAncestor) ? scrollableAncestor : [], frameElement && traverseIframes ? getOverflowAncestors(frameElement) : []);
+  } else {
+    return list.concat(scrollableAncestor, getOverflowAncestors(scrollableAncestor, [], traverseIframes));
+  }
+}
+function getFrameElement(win) {
+  return win.parent && Object.getPrototypeOf(win.parent) ? win.frameElement : null;
+}
 
 // node_modules/@base-ui/utils/safeReact.mjs
-var React = __toESM(require_react(), 1);
+var React2 = __toESM(require_react(), 1);
 var SafeReact = {
-  ...React
+  ...React2
 };
 
 // node_modules/@base-ui/utils/useRefWithInit.mjs
-var React2 = __toESM(require_react(), 1);
+var React3 = __toESM(require_react(), 1);
 "use client";
 var UNINITIALIZED = {};
 function useRefWithInit(init, initArg) {
-  const ref = React2.useRef(UNINITIALIZED);
+  const ref = React3.useRef(UNINITIALIZED);
   if (ref.current === UNINITIALIZED) {
     ref.current = init(initArg);
   }
@@ -19595,10 +19911,10 @@ function error(...messages) {
 }
 
 // node_modules/@base-ui/utils/useIsoLayoutEffect.mjs
-var React3 = __toESM(require_react(), 1);
+var React4 = __toESM(require_react(), 1);
 "use client";
 var noop = () => {};
-var useIsoLayoutEffect = typeof document !== "undefined" ? React3.useLayoutEffect : noop;
+var useIsoLayoutEffect = typeof document !== "undefined" ? React4.useLayoutEffect : noop;
 
 // node_modules/@base-ui/utils/mergeObjects.mjs
 function mergeObjects(a, b) {
@@ -19773,13 +20089,13 @@ function isSyntheticEvent(event) {
 }
 
 // node_modules/@base-ui/react/internals/composite/root/CompositeRootContext.mjs
-var React4 = __toESM(require_react(), 1);
+var React5 = __toESM(require_react(), 1);
 "use client";
-var CompositeRootContext = /* @__PURE__ */ React4.createContext(undefined);
+var CompositeRootContext = /* @__PURE__ */ React5.createContext(undefined);
 if (true)
   CompositeRootContext.displayName = "CompositeRootContext";
 function useCompositeRootContext(optional = false) {
-  const context = React4.useContext(CompositeRootContext);
+  const context = React5.useContext(CompositeRootContext);
   if (context === undefined && !optional) {
     throw new Error("Base UI: CompositeRootContext is missing. Composite parts must be placed within <Composite.Root>.");
   }
@@ -19787,7 +20103,7 @@ function useCompositeRootContext(optional = false) {
 }
 
 // node_modules/@base-ui/react/utils/useFocusableWhenDisabled.mjs
-var React5 = __toESM(require_react(), 1);
+var React6 = __toESM(require_react(), 1);
 "use client";
 function useFocusableWhenDisabled(parameters) {
   const {
@@ -19799,7 +20115,7 @@ function useFocusableWhenDisabled(parameters) {
   } = parameters;
   const isFocusableComposite = composite && focusableWhenDisabled !== false;
   const isNonFocusableComposite = composite && focusableWhenDisabled === false;
-  const props = React5.useMemo(() => {
+  const props = React6.useMemo(() => {
     const additionalProps = {
       onKeyDown(event) {
         if (disabled && focusableWhenDisabled && event.key !== "Tab") {
@@ -19836,7 +20152,7 @@ function useButton(parameters = {}) {
     native: isNativeButton = true,
     composite: compositeProp
   } = parameters;
-  const elementRef = React6.useRef(null);
+  const elementRef = React7.useRef(null);
   const compositeRootContext = useCompositeRootContext(true);
   const isCompositeItem = compositeProp ?? compositeRootContext !== undefined;
   const {
@@ -19849,7 +20165,7 @@ function useButton(parameters = {}) {
     isNativeButton
   });
   if (true) {
-    React6.useEffect(() => {
+    React7.useEffect(() => {
       if (!elementRef.current) {
         return;
       }
@@ -19867,7 +20183,7 @@ function useButton(parameters = {}) {
       }
     }, [isNativeButton]);
   }
-  const updateDisabled = React6.useCallback(() => {
+  const updateDisabled = React7.useCallback(() => {
     const element = elementRef.current;
     if (!isButtonElement(element)) {
       return;
@@ -19877,7 +20193,7 @@ function useButton(parameters = {}) {
     }
   }, [disabled, focusableWhenDisabledProps.disabled, isCompositeItem]);
   useIsoLayoutEffect(updateDisabled, [updateDisabled]);
-  const getButtonProps = React6.useCallback((externalProps = {}) => {
+  const getButtonProps = React7.useCallback((externalProps = {}) => {
     const {
       onClick: externalOnClick,
       onMouseDown: externalOnMouseDown,
@@ -19987,7 +20303,7 @@ function isValidLinkElement(elem) {
 }
 
 // node_modules/@base-ui/react/internals/useRenderElement.mjs
-var React9 = __toESM(require_react(), 1);
+var React10 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/useMergedRefs.mjs
 function useMergedRefs(a, b, c, d) {
@@ -20079,18 +20395,18 @@ function update(forkRef, refs) {
 }
 
 // node_modules/@base-ui/utils/getReactElementRef.mjs
-var React8 = __toESM(require_react(), 1);
+var React9 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/reactVersion.mjs
-var React7 = __toESM(require_react(), 1);
-var majorVersion = parseInt(React7.version, 10);
+var React8 = __toESM(require_react(), 1);
+var majorVersion = parseInt(React8.version, 10);
 function isReactVersionAtLeast(reactVersionToCheck) {
   return majorVersion >= reactVersionToCheck;
 }
 
 // node_modules/@base-ui/utils/getReactElementRef.mjs
 function getReactElementRef(element) {
-  if (!/* @__PURE__ */ React8.isValidElement(element)) {
+  if (!/* @__PURE__ */ React9.isValidElement(element)) {
     return null;
   }
   const reactElement = element;
@@ -20114,6 +20430,7 @@ function warn(...messages) {
 }
 
 // node_modules/@base-ui/utils/empty.mjs
+function NOOP() {}
 var EMPTY_ARRAY = Object.freeze([]);
 var EMPTY_OBJECT = Object.freeze({});
 
@@ -20218,16 +20535,16 @@ function evaluateRenderProp(element, render, props, state) {
     mergedProps.ref = props.ref;
     let newElement = render;
     if (newElement?.$$typeof === REACT_LAZY_TYPE) {
-      const children = React9.Children.toArray(render);
+      const children = React10.Children.toArray(render);
       newElement = children[0];
     }
     if (true) {
-      if (!/* @__PURE__ */ React9.isValidElement(newElement)) {
+      if (!/* @__PURE__ */ React10.isValidElement(newElement)) {
         throw new Error(["Base UI: The `render` prop was provided an invalid React element as `React.isValidElement(render)` is `false`.", "A valid React element must be provided to the `render` prop because it is cloned with props to replace the default element.", "https://base-ui.com/r/invalid-render-prop"].join(`
 `));
       }
     }
-    return /* @__PURE__ */ React9.cloneElement(newElement, mergedProps);
+    return /* @__PURE__ */ React10.cloneElement(newElement, mergedProps);
   }
   if (element) {
     if (typeof element === "string") {
@@ -20264,12 +20581,12 @@ function renderTag(Tag, props) {
       key: props.key
     });
   }
-  return /* @__PURE__ */ React9.createElement(Tag, props);
+  return /* @__PURE__ */ React10.createElement(Tag, props);
 }
 
 // node_modules/@base-ui/react/button/Button.mjs
 "use client";
-var Button = /* @__PURE__ */ React10.forwardRef(function Button2(componentProps, forwardedRef) {
+var Button = /* @__PURE__ */ React11.forwardRef(function Button2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -21727,13 +22044,10486 @@ function ResizableHandle({
   }, undefined, false, undefined, this);
 }
 
-// src/scriptorium/surface/components/StatusStrip.tsx
-var import_react6 = __toESM(require_react(), 1);
+// src/scriptorium/surface/components/context/ContextSidebar.tsx
+var import_react12 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/react/separator/Separator.mjs
-var React11 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/context-menu/index.parts.mjs
+var exports_index_parts2 = {};
+__export(exports_index_parts2, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => ContextMenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => ContextMenuTrigger
+});
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
+var React86 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useId.mjs
+var React12 = __toESM(require_react(), 1);
 "use client";
-var Separator = /* @__PURE__ */ React11.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+var globalId = 0;
+function useGlobalId(idOverride, prefix = "mui") {
+  const [defaultId, setDefaultId] = React12.useState(idOverride);
+  const id = idOverride || defaultId;
+  React12.useEffect(() => {
+    if (defaultId == null) {
+      globalId += 1;
+      setDefaultId(`${prefix}-${globalId}`);
+    }
+  }, [defaultId, prefix]);
+  return id;
+}
+var maybeReactUseId = SafeReact.useId;
+function useId(idOverride, prefix) {
+  if (maybeReactUseId !== undefined) {
+    const reactId = maybeReactUseId();
+    return idOverride ?? (prefix ? `${prefix}-${reactId}` : reactId);
+  }
+  return useGlobalId(idOverride, prefix);
+}
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRootContext.mjs
+var React13 = __toESM(require_react(), 1);
+"use client";
+var ContextMenuRootContext = /* @__PURE__ */ React13.createContext(undefined);
+if (true)
+  ContextMenuRootContext.displayName = "ContextMenuRootContext";
+function useContextMenuRootContext(optional = true) {
+  const context = React13.useContext(ContextMenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: ContextMenuRootContext is missing. ContextMenu parts must be placed within <ContextMenu.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/index.parts.mjs
+var exports_index_parts = {};
+__export(exports_index_parts, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Handle: () => MenuHandle,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => MenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => MenuTrigger,
+  Viewport: () => MenuViewport,
+  createHandle: () => createMenuHandle
+});
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+var React16 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/positioner/MenuPositionerContext.mjs
+var React14 = __toESM(require_react(), 1);
+"use client";
+var MenuPositionerContext = /* @__PURE__ */ React14.createContext(undefined);
+if (true)
+  MenuPositionerContext.displayName = "MenuPositionerContext";
+function useMenuPositionerContext(optional) {
+  const context = React14.useContext(MenuPositionerContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: MenuPositionerContext is missing. MenuPositioner parts must be placed within <Menu.Positioner>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/root/MenuRootContext.mjs
+var React15 = __toESM(require_react(), 1);
+"use client";
+var MenuRootContext = /* @__PURE__ */ React15.createContext(undefined);
+if (true)
+  MenuRootContext.displayName = "MenuRootContext";
+function useMenuRootContext(optional) {
+  const context = React15.useContext(MenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: MenuRootContext is missing. Menu parts must be placed within <Menu.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/stateAttributesMapping.mjs
+var TransitionStatusDataAttributes = /* @__PURE__ */ function(TransitionStatusDataAttributes2) {
+  TransitionStatusDataAttributes2["startingStyle"] = "data-starting-style";
+  TransitionStatusDataAttributes2["endingStyle"] = "data-ending-style";
+  return TransitionStatusDataAttributes2;
+}({});
+var STARTING_HOOK = {
+  [TransitionStatusDataAttributes.startingStyle]: ""
+};
+var ENDING_HOOK = {
+  [TransitionStatusDataAttributes.endingStyle]: ""
+};
+var transitionStatusMapping = {
+  transitionStatus(value) {
+    if (value === "starting") {
+      return STARTING_HOOK;
+    }
+    if (value === "ending") {
+      return ENDING_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/utils/popupStateMapping.mjs
+var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
+  CommonPopupDataAttributes2["open"] = "data-open";
+  CommonPopupDataAttributes2["closed"] = "data-closed";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
+  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
+  CommonPopupDataAttributes2["side"] = "data-side";
+  CommonPopupDataAttributes2["align"] = "data-align";
+  return CommonPopupDataAttributes2;
+}({});
+var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
+  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
+  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
+  return CommonTriggerDataAttributes2;
+}({});
+var TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: ""
+};
+var PRESSABLE_TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: "",
+  [CommonTriggerDataAttributes.pressed]: ""
+};
+var POPUP_OPEN_HOOK = {
+  [CommonPopupDataAttributes.open]: ""
+};
+var POPUP_CLOSED_HOOK = {
+  [CommonPopupDataAttributes.closed]: ""
+};
+var ANCHOR_HIDDEN_HOOK = {
+  [CommonPopupDataAttributes.anchorHidden]: ""
+};
+var triggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var pressableTriggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return PRESSABLE_TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var popupStateMapping = {
+  open(value) {
+    if (value) {
+      return POPUP_OPEN_HOOK;
+    }
+    return POPUP_CLOSED_HOOK;
+  },
+  anchorHidden(value) {
+    if (value) {
+      return ANCHOR_HIDDEN_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+"use client";
+var MenuArrow = /* @__PURE__ */ React16.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = useMenuPositionerContext();
+  const open = store.useState("open");
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered
+  };
+  return useRenderElement("div", componentProps, {
+    ref: [arrowRef, forwardedRef],
+    stateAttributesMapping: popupStateMapping,
+    state,
+    props: {
+      style: arrowStyles,
+      "aria-hidden": true,
+      ...elementProps
+    }
+  });
+});
+if (true)
+  MenuArrow.displayName = "MenuArrow";
+// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
+var React17 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/reason-parts.mjs
+var exports_reason_parts = {};
+__export(exports_reason_parts, {
+  cancelOpen: () => cancelOpen,
+  chipRemovePress: () => chipRemovePress,
+  clearPress: () => clearPress,
+  closePress: () => closePress,
+  closeWatcher: () => closeWatcher,
+  decrementPress: () => decrementPress,
+  disabled: () => disabled,
+  drag: () => drag,
+  escapeKey: () => escapeKey,
+  focusOut: () => focusOut,
+  imperativeAction: () => imperativeAction,
+  incrementPress: () => incrementPress,
+  initial: () => initial,
+  inputBlur: () => inputBlur,
+  inputChange: () => inputChange,
+  inputClear: () => inputClear,
+  inputPaste: () => inputPaste,
+  inputPress: () => inputPress,
+  itemPress: () => itemPress,
+  keyboard: () => keyboard,
+  linkPress: () => linkPress,
+  listNavigation: () => listNavigation,
+  missing: () => missing,
+  none: () => none,
+  outsidePress: () => outsidePress,
+  pointer: () => pointer,
+  scrub: () => scrub,
+  siblingOpen: () => siblingOpen,
+  swipe: () => swipe,
+  trackPress: () => trackPress,
+  triggerFocus: () => triggerFocus,
+  triggerHover: () => triggerHover,
+  triggerPress: () => triggerPress,
+  wheel: () => wheel,
+  windowResize: () => windowResize
+});
+var none = "none";
+var triggerPress = "trigger-press";
+var triggerHover = "trigger-hover";
+var triggerFocus = "trigger-focus";
+var outsidePress = "outside-press";
+var itemPress = "item-press";
+var closePress = "close-press";
+var linkPress = "link-press";
+var clearPress = "clear-press";
+var chipRemovePress = "chip-remove-press";
+var trackPress = "track-press";
+var incrementPress = "increment-press";
+var decrementPress = "decrement-press";
+var inputChange = "input-change";
+var inputClear = "input-clear";
+var inputBlur = "input-blur";
+var inputPaste = "input-paste";
+var inputPress = "input-press";
+var focusOut = "focus-out";
+var escapeKey = "escape-key";
+var closeWatcher = "close-watcher";
+var listNavigation = "list-navigation";
+var keyboard = "keyboard";
+var pointer = "pointer";
+var drag = "drag";
+var wheel = "wheel";
+var scrub = "scrub";
+var cancelOpen = "cancel-open";
+var siblingOpen = "sibling-open";
+var disabled = "disabled";
+var missing = "missing";
+var initial = "initial";
+var imperativeAction = "imperative-action";
+var swipe = "swipe";
+var windowResize = "window-resize";
+
+// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
+"use client";
+var stateAttributesMapping = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var MenuBackdrop = /* @__PURE__ */ React17.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const contextMenuContext = useContextMenuRootContext();
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    ref: contextMenuContext?.backdropRef ? [forwardedRef, contextMenuContext.backdropRef] : forwardedRef,
+    state,
+    stateAttributesMapping,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: lastOpenChangeReason === exports_reason_parts.triggerHover ? "none" : undefined,
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps]
+  });
+});
+if (true)
+  MenuBackdrop.displayName = "MenuBackdrop";
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var React24 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useControlled.mjs
+var React18 = __toESM(require_react(), 1);
+"use client";
+function useControlled({
+  controlled,
+  default: defaultProp,
+  name,
+  state = "value"
+}) {
+  const {
+    current: isControlled
+  } = React18.useRef(controlled !== undefined);
+  const [valueState, setValue] = React18.useState(defaultProp);
+  const value = isControlled ? controlled : valueState;
+  if (true) {
+    React18.useEffect(() => {
+      if (isControlled !== (controlled !== undefined)) {
+        error([`A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} ` + "element for the lifetime of the component.", "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join(`
+`));
+      }
+    }, [state, name, controlled]);
+    const {
+      current: defaultValue
+    } = React18.useRef(defaultProp);
+    React18.useEffect(() => {
+      if (!isControlled && serializeToDevModeString(defaultValue) !== serializeToDevModeString(defaultProp)) {
+        error([`A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. ` + `To suppress this warning opt to use a controlled ${name}.`].join(`
+`));
+      }
+    }, [defaultProp]);
+  }
+  const setValueIfUncontrolled = React18.useCallback((newValue) => {
+    if (!isControlled) {
+      setValue(newValue);
+    }
+  }, []);
+  return [value, setValueIfUncontrolled];
+}
+function serializeToDevModeString(input) {
+  let nextId = 0;
+  const seen = new WeakMap;
+  try {
+    const result = JSON.stringify(input, function replacer(key, value) {
+      if (key === "_owner" && this != null && typeof this === "object" && "$$typeof" in this) {
+        return;
+      }
+      if (typeof value === "bigint") {
+        return `__bigint__:${value}`;
+      }
+      if (value !== null && typeof value === "object") {
+        const id = seen.get(value);
+        if (id !== undefined) {
+          return `__object__:${id}`;
+        }
+        seen.set(value, nextId);
+        nextId += 1;
+      }
+      return value;
+    });
+    return result ?? `__top__:${typeof input}`;
+  } catch {
+    return "__unserializable__";
+  }
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemContext.mjs
+var React19 = __toESM(require_react(), 1);
+"use client";
+var MenuCheckboxItemContext = /* @__PURE__ */ React19.createContext(undefined);
+if (true)
+  MenuCheckboxItemContext.displayName = "MenuCheckboxItemContext";
+function useMenuCheckboxItemContext() {
+  const context = React19.useContext(MenuCheckboxItemContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuCheckboxItemContext is missing. MenuCheckboxItem parts must be placed within <Menu.CheckboxItem>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+var React21 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
+var React20 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/platform/parts.mjs
+var exports_parts = {};
+__export(exports_parts, {
+  engine: () => exports_engine,
+  env: () => exports_env,
+  os: () => exports_os,
+  screenReader: () => exports_screen_reader
+});
+
+// node_modules/@base-ui/utils/platform/os.mjs
+var exports_os = {};
+__export(exports_os, {
+  android: () => android,
+  apple: () => apple,
+  ios: () => ios,
+  linux: () => linux,
+  mac: () => mac,
+  windows: () => windows
+});
+
+// node_modules/@base-ui/utils/platform/shared.mjs
+function readRawData() {
+  if (typeof navigator === "undefined") {
+    return {
+      userAgent: "",
+      platform: "",
+      maxTouchPoints: 0
+    };
+  }
+  if (true) {
+    const uaData = navigator.userAgentData;
+    if (uaData && Array.isArray(uaData.brands)) {
+      return {
+        userAgent: uaData.brands.map(({
+          brand,
+          version: version2
+        }) => `${brand}/${version2}`).join(" "),
+        platform: uaData.platform ?? navigator.platform ?? "",
+        maxTouchPoints: navigator.maxTouchPoints ?? 0
+      };
+    }
+  }
+  return {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform ?? "",
+    maxTouchPoints: navigator.maxTouchPoints ?? 0
+  };
+}
+var {
+  userAgent,
+  platform,
+  maxTouchPoints
+} = readRawData();
+var lowerUserAgent = userAgent.toLowerCase();
+var lowerPlatform = platform.toLowerCase();
+
+// node_modules/@base-ui/utils/platform/os.mjs
+var ios = /^i(os$|p)/.test(lowerPlatform) || lowerPlatform === "macintel" && maxTouchPoints > 1;
+var ANDROID_STRING = "android";
+var android = lowerPlatform === ANDROID_STRING || lowerUserAgent.includes(ANDROID_STRING);
+var mac = !ios && lowerPlatform.startsWith("mac");
+var windows = lowerPlatform.startsWith("win");
+var linux = !android && /^(linux|chrome os)/.test(lowerPlatform);
+var apple = mac || ios;
+// node_modules/@base-ui/utils/platform/engine.mjs
+var exports_engine = {};
+__export(exports_engine, {
+  blink: () => blink,
+  gecko: () => gecko,
+  webkit: () => webkit
+});
+var webkit = typeof CSS !== "undefined" && !!CSS.supports?.("-webkit-backdrop-filter:none");
+var gecko = !webkit && lowerUserAgent.includes("firefox");
+var blink = !webkit && lowerUserAgent.includes("chrom");
+// node_modules/@base-ui/utils/platform/screen-reader.mjs
+var exports_screen_reader = {};
+__export(exports_screen_reader, {
+  voiceOver: () => voiceOver
+});
+var voiceOver = apple;
+// node_modules/@base-ui/utils/platform/env.mjs
+var exports_env = {};
+__export(exports_env, {
+  jsdom: () => jsdom
+});
+var jsdom = /jsdom|happydom/.test(lowerUserAgent);
+// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
+"use client";
+function useMenuItemCommonProps(params) {
+  const {
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  } = params;
+  const {
+    events: menuEvents
+  } = store.useState("floatingTreeRoot");
+  const open = store.useState("open");
+  const contextMenuContext = useContextMenuRootContext(true);
+  const isContextMenu = contextMenuContext !== undefined;
+  return React20.useMemo(() => ({
+    id,
+    role: "menuitem",
+    tabIndex: open && highlighted ? 0 : -1,
+    onKeyDown(event) {
+      if (event.key === " " && typingRef?.current) {
+        event.preventDefault();
+      }
+    },
+    onMouseMove(event) {
+      if (!nodeId) {
+        return;
+      }
+      menuEvents.emit("itemhover", {
+        nodeId,
+        target: event.currentTarget
+      });
+    },
+    onClick(event) {
+      if (closeOnClick) {
+        menuEvents.emit("close", {
+          domEvent: event,
+          reason: exports_reason_parts.itemPress
+        });
+      }
+    },
+    onMouseUp(event) {
+      if (contextMenuContext) {
+        const initialCursorPoint = contextMenuContext.initialCursorPointRef.current;
+        contextMenuContext.initialCursorPointRef.current = null;
+        if (isContextMenu && initialCursorPoint && Math.abs(event.clientX - initialCursorPoint.x) <= 1 && Math.abs(event.clientY - initialCursorPoint.y) <= 1) {
+          return;
+        }
+        if (isContextMenu && !exports_parts.os.mac && event.button === 2) {
+          return;
+        }
+      }
+      if (itemRef.current && store.context.allowMouseUpTriggerRef.current && (!isContextMenu || event.button === 2)) {
+        if (!itemMetadata || itemMetadata.type === "regular-item") {
+          itemRef.current.click();
+        }
+      }
+    }
+  }), [closeOnClick, highlighted, id, menuEvents, nodeId, open, store, typingRef, itemRef, contextMenuContext, isContextMenu, itemMetadata]);
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+"use client";
+var REGULAR_ITEM = {
+  type: "regular-item"
+};
+function useMenuItem(params) {
+  const {
+    closeOnClick,
+    disabled: disabledProp = false,
+    highlighted,
+    id,
+    store,
+    typingRef = store.context.typingRef,
+    nativeButton,
+    itemMetadata,
+    nodeId
+  } = params;
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled;
+  const itemRef = React21.useRef(null);
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled: true,
+    native: nativeButton,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  });
+  const getItemProps = React21.useCallback((externalProps) => {
+    return mergeProps(commonProps, {
+      onMouseEnter() {
+        if (itemMetadata.type !== "submenu-trigger") {
+          return;
+        }
+        itemMetadata.setActive();
+      }
+    }, externalProps, getButtonProps);
+  }, [commonProps, getButtonProps, itemMetadata]);
+  const mergedRef = useMergedRefs(itemRef, buttonRef);
+  return React21.useMemo(() => ({
+    getItemProps,
+    itemRef: mergedRef
+  }), [getItemProps, mergedRef]);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+var React23 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/composite/list/CompositeListContext.mjs
+var React22 = __toESM(require_react(), 1);
+"use client";
+var CompositeListContext = /* @__PURE__ */ React22.createContext({
+  register: () => {},
+  unregister: () => {},
+  subscribeMapChange: () => {
+    return () => {};
+  },
+  elementsRef: {
+    current: []
+  },
+  nextIndexRef: {
+    current: 0
+  }
+});
+if (true)
+  CompositeListContext.displayName = "CompositeListContext";
+function useCompositeListContext() {
+  return React22.useContext(CompositeListContext);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+"use client";
+var IndexGuessBehavior = /* @__PURE__ */ function(IndexGuessBehavior2) {
+  IndexGuessBehavior2[IndexGuessBehavior2["None"] = 0] = "None";
+  IndexGuessBehavior2[IndexGuessBehavior2["GuessFromOrder"] = 1] = "GuessFromOrder";
+  return IndexGuessBehavior2;
+}({});
+function useCompositeListItem(params = {}) {
+  const {
+    label,
+    metadata,
+    textRef,
+    indexGuessBehavior,
+    index: externalIndex
+  } = params;
+  const {
+    register,
+    unregister,
+    subscribeMapChange,
+    elementsRef,
+    labelsRef,
+    nextIndexRef
+  } = useCompositeListContext();
+  const indexRef = React23.useRef(-1);
+  const [index2, setIndex] = React23.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
+    if (indexRef.current === -1) {
+      const newIndex = nextIndexRef.current;
+      nextIndexRef.current += 1;
+      indexRef.current = newIndex;
+    }
+    return indexRef.current;
+  } : -1));
+  const componentRef = React23.useRef(null);
+  const ref = React23.useCallback((node) => {
+    componentRef.current = node;
+    if (index2 !== -1 && node !== null) {
+      elementsRef.current[index2] = node;
+      if (labelsRef) {
+        const isLabelDefined = label !== undefined;
+        labelsRef.current[index2] = isLabelDefined ? label : textRef?.current?.textContent ?? node.textContent;
+      }
+    }
+  }, [index2, elementsRef, labelsRef, label, textRef]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    const node = componentRef.current;
+    if (node) {
+      register(node, metadata);
+      return () => {
+        unregister(node);
+      };
+    }
+    return;
+  }, [externalIndex, register, unregister, metadata]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    return subscribeMapChange((map) => {
+      const i = componentRef.current ? map.get(componentRef.current)?.index : null;
+      if (i != null) {
+        setIndex(i);
+      }
+    });
+  }, [externalIndex, subscribeMapChange, setIndex]);
+  return {
+    ref,
+    index: index2
+  };
+}
+
+// node_modules/@base-ui/react/internals/useBaseUiId.mjs
+"use client";
+function useBaseUiId(idOverride) {
+  return useId(idOverride, "base-ui");
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemDataAttributes.mjs
+var MenuCheckboxItemDataAttributes = /* @__PURE__ */ function(MenuCheckboxItemDataAttributes2) {
+  MenuCheckboxItemDataAttributes2["checked"] = "data-checked";
+  MenuCheckboxItemDataAttributes2["unchecked"] = "data-unchecked";
+  MenuCheckboxItemDataAttributes2["disabled"] = "data-disabled";
+  MenuCheckboxItemDataAttributes2["highlighted"] = "data-highlighted";
+  return MenuCheckboxItemDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/menu/utils/stateAttributesMapping.mjs
+var itemMapping = {
+  checked(value) {
+    if (value) {
+      return {
+        [MenuCheckboxItemDataAttributes.checked]: ""
+      };
+    }
+    return {
+      [MenuCheckboxItemDataAttributes.unchecked]: ""
+    };
+  },
+  ...transitionStatusMapping
+};
+
+// node_modules/@base-ui/react/internals/createBaseUIEventDetails.mjs
+function createChangeEventDetails(reason, event, trigger, customProperties) {
+  let canceled = false;
+  let allowPropagation = false;
+  const custom = customProperties ?? EMPTY_OBJECT;
+  const details = {
+    reason,
+    event: event ?? new Event("base-ui"),
+    cancel() {
+      canceled = true;
+    },
+    allowPropagation() {
+      allowPropagation = true;
+    },
+    get isCanceled() {
+      return canceled;
+    },
+    get isPropagationAllowed() {
+      return allowPropagation;
+    },
+    trigger,
+    ...custom
+  };
+  return details;
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuCheckboxItem = /* @__PURE__ */ React24.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = false,
+    checked: checkedProp,
+    defaultChecked,
+    onCheckedChange,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const [checked, setChecked] = useControlled({
+    controlled: checkedProp,
+    default: defaultChecked ?? false,
+    name: "MenuCheckboxItem",
+    state: "checked"
+  });
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = React24.useMemo(() => ({
+    disabled: disabled2,
+    highlighted,
+    checked
+  }), [disabled2, highlighted, checked]);
+  function handleClick(event) {
+    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose() {}
+    });
+    onCheckedChange?.(!checked, details);
+    if (details.isCanceled) {
+      return;
+    }
+    setChecked((currentlyChecked) => !currentlyChecked);
+  }
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [itemProps, {
+      role: "menuitemcheckbox",
+      "aria-checked": checked,
+      onClick: handleClick
+    }, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+  return /* @__PURE__ */ import_jsx_runtime2.jsx(MenuCheckboxItemContext.Provider, {
+    value: state,
+    children: element
+  });
+});
+if (true)
+  MenuCheckboxItem.displayName = "MenuCheckboxItem";
+// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
+var React28 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
+var React26 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useOnMount.mjs
+var React25 = __toESM(require_react(), 1);
+"use client";
+var EMPTY = [];
+function useOnMount(fn) {
+  React25.useEffect(fn, EMPTY);
+}
+
+// node_modules/@base-ui/utils/useAnimationFrame.mjs
+"use client";
+var EMPTY2 = null;
+var LAST_RAF = globalThis.requestAnimationFrame;
+
+class Scheduler {
+  callbacks = [];
+  callbacksCount = 0;
+  nextId = 1;
+  startId = 1;
+  isScheduled = false;
+  tick = (timestamp) => {
+    this.isScheduled = false;
+    const currentCallbacks = this.callbacks;
+    const currentCallbacksCount = this.callbacksCount;
+    this.callbacks = [];
+    this.callbacksCount = 0;
+    this.startId = this.nextId;
+    if (currentCallbacksCount > 0) {
+      for (let i = 0;i < currentCallbacks.length; i += 1) {
+        currentCallbacks[i]?.(timestamp);
+      }
+    }
+  };
+  request(fn) {
+    const id = this.nextId;
+    this.nextId += 1;
+    this.callbacks.push(fn);
+    this.callbacksCount += 1;
+    const didRAFChange = LAST_RAF !== requestAnimationFrame && (LAST_RAF = requestAnimationFrame, true);
+    if (!this.isScheduled || didRAFChange) {
+      requestAnimationFrame(this.tick);
+      this.isScheduled = true;
+    }
+    return id;
+  }
+  cancel(id) {
+    const index2 = id - this.startId;
+    if (index2 < 0 || index2 >= this.callbacks.length) {
+      return;
+    }
+    this.callbacks[index2] = null;
+    this.callbacksCount -= 1;
+  }
+}
+var scheduler = new Scheduler;
+
+class AnimationFrame {
+  static create() {
+    return new AnimationFrame;
+  }
+  static request(fn) {
+    return scheduler.request(fn);
+  }
+  static cancel(id) {
+    return scheduler.cancel(id);
+  }
+  currentId = EMPTY2;
+  request(fn) {
+    this.cancel();
+    this.currentId = scheduler.request(() => {
+      this.currentId = EMPTY2;
+      fn();
+    });
+  }
+  cancel = () => {
+    if (this.currentId !== EMPTY2) {
+      scheduler.cancel(this.currentId);
+      this.currentId = EMPTY2;
+    }
+  };
+  disposeEffect = () => {
+    return this.cancel;
+  };
+}
+function useAnimationFrame() {
+  const timeout = useRefWithInit(AnimationFrame.create).current;
+  useOnMount(timeout.disposeEffect);
+  return timeout;
+}
+
+// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
+"use client";
+function useTransitionStatus(open, enableIdleState = false, deferEndingState = false) {
+  const [transitionStatus, setTransitionStatus] = React26.useState(open && enableIdleState ? "idle" : undefined);
+  const [mounted, setMounted] = React26.useState(open);
+  if (open && !mounted) {
+    setMounted(true);
+    setTransitionStatus("starting");
+  }
+  if (!open && mounted && transitionStatus !== "ending" && !deferEndingState) {
+    setTransitionStatus("ending");
+  }
+  if (!open && !mounted && transitionStatus === "ending") {
+    setTransitionStatus(undefined);
+  }
+  useIsoLayoutEffect(() => {
+    if (!open && mounted && transitionStatus !== "ending" && deferEndingState) {
+      const frame = AnimationFrame.request(() => {
+        setTransitionStatus("ending");
+      });
+      return () => {
+        AnimationFrame.cancel(frame);
+      };
+    }
+    return;
+  }, [open, mounted, transitionStatus, deferEndingState]);
+  useIsoLayoutEffect(() => {
+    if (!open || enableIdleState) {
+      return;
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus(undefined);
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open]);
+  useIsoLayoutEffect(() => {
+    if (!open || !enableIdleState) {
+      return;
+    }
+    if (open && mounted && transitionStatus !== "idle") {
+      setTransitionStatus("starting");
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus("idle");
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open, mounted, transitionStatus]);
+  return {
+    mounted,
+    setMounted,
+    transitionStatus
+  };
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+var React27 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+var ReactDOM = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/react/utils/resolveRef.mjs
+function resolveRef(maybeRef) {
+  if (maybeRef == null) {
+    return maybeRef;
+  }
+  return "current" in maybeRef ? maybeRef.current : maybeRef;
+}
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+"use client";
+function useAnimationsFinished(elementOrRef, waitForStartingStyleRemoved = false, treatAbortedAsFinished = true) {
+  const frame = useAnimationFrame();
+  return useStableCallback((fnToExecute, signal = null) => {
+    frame.cancel();
+    const element = resolveRef(elementOrRef);
+    if (element == null) {
+      return;
+    }
+    const resolvedElement = element;
+    const done = () => {
+      ReactDOM.flushSync(fnToExecute);
+    };
+    if (typeof resolvedElement.getAnimations !== "function" || globalThis.BASE_UI_ANIMATIONS_DISABLED) {
+      fnToExecute();
+      return;
+    }
+    function exec() {
+      Promise.all(resolvedElement.getAnimations().map((animation) => animation.finished)).then(() => {
+        if (!signal?.aborted) {
+          done();
+        }
+      }).catch(() => {
+        if (treatAbortedAsFinished) {
+          if (!signal?.aborted) {
+            done();
+          }
+          return;
+        }
+        const currentAnimations = resolvedElement.getAnimations();
+        if (!signal?.aborted && currentAnimations.length > 0 && currentAnimations.some((animation) => animation.pending || animation.playState !== "finished")) {
+          exec();
+        }
+      });
+    }
+    if (waitForStartingStyleRemoved) {
+      const startingStyleAttribute = TransitionStatusDataAttributes.startingStyle;
+      if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+        frame.request(exec);
+        return;
+      }
+      const attributeObserver = new MutationObserver(() => {
+        if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+          attributeObserver.disconnect();
+          exec();
+        }
+      });
+      attributeObserver.observe(resolvedElement, {
+        attributes: true,
+        attributeFilter: [startingStyleAttribute]
+      });
+      signal?.addEventListener("abort", () => attributeObserver.disconnect(), {
+        once: true
+      });
+      return;
+    }
+    frame.request(exec);
+  });
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+"use client";
+function useOpenChangeComplete(parameters) {
+  const {
+    enabled = true,
+    open,
+    ref,
+    onComplete: onCompleteParam
+  } = parameters;
+  const onComplete = useStableCallback(onCompleteParam);
+  const runOnceAnimationsFinish = useAnimationsFinished(ref, open, false);
+  React27.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const abortController = new AbortController;
+    runOnceAnimationsFinish(onComplete, abortController.signal);
+    return () => {
+      abortController.abort();
+    };
+  }, [enabled, open, onComplete, runOnceAnimationsFinish]);
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
+"use client";
+var MenuCheckboxItemIndicator = /* @__PURE__ */ React28.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    keepMounted = false,
+    ...elementProps
+  } = componentProps;
+  const item = useMenuCheckboxItemContext();
+  const indicatorRef = React28.useRef(null);
+  const {
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(item.checked);
+  useOpenChangeComplete({
+    open: item.checked,
+    ref: indicatorRef,
+    onComplete() {
+      if (!item.checked) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    checked: item.checked,
+    disabled: item.disabled,
+    highlighted: item.highlighted,
+    transitionStatus
+  };
+  const element = useRenderElement("span", componentProps, {
+    state,
+    ref: [forwardedRef, indicatorRef],
+    stateAttributesMapping: itemMapping,
+    props: {
+      "aria-hidden": true,
+      ...elementProps
+    },
+    enabled: keepMounted || item.checked
+  });
+  return element;
+});
+if (true)
+  MenuCheckboxItemIndicator.displayName = "MenuCheckboxItemIndicator";
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var React30 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/group/MenuGroupContext.mjs
+var React29 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupContext = /* @__PURE__ */ React29.createContext(undefined);
+if (true)
+  MenuGroupContext.displayName = "MenuGroupContext";
+function useMenuGroupRootContext() {
+  const context = React29.useContext(MenuGroupContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuGroupContext is missing. Menu group parts must be used within <Menu.Group> or <Menu.RadioGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuGroup = /* @__PURE__ */ React30.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const [labelId, setLabelId] = React30.useState(undefined);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      role: "group",
+      "aria-labelledby": labelId,
+      ...elementProps
+    }
+  });
+  return /* @__PURE__ */ import_jsx_runtime3.jsx(MenuGroupContext.Provider, {
+    value: setLabelId,
+    children: element
+  });
+});
+if (true)
+  MenuGroup.displayName = "MenuGroup";
+// node_modules/@base-ui/react/menu/group-label/MenuGroupLabel.mjs
+var React31 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupLabel = /* @__PURE__ */ React31.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const setLabelId = useMenuGroupRootContext();
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [setLabelId, id]);
+  return useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      id,
+      role: "presentation",
+      ...elementProps
+    }
+  });
+});
+if (true)
+  MenuGroupLabel.displayName = "MenuGroupLabel";
+// node_modules/@base-ui/react/menu/item/MenuItem.mjs
+var React32 = __toESM(require_react(), 1);
+"use client";
+var MenuItem = /* @__PURE__ */ React32.forwardRef(function MenuItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = true,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = {
+    disabled: disabled2,
+    highlighted
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+});
+if (true)
+  MenuItem.displayName = "MenuItem";
+// node_modules/@base-ui/react/menu/link-item/MenuLinkItem.mjs
+var React33 = __toESM(require_react(), 1);
+"use client";
+var MenuLinkItem = /* @__PURE__ */ React33.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    closeOnClick = false,
+    style,
+    ...elementProps
+  } = componentProps;
+  const linkRef = React33.useRef(null);
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const nodeId = menuPositionerContext?.context.nodeId;
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const typingRef = store.context.typingRef;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    native: false,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef: linkRef
+  });
+  function getItemProps(externalProps) {
+    return mergeProps(commonProps, externalProps, getButtonProps);
+  }
+  const state = {
+    highlighted
+  };
+  return useRenderElement("a", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [linkRef, buttonRef, forwardedRef, listItem.ref]
+  });
+});
+if (true)
+  MenuLinkItem.displayName = "MenuLinkItem";
+// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
+var React54 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
+var React37 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/addEventListener.mjs
+function addEventListener(target, type, listener, options) {
+  target.addEventListener(type, listener, options);
+  return () => {
+    target.removeEventListener(type, listener, options);
+  };
+}
+
+// node_modules/@base-ui/utils/mergeCleanups.mjs
+function mergeCleanups(...cleanups) {
+  return () => {
+    for (let i = 0;i < cleanups.length; i += 1) {
+      const cleanup = cleanups[i];
+      if (cleanup) {
+        cleanup();
+      }
+    }
+  };
+}
+
+// node_modules/@base-ui/utils/useValueAsRef.mjs
+"use client";
+function useValueAsRef(value) {
+  const latest = useRefWithInit(createLatestRef, value).current;
+  latest.next = value;
+  useIsoLayoutEffect(latest.effect);
+  return latest;
+}
+function createLatestRef(value) {
+  const latest = {
+    current: value,
+    next: value,
+    effect: () => {
+      latest.current = latest.next;
+    }
+  };
+  return latest;
+}
+
+// node_modules/@base-ui/utils/useTimeout.mjs
+"use client";
+var EMPTY3 = 0;
+
+class Timeout {
+  static create() {
+    return new Timeout;
+  }
+  currentId = EMPTY3;
+  start(delay, fn) {
+    this.clear();
+    this.currentId = setTimeout(() => {
+      this.currentId = EMPTY3;
+      fn();
+    }, delay);
+  }
+  isStarted() {
+    return this.currentId !== EMPTY3;
+  }
+  clear = () => {
+    if (this.currentId !== EMPTY3) {
+      clearTimeout(this.currentId);
+      this.currentId = EMPTY3;
+    }
+  };
+  disposeEffect = () => {
+    return this.clear;
+  };
+}
+function useTimeout() {
+  const timeout = useRefWithInit(Timeout.create).current;
+  useOnMount(timeout.disposeEffect);
+  return timeout;
+}
+
+// node_modules/@base-ui/utils/owner.mjs
+function ownerDocument(node) {
+  return node?.ownerDocument || document;
+}
+
+// node_modules/@base-ui/react/utils/FocusGuard.mjs
+var React34 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/visuallyHidden.mjs
+var visuallyHiddenBase = {
+  clipPath: "inset(50%)",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  border: 0,
+  padding: 0,
+  width: 1,
+  height: 1,
+  margin: -1
+};
+var visuallyHidden = {
+  ...visuallyHiddenBase,
+  position: "fixed",
+  top: 0,
+  left: 0
+};
+var visuallyHiddenInput = {
+  ...visuallyHiddenBase,
+  position: "absolute"
+};
+
+// node_modules/@base-ui/react/utils/FocusGuard.mjs
+var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FocusGuard = /* @__PURE__ */ React34.forwardRef(function FocusGuard2(props, ref) {
+  const [role, setRole] = React34.useState();
+  useIsoLayoutEffect(() => {
+    if (exports_parts.screenReader.voiceOver && exports_parts.engine.webkit) {
+      setRole("button");
+    }
+  }, []);
+  const restProps = {
+    tabIndex: 0,
+    role
+  };
+  return /* @__PURE__ */ import_jsx_runtime4.jsx("span", {
+    ...props,
+    ref,
+    style: visuallyHidden,
+    "aria-hidden": role ? undefined : true,
+    ...restProps,
+    "data-base-ui-focus-guard": ""
+  });
+});
+if (true)
+  FocusGuard.displayName = "FocusGuard";
+
+// node_modules/@base-ui/react/floating-ui-react/utils/constants.mjs
+var FOCUSABLE_ATTRIBUTE = "data-base-ui-focusable";
+var TYPEABLE_SELECTOR = "input:not([type='hidden']):not([disabled])," + "[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
+var ARROW_LEFT = "ArrowLeft";
+var ARROW_RIGHT = "ArrowRight";
+var ARROW_UP = "ArrowUp";
+var ARROW_DOWN = "ArrowDown";
+
+// node_modules/@base-ui/react/internals/shadowDom.mjs
+function activeElement(doc) {
+  let element = doc.activeElement;
+  while (element?.shadowRoot?.activeElement != null) {
+    element = element.shadowRoot.activeElement;
+  }
+  return element;
+}
+function contains(parent, child) {
+  if (!parent || !child) {
+    return false;
+  }
+  const rootNode = child.getRootNode?.();
+  if (parent.contains(child)) {
+    return true;
+  }
+  if (rootNode && isShadowRoot(rootNode)) {
+    let next = child;
+    while (next) {
+      if (parent === next) {
+        return true;
+      }
+      next = next.parentNode || next.host;
+    }
+  }
+  return false;
+}
+function getTarget(event) {
+  if ("composedPath" in event) {
+    return event.composedPath()[0];
+  }
+  return event.target;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/element.mjs
+function isTargetInsideEnabledTrigger(target, triggerElements) {
+  if (!isElement(target)) {
+    return false;
+  }
+  const targetElement = target;
+  if (triggerElements.hasElement(targetElement)) {
+    return !targetElement.hasAttribute("data-trigger-disabled");
+  }
+  for (const [, trigger] of triggerElements.entries()) {
+    if (contains(trigger, targetElement)) {
+      return !trigger.hasAttribute("data-trigger-disabled");
+    }
+  }
+  return false;
+}
+function isEventTargetWithin(event, node) {
+  if (node == null) {
+    return false;
+  }
+  if ("composedPath" in event) {
+    return event.composedPath().includes(node);
+  }
+  const eventAgain = event;
+  return eventAgain.target != null && node.contains(eventAgain.target);
+}
+function isRootElement(element) {
+  return element.matches("html,body");
+}
+function isTypeableElement(element) {
+  return isHTMLElement(element) && element.matches(TYPEABLE_SELECTOR);
+}
+function isInteractiveElement(element) {
+  return element?.closest(`button,a[href],[role="button"],select,[tabindex]:not([tabindex="-1"]),${TYPEABLE_SELECTOR}`) != null;
+}
+function isTypeableCombobox(element) {
+  if (!element) {
+    return false;
+  }
+  return element.getAttribute("role") === "combobox" && isTypeableElement(element);
+}
+function matchesFocusVisible(element) {
+  if (!element || exports_parts.env.jsdom) {
+    return true;
+  }
+  try {
+    return element.matches(":focus-visible");
+  } catch (_e2) {
+    return true;
+  }
+}
+function getFloatingFocusElement(floatingElement) {
+  if (!floatingElement) {
+    return null;
+  }
+  return floatingElement.hasAttribute(FOCUSABLE_ATTRIBUTE) ? floatingElement : floatingElement.querySelector(`[${FOCUSABLE_ATTRIBUTE}]`) || floatingElement;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/event.mjs
+function stopEvent(event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+function isReactEvent(event) {
+  return "nativeEvent" in event;
+}
+function isVirtualClick(event) {
+  if (event.pointerType === "" && event.isTrusted) {
+    return true;
+  }
+  if (exports_parts.os.android && event.pointerType) {
+    return event.type === "click" && event.buttons === 1;
+  }
+  return event.detail === 0 && !event.pointerType;
+}
+function isVirtualPointerEvent(event) {
+  if (exports_parts.env.jsdom) {
+    return false;
+  }
+  return !exports_parts.os.android && event.width === 0 && event.height === 0 || exports_parts.os.android && event.width === 1 && event.height === 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "mouse" || event.width < 1 && event.height < 1 && event.pressure === 0 && event.detail === 0 && event.pointerType === "touch";
+}
+function isMouseLikePointerType(pointerType, strict) {
+  const values = ["mouse", "pen"];
+  if (!strict) {
+    values.push("", undefined);
+  }
+  return values.includes(pointerType);
+}
+function isClickLikeEvent(event) {
+  const type = event.type;
+  return type === "click" || type === "mousedown" || type === "keydown" || type === "keyup";
+}
+
+// node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
+var sides = ["top", "right", "bottom", "left"];
+var min = Math.min;
+var max = Math.max;
+var round = Math.round;
+var floor = Math.floor;
+var createCoords = (v) => ({
+  x: v,
+  y: v
+});
+var oppositeSideMap = {
+  left: "right",
+  right: "left",
+  bottom: "top",
+  top: "bottom"
+};
+function clamp(start, value, end) {
+  return max(start, min(value, end));
+}
+function evaluate(value, param) {
+  return typeof value === "function" ? value(param) : value;
+}
+function getSide(placement) {
+  return placement.split("-")[0];
+}
+function getAlignment(placement) {
+  return placement.split("-")[1];
+}
+function getOppositeAxis(axis) {
+  return axis === "x" ? "y" : "x";
+}
+function getAxisLength(axis) {
+  return axis === "y" ? "height" : "width";
+}
+function getSideAxis(placement) {
+  const firstChar = placement[0];
+  return firstChar === "t" || firstChar === "b" ? "y" : "x";
+}
+function getAlignmentAxis(placement) {
+  return getOppositeAxis(getSideAxis(placement));
+}
+function getAlignmentSides(placement, rects, rtl) {
+  if (rtl === undefined) {
+    rtl = false;
+  }
+  const alignment = getAlignment(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const length = getAxisLength(alignmentAxis);
+  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
+  if (rects.reference[length] > rects.floating[length]) {
+    mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
+  }
+  return [mainAlignmentSide, getOppositePlacement(mainAlignmentSide)];
+}
+function getExpandedPlacements(placement) {
+  const oppositePlacement = getOppositePlacement(placement);
+  return [getOppositeAlignmentPlacement(placement), oppositePlacement, getOppositeAlignmentPlacement(oppositePlacement)];
+}
+function getOppositeAlignmentPlacement(placement) {
+  return placement.includes("start") ? placement.replace("start", "end") : placement.replace("end", "start");
+}
+var lrPlacement = ["left", "right"];
+var rlPlacement = ["right", "left"];
+var tbPlacement = ["top", "bottom"];
+var btPlacement = ["bottom", "top"];
+function getSideList(side, isStart, rtl) {
+  switch (side) {
+    case "top":
+    case "bottom":
+      if (rtl)
+        return isStart ? rlPlacement : lrPlacement;
+      return isStart ? lrPlacement : rlPlacement;
+    case "left":
+    case "right":
+      return isStart ? tbPlacement : btPlacement;
+    default:
+      return [];
+  }
+}
+function getOppositeAxisPlacements(placement, flipAlignment, direction, rtl) {
+  const alignment = getAlignment(placement);
+  let list = getSideList(getSide(placement), direction === "start", rtl);
+  if (alignment) {
+    list = list.map((side) => side + "-" + alignment);
+    if (flipAlignment) {
+      list = list.concat(list.map(getOppositeAlignmentPlacement));
+    }
+  }
+  return list;
+}
+function getOppositePlacement(placement) {
+  const side = getSide(placement);
+  return oppositeSideMap[side] + placement.slice(side.length);
+}
+function expandPaddingObject(padding) {
+  var _padding$top, _padding$right, _padding$bottom, _padding$left;
+  return {
+    top: (_padding$top = padding.top) != null ? _padding$top : 0,
+    right: (_padding$right = padding.right) != null ? _padding$right : 0,
+    bottom: (_padding$bottom = padding.bottom) != null ? _padding$bottom : 0,
+    left: (_padding$left = padding.left) != null ? _padding$left : 0
+  };
+}
+function getPaddingObject(padding) {
+  return typeof padding !== "number" ? expandPaddingObject(padding) : {
+    top: padding,
+    right: padding,
+    bottom: padding,
+    left: padding
+  };
+}
+function rectToClientRect(rect) {
+  const {
+    x,
+    y,
+    width,
+    height
+  } = rect;
+  return {
+    width,
+    height,
+    top: y,
+    left: x,
+    right: x + width,
+    bottom: y + height,
+    x,
+    y
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/composite.mjs
+function isIndexOutOfListBounds(list, index2) {
+  return index2 < 0 || index2 >= list.length;
+}
+function getMinListIndex(listRef, disabledIndices) {
+  return findNonDisabledListIndex(listRef.current, {
+    disabledIndices
+  });
+}
+function getMaxListIndex(listRef, disabledIndices) {
+  return findNonDisabledListIndex(listRef.current, {
+    decrement: true,
+    startingIndex: listRef.current.length,
+    disabledIndices
+  });
+}
+function findNonDisabledListIndex(list, {
+  startingIndex = -1,
+  decrement = false,
+  disabledIndices,
+  amount = 1
+} = {}) {
+  let index2 = startingIndex;
+  do {
+    index2 += decrement ? -amount : amount;
+  } while (index2 >= 0 && index2 <= list.length - 1 && isListIndexDisabled(list, index2, disabledIndices));
+  return index2;
+}
+function isListIndexDisabled(list, index2, disabledIndices) {
+  const isExplicitlyDisabled = typeof disabledIndices === "function" ? disabledIndices(index2) : disabledIndices?.includes(index2) ?? false;
+  if (isExplicitlyDisabled) {
+    return true;
+  }
+  const element = list[index2];
+  if (!element) {
+    return false;
+  }
+  if (!isElementVisible(element)) {
+    return true;
+  }
+  return !disabledIndices && (element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true");
+}
+function isHiddenByStyles(styles) {
+  return styles.visibility === "hidden" || styles.visibility === "collapse";
+}
+function isElementVisible(element, styles = element ? getComputedStyle2(element) : null) {
+  if (!element || !element.isConnected || !styles || isHiddenByStyles(styles)) {
+    return false;
+  }
+  if (typeof element.checkVisibility === "function") {
+    return element.checkVisibility();
+  }
+  return styles.display !== "none" && styles.display !== "contents";
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/tabbable.mjs
+var CANDIDATE_SELECTOR = 'a[href],button,input,select,textarea,summary,details,iframe,object,embed,[tabindex],[contenteditable]:not([contenteditable="false"]),audio[controls],video[controls]';
+function getParentElement(element) {
+  const assignedSlot = element.assignedSlot;
+  if (assignedSlot) {
+    return assignedSlot;
+  }
+  if (element.parentElement) {
+    return element.parentElement;
+  }
+  const rootNode = element.getRootNode();
+  return isShadowRoot(rootNode) ? rootNode.host : null;
+}
+function getDetailsSummary(details) {
+  for (const child of Array.from(details.children)) {
+    if (getNodeName(child) === "summary") {
+      return child;
+    }
+  }
+  return null;
+}
+function isWithinOpenDetailsSummary(element, details) {
+  const summary = getDetailsSummary(details);
+  return !!summary && (element === summary || contains(summary, element));
+}
+function isFocusableCandidate(element) {
+  const nodeName = element ? getNodeName(element) : "";
+  return element != null && element.matches(CANDIDATE_SELECTOR) && (nodeName !== "summary" || element.parentElement != null && getNodeName(element.parentElement) === "details" && getDetailsSummary(element.parentElement) === element) && (nodeName !== "details" || getDetailsSummary(element) == null) && (nodeName !== "input" || element.type !== "hidden");
+}
+function isFocusableElement(element) {
+  if (!isFocusableCandidate(element) || !element.isConnected || element.matches(":disabled")) {
+    return false;
+  }
+  for (let current = element;current; current = getParentElement(current)) {
+    const isAncestor = current !== element;
+    const isSlot = getNodeName(current) === "slot";
+    if (current.hasAttribute("inert")) {
+      return false;
+    }
+    if (isAncestor && getNodeName(current) === "details" && !current.open && !isWithinOpenDetailsSummary(element, current) || current.hasAttribute("hidden") || !isSlot && !isVisibleInTabbableTree(current, isAncestor)) {
+      return false;
+    }
+  }
+  return true;
+}
+function isVisibleInTabbableTree(element, isAncestor) {
+  const styles = getComputedStyle2(element);
+  if (!isAncestor) {
+    return isElementVisible(element, styles);
+  }
+  return styles.display !== "none";
+}
+function getTabIndex(element) {
+  const tabIndex = element.tabIndex;
+  if (tabIndex < 0) {
+    const nodeName = getNodeName(element);
+    if (nodeName === "details" || nodeName === "audio" || nodeName === "video" || isHTMLElement(element) && element.isContentEditable) {
+      return 0;
+    }
+  }
+  return tabIndex;
+}
+function getNamedRadioInput(element) {
+  if (getNodeName(element) !== "input") {
+    return null;
+  }
+  const input = element;
+  return input.type === "radio" && input.name !== "" ? input : null;
+}
+function isTabbableRadio(element, candidates) {
+  const input = getNamedRadioInput(element);
+  if (!input) {
+    return true;
+  }
+  const checkedRadio = candidates.find((candidate) => {
+    const radio = getNamedRadioInput(candidate);
+    return radio?.name === input.name && radio.form === input.form && radio.checked;
+  });
+  if (checkedRadio) {
+    return checkedRadio === input;
+  }
+  return candidates.find((candidate) => {
+    const radio = getNamedRadioInput(candidate);
+    return radio?.name === input.name && radio.form === input.form;
+  }) === input;
+}
+function getComposedChildren(container) {
+  if (isHTMLElement(container) && getNodeName(container) === "slot") {
+    const assignedElements = container.assignedElements({
+      flatten: true
+    });
+    if (assignedElements.length > 0) {
+      return assignedElements;
+    }
+  }
+  if (isHTMLElement(container) && container.shadowRoot) {
+    return Array.from(container.shadowRoot.children);
+  }
+  return Array.from(container.children);
+}
+function appendCandidates(container, list) {
+  getComposedChildren(container).forEach((child) => {
+    if (isFocusableCandidate(child)) {
+      list.push(child);
+    }
+    appendCandidates(child, list);
+  });
+}
+function appendMatchingElements(container, selector, list) {
+  getComposedChildren(container).forEach((child) => {
+    if (isHTMLElement(child) && child.matches(selector)) {
+      list.push(child);
+    }
+    appendMatchingElements(child, selector, list);
+  });
+}
+function isTabbable(element) {
+  return isFocusableElement(element) && getTabIndex(element) >= 0;
+}
+function focusable(container) {
+  const candidates = [];
+  appendCandidates(container, candidates);
+  return candidates.filter(isFocusableElement);
+}
+function tabbable(container) {
+  const candidates = focusable(container);
+  return candidates.filter((element) => getTabIndex(element) >= 0 && isTabbableRadio(element, candidates));
+}
+function getTabbableIn(container, dir) {
+  const list = tabbable(container);
+  const len = list.length;
+  if (len === 0) {
+    return;
+  }
+  const active = activeElement(ownerDocument(container));
+  const index2 = list.indexOf(active);
+  const nextIndex = index2 === -1 ? dir === 1 ? 0 : len - 1 : index2 + dir;
+  return list[nextIndex];
+}
+function getNextTabbable(referenceElement) {
+  return getTabbableIn(ownerDocument(referenceElement).body, 1) || referenceElement;
+}
+function getPreviousTabbable(referenceElement) {
+  return getTabbableIn(ownerDocument(referenceElement).body, -1) || referenceElement;
+}
+function getTabbableNearElement(referenceElement, dir) {
+  if (!referenceElement) {
+    return null;
+  }
+  const list = tabbable(ownerDocument(referenceElement).body);
+  const elementCount = list.length;
+  if (elementCount === 0) {
+    return null;
+  }
+  const index2 = list.indexOf(referenceElement);
+  if (index2 === -1) {
+    return null;
+  }
+  const nextIndex = (index2 + dir + elementCount) % elementCount;
+  return list[nextIndex];
+}
+function getTabbableAfterElement(referenceElement) {
+  return getTabbableNearElement(referenceElement, 1);
+}
+function getTabbableBeforeElement(referenceElement) {
+  return getTabbableNearElement(referenceElement, -1);
+}
+function isOutsideEvent(event, container) {
+  const containerElement = container || event.currentTarget;
+  const relatedTarget = event.relatedTarget;
+  return !relatedTarget || !contains(containerElement, relatedTarget);
+}
+function disableFocusInside(container) {
+  const tabbableElements = tabbable(container);
+  tabbableElements.forEach((element) => {
+    element.dataset.tabindex = element.getAttribute("tabindex") || "";
+    element.setAttribute("tabindex", "-1");
+  });
+}
+function enableFocusInside(container) {
+  const elements = [];
+  appendMatchingElements(container, "[data-tabindex]", elements);
+  elements.forEach((element) => {
+    const tabindex = element.dataset.tabindex;
+    delete element.dataset.tabindex;
+    if (tabindex) {
+      element.setAttribute("tabindex", tabindex);
+    } else {
+      element.removeAttribute("tabindex");
+    }
+  });
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/nodes.mjs
+function getNodeChildren(nodes, id, onlyOpenChildren = true) {
+  const directChildren = nodes.filter((node) => node.parentId === id);
+  return directChildren.flatMap((child) => [...!onlyOpenChildren || child.context?.open ? [child] : [], ...getNodeChildren(nodes, child.id, onlyOpenChildren)]);
+}
+function getNodeAncestors(nodes, id) {
+  let allAncestors = [];
+  let currentParentId = nodes.find((node) => node.id === id)?.parentId;
+  while (currentParentId) {
+    const currentNode = nodes.find((node) => node.id === currentParentId);
+    currentParentId = currentNode?.parentId;
+    if (currentNode) {
+      allAncestors = allAncestors.concat(currentNode);
+    }
+  }
+  return allAncestors;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/createAttribute.mjs
+function createAttribute(name) {
+  return `data-base-ui-${name}`;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/enqueueFocus.mjs
+var rafId = 0;
+function enqueueFocus(el, options = {}) {
+  const {
+    preventScroll = false,
+    sync = false,
+    shouldFocus
+  } = options;
+  cancelAnimationFrame(rafId);
+  function exec() {
+    if (shouldFocus && !shouldFocus()) {
+      return;
+    }
+    el?.focus({
+      preventScroll
+    });
+  }
+  if (sync) {
+    exec();
+    return NOOP;
+  }
+  const currentRafId = requestAnimationFrame(exec);
+  rafId = currentRafId;
+  return () => {
+    if (rafId === currentRafId) {
+      cancelAnimationFrame(currentRafId);
+      rafId = 0;
+    }
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/markOthers.mjs
+var counters = {
+  inert: new WeakMap,
+  "aria-hidden": new WeakMap
+};
+var markerName = "data-base-ui-inert";
+var uncontrolledElementsSets = {
+  inert: new WeakSet,
+  "aria-hidden": new WeakSet
+};
+var markerCounterMap = new WeakMap;
+var lockCount = 0;
+function getUncontrolledElementsSet(controlAttribute) {
+  return uncontrolledElementsSets[controlAttribute];
+}
+function unwrapHost(node) {
+  if (!node) {
+    return null;
+  }
+  return isShadowRoot(node) ? node.host : unwrapHost(node.parentNode);
+}
+var correctElements = (parent, targets) => targets.map((target) => {
+  if (parent.contains(target)) {
+    return target;
+  }
+  const correctedTarget = unwrapHost(target);
+  if (parent.contains(correctedTarget)) {
+    return correctedTarget;
+  }
+  return null;
+}).filter((x) => x != null);
+var buildKeepSet = (targets) => {
+  const keep = new Set;
+  targets.forEach((target) => {
+    let node = target;
+    while (node && !keep.has(node)) {
+      keep.add(node);
+      node = node.parentNode;
+    }
+  });
+  return keep;
+};
+var collectOutsideElements = (root, keepElements, stopElements) => {
+  const outside = [];
+  const walk = (parent) => {
+    if (!parent || stopElements.has(parent)) {
+      return;
+    }
+    Array.from(parent.children).forEach((node) => {
+      if (getNodeName(node) === "script") {
+        return;
+      }
+      if (keepElements.has(node)) {
+        walk(node);
+      } else {
+        outside.push(node);
+      }
+    });
+  };
+  walk(root);
+  return outside;
+};
+function applyAttributeToOthers(uncorrectedAvoidElements, body, ariaHidden, inert, {
+  mark = true
+}) {
+  let controlAttribute = null;
+  if (inert) {
+    controlAttribute = "inert";
+  } else if (ariaHidden) {
+    controlAttribute = "aria-hidden";
+  }
+  let counterMap = null;
+  let uncontrolledElementsSet = null;
+  const avoidElements = correctElements(body, uncorrectedAvoidElements);
+  const markerTargets = mark ? collectOutsideElements(body, buildKeepSet(avoidElements), new Set(avoidElements)) : [];
+  const hiddenElements = [];
+  const markedElements = [];
+  if (controlAttribute) {
+    const map = counters[controlAttribute];
+    const currentUncontrolledElementsSet = getUncontrolledElementsSet(controlAttribute);
+    uncontrolledElementsSet = currentUncontrolledElementsSet;
+    counterMap = map;
+    const ariaLiveElements = correctElements(body, Array.from(body.querySelectorAll("[aria-live]")));
+    const controlElements = avoidElements.concat(ariaLiveElements);
+    const controlTargets = collectOutsideElements(body, buildKeepSet(controlElements), new Set(controlElements));
+    controlTargets.forEach((node) => {
+      const attr = node.getAttribute(controlAttribute);
+      const alreadyHidden = attr !== null && attr !== "false";
+      const counterValue = (map.get(node) || 0) + 1;
+      map.set(node, counterValue);
+      hiddenElements.push(node);
+      if (counterValue === 1 && alreadyHidden) {
+        currentUncontrolledElementsSet.add(node);
+      }
+      if (!alreadyHidden) {
+        node.setAttribute(controlAttribute, controlAttribute === "inert" ? "" : "true");
+      }
+    });
+  }
+  if (mark) {
+    markerTargets.forEach((node) => {
+      const markerValue = (markerCounterMap.get(node) || 0) + 1;
+      markerCounterMap.set(node, markerValue);
+      markedElements.push(node);
+      if (markerValue === 1) {
+        node.setAttribute(markerName, "");
+      }
+    });
+  }
+  lockCount += 1;
+  return () => {
+    if (counterMap) {
+      hiddenElements.forEach((element) => {
+        const currentCounterValue = counterMap.get(element) || 0;
+        const counterValue = currentCounterValue - 1;
+        counterMap.set(element, counterValue);
+        if (!counterValue) {
+          if (!uncontrolledElementsSet?.has(element) && controlAttribute) {
+            element.removeAttribute(controlAttribute);
+          }
+          uncontrolledElementsSet?.delete(element);
+        }
+      });
+    }
+    if (mark) {
+      markedElements.forEach((element) => {
+        const markerValue = (markerCounterMap.get(element) || 0) - 1;
+        markerCounterMap.set(element, markerValue);
+        if (!markerValue) {
+          element.removeAttribute(markerName);
+        }
+      });
+    }
+    lockCount -= 1;
+    if (!lockCount) {
+      counters.inert = new WeakMap;
+      counters["aria-hidden"] = new WeakMap;
+      uncontrolledElementsSets.inert = new WeakSet;
+      uncontrolledElementsSets["aria-hidden"] = new WeakSet;
+      markerCounterMap = new WeakMap;
+    }
+  };
+}
+function markOthers(avoidElements, options = {}) {
+  const {
+    ariaHidden = false,
+    inert = false,
+    mark = true
+  } = options;
+  const body = ownerDocument(avoidElements[0]).body;
+  return applyAttributeToOthers(avoidElements, body, ariaHidden, inert, {
+    mark
+  });
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
+var React35 = __toESM(require_react(), 1);
+var ReactDOM2 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/react/internals/constants.mjs
+var TYPEAHEAD_RESET_MS = 500;
+var PATIENT_CLICK_THRESHOLD = 500;
+var DISABLED_TRANSITIONS_STYLE = {
+  style: {
+    transition: "none"
+  }
+};
+var CLICK_TRIGGER_IDENTIFIER = "data-base-ui-click-trigger";
+var BASE_UI_SWIPE_IGNORE_ATTRIBUTE = "data-base-ui-swipe-ignore";
+var LEGACY_SWIPE_IGNORE_ATTRIBUTE = "data-swipe-ignore";
+var BASE_UI_SWIPE_IGNORE_SELECTOR = `[${BASE_UI_SWIPE_IGNORE_ATTRIBUTE}]`;
+var LEGACY_SWIPE_IGNORE_SELECTOR = `[${LEGACY_SWIPE_IGNORE_ATTRIBUTE}]`;
+var DROPDOWN_COLLISION_AVOIDANCE = {
+  fallbackAxisSide: "none"
+};
+var POPUP_COLLISION_AVOIDANCE = {
+  fallbackAxisSide: "end"
+};
+var ownerVisuallyHidden = {
+  clipPath: "inset(50%)",
+  position: "fixed",
+  top: 0,
+  left: 0
+};
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
+var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PortalContext = /* @__PURE__ */ React35.createContext(null);
+if (true)
+  PortalContext.displayName = "PortalContext";
+var usePortalContext = () => React35.useContext(PortalContext);
+var attr = createAttribute("portal");
+function useFloatingPortalNode(props = {}) {
+  const {
+    ref,
+    container: containerProp,
+    componentProps = EMPTY_OBJECT,
+    elementProps
+  } = props;
+  const uniqueId = useId();
+  const portalContext = usePortalContext();
+  const parentPortalNode = portalContext?.portalNode;
+  const [containerElement, setContainerElement] = React35.useState(null);
+  const [portalNode, setPortalNode] = React35.useState(null);
+  const setPortalNodeRef = useStableCallback((node) => {
+    if (node !== null) {
+      setPortalNode(node);
+    }
+  });
+  const containerRef = React35.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (containerProp === null) {
+      if (containerRef.current) {
+        containerRef.current = null;
+        setPortalNode(null);
+        setContainerElement(null);
+      }
+      return;
+    }
+    if (uniqueId == null) {
+      return;
+    }
+    const resolvedContainer = (containerProp && (isNode(containerProp) ? containerProp : containerProp.current)) ?? parentPortalNode ?? document.body;
+    if (resolvedContainer == null) {
+      if (containerRef.current) {
+        containerRef.current = null;
+        setPortalNode(null);
+        setContainerElement(null);
+      }
+      return;
+    }
+    if (containerRef.current !== resolvedContainer) {
+      containerRef.current = resolvedContainer;
+      setPortalNode(null);
+      setContainerElement(resolvedContainer);
+    }
+  }, [containerProp, parentPortalNode, uniqueId]);
+  const portalElement = useRenderElement("div", componentProps, {
+    ref: [ref, setPortalNodeRef],
+    props: [{
+      id: uniqueId,
+      [attr]: ""
+    }, elementProps]
+  });
+  const portalSubtree = containerElement && portalElement ? /* @__PURE__ */ ReactDOM2.createPortal(portalElement, containerElement) : null;
+  return {
+    portalNode,
+    portalSubtree
+  };
+}
+var FloatingPortal = /* @__PURE__ */ React35.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    container,
+    renderGuards,
+    ...elementProps
+  } = componentProps;
+  const {
+    portalNode,
+    portalSubtree
+  } = useFloatingPortalNode({
+    container,
+    ref: forwardedRef,
+    componentProps,
+    elementProps
+  });
+  const beforeOutsideRef = React35.useRef(null);
+  const afterOutsideRef = React35.useRef(null);
+  const beforeInsideRef = React35.useRef(null);
+  const afterInsideRef = React35.useRef(null);
+  const [focusManagerState, setFocusManagerState] = React35.useState(null);
+  const focusInsideDisabledRef = React35.useRef(false);
+  const modal = focusManagerState?.modal;
+  const open = focusManagerState?.open;
+  const shouldRenderGuards = typeof renderGuards === "boolean" ? renderGuards : !!focusManagerState && !focusManagerState.modal && focusManagerState.open && !!portalNode;
+  React35.useEffect(() => {
+    if (!portalNode || modal) {
+      return;
+    }
+    function onFocus(event) {
+      if (portalNode && event.relatedTarget && isOutsideEvent(event)) {
+        if (event.type === "focusin") {
+          if (focusInsideDisabledRef.current) {
+            enableFocusInside(portalNode);
+            focusInsideDisabledRef.current = false;
+          }
+        } else {
+          disableFocusInside(portalNode);
+          focusInsideDisabledRef.current = true;
+        }
+      }
+    }
+    return mergeCleanups(addEventListener(portalNode, "focusin", onFocus, true), addEventListener(portalNode, "focusout", onFocus, true));
+  }, [portalNode, modal]);
+  useIsoLayoutEffect(() => {
+    if (!portalNode || open !== true || !focusInsideDisabledRef.current) {
+      return;
+    }
+    enableFocusInside(portalNode);
+    focusInsideDisabledRef.current = false;
+  }, [open, portalNode]);
+  const portalContextValue = React35.useMemo(() => ({
+    beforeOutsideRef,
+    afterOutsideRef,
+    beforeInsideRef,
+    afterInsideRef,
+    portalNode,
+    setFocusManagerState
+  }), [portalNode]);
+  return /* @__PURE__ */ import_jsx_runtime5.jsxs(React35.Fragment, {
+    children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime5.jsxs(PortalContext.Provider, {
+      value: portalContextValue,
+      children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+        "data-type": "outside",
+        ref: beforeOutsideRef,
+        onFocus: (event) => {
+          if (isOutsideEvent(event, portalNode)) {
+            beforeInsideRef.current?.focus();
+          } else {
+            const domReference = focusManagerState ? focusManagerState.domReference : null;
+            const prevTabbable = getPreviousTabbable(domReference);
+            prevTabbable?.focus();
+          }
+        }
+      }), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx("span", {
+        "aria-owns": portalNode.id,
+        style: ownerVisuallyHidden
+      }), portalNode && /* @__PURE__ */ ReactDOM2.createPortal(children, portalNode), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+        "data-type": "outside",
+        ref: afterOutsideRef,
+        onFocus: (event) => {
+          if (isOutsideEvent(event, portalNode)) {
+            afterInsideRef.current?.focus();
+          } else {
+            const domReference = focusManagerState ? focusManagerState.domReference : null;
+            const nextTabbable = getNextTabbable(domReference);
+            nextTabbable?.focus();
+            if (focusManagerState?.closeOnFocusOut) {
+              focusManagerState?.onOpenChange(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent));
+            }
+          }
+        }
+      })]
+    })]
+  });
+});
+if (true)
+  FloatingPortal.displayName = "FloatingPortal";
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
+var React36 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/floating-ui-react/utils/createEventEmitter.mjs
+function createEventEmitter() {
+  const map = new Map;
+  return {
+    emit(event, data) {
+      map.get(event)?.forEach((listener) => listener(data));
+    },
+    on(event, listener) {
+      if (!map.has(event)) {
+        map.set(event, new Set);
+      }
+      map.get(event).add(listener);
+    },
+    off(event, listener) {
+      map.get(event)?.delete(listener);
+    }
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTreeStore.mjs
+class FloatingTreeStore {
+  nodesRef = {
+    current: []
+  };
+  events = createEventEmitter();
+  addNode(node) {
+    this.nodesRef.current.push(node);
+  }
+  removeNode(node) {
+    const index2 = this.nodesRef.current.findIndex((n) => n === node);
+    if (index2 !== -1) {
+      this.nodesRef.current.splice(index2, 1);
+    }
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
+var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FloatingNodeContext = /* @__PURE__ */ React36.createContext(null);
+if (true)
+  FloatingNodeContext.displayName = "FloatingNodeContext";
+var FloatingTreeContext = /* @__PURE__ */ React36.createContext(null);
+if (true)
+  FloatingTreeContext.displayName = "FloatingTreeContext";
+var useFloatingParentNodeId = () => React36.useContext(FloatingNodeContext)?.id || null;
+var useFloatingTree = (externalTree) => {
+  const contextTree = React36.useContext(FloatingTreeContext);
+  return externalTree ?? contextTree;
+};
+function useFloatingNodeId(externalTree) {
+  const id = useId();
+  const tree = useFloatingTree(externalTree);
+  const parentId = useFloatingParentNodeId();
+  useIsoLayoutEffect(() => {
+    if (!id) {
+      return;
+    }
+    const node = {
+      id,
+      parentId
+    };
+    tree?.addNode(node);
+    return () => {
+      tree?.removeNode(node);
+    };
+  }, [tree, id, parentId]);
+  return id;
+}
+function FloatingNode(props) {
+  const {
+    children,
+    id
+  } = props;
+  const parentId = useFloatingParentNodeId();
+  return /* @__PURE__ */ import_jsx_runtime6.jsx(FloatingNodeContext.Provider, {
+    value: React36.useMemo(() => ({
+      id,
+      parentId
+    }), [id, parentId]),
+    children
+  });
+}
+function FloatingTree(props) {
+  const {
+    children,
+    externalTree
+  } = props;
+  const tree = useRefWithInit(() => externalTree ?? new FloatingTreeStore).current;
+  return /* @__PURE__ */ import_jsx_runtime6.jsx(FloatingTreeContext.Provider, {
+    value: tree,
+    children
+  });
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
+var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function getEventType(event, lastInteractionType) {
+  const win = getWindow(getTarget(event));
+  if (event instanceof win.KeyboardEvent) {
+    return "keyboard";
+  }
+  if (event instanceof win.FocusEvent) {
+    return lastInteractionType || "keyboard";
+  }
+  if ("pointerType" in event) {
+    return event.pointerType || "keyboard";
+  }
+  if ("touches" in event) {
+    return "touch";
+  }
+  if (event instanceof win.MouseEvent) {
+    return lastInteractionType || (event.detail === 0 ? "keyboard" : "mouse");
+  }
+  return "";
+}
+var LIST_LIMIT = 20;
+var previouslyFocusedElements = [];
+function clearDisconnectedPreviouslyFocusedElements() {
+  previouslyFocusedElements = previouslyFocusedElements.filter((entry) => {
+    return entry.deref()?.isConnected;
+  });
+}
+function addPreviouslyFocusedElement(element) {
+  clearDisconnectedPreviouslyFocusedElements();
+  if (element && getNodeName(element) !== "body") {
+    previouslyFocusedElements.push(new WeakRef(element));
+    if (previouslyFocusedElements.length > LIST_LIMIT) {
+      previouslyFocusedElements = previouslyFocusedElements.slice(-LIST_LIMIT);
+    }
+  }
+}
+function getPreviouslyFocusedElement() {
+  clearDisconnectedPreviouslyFocusedElements();
+  return previouslyFocusedElements[previouslyFocusedElements.length - 1]?.deref();
+}
+function getFirstTabbableElement(container) {
+  if (!container) {
+    return null;
+  }
+  if (isTabbable(container)) {
+    return container;
+  }
+  return tabbable(container)[0] || container;
+}
+function handleTabIndex(floatingFocusElement) {
+  if (floatingFocusElement.hasAttribute("tabindex") && !floatingFocusElement.hasAttribute("data-tabindex")) {
+    return;
+  }
+  if (!floatingFocusElement.getAttribute("role")?.includes("dialog")) {
+    return;
+  }
+  const focusableElements = focusable(floatingFocusElement);
+  const tabbableContent = focusableElements.filter((element) => {
+    const dataTabIndex = element.getAttribute("data-tabindex") || "";
+    return isTabbable(element) || element.hasAttribute("data-tabindex") && !dataTabIndex.startsWith("-");
+  });
+  const tabIndex = floatingFocusElement.getAttribute("tabindex");
+  if (tabbableContent.length === 0) {
+    if (tabIndex !== "0") {
+      floatingFocusElement.setAttribute("tabindex", "0");
+      floatingFocusElement.setAttribute("data-tabindex", "0");
+    }
+  } else if (tabIndex !== "-1" || floatingFocusElement.hasAttribute("data-tabindex") && floatingFocusElement.getAttribute("data-tabindex") !== "-1") {
+    floatingFocusElement.setAttribute("tabindex", "-1");
+    floatingFocusElement.setAttribute("data-tabindex", "-1");
+  }
+}
+function FloatingFocusManager(props) {
+  const {
+    context,
+    children,
+    disabled: disabled2 = false,
+    initialFocus = true,
+    returnFocus = true,
+    restoreFocus = false,
+    modal = true,
+    closeOnFocusOut = true,
+    openInteractionType = "",
+    nextFocusableElement,
+    previousFocusableElement,
+    beforeContentFocusGuardRef,
+    externalTree,
+    getInsideElements
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const domReference = store.useState("domReferenceElement");
+  const floating = store.useState("floatingElement");
+  const {
+    events,
+    dataRef
+  } = store.context;
+  const getNodeId = useStableCallback(() => dataRef.current.floatingContext?.nodeId);
+  const ignoreInitialFocus = initialFocus === false;
+  const isUntrappedTypeableCombobox = isTypeableCombobox(domReference) && ignoreInitialFocus;
+  const initialFocusRef = useValueAsRef(initialFocus);
+  const returnFocusRef = useValueAsRef(returnFocus);
+  const openInteractionTypeRef = useValueAsRef(openInteractionType);
+  const openRef = useValueAsRef(open);
+  const tree = useFloatingTree(externalTree);
+  const portalContext = usePortalContext();
+  const preventReturnFocusRef = React37.useRef(false);
+  const isPointerDownRef = React37.useRef(false);
+  const pointerDownOutsideRef = React37.useRef(false);
+  const lastFocusedTabbableRef = React37.useRef(null);
+  const closeTypeRef = React37.useRef("");
+  const lastInteractionTypeRef = React37.useRef("");
+  const beforeGuardRef = React37.useRef(null);
+  const afterGuardRef = React37.useRef(null);
+  const mergedBeforeGuardRef = useMergedRefs(beforeGuardRef, beforeContentFocusGuardRef, portalContext?.beforeInsideRef);
+  const mergedAfterGuardRef = useMergedRefs(afterGuardRef, portalContext?.afterInsideRef);
+  const blurTimeout = useTimeout();
+  const pointerDownTimeout = useTimeout();
+  const restoreFocusFrame = useAnimationFrame();
+  const isInsidePortal = portalContext != null;
+  const floatingFocusElement = getFloatingFocusElement(floating);
+  const getTabbableContent = useStableCallback((container = floatingFocusElement) => {
+    return container ? tabbable(container) : [];
+  });
+  const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element) => element != null) ?? []);
+  React37.useEffect(() => {
+    if (disabled2 || !modal) {
+      return;
+    }
+    function onKeyDown(event) {
+      if (event.key === "Tab") {
+        if (contains(floatingFocusElement, activeElement(ownerDocument(floatingFocusElement))) && getTabbableContent().length === 0 && !isUntrappedTypeableCombobox) {
+          stopEvent(event);
+        }
+      }
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    return addEventListener(doc, "keydown", onKeyDown);
+  }, [disabled2, floatingFocusElement, modal, isUntrappedTypeableCombobox, getTabbableContent]);
+  React37.useEffect(() => {
+    if (disabled2 || !open) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    function clearPointerDownOutside() {
+      pointerDownOutsideRef.current = false;
+    }
+    function onPointerDown(event) {
+      const target = getTarget(event);
+      const insideElements = getResolvedInsideElements();
+      const pointerTargetInside = contains(floating, target) || contains(domReference, target) || contains(portalContext?.portalNode, target) || insideElements.some((element) => element === target || contains(element, target));
+      pointerDownOutsideRef.current = !pointerTargetInside;
+      lastInteractionTypeRef.current = event.pointerType || "keyboard";
+      if (target?.closest(`[${CLICK_TRIGGER_IDENTIFIER}]`)) {
+        isPointerDownRef.current = true;
+        pointerDownTimeout.start(0, () => {
+          isPointerDownRef.current = false;
+        });
+      }
+    }
+    function onKeyDown() {
+      lastInteractionTypeRef.current = "keyboard";
+    }
+    return mergeCleanups(addEventListener(doc, "pointerdown", onPointerDown, true), addEventListener(doc, "pointerup", clearPointerDownOutside, true), addEventListener(doc, "pointercancel", clearPointerDownOutside, true), addEventListener(doc, "keydown", onKeyDown, true), clearPointerDownOutside);
+  }, [disabled2, floating, domReference, floatingFocusElement, open, portalContext, pointerDownTimeout, getResolvedInsideElements]);
+  React37.useEffect(() => {
+    if (disabled2 || !closeOnFocusOut) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    function handlePointerDown() {
+      isPointerDownRef.current = true;
+      pointerDownTimeout.start(0, () => {
+        isPointerDownRef.current = false;
+      });
+    }
+    function handleFocusIn(event) {
+      const target = getTarget(event);
+      if (isTabbable(target)) {
+        lastFocusedTabbableRef.current = target;
+      }
+    }
+    function handleFocusOutside(event) {
+      const relatedTarget = event.relatedTarget;
+      const currentTarget = event.currentTarget;
+      const target = getTarget(event);
+      if (modal && relatedTarget == null && target != null && contains(floating, target)) {
+        addPreviouslyFocusedElement(target);
+      }
+      queueMicrotask(() => {
+        const nodeId = getNodeId();
+        const triggers = store.context.triggerElements;
+        const insideElements = getResolvedInsideElements();
+        const isRelatedFocusGuard = relatedTarget?.hasAttribute(createAttribute("focus-guard")) && [beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeInsideRef.current, portalContext?.afterInsideRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement)].includes(relatedTarget);
+        const movedToUnrelatedNode = !(contains(domReference, relatedTarget) || contains(floating, relatedTarget) || contains(relatedTarget, floating) || contains(portalContext?.portalNode, relatedTarget) || insideElements.some((element) => element === relatedTarget || contains(element, relatedTarget)) || relatedTarget != null && triggers.hasElement(relatedTarget) || triggers.hasMatchingElement((trigger) => contains(trigger, relatedTarget)) || isRelatedFocusGuard || tree && (getNodeChildren(tree.nodesRef.current, nodeId).find((node) => contains(node.context?.elements.floating, relatedTarget) || contains(node.context?.elements.domReference, relatedTarget)) || getNodeAncestors(tree.nodesRef.current, nodeId).find((node) => [node.context?.elements.floating, getFloatingFocusElement(node.context?.elements.floating)].includes(relatedTarget) || node.context?.elements.domReference === relatedTarget)));
+        if (currentTarget === domReference && floatingFocusElement) {
+          handleTabIndex(floatingFocusElement);
+        }
+        if (restoreFocus && currentTarget !== domReference && !isElementVisible(target) && activeElement(doc) === doc.body) {
+          if (isHTMLElement(floatingFocusElement)) {
+            floatingFocusElement.focus();
+            if (restoreFocus === "popup") {
+              restoreFocusFrame.request(() => {
+                floatingFocusElement.focus();
+              });
+              return;
+            }
+          }
+          const tabbableContent = getTabbableContent();
+          const prevTabbable = lastFocusedTabbableRef.current;
+          const nodeToFocus = (prevTabbable && tabbableContent.includes(prevTabbable) ? prevTabbable : null) || tabbableContent[tabbableContent.length - 1] || floatingFocusElement;
+          if (isHTMLElement(nodeToFocus)) {
+            nodeToFocus.focus();
+          }
+        }
+        if (dataRef.current.insideReactTree) {
+          dataRef.current.insideReactTree = false;
+          return;
+        }
+        if ((isUntrappedTypeableCombobox ? true : !modal) && relatedTarget && movedToUnrelatedNode && !isPointerDownRef.current && (isUntrappedTypeableCombobox || relatedTarget !== getPreviouslyFocusedElement())) {
+          preventReturnFocusRef.current = true;
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event));
+        }
+      });
+    }
+    function markInsideReactTree() {
+      if (pointerDownOutsideRef.current) {
+        return;
+      }
+      dataRef.current.insideReactTree = true;
+      blurTimeout.start(0, () => {
+        dataRef.current.insideReactTree = false;
+      });
+    }
+    const domReferenceElement = isHTMLElement(domReference) ? domReference : null;
+    if (!floating && !domReferenceElement) {
+      return;
+    }
+    return mergeCleanups(domReferenceElement && addEventListener(domReferenceElement, "focusout", handleFocusOutside), domReferenceElement && addEventListener(domReferenceElement, "pointerdown", handlePointerDown), floating && addEventListener(floating, "focusin", handleFocusIn), floating && addEventListener(floating, "focusout", handleFocusOutside), floating && portalContext && addEventListener(floating, "focusout", markInsideReactTree, true));
+  }, [disabled2, domReference, floating, floatingFocusElement, modal, tree, portalContext, store, closeOnFocusOut, restoreFocus, getTabbableContent, isUntrappedTypeableCombobox, getNodeId, dataRef, blurTimeout, pointerDownTimeout, restoreFocusFrame, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
+  React37.useEffect(() => {
+    if (disabled2 || !floating || !open) {
+      return;
+    }
+    const portalNodes = Array.from(portalContext?.portalNode?.querySelectorAll(`[${createAttribute("portal")}]`) || []);
+    const ancestors = tree ? getNodeAncestors(tree.nodesRef.current, getNodeId()) : [];
+    const rootAncestorComboboxDomReference = ancestors.find((node) => isTypeableCombobox(node.context?.elements.domReference || null))?.context?.elements.domReference;
+    const controlInsideElements = [floating, ...portalNodes, beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, ...getResolvedInsideElements()];
+    const insideElements = [...controlInsideElements, rootAncestorComboboxDomReference, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement), isUntrappedTypeableCombobox ? domReference : null].filter((x) => x != null);
+    const ariaHiddenCleanup = markOthers(insideElements, {
+      ariaHidden: modal || isUntrappedTypeableCombobox,
+      mark: false
+    });
+    const markerInsideElements = [floating, ...portalNodes].filter((x) => x != null);
+    const markerCleanup = markOthers(markerInsideElements);
+    return () => {
+      markerCleanup();
+      ariaHiddenCleanup();
+    };
+  }, [open, disabled2, domReference, floating, modal, portalContext, isUntrappedTypeableCombobox, tree, getNodeId, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
+  useIsoLayoutEffect(() => {
+    if (!open || disabled2 || !isHTMLElement(floatingFocusElement)) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    const previouslyFocusedElement = activeElement(doc);
+    queueMicrotask(() => {
+      const initialFocusValueOrFn = initialFocusRef.current;
+      const resolvedInitialFocus = typeof initialFocusValueOrFn === "function" ? initialFocusValueOrFn(openInteractionTypeRef.current || "") : initialFocusValueOrFn;
+      if (resolvedInitialFocus === undefined || resolvedInitialFocus === false) {
+        return;
+      }
+      const focusAlreadyInsideFloatingEl = contains(floatingFocusElement, previouslyFocusedElement);
+      if (focusAlreadyInsideFloatingEl) {
+        return;
+      }
+      let focusableElements = null;
+      const getDefaultFocusElement = () => {
+        if (focusableElements == null) {
+          focusableElements = getTabbableContent(floatingFocusElement);
+        }
+        return focusableElements[0] || floatingFocusElement;
+      };
+      let elToFocus;
+      if (resolvedInitialFocus === true || resolvedInitialFocus === null) {
+        elToFocus = getDefaultFocusElement();
+      } else {
+        elToFocus = resolveRef(resolvedInitialFocus);
+      }
+      elToFocus = elToFocus || getDefaultFocusElement();
+      const hadFocusInside = contains(floatingFocusElement, activeElement(doc));
+      enqueueFocus(elToFocus, {
+        preventScroll: elToFocus === floatingFocusElement,
+        shouldFocus() {
+          if (!openRef.current) {
+            return false;
+          }
+          if (hadFocusInside) {
+            return true;
+          }
+          const currentActiveElement = activeElement(doc);
+          const focusMovedInside = currentActiveElement !== elToFocus && contains(floatingFocusElement, currentActiveElement);
+          return !focusMovedInside;
+        }
+      });
+    });
+  }, [disabled2, open, floatingFocusElement, getTabbableContent, initialFocusRef, openInteractionTypeRef, openRef]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !floatingFocusElement) {
+      return;
+    }
+    const doc = ownerDocument(floatingFocusElement);
+    const elementFocusedBeforeOpen = activeElement(doc);
+    const preferPreviousFocus = openInteractionTypeRef.current == null;
+    addPreviouslyFocusedElement(elementFocusedBeforeOpen);
+    function onOpenChangeLocal(details) {
+      if (!details.open) {
+        closeTypeRef.current = getEventType(details.nativeEvent, lastInteractionTypeRef.current);
+      }
+      if (details.reason === exports_reason_parts.triggerHover && details.nativeEvent.type === "mouseleave") {
+        preventReturnFocusRef.current = true;
+      }
+      if (details.reason !== exports_reason_parts.outsidePress) {
+        return;
+      }
+      if (details.nested) {
+        preventReturnFocusRef.current = false;
+      } else if (isVirtualClick(details.nativeEvent) || isVirtualPointerEvent(details.nativeEvent)) {
+        preventReturnFocusRef.current = false;
+      } else {
+        let isPreventScrollSupported = false;
+        ownerDocument(floatingFocusElement).createElement("div").focus({
+          get preventScroll() {
+            isPreventScrollSupported = true;
+            return false;
+          }
+        });
+        if (isPreventScrollSupported) {
+          preventReturnFocusRef.current = false;
+        } else {
+          preventReturnFocusRef.current = true;
+        }
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    function getReturnElement() {
+      const returnFocusValueOrFn = returnFocusRef.current;
+      let resolvedReturnFocusValue = typeof returnFocusValueOrFn === "function" ? returnFocusValueOrFn(closeTypeRef.current) : returnFocusValueOrFn;
+      if (resolvedReturnFocusValue === undefined || resolvedReturnFocusValue === false) {
+        return null;
+      }
+      if (resolvedReturnFocusValue === null) {
+        resolvedReturnFocusValue = true;
+      }
+      const referenceReturnElement = domReference?.isConnected ? domReference : null;
+      const previousReturnElement = elementFocusedBeforeOpen?.isConnected && getNodeName(elementFocusedBeforeOpen) !== "body" ? elementFocusedBeforeOpen : null;
+      let defaultReturnElement = preferPreviousFocus ? previousReturnElement || referenceReturnElement : referenceReturnElement || previousReturnElement;
+      if (!defaultReturnElement) {
+        defaultReturnElement = getPreviouslyFocusedElement() || null;
+      }
+      if (typeof resolvedReturnFocusValue === "boolean") {
+        return defaultReturnElement;
+      }
+      return resolveRef(resolvedReturnFocusValue) || defaultReturnElement || null;
+    }
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+      const activeEl = activeElement(doc);
+      const insideElements = getResolvedInsideElements();
+      const isFocusInsideFloatingTree = contains(floating, activeEl) || insideElements.some((element) => element === activeEl || contains(element, activeEl)) || tree && getNodeChildren(tree.nodesRef.current, getNodeId(), false).some((node) => contains(node.context?.elements.floating, activeEl));
+      const returnFocusValueOrFn = returnFocusRef.current;
+      const returnElement = getReturnElement();
+      queueMicrotask(() => {
+        const tabbableReturnElement = getFirstTabbableElement(returnElement);
+        const hasExplicitReturnFocus = typeof returnFocusValueOrFn !== "boolean";
+        if (returnFocusValueOrFn && !preventReturnFocusRef.current && isHTMLElement(tabbableReturnElement) && (!hasExplicitReturnFocus && tabbableReturnElement !== activeEl && activeEl !== doc.body ? isFocusInsideFloatingTree : true)) {
+          tabbableReturnElement.focus({
+            preventScroll: true
+          });
+        }
+        preventReturnFocusRef.current = false;
+      });
+    };
+  }, [disabled2, floating, floatingFocusElement, returnFocusRef, openInteractionTypeRef, events, tree, domReference, getNodeId, getResolvedInsideElements]);
+  useIsoLayoutEffect(() => {
+    if (!exports_parts.engine.webkit || open || !floating) {
+      return;
+    }
+    const activeEl = activeElement(ownerDocument(floating));
+    if (!isHTMLElement(activeEl) || !isTypeableElement(activeEl)) {
+      return;
+    }
+    if (contains(floating, activeEl)) {
+      activeEl.blur();
+    }
+  }, [open, floating]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !portalContext) {
+      return;
+    }
+    portalContext.setFocusManagerState({
+      modal,
+      closeOnFocusOut,
+      open,
+      onOpenChange: store.setOpen,
+      domReference
+    });
+    return () => {
+      portalContext.setFocusManagerState(null);
+    };
+  }, [disabled2, portalContext, modal, open, store, closeOnFocusOut, domReference]);
+  useIsoLayoutEffect(() => {
+    if (disabled2 || !floatingFocusElement) {
+      return;
+    }
+    handleTabIndex(floatingFocusElement);
+    return () => {
+      queueMicrotask(clearDisconnectedPreviouslyFocusedElements);
+    };
+  }, [disabled2, floatingFocusElement]);
+  const shouldRenderGuards = !disabled2 && (modal ? !isUntrappedTypeableCombobox : true) && (isInsidePortal || modal);
+  return /* @__PURE__ */ import_jsx_runtime7.jsxs(React37.Fragment, {
+    children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime7.jsx(FocusGuard, {
+      "data-type": "inside",
+      ref: mergedBeforeGuardRef,
+      onFocus: (event) => {
+        if (modal) {
+          const els = getTabbableContent();
+          enqueueFocus(els[els.length - 1]);
+        } else if (portalContext?.portalNode) {
+          preventReturnFocusRef.current = false;
+          if (isOutsideEvent(event, portalContext.portalNode)) {
+            const nextTabbable = getNextTabbable(domReference);
+            nextTabbable?.focus();
+          } else {
+            resolveRef(previousFocusableElement ?? portalContext.beforeOutsideRef)?.focus();
+          }
+        }
+      }
+    }), children, shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime7.jsx(FocusGuard, {
+      "data-type": "inside",
+      ref: mergedAfterGuardRef,
+      onFocus: (event) => {
+        if (modal) {
+          enqueueFocus(getTabbableContent()[0]);
+        } else if (portalContext?.portalNode) {
+          if (closeOnFocusOut) {
+            preventReturnFocusRef.current = true;
+          }
+          if (isOutsideEvent(event, portalContext.portalNode)) {
+            const prevTabbable = getPreviousTabbable(domReference);
+            prevTabbable?.focus();
+          } else {
+            resolveRef(nextFocusableElement ?? portalContext.afterOutsideRef)?.focus();
+          }
+        }
+      }
+    })]
+  });
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useClick.mjs
+var React38 = __toESM(require_react(), 1);
+"use client";
+function useClick(context, props = {}) {
+  const {
+    enabled = true,
+    event: eventOption = "click",
+    toggle = true,
+    ignoreMouse = false,
+    stickIfOpen = true,
+    touchOpenDelay = 0,
+    reason = exports_reason_parts.triggerPress
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const dataRef = store.context.dataRef;
+  const pointerTypeRef = React38.useRef(undefined);
+  const frame = useAnimationFrame();
+  const touchOpenTimeout = useTimeout();
+  const reference = React38.useMemo(() => {
+    function setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType) {
+      const details = createChangeEventDetails(reason, nativeEvent, target);
+      if (nextOpen && pointerType === "touch" && touchOpenDelay > 0) {
+        touchOpenTimeout.start(touchOpenDelay, () => {
+          store.setOpen(true, details);
+        });
+      } else {
+        store.setOpen(nextOpen, details);
+      }
+    }
+    function getNextOpen(open, currentTarget, isClickLikeOpenEvent) {
+      const openEvent = dataRef.current.openEvent;
+      const hasClickedOnInactiveTrigger = store.select("domReferenceElement") !== currentTarget;
+      if (open && hasClickedOnInactiveTrigger) {
+        return true;
+      }
+      if (!open) {
+        return true;
+      }
+      if (!toggle) {
+        return true;
+      }
+      if (openEvent && stickIfOpen) {
+        return !isClickLikeOpenEvent(openEvent.type);
+      }
+      return false;
+    }
+    return {
+      onPointerDown(event) {
+        pointerTypeRef.current = event.pointerType;
+      },
+      onMouseDown(event) {
+        const pointerType = pointerTypeRef.current;
+        const nativeEvent = event.nativeEvent;
+        const open = store.select("open");
+        if (event.button !== 0 || eventOption === "click" || isMouseLikePointerType(pointerType, true) && ignoreMouse) {
+          return;
+        }
+        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown");
+        const target = getTarget(nativeEvent);
+        if (isTypeableElement(target)) {
+          setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType);
+          return;
+        }
+        const eventCurrentTarget = event.currentTarget;
+        frame.request(() => {
+          setOpenWithTouchDelay(nextOpen, nativeEvent, eventCurrentTarget, pointerType);
+        });
+      },
+      onClick(event) {
+        if (eventOption === "mousedown-only") {
+          return;
+        }
+        const pointerType = pointerTypeRef.current;
+        if (eventOption === "mousedown" && pointerType) {
+          pointerTypeRef.current = undefined;
+          return;
+        }
+        if (isMouseLikePointerType(pointerType, true) && ignoreMouse) {
+          return;
+        }
+        const open = store.select("open");
+        const nextOpen = getNextOpen(open, event.currentTarget, (openEventType) => openEventType === "click" || openEventType === "mousedown" || openEventType === "keydown" || openEventType === "keyup");
+        setOpenWithTouchDelay(nextOpen, event.nativeEvent, event.currentTarget, pointerType);
+      },
+      onKeyDown() {
+        pointerTypeRef.current = undefined;
+      }
+    };
+  }, [dataRef, eventOption, ignoreMouse, reason, store, stickIfOpen, toggle, frame, touchOpenTimeout, touchOpenDelay]);
+  return React38.useMemo(() => enabled ? {
+    reference
+  } : EMPTY_OBJECT, [enabled, reference]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useDismiss.mjs
+var React39 = __toESM(require_react(), 1);
+"use client";
+function alwaysFalse() {
+  return false;
+}
+function normalizeProp(normalizable) {
+  return {
+    escapeKey: typeof normalizable === "boolean" ? normalizable : normalizable?.escapeKey ?? false,
+    outsidePress: typeof normalizable === "boolean" ? normalizable : normalizable?.outsidePress ?? true
+  };
+}
+function useDismiss(context, props = {}) {
+  const {
+    enabled = true,
+    escapeKey: escapeKey2 = true,
+    outsidePress: outsidePressProp = true,
+    outsidePressEvent = "sloppy",
+    referencePress = alwaysFalse,
+    bubbles,
+    externalTree
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const {
+    dataRef
+  } = store.context;
+  const tree = useFloatingTree(externalTree);
+  const outsidePressFn = useStableCallback(typeof outsidePressProp === "function" ? outsidePressProp : () => false);
+  const outsidePress2 = typeof outsidePressProp === "function" ? outsidePressFn : outsidePressProp;
+  const outsidePressEnabled = outsidePress2 !== false;
+  const getOutsidePressEventProp = useStableCallback(() => outsidePressEvent);
+  const {
+    escapeKey: escapeKeyBubbles,
+    outsidePress: outsidePressBubbles
+  } = normalizeProp(bubbles);
+  const pressStartedInsideRef = React39.useRef(false);
+  const pressStartPreventedRef = React39.useRef(false);
+  const suppressNextOutsideClickRef = React39.useRef(false);
+  const isComposingRef = React39.useRef(false);
+  const currentPointerTypeRef = React39.useRef("");
+  const touchStateRef = React39.useRef(null);
+  const cancelDismissOnEndTimeout = useTimeout();
+  const clearInsideReactTreeTimeout = useTimeout();
+  const clearInsideReactTree = useStableCallback(() => {
+    clearInsideReactTreeTimeout.clear();
+    dataRef.current.insideReactTree = false;
+  });
+  const hasBlockingChild = useStableCallback((bubbleKey) => {
+    const nodeId = dataRef.current.floatingContext?.nodeId;
+    const children = tree ? getNodeChildren(tree.nodesRef.current, nodeId) : [];
+    return children.some((child) => child.context?.open && !child.context.dataRef.current[bubbleKey]);
+  });
+  const isEventWithinOwnElements = useStableCallback((event) => {
+    return isEventTargetWithin(event, store.select("floatingElement")) || isEventTargetWithin(event, store.select("domReferenceElement"));
+  });
+  const closeOnReferencePress = useStableCallback((event) => {
+    if (!referencePress()) {
+      return;
+    }
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerPress, event.nativeEvent));
+  });
+  const closeOnEscapeKeyDown = useStableCallback((event) => {
+    if (!open || !enabled || !escapeKey2 || event.key !== "Escape") {
+      return;
+    }
+    if (isComposingRef.current) {
+      return;
+    }
+    if (!escapeKeyBubbles && hasBlockingChild("__escapeKeyBubbles")) {
+      return;
+    }
+    const native = isReactEvent(event) ? event.nativeEvent : event;
+    const eventDetails = createChangeEventDetails(exports_reason_parts.escapeKey, native);
+    store.setOpen(false, eventDetails);
+    if (!eventDetails.isCanceled) {
+      event.preventDefault();
+    }
+    if (!escapeKeyBubbles && !eventDetails.isPropagationAllowed) {
+      event.stopPropagation();
+    }
+  });
+  const markInsideReactTree = useStableCallback(() => {
+    dataRef.current.insideReactTree = true;
+    clearInsideReactTreeTimeout.start(0, clearInsideReactTree);
+  });
+  const markPressStartedInsideReactTree = useStableCallback((event) => {
+    if (!open || !enabled || event.button !== 0) {
+      return;
+    }
+    const target = getTarget(event.nativeEvent);
+    if (!contains(store.select("floatingElement"), target)) {
+      return;
+    }
+    if (!pressStartedInsideRef.current) {
+      pressStartedInsideRef.current = true;
+      pressStartPreventedRef.current = false;
+    }
+  });
+  const markInsidePressStartPrevented = useStableCallback((event) => {
+    if (!open || !enabled) {
+      return;
+    }
+    if (!(event.defaultPrevented || event.nativeEvent.defaultPrevented)) {
+      return;
+    }
+    if (pressStartedInsideRef.current) {
+      pressStartPreventedRef.current = true;
+    }
+  });
+  React39.useEffect(() => {
+    if (!open || !enabled) {
+      return;
+    }
+    dataRef.current.__escapeKeyBubbles = escapeKeyBubbles;
+    dataRef.current.__outsidePressBubbles = outsidePressBubbles;
+    const compositionTimeout = new Timeout;
+    const preventedPressSuppressionTimeout = new Timeout;
+    function handleCompositionStart() {
+      compositionTimeout.clear();
+      isComposingRef.current = true;
+    }
+    function handleCompositionEnd() {
+      compositionTimeout.start(exports_parts.engine.webkit ? 5 : 0, () => {
+        isComposingRef.current = false;
+      });
+    }
+    function suppressImmediateOutsideClickAfterPreventedStart() {
+      suppressNextOutsideClickRef.current = true;
+      preventedPressSuppressionTimeout.start(0, () => {
+        suppressNextOutsideClickRef.current = false;
+      });
+    }
+    function resetPressStartState() {
+      pressStartedInsideRef.current = false;
+      pressStartPreventedRef.current = false;
+    }
+    function getOutsidePressEvent() {
+      const type = currentPointerTypeRef.current;
+      const computedType = type === "pen" || !type ? "mouse" : type;
+      const outsidePressEventValue = getOutsidePressEventProp();
+      const resolved = typeof outsidePressEventValue === "function" ? outsidePressEventValue() : outsidePressEventValue;
+      if (typeof resolved === "string") {
+        return resolved;
+      }
+      return resolved[computedType];
+    }
+    function shouldIgnoreEvent(event) {
+      const computedOutsidePressEvent = getOutsidePressEvent();
+      return computedOutsidePressEvent === "intentional" && event.type !== "click" || computedOutsidePressEvent === "sloppy" && event.type === "click";
+    }
+    function isEventWithinFloatingTree(event) {
+      const nodeId = dataRef.current.floatingContext?.nodeId;
+      const targetIsInsideChildren = tree && getNodeChildren(tree.nodesRef.current, nodeId).some((node) => isEventTargetWithin(event, node.context?.elements.floating));
+      return isEventWithinOwnElements(event) || targetIsInsideChildren;
+    }
+    function closeOnPressOutside(event) {
+      if (shouldIgnoreEvent(event)) {
+        if (event.type !== "click" && !isEventWithinOwnElements(event)) {
+          preventedPressSuppressionTimeout.clear();
+          suppressNextOutsideClickRef.current = false;
+        }
+        clearInsideReactTree();
+        return;
+      }
+      if (dataRef.current.insideReactTree) {
+        clearInsideReactTree();
+        return;
+      }
+      const target = getTarget(event);
+      const inertSelector = `[${createAttribute("inert")}]`;
+      const targetRoot = isElement(target) ? target.getRootNode() : null;
+      const markers = Array.from((isShadowRoot(targetRoot) ? targetRoot : ownerDocument(store.select("floatingElement"))).querySelectorAll(inertSelector));
+      const triggers = store.context.triggerElements;
+      if (target && (triggers.hasElement(target) || triggers.hasMatchingElement((trigger) => contains(trigger, target)))) {
+        return;
+      }
+      let targetRootAncestor = isElement(target) ? target : null;
+      while (targetRootAncestor && !isLastTraversableNode(targetRootAncestor)) {
+        const nextParent = getParentNode(targetRootAncestor);
+        if (isLastTraversableNode(nextParent) || !isElement(nextParent)) {
+          break;
+        }
+        targetRootAncestor = nextParent;
+      }
+      if (markers.length && isElement(target) && !isRootElement(target) && !contains(target, store.select("floatingElement")) && markers.every((marker) => !contains(targetRootAncestor, marker))) {
+        return;
+      }
+      if (isHTMLElement(target) && !("touches" in event)) {
+        const lastTraversableNode = isLastTraversableNode(target);
+        const style = getComputedStyle2(target);
+        const scrollRe = /auto|scroll/;
+        const isScrollableX = lastTraversableNode || scrollRe.test(style.overflowX);
+        const isScrollableY = lastTraversableNode || scrollRe.test(style.overflowY);
+        const canScrollX = isScrollableX && target.clientWidth > 0 && target.scrollWidth > target.clientWidth;
+        const canScrollY = isScrollableY && target.clientHeight > 0 && target.scrollHeight > target.clientHeight;
+        const isRTL = style.direction === "rtl";
+        const pressedVerticalScrollbar = canScrollY && (isRTL ? event.offsetX <= target.offsetWidth - target.clientWidth : event.offsetX > target.clientWidth);
+        const pressedHorizontalScrollbar = canScrollX && event.offsetY > target.clientHeight;
+        if (pressedVerticalScrollbar || pressedHorizontalScrollbar) {
+          return;
+        }
+      }
+      if (isEventWithinFloatingTree(event)) {
+        return;
+      }
+      if (getOutsidePressEvent() === "intentional" && suppressNextOutsideClickRef.current) {
+        preventedPressSuppressionTimeout.clear();
+        suppressNextOutsideClickRef.current = false;
+        return;
+      }
+      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
+        return;
+      }
+      if (hasBlockingChild("__outsidePressBubbles")) {
+        return;
+      }
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.outsidePress, event));
+      clearInsideReactTree();
+    }
+    function handlePointerDown(event) {
+      if (getOutsidePressEvent() !== "sloppy" || event.pointerType === "touch" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
+        return;
+      }
+      closeOnPressOutside(event);
+    }
+    function handleTouchStart(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !store.select("open") || !enabled || isEventWithinOwnElements(event)) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch) {
+        touchStateRef.current = {
+          startTime: Date.now(),
+          startX: touch.clientX,
+          startY: touch.clientY,
+          dismissOnTouchEnd: false,
+          dismissOnMouseDown: true
+        };
+        cancelDismissOnEndTimeout.start(1000, () => {
+          if (touchStateRef.current) {
+            touchStateRef.current.dismissOnTouchEnd = false;
+            touchStateRef.current.dismissOnMouseDown = false;
+          }
+        });
+      }
+    }
+    function addTargetEventListenerOnce(event, listener) {
+      const target = getTarget(event);
+      if (!target) {
+        return;
+      }
+      const unsubscribe2 = addEventListener(target, event.type, () => {
+        listener(event);
+        unsubscribe2();
+      });
+    }
+    function handleTouchStartCapture(event) {
+      currentPointerTypeRef.current = "touch";
+      addTargetEventListenerOnce(event, handleTouchStart);
+    }
+    function closeOnPressOutsideCapture(event) {
+      cancelDismissOnEndTimeout.clear();
+      if (event.type === "pointerdown") {
+        currentPointerTypeRef.current = event.pointerType;
+      }
+      if (event.type === "mousedown" && touchStateRef.current && !touchStateRef.current.dismissOnMouseDown) {
+        return;
+      }
+      addTargetEventListenerOnce(event, (targetEvent) => {
+        if (targetEvent.type === "pointerdown") {
+          handlePointerDown(targetEvent);
+        } else {
+          closeOnPressOutside(targetEvent);
+        }
+      });
+    }
+    function handlePressEndCapture(event) {
+      if (!pressStartedInsideRef.current) {
+        return;
+      }
+      const pressStartedInsideDefaultPrevented = pressStartPreventedRef.current;
+      resetPressStartState();
+      if (getOutsidePressEvent() !== "intentional") {
+        return;
+      }
+      if (event.type === "pointercancel") {
+        if (pressStartedInsideDefaultPrevented) {
+          suppressImmediateOutsideClickAfterPreventedStart();
+        }
+        return;
+      }
+      if (isEventWithinFloatingTree(event)) {
+        return;
+      }
+      if (pressStartedInsideDefaultPrevented) {
+        suppressImmediateOutsideClickAfterPreventedStart();
+        return;
+      }
+      if (typeof outsidePress2 === "function" && !outsidePress2(event)) {
+        return;
+      }
+      preventedPressSuppressionTimeout.clear();
+      suppressNextOutsideClickRef.current = true;
+      clearInsideReactTree();
+    }
+    function handleTouchMove(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+      const deltaX = Math.abs(touch.clientX - touchStateRef.current.startX);
+      const deltaY = Math.abs(touch.clientY - touchStateRef.current.startY);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      if (distance > 5) {
+        touchStateRef.current.dismissOnTouchEnd = true;
+      }
+      if (distance > 10) {
+        closeOnPressOutside(event);
+        cancelDismissOnEndTimeout.clear();
+        touchStateRef.current = null;
+      }
+    }
+    function handleTouchMoveCapture(event) {
+      addTargetEventListenerOnce(event, handleTouchMove);
+    }
+    function handleTouchEnd(event) {
+      if (getOutsidePressEvent() !== "sloppy" || !touchStateRef.current || isEventWithinOwnElements(event)) {
+        return;
+      }
+      if (touchStateRef.current.dismissOnTouchEnd) {
+        closeOnPressOutside(event);
+      }
+      cancelDismissOnEndTimeout.clear();
+      touchStateRef.current = null;
+    }
+    function handleTouchEndCapture(event) {
+      addTargetEventListenerOnce(event, handleTouchEnd);
+    }
+    const doc = ownerDocument(floatingElement);
+    const unsubscribe = mergeCleanups(escapeKey2 && mergeCleanups(addEventListener(doc, "keydown", closeOnEscapeKeyDown), addEventListener(doc, "compositionstart", handleCompositionStart), addEventListener(doc, "compositionend", handleCompositionEnd)), outsidePressEnabled && mergeCleanups(addEventListener(doc, "click", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerdown", closeOnPressOutsideCapture, true), addEventListener(doc, "pointerup", handlePressEndCapture, true), addEventListener(doc, "pointercancel", handlePressEndCapture, true), addEventListener(doc, "mousedown", closeOnPressOutsideCapture, true), addEventListener(doc, "mouseup", handlePressEndCapture, true), addEventListener(doc, "touchstart", handleTouchStartCapture, true), addEventListener(doc, "touchmove", handleTouchMoveCapture, true), addEventListener(doc, "touchend", handleTouchEndCapture, true)));
+    return () => {
+      unsubscribe();
+      compositionTimeout.clear();
+      preventedPressSuppressionTimeout.clear();
+      resetPressStartState();
+      suppressNextOutsideClickRef.current = false;
+    };
+  }, [dataRef, floatingElement, escapeKey2, outsidePressEnabled, outsidePress2, open, enabled, escapeKeyBubbles, outsidePressBubbles, closeOnEscapeKeyDown, clearInsideReactTree, getOutsidePressEventProp, hasBlockingChild, isEventWithinOwnElements, tree, store, cancelDismissOnEndTimeout]);
+  React39.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
+  const reference = React39.useMemo(() => ({
+    onKeyDown: closeOnEscapeKeyDown,
+    onPointerDown: closeOnReferencePress,
+    onClick: closeOnReferencePress
+  }), [closeOnEscapeKeyDown, closeOnReferencePress]);
+  const floating = React39.useMemo(() => ({
+    onKeyDown: closeOnEscapeKeyDown,
+    onPointerDown: markInsidePressStartPrevented,
+    onMouseDown: markInsidePressStartPrevented,
+    onClickCapture: markInsideReactTree,
+    onMouseDownCapture(event) {
+      markInsideReactTree();
+      markPressStartedInsideReactTree(event);
+    },
+    onPointerDownCapture(event) {
+      markInsideReactTree();
+      markPressStartedInsideReactTree(event);
+    },
+    onMouseUpCapture: markInsideReactTree,
+    onTouchEndCapture: markInsideReactTree,
+    onTouchMoveCapture: markInsideReactTree
+  }), [closeOnEscapeKeyDown, markInsideReactTree, markPressStartedInsideReactTree, markInsidePressStartPrevented]);
+  return React39.useMemo(() => enabled ? {
+    reference,
+    floating,
+    trigger: reference
+  } : {}, [enabled, reference, floating]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
+var React47 = __toESM(require_react(), 1);
+
+// node_modules/@floating-ui/core/dist/floating-ui.core.mjs
+function computeCoordsFromPlacement(_ref, placement, rtl) {
+  let {
+    reference,
+    floating
+  } = _ref;
+  const sideAxis = getSideAxis(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const alignLength = getAxisLength(alignmentAxis);
+  const side = getSide(placement);
+  const isVertical = sideAxis === "y";
+  const commonX = reference.x + reference.width / 2 - floating.width / 2;
+  const commonY = reference.y + reference.height / 2 - floating.height / 2;
+  const commonAlign = reference[alignLength] / 2 - floating[alignLength] / 2;
+  let coords;
+  switch (side) {
+    case "top":
+      coords = {
+        x: commonX,
+        y: reference.y - floating.height
+      };
+      break;
+    case "bottom":
+      coords = {
+        x: commonX,
+        y: reference.y + reference.height
+      };
+      break;
+    case "right":
+      coords = {
+        x: reference.x + reference.width,
+        y: commonY
+      };
+      break;
+    case "left":
+      coords = {
+        x: reference.x - floating.width,
+        y: commonY
+      };
+      break;
+    default:
+      coords = {
+        x: reference.x,
+        y: reference.y
+      };
+  }
+  const alignment = getAlignment(placement);
+  if (alignment) {
+    coords[alignmentAxis] += commonAlign * (alignment === "end" ? 1 : -1) * (rtl && isVertical ? -1 : 1);
+  }
+  return coords;
+}
+async function detectOverflow(state, options) {
+  var _await$platform$isEle;
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    x,
+    y,
+    platform: platform2,
+    rects,
+    elements,
+    strategy
+  } = state;
+  const {
+    boundary = "clippingAncestors",
+    rootBoundary = "viewport",
+    elementContext = "floating",
+    altBoundary = false,
+    padding = 0
+  } = evaluate(options, state);
+  const paddingObject = getPaddingObject(padding);
+  const altContext = elementContext === "floating" ? "reference" : "floating";
+  const element = elements[altBoundary ? altContext : elementContext];
+  const clippingClientRect = rectToClientRect(await platform2.getClippingRect({
+    element: ((_await$platform$isEle = await (platform2.isElement == null ? undefined : platform2.isElement(element))) != null ? _await$platform$isEle : true) ? element : element.contextElement || await (platform2.getDocumentElement == null ? undefined : platform2.getDocumentElement(elements.floating)),
+    boundary,
+    rootBoundary,
+    strategy
+  }));
+  const rect = elementContext === "floating" ? {
+    x,
+    y,
+    width: rects.floating.width,
+    height: rects.floating.height
+  } : rects.reference;
+  const offsetParent = await (platform2.getOffsetParent == null ? undefined : platform2.getOffsetParent(elements.floating));
+  const offsetScale = await (platform2.isElement == null ? undefined : platform2.isElement(offsetParent)) && await (platform2.getScale == null ? undefined : platform2.getScale(offsetParent)) || {
+    x: 1,
+    y: 1
+  };
+  const elementClientRect = rectToClientRect(platform2.convertOffsetParentRelativeRectToViewportRelativeRect ? await platform2.convertOffsetParentRelativeRectToViewportRelativeRect({
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  }) : rect);
+  return {
+    top: (clippingClientRect.top - elementClientRect.top + paddingObject.top) / offsetScale.y,
+    bottom: (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
+    left: (clippingClientRect.left - elementClientRect.left + paddingObject.left) / offsetScale.x,
+    right: (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x
+  };
+}
+var MAX_RESET_COUNT = 50;
+var computePosition = async (reference, floating, config) => {
+  const {
+    placement = "bottom",
+    strategy = "absolute",
+    middleware = [],
+    platform: platform2
+  } = config;
+  const platformWithDetectOverflow = platform2.detectOverflow ? platform2 : {
+    ...platform2,
+    detectOverflow
+  };
+  const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(floating));
+  let rects = await platform2.getElementRects({
+    reference,
+    floating,
+    strategy
+  });
+  let {
+    x,
+    y
+  } = computeCoordsFromPlacement(rects, placement, rtl);
+  let statefulPlacement = placement;
+  let resetCount = 0;
+  const middlewareData = {};
+  for (let i = 0;i < middleware.length; i++) {
+    const currentMiddleware = middleware[i];
+    if (!currentMiddleware) {
+      continue;
+    }
+    const {
+      name,
+      fn
+    } = currentMiddleware;
+    const {
+      x: nextX,
+      y: nextY,
+      data,
+      reset
+    } = await fn({
+      x,
+      y,
+      initialPlacement: placement,
+      placement: statefulPlacement,
+      strategy,
+      middlewareData,
+      rects,
+      platform: platformWithDetectOverflow,
+      elements: {
+        reference,
+        floating
+      }
+    });
+    x = nextX != null ? nextX : x;
+    y = nextY != null ? nextY : y;
+    middlewareData[name] = {
+      ...middlewareData[name],
+      ...data
+    };
+    if (reset && resetCount < MAX_RESET_COUNT) {
+      resetCount++;
+      if (typeof reset === "object") {
+        if (reset.placement) {
+          statefulPlacement = reset.placement;
+        }
+        if (reset.rects) {
+          rects = reset.rects === true ? await platform2.getElementRects({
+            reference,
+            floating,
+            strategy
+          }) : reset.rects;
+        }
+        ({
+          x,
+          y
+        } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
+      }
+      i = -1;
+    }
+  }
+  return {
+    x,
+    y,
+    placement: statefulPlacement,
+    strategy,
+    middlewareData
+  };
+};
+var flip = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "flip",
+    options,
+    async fn(state) {
+      var _middlewareData$arrow, _middlewareData$flip;
+      const {
+        placement,
+        middlewareData,
+        rects,
+        initialPlacement,
+        platform: platform2,
+        elements
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = true,
+        fallbackPlacements: specifiedFallbackPlacements,
+        fallbackStrategy = "bestFit",
+        fallbackAxisSideDirection = "none",
+        flipAlignment = true,
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      if ((_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      const side = getSide(placement);
+      const initialSideAxis = getSideAxis(initialPlacement);
+      const isBasePlacement = getSide(initialPlacement) === initialPlacement;
+      const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating));
+      const fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipAlignment ? [getOppositePlacement(initialPlacement)] : getExpandedPlacements(initialPlacement));
+      const hasFallbackAxisSideDirection = fallbackAxisSideDirection !== "none";
+      if (!specifiedFallbackPlacements && hasFallbackAxisSideDirection) {
+        fallbackPlacements.push(...getOppositeAxisPlacements(initialPlacement, flipAlignment, fallbackAxisSideDirection, rtl));
+      }
+      const placements2 = [initialPlacement, ...fallbackPlacements];
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const overflows = [];
+      let overflowsData = ((_middlewareData$flip = middlewareData.flip) == null ? undefined : _middlewareData$flip.overflows) || [];
+      if (checkMainAxis) {
+        overflows.push(overflow[side]);
+      }
+      if (checkCrossAxis) {
+        const sides2 = getAlignmentSides(placement, rects, rtl);
+        overflows.push(overflow[sides2[0]], overflow[sides2[1]]);
+      }
+      overflowsData = [...overflowsData, {
+        placement,
+        overflows
+      }];
+      if (!overflows.every((side2) => side2 <= 0)) {
+        var _middlewareData$flip2, _overflowsData$filter;
+        const nextIndex = (((_middlewareData$flip2 = middlewareData.flip) == null ? undefined : _middlewareData$flip2.index) || 0) + 1;
+        const nextPlacement = placements2[nextIndex];
+        if (nextPlacement) {
+          const ignoreCrossAxisOverflow = checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
+          if (!ignoreCrossAxisOverflow || overflowsData.every((d) => getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true)) {
+            return {
+              data: {
+                index: nextIndex,
+                overflows: overflowsData
+              },
+              reset: {
+                placement: nextPlacement
+              }
+            };
+          }
+        }
+        let resetPlacement = (_overflowsData$filter = overflowsData.filter((d) => d.overflows[0] <= 0).sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null ? undefined : _overflowsData$filter.placement;
+        if (!resetPlacement) {
+          switch (fallbackStrategy) {
+            case "bestFit": {
+              var _overflowsData$filter2;
+              const placement2 = (_overflowsData$filter2 = overflowsData.filter((d) => {
+                if (hasFallbackAxisSideDirection) {
+                  const currentSideAxis = getSideAxis(d.placement);
+                  return currentSideAxis === initialSideAxis || currentSideAxis === "y";
+                }
+                return true;
+              }).map((d) => [d.placement, d.overflows.filter((overflow2) => overflow2 > 0).reduce((acc, overflow2) => acc + overflow2, 0)]).sort((a, b) => a[1] - b[1])[0]) == null ? undefined : _overflowsData$filter2[0];
+              if (placement2) {
+                resetPlacement = placement2;
+              }
+              break;
+            }
+            case "initialPlacement":
+              resetPlacement = initialPlacement;
+              break;
+          }
+        }
+        if (placement !== resetPlacement) {
+          return {
+            reset: {
+              placement: resetPlacement
+            }
+          };
+        }
+      }
+      return {};
+    }
+  };
+};
+function getSideOffsets(overflow, rect) {
+  return {
+    top: overflow.top - rect.height,
+    right: overflow.right - rect.width,
+    bottom: overflow.bottom - rect.height,
+    left: overflow.left - rect.width
+  };
+}
+function isAnySideFullyClipped(overflow) {
+  return sides.some((side) => overflow[side] >= 0);
+}
+var hide = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "hide",
+    options,
+    async fn(state) {
+      const {
+        rects,
+        platform: platform2
+      } = state;
+      const {
+        strategy = "referenceHidden",
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      switch (strategy) {
+        case "referenceHidden": {
+          const overflow = await platform2.detectOverflow(state, {
+            ...detectOverflowOptions,
+            elementContext: "reference"
+          });
+          const offsets = getSideOffsets(overflow, rects.reference);
+          return {
+            data: {
+              referenceHiddenOffsets: offsets,
+              referenceHidden: isAnySideFullyClipped(offsets)
+            }
+          };
+        }
+        case "escaped": {
+          const overflow = await platform2.detectOverflow(state, {
+            ...detectOverflowOptions,
+            altBoundary: true
+          });
+          const offsets = getSideOffsets(overflow, rects.floating);
+          return {
+            data: {
+              escapedOffsets: offsets,
+              escaped: isAnySideFullyClipped(offsets)
+            }
+          };
+        }
+        default: {
+          return {};
+        }
+      }
+    }
+  };
+};
+var originSides = /* @__PURE__ */ new Set(["left", "top"]);
+async function convertValueToCoords(state, options) {
+  const {
+    placement,
+    platform: platform2,
+    elements
+  } = state;
+  const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating));
+  const side = getSide(placement);
+  const alignment = getAlignment(placement);
+  const isVertical = getSideAxis(placement) === "y";
+  const mainAxisMulti = originSides.has(side) ? -1 : 1;
+  const crossAxisMulti = rtl && isVertical ? -1 : 1;
+  const rawValue = evaluate(options, state);
+  let {
+    mainAxis,
+    crossAxis,
+    alignmentAxis
+  } = typeof rawValue === "number" ? {
+    mainAxis: rawValue,
+    crossAxis: 0,
+    alignmentAxis: null
+  } : {
+    mainAxis: rawValue.mainAxis || 0,
+    crossAxis: rawValue.crossAxis || 0,
+    alignmentAxis: rawValue.alignmentAxis
+  };
+  if (alignment && typeof alignmentAxis === "number") {
+    crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
+  }
+  return isVertical ? {
+    x: crossAxis * crossAxisMulti,
+    y: mainAxis * mainAxisMulti
+  } : {
+    x: mainAxis * mainAxisMulti,
+    y: crossAxis * crossAxisMulti
+  };
+}
+var offset = function(options) {
+  if (options === undefined) {
+    options = 0;
+  }
+  return {
+    name: "offset",
+    options,
+    async fn(state) {
+      var _middlewareData$offse, _middlewareData$arrow;
+      const {
+        x,
+        y,
+        placement,
+        middlewareData
+      } = state;
+      const diffCoords = await convertValueToCoords(state, options);
+      if (placement === ((_middlewareData$offse = middlewareData.offset) == null ? undefined : _middlewareData$offse.placement) && (_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      return {
+        x: x + diffCoords.x,
+        y: y + diffCoords.y,
+        data: {
+          ...diffCoords,
+          placement
+        }
+      };
+    }
+  };
+};
+var shift = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "shift",
+    options,
+    async fn(state) {
+      const {
+        x,
+        y,
+        placement,
+        platform: platform2
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = false,
+        limiter = {
+          fn: (_ref) => {
+            let {
+              x: x2,
+              y: y2
+            } = _ref;
+            return {
+              x: x2,
+              y: y2
+            };
+          }
+        },
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      const coords = {
+        x,
+        y
+      };
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const crossAxis = getSideAxis(placement);
+      const mainAxis = getOppositeAxis(crossAxis);
+      let mainAxisCoord = coords[mainAxis];
+      let crossAxisCoord = coords[crossAxis];
+      const clampCoord = (axis, coord) => clamp(coord + overflow[axis === "y" ? "top" : "left"], coord, coord - overflow[axis === "y" ? "bottom" : "right"]);
+      if (checkMainAxis) {
+        mainAxisCoord = clampCoord(mainAxis, mainAxisCoord);
+      }
+      if (checkCrossAxis) {
+        crossAxisCoord = clampCoord(crossAxis, crossAxisCoord);
+      }
+      const limitedCoords = limiter.fn({
+        ...state,
+        [mainAxis]: mainAxisCoord,
+        [crossAxis]: crossAxisCoord
+      });
+      return {
+        ...limitedCoords,
+        data: {
+          x: limitedCoords.x - x,
+          y: limitedCoords.y - y,
+          enabled: {
+            [mainAxis]: checkMainAxis,
+            [crossAxis]: checkCrossAxis
+          }
+        }
+      };
+    }
+  };
+};
+var limitShift = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    options,
+    fn(state) {
+      var _rawOffset$mainAxis, _rawOffset$crossAxis;
+      const {
+        x,
+        y,
+        placement,
+        rects,
+        middlewareData
+      } = state;
+      const {
+        offset: offset2 = 0,
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = true
+      } = evaluate(options, state);
+      const coords = {
+        x,
+        y
+      };
+      const crossAxis = getSideAxis(placement);
+      const mainAxis = getOppositeAxis(crossAxis);
+      let mainAxisCoord = coords[mainAxis];
+      let crossAxisCoord = coords[crossAxis];
+      const rawOffset = evaluate(offset2, state);
+      const computedOffset = typeof rawOffset === "number" ? {
+        mainAxis: rawOffset,
+        crossAxis: 0
+      } : {
+        mainAxis: (_rawOffset$mainAxis = rawOffset.mainAxis) != null ? _rawOffset$mainAxis : 0,
+        crossAxis: (_rawOffset$crossAxis = rawOffset.crossAxis) != null ? _rawOffset$crossAxis : 0
+      };
+      if (checkMainAxis) {
+        const len = mainAxis === "y" ? "height" : "width";
+        const limitMin = rects.reference[mainAxis] - rects.floating[len] + computedOffset.mainAxis;
+        const limitMax = rects.reference[mainAxis] + rects.reference[len] - computedOffset.mainAxis;
+        if (mainAxisCoord < limitMin) {
+          mainAxisCoord = limitMin;
+        } else if (mainAxisCoord > limitMax) {
+          mainAxisCoord = limitMax;
+        }
+      }
+      if (checkCrossAxis) {
+        var _middlewareData$offse, _middlewareData$offse2;
+        const len = mainAxis === "y" ? "width" : "height";
+        const isOriginSide = originSides.has(getSide(placement));
+        const limitMin = rects.reference[crossAxis] - rects.floating[len] + (isOriginSide ? ((_middlewareData$offse = middlewareData.offset) == null ? undefined : _middlewareData$offse[crossAxis]) || 0 : 0) + (isOriginSide ? 0 : computedOffset.crossAxis);
+        const limitMax = rects.reference[crossAxis] + rects.reference[len] + (isOriginSide ? 0 : ((_middlewareData$offse2 = middlewareData.offset) == null ? undefined : _middlewareData$offse2[crossAxis]) || 0) - (isOriginSide ? computedOffset.crossAxis : 0);
+        if (crossAxisCoord < limitMin) {
+          crossAxisCoord = limitMin;
+        } else if (crossAxisCoord > limitMax) {
+          crossAxisCoord = limitMax;
+        }
+      }
+      return {
+        [mainAxis]: mainAxisCoord,
+        [crossAxis]: crossAxisCoord
+      };
+    }
+  };
+};
+var size = function(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return {
+    name: "size",
+    options,
+    async fn(state) {
+      const {
+        placement,
+        rects,
+        platform: platform2,
+        elements
+      } = state;
+      const {
+        apply = () => {},
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const side = getSide(placement);
+      const alignment = getAlignment(placement);
+      const isYAxis = getSideAxis(placement) === "y";
+      const {
+        width,
+        height
+      } = rects.floating;
+      let heightSide;
+      let widthSide;
+      if (side === "top" || side === "bottom") {
+        heightSide = side;
+        widthSide = alignment === (await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
+      } else {
+        widthSide = side;
+        heightSide = alignment === "end" ? "top" : "bottom";
+      }
+      const maximumClippingHeight = height - overflow.top - overflow.bottom;
+      const maximumClippingWidth = width - overflow.left - overflow.right;
+      const overflowAvailableHeight = min(height - overflow[heightSide], maximumClippingHeight);
+      const overflowAvailableWidth = min(width - overflow[widthSide], maximumClippingWidth);
+      const shiftData = state.middlewareData.shift;
+      const noShift = !shiftData;
+      let availableHeight = overflowAvailableHeight;
+      let availableWidth = overflowAvailableWidth;
+      if (shiftData != null && shiftData.enabled.x) {
+        availableWidth = maximumClippingWidth;
+      }
+      if (shiftData != null && shiftData.enabled.y) {
+        availableHeight = maximumClippingHeight;
+      }
+      if (noShift && !alignment) {
+        if (isYAxis) {
+          availableWidth = width - 2 * max(overflow.left, overflow.right);
+        } else {
+          availableHeight = height - 2 * max(overflow.top, overflow.bottom);
+        }
+      }
+      await apply({
+        ...state,
+        availableWidth,
+        availableHeight
+      });
+      const nextDimensions = await platform2.getDimensions(elements.floating);
+      if (width !== nextDimensions.width || height !== nextDimensions.height) {
+        return {
+          reset: {
+            rects: true
+          }
+        };
+      }
+      return {};
+    }
+  };
+};
+
+// node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
+function getCssDimensions(element) {
+  const css = getComputedStyle2(element);
+  let width = parseFloat(css.width) || 0;
+  let height = parseFloat(css.height) || 0;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
+  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
+  if (shouldFallback) {
+    width = offsetWidth;
+    height = offsetHeight;
+  }
+  return {
+    width,
+    height,
+    $: shouldFallback
+  };
+}
+function unwrapElement(element) {
+  return !isElement(element) ? element.contextElement : element;
+}
+function getScale(element) {
+  const domElement = unwrapElement(element);
+  if (!isHTMLElement(domElement)) {
+    return createCoords(1);
+  }
+  const rect = domElement.getBoundingClientRect();
+  const {
+    width,
+    height,
+    $
+  } = getCssDimensions(domElement);
+  let x = ($ ? round(rect.width) : rect.width) / width;
+  let y = ($ ? round(rect.height) : rect.height) / height;
+  if (!x || !Number.isFinite(x)) {
+    x = 1;
+  }
+  if (!y || !Number.isFinite(y)) {
+    y = 1;
+  }
+  return {
+    x,
+    y
+  };
+}
+var noOffsets = /* @__PURE__ */ createCoords(0);
+function getVisualOffsets(element) {
+  const win = getWindow(element);
+  if (!isWebKit() || !win.visualViewport) {
+    return noOffsets;
+  }
+  return {
+    x: win.visualViewport.offsetLeft,
+    y: win.visualViewport.offsetTop
+  };
+}
+function shouldAddVisualOffsets(element, isFixed, floatingOffsetParent) {
+  if (isFixed === undefined) {
+    isFixed = false;
+  }
+  return !!floatingOffsetParent && isFixed && floatingOffsetParent === getWindow(element);
+}
+function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetParent) {
+  if (includeScale === undefined) {
+    includeScale = false;
+  }
+  if (isFixedStrategy === undefined) {
+    isFixedStrategy = false;
+  }
+  const clientRect = element.getBoundingClientRect();
+  const domElement = unwrapElement(element);
+  let scale = createCoords(1);
+  if (includeScale) {
+    if (offsetParent) {
+      if (isElement(offsetParent)) {
+        scale = getScale(offsetParent);
+      }
+    } else {
+      scale = getScale(element);
+    }
+  }
+  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
+  let x = (clientRect.left + visualOffsets.x) / scale.x;
+  let y = (clientRect.top + visualOffsets.y) / scale.y;
+  let width = clientRect.width / scale.x;
+  let height = clientRect.height / scale.y;
+  if (domElement && offsetParent) {
+    const win = getWindow(domElement);
+    const offsetWin = isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
+    let currentWin = win;
+    let currentIFrame = getFrameElement(currentWin);
+    while (currentIFrame && offsetWin !== currentWin) {
+      const iframeScale = getScale(currentIFrame);
+      const iframeRect = currentIFrame.getBoundingClientRect();
+      const css = getComputedStyle2(currentIFrame);
+      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
+      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
+      x *= iframeScale.x;
+      y *= iframeScale.y;
+      width *= iframeScale.x;
+      height *= iframeScale.y;
+      x += left;
+      y += top;
+      currentWin = getWindow(currentIFrame);
+      currentIFrame = getFrameElement(currentWin);
+    }
+  }
+  return rectToClientRect({
+    width,
+    height,
+    x,
+    y
+  });
+}
+function getWindowScrollBarX(element, rect) {
+  const leftScroll = getNodeScroll(element).scrollLeft;
+  if (!rect) {
+    return getBoundingClientRect(getDocumentElement(element)).left + leftScroll;
+  }
+  return rect.left + leftScroll;
+}
+function getHTMLOffset(documentElement, scroll) {
+  const htmlRect = documentElement.getBoundingClientRect();
+  const x = htmlRect.left + scroll.scrollLeft - getWindowScrollBarX(documentElement, htmlRect);
+  const y = htmlRect.top + scroll.scrollTop;
+  return {
+    x,
+    y
+  };
+}
+function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
+  let {
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  } = _ref;
+  const isFixed = strategy === "fixed";
+  const documentElement = getDocumentElement(offsetParent);
+  const topLayer = elements ? isTopLayer(elements.floating) : false;
+  if (offsetParent === documentElement || topLayer && isFixed) {
+    return rect;
+  }
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  let scale = createCoords(1);
+  const offsets = createCoords(0);
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent);
+      scale = getScale(offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  return {
+    width: rect.width * scale.x,
+    height: rect.height * scale.y,
+    x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
+    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
+  };
+}
+function getClientRects(element) {
+  return element.getClientRects ? Array.from(element.getClientRects()) : [];
+}
+function getDocumentRect(html) {
+  const scroll = getNodeScroll(html);
+  const body = html.ownerDocument.body;
+  const width = max(html.scrollWidth, html.clientWidth, body.scrollWidth, body.clientWidth);
+  const height = max(html.scrollHeight, html.clientHeight, body.scrollHeight, body.clientHeight);
+  let x = -scroll.scrollLeft + getWindowScrollBarX(html);
+  const y = -scroll.scrollTop;
+  if (getComputedStyle2(body).direction === "rtl") {
+    x += max(html.clientWidth, body.clientWidth) - width;
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+var SCROLLBAR_MAX = 25;
+function getViewportRect(element, strategy, rootBoundary) {
+  if (rootBoundary === undefined) {
+    rootBoundary = "viewport";
+  }
+  const isLayoutViewport = rootBoundary === "layoutViewport";
+  const win = getWindow(element);
+  const html = getDocumentElement(element);
+  const visualViewport = win.visualViewport;
+  let width = html.clientWidth;
+  let height = html.clientHeight;
+  let x = 0;
+  let y = 0;
+  if (visualViewport) {
+    const layoutRelativeClientCoords = !isWebKit() || strategy === "fixed";
+    if (isLayoutViewport) {
+      if (!layoutRelativeClientCoords) {
+        x = -visualViewport.offsetLeft;
+        y = -visualViewport.offsetTop;
+      }
+    } else {
+      width = visualViewport.width;
+      height = visualViewport.height;
+      if (layoutRelativeClientCoords) {
+        x = visualViewport.offsetLeft;
+        y = visualViewport.offsetTop;
+      }
+    }
+  }
+  const windowScrollbarX = getWindowScrollBarX(html);
+  if (windowScrollbarX <= 0) {
+    const doc = html.ownerDocument;
+    const body = doc.body;
+    const bodyStyles = getComputedStyle(body);
+    const bodyMarginInline = doc.compatMode === "CSS1Compat" ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0 : 0;
+    const reservedWidth = Math.abs(html.clientWidth - body.clientWidth - bodyMarginInline);
+    const gutter = getComputedStyle(html).scrollbarGutter === "stable both-edges" ? reservedWidth / 2 : reservedWidth;
+    if (gutter <= SCROLLBAR_MAX) {
+      width -= gutter;
+    }
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getInnerBoundingClientRect(element, strategy) {
+  const clientRect = getBoundingClientRect(element, true, strategy === "fixed");
+  const top = clientRect.top + element.clientTop;
+  const left = clientRect.left + element.clientLeft;
+  const scale = getScale(element);
+  const width = element.clientWidth * scale.x;
+  const height = element.clientHeight * scale.y;
+  const x = left * scale.x;
+  const y = top * scale.y;
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) {
+  let rect;
+  if (clippingAncestor === "viewport" || clippingAncestor === "layoutViewport") {
+    rect = getViewportRect(element, strategy, clippingAncestor);
+  } else if (clippingAncestor === "document") {
+    rect = getDocumentRect(getDocumentElement(element));
+  } else if (isElement(clippingAncestor)) {
+    rect = getInnerBoundingClientRect(clippingAncestor, strategy);
+  } else {
+    const visualOffsets = getVisualOffsets(element);
+    rect = {
+      x: clippingAncestor.x - visualOffsets.x,
+      y: clippingAncestor.y - visualOffsets.y,
+      width: clippingAncestor.width,
+      height: clippingAncestor.height
+    };
+  }
+  return rectToClientRect(rect);
+}
+function getClippingElementAncestors(element, cache) {
+  const cachedResult = cache.get(element);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  let result = getOverflowAncestors(element, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
+  let lastKeptComputedStyle = null;
+  const elementIsFixed = getComputedStyle2(element).position === "fixed";
+  let currentNode = elementIsFixed ? getParentNode(element) : element;
+  while (isElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    const computedStyle = getComputedStyle2(currentNode);
+    const currentNodeIsContaining = isContainingBlock(currentNode);
+    const lastPosition = lastKeptComputedStyle ? lastKeptComputedStyle.position : elementIsFixed ? "fixed" : "";
+    const shouldDropCurrentNode = !currentNodeIsContaining && (lastPosition === "fixed" || lastPosition === "absolute" && computedStyle.position === "static");
+    if (shouldDropCurrentNode) {
+      result = result.filter((ancestor) => ancestor !== currentNode);
+    } else {
+      lastKeptComputedStyle = computedStyle;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  cache.set(element, result);
+  return result;
+}
+function getClippingRect(_ref) {
+  let {
+    element,
+    boundary,
+    rootBoundary,
+    strategy
+  } = _ref;
+  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element) ? [] : getClippingElementAncestors(element, this._c) : [].concat(boundary);
+  const clippingAncestors = [...elementClippingAncestors, rootBoundary];
+  const firstRect = getClientRectFromClippingAncestor(element, clippingAncestors[0], strategy);
+  let top = firstRect.top;
+  let right = firstRect.right;
+  let bottom = firstRect.bottom;
+  let left = firstRect.left;
+  for (let i = 1;i < clippingAncestors.length; i++) {
+    const rect = getClientRectFromClippingAncestor(element, clippingAncestors[i], strategy);
+    top = max(rect.top, top);
+    right = min(rect.right, right);
+    bottom = min(rect.bottom, bottom);
+    left = max(rect.left, left);
+  }
+  return {
+    width: right - left,
+    height: bottom - top,
+    x: left,
+    y: top
+  };
+}
+function getDimensions(element) {
+  const {
+    width,
+    height
+  } = getCssDimensions(element);
+  return {
+    width,
+    height
+  };
+}
+function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  const documentElement = getDocumentElement(offsetParent);
+  const isFixed = strategy === "fixed";
+  const rect = getBoundingClientRect(element, true, isFixed, offsetParent);
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  const offsets = createCoords(0);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent, true, isFixed, offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  if (!isOffsetParentAnElement && documentElement) {
+    offsets.x = getWindowScrollBarX(documentElement);
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  const x = rect.left + scroll.scrollLeft - offsets.x - htmlOffset.x;
+  const y = rect.top + scroll.scrollTop - offsets.y - htmlOffset.y;
+  return {
+    x,
+    y,
+    width: rect.width,
+    height: rect.height
+  };
+}
+function isStaticPositioned(element) {
+  return getComputedStyle2(element).position === "static";
+}
+function getTrueOffsetParent(element, polyfill) {
+  if (!isHTMLElement(element) || getComputedStyle2(element).position === "fixed") {
+    return null;
+  }
+  if (polyfill) {
+    return polyfill(element);
+  }
+  let rawOffsetParent = element.offsetParent;
+  if (getDocumentElement(element) === rawOffsetParent) {
+    rawOffsetParent = rawOffsetParent.ownerDocument.body;
+  }
+  return rawOffsetParent;
+}
+function getOffsetParent(element, polyfill) {
+  const win = getWindow(element);
+  if (isTopLayer(element)) {
+    return win;
+  }
+  if (!isHTMLElement(element)) {
+    let svgOffsetParent = getParentNode(element);
+    while (svgOffsetParent && !isLastTraversableNode(svgOffsetParent)) {
+      if (isElement(svgOffsetParent) && !isStaticPositioned(svgOffsetParent)) {
+        return svgOffsetParent;
+      }
+      svgOffsetParent = getParentNode(svgOffsetParent);
+    }
+    return win;
+  }
+  let offsetParent = getTrueOffsetParent(element, polyfill);
+  while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
+    offsetParent = getTrueOffsetParent(offsetParent, polyfill);
+  }
+  if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
+    return win;
+  }
+  return offsetParent || getContainingBlock(element) || win;
+}
+var getElementRects = async function(data) {
+  const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
+  const getDimensionsFn = this.getDimensions;
+  const floatingDimensions = await getDimensionsFn(data.floating);
+  return {
+    reference: getRectRelativeToOffsetParent(data.reference, await getOffsetParentFn(data.floating), data.strategy),
+    floating: {
+      x: 0,
+      y: 0,
+      width: floatingDimensions.width,
+      height: floatingDimensions.height
+    }
+  };
+};
+function isRTL(element) {
+  return getComputedStyle2(element).direction === "rtl";
+}
+var platform2 = {
+  convertOffsetParentRelativeRectToViewportRelativeRect,
+  getDocumentElement,
+  getClippingRect,
+  getOffsetParent,
+  getElementRects,
+  getClientRects,
+  getDimensions,
+  getScale,
+  isElement,
+  isRTL
+};
+function rectsAreEqual(a, b) {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+function observeMove(element, onMove, ancestorResize) {
+  let io = null;
+  let timeoutId;
+  const root = getDocumentElement(element);
+  function cleanup() {
+    var _io;
+    clearTimeout(timeoutId);
+    (_io = io) == null || _io.disconnect();
+    io = null;
+  }
+  function refresh(skip, threshold) {
+    if (skip === undefined) {
+      skip = false;
+    }
+    if (threshold === undefined) {
+      threshold = 1;
+    }
+    cleanup();
+    const elementRectForRootMargin = element.getBoundingClientRect();
+    const {
+      left,
+      top,
+      width,
+      height
+    } = elementRectForRootMargin;
+    if (!skip) {
+      onMove();
+    }
+    if (!width || !height) {
+      return;
+    }
+    const insetTop = floor(top);
+    const insetRight = floor(root.clientWidth - (left + width));
+    const insetBottom = floor(root.clientHeight - (top + height));
+    const insetLeft = floor(left);
+    const rootMargin = -insetTop + "px " + -insetRight + "px " + -insetBottom + "px " + -insetLeft + "px";
+    const options = {
+      rootMargin,
+      threshold: max(0, min(1, threshold)) || 1
+    };
+    let isFirstUpdate = true;
+    function handleObserve(entries) {
+      const ratio = entries[0].intersectionRatio;
+      if (!rectsAreEqual(elementRectForRootMargin, element.getBoundingClientRect())) {
+        return refresh();
+      }
+      if (ratio !== threshold) {
+        if (!isFirstUpdate) {
+          return refresh();
+        }
+        if (!ratio) {
+          timeoutId = setTimeout(() => {
+            refresh(false, 0.0000001);
+          }, 1000);
+        } else {
+          refresh(false, ratio);
+        }
+      }
+      isFirstUpdate = false;
+    }
+    try {
+      io = new IntersectionObserver(handleObserve, {
+        ...options,
+        root: root.ownerDocument
+      });
+    } catch (_e2) {
+      io = new IntersectionObserver(handleObserve, options);
+    }
+    io.observe(element);
+  }
+  const win = getWindow(element);
+  const handleResize = () => refresh(ancestorResize);
+  win.addEventListener("resize", handleResize);
+  refresh(true);
+  return () => {
+    win.removeEventListener("resize", handleResize);
+    cleanup();
+  };
+}
+function autoUpdate(reference, floating, update2, options) {
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    ancestorScroll = true,
+    ancestorResize = true,
+    elementResize = typeof ResizeObserver === "function",
+    layoutShift = typeof IntersectionObserver === "function",
+    animationFrame = false
+  } = options;
+  const referenceEl = unwrapElement(reference);
+  const ancestors = ancestorScroll || ancestorResize ? [...referenceEl ? getOverflowAncestors(referenceEl) : [], ...floating ? getOverflowAncestors(floating) : []] : [];
+  ancestors.forEach((ancestor) => {
+    ancestorScroll && ancestor.addEventListener("scroll", update2);
+    ancestorResize && ancestor.addEventListener("resize", update2);
+  });
+  const cleanupIo = referenceEl && layoutShift ? observeMove(referenceEl, update2, ancestorResize) : null;
+  let reobserveFrame = -1;
+  let resizeObserver = null;
+  if (elementResize) {
+    resizeObserver = new ResizeObserver((_ref) => {
+      let [firstEntry] = _ref;
+      if (firstEntry && firstEntry.target === referenceEl && resizeObserver && floating) {
+        resizeObserver.unobserve(floating);
+        cancelAnimationFrame(reobserveFrame);
+        reobserveFrame = requestAnimationFrame(() => {
+          var _resizeObserver;
+          (_resizeObserver = resizeObserver) == null || _resizeObserver.observe(floating);
+        });
+      }
+      update2();
+    });
+    if (referenceEl && !animationFrame) {
+      resizeObserver.observe(referenceEl);
+    }
+    if (floating) {
+      resizeObserver.observe(floating);
+    }
+  }
+  let frameId;
+  let prevRefRect = animationFrame ? getBoundingClientRect(reference) : null;
+  if (animationFrame) {
+    frameLoop();
+  }
+  function frameLoop() {
+    const nextRefRect = getBoundingClientRect(reference);
+    if (prevRefRect && !rectsAreEqual(prevRefRect, nextRefRect)) {
+      update2();
+    }
+    prevRefRect = nextRefRect;
+    frameId = requestAnimationFrame(frameLoop);
+  }
+  update2();
+  return () => {
+    var _resizeObserver2;
+    ancestors.forEach((ancestor) => {
+      ancestorScroll && ancestor.removeEventListener("scroll", update2);
+      ancestorResize && ancestor.removeEventListener("resize", update2);
+    });
+    cleanupIo == null || cleanupIo();
+    (_resizeObserver2 = resizeObserver) == null || _resizeObserver2.disconnect();
+    resizeObserver = null;
+    if (animationFrame) {
+      cancelAnimationFrame(frameId);
+    }
+  };
+}
+var offset2 = offset;
+var shift2 = shift;
+var flip2 = flip;
+var size2 = size;
+var hide2 = hide;
+var limitShift2 = limitShift;
+var computePosition2 = (reference, floating, options) => {
+  const cache = new Map;
+  const mergedOptions = options != null ? options : {};
+  const platformWithCache = {
+    ...platform2,
+    ...mergedOptions.platform,
+    _c: cache
+  };
+  return computePosition(reference, floating, {
+    ...mergedOptions,
+    platform: platformWithCache
+  });
+};
+
+// node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs
+var React40 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
+var ReactDOM3 = __toESM(require_react_dom(), 1);
+var isClient = typeof document !== "undefined";
+var noop2 = function noop3() {};
+var index2 = isClient ? import_react6.useLayoutEffect : noop2;
+function deepEqual(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (typeof a !== typeof b) {
+    return false;
+  }
+  if (typeof a === "function" && a.toString() === b.toString()) {
+    return true;
+  }
+  let length;
+  let i;
+  let keys;
+  if (a && b && typeof a === "object") {
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length !== b.length)
+        return false;
+      for (i = length;i-- !== 0; ) {
+        if (!deepEqual(a[i], b[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) {
+      return false;
+    }
+    for (i = length;i-- !== 0; ) {
+      if (!{}.hasOwnProperty.call(b, keys[i])) {
+        return false;
+      }
+    }
+    for (i = length;i-- !== 0; ) {
+      const key = keys[i];
+      if (key === "_owner" && a.$$typeof) {
+        continue;
+      }
+      if (!deepEqual(a[key], b[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return a !== a && b !== b;
+}
+function getDPR(element) {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+  const win = element.ownerDocument.defaultView || window;
+  return win.devicePixelRatio || 1;
+}
+function roundByDPR(element, value) {
+  const dpr = getDPR(element);
+  return Math.round(value * dpr) / dpr;
+}
+function useLatestRef(value) {
+  const ref = React40.useRef(value);
+  index2(() => {
+    ref.current = value;
+  });
+  return ref;
+}
+function useFloating(options) {
+  if (options === undefined) {
+    options = {};
+  }
+  const {
+    placement = "bottom",
+    strategy = "absolute",
+    middleware = [],
+    platform: platform3,
+    elements: {
+      reference: externalReference,
+      floating: externalFloating
+    } = {},
+    transform = true,
+    whileElementsMounted,
+    open
+  } = options;
+  const [data, setData] = React40.useState({
+    x: 0,
+    y: 0,
+    strategy,
+    placement,
+    middlewareData: {},
+    isPositioned: false
+  });
+  const [latestMiddleware, setLatestMiddleware] = React40.useState(middleware);
+  if (!deepEqual(latestMiddleware, middleware)) {
+    setLatestMiddleware(middleware);
+  }
+  const [_reference, _setReference] = React40.useState(null);
+  const [_floating, _setFloating] = React40.useState(null);
+  const setReference = React40.useCallback((node) => {
+    if (node !== referenceRef.current) {
+      referenceRef.current = node;
+      _setReference(node);
+    }
+  }, []);
+  const setFloating = React40.useCallback((node) => {
+    if (node !== floatingRef.current) {
+      floatingRef.current = node;
+      _setFloating(node);
+    }
+  }, []);
+  const referenceEl = externalReference || _reference;
+  const floatingEl = externalFloating || _floating;
+  const referenceRef = React40.useRef(null);
+  const floatingRef = React40.useRef(null);
+  const dataRef = React40.useRef(data);
+  const hasWhileElementsMounted = whileElementsMounted != null;
+  const whileElementsMountedRef = useLatestRef(whileElementsMounted);
+  const platformRef = useLatestRef(platform3);
+  const openRef = useLatestRef(open);
+  const update2 = React40.useCallback(() => {
+    if (!referenceRef.current || !floatingRef.current) {
+      return;
+    }
+    const config = {
+      placement,
+      strategy,
+      middleware: latestMiddleware
+    };
+    if (platformRef.current) {
+      config.platform = platformRef.current;
+    }
+    computePosition2(referenceRef.current, floatingRef.current, config).then((data2) => {
+      const fullData = {
+        ...data2,
+        isPositioned: openRef.current !== false
+      };
+      if (isMountedRef.current && !deepEqual(dataRef.current, fullData)) {
+        dataRef.current = fullData;
+        ReactDOM3.flushSync(() => {
+          setData(fullData);
+        });
+      }
+    });
+  }, [latestMiddleware, placement, strategy, platformRef, openRef]);
+  index2(() => {
+    if (open === false && dataRef.current.isPositioned) {
+      dataRef.current.isPositioned = false;
+      setData((data2) => ({
+        ...data2,
+        isPositioned: false
+      }));
+    }
+  }, [open]);
+  const isMountedRef = React40.useRef(false);
+  index2(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  index2(() => {
+    if (referenceEl)
+      referenceRef.current = referenceEl;
+    if (floatingEl)
+      floatingRef.current = floatingEl;
+    if (referenceEl && floatingEl) {
+      if (whileElementsMountedRef.current) {
+        return whileElementsMountedRef.current(referenceEl, floatingEl, update2);
+      }
+      update2();
+    }
+  }, [referenceEl, floatingEl, update2, whileElementsMountedRef, hasWhileElementsMounted]);
+  const refs = React40.useMemo(() => ({
+    reference: referenceRef,
+    floating: floatingRef,
+    setReference,
+    setFloating
+  }), [setReference, setFloating]);
+  const elements = React40.useMemo(() => ({
+    reference: referenceEl,
+    floating: floatingEl
+  }), [referenceEl, floatingEl]);
+  const floatingStyles = React40.useMemo(() => {
+    const initialStyles = {
+      position: strategy,
+      left: 0,
+      top: 0
+    };
+    if (!elements.floating) {
+      return initialStyles;
+    }
+    const x = roundByDPR(elements.floating, data.x);
+    const y = roundByDPR(elements.floating, data.y);
+    if (transform) {
+      return {
+        ...initialStyles,
+        transform: "translate(" + x + "px, " + y + "px)",
+        ...getDPR(elements.floating) >= 1.5 && {
+          willChange: "transform"
+        }
+      };
+    }
+    return {
+      position: strategy,
+      left: x,
+      top: y
+    };
+  }, [strategy, transform, elements.floating, data.x, data.y]);
+  return React40.useMemo(() => ({
+    ...data,
+    update: update2,
+    refs,
+    elements,
+    floatingStyles
+  }), [data, update2, refs, elements, floatingStyles]);
+}
+var offset3 = (options, deps) => {
+  const result = offset2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var shift3 = (options, deps) => {
+  const result = shift2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var limitShift3 = (options, deps) => {
+  const result = limitShift2(options);
+  return {
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var flip3 = (options, deps) => {
+  const result = flip2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var size3 = (options, deps) => {
+  const result = size2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+var hide3 = (options, deps) => {
+  const result = hide2(options);
+  return {
+    name: result.name,
+    fn: result.fn,
+    options: [options, deps]
+  };
+};
+
+// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
+var React46 = __toESM(require_react(), 1);
+var ReactDOM4 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/useOnFirstRender.mjs
+var React41 = __toESM(require_react(), 1);
+"use client";
+function useOnFirstRender(fn) {
+  const ref = React41.useRef(true);
+  if (ref.current) {
+    ref.current = false;
+    fn();
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+var React45 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/store/createSelector.mjs
+var createSelector = (a, b, c, d, e, f, ...other) => {
+  if (other.length > 0) {
+    throw new Error("Unsupported number of selectors");
+  }
+  let selector;
+  if (a && b && c && d && e && f) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      const vd = d(state, a1, a2, a3);
+      const ve2 = e(state, a1, a2, a3);
+      return f(va, vb, vc, vd, ve2, a1, a2, a3);
+    };
+  } else if (a && b && c && d && e) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      const vd = d(state, a1, a2, a3);
+      return e(va, vb, vc, vd, a1, a2, a3);
+    };
+  } else if (a && b && c && d) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      const vc = c(state, a1, a2, a3);
+      return d(va, vb, vc, a1, a2, a3);
+    };
+  } else if (a && b && c) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      const vb = b(state, a1, a2, a3);
+      return c(va, vb, a1, a2, a3);
+    };
+  } else if (a && b) {
+    selector = (state, a1, a2, a3) => {
+      const va = a(state, a1, a2, a3);
+      return b(va, a1, a2, a3);
+    };
+  } else if (a) {
+    selector = a;
+  } else {
+    throw new Error("Missing arguments");
+  }
+  return selector;
+};
+
+// node_modules/@base-ui/utils/store/useStore.mjs
+var React43 = __toESM(require_react(), 1);
+var import_shim = __toESM(require_shim(), 1);
+var import_with_selector = __toESM(require_with_selector(), 1);
+
+// node_modules/@base-ui/utils/fastHooks.mjs
+var React42 = __toESM(require_react(), 1);
+var hooks = [];
+var currentInstance = undefined;
+function getInstance() {
+  return currentInstance;
+}
+function register(hook) {
+  hooks.push(hook);
+}
+function fastComponent(fn) {
+  const FastComponent = (props, forwardedRef) => {
+    const instance2 = useRefWithInit(createInstance).current;
+    let result;
+    try {
+      currentInstance = instance2;
+      for (const hook of hooks) {
+        hook.before(instance2);
+      }
+      result = fn(props, forwardedRef);
+      for (const hook of hooks) {
+        hook.after(instance2);
+      }
+      instance2.didInitialize = true;
+    } finally {
+      currentInstance = undefined;
+    }
+    return result;
+  };
+  FastComponent.displayName = fn.displayName || fn.name;
+  return FastComponent;
+}
+function fastComponentRef(fn) {
+  return /* @__PURE__ */ React42.forwardRef(fastComponent(fn));
+}
+function createInstance() {
+  return {
+    didInitialize: false
+  };
+}
+
+// node_modules/@base-ui/utils/store/useStore.mjs
+var canUseRawUseSyncExternalStore = isReactVersionAtLeast(19);
+var useStoreImplementation = canUseRawUseSyncExternalStore ? useStoreFast : useStoreLegacy;
+function useStore(store, selector, a1, a2, a3) {
+  return useStoreImplementation(store, selector, a1, a2, a3);
+}
+function useStoreR19(store, selector, a1, a2, a3) {
+  const getSelection = React43.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
+  return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
+}
+register({
+  before(instance2) {
+    instance2.syncIndex = 0;
+    if (!instance2.didInitialize) {
+      instance2.syncTick = 1;
+      instance2.syncHooks = [];
+      instance2.didChangeStore = true;
+      instance2.getSnapshot = () => {
+        let didChange2 = false;
+        for (let i = 0;i < instance2.syncHooks.length; i += 1) {
+          const hook = instance2.syncHooks[i];
+          const value = hook.selector(hook.store.state, hook.a1, hook.a2, hook.a3);
+          if (!Object.is(hook.value, value)) {
+            didChange2 = true;
+            hook.value = value;
+          }
+        }
+        if (didChange2) {
+          instance2.syncTick += 1;
+        }
+        return instance2.syncTick;
+      };
+    }
+  },
+  after(instance2) {
+    if (instance2.syncHooks.length > 0) {
+      if (instance2.didChangeStore) {
+        instance2.didChangeStore = false;
+        instance2.subscribe = (onStoreChange) => {
+          const stores = new Set;
+          for (const hook of instance2.syncHooks) {
+            stores.add(hook.store);
+          }
+          const unsubscribes = [];
+          for (const store of stores) {
+            unsubscribes.push(store.subscribe(onStoreChange));
+          }
+          return () => {
+            for (const unsubscribe of unsubscribes) {
+              unsubscribe();
+            }
+          };
+        };
+      }
+      import_shim.useSyncExternalStore(instance2.subscribe, instance2.getSnapshot, instance2.getSnapshot);
+    }
+  }
+});
+function useStoreFast(store, selector, a1, a2, a3) {
+  const instance2 = getInstance();
+  if (!instance2) {
+    return useStoreR19(store, selector, a1, a2, a3);
+  }
+  const index3 = instance2.syncIndex;
+  instance2.syncIndex += 1;
+  let hook;
+  if (!instance2.didInitialize) {
+    hook = {
+      store,
+      selector,
+      a1,
+      a2,
+      a3,
+      value: selector(store.getSnapshot(), a1, a2, a3)
+    };
+    instance2.syncHooks.push(hook);
+  } else {
+    hook = instance2.syncHooks[index3];
+    if (hook.store !== store || hook.selector !== selector || !Object.is(hook.a1, a1) || !Object.is(hook.a2, a2) || !Object.is(hook.a3, a3)) {
+      if (hook.store !== store) {
+        instance2.didChangeStore = true;
+      }
+      hook.store = store;
+      hook.selector = selector;
+      hook.a1 = a1;
+      hook.a2 = a2;
+      hook.a3 = a3;
+      hook.value = selector(store.getSnapshot(), a1, a2, a3);
+    }
+  }
+  return hook.value;
+}
+function useStoreLegacy(store, selector, a1, a2, a3) {
+  return import_with_selector.useSyncExternalStoreWithSelector(store.subscribe, store.getSnapshot, store.getSnapshot, (state) => selector(state, a1, a2, a3));
+}
+
+// node_modules/@base-ui/utils/store/Store.mjs
+class Store {
+  constructor(state) {
+    this.state = state;
+    this.listeners = new Set;
+    this.updateTick = 0;
+  }
+  subscribe = (fn) => {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  };
+  getSnapshot = () => {
+    return this.state;
+  };
+  setState(newState) {
+    if (this.state === newState) {
+      return;
+    }
+    this.state = newState;
+    this.updateTick += 1;
+    const currentTick = this.updateTick;
+    for (const listener of this.listeners) {
+      if (currentTick !== this.updateTick) {
+        return;
+      }
+      listener(newState);
+    }
+  }
+  update(changes) {
+    for (const key in changes) {
+      if (!Object.is(this.state[key], changes[key])) {
+        this.setState({
+          ...this.state,
+          ...changes
+        });
+        return;
+      }
+    }
+  }
+  set(key, value) {
+    if (!Object.is(this.state[key], value)) {
+      this.setState({
+        ...this.state,
+        [key]: value
+      });
+    }
+  }
+  notifyAll() {
+    const newState = {
+      ...this.state
+    };
+    this.setState(newState);
+  }
+  use(selector, a1, a2, a3) {
+    return useStore(this, selector, a1, a2, a3);
+  }
+}
+
+// node_modules/@base-ui/utils/store/ReactStore.mjs
+var React44 = __toESM(require_react(), 1);
+"use client";
+
+class ReactStore extends Store {
+  constructor(state, context = {}, selectors) {
+    super(state);
+    this.context = context;
+    this.selectors = selectors;
+  }
+  useSyncedValue(key, value) {
+    React44.useDebugValue(key);
+    const store = this;
+    useIsoLayoutEffect(() => {
+      if (store.state[key] !== value) {
+        store.set(key, value);
+      }
+    }, [store, key, value]);
+  }
+  useSyncedValueWithCleanup(key, value) {
+    const store = this;
+    useIsoLayoutEffect(() => {
+      if (store.state[key] !== value) {
+        store.set(key, value);
+      }
+      return () => {
+        store.set(key, undefined);
+      };
+    }, [store, key, value]);
+  }
+  useSyncedValues(statePart) {
+    const store = this;
+    if (true) {
+      React44.useDebugValue(statePart, (p) => Object.keys(p));
+      const keys = React44.useRef(Object.keys(statePart)).current;
+      const nextKeys = Object.keys(statePart);
+      if (keys.length !== nextKeys.length || keys.some((key, index3) => key !== nextKeys[index3])) {
+        console.error("ReactStore.useSyncedValues expects the same prop keys on every render. Keys should be stable.");
+      }
+    }
+    const dependencies = Object.values(statePart);
+    useIsoLayoutEffect(() => {
+      store.update(statePart);
+    }, [store, ...dependencies]);
+  }
+  useControlledProp(key, controlled) {
+    React44.useDebugValue(key);
+    const store = this;
+    const isControlled = controlled !== undefined;
+    useIsoLayoutEffect(() => {
+      if (isControlled && !Object.is(store.state[key], controlled)) {
+        store.setState({
+          ...store.state,
+          [key]: controlled
+        });
+      }
+    }, [store, key, controlled, isControlled]);
+    if (true) {
+      const cache = this.controlledValues ??= new Map;
+      if (!cache.has(key)) {
+        cache.set(key, isControlled);
+      }
+      const previouslyControlled = cache.get(key);
+      if (previouslyControlled !== undefined && previouslyControlled !== isControlled) {
+        console.error(`A component is changing the ${isControlled ? "" : "un"}controlled state of ${key.toString()} to be ${isControlled ? "un" : ""}controlled. Elements should not switch from uncontrolled to controlled (or vice versa).`);
+      }
+    }
+  }
+  select(key, a1, a2, a3) {
+    const selector = this.selectors[key];
+    return selector(this.state, a1, a2, a3);
+  }
+  useState(key, a1, a2, a3) {
+    React44.useDebugValue(key);
+    return useStore(this, this.selectors[key], a1, a2, a3);
+  }
+  useContextCallback(key, fn) {
+    React44.useDebugValue(key);
+    const stableFunction = useStableCallback(fn ?? NOOP);
+    this.context[key] = stableFunction;
+  }
+  useStateSetter(key) {
+    const ref = React44.useRef(undefined);
+    if (ref.current === undefined) {
+      ref.current = (value) => {
+        this.set(key, value);
+      };
+    }
+    return ref.current;
+  }
+  observe(selector, listener) {
+    let selectFn;
+    if (typeof selector === "function") {
+      selectFn = selector;
+    } else {
+      selectFn = this.selectors[selector];
+    }
+    let prevValue = selectFn(this.state);
+    listener(prevValue, prevValue, this);
+    return this.subscribe((nextState) => {
+      const nextValue = selectFn(nextState);
+      if (!Object.is(prevValue, nextValue)) {
+        const oldValue = prevValue;
+        prevValue = nextValue;
+        listener(nextValue, oldValue, this);
+      }
+    });
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingRootStore.mjs
+var selectors = {
+  open: createSelector((state) => state.open),
+  transitionStatus: createSelector((state) => state.transitionStatus),
+  domReferenceElement: createSelector((state) => state.domReferenceElement),
+  referenceElement: createSelector((state) => state.positionReference ?? state.referenceElement),
+  floatingElement: createSelector((state) => state.floatingElement),
+  floatingId: createSelector((state) => state.floatingId)
+};
+
+class FloatingRootStore extends ReactStore {
+  constructor(options) {
+    const {
+      syncOnly,
+      nested,
+      onOpenChange,
+      triggerElements,
+      ...initialState
+    } = options;
+    super({
+      ...initialState,
+      positionReference: initialState.referenceElement,
+      domReferenceElement: initialState.referenceElement
+    }, {
+      onOpenChange,
+      dataRef: {
+        current: {}
+      },
+      events: createEventEmitter(),
+      nested,
+      triggerElements
+    }, selectors);
+    this.syncOnly = syncOnly;
+  }
+  syncOpenEvent = (newOpen, event) => {
+    if (!newOpen || !this.state.open || event != null && isClickLikeEvent(event)) {
+      this.context.dataRef.current.openEvent = newOpen ? event : undefined;
+    }
+  };
+  dispatchOpenChange = (newOpen, eventDetails) => {
+    this.syncOpenEvent(newOpen, eventDetails.event);
+    const details = {
+      open: newOpen,
+      reason: eventDetails.reason,
+      nativeEvent: eventDetails.event,
+      nested: this.context.nested,
+      triggerElement: eventDetails.trigger
+    };
+    this.context.events.emit("openchange", details);
+  };
+  setOpen = (newOpen, eventDetails) => {
+    if (this.syncOnly) {
+      this.context.onOpenChange?.(newOpen, eventDetails);
+      return;
+    }
+    this.dispatchOpenChange(newOpen, eventDetails);
+    this.context.onOpenChange?.(newOpen, eventDetails);
+  };
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+"use client";
+function useSyncedFloatingRootContext(options) {
+  const {
+    popupStore,
+    treatPopupAsFloatingElement = false,
+    floatingRootContext: floatingRootContextProp,
+    floatingId,
+    nested,
+    onOpenChange
+  } = options;
+  const open = popupStore.useState("open");
+  const referenceElement = popupStore.useState("activeTriggerElement");
+  const floatingElement = popupStore.useState(treatPopupAsFloatingElement ? "popupElement" : "positionerElement");
+  const triggerElements = popupStore.context.triggerElements;
+  const handleOpenChange = onOpenChange;
+  const internalStoreRef = React45.useRef(null);
+  if (floatingRootContextProp === undefined && internalStoreRef.current === null) {
+    internalStoreRef.current = new FloatingRootStore({
+      open,
+      transitionStatus: undefined,
+      referenceElement,
+      floatingElement,
+      triggerElements,
+      onOpenChange: handleOpenChange,
+      floatingId,
+      syncOnly: true,
+      nested
+    });
+  }
+  const store = floatingRootContextProp ?? internalStoreRef.current;
+  popupStore.useSyncedValue("floatingId", floatingId);
+  useIsoLayoutEffect(() => {
+    const valuesToSync = {
+      open,
+      floatingId,
+      referenceElement,
+      floatingElement
+    };
+    if (isElement(referenceElement)) {
+      valuesToSync.domReferenceElement = referenceElement;
+    }
+    if (store.state.positionReference === store.state.referenceElement) {
+      valuesToSync.positionReference = referenceElement;
+    }
+    store.update(valuesToSync);
+  }, [open, floatingId, referenceElement, floatingElement, store]);
+  store.context.onOpenChange = handleOpenChange;
+  store.context.nested = nested;
+  return store;
+}
+
+// node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
+"use client";
+var FOCUSABLE_POPUP_PROPS = {
+  tabIndex: -1,
+  [FOCUSABLE_ATTRIBUTE]: ""
+};
+function useTriggerRegistration(id, store) {
+  const registeredElementIdRef = React46.useRef(null);
+  const registeredElementRef = React46.useRef(null);
+  return React46.useCallback((element) => {
+    if (id === undefined) {
+      return;
+    }
+    let shouldSyncTriggerCount = false;
+    if (registeredElementIdRef.current !== null) {
+      const registeredId = registeredElementIdRef.current;
+      const registeredElement = registeredElementRef.current;
+      const currentElement = store.context.triggerElements.getById(registeredId);
+      if (registeredElement && currentElement === registeredElement) {
+        store.context.triggerElements.delete(registeredId);
+        shouldSyncTriggerCount = true;
+      }
+      registeredElementIdRef.current = null;
+      registeredElementRef.current = null;
+    }
+    if (element !== null) {
+      registeredElementIdRef.current = id;
+      registeredElementRef.current = element;
+      store.context.triggerElements.add(id, element);
+      shouldSyncTriggerCount = true;
+    }
+    if (shouldSyncTriggerCount) {
+      const triggerCount = store.context.triggerElements.size;
+      if (store.select("open") && store.state.triggerCount !== triggerCount) {
+        store.set("triggerCount", triggerCount);
+      }
+    }
+  }, [store, id]);
+}
+function setPopupOpenState(state, open, trigger, preventUnmountOnClose = false) {
+  if (open) {
+    state.preventUnmountingOnClose = false;
+  } else if (preventUnmountOnClose) {
+    state.preventUnmountingOnClose = true;
+  }
+  const triggerId = trigger?.id ?? null;
+  if (triggerId || open) {
+    state.activeTriggerId = triggerId;
+    state.activeTriggerElement = trigger ?? null;
+  }
+}
+function attachPreventUnmountOnClose(eventDetails) {
+  let preventUnmountOnClose = false;
+  eventDetails.preventUnmountOnClose = () => {
+    preventUnmountOnClose = true;
+  };
+  return () => preventUnmountOnClose;
+}
+function useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerId) {
+  useOnFirstRender(() => {
+    if (openProp === undefined && store.state.open === false && defaultOpen) {
+      store.state = {
+        ...store.state,
+        open: true,
+        activeTriggerId: defaultTriggerId,
+        preventUnmountingOnClose: false
+      };
+    }
+  });
+}
+function useTriggerDataForwarding(triggerId, triggerElementRef, store, stateUpdates) {
+  const isMountedByThisTrigger = store.useState("isMountedByTrigger", triggerId);
+  const baseRegisterTrigger = useTriggerRegistration(triggerId, store);
+  const registerTrigger = useStableCallback((element) => {
+    baseRegisterTrigger(element);
+    if (!element) {
+      return;
+    }
+    const open = store.select("open");
+    const activeTriggerId = store.select("activeTriggerId");
+    if (activeTriggerId === triggerId) {
+      store.update({
+        activeTriggerElement: element,
+        ...open ? stateUpdates : null
+      });
+      return;
+    }
+    if (activeTriggerId == null && open) {
+      store.update({
+        activeTriggerId: triggerId,
+        activeTriggerElement: element,
+        ...stateUpdates
+      });
+    }
+  });
+  useIsoLayoutEffect(() => {
+    if (isMountedByThisTrigger) {
+      store.update({
+        activeTriggerElement: triggerElementRef.current,
+        ...stateUpdates
+      });
+    }
+  }, [isMountedByThisTrigger, store, triggerElementRef, ...Object.values(stateUpdates)]);
+  return {
+    registerTrigger,
+    isMountedByThisTrigger
+  };
+}
+function useImplicitActiveTrigger(store, options = {}) {
+  const {
+    closeOnActiveTriggerUnmount = false
+  } = options;
+  const open = store.useState("open");
+  const reactiveTriggerCount = store.useState("triggerCount");
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      if (store.state.triggerCount !== 0) {
+        store.set("triggerCount", 0);
+      }
+      return;
+    }
+    const triggerCount = store.context.triggerElements.size;
+    const stateUpdates = {};
+    if (store.state.triggerCount !== triggerCount) {
+      stateUpdates.triggerCount = triggerCount;
+    }
+    const activeTriggerId = store.select("activeTriggerId");
+    let lostActiveTriggerId = null;
+    if (activeTriggerId) {
+      const activeTriggerElement = store.context.triggerElements.getById(activeTriggerId);
+      if (!activeTriggerElement) {
+        lostActiveTriggerId = activeTriggerId;
+      } else if (activeTriggerElement !== store.state.activeTriggerElement) {
+        stateUpdates.activeTriggerElement = activeTriggerElement;
+      }
+    }
+    if (!lostActiveTriggerId && !activeTriggerId && triggerCount === 1) {
+      const iteratorResult = store.context.triggerElements.entries().next();
+      if (!iteratorResult.done) {
+        const [implicitTriggerId, implicitTriggerElement] = iteratorResult.value;
+        stateUpdates.activeTriggerId = implicitTriggerId;
+        stateUpdates.activeTriggerElement = implicitTriggerElement;
+      }
+    }
+    if (stateUpdates.triggerCount !== undefined || stateUpdates.activeTriggerId !== undefined || stateUpdates.activeTriggerElement !== undefined) {
+      store.update(stateUpdates);
+    }
+    if (lostActiveTriggerId) {
+      if (closeOnActiveTriggerUnmount) {
+        queueMicrotask(() => {
+          if (store.select("open") && store.select("activeTriggerId") === lostActiveTriggerId && !store.context.triggerElements.getById(lostActiveTriggerId)) {
+            const eventDetails = createChangeEventDetails(exports_reason_parts.none);
+            store.setOpen(false, eventDetails);
+            if (!eventDetails.isCanceled) {
+              store.update({
+                activeTriggerId: null,
+                activeTriggerElement: null
+              });
+            }
+          }
+        });
+      }
+    }
+  }, [open, store, reactiveTriggerCount, closeOnActiveTriggerUnmount]);
+}
+function useOpenStateTransitions(open, store, onUnmount) {
+  const {
+    mounted,
+    setMounted,
+    transitionStatus
+  } = useTransitionStatus(open);
+  const preventUnmountingOnClose = store.useState("preventUnmountingOnClose");
+  const syncedPreventUnmountingOnClose = open ? false : preventUnmountingOnClose;
+  store.useSyncedValues({
+    mounted,
+    transitionStatus,
+    preventUnmountingOnClose: syncedPreventUnmountingOnClose
+  });
+  const forceUnmount = useStableCallback(() => {
+    setMounted(false);
+    store.update({
+      activeTriggerId: null,
+      activeTriggerElement: null,
+      mounted: false,
+      preventUnmountingOnClose: false
+    });
+    onUnmount?.();
+    store.context.onOpenChangeComplete?.(false);
+  });
+  useOpenChangeComplete({
+    enabled: mounted && !open && !syncedPreventUnmountingOnClose,
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (!open) {
+        forceUnmount();
+      }
+    }
+  });
+  return {
+    forceUnmount,
+    transitionStatus
+  };
+}
+function usePopupInteractionProps(store, statePart) {
+  store.useSyncedValues(statePart);
+  useIsoLayoutEffect(() => () => {
+    store.update({
+      activeTriggerProps: EMPTY_OBJECT,
+      inactiveTriggerProps: EMPTY_OBJECT,
+      popupProps: EMPTY_OBJECT
+    });
+  }, [store]);
+}
+
+// node_modules/@base-ui/react/utils/popups/popupTriggerMap.mjs
+class PopupTriggerMap {
+  constructor() {
+    this.elementsSet = new Set;
+    this.idMap = new Map;
+  }
+  add(id, element) {
+    const existingElement = this.idMap.get(id);
+    if (existingElement === element) {
+      return;
+    }
+    if (existingElement !== undefined) {
+      this.elementsSet.delete(existingElement);
+    }
+    this.elementsSet.add(element);
+    this.idMap.set(id, element);
+    if (true) {
+      if (this.elementsSet.size !== this.idMap.size) {
+        throw new Error("Base UI: A trigger element cannot be registered under multiple IDs in PopupTriggerMap.");
+      }
+    }
+  }
+  delete(id) {
+    const element = this.idMap.get(id);
+    if (element) {
+      this.elementsSet.delete(element);
+      this.idMap.delete(id);
+    }
+  }
+  hasElement(element) {
+    return this.elementsSet.has(element);
+  }
+  hasMatchingElement(predicate) {
+    for (const element of this.elementsSet) {
+      if (predicate(element)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  getById(id) {
+    return this.idMap.get(id);
+  }
+  entries() {
+    return this.idMap.entries();
+  }
+  elements() {
+    return this.elementsSet.values();
+  }
+  get size() {
+    return this.idMap.size;
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/utils/getEmptyRootContext.mjs
+function getEmptyRootContext() {
+  return new FloatingRootStore({
+    open: false,
+    transitionStatus: undefined,
+    floatingElement: null,
+    referenceElement: null,
+    triggerElements: new PopupTriggerMap,
+    floatingId: undefined,
+    syncOnly: false,
+    nested: false,
+    onOpenChange: undefined
+  });
+}
+
+// node_modules/@base-ui/react/utils/popups/store.mjs
+function createInitialPopupStoreState() {
+  return {
+    open: false,
+    openProp: undefined,
+    mounted: false,
+    transitionStatus: undefined,
+    floatingRootContext: getEmptyRootContext(),
+    floatingId: undefined,
+    triggerCount: 0,
+    preventUnmountingOnClose: false,
+    payload: undefined,
+    activeTriggerId: null,
+    activeTriggerElement: null,
+    triggerIdProp: undefined,
+    popupElement: null,
+    positionerElement: null,
+    activeTriggerProps: EMPTY_OBJECT,
+    inactiveTriggerProps: EMPTY_OBJECT,
+    popupProps: EMPTY_OBJECT
+  };
+}
+var activeTriggerIdSelector = createSelector((state) => state.triggerIdProp ?? state.activeTriggerId);
+var openSelector = createSelector((state) => state.openProp ?? state.open);
+var popupIdSelector = createSelector((state) => {
+  const popupId = state.popupElement?.id ?? state.floatingId;
+  return popupId || undefined;
+});
+function triggerOwnsOpenPopup(state, triggerId) {
+  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) === triggerId;
+}
+function triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) {
+  if (triggerOwnsOpenPopup(state, triggerId)) {
+    return true;
+  }
+  return triggerId !== undefined && openSelector(state) && activeTriggerIdSelector(state) == null && state.triggerCount === 1;
+}
+var popupStoreSelectors = {
+  open: openSelector,
+  mounted: createSelector((state) => state.mounted),
+  transitionStatus: createSelector((state) => state.transitionStatus),
+  floatingRootContext: createSelector((state) => state.floatingRootContext),
+  triggerCount: createSelector((state) => state.triggerCount),
+  preventUnmountingOnClose: createSelector((state) => state.preventUnmountingOnClose),
+  payload: createSelector((state) => state.payload),
+  activeTriggerId: activeTriggerIdSelector,
+  activeTriggerElement: createSelector((state) => state.mounted ? state.activeTriggerElement : null),
+  popupId: popupIdSelector,
+  isTriggerActive: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId),
+  isOpenedByTrigger: createSelector((state, triggerId) => triggerOwnsOpenPopup(state, triggerId)),
+  isMountedByTrigger: createSelector((state, triggerId) => triggerId !== undefined && activeTriggerIdSelector(state) === triggerId && state.mounted),
+  triggerProps: createSelector((state, isActive) => isActive ? state.activeTriggerProps : state.inactiveTriggerProps),
+  triggerPopupId: createSelector((state, triggerId) => triggerOwnsOpenPopupOrIsOnlyTrigger(state, triggerId) ? popupIdSelector(state) : undefined),
+  popupProps: createSelector((state) => state.popupProps),
+  popupElement: createSelector((state) => state.popupElement),
+  positionerElement: createSelector((state) => state.positionerElement)
+};
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloatingRootContext.mjs
+"use client";
+function useFloatingRootContext(options) {
+  const {
+    open = false,
+    onOpenChange,
+    elements = {}
+  } = options;
+  const floatingId = useId();
+  const nested = useFloatingParentNodeId() != null;
+  if (true) {
+    const optionDomReference = elements.reference;
+    if (optionDomReference && !isElement(optionDomReference)) {
+      console.error("Cannot pass a virtual element to the `elements.reference` option,", "as it must be a real DOM element. Use `context.setPositionReference()`", "instead.");
+    }
+  }
+  const store = useRefWithInit(() => new FloatingRootStore({
+    open,
+    transitionStatus: undefined,
+    onOpenChange,
+    referenceElement: elements.reference ?? null,
+    floatingElement: elements.floating ?? null,
+    triggerElements: new PopupTriggerMap,
+    floatingId,
+    syncOnly: false,
+    nested
+  })).current;
+  useIsoLayoutEffect(() => {
+    const valuesToSync = {
+      open,
+      floatingId
+    };
+    if (elements.reference !== undefined) {
+      valuesToSync.referenceElement = elements.reference;
+      valuesToSync.domReferenceElement = isElement(elements.reference) ? elements.reference : null;
+    }
+    if (elements.floating !== undefined) {
+      valuesToSync.floatingElement = elements.floating;
+    }
+    store.update(valuesToSync);
+  }, [open, floatingId, elements.reference, elements.floating, store]);
+  store.context.onOpenChange = onOpenChange;
+  store.context.nested = nested;
+  return store;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
+"use client";
+function useFloating2(options = {}) {
+  const {
+    nodeId,
+    externalTree
+  } = options;
+  const internalStore = useFloatingRootContext(options);
+  const store = options.rootContext || internalStore;
+  const referenceElement = store.useState("referenceElement");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const open = store.useState("open");
+  const floatingId = store.useState("floatingId");
+  const [positionReference, setPositionReferenceRaw] = React47.useState(null);
+  const [localDomReference, setLocalDomReference] = React47.useState(undefined);
+  const [localFloatingElement, setLocalFloatingElement] = React47.useState(undefined);
+  const domReferenceRef = React47.useRef(null);
+  const tree = useFloatingTree(externalTree);
+  const storeElements = React47.useMemo(() => ({
+    reference: referenceElement,
+    floating: floatingElement,
+    domReference: domReferenceElement
+  }), [referenceElement, floatingElement, domReferenceElement]);
+  const position = useFloating({
+    ...options,
+    elements: {
+      ...storeElements,
+      ...positionReference && {
+        reference: positionReference
+      }
+    }
+  });
+  const localDomReferenceElement = isElement(localDomReference) ? localDomReference : null;
+  const syncedFloatingElement = localFloatingElement === undefined ? store.state.floatingElement : localFloatingElement;
+  store.useSyncedValue("referenceElement", localDomReference ?? null);
+  store.useSyncedValue("domReferenceElement", localDomReference === undefined ? domReferenceElement : localDomReferenceElement);
+  store.useSyncedValue("floatingElement", syncedFloatingElement);
+  const setPositionReference = React47.useCallback((node) => {
+    const computedPositionReference = isElement(node) ? {
+      getBoundingClientRect: () => node.getBoundingClientRect(),
+      getClientRects: () => node.getClientRects(),
+      contextElement: node
+    } : node;
+    setPositionReferenceRaw(computedPositionReference);
+    position.refs.setReference(computedPositionReference);
+  }, [position.refs]);
+  const setReference = React47.useCallback((node) => {
+    if (isElement(node) || node === null) {
+      domReferenceRef.current = node;
+      setLocalDomReference(node);
+    }
+    if (isElement(position.refs.reference.current) || position.refs.reference.current === null || node !== null && !isElement(node)) {
+      position.refs.setReference(node);
+    }
+  }, [position.refs, setLocalDomReference]);
+  const setFloating = React47.useCallback((node) => {
+    setLocalFloatingElement(node);
+    position.refs.setFloating(node);
+  }, [position.refs]);
+  const refs = React47.useMemo(() => ({
+    ...position.refs,
+    setReference,
+    setFloating,
+    setPositionReference,
+    domReference: domReferenceRef
+  }), [position.refs, setReference, setFloating, setPositionReference]);
+  const elements = React47.useMemo(() => ({
+    ...position.elements,
+    domReference: domReferenceElement
+  }), [position.elements, domReferenceElement]);
+  const context = React47.useMemo(() => ({
+    ...position,
+    dataRef: store.context.dataRef,
+    open,
+    onOpenChange: store.setOpen,
+    events: store.context.events,
+    floatingId,
+    refs,
+    elements,
+    nodeId,
+    rootStore: store
+  }), [position, refs, elements, nodeId, store, open, floatingId]);
+  useIsoLayoutEffect(() => {
+    if (domReferenceElement) {
+      domReferenceRef.current = domReferenceElement;
+    }
+  }, [domReferenceElement]);
+  useIsoLayoutEffect(() => {
+    store.context.dataRef.current.floatingContext = context;
+    const node = tree?.nodesRef.current.find((n) => n.id === nodeId);
+    if (node) {
+      node.context = context;
+    }
+  });
+  return React47.useMemo(() => ({
+    ...position,
+    context,
+    refs,
+    elements,
+    rootStore: store
+  }), [position, refs, elements, context, store]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useFocus.mjs
+var React48 = __toESM(require_react(), 1);
+"use client";
+var isMacSafari = exports_parts.os.mac && exports_parts.engine.webkit;
+function useFocus(context, props = {}) {
+  const {
+    enabled = true,
+    delay
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const {
+    events,
+    dataRef
+  } = store.context;
+  const blockFocusRef = React48.useRef(false);
+  const blockedReferenceRef = React48.useRef(null);
+  const keyboardModalityRef = React48.useRef(true);
+  const timeout = useTimeout();
+  React48.useEffect(() => {
+    const domReference = store.select("domReferenceElement");
+    if (!enabled) {
+      return;
+    }
+    const win = getWindow(domReference);
+    function onBlur() {
+      const currentDomReference = store.select("domReferenceElement");
+      if (!store.select("open") && isHTMLElement(currentDomReference) && currentDomReference === activeElement(ownerDocument(currentDomReference))) {
+        blockFocusRef.current = true;
+      }
+    }
+    function onKeyDown() {
+      keyboardModalityRef.current = true;
+    }
+    function onPointerDown() {
+      keyboardModalityRef.current = false;
+    }
+    return mergeCleanups(addEventListener(win, "blur", onBlur), isMacSafari && addEventListener(win, "keydown", onKeyDown, true), isMacSafari && addEventListener(win, "pointerdown", onPointerDown, true));
+  }, [store, enabled]);
+  React48.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function onOpenChangeLocal(details) {
+      if (details.reason === exports_reason_parts.triggerPress || details.reason === exports_reason_parts.escapeKey) {
+        const referenceElement = store.select("domReferenceElement");
+        if (isElement(referenceElement)) {
+          blockedReferenceRef.current = referenceElement;
+          blockFocusRef.current = true;
+        }
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+    };
+  }, [events, enabled, store]);
+  const reference = React48.useMemo(() => {
+    function resetBlockedFocus() {
+      blockFocusRef.current = false;
+      blockedReferenceRef.current = null;
+    }
+    return {
+      onMouseLeave() {
+        resetBlockedFocus();
+      },
+      onFocus(event) {
+        const focusTarget = event.currentTarget;
+        if (blockFocusRef.current) {
+          if (blockedReferenceRef.current === focusTarget) {
+            return;
+          }
+          resetBlockedFocus();
+        }
+        const target = getTarget(event.nativeEvent);
+        if (isElement(target)) {
+          if (isMacSafari && !event.relatedTarget) {
+            if (!keyboardModalityRef.current && !isTypeableElement(target)) {
+              return;
+            }
+          } else if (!matchesFocusVisible(target)) {
+            return;
+          }
+        }
+        const movedFromOtherEnabledTrigger = isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements);
+        const {
+          nativeEvent,
+          currentTarget
+        } = event;
+        const delayValue = typeof delay === "function" ? delay() : delay;
+        if (store.select("open") && movedFromOtherEnabledTrigger || delayValue === 0 || delayValue === undefined) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent, currentTarget));
+          return;
+        }
+        timeout.start(delayValue, () => {
+          if (blockFocusRef.current) {
+            return;
+          }
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent, currentTarget));
+        });
+      },
+      onBlur(event) {
+        resetBlockedFocus();
+        const relatedTarget = event.relatedTarget;
+        const nativeEvent = event.nativeEvent;
+        const movedToFocusGuard = isElement(relatedTarget) && relatedTarget.hasAttribute(createAttribute("focus-guard")) && relatedTarget.getAttribute("data-type") === "outside";
+        timeout.start(0, () => {
+          const domReference = store.select("domReferenceElement");
+          const activeEl = activeElement(ownerDocument(domReference));
+          if (!relatedTarget && activeEl === domReference) {
+            return;
+          }
+          if (contains(dataRef.current.floatingContext?.refs.floating.current, activeEl) || contains(domReference, activeEl) || movedToFocusGuard) {
+            return;
+          }
+          const nextFocusedElement = relatedTarget ?? activeEl;
+          if (isTargetInsideEnabledTrigger(nextFocusedElement, store.context.triggerElements)) {
+            return;
+          }
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerFocus, nativeEvent));
+        });
+      }
+    };
+  }, [dataRef, delay, store, timeout]);
+  return React48.useMemo(() => enabled ? {
+    reference,
+    trigger: reference
+  } : {}, [enabled, reference]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
+var React49 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverInteractionSharedState.mjs
+"use client";
+class HoverInteraction {
+  constructor() {
+    this.pointerType = undefined;
+    this.interactedInside = false;
+    this.handler = undefined;
+    this.blockMouseMove = true;
+    this.performedPointerEventsMutation = false;
+    this.pointerEventsScopeElement = null;
+    this.pointerEventsReferenceElement = null;
+    this.pointerEventsFloatingElement = null;
+    this.restTimeoutPending = false;
+    this.openChangeTimeout = new Timeout;
+    this.restTimeout = new Timeout;
+    this.handleCloseOptions = undefined;
+  }
+  static create() {
+    return new HoverInteraction;
+  }
+  dispose = () => {
+    this.openChangeTimeout.clear();
+    this.restTimeout.clear();
+  };
+  disposeEffect = () => {
+    return this.dispose;
+  };
+}
+var pointerEventsMutationOwnerByScopeElement = new WeakMap;
+function clearSafePolygonPointerEventsMutation(instance2) {
+  if (!instance2.performedPointerEventsMutation) {
+    return;
+  }
+  const scopeElement = instance2.pointerEventsScopeElement;
+  if (scopeElement && pointerEventsMutationOwnerByScopeElement.get(scopeElement) === instance2) {
+    instance2.pointerEventsScopeElement?.style.removeProperty("pointer-events");
+    instance2.pointerEventsReferenceElement?.style.removeProperty("pointer-events");
+    instance2.pointerEventsFloatingElement?.style.removeProperty("pointer-events");
+    pointerEventsMutationOwnerByScopeElement.delete(scopeElement);
+  }
+  instance2.performedPointerEventsMutation = false;
+  instance2.pointerEventsScopeElement = null;
+  instance2.pointerEventsReferenceElement = null;
+  instance2.pointerEventsFloatingElement = null;
+}
+function applySafePolygonPointerEventsMutation(instance2, options) {
+  const {
+    scopeElement,
+    referenceElement,
+    floatingElement
+  } = options;
+  const existingOwner = pointerEventsMutationOwnerByScopeElement.get(scopeElement);
+  if (existingOwner && existingOwner !== instance2) {
+    clearSafePolygonPointerEventsMutation(existingOwner);
+  }
+  clearSafePolygonPointerEventsMutation(instance2);
+  instance2.performedPointerEventsMutation = true;
+  instance2.pointerEventsScopeElement = scopeElement;
+  instance2.pointerEventsReferenceElement = referenceElement;
+  instance2.pointerEventsFloatingElement = floatingElement;
+  pointerEventsMutationOwnerByScopeElement.set(scopeElement, instance2);
+  scopeElement.style.pointerEvents = "none";
+  referenceElement.style.pointerEvents = "auto";
+  floatingElement.style.pointerEvents = "auto";
+}
+function useHoverInteractionSharedState(store) {
+  const data = store.context.dataRef.current;
+  const instance2 = useRefWithInit(() => data.hoverInteractionState ?? HoverInteraction.create()).current;
+  if (!data.hoverInteractionState) {
+    data.hoverInteractionState = instance2;
+  }
+  useOnMount(data.hoverInteractionState.disposeEffect);
+  return data.hoverInteractionState;
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverShared.mjs
+function resolveValue2(value, pointerType) {
+  if (pointerType != null && !isMouseLikePointerType(pointerType)) {
+    return 0;
+  }
+  if (typeof value === "function") {
+    return value();
+  }
+  return value;
+}
+function getDelay(value, prop, pointerType) {
+  const result = resolveValue2(value, pointerType);
+  if (typeof result === "number") {
+    return result;
+  }
+  return result?.[prop];
+}
+function getRestMs(value) {
+  if (typeof value === "function") {
+    return value();
+  }
+  return value;
+}
+function isClickLikeOpenEvent(openEventType, interactedInside) {
+  return interactedInside || openEventType === "click" || openEventType === "mousedown";
+}
+function isHoverOpenEvent(openEventType) {
+  return openEventType?.includes("mouse") && openEventType !== "mousedown";
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
+"use client";
+function useHoverFloatingInteraction(context, parameters = {}) {
+  const {
+    enabled = true,
+    closeDelay: closeDelayProp = 0,
+    nodeId: nodeIdProp
+  } = parameters;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const {
+    dataRef
+  } = store.context;
+  const tree = useFloatingTree();
+  const parentId = useFloatingParentNodeId();
+  const instance2 = useHoverInteractionSharedState(store);
+  const childClosedTimeout = useTimeout();
+  const isClickLikeOpenEvent2 = useStableCallback(() => {
+    return isClickLikeOpenEvent(dataRef.current.openEvent?.type, instance2.interactedInside);
+  });
+  const isHoverOpen = useStableCallback(() => {
+    return isHoverOpenEvent(dataRef.current.openEvent?.type);
+  });
+  const clearPointerEvents = useStableCallback(() => {
+    clearSafePolygonPointerEventsMutation(instance2);
+  });
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      instance2.pointerType = undefined;
+      instance2.restTimeoutPending = false;
+      instance2.interactedInside = false;
+      clearPointerEvents();
+    }
+  }, [open, instance2, clearPointerEvents]);
+  React49.useEffect(() => {
+    return clearPointerEvents;
+  }, [clearPointerEvents]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (open && instance2.handleCloseOptions?.blockPointerEvents && isHoverOpen() && isElement(domReferenceElement) && floatingElement) {
+      const ref = domReferenceElement;
+      const floatingEl = floatingElement;
+      const doc = ownerDocument(floatingElement);
+      const parentFloating = tree?.nodesRef.current.find((node) => node.id === parentId)?.context?.elements.floating;
+      if (parentFloating) {
+        parentFloating.style.pointerEvents = "";
+      }
+      const cachedScopeElement = instance2.pointerEventsScopeElement !== floatingEl ? instance2.pointerEventsScopeElement : null;
+      const parentScopeElement = parentFloating !== floatingEl ? parentFloating : null;
+      const scopeElement = instance2.handleCloseOptions?.getScope?.() ?? cachedScopeElement ?? parentScopeElement ?? ref.closest("[data-rootownerid]") ?? doc.body;
+      applySafePolygonPointerEventsMutation(instance2, {
+        scopeElement,
+        referenceElement: ref,
+        floatingElement: floatingEl
+      });
+      return () => {
+        clearPointerEvents();
+      };
+    }
+    return;
+  }, [enabled, open, domReferenceElement, floatingElement, instance2, isHoverOpen, tree, parentId, clearPointerEvents]);
+  React49.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function hasParentChildren() {
+      return !!(tree && parentId && getNodeChildren(tree.nodesRef.current, parentId).length > 0);
+    }
+    function closeWithDelay(event) {
+      const closeDelay = getDelay(closeDelayProp, "close", instance2.pointerType);
+      const close = () => {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree?.events.emit("floating.closed", event);
+      };
+      if (closeDelay) {
+        instance2.openChangeTimeout.start(closeDelay, close);
+      } else {
+        instance2.openChangeTimeout.clear();
+        close();
+      }
+    }
+    function handleInteractInside(event) {
+      const target = getTarget(event);
+      if (!isInteractiveElement(target)) {
+        instance2.interactedInside = false;
+        return;
+      }
+      instance2.interactedInside = target?.closest("[aria-haspopup]") != null;
+    }
+    function onFloatingMouseEnter() {
+      instance2.openChangeTimeout.clear();
+      childClosedTimeout.clear();
+      tree?.events.off("floating.closed", onNodeClosed);
+      clearPointerEvents();
+    }
+    function onFloatingMouseLeave(event) {
+      if (hasParentChildren() && tree) {
+        tree.events.on("floating.closed", onNodeClosed);
+        return;
+      }
+      if (isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements)) {
+        return;
+      }
+      const currentNodeId = dataRef.current.floatingContext?.nodeId ?? nodeIdProp;
+      const relatedTarget = event.relatedTarget;
+      const isMovingIntoDescendantFloating = tree && currentNodeId && isElement(relatedTarget) && getNodeChildren(tree.nodesRef.current, currentNodeId, false).some((node) => contains(node.context?.elements.floating, relatedTarget));
+      if (isMovingIntoDescendantFloating) {
+        return;
+      }
+      if (instance2.handler) {
+        instance2.handler(event);
+        return;
+      }
+      clearPointerEvents();
+      if (isHoverOpen() && !isClickLikeOpenEvent2()) {
+        closeWithDelay(event);
+      }
+    }
+    function onNodeClosed(event) {
+      if (!tree || !parentId || hasParentChildren()) {
+        return;
+      }
+      childClosedTimeout.start(0, () => {
+        tree.events.off("floating.closed", onNodeClosed);
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree.events.emit("floating.closed", event);
+      });
+    }
+    const floating = floatingElement;
+    return mergeCleanups(floating && addEventListener(floating, "mouseenter", onFloatingMouseEnter), floating && addEventListener(floating, "mouseleave", onFloatingMouseLeave), floating && addEventListener(floating, "pointerdown", handleInteractInside, true), () => {
+      tree?.events.off("floating.closed", onNodeClosed);
+    });
+  }, [enabled, floatingElement, store, dataRef, closeDelayProp, nodeIdProp, isHoverOpen, isClickLikeOpenEvent2, clearPointerEvents, instance2, tree, parentId, childClosedTimeout]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useHoverReferenceInteraction.mjs
+var React50 = __toESM(require_react(), 1);
+var ReactDOM5 = __toESM(require_react_dom(), 1);
+"use client";
+var EMPTY_REF = {
+  current: null
+};
+function useHoverReferenceInteraction(context, props = {}) {
+  const {
+    enabled = true,
+    delay = 0,
+    handleClose = null,
+    mouseOnly = false,
+    restMs = 0,
+    move = true,
+    triggerElementRef = EMPTY_REF,
+    externalTree,
+    isActiveTrigger = true,
+    getHandleCloseContext,
+    isClosing,
+    shouldOpen: shouldOpenProp
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const {
+    dataRef,
+    events
+  } = store.context;
+  const tree = useFloatingTree(externalTree);
+  const instance2 = useHoverInteractionSharedState(store);
+  const isHoverCloseActiveRef = React50.useRef(false);
+  const handleCloseRef = useValueAsRef(handleClose);
+  const delayRef = useValueAsRef(delay);
+  const restMsRef = useValueAsRef(restMs);
+  const enabledRef = useValueAsRef(enabled);
+  const shouldOpenRef = useValueAsRef(shouldOpenProp);
+  const isClosingRef = useValueAsRef(isClosing);
+  const isClickLikeOpenEvent2 = useStableCallback(() => {
+    return isClickLikeOpenEvent(dataRef.current.openEvent?.type, instance2.interactedInside);
+  });
+  const checkShouldOpen = useStableCallback(() => {
+    return shouldOpenRef.current?.() !== false;
+  });
+  const isOverInactiveTrigger = useStableCallback((currentDomReference, currentTarget, target) => {
+    const allTriggers = store.context.triggerElements;
+    if (allTriggers.hasElement(currentTarget)) {
+      return !currentDomReference || !contains(currentDomReference, currentTarget);
+    }
+    if (!isElement(target)) {
+      return false;
+    }
+    const targetElement = target;
+    return allTriggers.hasMatchingElement((trigger) => contains(trigger, targetElement)) && (!currentDomReference || !contains(currentDomReference, targetElement));
+  });
+  const cleanupMouseMoveHandler = useStableCallback(() => {
+    if (!instance2.handler) {
+      return;
+    }
+    const doc = ownerDocument(store.select("domReferenceElement"));
+    doc.removeEventListener("mousemove", instance2.handler);
+    instance2.handler = undefined;
+  });
+  const clearPointerEvents = useStableCallback(() => {
+    clearSafePolygonPointerEventsMutation(instance2);
+  });
+  if (isActiveTrigger) {
+    instance2.handleCloseOptions = handleCloseRef.current?.__options;
+  }
+  React50.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
+  React50.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function onOpenChangeLocal(details) {
+      if (!details.open) {
+        isHoverCloseActiveRef.current = details.reason === exports_reason_parts.triggerHover;
+        cleanupMouseMoveHandler();
+        instance2.openChangeTimeout.clear();
+        instance2.restTimeout.clear();
+        instance2.blockMouseMove = true;
+        instance2.restTimeoutPending = false;
+      } else {
+        isHoverCloseActiveRef.current = false;
+      }
+    }
+    events.on("openchange", onOpenChangeLocal);
+    return () => {
+      events.off("openchange", onOpenChangeLocal);
+    };
+  }, [enabled, events, instance2, cleanupMouseMoveHandler]);
+  React50.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    function closeWithDelay(event, runElseBranch = true) {
+      const closeDelay = getDelay(delayRef.current, "close", instance2.pointerType);
+      if (closeDelay) {
+        instance2.openChangeTimeout.start(closeDelay, () => {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+          tree?.events.emit("floating.closed", event);
+        });
+      } else if (runElseBranch) {
+        instance2.openChangeTimeout.clear();
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.triggerHover, event));
+        tree?.events.emit("floating.closed", event);
+      }
+    }
+    const trigger = triggerElementRef.current ?? (isActiveTrigger ? store.select("domReferenceElement") : null);
+    if (!isElement(trigger)) {
+      return;
+    }
+    function onMouseEnter(event) {
+      instance2.openChangeTimeout.clear();
+      instance2.blockMouseMove = false;
+      if (mouseOnly && !isMouseLikePointerType(instance2.pointerType)) {
+        return;
+      }
+      const restMsValue = getRestMs(restMsRef.current);
+      const openDelay = getDelay(delayRef.current, "open", instance2.pointerType);
+      const eventTarget = getTarget(event);
+      const currentTarget = event.currentTarget ?? null;
+      const currentDomReference = store.select("domReferenceElement");
+      let triggerNode = currentTarget;
+      if (isElement(eventTarget) && !store.context.triggerElements.hasElement(eventTarget)) {
+        for (const triggerElement of store.context.triggerElements.elements()) {
+          if (contains(triggerElement, eventTarget)) {
+            triggerNode = triggerElement;
+            break;
+          }
+        }
+      }
+      if (isElement(currentTarget) && isElement(currentDomReference) && !store.context.triggerElements.hasElement(currentTarget) && contains(currentTarget, currentDomReference)) {
+        triggerNode = currentDomReference;
+      }
+      const isOverInactive = triggerNode == null ? false : isOverInactiveTrigger(currentDomReference, triggerNode, eventTarget);
+      const isOpen = store.select("open");
+      const isInClosingTransition = isClosingRef.current?.() ?? store.select("transitionStatus") === "ending";
+      const isHoverCloseTransition = !isOpen && isInClosingTransition && isHoverCloseActiveRef.current;
+      const isReenteringSameTriggerDuringCloseTransition = !isOverInactive && isElement(triggerNode) && isElement(currentDomReference) && contains(currentDomReference, triggerNode) && isHoverCloseTransition;
+      const isRestOnlyDelay = restMsValue > 0 && !openDelay;
+      const shouldOpenImmediately = isOverInactive && (isOpen || isHoverCloseTransition) || isReenteringSameTriggerDuringCloseTransition;
+      const shouldOpen = !isOpen || isOverInactive;
+      if (shouldOpenImmediately) {
+        if (checkShouldOpen()) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+        }
+        return;
+      }
+      if (isRestOnlyDelay) {
+        return;
+      }
+      if (openDelay) {
+        instance2.openChangeTimeout.start(openDelay, () => {
+          if (shouldOpen && checkShouldOpen()) {
+            store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+          }
+        });
+      } else if (shouldOpen) {
+        if (checkShouldOpen()) {
+          store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, event, triggerNode));
+        }
+      }
+    }
+    function onMouseLeave(event) {
+      if (isClickLikeOpenEvent2()) {
+        clearPointerEvents();
+        return;
+      }
+      cleanupMouseMoveHandler();
+      const domReferenceElement = store.select("domReferenceElement");
+      const doc = ownerDocument(domReferenceElement);
+      instance2.restTimeout.clear();
+      instance2.restTimeoutPending = false;
+      const handleCloseContextBase = dataRef.current.floatingContext ?? getHandleCloseContext?.();
+      if (isTargetInsideEnabledTrigger(event.relatedTarget, store.context.triggerElements)) {
+        return;
+      }
+      if (handleCloseRef.current && handleCloseContextBase) {
+        if (!store.select("open")) {
+          instance2.openChangeTimeout.clear();
+        }
+        const currentTrigger = triggerElementRef.current;
+        instance2.handler = handleCloseRef.current({
+          ...handleCloseContextBase,
+          tree,
+          x: event.clientX,
+          y: event.clientY,
+          onClose() {
+            clearPointerEvents();
+            cleanupMouseMoveHandler();
+            if (enabledRef.current && !isClickLikeOpenEvent2() && currentTrigger === store.select("domReferenceElement")) {
+              closeWithDelay(event, true);
+            }
+          }
+        });
+        doc.addEventListener("mousemove", instance2.handler);
+        instance2.handler(event);
+        return;
+      }
+      const shouldClose = instance2.pointerType === "touch" ? !contains(store.select("floatingElement"), event.relatedTarget) : true;
+      if (shouldClose) {
+        closeWithDelay(event);
+      }
+    }
+    if (move) {
+      return mergeCleanups(addEventListener(trigger, "mousemove", onMouseEnter, {
+        once: true
+      }), addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
+    }
+    return mergeCleanups(addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
+  }, [cleanupMouseMoveHandler, clearPointerEvents, dataRef, delayRef, store, enabled, handleCloseRef, instance2, isActiveTrigger, isOverInactiveTrigger, isClickLikeOpenEvent2, mouseOnly, move, restMsRef, triggerElementRef, tree, enabledRef, getHandleCloseContext, isClosingRef, checkShouldOpen]);
+  return React50.useMemo(() => {
+    if (!enabled) {
+      return;
+    }
+    function setPointerRef(event) {
+      instance2.pointerType = event.pointerType;
+    }
+    return {
+      onPointerDown: setPointerRef,
+      onPointerEnter: setPointerRef,
+      onMouseMove(event) {
+        const {
+          nativeEvent
+        } = event;
+        const trigger = event.currentTarget;
+        const currentDomReference = store.select("domReferenceElement");
+        const currentOpen = store.select("open");
+        const isOverInactive = isOverInactiveTrigger(currentDomReference, trigger, event.target);
+        if (mouseOnly && !isMouseLikePointerType(instance2.pointerType)) {
+          return;
+        }
+        if (currentOpen && isOverInactive && instance2.handleCloseOptions?.blockPointerEvents) {
+          const floatingElement = store.select("floatingElement");
+          if (floatingElement) {
+            const scopeElement = instance2.handleCloseOptions?.getScope?.() ?? trigger.ownerDocument.body;
+            applySafePolygonPointerEventsMutation(instance2, {
+              scopeElement,
+              referenceElement: trigger,
+              floatingElement
+            });
+          }
+        }
+        const restMsValue = getRestMs(restMsRef.current);
+        if (currentOpen && !isOverInactive || restMsValue === 0) {
+          return;
+        }
+        if (!isOverInactive && instance2.restTimeoutPending && event.movementX ** 2 + event.movementY ** 2 < 2) {
+          return;
+        }
+        instance2.restTimeout.clear();
+        function handleMouseMove() {
+          instance2.restTimeoutPending = false;
+          if (isClickLikeOpenEvent2()) {
+            return;
+          }
+          const latestOpen = store.select("open");
+          if (!instance2.blockMouseMove && (!latestOpen || isOverInactive) && checkShouldOpen()) {
+            store.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerHover, nativeEvent, trigger));
+          }
+        }
+        if (instance2.pointerType === "touch") {
+          ReactDOM5.flushSync(() => {
+            handleMouseMove();
+          });
+        } else if (isOverInactive && currentOpen) {
+          handleMouseMove();
+        } else {
+          instance2.restTimeoutPending = true;
+          instance2.restTimeout.start(restMsValue, handleMouseMove);
+        }
+      }
+    };
+  }, [enabled, instance2, isClickLikeOpenEvent2, isOverInactiveTrigger, mouseOnly, store, restMsRef, checkShouldOpen]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useListNavigation.mjs
+var React51 = __toESM(require_react(), 1);
+"use client";
+var ESCAPE = "Escape";
+function doSwitch(orientation, vertical, horizontal) {
+  switch (orientation) {
+    case "vertical":
+      return vertical;
+    case "horizontal":
+      return horizontal;
+    default:
+      return vertical || horizontal;
+  }
+}
+function isMainOrientationKey(key, orientation) {
+  const vertical = key === ARROW_UP || key === ARROW_DOWN;
+  const horizontal = key === ARROW_LEFT || key === ARROW_RIGHT;
+  return doSwitch(orientation, vertical, horizontal);
+}
+function isMainOrientationToEndKey(key, orientation, rtl) {
+  const vertical = key === ARROW_DOWN;
+  const horizontal = rtl ? key === ARROW_LEFT : key === ARROW_RIGHT;
+  return doSwitch(orientation, vertical, horizontal) || key === "Enter" || key === " " || key === "";
+}
+function isCrossOrientationOpenKey(key, orientation, rtl) {
+  const vertical = rtl ? key === ARROW_LEFT : key === ARROW_RIGHT;
+  const horizontal = key === ARROW_DOWN;
+  return doSwitch(orientation, vertical, horizontal);
+}
+function isCrossOrientationCloseKey(key, orientation, rtl, grid) {
+  const vertical = rtl ? key === ARROW_RIGHT : key === ARROW_LEFT;
+  const horizontal = key === ARROW_UP;
+  if (orientation === "both" || orientation === "horizontal" && grid) {
+    return key === ESCAPE;
+  }
+  return doSwitch(orientation, vertical, horizontal);
+}
+function useListNavigation(context, props) {
+  const {
+    listRef,
+    activeIndex,
+    onNavigate: onNavigateProp = () => {},
+    enabled = true,
+    selectedIndex = null,
+    allowEscape = false,
+    loopFocus = false,
+    nested = false,
+    rtl = false,
+    virtual = false,
+    focusItemOnOpen = "auto",
+    focusItemOnHover = true,
+    openOnArrowKeyDown = true,
+    disabledIndices = undefined,
+    orientation = "vertical",
+    parentOrientation,
+    id,
+    resetOnPointerLeave = true,
+    externalTree,
+    grid: navigateGrid
+  } = props;
+  const isGrid = navigateGrid != null;
+  if (true) {
+    if (allowEscape) {
+      if (!loopFocus) {
+        console.warn("`useListNavigation` looping must be enabled to allow escaping.");
+      }
+      if (!virtual) {
+        console.warn("`useListNavigation` must be virtual to allow escaping.");
+      }
+    }
+    if (orientation === "vertical" && isGrid) {
+      console.warn("In grid list navigation mode, the `orientation` should", 'be either "horizontal" or "both".');
+    }
+  }
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const floatingElement = store.useState("floatingElement");
+  const domReferenceElement = store.useState("domReferenceElement");
+  const dataRef = store.context.dataRef;
+  const floatingFocusElement = getFloatingFocusElement(floatingElement);
+  const typeableComboboxReference = isTypeableCombobox(domReferenceElement);
+  const floatingFocusElementRef = useValueAsRef(floatingFocusElement);
+  const parentId = useFloatingParentNodeId();
+  const tree = useFloatingTree(externalTree);
+  const focusItemOnOpenRef = React51.useRef(focusItemOnOpen);
+  const indexRef = React51.useRef(selectedIndex ?? -1);
+  const keyRef = React51.useRef(null);
+  const isPointerModalityRef = React51.useRef(true);
+  const onNavigate = useStableCallback((event) => {
+    onNavigateProp(indexRef.current === -1 ? null : indexRef.current, event);
+  });
+  const previousMountedRef = React51.useRef(!!floatingElement);
+  const previousOpenRef = React51.useRef(open);
+  const forceSyncFocusRef = React51.useRef(false);
+  const forceScrollIntoViewRef = React51.useRef(false);
+  const cancelQueuedFocusRef = React51.useRef(null);
+  const disabledIndicesRef = useValueAsRef(disabledIndices);
+  const latestOpenRef = useValueAsRef(open);
+  const selectedIndexRef = useValueAsRef(selectedIndex);
+  const resetOnPointerLeaveRef = useValueAsRef(resetOnPointerLeave);
+  const focusFrame = useAnimationFrame();
+  const waitForListPopulatedFrame = useAnimationFrame();
+  const focusItem = useStableCallback(() => {
+    function runFocus(item2) {
+      if (virtual) {
+        tree?.events.emit("virtualfocus", item2);
+      } else {
+        cancelQueuedFocusRef.current = enqueueFocus(item2, {
+          sync: forceSyncFocusRef.current,
+          preventScroll: true
+        });
+      }
+    }
+    const initialItem = listRef.current[indexRef.current];
+    const forceScrollIntoView = forceScrollIntoViewRef.current;
+    if (initialItem) {
+      runFocus(initialItem);
+    }
+    const scheduler2 = forceSyncFocusRef.current ? (callback) => callback() : (callback) => focusFrame.request(callback);
+    scheduler2(() => {
+      const waitedItem = listRef.current[indexRef.current] || initialItem;
+      if (!waitedItem) {
+        return;
+      }
+      if (!initialItem) {
+        runFocus(waitedItem);
+      }
+      const shouldScrollIntoView = item && (forceScrollIntoView || !isPointerModalityRef.current);
+      if (shouldScrollIntoView) {
+        waitedItem.scrollIntoView?.({
+          block: "nearest",
+          inline: "nearest"
+        });
+      }
+    });
+  });
+  useIsoLayoutEffect(() => {
+    dataRef.current.orientation = orientation;
+  }, [dataRef, orientation]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (open && floatingElement) {
+      indexRef.current = selectedIndex ?? -1;
+      if (focusItemOnOpenRef.current && selectedIndex != null) {
+        forceScrollIntoViewRef.current = true;
+        onNavigate();
+      }
+    } else if (previousMountedRef.current) {
+      indexRef.current = -1;
+      onNavigate();
+    }
+  }, [enabled, open, floatingElement, selectedIndex, onNavigate]);
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    if (!open) {
+      forceSyncFocusRef.current = false;
+      return;
+    }
+    if (!floatingElement) {
+      return;
+    }
+    if (activeIndex == null) {
+      forceSyncFocusRef.current = false;
+      if (selectedIndexRef.current != null) {
+        return;
+      }
+      if (previousMountedRef.current) {
+        indexRef.current = -1;
+        focusItem();
+      }
+      if ((!previousOpenRef.current || !previousMountedRef.current) && focusItemOnOpenRef.current && (keyRef.current != null || focusItemOnOpenRef.current === true && keyRef.current == null)) {
+        let runs = 0;
+        const waitForListPopulated = () => {
+          if (listRef.current[0] == null) {
+            if (runs < 2) {
+              const scheduler2 = runs ? (callback) => waitForListPopulatedFrame.request(callback) : queueMicrotask;
+              scheduler2(waitForListPopulated);
+            }
+            runs += 1;
+          } else {
+            indexRef.current = keyRef.current == null || isMainOrientationToEndKey(keyRef.current, orientation, rtl) || nested ? getMinListIndex(listRef) : getMaxListIndex(listRef);
+            keyRef.current = null;
+            onNavigate();
+          }
+        };
+        waitForListPopulated();
+      }
+    } else if (!isIndexOutOfListBounds(listRef.current, activeIndex)) {
+      indexRef.current = activeIndex;
+      focusItem();
+      forceScrollIntoViewRef.current = false;
+    }
+  }, [enabled, open, floatingElement, activeIndex, selectedIndexRef, nested, listRef, orientation, rtl, onNavigate, focusItem, waitForListPopulatedFrame]);
+  useIsoLayoutEffect(() => {
+    if (!enabled || floatingElement || !tree || virtual || !previousMountedRef.current) {
+      return;
+    }
+    const nodes = tree.nodesRef.current;
+    const parent = nodes.find((node) => node.id === parentId)?.context?.elements.floating;
+    const activeEl = activeElement(ownerDocument(domReferenceElement ?? parent ?? null));
+    const treeContainsActiveEl = nodes.some((node) => node.context && contains(node.context.elements.floating, activeEl));
+    if (parent && !treeContainsActiveEl && isPointerModalityRef.current) {
+      parent.focus({
+        preventScroll: true
+      });
+    }
+  }, [enabled, floatingElement, domReferenceElement, tree, parentId, virtual]);
+  useIsoLayoutEffect(() => {
+    previousOpenRef.current = open;
+    previousMountedRef.current = !!floatingElement;
+  });
+  useIsoLayoutEffect(() => {
+    if (!open) {
+      keyRef.current = null;
+      focusItemOnOpenRef.current = focusItemOnOpen;
+    }
+  }, [open, focusItemOnOpen]);
+  const hasActiveIndex = activeIndex != null;
+  const syncCurrentTarget = useStableCallback((event) => {
+    if (!latestOpenRef.current) {
+      return;
+    }
+    const index3 = listRef.current.indexOf(event.currentTarget);
+    if (index3 !== -1 && (indexRef.current !== index3 || activeIndex !== index3)) {
+      indexRef.current = index3;
+      onNavigate(event);
+    }
+  });
+  const getParentOrientation = useStableCallback(() => {
+    return parentOrientation ?? tree?.nodesRef.current.find((node) => node.id === parentId)?.context?.dataRef?.current.orientation;
+  });
+  const getMinEnabledIndex = useStableCallback(() => {
+    return getMinListIndex(listRef, disabledIndicesRef.current);
+  });
+  const commonOnKeyDown = useStableCallback((event) => {
+    isPointerModalityRef.current = false;
+    forceSyncFocusRef.current = true;
+    if (event.which === 229) {
+      return;
+    }
+    if (!latestOpenRef.current && event.currentTarget === floatingFocusElementRef.current) {
+      return;
+    }
+    if (nested && isCrossOrientationCloseKey(event.key, orientation, rtl, isGrid)) {
+      if (!isMainOrientationKey(event.key, getParentOrientation())) {
+        stopEvent(event);
+      }
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent));
+      if (isHTMLElement(domReferenceElement)) {
+        if (virtual) {
+          tree?.events.emit("virtualfocus", domReferenceElement);
+        } else {
+          domReferenceElement.focus();
+        }
+      }
+      return;
+    }
+    const currentIndex = indexRef.current;
+    const minIndex = getMinListIndex(listRef, disabledIndices);
+    const maxIndex = getMaxListIndex(listRef, disabledIndices);
+    if (!typeableComboboxReference) {
+      if (event.key === "Home") {
+        stopEvent(event);
+        indexRef.current = minIndex;
+        onNavigate(event);
+      }
+      if (event.key === "End") {
+        stopEvent(event);
+        indexRef.current = maxIndex;
+        onNavigate(event);
+      }
+    }
+    if (navigateGrid != null) {
+      const index3 = navigateGrid(event, indexRef.current, listRef, orientation, loopFocus, rtl, disabledIndices, minIndex, maxIndex);
+      if (index3 != null) {
+        indexRef.current = index3;
+        onNavigate(event);
+      }
+      if (orientation === "both") {
+        return;
+      }
+    }
+    if (isMainOrientationKey(event.key, orientation)) {
+      stopEvent(event);
+      if (open && !virtual && activeElement(event.currentTarget.ownerDocument) === event.currentTarget) {
+        indexRef.current = isMainOrientationToEndKey(event.key, orientation, rtl) ? minIndex : maxIndex;
+        onNavigate(event);
+        return;
+      }
+      if (isMainOrientationToEndKey(event.key, orientation, rtl)) {
+        if (loopFocus) {
+          if (currentIndex >= maxIndex) {
+            if (allowEscape && currentIndex !== listRef.current.length) {
+              indexRef.current = -1;
+            } else {
+              forceSyncFocusRef.current = false;
+              indexRef.current = minIndex;
+            }
+          } else {
+            indexRef.current = findNonDisabledListIndex(listRef.current, {
+              startingIndex: currentIndex,
+              disabledIndices
+            });
+          }
+        } else {
+          indexRef.current = Math.min(maxIndex, findNonDisabledListIndex(listRef.current, {
+            startingIndex: currentIndex,
+            disabledIndices
+          }));
+        }
+      } else if (loopFocus) {
+        if (currentIndex <= minIndex) {
+          if (allowEscape && currentIndex !== -1) {
+            indexRef.current = listRef.current.length;
+          } else {
+            forceSyncFocusRef.current = false;
+            indexRef.current = maxIndex;
+          }
+        } else {
+          indexRef.current = findNonDisabledListIndex(listRef.current, {
+            startingIndex: currentIndex,
+            decrement: true,
+            disabledIndices
+          });
+        }
+      } else {
+        indexRef.current = Math.max(minIndex, findNonDisabledListIndex(listRef.current, {
+          startingIndex: currentIndex,
+          decrement: true,
+          disabledIndices
+        }));
+      }
+      if (isIndexOutOfListBounds(listRef.current, indexRef.current)) {
+        indexRef.current = -1;
+      }
+      onNavigate(event);
+    }
+  });
+  const item = React51.useMemo(() => {
+    const itemProps = {
+      onFocus(event) {
+        forceSyncFocusRef.current = true;
+        syncCurrentTarget(event);
+      },
+      onClick: ({
+        currentTarget
+      }) => currentTarget.focus({
+        preventScroll: true
+      }),
+      onMouseMove(event) {
+        forceSyncFocusRef.current = true;
+        forceScrollIntoViewRef.current = false;
+        if (focusItemOnHover) {
+          syncCurrentTarget(event);
+        }
+      },
+      onPointerLeave(event) {
+        if (!latestOpenRef.current || !isPointerModalityRef.current || event.pointerType === "touch") {
+          return;
+        }
+        forceSyncFocusRef.current = true;
+        const relatedTarget = event.relatedTarget;
+        if (!focusItemOnHover || listRef.current.includes(relatedTarget)) {
+          return;
+        }
+        if (!resetOnPointerLeaveRef.current) {
+          return;
+        }
+        cancelQueuedFocusRef.current?.();
+        cancelQueuedFocusRef.current = null;
+        indexRef.current = -1;
+        onNavigate(event);
+        if (!virtual) {
+          const floatingFocusEl = floatingFocusElementRef.current;
+          const activeEl = activeElement(ownerDocument(floatingFocusEl));
+          if (floatingFocusEl && contains(floatingFocusEl, activeEl)) {
+            floatingFocusEl.focus({
+              preventScroll: true
+            });
+          }
+        }
+      }
+    };
+    return itemProps;
+  }, [syncCurrentTarget, latestOpenRef, floatingFocusElementRef, focusItemOnHover, listRef, onNavigate, resetOnPointerLeaveRef, virtual]);
+  const ariaActiveDescendantProp = React51.useMemo(() => {
+    return virtual && open && hasActiveIndex && {
+      "aria-activedescendant": `${id}-${activeIndex}`
+    };
+  }, [virtual, open, hasActiveIndex, id, activeIndex]);
+  const floating = React51.useMemo(() => {
+    return {
+      "aria-orientation": orientation === "both" ? undefined : orientation,
+      ...!typeableComboboxReference ? ariaActiveDescendantProp : {},
+      onKeyDown(event) {
+        if (event.key === "Tab" && event.shiftKey && open && !virtual) {
+          const target = getTarget(event.nativeEvent);
+          if (target && !contains(floatingFocusElementRef.current, target)) {
+            return;
+          }
+          stopEvent(event);
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent));
+          if (isHTMLElement(domReferenceElement)) {
+            domReferenceElement.focus();
+          }
+          return;
+        }
+        commonOnKeyDown(event);
+      },
+      onPointerMove() {
+        isPointerModalityRef.current = true;
+      }
+    };
+  }, [ariaActiveDescendantProp, commonOnKeyDown, floatingFocusElementRef, orientation, typeableComboboxReference, store, open, virtual, domReferenceElement]);
+  const trigger = React51.useMemo(() => {
+    function openOnNavigationKeyDown(event) {
+      store.setOpen(true, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent, event.currentTarget));
+    }
+    function checkVirtualMouse(event) {
+      if (focusItemOnOpen === "auto" && isVirtualClick(event.nativeEvent)) {
+        focusItemOnOpenRef.current = !virtual;
+      }
+    }
+    function checkVirtualPointer(event) {
+      focusItemOnOpenRef.current = focusItemOnOpen;
+      if (focusItemOnOpen === "auto" && isVirtualPointerEvent(event.nativeEvent)) {
+        focusItemOnOpenRef.current = true;
+      }
+    }
+    return {
+      onKeyDown(event) {
+        const currentOpen = store.select("open");
+        isPointerModalityRef.current = false;
+        const isArrowKey = event.key.startsWith("Arrow");
+        const isParentCrossOpenKey = isCrossOrientationOpenKey(event.key, getParentOrientation(), rtl);
+        const isMainKey = isMainOrientationKey(event.key, orientation);
+        const isNavigationKey = (nested ? isParentCrossOpenKey : isMainKey) || event.key === "Enter" || event.key.trim() === "";
+        if (virtual && currentOpen) {
+          return commonOnKeyDown(event);
+        }
+        if (!currentOpen && !openOnArrowKeyDown && isArrowKey) {
+          return;
+        }
+        if (isNavigationKey) {
+          const isParentMainKey = isMainOrientationKey(event.key, getParentOrientation());
+          keyRef.current = nested && isParentMainKey ? null : event.key;
+        }
+        if (nested) {
+          if (isParentCrossOpenKey) {
+            stopEvent(event);
+            if (currentOpen) {
+              indexRef.current = getMinEnabledIndex();
+              onNavigate(event);
+            } else {
+              openOnNavigationKeyDown(event);
+            }
+          }
+          return;
+        }
+        if (isMainKey) {
+          if (selectedIndexRef.current != null) {
+            indexRef.current = selectedIndexRef.current;
+          }
+          stopEvent(event);
+          if (!currentOpen && openOnArrowKeyDown) {
+            openOnNavigationKeyDown(event);
+          } else {
+            commonOnKeyDown(event);
+          }
+          if (currentOpen) {
+            onNavigate(event);
+          }
+        }
+        return;
+      },
+      onFocus(event) {
+        if (store.select("open") && !virtual) {
+          indexRef.current = -1;
+          onNavigate(event);
+        }
+      },
+      onPointerDown: checkVirtualPointer,
+      onPointerEnter: checkVirtualPointer,
+      onMouseDown: checkVirtualMouse,
+      onClick: checkVirtualMouse
+    };
+  }, [commonOnKeyDown, focusItemOnOpen, getMinEnabledIndex, nested, onNavigate, store, openOnArrowKeyDown, orientation, getParentOrientation, rtl, selectedIndexRef, virtual]);
+  const reference = React51.useMemo(() => {
+    return {
+      ...ariaActiveDescendantProp,
+      ...trigger
+    };
+  }, [ariaActiveDescendantProp, trigger]);
+  return React51.useMemo(() => enabled ? {
+    reference,
+    floating,
+    item,
+    trigger
+  } : {}, [enabled, reference, floating, trigger, item]);
+}
+// node_modules/@base-ui/react/floating-ui-react/hooks/useTypeahead.mjs
+var React52 = __toESM(require_react(), 1);
+"use client";
+function useTypeahead(context, props) {
+  const {
+    listRef,
+    elementsRef,
+    activeIndex,
+    onMatch: onMatchProp,
+    disabledIndices,
+    onTyping,
+    enabled = true,
+    resetMs = 750,
+    selectedIndex = null
+  } = props;
+  const store = "rootStore" in context ? context.rootStore : context;
+  const open = store.useState("open");
+  const timeout = useTimeout();
+  const stringRef = React52.useRef("");
+  const prevIndexRef = React52.useRef(selectedIndex ?? activeIndex ?? -1);
+  const matchIndexRef = React52.useRef(null);
+  const onKeyDown = useStableCallback((event) => {
+    function isVisible(index4) {
+      const element = elementsRef?.current[index4];
+      return !element || isElementVisible(element);
+    }
+    function isItemAvailable(index4) {
+      if (!isVisible(index4)) {
+        return false;
+      }
+      return disabledIndices == null || !isListIndexDisabled(EMPTY_ARRAY, index4, disabledIndices);
+    }
+    function getMatchingIndex(list, string, startIndex2 = 0) {
+      if (list.length === 0) {
+        return -1;
+      }
+      const normalizedStartIndex = (startIndex2 % list.length + list.length) % list.length;
+      const lowerString = string.toLowerCase();
+      for (let offset4 = 0;offset4 < list.length; offset4 += 1) {
+        const index4 = (normalizedStartIndex + offset4) % list.length;
+        const text = list[index4];
+        if (!text?.toLowerCase().startsWith(lowerString) || !isItemAvailable(index4)) {
+          continue;
+        }
+        return index4;
+      }
+      return -1;
+    }
+    const listContent = listRef.current;
+    if (stringRef.current.length > 0 && event.key === " ") {
+      stopEvent(event);
+      onTyping?.(true);
+    }
+    if (stringRef.current.length > 0 && stringRef.current[0] !== " ") {
+      if (getMatchingIndex(listContent, stringRef.current) === -1 && event.key !== " ") {
+        onTyping?.(false);
+      }
+    }
+    if (listContent == null || event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (open && event.key !== " ") {
+      stopEvent(event);
+      onTyping?.(true);
+    }
+    const isNewSession = stringRef.current === "";
+    if (isNewSession) {
+      prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
+    }
+    const allowRapidSuccessionOfFirstLetter = listContent.every((text, index4) => text && isItemAvailable(index4) ? text[0]?.toLowerCase() !== text[1]?.toLowerCase() : true);
+    if (allowRapidSuccessionOfFirstLetter && stringRef.current === event.key) {
+      stringRef.current = "";
+      prevIndexRef.current = matchIndexRef.current;
+    }
+    stringRef.current += event.key;
+    timeout.start(resetMs, () => {
+      stringRef.current = "";
+      prevIndexRef.current = matchIndexRef.current;
+      onTyping?.(false);
+    });
+    const prevIndex = isNewSession ? selectedIndex ?? activeIndex ?? -1 : prevIndexRef.current;
+    const startIndex = (prevIndex ?? 0) + 1;
+    const index3 = getMatchingIndex(listContent, stringRef.current, startIndex);
+    if (index3 !== -1) {
+      onMatchProp?.(index3);
+      matchIndexRef.current = index3;
+    } else if (event.key !== " ") {
+      stringRef.current = "";
+      onTyping?.(false);
+    }
+  });
+  const onBlur = useStableCallback((event) => {
+    const next = event.relatedTarget;
+    const currentDomReferenceElement = store.select("domReferenceElement");
+    const currentFloatingElement = store.select("floatingElement");
+    const withinComposite = contains(currentDomReferenceElement, next) || contains(currentFloatingElement, next);
+    if (withinComposite) {
+      return;
+    }
+    timeout.clear();
+    stringRef.current = "";
+    prevIndexRef.current = matchIndexRef.current;
+    onTyping?.(false);
+  });
+  useIsoLayoutEffect(() => {
+    if (!open && selectedIndex !== null) {
+      return;
+    }
+    timeout.clear();
+    matchIndexRef.current = null;
+    if (stringRef.current !== "") {
+      stringRef.current = "";
+    }
+  }, [open, selectedIndex, timeout]);
+  useIsoLayoutEffect(() => {
+    if (open && stringRef.current === "") {
+      prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
+    }
+  }, [open, selectedIndex, activeIndex]);
+  const sharedProps = React52.useMemo(() => ({
+    onKeyDown,
+    onBlur
+  }), [onKeyDown, onBlur]);
+  return React52.useMemo(() => enabled ? {
+    reference: sharedProps,
+    floating: sharedProps
+  } : {}, [enabled, sharedProps]);
+}
+// node_modules/@base-ui/react/floating-ui-react/safePolygon.mjs
+var CURSOR_SPEED_THRESHOLD = 0.1;
+var CURSOR_SPEED_THRESHOLD_SQUARED = CURSOR_SPEED_THRESHOLD * CURSOR_SPEED_THRESHOLD;
+var POLYGON_BUFFER = 0.5;
+function hasIntersectingEdge(pointX, pointY, xi, yi, xj, yj) {
+  return yi >= pointY !== yj >= pointY && pointX <= (xj - xi) * (pointY - yi) / (yj - yi) + xi;
+}
+function isPointInQuadrilateral(pointX, pointY, x1, y1, x2, y2, x3, y3, x4, y4) {
+  let isInsideValue = false;
+  if (hasIntersectingEdge(pointX, pointY, x1, y1, x2, y2)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x2, y2, x3, y3)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x3, y3, x4, y4)) {
+    isInsideValue = !isInsideValue;
+  }
+  if (hasIntersectingEdge(pointX, pointY, x4, y4, x1, y1)) {
+    isInsideValue = !isInsideValue;
+  }
+  return isInsideValue;
+}
+function isInsideRect(pointX, pointY, rect) {
+  return pointX >= rect.x && pointX <= rect.x + rect.width && pointY >= rect.y && pointY <= rect.y + rect.height;
+}
+function isInsideAxisAlignedRect(pointX, pointY, x1, y1, x2, y2) {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  const minY = Math.min(y1, y2);
+  const maxY = Math.max(y1, y2);
+  return pointX >= minX && pointX <= maxX && pointY >= minY && pointY <= maxY;
+}
+function safePolygon(options = {}) {
+  const {
+    blockPointerEvents = false
+  } = options;
+  const timeout = new Timeout;
+  const fn = ({
+    x,
+    y,
+    placement,
+    elements,
+    onClose,
+    nodeId,
+    tree
+  }) => {
+    const side = placement?.split("-")[0];
+    let hasLanded = false;
+    let lastX = null;
+    let lastY = null;
+    let lastCursorTime = typeof performance !== "undefined" ? performance.now() : 0;
+    function isCursorMovingSlowly(nextX, nextY) {
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - lastCursorTime;
+      if (lastX === null || lastY === null || elapsedTime === 0) {
+        lastX = nextX;
+        lastY = nextY;
+        lastCursorTime = currentTime;
+        return false;
+      }
+      const deltaX = nextX - lastX;
+      const deltaY = nextY - lastY;
+      const distanceSquared = deltaX * deltaX + deltaY * deltaY;
+      const thresholdSquared = elapsedTime * elapsedTime * CURSOR_SPEED_THRESHOLD_SQUARED;
+      lastX = nextX;
+      lastY = nextY;
+      lastCursorTime = currentTime;
+      return distanceSquared < thresholdSquared;
+    }
+    function close() {
+      timeout.clear();
+      onClose();
+    }
+    return function onMouseMove(event) {
+      timeout.clear();
+      const domReference = elements.domReference;
+      const floating = elements.floating;
+      if (!domReference || !floating || side == null || x == null || y == null) {
+        return;
+      }
+      const {
+        clientX,
+        clientY
+      } = event;
+      const target = getTarget(event);
+      const isLeave = event.type === "mouseleave";
+      const isOverFloatingEl = contains(floating, target);
+      const isOverReferenceEl = contains(domReference, target);
+      if (isOverFloatingEl) {
+        hasLanded = true;
+        if (!isLeave) {
+          return;
+        }
+      }
+      if (isOverReferenceEl) {
+        hasLanded = false;
+        if (!isLeave) {
+          hasLanded = true;
+          return;
+        }
+      }
+      if (isLeave && isElement(event.relatedTarget) && contains(floating, event.relatedTarget)) {
+        return;
+      }
+      function hasOpenChildNode() {
+        return Boolean(tree && getNodeChildren(tree.nodesRef.current, nodeId).length > 0);
+      }
+      function closeIfNoOpenChild() {
+        if (!hasOpenChildNode()) {
+          close();
+        }
+      }
+      if (hasOpenChildNode()) {
+        return;
+      }
+      const refRect = domReference.getBoundingClientRect();
+      const rect = floating.getBoundingClientRect();
+      const cursorLeaveFromRight = x > rect.right - rect.width / 2;
+      const cursorLeaveFromBottom = y > rect.bottom - rect.height / 2;
+      const isFloatingWider = rect.width > refRect.width;
+      const isFloatingTaller = rect.height > refRect.height;
+      const left = (isFloatingWider ? refRect : rect).left;
+      const right = (isFloatingWider ? refRect : rect).right;
+      const top = (isFloatingTaller ? refRect : rect).top;
+      const bottom = (isFloatingTaller ? refRect : rect).bottom;
+      if (side === "top" && y >= refRect.bottom - 1 || side === "bottom" && y <= refRect.top + 1 || side === "left" && x >= refRect.right - 1 || side === "right" && x <= refRect.left + 1) {
+        closeIfNoOpenChild();
+        return;
+      }
+      let isInsideTroughRect = false;
+      switch (side) {
+        case "top":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, left, refRect.top + 1, right, rect.bottom - 1);
+          break;
+        case "bottom":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, left, rect.top + 1, right, refRect.bottom - 1);
+          break;
+        case "left":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, rect.right - 1, bottom, refRect.left + 1, top);
+          break;
+        case "right":
+          isInsideTroughRect = isInsideAxisAlignedRect(clientX, clientY, refRect.right - 1, bottom, rect.left + 1, top);
+          break;
+        default:
+      }
+      if (isInsideTroughRect) {
+        return;
+      }
+      if (hasLanded && !isInsideRect(clientX, clientY, refRect)) {
+        closeIfNoOpenChild();
+        return;
+      }
+      if (!isLeave && isCursorMovingSlowly(clientX, clientY)) {
+        closeIfNoOpenChild();
+        return;
+      }
+      let isInsidePolygon = false;
+      switch (side) {
+        case "top": {
+          const cursorXOffset = isFloatingWider ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneX = isFloatingWider ? x + cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointTwoX = isFloatingWider ? x - cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointY = y + POLYGON_BUFFER + 1;
+          const commonYLeft = cursorLeaveFromRight ? rect.bottom - POLYGON_BUFFER : isFloatingWider ? rect.bottom - POLYGON_BUFFER : rect.top;
+          const commonYRight = cursorLeaveFromRight ? isFloatingWider ? rect.bottom - POLYGON_BUFFER : rect.top : rect.bottom - POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointOneX, cursorPointY, cursorPointTwoX, cursorPointY, rect.left, commonYLeft, rect.right, commonYRight);
+          break;
+        }
+        case "bottom": {
+          const cursorXOffset = isFloatingWider ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneX = isFloatingWider ? x + cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointTwoX = isFloatingWider ? x - cursorXOffset : cursorLeaveFromRight ? x + cursorXOffset : x - cursorXOffset;
+          const cursorPointY = y - POLYGON_BUFFER;
+          const commonYLeft = cursorLeaveFromRight ? rect.top + POLYGON_BUFFER : isFloatingWider ? rect.top + POLYGON_BUFFER : rect.bottom;
+          const commonYRight = cursorLeaveFromRight ? isFloatingWider ? rect.top + POLYGON_BUFFER : rect.bottom : rect.top + POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointOneX, cursorPointY, cursorPointTwoX, cursorPointY, rect.left, commonYLeft, rect.right, commonYRight);
+          break;
+        }
+        case "left": {
+          const cursorYOffset = isFloatingTaller ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneY = isFloatingTaller ? y + cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointTwoY = isFloatingTaller ? y - cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointX = x + POLYGON_BUFFER + 1;
+          const commonXTop = cursorLeaveFromBottom ? rect.right - POLYGON_BUFFER : isFloatingTaller ? rect.right - POLYGON_BUFFER : rect.left;
+          const commonXBottom = cursorLeaveFromBottom ? isFloatingTaller ? rect.right - POLYGON_BUFFER : rect.left : rect.right - POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, commonXTop, rect.top, commonXBottom, rect.bottom, cursorPointX, cursorPointOneY, cursorPointX, cursorPointTwoY);
+          break;
+        }
+        case "right": {
+          const cursorYOffset = isFloatingTaller ? POLYGON_BUFFER / 2 : POLYGON_BUFFER * 4;
+          const cursorPointOneY = isFloatingTaller ? y + cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointTwoY = isFloatingTaller ? y - cursorYOffset : cursorLeaveFromBottom ? y + cursorYOffset : y - cursorYOffset;
+          const cursorPointX = x - POLYGON_BUFFER;
+          const commonXTop = cursorLeaveFromBottom ? rect.left + POLYGON_BUFFER : isFloatingTaller ? rect.left + POLYGON_BUFFER : rect.right;
+          const commonXBottom = cursorLeaveFromBottom ? isFloatingTaller ? rect.left + POLYGON_BUFFER : rect.right : rect.left + POLYGON_BUFFER;
+          isInsidePolygon = isPointInQuadrilateral(clientX, clientY, cursorPointX, cursorPointOneY, cursorPointX, cursorPointTwoY, commonXTop, rect.top, commonXBottom, rect.bottom);
+          break;
+        }
+        default:
+      }
+      if (!isInsidePolygon) {
+        closeIfNoOpenChild();
+      } else if (!hasLanded) {
+        timeout.start(40, closeIfNoOpenChild);
+      }
+      return;
+    };
+  };
+  fn.__options = {
+    ...options,
+    blockPointerEvents
+  };
+  return fn;
+}
+// node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
+var React53 = __toESM(require_react(), 1);
+"use client";
+var ToolbarRootContext = /* @__PURE__ */ React53.createContext(undefined);
+if (true)
+  ToolbarRootContext.displayName = "ToolbarRootContext";
+function useToolbarRootContext(optional) {
+  const context = React53.useContext(ToolbarRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: ToolbarRootContext is missing. Toolbar parts must be placed within <Toolbar.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/composite/composite.mjs
+var ARROW_UP2 = "ArrowUp";
+var ARROW_DOWN2 = "ArrowDown";
+var ARROW_LEFT2 = "ArrowLeft";
+var ARROW_RIGHT2 = "ArrowRight";
+var HOME = "Home";
+var END = "End";
+var HORIZONTAL_KEYS = new Set([ARROW_LEFT2, ARROW_RIGHT2]);
+var HORIZONTAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_LEFT2, ARROW_RIGHT2, HOME, END]);
+var VERTICAL_KEYS = new Set([ARROW_UP2, ARROW_DOWN2]);
+var VERTICAL_KEYS_WITH_EXTRA_KEYS = new Set([ARROW_UP2, ARROW_DOWN2, HOME, END]);
+var ARROW_KEYS = new Set([...HORIZONTAL_KEYS, ...VERTICAL_KEYS]);
+var COMPOSITE_KEYS = new Set([...ARROW_KEYS, HOME, END]);
+var SHIFT = "Shift";
+var CONTROL = "Control";
+var ALT = "Alt";
+var META = "Meta";
+var MODIFIER_KEYS = new Set([SHIFT, CONTROL, ALT, META]);
+
+// node_modules/@base-ui/react/utils/getDisabledMountTransitionStyles.mjs
+function getDisabledMountTransitionStyles(transitionStatus) {
+  return transitionStatus === "starting" ? DISABLED_TRANSITIONS_STYLE : EMPTY_OBJECT;
+}
+
+// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
+var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping2 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var MenuPopup = /* @__PURE__ */ React54.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    finalFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    side,
+    align
+  } = useMenuPositionerContext();
+  const insideToolbar = useToolbarRootContext(true) != null;
+  const open = store.useState("open");
+  const transitionStatus = store.useState("transitionStatus");
+  const popupProps = store.useState("popupProps");
+  const mounted = store.useState("mounted");
+  const instantType = store.useState("instantType");
+  const triggerElement = store.useState("activeTriggerElement");
+  const parent = store.useState("parent");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const rootId = store.useState("rootId");
+  const floatingContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const closeDelay = store.useState("closeDelay");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const hoverEnabled = store.useState("hoverEnabled");
+  const disabled2 = store.useState("disabled");
+  const openMethod = store.useState("openMethod");
+  const isContextMenu = parent.type === "context-menu";
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  React54.useEffect(() => {
+    function handleClose(event) {
+      store.setOpen(false, createChangeEventDetails(event.reason, event.domEvent));
+    }
+    floatingTreeRoot.events.on("close", handleClose);
+    return () => {
+      floatingTreeRoot.events.off("close", handleClose);
+    };
+  }, [floatingTreeRoot.events, store]);
+  useHoverFloatingInteraction(floatingContext, {
+    enabled: hoverEnabled && !disabled2 && !isContextMenu && parent.type !== "menubar",
+    closeDelay
+  });
+  const setPopupElement = React54.useCallback((element2) => {
+    store.set("popupElement", element2);
+  }, [store]);
+  const state = {
+    transitionStatus,
+    side,
+    align,
+    open,
+    nested: parent.type === "menu",
+    instant: instantType
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping2,
+    props: [popupProps, {
+      onKeyDown(event) {
+        if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      }
+    }, getDisabledMountTransitionStyles(transitionStatus), elementProps, {
+      "data-rootownerid": rootId
+    }]
+  });
+  let returnFocus = parent.type === undefined || isContextMenu;
+  if (triggerElement || parent.type === "menubar" && lastOpenChangeReason !== exports_reason_parts.outsidePress) {
+    returnFocus = true;
+  }
+  return /* @__PURE__ */ import_jsx_runtime8.jsx(FloatingFocusManager, {
+    context: floatingContext,
+    openInteractionType: openMethod,
+    modal: isContextMenu,
+    disabled: !mounted,
+    returnFocus: finalFocus === undefined ? returnFocus : finalFocus,
+    initialFocus: parent.type !== "menu",
+    restoreFocus: true,
+    externalTree: parent.type !== "menubar" ? floatingTreeRoot : undefined,
+    previousFocusableElement: activeTriggerElement,
+    nextFocusableElement: parent.type === undefined ? store.context.triggerFocusTargetRef : undefined,
+    beforeContentFocusGuardRef: parent.type === undefined ? store.context.beforeContentFocusGuardRef : undefined,
+    children: element
+  });
+});
+if (true)
+  MenuPopup.displayName = "MenuPopup";
+// node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
+var React56 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/portal/MenuPortalContext.mjs
+var React55 = __toESM(require_react(), 1);
+"use client";
+var MenuPortalContext = /* @__PURE__ */ React55.createContext(undefined);
+if (true)
+  MenuPortalContext.displayName = "MenuPortalContext";
+function useMenuPortalContext() {
+  const value = React55.useContext(MenuPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Menu.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuPortal = /* @__PURE__ */ React56.forwardRef(function MenuPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useMenuRootContext();
+  const mounted = store.useState("mounted");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime9.jsx(MenuPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime9.jsx(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps
+    })
+  });
+});
+if (true)
+  MenuPortal.displayName = "MenuPortal";
+// node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
+var React62 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/inertValue.mjs
+function inertValue(value) {
+  if (isReactVersionAtLeast(19)) {
+    return value;
+  }
+  return value ? "true" : undefined;
+}
+
+// node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
+var React58 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/direction-context/DirectionContext.mjs
+var React57 = __toESM(require_react(), 1);
+"use client";
+var DirectionContext = /* @__PURE__ */ React57.createContext(undefined);
+if (true)
+  DirectionContext.displayName = "DirectionContext";
+function useDirection() {
+  const context = React57.useContext(DirectionContext);
+  return context?.direction ?? "ltr";
+}
+
+// node_modules/@base-ui/react/floating-ui-react/middleware/arrow.mjs
+var baseArrow = (options) => ({
+  name: "arrow",
+  options,
+  async fn(state) {
+    const {
+      x,
+      y,
+      placement,
+      rects,
+      platform: platform3,
+      elements,
+      middlewareData
+    } = state;
+    const {
+      element,
+      padding = 0,
+      offsetParent = "real"
+    } = evaluate(options, state) || {};
+    if (element == null) {
+      return {};
+    }
+    const paddingObject = getPaddingObject(padding);
+    const coords = {
+      x,
+      y
+    };
+    const axis = getAlignmentAxis(placement);
+    const length = getAxisLength(axis);
+    const arrowDimensions = await platform3.getDimensions(element);
+    const isYAxis = axis === "y";
+    const minProp = isYAxis ? "top" : "left";
+    const maxProp = isYAxis ? "bottom" : "right";
+    const clientProp = isYAxis ? "clientHeight" : "clientWidth";
+    const endDiff = rects.reference[length] + rects.reference[axis] - coords[axis] - rects.floating[length];
+    const startDiff = coords[axis] - rects.reference[axis];
+    const arrowOffsetParent = offsetParent === "real" ? await platform3.getOffsetParent?.(element) : elements.floating;
+    let clientSize = elements.floating[clientProp] || rects.floating[length];
+    if (!clientSize || !await platform3.isElement?.(arrowOffsetParent)) {
+      clientSize = elements.floating[clientProp] || rects.floating[length];
+    }
+    const centerToReference = endDiff / 2 - startDiff / 2;
+    const largestPossiblePadding = clientSize / 2 - arrowDimensions[length] / 2 - 1;
+    const minPadding = Math.min(paddingObject[minProp], largestPossiblePadding);
+    const maxPadding = Math.min(paddingObject[maxProp], largestPossiblePadding);
+    const min2 = minPadding;
+    const max2 = clientSize - arrowDimensions[length] - maxPadding;
+    const center = clientSize / 2 - arrowDimensions[length] / 2 + centerToReference;
+    const offset4 = clamp(min2, center, max2);
+    const shouldAddOffset = !middlewareData.arrow && getAlignment(placement) != null && center !== offset4 && rects.reference[length] / 2 - (center < min2 ? minPadding : maxPadding) - arrowDimensions[length] / 2 < 0;
+    const alignmentOffset = shouldAddOffset ? center < min2 ? center - min2 : center - max2 : 0;
+    return {
+      [axis]: coords[axis] + alignmentOffset,
+      data: {
+        [axis]: offset4,
+        centerOffset: center - offset4 - alignmentOffset,
+        ...shouldAddOffset && {
+          alignmentOffset
+        }
+      },
+      reset: shouldAddOffset
+    };
+  }
+});
+var arrow4 = (options, deps) => ({
+  ...baseArrow(options),
+  options: [options, deps]
+});
+
+// node_modules/@base-ui/react/utils/hideMiddleware.mjs
+var nativeHideFn = hide3().fn;
+var hide4 = {
+  name: "hide",
+  async fn(state) {
+    const {
+      width,
+      height,
+      x,
+      y
+    } = state.rects.reference;
+    const anchorHidden = width === 0 && height === 0 && x === 0 && y === 0;
+    const nativeHideResult = await nativeHideFn(state);
+    return {
+      data: {
+        referenceHidden: nativeHideResult.data?.referenceHidden || anchorHidden
+      }
+    };
+  }
+};
+
+// node_modules/@base-ui/react/utils/adaptiveOriginMiddleware.mjs
+var DEFAULT_SIDES = {
+  sideX: "left",
+  sideY: "top"
+};
+var adaptiveOrigin = {
+  name: "adaptiveOrigin",
+  async fn(state) {
+    const {
+      x: rawX,
+      y: rawY,
+      rects: {
+        floating: floatRect
+      },
+      elements: {
+        floating
+      },
+      platform: platform3,
+      strategy,
+      placement
+    } = state;
+    const win = getWindow(floating);
+    const styles = win.getComputedStyle(floating);
+    const hasTransition = styles.transitionDuration !== "0s" && styles.transitionDuration !== "";
+    if (!hasTransition) {
+      return {
+        x: rawX,
+        y: rawY,
+        data: DEFAULT_SIDES
+      };
+    }
+    const offsetParent = await platform3.getOffsetParent?.(floating);
+    let offsetDimensions = {
+      width: 0,
+      height: 0
+    };
+    if (strategy === "fixed" && win?.visualViewport) {
+      offsetDimensions = {
+        width: win.visualViewport.width,
+        height: win.visualViewport.height
+      };
+    } else if (offsetParent === win) {
+      const doc = ownerDocument(floating);
+      offsetDimensions = {
+        width: doc.documentElement.clientWidth,
+        height: doc.documentElement.clientHeight
+      };
+    } else if (await platform3.isElement?.(offsetParent)) {
+      offsetDimensions = await platform3.getDimensions(offsetParent);
+    }
+    const currentSide = getSide(placement);
+    let x = rawX;
+    let y = rawY;
+    if (currentSide === "left") {
+      x = offsetDimensions.width - (rawX + floatRect.width);
+    }
+    if (currentSide === "top") {
+      y = offsetDimensions.height - (rawY + floatRect.height);
+    }
+    const sideX = currentSide === "left" ? "right" : DEFAULT_SIDES.sideX;
+    const sideY = currentSide === "top" ? "bottom" : DEFAULT_SIDES.sideY;
+    return {
+      x,
+      y,
+      data: {
+        sideX,
+        sideY
+      }
+    };
+  }
+};
+
+// node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
+"use client";
+function getLogicalSide(sideParam, renderedSide, isRtl) {
+  const isLogicalSideParam = sideParam === "inline-start" || sideParam === "inline-end";
+  const logicalRight = isRtl ? "inline-start" : "inline-end";
+  const logicalLeft = isRtl ? "inline-end" : "inline-start";
+  return {
+    top: "top",
+    right: isLogicalSideParam ? logicalRight : "right",
+    bottom: "bottom",
+    left: isLogicalSideParam ? logicalLeft : "left"
+  }[renderedSide];
+}
+function getOffsetData(state, sideParam, isRtl) {
+  const {
+    rects,
+    placement
+  } = state;
+  const data = {
+    side: getLogicalSide(sideParam, getSide(placement), isRtl),
+    align: getAlignment(placement) || "center",
+    anchor: {
+      width: rects.reference.width,
+      height: rects.reference.height
+    },
+    positioner: {
+      width: rects.floating.width,
+      height: rects.floating.height
+    }
+  };
+  return data;
+}
+function useAnchorPositioning(params) {
+  const {
+    anchor,
+    positionMethod = "absolute",
+    side: sideParam = "bottom",
+    sideOffset = 0,
+    align = "center",
+    alignOffset = 0,
+    collisionBoundary,
+    collisionPadding: collisionPaddingParam = 5,
+    sticky = false,
+    arrowPadding = 5,
+    disableAnchorTracking = false,
+    inline: inlineMiddleware,
+    keepMounted = false,
+    floatingRootContext,
+    mounted,
+    collisionAvoidance,
+    shiftCrossAxis = false,
+    nodeId,
+    adaptiveOrigin: adaptiveOrigin2,
+    lazyFlip = false,
+    externalTree
+  } = params;
+  const [mountSide, setMountSide] = React58.useState(null);
+  if (!mounted && mountSide !== null) {
+    setMountSide(null);
+  }
+  const collisionAvoidanceSide = collisionAvoidance.side || "flip";
+  const collisionAvoidanceAlign = collisionAvoidance.align || "flip";
+  const collisionAvoidanceFallbackAxisSide = collisionAvoidance.fallbackAxisSide || "end";
+  const anchorFn = typeof anchor === "function" ? anchor : undefined;
+  const anchorFnCallback = useStableCallback(anchorFn);
+  const anchorDep = anchorFn ? anchorFnCallback : anchor;
+  const anchorValueRef = useValueAsRef(anchor);
+  const mountedRef = useValueAsRef(mounted);
+  const direction = useDirection();
+  const isRtl = direction === "rtl";
+  const side = mountSide || {
+    top: "top",
+    right: "right",
+    bottom: "bottom",
+    left: "left",
+    "inline-end": isRtl ? "left" : "right",
+    "inline-start": isRtl ? "right" : "left"
+  }[sideParam];
+  const placement = align === "center" ? side : `${side}-${align}`;
+  let collisionPadding = collisionPaddingParam;
+  const bias = 1;
+  const biasTop = sideParam === "bottom" ? bias : 0;
+  const biasBottom = sideParam === "top" ? bias : 0;
+  const biasLeft = sideParam === "right" ? bias : 0;
+  const biasRight = sideParam === "left" ? bias : 0;
+  if (typeof collisionPadding === "number") {
+    collisionPadding = {
+      top: collisionPadding + biasTop,
+      right: collisionPadding + biasRight,
+      bottom: collisionPadding + biasBottom,
+      left: collisionPadding + biasLeft
+    };
+  } else if (collisionPadding) {
+    collisionPadding = {
+      top: (collisionPadding.top || 0) + biasTop,
+      right: (collisionPadding.right || 0) + biasRight,
+      bottom: (collisionPadding.bottom || 0) + biasBottom,
+      left: (collisionPadding.left || 0) + biasLeft
+    };
+  }
+  const commonCollisionProps = {
+    boundary: collisionBoundary === "clipping-ancestors" ? "clippingAncestors" : collisionBoundary,
+    padding: collisionPadding
+  };
+  const arrowRef = React58.useRef(null);
+  const sideOffsetRef = useValueAsRef(sideOffset);
+  const alignOffsetRef = useValueAsRef(alignOffset);
+  const sideOffsetDep = typeof sideOffset !== "function" ? sideOffset : 0;
+  const alignOffsetDep = typeof alignOffset !== "function" ? alignOffset : 0;
+  const middleware = [];
+  if (inlineMiddleware) {
+    middleware.push(inlineMiddleware);
+  }
+  middleware.push(offset3((state) => {
+    const data = getOffsetData(state, sideParam, isRtl);
+    const sideAxis = typeof sideOffsetRef.current === "function" ? sideOffsetRef.current(data) : sideOffsetRef.current;
+    const alignAxis = typeof alignOffsetRef.current === "function" ? alignOffsetRef.current(data) : alignOffsetRef.current;
+    return {
+      mainAxis: sideAxis,
+      crossAxis: alignAxis,
+      alignmentAxis: alignAxis
+    };
+  }, [sideOffsetDep, alignOffsetDep, isRtl, sideParam]));
+  const shiftDisabled = collisionAvoidanceAlign === "none" && collisionAvoidanceSide !== "shift";
+  const crossAxisShiftEnabled = !shiftDisabled && (sticky || shiftCrossAxis || collisionAvoidanceSide === "shift");
+  const flipMiddleware = collisionAvoidanceSide === "none" ? null : flip3({
+    ...commonCollisionProps,
+    padding: {
+      top: collisionPadding.top + bias,
+      right: collisionPadding.right + bias,
+      bottom: collisionPadding.bottom + bias,
+      left: collisionPadding.left + bias
+    },
+    mainAxis: !shiftCrossAxis && collisionAvoidanceSide === "flip",
+    crossAxis: collisionAvoidanceAlign === "flip" ? "alignment" : false,
+    fallbackAxisSideDirection: collisionAvoidanceFallbackAxisSide
+  });
+  const shiftMiddleware = shiftDisabled ? null : shift3((data) => {
+    const html = ownerDocument(data.elements.floating).documentElement;
+    return {
+      ...commonCollisionProps,
+      rootBoundary: shiftCrossAxis ? {
+        x: 0,
+        y: 0,
+        width: html.clientWidth,
+        height: html.clientHeight
+      } : undefined,
+      mainAxis: collisionAvoidanceAlign !== "none",
+      crossAxis: crossAxisShiftEnabled,
+      limiter: sticky || shiftCrossAxis ? undefined : limitShift3((limitData) => {
+        if (!arrowRef.current) {
+          return {};
+        }
+        const {
+          width,
+          height
+        } = arrowRef.current.getBoundingClientRect();
+        const sideAxis = getSideAxis(getSide(limitData.placement));
+        const arrowSize = sideAxis === "y" ? width : height;
+        const offsetAmount = sideAxis === "y" ? collisionPadding.left + collisionPadding.right : collisionPadding.top + collisionPadding.bottom;
+        return {
+          offset: arrowSize / 2 + offsetAmount / 2
+        };
+      })
+    };
+  }, [commonCollisionProps, sticky, shiftCrossAxis, collisionPadding, collisionAvoidanceAlign]);
+  if (collisionAvoidanceSide === "shift" || collisionAvoidanceAlign === "shift" || align === "center") {
+    middleware.push(shiftMiddleware, flipMiddleware);
+  } else {
+    middleware.push(flipMiddleware, shiftMiddleware);
+  }
+  middleware.push(size3({
+    ...commonCollisionProps,
+    apply({
+      elements: {
+        floating
+      },
+      availableWidth,
+      availableHeight,
+      rects
+    }) {
+      if (!mountedRef.current) {
+        return;
+      }
+      const floatingStyle = floating.style;
+      floatingStyle.setProperty("--available-width", `${availableWidth}px`);
+      floatingStyle.setProperty("--available-height", `${availableHeight}px`);
+      const dpr = getWindow(floating).devicePixelRatio || 1;
+      const {
+        x: x2,
+        y: y2,
+        width,
+        height
+      } = rects.reference;
+      const anchorWidth = (Math.round((x2 + width) * dpr) - Math.round(x2 * dpr)) / dpr;
+      const anchorHeight = (Math.round((y2 + height) * dpr) - Math.round(y2 * dpr)) / dpr;
+      floatingStyle.setProperty("--anchor-width", `${anchorWidth}px`);
+      floatingStyle.setProperty("--anchor-height", `${anchorHeight}px`);
+    }
+  }), arrow4((state) => ({
+    element: arrowRef.current || ownerDocument(state.elements.floating).createElement("div"),
+    padding: arrowPadding,
+    offsetParent: "floating"
+  }), [arrowPadding]), {
+    name: "transformOrigin",
+    fn(state) {
+      const {
+        elements: elements2,
+        middlewareData: middlewareData2,
+        placement: renderedPlacement2,
+        rects,
+        y: y2
+      } = state;
+      const currentRenderedSide = getSide(renderedPlacement2);
+      const currentRenderedAxis = getSideAxis(currentRenderedSide);
+      const arrowEl = arrowRef.current;
+      const arrowX = middlewareData2.arrow?.x || 0;
+      const arrowY = middlewareData2.arrow?.y || 0;
+      const arrowWidth = arrowEl?.clientWidth || 0;
+      const arrowHeight = arrowEl?.clientHeight || 0;
+      const transformX = arrowX + arrowWidth / 2;
+      const transformY = arrowY + arrowHeight / 2;
+      const shiftY = Math.abs(middlewareData2.shift?.y || 0);
+      const halfAnchorHeight = rects.reference.height / 2;
+      const sideOffsetValue = typeof sideOffset === "function" ? sideOffset(getOffsetData(state, sideParam, isRtl)) : sideOffset;
+      const isOverlappingAnchor = shiftY > sideOffsetValue;
+      const adjacentTransformOrigin = {
+        top: `${transformX}px calc(100% + ${sideOffsetValue}px)`,
+        bottom: `${transformX}px ${-sideOffsetValue}px`,
+        left: `calc(100% + ${sideOffsetValue}px) ${transformY}px`,
+        right: `${-sideOffsetValue}px ${transformY}px`
+      }[currentRenderedSide];
+      const overlapTransformOrigin = `${transformX}px ${rects.reference.y + halfAnchorHeight - y2}px`;
+      elements2.floating.style.setProperty("--transform-origin", crossAxisShiftEnabled && currentRenderedAxis === "y" && isOverlappingAnchor ? overlapTransformOrigin : adjacentTransformOrigin);
+      return {};
+    }
+  }, hide4, adaptiveOrigin2);
+  useIsoLayoutEffect(() => {
+    if (!mounted && floatingRootContext) {
+      floatingRootContext.update({
+        referenceElement: null,
+        floatingElement: null,
+        domReferenceElement: null,
+        positionReference: null
+      });
+    }
+  }, [mounted, floatingRootContext]);
+  const autoUpdateOptions = React58.useMemo(() => ({
+    elementResize: !disableAnchorTracking && typeof ResizeObserver !== "undefined",
+    layoutShift: !disableAnchorTracking && typeof IntersectionObserver !== "undefined"
+  }), [disableAnchorTracking]);
+  const {
+    refs,
+    elements,
+    x,
+    y,
+    middlewareData,
+    update: update2,
+    placement: renderedPlacement,
+    context,
+    isPositioned,
+    floatingStyles: originalFloatingStyles
+  } = useFloating2({
+    rootContext: floatingRootContext,
+    open: keepMounted ? mounted : undefined,
+    placement,
+    middleware,
+    strategy: positionMethod,
+    whileElementsMounted: keepMounted ? undefined : (...args) => autoUpdate(...args, autoUpdateOptions),
+    nodeId,
+    externalTree
+  });
+  const {
+    sideX,
+    sideY
+  } = middlewareData.adaptiveOrigin || DEFAULT_SIDES;
+  const resolvedPosition = isPositioned ? positionMethod : "fixed";
+  const floatingStyles = React58.useMemo(() => {
+    const base = adaptiveOrigin2 ? {
+      position: resolvedPosition,
+      [sideX]: x,
+      [sideY]: y
+    } : {
+      position: resolvedPosition,
+      ...originalFloatingStyles
+    };
+    if (!isPositioned) {
+      base.opacity = 0;
+    }
+    return base;
+  }, [adaptiveOrigin2, resolvedPosition, sideX, x, sideY, y, originalFloatingStyles, isPositioned]);
+  const registeredPositionReferenceRef = React58.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (!mounted) {
+      return;
+    }
+    const anchorValue = anchorValueRef.current;
+    const resolvedAnchor = typeof anchorValue === "function" ? anchorValue() : anchorValue;
+    const unwrappedElement = (isRef(resolvedAnchor) ? resolvedAnchor.current : resolvedAnchor) || null;
+    const finalAnchor = unwrappedElement || null;
+    if (finalAnchor !== registeredPositionReferenceRef.current) {
+      refs.setPositionReference(finalAnchor);
+      registeredPositionReferenceRef.current = finalAnchor;
+    }
+  }, [mounted, refs, anchorDep, anchorValueRef]);
+  React58.useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+    const anchorValue = anchorValueRef.current;
+    if (typeof anchorValue === "function") {
+      return;
+    }
+    if (isRef(anchorValue) && anchorValue.current !== registeredPositionReferenceRef.current) {
+      refs.setPositionReference(anchorValue.current);
+      registeredPositionReferenceRef.current = anchorValue.current;
+    }
+  }, [mounted, refs, anchorDep, anchorValueRef]);
+  React58.useEffect(() => {
+    if (keepMounted && mounted && elements.reference && elements.floating) {
+      return autoUpdate(elements.reference, elements.floating, update2, autoUpdateOptions);
+    }
+    return;
+  }, [keepMounted, mounted, elements, update2, autoUpdateOptions]);
+  const renderedSide = getSide(renderedPlacement);
+  const logicalRenderedSide = getLogicalSide(sideParam, renderedSide, isRtl);
+  const renderedAlign = getAlignment(renderedPlacement) || "center";
+  const anchorHidden = Boolean(middlewareData.hide?.referenceHidden);
+  useIsoLayoutEffect(() => {
+    if (lazyFlip && mounted && isPositioned) {
+      setMountSide(renderedSide);
+    }
+  }, [lazyFlip, mounted, isPositioned, renderedSide]);
+  const arrowStyles = React58.useMemo(() => ({
+    position: "absolute",
+    top: middlewareData.arrow?.y,
+    left: middlewareData.arrow?.x
+  }), [middlewareData.arrow]);
+  const arrowUncentered = middlewareData.arrow?.centerOffset !== 0;
+  return React58.useMemo(() => ({
+    positionerStyles: floatingStyles,
+    arrowStyles,
+    arrowRef,
+    arrowUncentered,
+    side: logicalRenderedSide,
+    align: renderedAlign,
+    physicalSide: renderedSide,
+    anchorHidden,
+    refs,
+    context,
+    isPositioned,
+    update: update2
+  }), [floatingStyles, arrowStyles, arrowRef, arrowUncentered, logicalRenderedSide, renderedAlign, renderedSide, anchorHidden, refs, context, isPositioned, update2]);
+}
+function isRef(param) {
+  return param != null && "current" in param;
+}
+
+// node_modules/@base-ui/react/internals/composite/list/CompositeList.mjs
+var React59 = __toESM(require_react(), 1);
+var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function CompositeList(props) {
+  const {
+    children,
+    elementsRef,
+    labelsRef,
+    onMapChange: onMapChangeProp
+  } = props;
+  const onMapChange = useStableCallback(onMapChangeProp);
+  const nextIndexRef = React59.useRef(0);
+  const listeners = useRefWithInit(createListeners).current;
+  const map = useRefWithInit(createMap).current;
+  const [mapTick, setMapTick] = React59.useState(0);
+  const lastTickRef = React59.useRef(mapTick);
+  const register2 = useStableCallback((node, metadata) => {
+    map.set(node, metadata ?? null);
+    lastTickRef.current += 1;
+    setMapTick(lastTickRef.current);
+  });
+  const unregister = useStableCallback((node) => {
+    map.delete(node);
+    lastTickRef.current += 1;
+    setMapTick(lastTickRef.current);
+  });
+  const sortedMap = React59.useMemo(() => {
+    disableEslintWarning(mapTick);
+    const newMap = new Map;
+    const sortedNodes = Array.from(map.keys()).filter((node) => node.isConnected).sort(sortByDocumentPosition);
+    sortedNodes.forEach((node, index3) => {
+      const metadata = map.get(node) ?? {};
+      newMap.set(node, {
+        ...metadata,
+        index: index3
+      });
+    });
+    return newMap;
+  }, [map, mapTick]);
+  useIsoLayoutEffect(() => {
+    if (typeof MutationObserver !== "function" || sortedMap.size === 0) {
+      return;
+    }
+    const mutationObserver = new MutationObserver((entries) => {
+      const diff = new Set;
+      const updateDiff = (node) => diff.has(node) ? diff.delete(node) : diff.add(node);
+      entries.forEach((entry) => {
+        entry.removedNodes.forEach(updateDiff);
+        entry.addedNodes.forEach(updateDiff);
+      });
+      if (diff.size === 0) {
+        lastTickRef.current += 1;
+        setMapTick(lastTickRef.current);
+      }
+    });
+    sortedMap.forEach((_, node) => {
+      if (node.parentElement) {
+        mutationObserver.observe(node.parentElement, {
+          childList: true
+        });
+      }
+    });
+    return () => {
+      mutationObserver.disconnect();
+    };
+  }, [sortedMap]);
+  useIsoLayoutEffect(() => {
+    const shouldUpdateLengths = lastTickRef.current === mapTick;
+    if (shouldUpdateLengths) {
+      if (elementsRef.current.length !== sortedMap.size) {
+        elementsRef.current.length = sortedMap.size;
+      }
+      if (labelsRef && labelsRef.current.length !== sortedMap.size) {
+        labelsRef.current.length = sortedMap.size;
+      }
+      nextIndexRef.current = sortedMap.size;
+    }
+    onMapChange(sortedMap);
+  }, [onMapChange, sortedMap, elementsRef, labelsRef, mapTick]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      elementsRef.current = [];
+    };
+  }, [elementsRef]);
+  useIsoLayoutEffect(() => {
+    return () => {
+      if (labelsRef) {
+        labelsRef.current = [];
+      }
+    };
+  }, [labelsRef]);
+  const subscribeMapChange = useStableCallback((fn) => {
+    listeners.add(fn);
+    return () => {
+      listeners.delete(fn);
+    };
+  });
+  useIsoLayoutEffect(() => {
+    listeners.forEach((l) => l(sortedMap));
+  }, [listeners, sortedMap]);
+  const contextValue = React59.useMemo(() => ({
+    register: register2,
+    unregister,
+    subscribeMapChange,
+    elementsRef,
+    labelsRef,
+    nextIndexRef
+  }), [register2, unregister, subscribeMapChange, elementsRef, labelsRef, nextIndexRef]);
+  return /* @__PURE__ */ import_jsx_runtime10.jsx(CompositeListContext.Provider, {
+    value: contextValue,
+    children
+  });
+}
+function createMap() {
+  return new Map;
+}
+function createListeners() {
+  return new Set;
+}
+function sortByDocumentPosition(a, b) {
+  const position = a.compareDocumentPosition(b);
+  if (position & Node.DOCUMENT_POSITION_FOLLOWING || position & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+    return -1;
+  }
+  if (position & Node.DOCUMENT_POSITION_PRECEDING || position & Node.DOCUMENT_POSITION_CONTAINS) {
+    return 1;
+  }
+  return 0;
+}
+function disableEslintWarning(_) {}
+
+// node_modules/@base-ui/react/utils/InternalBackdrop.mjs
+var React60 = __toESM(require_react(), 1);
+var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+var InternalBackdrop = /* @__PURE__ */ React60.forwardRef(function InternalBackdrop2(props, ref) {
+  const {
+    cutout,
+    ...otherProps
+  } = props;
+  let clipPath;
+  if (cutout) {
+    const rect = cutout.getBoundingClientRect();
+    clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
+  }
+  return /* @__PURE__ */ import_jsx_runtime11.jsx("div", {
+    ref,
+    role: "presentation",
+    "data-base-ui-inert": "",
+    ...otherProps,
+    style: {
+      position: "fixed",
+      inset: 0,
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      clipPath
+    }
+  });
+});
+if (true)
+  InternalBackdrop.displayName = "InternalBackdrop";
+
+// node_modules/@base-ui/react/utils/usePositioner.mjs
+"use client";
+function usePositioner(componentProps, state, {
+  styles,
+  transitionStatus,
+  props,
+  refs,
+  hidden,
+  inert = false
+}) {
+  const style = {
+    ...styles
+  };
+  if (inert) {
+    style.pointerEvents = "none";
+  }
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: refs,
+    props: [{
+      role: "presentation",
+      hidden,
+      style
+    }, getDisabledMountTransitionStyles(transitionStatus), props],
+    stateAttributesMapping: popupStateMapping
+  });
+}
+
+// node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
+var React61 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useScrollLock.mjs
+"use client";
+var originalHtmlStyles = {};
+var originalBodyStyles = {};
+var originalHtmlScrollBehavior = "";
+function hasInsetScrollbars(referenceElement) {
+  if (typeof document === "undefined") {
+    return false;
+  }
+  const doc = ownerDocument(referenceElement);
+  const win = getWindow(doc);
+  return win.innerWidth - doc.documentElement.clientWidth > 0;
+}
+function supportsStableScrollbarGutter(referenceElement) {
+  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
+  if (!supported || typeof document === "undefined") {
+    return false;
+  }
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const scrollContainer = isOverflowElement(html) ? html : body;
+  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
+  const originalHtmlStyleGutter = html.style.scrollbarGutter;
+  html.style.scrollbarGutter = "stable";
+  scrollContainer.style.overflowY = "scroll";
+  const before = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = "hidden";
+  const after = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
+  html.style.scrollbarGutter = originalHtmlStyleGutter;
+  return before === after;
+}
+function preventScrollOverlayScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const elementToLock = isOverflowElement(html) ? html : body;
+  const originalElementToLockStyles = {
+    overflowY: elementToLock.style.overflowY,
+    overflowX: elementToLock.style.overflowX
+  };
+  Object.assign(elementToLock.style, {
+    overflowY: "hidden",
+    overflowX: "hidden"
+  });
+  return () => {
+    Object.assign(elementToLock.style, originalElementToLockStyles);
+  };
+}
+function preventScrollInsetScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const win = getWindow(html);
+  let scrollTop = 0;
+  let scrollLeft = 0;
+  let updateGutterOnly = false;
+  const resizeFrame = AnimationFrame.create();
+  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
+    return () => {};
+  }
+  function lockScroll() {
+    const htmlStyles = win.getComputedStyle(html);
+    const bodyStyles = win.getComputedStyle(body);
+    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
+    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
+    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
+    scrollTop = html.scrollTop;
+    scrollLeft = html.scrollLeft;
+    originalHtmlStyles = {
+      scrollbarGutter: html.style.scrollbarGutter,
+      overflowY: html.style.overflowY,
+      overflowX: html.style.overflowX
+    };
+    originalHtmlScrollBehavior = html.style.scrollBehavior;
+    originalBodyStyles = {
+      position: body.style.position,
+      height: body.style.height,
+      width: body.style.width,
+      boxSizing: body.style.boxSizing,
+      overflowY: body.style.overflowY,
+      overflowX: body.style.overflowX,
+      scrollBehavior: body.style.scrollBehavior
+    };
+    const isScrollableY = html.scrollHeight > html.clientHeight;
+    const isScrollableX = html.scrollWidth > html.clientWidth;
+    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
+    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
+    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
+    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
+    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
+    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
+    const elementToLock = isOverflowElement(html) ? html : body;
+    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
+    if (updateGutterOnly) {
+      html.style.scrollbarGutter = scrollbarGutterValue;
+      elementToLock.style.overflowY = "hidden";
+      elementToLock.style.overflowX = "hidden";
+      return;
+    }
+    Object.assign(html.style, {
+      scrollbarGutter: scrollbarGutterValue,
+      overflowY: "hidden",
+      overflowX: "hidden"
+    });
+    if (isScrollableY || hasConstantOverflowY) {
+      html.style.overflowY = "scroll";
+    }
+    if (isScrollableX || hasConstantOverflowX) {
+      html.style.overflowX = "scroll";
+    }
+    Object.assign(body.style, {
+      position: "relative",
+      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
+      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      scrollBehavior: "unset"
+    });
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+    html.setAttribute("data-base-ui-scroll-locked", "");
+    html.style.scrollBehavior = "unset";
+  }
+  function cleanup() {
+    Object.assign(html.style, originalHtmlStyles);
+    Object.assign(body.style, originalBodyStyles);
+    if (!updateGutterOnly) {
+      html.scrollTop = scrollTop;
+      html.scrollLeft = scrollLeft;
+      html.removeAttribute("data-base-ui-scroll-locked");
+      html.style.scrollBehavior = originalHtmlScrollBehavior;
+    }
+  }
+  function handleResize() {
+    cleanup();
+    resizeFrame.request(lockScroll);
+  }
+  lockScroll();
+  const unsubscribeResize = addEventListener(win, "resize", handleResize);
+  return () => {
+    resizeFrame.cancel();
+    cleanup();
+    if (typeof win.removeEventListener === "function") {
+      unsubscribeResize();
+    }
+  };
+}
+
+class ScrollLocker {
+  lockCount = 0;
+  restore = null;
+  timeoutLock = Timeout.create();
+  timeoutUnlock = Timeout.create();
+  acquire(referenceElement) {
+    this.lockCount += 1;
+    if (this.lockCount === 1 && this.restore === null) {
+      this.timeoutLock.start(0, () => this.lock(referenceElement));
+    }
+    return this.release;
+  }
+  release = () => {
+    this.lockCount -= 1;
+    if (this.lockCount === 0 && this.restore) {
+      this.timeoutUnlock.start(0, this.unlock);
+    }
+  };
+  unlock = () => {
+    if (this.lockCount === 0 && this.restore) {
+      this.restore?.();
+      this.restore = null;
+    }
+  };
+  lock(referenceElement) {
+    if (this.lockCount === 0 || this.restore !== null) {
+      return;
+    }
+    const doc = ownerDocument(referenceElement);
+    const html = doc.documentElement;
+    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
+    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
+      this.restore = NOOP;
+      return;
+    }
+    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
+    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
+  }
+}
+var SCROLL_LOCKER = new ScrollLocker;
+function useScrollLock(enabled = true, referenceElement = null) {
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    return SCROLL_LOCKER.acquire(referenceElement);
+  }, [enabled, referenceElement]);
+}
+
+// node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
+"use client";
+var VIEWPORT_WIDTH_TOLERANCE_PX = 20;
+function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, referenceElement) {
+  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React61.useState(false);
+  useIsoLayoutEffect(() => {
+    if (!enabled || !touchOpen || positionerElement == null) {
+      setTouchOpenShouldLockScroll(false);
+      return;
+    }
+    const viewportWidth = ownerDocument(positionerElement).documentElement.clientWidth;
+    const popupWidth = positionerElement.offsetWidth;
+    setTouchOpenShouldLockScroll(viewportWidth > 0 && popupWidth > 0 && popupWidth >= viewportWidth - VIEWPORT_WIDTH_TOLERANCE_PX);
+  }, [enabled, touchOpen, positionerElement]);
+  useScrollLock(enabled && (!touchOpen || touchOpenShouldLockScroll), referenceElement);
+}
+
+// node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
+var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuPositioner = /* @__PURE__ */ React62.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
+  const {
+    anchor: anchorProp,
+    positionMethod: positionMethodProp = "absolute",
+    className,
+    render,
+    side,
+    align: alignProp,
+    sideOffset: sideOffsetProp = 0,
+    alignOffset: alignOffsetProp = 0,
+    collisionBoundary = "clipping-ancestors",
+    collisionPadding = 5,
+    arrowPadding = 5,
+    sticky = false,
+    disableAnchorTracking = false,
+    collisionAvoidance: collisionAvoidanceProp = DROPDOWN_COLLISION_AVOIDANCE,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const keepMounted = useMenuPortalContext();
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parent = store.useState("parent");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const mounted = store.useState("mounted");
+  const open = store.useState("open");
+  const modal = store.useState("modal");
+  const openMethod = store.useState("openMethod");
+  const triggerElement = store.useState("activeTriggerElement");
+  const transitionStatus = store.useState("transitionStatus");
+  const positionerElement = store.useState("positionerElement");
+  const instantType = store.useState("instantType");
+  const hasViewport = store.useState("hasViewport");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const floatingNodeId = store.useState("floatingNodeId");
+  const floatingParentNodeId = store.useState("floatingParentNodeId");
+  const domReference = floatingRootContext.useState("domReferenceElement");
+  const previousTriggerRef = React62.useRef(null);
+  const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
+  let anchor = anchorProp;
+  let sideOffset = sideOffsetProp;
+  let alignOffset = alignOffsetProp;
+  let align = alignProp;
+  let collisionAvoidance = collisionAvoidanceProp;
+  if (parent.type === "context-menu") {
+    anchor = anchorProp ?? parent.context?.anchor;
+    align = align ?? "start";
+    if (!side && align !== "center") {
+      alignOffset = componentProps.alignOffset ?? 2;
+      sideOffset = componentProps.sideOffset ?? -5;
+    }
+  }
+  let computedSide = side;
+  let computedAlign = align;
+  if (parent.type === "menu") {
+    computedSide = computedSide ?? "inline-end";
+    computedAlign = computedAlign ?? "start";
+    collisionAvoidance = componentProps.collisionAvoidance ?? POPUP_COLLISION_AVOIDANCE;
+  } else if (parent.type === "menubar") {
+    computedSide = computedSide ?? (parent.context.orientation === "vertical" ? "inline-end" : "bottom");
+    computedAlign = computedAlign ?? "start";
+  }
+  const contextMenu = parent.type === "context-menu";
+  const positioner = useAnchorPositioning({
+    anchor,
+    floatingRootContext,
+    positionMethod: contextMenuContext ? "fixed" : positionMethodProp,
+    mounted,
+    side: computedSide,
+    sideOffset,
+    align: computedAlign,
+    alignOffset,
+    arrowPadding: contextMenu ? 0 : arrowPadding,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    nodeId: floatingNodeId,
+    keepMounted,
+    disableAnchorTracking,
+    collisionAvoidance,
+    shiftCrossAxis: contextMenu && !(("side" in collisionAvoidance) && collisionAvoidance.side === "flip"),
+    externalTree: floatingTreeRoot,
+    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
+  });
+  React62.useEffect(() => {
+    function onMenuOpenChange(details) {
+      if (details.open) {
+        if (details.parentNodeId === floatingNodeId) {
+          store.set("hoverEnabled", false);
+        }
+        if (details.nodeId !== floatingNodeId && details.parentNodeId === store.select("floatingParentNodeId")) {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+        }
+      }
+    }
+    floatingTreeRoot.events.on("menuopenchange", onMenuOpenChange);
+    return () => {
+      floatingTreeRoot.events.off("menuopenchange", onMenuOpenChange);
+    };
+  }, [store, floatingTreeRoot.events, floatingNodeId]);
+  React62.useEffect(() => {
+    if (store.select("floatingParentNodeId") == null) {
+      return;
+    }
+    function onParentClose(details) {
+      if (details.open || details.nodeId !== store.select("floatingParentNodeId")) {
+        return;
+      }
+      const reason = details.reason ?? exports_reason_parts.siblingOpen;
+      store.setOpen(false, createChangeEventDetails(reason));
+    }
+    floatingTreeRoot.events.on("menuopenchange", onParentClose);
+    return () => {
+      floatingTreeRoot.events.off("menuopenchange", onParentClose);
+    };
+  }, [floatingTreeRoot.events, store]);
+  const closeTimeout = useTimeout();
+  React62.useEffect(() => {
+    if (!open) {
+      closeTimeout.clear();
+    }
+  }, [open, closeTimeout]);
+  React62.useEffect(() => {
+    function onItemHover(event) {
+      if (!open || event.nodeId !== store.select("floatingParentNodeId")) {
+        return;
+      }
+      if (event.target && triggerElement && triggerElement !== event.target) {
+        const delay = store.select("closeDelay");
+        if (delay > 0) {
+          if (!closeTimeout.isStarted()) {
+            closeTimeout.start(delay, () => {
+              store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+            });
+          }
+        } else {
+          store.setOpen(false, createChangeEventDetails(exports_reason_parts.siblingOpen));
+        }
+      } else {
+        closeTimeout.clear();
+      }
+    }
+    floatingTreeRoot.events.on("itemhover", onItemHover);
+    return () => {
+      floatingTreeRoot.events.off("itemhover", onItemHover);
+    };
+  }, [floatingTreeRoot.events, open, triggerElement, store, closeTimeout]);
+  React62.useEffect(() => {
+    const eventDetails = {
+      open,
+      nodeId: floatingNodeId,
+      parentNodeId: floatingParentNodeId,
+      reason: store.select("lastOpenChangeReason")
+    };
+    floatingTreeRoot.events.emit("menuopenchange", eventDetails);
+  }, [floatingTreeRoot.events, open, store, floatingNodeId, floatingParentNodeId]);
+  useIsoLayoutEffect(() => {
+    const currentTrigger = domReference;
+    const previousTrigger = previousTriggerRef.current;
+    if (currentTrigger) {
+      previousTriggerRef.current = currentTrigger;
+    }
+    if (previousTrigger && currentTrigger && currentTrigger !== previousTrigger) {
+      store.set("instantType", undefined);
+      const abortController = new AbortController;
+      runOnceAnimationsFinish(() => {
+        store.set("instantType", "trigger-change");
+      }, abortController.signal);
+      return () => {
+        abortController.abort();
+      };
+    }
+    return;
+  }, [domReference, runOnceAnimationsFinish, store]);
+  const state = {
+    open,
+    side: positioner.side,
+    align: positioner.align,
+    anchorHidden: positioner.anchorHidden,
+    nested: parent.type === "menu",
+    instant: instantType
+  };
+  const menubarModal = parent.type === "menubar" && parent.context.modal;
+  const popupModal = modal && lastOpenChangeReason !== exports_reason_parts.triggerHover;
+  useAnchoredPopupScrollLock(open && (menubarModal || popupModal), openMethod === "touch", positionerElement, triggerElement);
+  const element = usePositioner(componentProps, state, {
+    styles: positioner.positionerStyles,
+    transitionStatus,
+    props: elementProps,
+    refs: [forwardedRef, store.useStateSetter("positionerElement")],
+    hidden: !mounted,
+    inert: !open
+  });
+  const shouldRenderBackdrop = mounted && parent.type !== "menu" && (parent.type !== "menubar" && modal && lastOpenChangeReason !== exports_reason_parts.triggerHover || parent.type === "menubar" && parent.context.modal);
+  let backdropCutout = null;
+  if (parent.type === "menubar") {
+    backdropCutout = parent.context.contentElement;
+  } else if (parent.type === undefined) {
+    backdropCutout = triggerElement;
+  }
+  return /* @__PURE__ */ import_jsx_runtime12.jsxs(MenuPositionerContext.Provider, {
+    value: positioner,
+    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime12.jsx(InternalBackdrop, {
+      ref: parent.type === "context-menu" || parent.type === "nested-context-menu" ? parent.context.internalBackdropRef : null,
+      inert: inertValue(!open),
+      cutout: backdropCutout
+    }), /* @__PURE__ */ import_jsx_runtime12.jsx(FloatingNode, {
+      id: floatingNodeId,
+      children: /* @__PURE__ */ import_jsx_runtime12.jsx(CompositeList, {
+        elementsRef: store.context.itemDomElements,
+        labelsRef: store.context.itemLabels,
+        children: element
+      })
+    })]
+  });
+});
+if (true)
+  MenuPositioner.displayName = "MenuPositioner";
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
+var React64 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroupContext.mjs
+var React63 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioGroupContext = /* @__PURE__ */ React63.createContext(undefined);
+if (true)
+  MenuRadioGroupContext.displayName = "MenuRadioGroupContext";
+function useMenuRadioGroupContext() {
+  const context = React63.useContext(MenuRadioGroupContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuRadioGroupContext is missing. MenuRadioGroup parts must be placed within <Menu.RadioGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
+var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRadioGroup = /* @__PURE__ */ React64.memo(/* @__PURE__ */ React64.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    value: valueProp,
+    defaultValue,
+    onValueChange: onValueChangeProp,
+    disabled: disabled2 = false,
+    style,
+    "aria-labelledby": ariaLabelledByProp,
+    ...elementProps
+  } = componentProps;
+  const [labelId, setLabelId] = React64.useState(undefined);
+  const [value, setValueUnwrapped] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+    name: "MenuRadioGroup"
+  });
+  const setValue = useStableCallback((newValue, eventDetails) => {
+    onValueChangeProp?.(newValue, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    setValueUnwrapped(newValue);
+  });
+  const state = {
+    disabled: disabled2
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: {
+      role: "group",
+      "aria-labelledby": ariaLabelledByProp ?? labelId,
+      "aria-disabled": disabled2 || undefined,
+      ...elementProps
+    }
+  });
+  const context = React64.useMemo(() => ({
+    value,
+    setValue,
+    disabled: disabled2
+  }), [value, setValue, disabled2]);
+  return /* @__PURE__ */ import_jsx_runtime13.jsx(MenuGroupContext.Provider, {
+    value: setLabelId,
+    children: /* @__PURE__ */ import_jsx_runtime13.jsx(MenuRadioGroupContext.Provider, {
+      value: context,
+      children: element
+    })
+  });
+}));
+if (true)
+  MenuRadioGroup.displayName = "MenuRadioGroup";
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
+var React66 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItemContext.mjs
+var React65 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioItemContext = /* @__PURE__ */ React65.createContext(undefined);
+if (true)
+  MenuRadioItemContext.displayName = "MenuRadioItemContext";
+function useMenuRadioItemContext() {
+  const context = React65.useContext(MenuRadioItemContext);
+  if (context === undefined) {
+    throw new Error("Base UI: MenuRadioItemContext is missing. MenuRadioItem parts must be placed within <Menu.RadioItem>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
+var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRadioItem = /* @__PURE__ */ React66.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabledProp = false,
+    closeOnClick = false,
+    value,
+    style,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const {
+    value: selectedValue,
+    setValue: setSelectedValue,
+    disabled: groupDisabled
+  } = useMenuRadioGroupContext();
+  const disabled2 = groupDisabled || disabledProp;
+  const checked = selectedValue === value;
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = React66.useMemo(() => ({
+    disabled: disabled2,
+    highlighted,
+    checked
+  }), [disabled2, highlighted, checked]);
+  function handleClick(event) {
+    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose() {}
+    });
+    setSelectedValue(value, details);
+  }
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [itemProps, {
+      role: "menuitemradio",
+      "aria-checked": checked,
+      onClick: handleClick
+    }, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+  return /* @__PURE__ */ import_jsx_runtime14.jsx(MenuRadioItemContext.Provider, {
+    value: state,
+    children: element
+  });
+});
+if (true)
+  MenuRadioItem.displayName = "MenuRadioItem";
+// node_modules/@base-ui/react/menu/radio-item-indicator/MenuRadioItemIndicator.mjs
+var React67 = __toESM(require_react(), 1);
+"use client";
+var MenuRadioItemIndicator = /* @__PURE__ */ React67.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    keepMounted = false,
+    ...elementProps
+  } = componentProps;
+  const item = useMenuRadioItemContext();
+  const indicatorRef = React67.useRef(null);
+  const {
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(item.checked);
+  useOpenChangeComplete({
+    open: item.checked,
+    ref: indicatorRef,
+    onComplete() {
+      if (!item.checked) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    checked: item.checked,
+    disabled: item.disabled,
+    highlighted: item.highlighted,
+    transitionStatus
+  };
+  const element = useRenderElement("span", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    ref: [forwardedRef, indicatorRef],
+    props: {
+      "aria-hidden": true,
+      ...elementProps
+    },
+    enabled: keepMounted || item.checked
+  });
+  return element;
+});
+if (true)
+  MenuRadioItemIndicator.displayName = "MenuRadioItemIndicator";
+// node_modules/@base-ui/react/menu/root/MenuRoot.mjs
+var React74 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menubar/MenubarContext.mjs
+var React68 = __toESM(require_react(), 1);
+"use client";
+var MenubarContext = /* @__PURE__ */ React68.createContext(null);
+if (true)
+  MenubarContext.displayName = "MenubarContext";
+function useMenubarContext(optional) {
+  const context = React68.useContext(MenubarContext);
+  if (context === null && !optional) {
+    throw new Error("Base UI: MenubarContext is missing. Menubar parts must be placed within <Menubar>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+var React71 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
+var React69 = __toESM(require_react(), 1);
+"use client";
+function useEnhancedClickHandler(handler) {
+  const lastClickInteractionTypeRef = React69.useRef("");
+  const handlePointerDown = React69.useCallback((event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    lastClickInteractionTypeRef.current = event.pointerType;
+    handler(event, event.pointerType);
+  }, [handler]);
+  const handleClick = React69.useCallback((event) => {
+    if (event.detail === 0) {
+      handler(event, "keyboard");
+      return;
+    }
+    if ("pointerType" in event) {
+      handler(event, event.pointerType);
+    } else {
+      handler(event, lastClickInteractionTypeRef.current);
+    }
+    lastClickInteractionTypeRef.current = "";
+  }, [handler]);
+  return {
+    onClick: handleClick,
+    onPointerDown: handlePointerDown
+  };
+}
+
+// node_modules/@base-ui/react/internals/useValueChanged.mjs
+var React70 = __toESM(require_react(), 1);
+"use client";
+function useValueChanged(value, onChange) {
+  const valueRef = React70.useRef(value);
+  const onChangeCallback = useStableCallback(onChange);
+  useIsoLayoutEffect(() => {
+    if (valueRef.current === value) {
+      return;
+    }
+    onChangeCallback(valueRef.current);
+  }, [value, onChangeCallback]);
+  useIsoLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+}
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+"use client";
+function useOpenMethodTriggerProps(open, setOpenMethod) {
+  const handleTriggerClick = useStableCallback((_, interactionType) => {
+    const isOpen = typeof open === "function" ? open() : open;
+    if (!isOpen) {
+      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
+    }
+  });
+  const {
+    onClick,
+    onPointerDown
+  } = useEnhancedClickHandler(handleTriggerClick);
+  return React71.useMemo(() => ({
+    onClick,
+    onPointerDown
+  }), [onClick, onPointerDown]);
+}
+function useOpenInteractionType(open) {
+  const [openMethod, setOpenMethod] = React71.useState(null);
+  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
+  useValueChanged(open, (previousOpen) => {
+    if (previousOpen && !open) {
+      setOpenMethod(null);
+    }
+  });
+  return React71.useMemo(() => ({
+    openMethod,
+    triggerProps
+  }), [openMethod, triggerProps]);
+}
+
+// node_modules/@base-ui/react/menu/store/MenuStore.mjs
+var React72 = __toESM(require_react(), 1);
+var selectors2 = {
+  ...popupStoreSelectors,
+  disabled: createSelector((state) => state.parent.type === "menubar" ? state.parent.context.disabled || state.disabled : state.disabled),
+  modal: createSelector((state) => (state.parent.type === undefined || state.parent.type === "context-menu") && (state.modal ?? true)),
+  openMethod: createSelector((state) => state.openMethod),
+  allowMouseEnter: createSelector((state) => state.allowMouseEnter),
+  highlightItemOnHover: createSelector((state) => state.highlightItemOnHover),
+  stickIfOpen: createSelector((state) => state.stickIfOpen),
+  parent: createSelector((state) => state.parent),
+  rootId: createSelector((state) => {
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("rootId");
+    }
+    return state.parent.type !== undefined ? state.parent.context.rootId : state.rootId;
+  }),
+  activeIndex: createSelector((state) => state.activeIndex),
+  isActive: createSelector((state, itemIndex) => state.activeIndex === itemIndex),
+  hoverEnabled: createSelector((state) => state.hoverEnabled),
+  instantType: createSelector((state) => state.instantType),
+  lastOpenChangeReason: createSelector((state) => state.openChangeReason),
+  floatingTreeRoot: createSelector((state) => {
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("floatingTreeRoot");
+    }
+    return state.floatingTreeRoot;
+  }),
+  floatingNodeId: createSelector((state) => state.floatingNodeId),
+  floatingParentNodeId: createSelector((state) => state.floatingParentNodeId),
+  itemProps: createSelector((state) => state.itemProps),
+  closeDelay: createSelector((state) => state.closeDelay),
+  hasViewport: createSelector((state) => state.hasViewport),
+  keyboardEventRelay: createSelector((state) => {
+    if (state.keyboardEventRelay) {
+      return state.keyboardEventRelay;
+    }
+    if (state.parent.type === "menu") {
+      return state.parent.store.select("keyboardEventRelay");
+    }
+    return;
+  })
+};
+
+class MenuStore extends ReactStore {
+  constructor(initialState) {
+    super({
+      ...createInitialState(),
+      ...initialState
+    }, {
+      positionerRef: /* @__PURE__ */ React72.createRef(),
+      popupRef: /* @__PURE__ */ React72.createRef(),
+      typingRef: {
+        current: false
+      },
+      itemDomElements: {
+        current: []
+      },
+      itemLabels: {
+        current: []
+      },
+      allowMouseUpTriggerRef: {
+        current: false
+      },
+      triggerFocusTargetRef: /* @__PURE__ */ React72.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React72.createRef(),
+      onOpenChangeComplete: undefined,
+      triggerElements: new PopupTriggerMap
+    }, selectors2);
+    this.unsubscribeParentListener = this.observe("parent", (parent) => {
+      this.unsubscribeParentListener?.();
+      if (parent.type === "menu") {
+        let rootId = parent.store.select("rootId");
+        let floatingTreeRoot = parent.store.select("floatingTreeRoot");
+        let keyboardEventRelay = parent.store.select("keyboardEventRelay");
+        this.unsubscribeParentListener = parent.store.subscribe(() => {
+          const nextRootId = parent.store.select("rootId");
+          const nextFloatingTreeRoot = parent.store.select("floatingTreeRoot");
+          const nextKeyboardEventRelay = parent.store.select("keyboardEventRelay");
+          if (rootId === nextRootId && floatingTreeRoot === nextFloatingTreeRoot && keyboardEventRelay === nextKeyboardEventRelay) {
+            return;
+          }
+          rootId = nextRootId;
+          floatingTreeRoot = nextFloatingTreeRoot;
+          keyboardEventRelay = nextKeyboardEventRelay;
+          this.notifyAll();
+        });
+        this.context.allowMouseUpTriggerRef = parent.store.context.allowMouseUpTriggerRef;
+        return;
+      }
+      if (parent.type !== undefined) {
+        this.context.allowMouseUpTriggerRef = parent.context.allowMouseUpTriggerRef;
+      }
+      this.unsubscribeParentListener = null;
+    });
+  }
+  setOpen(open, eventDetails) {
+    this.state.floatingRootContext.context.events.emit("setOpen", {
+      open,
+      eventDetails
+    });
+  }
+  static useStore(externalStore, initialState) {
+    const internalStore = useRefWithInit(() => {
+      return new MenuStore(initialState);
+    }).current;
+    return externalStore ?? internalStore;
+  }
+  unsubscribeParentListener = null;
+}
+function createInitialState() {
+  return {
+    ...createInitialPopupStoreState(),
+    disabled: false,
+    modal: true,
+    openMethod: null,
+    allowMouseEnter: false,
+    highlightItemOnHover: true,
+    stickIfOpen: true,
+    parent: {
+      type: undefined
+    },
+    rootId: undefined,
+    activeIndex: null,
+    hoverEnabled: true,
+    instantType: undefined,
+    openChangeReason: null,
+    floatingTreeRoot: new FloatingTreeStore,
+    floatingNodeId: undefined,
+    floatingParentNodeId: null,
+    itemProps: EMPTY_OBJECT,
+    keyboardEventRelay: undefined,
+    closeDelay: 0,
+    hasViewport: false
+  };
+}
+
+// node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRootContext.mjs
+var React73 = __toESM(require_react(), 1);
+"use client";
+var MenuSubmenuRootContext = /* @__PURE__ */ React73.createContext(undefined);
+if (true)
+  MenuSubmenuRootContext.displayName = "MenuSubmenuRootContext";
+function useMenuSubmenuRootContext() {
+  return React73.useContext(MenuSubmenuRootContext);
+}
+
+// node_modules/@base-ui/react/menu/root/MenuRoot.mjs
+var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuRoot = fastComponent(function MenuRoot2(props) {
+  const {
+    children,
+    open: openProp,
+    onOpenChange,
+    onOpenChangeComplete,
+    defaultOpen = false,
+    disabled: disabledProp = false,
+    modal: modalProp,
+    loopFocus = true,
+    orientation = "vertical",
+    actionsRef,
+    closeParentOnEsc = false,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null,
+    highlightItemOnHover = true
+  } = props;
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parentMenuRootContext = useMenuRootContext(true);
+  const menubarContext = useMenubarContext(true);
+  const isSubmenu = useMenuSubmenuRootContext();
+  const parentFromContext = React74.useMemo(() => {
+    if (isSubmenu && parentMenuRootContext) {
+      return {
+        type: "menu",
+        store: parentMenuRootContext.store
+      };
+    }
+    if (menubarContext) {
+      return {
+        type: "menubar",
+        context: menubarContext
+      };
+    }
+    if (contextMenuContext && !parentMenuRootContext) {
+      return {
+        type: "context-menu",
+        context: contextMenuContext
+      };
+    }
+    return {
+      type: undefined
+    };
+  }, [contextMenuContext, parentMenuRootContext, menubarContext, isSubmenu]);
+  const store = MenuStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    parent: parentFromContext
+  });
+  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const rootId = useId();
+  const floatingId = useId();
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const floatingNodeIdFromContext = useFloatingNodeId(floatingTreeRoot);
+  const floatingParentNodeIdFromContext = useFloatingParentNodeId();
+  const open = store.useState("open");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const positionerElement = store.useState("positionerElement");
+  const hoverEnabled = store.useState("hoverEnabled");
+  const disabled2 = store.useState("disabled");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const parent = store.useState("parent");
+  const activeIndex = store.useState("activeIndex");
+  const payload = store.useState("payload");
+  const floatingParentNodeId = store.useState("floatingParentNodeId");
+  const openEventRef = React74.useRef(null);
+  const allowOutsidePressDismissalRef = React74.useRef(parent.type !== "context-menu");
+  const allowOutsidePressDismissalTimeout = useTimeout();
+  const allowTouchToCloseRef = React74.useRef(true);
+  const allowTouchToCloseTimeout = useTimeout();
+  const nested = floatingParentNodeId != null;
+  if (true) {
+    if (parent.type !== undefined && modalProp !== undefined) {
+      console.warn("Base UI: The `modal` prop is not supported on nested menus. It will be ignored.");
+    }
+  }
+  const {
+    openMethod,
+    triggerProps: interactionTypeProps
+  } = useOpenInteractionType(open);
+  store.useSyncedValues({
+    disabled: disabledProp,
+    highlightItemOnHover,
+    modal: parent.type === undefined ? modalProp : undefined,
+    openMethod,
+    rootId
+  });
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store, () => {
+    store.update({
+      allowMouseEnter: false,
+      stickIfOpen: true
+    });
+  });
+  useIsoLayoutEffect(() => {
+    if (contextMenuContext && !parentMenuRootContext) {
+      store.update({
+        parent: {
+          type: "context-menu",
+          context: contextMenuContext
+        },
+        floatingNodeId: floatingNodeIdFromContext,
+        floatingParentNodeId: floatingParentNodeIdFromContext
+      });
+    } else if (parentMenuRootContext) {
+      store.update({
+        floatingNodeId: floatingNodeIdFromContext,
+        floatingParentNodeId: floatingParentNodeIdFromContext
+      });
+    }
+  }, [contextMenuContext, parentMenuRootContext, floatingNodeIdFromContext, floatingParentNodeIdFromContext, store]);
+  React74.useEffect(() => {
+    if (!open) {
+      openEventRef.current = null;
+    }
+    if (parent.type !== "context-menu") {
+      return;
+    }
+    if (!open) {
+      allowOutsidePressDismissalTimeout.clear();
+      allowOutsidePressDismissalRef.current = false;
+      return;
+    }
+    allowOutsidePressDismissalTimeout.start(500, () => {
+      allowOutsidePressDismissalRef.current = true;
+    });
+  }, [allowOutsidePressDismissalTimeout, open, parent.type]);
+  useIsoLayoutEffect(() => {
+    if (!open && !hoverEnabled) {
+      store.set("hoverEnabled", true);
+    }
+  }, [open, hoverEnabled, store]);
+  const setOpen = useStableCallback((nextOpen, eventDetails) => {
+    const reason = eventDetails.reason;
+    if (open === nextOpen && eventDetails.trigger === activeTriggerElement && lastOpenChangeReason === reason) {
+      return;
+    }
+    const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
+    if (!nextOpen && eventDetails.trigger == null) {
+      eventDetails.trigger = activeTriggerElement ?? undefined;
+    }
+    onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    store.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const nativeEvent = eventDetails.event;
+    if (nextOpen === false && nativeEvent?.type === "click" && nativeEvent.pointerType === "touch" && !allowTouchToCloseRef.current) {
+      return;
+    }
+    if (nextOpen && reason === exports_reason_parts.triggerFocus) {
+      allowTouchToCloseRef.current = false;
+      allowTouchToCloseTimeout.start(300, () => {
+        allowTouchToCloseRef.current = true;
+      });
+    } else {
+      allowTouchToCloseRef.current = true;
+      allowTouchToCloseTimeout.clear();
+    }
+    const isKeyboardClick = (reason === exports_reason_parts.triggerPress || reason === exports_reason_parts.itemPress) && nativeEvent.detail === 0 && nativeEvent?.isTrusted;
+    const isDismissClose = !nextOpen && (reason === exports_reason_parts.escapeKey || reason == null);
+    const updatedState = {
+      open: nextOpen,
+      openChangeReason: reason
+    };
+    openEventRef.current = eventDetails.event ?? null;
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
+    store.update(updatedState);
+    if (parent.type === "menubar" && (reason === exports_reason_parts.triggerFocus || reason === exports_reason_parts.focusOut || reason === exports_reason_parts.triggerHover || reason === exports_reason_parts.listNavigation || reason === exports_reason_parts.siblingOpen)) {
+      store.set("instantType", "group");
+    } else if (isKeyboardClick || isDismissClose) {
+      store.set("instantType", isKeyboardClick ? "click" : "dismiss");
+    } else {
+      store.set("instantType", undefined);
+    }
+  });
+  const floatingRootContext = useSyncedFloatingRootContext({
+    popupStore: store,
+    floatingId,
+    nested: floatingParentNodeIdFromContext != null,
+    onOpenChange: setOpen
+  });
+  const floatingEvents = floatingRootContext.context.events;
+  React74.useEffect(() => {
+    const handleSetOpenEvent = ({
+      open: nextOpen,
+      eventDetails
+    }) => setOpen(nextOpen, eventDetails);
+    floatingEvents.on("setOpen", handleSetOpenEvent);
+    return () => {
+      floatingEvents?.off("setOpen", handleSetOpenEvent);
+    };
+  }, [floatingEvents, setOpen]);
+  const handleImperativeClose = React74.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React74.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+  let ctx;
+  if (parent.type === "context-menu") {
+    ctx = parent.context;
+  }
+  React74.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
+  React74.useImperativeHandle(ctx?.actionsRef, () => ({
+    setOpen
+  }), [setOpen]);
+  const dismiss = useDismiss(floatingRootContext, {
+    enabled: !disabled2,
+    bubbles: {
+      escapeKey: closeParentOnEsc && parent.type === "menu"
+    },
+    outsidePress() {
+      if (parent.type !== "context-menu" || openEventRef.current?.type === "contextmenu") {
+        return true;
+      }
+      return allowOutsidePressDismissalRef.current;
+    },
+    externalTree: nested ? floatingTreeRoot : undefined
+  });
+  const direction = useDirection();
+  const setActiveIndex = React74.useCallback((index3) => {
+    if (store.select("activeIndex") === index3) {
+      return;
+    }
+    store.set("activeIndex", index3);
+  }, [store]);
+  const listNavigation2 = useListNavigation(floatingRootContext, {
+    enabled: !disabled2,
+    listRef: store.context.itemDomElements,
+    activeIndex,
+    nested: parent.type !== undefined,
+    loopFocus,
+    orientation,
+    parentOrientation: parent.type === "menubar" ? parent.context.orientation : undefined,
+    rtl: direction === "rtl",
+    disabledIndices: EMPTY_ARRAY,
+    onNavigate: setActiveIndex,
+    openOnArrowKeyDown: parent.type !== "context-menu",
+    externalTree: nested ? floatingTreeRoot : undefined,
+    focusItemOnHover: highlightItemOnHover
+  });
+  const onTyping = React74.useCallback((nextTyping) => {
+    store.context.typingRef.current = nextTyping;
+  }, [store]);
+  const typeahead = useTypeahead(floatingRootContext, {
+    enabled: !disabled2,
+    listRef: store.context.itemLabels,
+    elementsRef: store.context.itemDomElements,
+    activeIndex,
+    resetMs: TYPEAHEAD_RESET_MS,
+    onMatch: (index3) => {
+      if (open && index3 !== activeIndex) {
+        store.set("activeIndex", index3);
+      }
+    },
+    onTyping
+  });
+  const activeTriggerProps = React74.useMemo(() => {
+    const mergedProps = mergeProps(typeahead.reference, listNavigation2.reference, dismiss.reference, {
+      onMouseMove() {
+        store.set("allowMouseEnter", true);
+      }
+    }, interactionTypeProps);
+    mergedProps["aria-haspopup"] = "menu";
+    mergedProps["aria-expanded"] = open;
+    return mergedProps;
+  }, [store, typeahead.reference, listNavigation2.reference, dismiss.reference, interactionTypeProps, open]);
+  const inactiveTriggerProps = React74.useMemo(() => {
+    const mergedProps = mergeProps(listNavigation2.trigger, dismiss.trigger, interactionTypeProps);
+    mergedProps["aria-haspopup"] = "menu";
+    mergedProps["aria-expanded"] = false;
+    return mergedProps;
+  }, [listNavigation2.trigger, dismiss.trigger, interactionTypeProps]);
+  const popupProps = React74.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
+    id: floatingId,
+    role: "menu",
+    "aria-labelledby": activeTriggerElement?.id,
+    onMouseMove() {
+      store.set("allowMouseEnter", true);
+      if (parent.type === "menu") {
+        store.set("hoverEnabled", false);
+      }
+    },
+    onClick() {
+      if (store.select("hoverEnabled")) {
+        store.set("hoverEnabled", false);
+      }
+    },
+    onKeyDown(event) {
+      const relay = store.select("keyboardEventRelay");
+      if (relay && !event.isPropagationStopped()) {
+        relay(event);
+      }
+    }
+  }, typeahead.floating, listNavigation2.floating, dismiss.floating), [activeTriggerElement, floatingId, parent.type, store, typeahead.floating, listNavigation2.floating, dismiss.floating]);
+  const itemProps = listNavigation2.item ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    floatingRootContext,
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    itemProps
+  });
+  const context = React74.useMemo(() => ({
+    store,
+    parent: parentFromContext
+  }), [store, parentFromContext]);
+  const content = /* @__PURE__ */ import_jsx_runtime15.jsx(MenuRootContext.Provider, {
+    value: context,
+    children: typeof children === "function" ? children({
+      payload
+    }) : children
+  });
+  if (parent.type === undefined || parent.type === "context-menu") {
+    return /* @__PURE__ */ import_jsx_runtime15.jsx(FloatingTree, {
+      externalTree: floatingTreeRoot,
+      children: content
+    });
+  }
+  return content;
+});
+if (true)
+  MenuRoot.displayName = "MenuRoot";
+// node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRoot.mjs
+var React75 = __toESM(require_react(), 1);
+var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function MenuSubmenuRoot(props) {
+  const parentMenu = useMenuRootContext().store;
+  const contextValue = React75.useMemo(() => ({
+    parentMenu
+  }), [parentMenu]);
+  return /* @__PURE__ */ import_jsx_runtime16.jsx(MenuSubmenuRootContext.Provider, {
+    value: contextValue,
+    children: /* @__PURE__ */ import_jsx_runtime16.jsx(MenuRoot, {
+      ...props
+    })
+  });
+}
+// node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
+var React79 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/getPseudoElementBounds.mjs
+function getPseudoElementBounds(element) {
+  const elementRect = element.getBoundingClientRect();
+  const win = getWindow(element);
+  if (exports_parts.env.jsdom) {
+    return elementRect;
+  }
+  const beforeStyles = win.getComputedStyle(element, "::before");
+  const afterStyles = win.getComputedStyle(element, "::after");
+  const hasPseudoElements = beforeStyles.content !== "none" || afterStyles.content !== "none";
+  if (!hasPseudoElements) {
+    return elementRect;
+  }
+  const beforeWidth = parseFloat(beforeStyles.width) || 0;
+  const beforeHeight = parseFloat(beforeStyles.height) || 0;
+  const afterWidth = parseFloat(afterStyles.width) || 0;
+  const afterHeight = parseFloat(afterStyles.height) || 0;
+  const totalWidth = Math.max(elementRect.width, beforeWidth, afterWidth);
+  const totalHeight = Math.max(elementRect.height, beforeHeight, afterHeight);
+  const widthDiff = totalWidth - elementRect.width;
+  const heightDiff = totalHeight - elementRect.height;
+  return {
+    left: elementRect.left - widthDiff / 2,
+    right: elementRect.right + widthDiff / 2,
+    top: elementRect.top - heightDiff / 2,
+    bottom: elementRect.bottom + heightDiff / 2
+  };
+}
+
+// node_modules/@base-ui/react/internals/composite/item/useCompositeItem.mjs
+var React76 = __toESM(require_react(), 1);
+"use client";
+function useCompositeItem(params = {}) {
+  const {
+    highlightItemOnHover,
+    highlightedIndex,
+    onHighlightedIndexChange
+  } = useCompositeRootContext();
+  const {
+    ref,
+    index: index3
+  } = useCompositeListItem(params);
+  const isHighlighted = highlightedIndex === index3;
+  const itemRef = React76.useRef(null);
+  const mergedRef = useMergedRefs(ref, itemRef);
+  const compositeProps = {
+    tabIndex: isHighlighted ? 0 : -1,
+    onFocus() {
+      onHighlightedIndexChange(index3);
+    },
+    onMouseMove() {
+      const item = itemRef.current;
+      if (!highlightItemOnHover || !item) {
+        return;
+      }
+      const disabled2 = item.hasAttribute("disabled") || item.ariaDisabled === "true";
+      if (!isHighlighted && !disabled2) {
+        item.focus();
+      }
+    }
+  };
+  return {
+    compositeProps,
+    compositeRef: mergedRef,
+    index: index3
+  };
+}
+
+// node_modules/@base-ui/react/internals/composite/item/CompositeItem.mjs
+"use client";
+function CompositeItem(componentProps) {
+  const {
+    render,
+    className,
+    style,
+    state = EMPTY_OBJECT,
+    props = EMPTY_ARRAY,
+    refs = EMPTY_ARRAY,
+    metadata,
+    stateAttributesMapping: stateAttributesMapping3,
+    tag = "div",
+    ...elementProps
+  } = componentProps;
+  const {
+    compositeProps,
+    compositeRef
+  } = useCompositeItem({
+    metadata
+  });
+  return useRenderElement(tag, componentProps, {
+    state,
+    ref: [...refs, compositeRef],
+    props: [compositeProps, ...props, elementProps],
+    stateAttributesMapping: stateAttributesMapping3
+  });
+}
+
+// node_modules/@base-ui/react/menu/utils/findRootOwnerId.mjs
+function findRootOwnerId(node) {
+  if (isHTMLElement(node) && node.hasAttribute("data-rootownerid")) {
+    return node.getAttribute("data-rootownerid") ?? undefined;
+  }
+  if (isLastTraversableNode(node)) {
+    return;
+  }
+  return findRootOwnerId(getParentNode(node));
+}
+
+// node_modules/@base-ui/react/utils/popups/useTriggerFocusGuards.mjs
+var React77 = __toESM(require_react(), 1);
+var ReactDOM6 = __toESM(require_react_dom(), 1);
+"use client";
+function useTriggerFocusGuards(store, triggerElementRef) {
+  const preFocusGuardRef = React77.useRef(null);
+  function handlePreFocusGuardFocus(event) {
+    ReactDOM6.flushSync(() => {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
+    });
+    const previousTabbable = getTabbableBeforeElement(preFocusGuardRef.current);
+    previousTabbable?.focus();
+  }
+  function handleFocusTargetFocus(event) {
+    const positionerElement = store.select("positionerElement");
+    if (positionerElement && isOutsideEvent(event, positionerElement)) {
+      store.context.beforeContentFocusGuardRef.current?.focus();
+    } else {
+      ReactDOM6.flushSync(() => {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
+      });
+      let nextTabbable = getTabbableAfterElement(store.context.triggerFocusTargetRef.current || triggerElementRef.current);
+      while (nextTabbable !== null && contains(positionerElement, nextTabbable)) {
+        const prevTabbable = nextTabbable;
+        nextTabbable = getNextTabbable(nextTabbable);
+        if (nextTabbable === prevTabbable) {
+          break;
+        }
+      }
+      nextTabbable?.focus();
+    }
+  }
+  return {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  };
+}
+
+// node_modules/@base-ui/react/utils/useMixedToggleClickHandler.mjs
+var React78 = __toESM(require_react(), 1);
+"use client";
+function useMixedToggleClickHandler(params) {
+  const {
+    enabled = true,
+    mouseDownAction,
+    open
+  } = params;
+  const ignoreClickRef = React78.useRef(false);
+  return React78.useMemo(() => {
+    if (!enabled) {
+      return EMPTY_OBJECT;
+    }
+    return {
+      onMouseDown: (event) => {
+        if (mouseDownAction === "open" && !open || mouseDownAction === "close" && open) {
+          ignoreClickRef.current = true;
+          ownerDocument(event.currentTarget).addEventListener("click", () => {
+            ignoreClickRef.current = false;
+          }, {
+            once: true
+          });
+        }
+      },
+      onClick: (event) => {
+        if (ignoreClickRef.current) {
+          ignoreClickRef.current = false;
+          event.preventBaseUIHandler();
+        }
+      }
+    };
+  }, [enabled, mouseDownAction, open]);
+}
+
+// node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
+var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var BOUNDARY_OFFSET = 2;
+var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabledProp = false,
+    nativeButton = true,
+    id: idProp,
+    openOnHover: openOnHoverProp,
+    delay = 100,
+    closeDelay = 0,
+    handle,
+    payload,
+    ...elementProps
+  } = componentProps;
+  const rootContext = useMenuRootContext(true);
+  const store = handle?.store ?? rootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Menu.Trigger> must be either used within a <Menu.Root> component or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
+  const floatingRootContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React79.useRef(null);
+  const parent = useMenuParent();
+  const compositeRootContext = useCompositeRootContext(true);
+  const floatingTreeRootFromContext = useFloatingTree();
+  const floatingTreeRoot = React79.useMemo(() => {
+    return floatingTreeRootFromContext ?? new FloatingTreeStore;
+  }, [floatingTreeRootFromContext]);
+  const floatingNodeId = useFloatingNodeId(floatingTreeRoot);
+  const floatingParentNodeId = useFloatingParentNodeId();
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload,
+    closeDelay,
+    parent,
+    floatingTreeRoot,
+    floatingNodeId,
+    floatingParentNodeId,
+    keyboardEventRelay: compositeRootContext?.relayKeyboardEvent
+  });
+  const isInMenubar = parent.type === "menubar";
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled || isInMenubar && parent.context.disabled;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  React79.useEffect(() => {
+    if (!isOpenedByThisTrigger && parent.type === undefined) {
+      store.context.allowMouseUpTriggerRef.current = false;
+    }
+  }, [store, isOpenedByThisTrigger, parent.type]);
+  const triggerRef = React79.useRef(null);
+  const allowMouseUpTriggerTimeout = useTimeout();
+  const handleDocumentMouseUp = useStableCallback((mouseEvent) => {
+    if (!triggerRef.current) {
+      return;
+    }
+    allowMouseUpTriggerTimeout.clear();
+    store.context.allowMouseUpTriggerRef.current = false;
+    const mouseUpTarget = mouseEvent.target;
+    if (contains(triggerRef.current, mouseUpTarget) || contains(store.select("positionerElement"), mouseUpTarget) || mouseUpTarget === triggerRef.current) {
+      return;
+    }
+    if (mouseUpTarget != null && findRootOwnerId(mouseUpTarget) === store.select("rootId")) {
+      return;
+    }
+    const bounds = getPseudoElementBounds(triggerRef.current);
+    if (mouseEvent.clientX >= bounds.left - BOUNDARY_OFFSET && mouseEvent.clientX <= bounds.right + BOUNDARY_OFFSET && mouseEvent.clientY >= bounds.top - BOUNDARY_OFFSET && mouseEvent.clientY <= bounds.bottom + BOUNDARY_OFFSET) {
+      return;
+    }
+    floatingTreeRoot.events.emit("close", {
+      domEvent: mouseEvent,
+      reason: exports_reason_parts.cancelOpen
+    });
+  });
+  React79.useEffect(() => {
+    if (isOpenedByThisTrigger && store.select("lastOpenChangeReason") === exports_reason_parts.triggerHover) {
+      const doc = ownerDocument(triggerRef.current);
+      doc.addEventListener("mouseup", handleDocumentMouseUp, {
+        once: true
+      });
+    }
+  }, [isOpenedByThisTrigger, handleDocumentMouseUp, store]);
+  const parentMenubarHasSubmenuOpen = isInMenubar && parent.context.hasSubmenuOpen;
+  const openOnHover = openOnHoverProp ?? parentMenubarHasSubmenuOpen;
+  const hoverProps = useHoverReferenceInteraction(floatingRootContext, {
+    enabled: openOnHover && !disabled2 && parent.type !== "context-menu" && (!isInMenubar || parentMenubarHasSubmenuOpen && !isMountedByThisTrigger),
+    handleClose: safePolygon({
+      blockPointerEvents: !isInMenubar
+    }),
+    mouseOnly: true,
+    move: false,
+    restMs: parent.type === undefined ? delay : undefined,
+    delay: {
+      close: closeDelay
+    },
+    triggerElementRef,
+    externalTree: floatingTreeRoot,
+    isActiveTrigger: isTriggerActive,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const stickIfOpen = useStickIfOpen(isOpenedByThisTrigger, store.select("lastOpenChangeReason"));
+  const click = useClick(floatingRootContext, {
+    enabled: !disabled2 && parent.type !== "context-menu",
+    event: isOpenedByThisTrigger && isInMenubar ? "click" : "mousedown",
+    toggle: true,
+    ignoreMouse: false,
+    stickIfOpen: parent.type === undefined ? stickIfOpen : false
+  });
+  const focus = useFocus(floatingRootContext, {
+    enabled: !disabled2 && parentMenubarHasSubmenuOpen
+  });
+  const mixedToggleHandlers = useMixedToggleClickHandler({
+    open: isOpenedByThisTrigger,
+    enabled: isInMenubar,
+    mouseDownAction: "open"
+  });
+  const localInteractionProps = React79.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  const {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  } = useTriggerFocusGuards(store, triggerElementRef);
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const ref = [triggerRef, forwardedRef, buttonRef, registerTrigger, triggerElementRef];
+  const props = [localInteractionProps, hoverProps ?? EMPTY_OBJECT, rootTriggerProps, {
+    "aria-haspopup": "menu",
+    "aria-controls": popupId,
+    id: thisTriggerId,
+    onMouseDown: (event) => {
+      if (store.select("open")) {
+        return;
+      }
+      allowMouseUpTriggerTimeout.start(200, () => {
+        store.context.allowMouseUpTriggerRef.current = true;
+      });
+      const doc = ownerDocument(event.currentTarget);
+      doc.addEventListener("mouseup", handleDocumentMouseUp, {
+        once: true
+      });
+    }
+  }, isInMenubar ? {
+    role: "menuitem"
+  } : {}, mixedToggleHandlers, elementProps, getButtonProps];
+  const element = useRenderElement("button", componentProps, {
+    enabled: !isInMenubar,
+    stateAttributesMapping: pressableTriggerOpenStateMapping,
+    state,
+    ref,
+    props
+  });
+  if (isInMenubar) {
+    return /* @__PURE__ */ import_jsx_runtime17.jsx(CompositeItem, {
+      tag: "button",
+      render,
+      className,
+      style,
+      state,
+      refs: ref,
+      props,
+      stateAttributesMapping: pressableTriggerOpenStateMapping
+    });
+  }
+  if (isOpenedByThisTrigger) {
+    return /* @__PURE__ */ import_jsx_runtime17.jsxs(React79.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime17.jsx(FocusGuard, {
+        ref: preFocusGuardRef,
+        onFocus: handlePreFocusGuardFocus
+      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime17.jsx(React79.Fragment, {
+        children: element
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime17.jsx(FocusGuard, {
+        ref: store.context.triggerFocusTargetRef,
+        onFocus: handleFocusTargetFocus
+      }, `${thisTriggerId}-post-focus-guard`)]
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime17.jsx(React79.Fragment, {
+    children: element
+  }, thisTriggerId);
+});
+if (true)
+  MenuTrigger.displayName = "MenuTrigger";
+function useStickIfOpen(open, openReason) {
+  const stickIfOpenTimeout = useTimeout();
+  const [stickIfOpen, setStickIfOpen] = React79.useState(false);
+  useIsoLayoutEffect(() => {
+    if (open && openReason === "trigger-hover") {
+      setStickIfOpen(true);
+      stickIfOpenTimeout.start(PATIENT_CLICK_THRESHOLD, () => {
+        setStickIfOpen(false);
+      });
+    } else if (!open) {
+      stickIfOpenTimeout.clear();
+      setStickIfOpen(false);
+    }
+  }, [open, openReason, stickIfOpenTimeout]);
+  return stickIfOpen;
+}
+function useMenuParent() {
+  const contextMenuContext = useContextMenuRootContext(true);
+  const parentContext = useMenuRootContext(true);
+  const menubarContext = useMenubarContext(true);
+  const parent = React79.useMemo(() => {
+    if (menubarContext) {
+      return {
+        type: "menubar",
+        context: menubarContext
+      };
+    }
+    if (contextMenuContext && !parentContext) {
+      return {
+        type: "context-menu",
+        context: contextMenuContext
+      };
+    }
+    return {
+      type: undefined
+    };
+  }, [contextMenuContext, parentContext, menubarContext]);
+  return parent;
+}
+// node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
+var React83 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/usePopupViewport.mjs
+var React82 = __toESM(require_react(), 1);
+var ReactDOM7 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/usePreviousValue.mjs
+var React80 = __toESM(require_react(), 1);
+"use client";
+function usePreviousValue(value) {
+  const [state, setState] = React80.useState({
+    current: value,
+    previous: null
+  });
+  if (value !== state.current) {
+    setState({
+      current: value,
+      previous: state.current
+    });
+  }
+  return state.previous;
+}
+
+// node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
+var React81 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/getCssDimensions.mjs
+function getCssDimensions2(element) {
+  const css = getComputedStyle2(element);
+  let width = parseFloat(css.width) || 0;
+  let height = parseFloat(css.height) || 0;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
+  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
+  if (shouldFallback) {
+    width = offsetWidth;
+    height = offsetHeight;
+  }
+  return {
+    width,
+    height
+  };
+}
+
+// node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
+"use client";
+function usePopupAutoResize(parameters) {
+  const {
+    popupElement,
+    positionerElement,
+    content,
+    mounted,
+    onMeasureLayout: onMeasureLayoutParam,
+    onMeasureLayoutComplete: onMeasureLayoutCompleteParam,
+    side,
+    direction
+  } = parameters;
+  const runOnceAnimationsFinish = useAnimationsFinished(popupElement, true, false);
+  const animationFrame = useAnimationFrame();
+  const committedDimensionsRef = React81.useRef(null);
+  const isInitialRenderRef = React81.useRef(true);
+  const restoreAnchoringStylesRef = React81.useRef(NOOP);
+  const onMeasureLayout = useStableCallback(onMeasureLayoutParam);
+  const onMeasureLayoutComplete = useStableCallback(onMeasureLayoutCompleteParam);
+  const anchoringStyles = React81.useMemo(() => {
+    let isOriginSide = side === "top";
+    let isPhysicalLeft = side === "left";
+    if (direction === "rtl") {
+      isOriginSide = isOriginSide || side === "inline-end";
+      isPhysicalLeft = isPhysicalLeft || side === "inline-end";
+    } else {
+      isOriginSide = isOriginSide || side === "inline-start";
+      isPhysicalLeft = isPhysicalLeft || side === "inline-start";
+    }
+    return isOriginSide ? {
+      position: "absolute",
+      [side === "top" ? "bottom" : "top"]: "0",
+      [isPhysicalLeft ? "right" : "left"]: "0"
+    } : EMPTY_OBJECT;
+  }, [side, direction]);
+  useIsoLayoutEffect(() => {
+    if (!mounted) {
+      restoreAnchoringStylesRef.current = NOOP;
+      isInitialRenderRef.current = true;
+      committedDimensionsRef.current = null;
+      return;
+    }
+    if (!popupElement || !positionerElement) {
+      return;
+    }
+    restoreAnchoringStylesRef.current = applyElementStyles(popupElement, anchoringStyles);
+    setPopupCssSize(popupElement, "auto");
+    const restorePopupPosition = overrideElementStyle(popupElement, "position", "static");
+    const restorePopupTransform = overrideElementStyle(popupElement, "transform", "none");
+    const restorePopupScale = overrideElementStyle(popupElement, "scale", "1");
+    const restorePositionerAvailableSize = applyElementStyles(positionerElement, {
+      "--available-width": "max-content",
+      "--available-height": "max-content"
+    });
+    function restoreMeasurementOverrides() {
+      restorePopupPosition();
+      restorePopupTransform();
+      restorePositionerAvailableSize();
+    }
+    function restoreMeasurementOverridesIncludingScale() {
+      restoreMeasurementOverrides();
+      restorePopupScale();
+    }
+    onMeasureLayout?.();
+    if (isInitialRenderRef.current || committedDimensionsRef.current === null) {
+      setPositionerCssSize(positionerElement, "max-content");
+      const dimensions = getCssDimensions2(popupElement);
+      committedDimensionsRef.current = dimensions;
+      setPositionerCssSize(positionerElement, dimensions);
+      restoreMeasurementOverridesIncludingScale();
+      onMeasureLayoutComplete?.(null, dimensions);
+      isInitialRenderRef.current = false;
+      return () => {
+        restoreAnchoringStylesRef.current();
+        restoreAnchoringStylesRef.current = NOOP;
+      };
+    }
+    setPositionerCssSize(positionerElement, "max-content");
+    const previousDimensions = committedDimensionsRef.current;
+    const newDimensions = getCssDimensions2(popupElement);
+    committedDimensionsRef.current = newDimensions;
+    setPopupCssSize(popupElement, previousDimensions);
+    restoreMeasurementOverridesIncludingScale();
+    onMeasureLayoutComplete?.(previousDimensions, newDimensions);
+    setPositionerCssSize(positionerElement, newDimensions);
+    const abortController = new AbortController;
+    animationFrame.request(() => {
+      setPopupCssSize(popupElement, newDimensions);
+      runOnceAnimationsFinish(() => {
+        popupElement.style.setProperty("--popup-width", "auto");
+        popupElement.style.setProperty("--popup-height", "auto");
+      }, abortController.signal);
+    });
+    return () => {
+      abortController.abort();
+      animationFrame.cancel();
+      restoreAnchoringStylesRef.current();
+      restoreAnchoringStylesRef.current = NOOP;
+    };
+  }, [content, popupElement, positionerElement, runOnceAnimationsFinish, animationFrame, mounted, onMeasureLayout, onMeasureLayoutComplete, anchoringStyles]);
+}
+function overrideElementStyle(element, property, value) {
+  const originalValue = element.style.getPropertyValue(property);
+  element.style.setProperty(property, value);
+  return () => {
+    element.style.setProperty(property, originalValue);
+  };
+}
+function applyElementStyles(element, styles) {
+  const restorers = [];
+  for (const [key, value] of Object.entries(styles)) {
+    restorers.push(overrideElementStyle(element, key, value));
+  }
+  return restorers.length ? () => {
+    restorers.forEach((restore) => restore());
+  } : NOOP;
+}
+function setPopupCssSize(popupElement, size4) {
+  const width = size4 === "auto" ? "auto" : `${size4.width}px`;
+  const height = size4 === "auto" ? "auto" : `${size4.height}px`;
+  popupElement.style.setProperty("--popup-width", width);
+  popupElement.style.setProperty("--popup-height", height);
+}
+function setPositionerCssSize(positionerElement, size4) {
+  const width = size4 === "max-content" ? "max-content" : `${size4.width}px`;
+  const height = size4 === "max-content" ? "max-content" : `${size4.height}px`;
+  positionerElement.style.setProperty("--positioner-width", width);
+  positionerElement.style.setProperty("--positioner-height", height);
+}
+// node_modules/@base-ui/react/utils/usePopupViewport.mjs
+var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function usePopupViewport(parameters) {
+  const {
+    store,
+    side,
+    cssVars,
+    children
+  } = parameters;
+  const direction = useDirection();
+  const activeTrigger = store.useState("activeTriggerElement");
+  const activeTriggerId = store.useState("activeTriggerId");
+  const open = store.useState("open");
+  const payload = store.useState("payload");
+  const mounted = store.useState("mounted");
+  const popupElement = store.useState("popupElement");
+  const positionerElement = store.useState("positionerElement");
+  const previousActiveTrigger = usePreviousValue(open ? activeTrigger : null);
+  const currentContentKey = usePopupContentKey(activeTriggerId, payload);
+  const capturedNodeRef = React82.useRef(null);
+  const [previousContentNode, setPreviousContentNode] = React82.useState(null);
+  const [newTriggerOffset, setNewTriggerOffset] = React82.useState(null);
+  const currentContainerRef = React82.useRef(null);
+  const previousContainerRef = React82.useRef(null);
+  const onAnimationsFinished = useAnimationsFinished(currentContainerRef, true, false);
+  const cleanupFrame = useAnimationFrame();
+  const [previousContentDimensions, setPreviousContentDimensions] = React82.useState(null);
+  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React82.useState(false);
+  useIsoLayoutEffect(() => {
+    store.set("hasViewport", true);
+    return () => {
+      store.set("hasViewport", false);
+    };
+  }, [store]);
+  const handleMeasureLayout = useStableCallback(() => {
+    currentContainerRef.current?.style.setProperty("animation", "none");
+    currentContainerRef.current?.style.setProperty("transition", "none");
+    previousContainerRef.current?.style.setProperty("display", "none");
+  });
+  const handleMeasureLayoutComplete = useStableCallback((previousDimensions) => {
+    currentContainerRef.current?.style.removeProperty("animation");
+    currentContainerRef.current?.style.removeProperty("transition");
+    previousContainerRef.current?.style.removeProperty("display");
+    if (previousDimensions) {
+      setPreviousContentDimensions(previousDimensions);
+    }
+  });
+  const lastHandledTriggerRef = React82.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (!open || !mounted) {
+      lastHandledTriggerRef.current = null;
+    }
+  }, [open, mounted]);
+  useIsoLayoutEffect(() => {
+    if (activeTrigger && previousActiveTrigger && activeTrigger !== previousActiveTrigger && lastHandledTriggerRef.current !== activeTrigger && capturedNodeRef.current) {
+      setPreviousContentNode(capturedNodeRef.current);
+      setShowStartingStyleAttribute(true);
+      const offset4 = calculateRelativePosition(previousActiveTrigger, activeTrigger);
+      setNewTriggerOffset(offset4);
+      cleanupFrame.request(() => {
+        ReactDOM7.flushSync(() => {
+          setShowStartingStyleAttribute(false);
+        });
+        onAnimationsFinished(() => {
+          setPreviousContentNode(null);
+          setPreviousContentDimensions(null);
+          capturedNodeRef.current = null;
+        });
+      });
+      lastHandledTriggerRef.current = activeTrigger;
+    }
+  }, [activeTrigger, previousActiveTrigger, previousContentNode, onAnimationsFinished, cleanupFrame]);
+  useIsoLayoutEffect(() => {
+    const source = currentContainerRef.current;
+    if (!source) {
+      return;
+    }
+    const wrapper = ownerDocument(source).createElement("div");
+    for (const child of Array.from(source.childNodes)) {
+      wrapper.appendChild(child.cloneNode(true));
+    }
+    capturedNodeRef.current = wrapper;
+  });
+  const isTransitioning = previousContentNode != null;
+  let childrenToRender;
+  if (!isTransitioning) {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+      "data-current": true,
+      ref: currentContainerRef,
+      children
+    }, currentContentKey);
+  } else {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime18.jsxs(React82.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+        "data-previous": true,
+        inert: inertValue(true),
+        ref: previousContainerRef,
+        style: {
+          ...previousContentDimensions ? {
+            [cssVars.popupWidth]: `${previousContentDimensions.width}px`,
+            [cssVars.popupHeight]: `${previousContentDimensions.height}px`
+          } : null,
+          position: "absolute"
+        },
+        "data-ending-style": showStartingStyleAttribute ? undefined : ""
+      }, "previous"), /* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+        "data-current": true,
+        ref: currentContainerRef,
+        "data-starting-style": showStartingStyleAttribute ? "" : undefined,
+        children
+      }, currentContentKey)]
+    });
+  }
+  useIsoLayoutEffect(() => {
+    const container = previousContainerRef.current;
+    if (!container || !previousContentNode) {
+      return;
+    }
+    container.replaceChildren(...Array.from(previousContentNode.childNodes));
+  }, [previousContentNode]);
+  usePopupAutoResize({
+    popupElement,
+    positionerElement,
+    mounted,
+    content: payload,
+    onMeasureLayout: handleMeasureLayout,
+    onMeasureLayoutComplete: handleMeasureLayoutComplete,
+    side,
+    direction
+  });
+  const state = {
+    activationDirection: getActivationDirection(newTriggerOffset),
+    transitioning: isTransitioning
+  };
+  return {
+    children: childrenToRender,
+    state
+  };
+}
+function getActivationDirection(offset4) {
+  if (!offset4) {
+    return;
+  }
+  return `${getValueWithTolerance(offset4.horizontal, 5, "right", "left")} ${getValueWithTolerance(offset4.vertical, 5, "down", "up")}`;
+}
+function getValueWithTolerance(value, tolerance, positiveLabel, negativeLabel) {
+  if (value > tolerance) {
+    return positiveLabel;
+  }
+  if (value < -tolerance) {
+    return negativeLabel;
+  }
+  return "";
+}
+function calculateRelativePosition(from, to) {
+  const fromRect = from.getBoundingClientRect();
+  const toRect = to.getBoundingClientRect();
+  const fromCenter = {
+    x: fromRect.left + fromRect.width / 2,
+    y: fromRect.top + fromRect.height / 2
+  };
+  const toCenter = {
+    x: toRect.left + toRect.width / 2,
+    y: toRect.top + toRect.height / 2
+  };
+  return {
+    horizontal: toCenter.x - fromCenter.x,
+    vertical: toCenter.y - fromCenter.y
+  };
+}
+function usePopupContentKey(activeTriggerId, payload) {
+  const [contentKey, setContentKey] = React82.useState(0);
+  const previousActiveTriggerIdRef = React82.useRef(activeTriggerId);
+  const previousPayloadRef = React82.useRef(payload);
+  const pendingPayloadUpdateRef = React82.useRef(false);
+  useIsoLayoutEffect(() => {
+    const previousActiveTriggerId = previousActiveTriggerIdRef.current;
+    const previousPayload = previousPayloadRef.current;
+    const triggerIdChanged = activeTriggerId !== previousActiveTriggerId;
+    const payloadChanged = payload !== previousPayload;
+    if (triggerIdChanged) {
+      setContentKey((value) => value + 1);
+      pendingPayloadUpdateRef.current = !payloadChanged;
+    } else if (pendingPayloadUpdateRef.current && payloadChanged) {
+      setContentKey((value) => value + 1);
+      pendingPayloadUpdateRef.current = false;
+    }
+    previousActiveTriggerIdRef.current = activeTriggerId;
+    previousPayloadRef.current = payload;
+  }, [activeTriggerId, payload]);
+  return `${activeTriggerId ?? "current"}-${contentKey}`;
+}
+
+// node_modules/@base-ui/react/menu/viewport/MenuViewportCssVars.mjs
+var MenuViewportCssVars = /* @__PURE__ */ function(MenuViewportCssVars2) {
+  MenuViewportCssVars2["popupWidth"] = "--popup-width";
+  MenuViewportCssVars2["popupHeight"] = "--popup-height";
+  return MenuViewportCssVars2;
+}({});
+
+// node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
+"use client";
+var stateAttributesMapping3 = {
+  activationDirection: (value) => value ? {
+    "data-activation-direction": value
+  } : null
+};
+var MenuViewport = /* @__PURE__ */ React83.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    side
+  } = useMenuPositionerContext();
+  const instantType = store.useState("instantType");
+  const {
+    children: childrenToRender,
+    state: viewportState
+  } = usePopupViewport({
+    store,
+    side,
+    cssVars: MenuViewportCssVars,
+    children
+  });
+  const state = {
+    activationDirection: viewportState.activationDirection,
+    transitioning: viewportState.transitioning,
+    instant: instantType
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [elementProps, {
+      children: childrenToRender
+    }],
+    stateAttributesMapping: stateAttributesMapping3
+  });
+});
+if (true)
+  MenuViewport.displayName = "MenuViewport";
+// node_modules/@base-ui/react/separator/Separator.mjs
+var React84 = __toESM(require_react(), 1);
+"use client";
+var Separator = /* @__PURE__ */ React84.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
   const {
     className,
     render,
@@ -21756,10 +32546,14150 @@ var Separator = /* @__PURE__ */ React11.forwardRef(function SeparatorComponent(c
 });
 if (true)
   Separator.displayName = "Separator";
-// src/scriptorium/surface/ui/separator.tsx
+// node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
+var React85 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/isElementDisabled.mjs
+function isElementDisabled(element) {
+  return element == null || element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
+}
+
+// node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
+"use client";
+var MenuSubmenuTrigger = /* @__PURE__ */ React85.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    label,
+    id: idProp,
+    nativeButton = false,
+    openOnHover = true,
+    delay = 100,
+    closeDelay = 0,
+    disabled: disabledProp = false,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext();
+  const {
+    store
+  } = useMenuRootContext();
+  const thisTriggerId = useBaseUiId(idProp);
+  const open = store.useState("open");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const floatingTreeRoot = store.useState("floatingTreeRoot");
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const baseRegisterTrigger = useTriggerRegistration(thisTriggerId, store);
+  const registerTrigger = React85.useCallback((element2) => {
+    const cleanup = baseRegisterTrigger(element2);
+    if (element2 !== null && store.select("open") && store.select("activeTriggerId") == null) {
+      store.update({
+        activeTriggerId: thisTriggerId,
+        activeTriggerElement: element2,
+        closeDelay
+      });
+    }
+    return cleanup;
+  }, [baseRegisterTrigger, closeDelay, store, thisTriggerId]);
+  const triggerElementRef = React85.useRef(null);
+  const handleTriggerElementRef = React85.useCallback((el) => {
+    triggerElementRef.current = el;
+    store.set("activeTriggerElement", el);
+  }, [store]);
+  const submenuRootContext = useMenuSubmenuRootContext();
+  if (!submenuRootContext?.parentMenu) {
+    throw new Error("Base UI: <Menu.SubmenuTrigger> must be placed in <Menu.SubmenuRoot>.");
+  }
+  store.useSyncedValue("closeDelay", closeDelay);
+  const parentMenuStore = submenuRootContext.parentMenu;
+  const rootDisabled = store.useState("disabled");
+  const parentDisabled = parentMenuStore.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled || parentDisabled;
+  if (true) {
+    useIsoLayoutEffect(() => {
+      const element2 = triggerElementRef.current;
+      if (element2 && isElementDisabled(element2) && !disabled2) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        warn(`A disabled element was detected on <Menu.SubmenuTrigger>. To properly disable the trigger, use the \`disabled\` prop on the component instead of setting it on the rendered element.${ownerStackMessage}`);
+      }
+    });
+  }
+  const itemProps = parentMenuStore.useState("itemProps");
+  const highlighted = parentMenuStore.useState("isActive", listItem.index);
+  const itemMetadata = React85.useMemo(() => ({
+    type: "submenu-trigger",
+    setActive() {
+      if (parentMenuStore.select("highlightItemOnHover")) {
+        parentMenuStore.set("activeIndex", listItem.index);
+      }
+    }
+  }), [parentMenuStore, listItem.index]);
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick: false,
+    disabled: disabled2,
+    highlighted,
+    id: thisTriggerId,
+    store,
+    typingRef: parentMenuStore.context.typingRef,
+    nativeButton,
+    itemMetadata,
+    nodeId: menuPositionerContext?.context.nodeId
+  });
+  const hoverEnabled = store.useState("hoverEnabled");
+  const hoverProps = useHoverReferenceInteraction(floatingRootContext, {
+    enabled: hoverEnabled && openOnHover && !disabled2,
+    handleClose: safePolygon({
+      blockPointerEvents: true
+    }),
+    mouseOnly: true,
+    move: true,
+    restMs: delay,
+    delay: {
+      open: delay,
+      close: closeDelay
+    },
+    shouldOpen: delay > 0 ? () => parentMenuStore.select("allowMouseEnter") : undefined,
+    triggerElementRef,
+    externalTree: floatingTreeRoot,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const click = useClick(floatingRootContext, {
+    enabled: !disabled2,
+    event: "mousedown",
+    toggle: !openOnHover,
+    ignoreMouse: openOnHover,
+    stickIfOpen: false
+  });
+  const localInteractionProps = click.reference ?? EMPTY_OBJECT;
+  const rootTriggerProps = store.useState("triggerProps", true);
+  delete rootTriggerProps.id;
+  const state = {
+    disabled: disabled2,
+    highlighted,
+    open
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: triggerOpenStateMapping,
+    props: [localInteractionProps, hoverProps, rootTriggerProps, itemProps, {
+      "aria-controls": popupId,
+      tabIndex: open || highlighted ? 0 : -1,
+      onBlur() {
+        if (highlighted) {
+          parentMenuStore.set("activeIndex", null);
+        }
+      }
+    }, elementProps, getItemProps],
+    ref: [forwardedRef, listItem.ref, itemRef, registerTrigger, handleTriggerElementRef]
+  });
+  return element;
+});
+if (true)
+  MenuSubmenuTrigger.displayName = "MenuSubmenuTrigger";
+// node_modules/@base-ui/react/menu/store/MenuHandle.mjs
+class MenuHandle {
+  constructor() {
+    this.store = new MenuStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (triggerId && !triggerElement) {
+      throw new Error(`Base UI: MenuHandle.open: No trigger found with id "${triggerId}".`);
+    }
+    this.store.setOpen(true, createChangeEventDetails("imperative-action", undefined, triggerElement));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails("imperative-action", undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createMenuHandle() {
+  return new MenuHandle;
+}
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
+var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function ContextMenuRoot(props) {
+  const [anchor, setAnchor] = React86.useState({
+    getBoundingClientRect() {
+      return DOMRect.fromRect({
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0
+      });
+    }
+  });
+  const backdropRef = React86.useRef(null);
+  const internalBackdropRef = React86.useRef(null);
+  const actionsRef = React86.useRef(null);
+  const positionerRef = React86.useRef(null);
+  const allowMouseUpTriggerRef = React86.useRef(true);
+  const initialCursorPointRef = React86.useRef(null);
+  const id = useId();
+  const contextValue = React86.useMemo(() => ({
+    anchor,
+    setAnchor,
+    actionsRef,
+    backdropRef,
+    internalBackdropRef,
+    positionerRef,
+    allowMouseUpTriggerRef,
+    initialCursorPointRef,
+    rootId: id
+  }), [anchor, id]);
+  return /* @__PURE__ */ import_jsx_runtime19.jsx(ContextMenuRootContext.Provider, {
+    value: contextValue,
+    children: /* @__PURE__ */ import_jsx_runtime19.jsx(MenuRootContext.Provider, {
+      value: undefined,
+      children: /* @__PURE__ */ import_jsx_runtime19.jsx(exports_index_parts.Root, {
+        ...props
+      })
+    })
+  });
+}
+// node_modules/@base-ui/react/context-menu/trigger/ContextMenuTrigger.mjs
+var React87 = __toESM(require_react(), 1);
+"use client";
+var LONG_PRESS_DELAY = 500;
+var ContextMenuTrigger = /* @__PURE__ */ React87.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    setAnchor,
+    actionsRef,
+    internalBackdropRef,
+    backdropRef,
+    positionerRef,
+    allowMouseUpTriggerRef,
+    initialCursorPointRef,
+    rootId
+  } = useContextMenuRootContext(false);
+  const {
+    store
+  } = useMenuRootContext(false);
+  const open = store.useState("open");
+  const disabled2 = store.useState("disabled");
+  const triggerRef = React87.useRef(null);
+  const touchPositionRef = React87.useRef(null);
+  const longPressTimeout = useTimeout();
+  const allowMouseUpTimeout = useTimeout();
+  const allowMouseUpRef = React87.useRef(false);
+  function handleLongPress(x, y, event) {
+    const isTouchEvent = event.type.startsWith("touch");
+    initialCursorPointRef.current = {
+      x,
+      y
+    };
+    setAnchor({
+      getBoundingClientRect() {
+        return DOMRect.fromRect({
+          width: isTouchEvent ? 10 : 0,
+          height: isTouchEvent ? 10 : 0,
+          x,
+          y
+        });
+      }
+    });
+    allowMouseUpRef.current = false;
+    actionsRef.current?.setOpen(true, createChangeEventDetails(exports_reason_parts.triggerPress, event));
+    allowMouseUpTimeout.start(LONG_PRESS_DELAY, () => {
+      allowMouseUpRef.current = true;
+    });
+  }
+  function handleContextMenu(event) {
+    if (disabled2) {
+      return;
+    }
+    allowMouseUpTriggerRef.current = true;
+    stopEvent(event);
+    handleLongPress(event.clientX, event.clientY, event.nativeEvent);
+    const doc = ownerDocument(triggerRef.current);
+    addEventListener(doc, "mouseup", (mouseEvent) => {
+      allowMouseUpTriggerRef.current = false;
+      if (!allowMouseUpRef.current) {
+        return;
+      }
+      allowMouseUpTimeout.clear();
+      allowMouseUpRef.current = false;
+      const mouseUpTarget = getTarget(mouseEvent);
+      if (contains(positionerRef.current, mouseUpTarget)) {
+        return;
+      }
+      if (rootId && mouseUpTarget && findRootOwnerId(mouseUpTarget) === rootId) {
+        return;
+      }
+      actionsRef.current?.setOpen(false, createChangeEventDetails(exports_reason_parts.cancelOpen, mouseEvent));
+    }, {
+      once: true
+    });
+  }
+  function handleTouchStart(event) {
+    if (disabled2) {
+      return;
+    }
+    allowMouseUpTriggerRef.current = false;
+    if (event.touches.length === 1) {
+      event.stopPropagation();
+      const touch = event.touches[0];
+      touchPositionRef.current = {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+      longPressTimeout.start(LONG_PRESS_DELAY, () => {
+        if (touchPositionRef.current) {
+          handleLongPress(touchPositionRef.current.x, touchPositionRef.current.y, event.nativeEvent);
+        }
+      });
+    }
+  }
+  function handleTouchMove(event) {
+    if (longPressTimeout.isStarted() && touchPositionRef.current && event.touches.length === 1) {
+      const touch = event.touches[0];
+      const moveThreshold = 10;
+      const deltaX = Math.abs(touch.clientX - touchPositionRef.current.x);
+      const deltaY = Math.abs(touch.clientY - touchPositionRef.current.y);
+      if (deltaX > moveThreshold || deltaY > moveThreshold) {
+        longPressTimeout.clear();
+      }
+    }
+  }
+  function handleTouchEnd() {
+    longPressTimeout.clear();
+    touchPositionRef.current = null;
+  }
+  React87.useEffect(() => {
+    function handleDocumentContextMenu(event) {
+      if (disabled2) {
+        return;
+      }
+      const target = getTarget(event);
+      const targetElement = target;
+      if (contains(triggerRef.current, targetElement) || contains(internalBackdropRef.current, targetElement) || contains(backdropRef.current, targetElement)) {
+        event.preventDefault();
+      }
+    }
+    const doc = ownerDocument(triggerRef.current);
+    return addEventListener(doc, "contextmenu", handleDocumentContextMenu);
+  }, [backdropRef, disabled2, internalBackdropRef]);
+  const state = {
+    open
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [triggerRef, forwardedRef],
+    props: [{
+      onContextMenu: handleContextMenu,
+      onTouchStart: handleTouchStart,
+      onTouchMove: handleTouchMove,
+      onTouchEnd: handleTouchEnd,
+      onTouchCancel: handleTouchEnd,
+      style: {
+        WebkitTouchCallout: "none"
+      }
+    }, elementProps],
+    stateAttributesMapping: pressableTriggerOpenStateMapping
+  });
+  return element;
+});
+if (true)
+  ContextMenuTrigger.displayName = "ContextMenuTrigger";
+// src/scriptorium/surface/ui/context-menu.tsx
 var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
+function ContextMenu({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Root, {
+    "data-slot": "context-menu",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuTrigger3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Trigger, {
+    "data-slot": "context-menu-trigger",
+    className: cn("select-none", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuContent({
+  className,
+  align = "start",
+  alignOffset = 4,
+  side = "right",
+  sideOffset = 0,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Positioner, {
+      className: "isolate z-50 outline-none",
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Popup, {
+        "data-slot": "context-menu-content",
+        className: cn("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+function ContextMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Item, {
+    "data-slot": "context-menu-item",
+    "data-inset": inset,
+    "data-variant": variant,
+    className: cn("group/context-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus:*:[svg]:text-accent-foreground data-[variant=destructive]:*:[svg]:text-destructive", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function ContextMenuSeparator({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(exports_index_parts2.Separator, {
+    "data-slot": "context-menu-separator",
+    className: cn("-mx-1 my-1 h-px bg-border", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/context/AddPath.tsx
+var import_react7 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/input/Input.mjs
+var React106 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  Control: () => FieldControl,
+  Description: () => FieldDescription,
+  Error: () => FieldError,
+  Item: () => FieldItem,
+  Label: () => FieldLabel,
+  Root: () => FieldRoot,
+  Validity: () => FieldValidity
+});
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var React95 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
+var React88 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
+var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
+  FieldControlDataAttributes2["disabled"] = "data-disabled";
+  FieldControlDataAttributes2["valid"] = "data-valid";
+  FieldControlDataAttributes2["invalid"] = "data-invalid";
+  FieldControlDataAttributes2["touched"] = "data-touched";
+  FieldControlDataAttributes2["dirty"] = "data-dirty";
+  FieldControlDataAttributes2["filled"] = "data-filled";
+  FieldControlDataAttributes2["focused"] = "data-focused";
+  return FieldControlDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/internals/field-constants/constants.mjs
+var DEFAULT_VALIDITY_STATE = {
+  badInput: false,
+  customError: false,
+  patternMismatch: false,
+  rangeOverflow: false,
+  rangeUnderflow: false,
+  stepMismatch: false,
+  tooLong: false,
+  tooShort: false,
+  typeMismatch: false,
+  valid: null,
+  valueMissing: false
+};
+var DEFAULT_FIELD_STATE_ATTRIBUTES = {
+  valid: null,
+  touched: false,
+  dirty: false,
+  filled: false,
+  focused: false
+};
+var DEFAULT_FIELD_ROOT_STATE = {
+  disabled: false,
+  ...DEFAULT_FIELD_STATE_ATTRIBUTES
+};
+var fieldValidityMapping = {
+  valid(value) {
+    if (value === null) {
+      return null;
+    }
+    if (value) {
+      return {
+        [FieldControlDataAttributes.valid]: ""
+      };
+    }
+    return {
+      [FieldControlDataAttributes.invalid]: ""
+    };
+  }
+};
+
+// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
+"use client";
+var DEFAULT_FIELD_ROOT_CONTEXT = {
+  invalid: undefined,
+  name: undefined,
+  validityData: {
+    state: DEFAULT_VALIDITY_STATE,
+    errors: [],
+    error: "",
+    value: "",
+    initialValue: null
+  },
+  setValidityData: NOOP,
+  disabled: undefined,
+  touched: DEFAULT_FIELD_STATE_ATTRIBUTES.touched,
+  setTouched: NOOP,
+  dirty: DEFAULT_FIELD_STATE_ATTRIBUTES.dirty,
+  setDirty: NOOP,
+  filled: DEFAULT_FIELD_STATE_ATTRIBUTES.filled,
+  setFilled: NOOP,
+  focused: DEFAULT_FIELD_STATE_ATTRIBUTES.focused,
+  setFocused: NOOP,
+  validate: () => null,
+  validationMode: "onSubmit",
+  validationDebounceTime: 0,
+  shouldValidateOnChange: () => false,
+  state: DEFAULT_FIELD_ROOT_STATE,
+  markedDirtyRef: {
+    current: false
+  },
+  registerFieldControl: NOOP,
+  validation: {
+    getValidationProps: (_disabled, props = EMPTY_OBJECT) => props,
+    inputRef: {
+      current: null
+    },
+    registerInput: NOOP,
+    commit: async () => {},
+    change: NOOP
+  }
+};
+var FieldRootContext = /* @__PURE__ */ React88.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
+if (true)
+  FieldRootContext.displayName = "FieldRootContext";
+function useFieldRootContext(optional = true) {
+  const context = React88.useContext(FieldRootContext);
+  if (context.setValidityData === NOOP && !optional) {
+    throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
+var React89 = __toESM(require_react(), 1);
+"use client";
+var FieldsetRootContext = /* @__PURE__ */ React89.createContext(undefined);
+if (true)
+  FieldsetRootContext.displayName = "FieldsetRootContext";
+function useFieldsetRootContext(optional = false) {
+  const context = React89.useContext(FieldsetRootContext);
+  if (!context && !optional) {
+    throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/form-context/FormContext.mjs
+var React90 = __toESM(require_react(), 1);
+"use client";
+var FormContext = /* @__PURE__ */ React90.createContext({
+  formRef: {
+    current: {
+      fields: new Map
+    }
+  },
+  errors: {},
+  clearErrors: NOOP,
+  validationMode: "onSubmit",
+  submitAttemptedRef: {
+    current: false
+  }
+});
+if (true)
+  FormContext.displayName = "FormContext";
+function useFormContext() {
+  return React90.useContext(FormContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
+var React92 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
+var React91 = __toESM(require_react(), 1);
+"use client";
+var LabelableContext = /* @__PURE__ */ React91.createContext({
+  controlId: undefined,
+  registerControlId: NOOP,
+  labelId: undefined,
+  setLabelId: NOOP,
+  messageIds: [],
+  setMessageIds: NOOP,
+  getDescriptionProps: (externalProps) => externalProps
+});
+if (true)
+  LabelableContext.displayName = "LabelableContext";
+function useLabelableContext() {
+  return React91.useContext(LabelableContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var LabelableProvider = function LabelableProvider2(props) {
+  const defaultId = useBaseUiId();
+  const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
+  const [controlId, setControlIdState] = React92.useState(initialControlId);
+  const [labelId, setLabelId] = React92.useState(props.labelId);
+  const [messageIds, setMessageIds] = React92.useState([]);
+  const registrationsRef = useRefWithInit(() => new Map);
+  const {
+    messageIds: parentMessageIds
+  } = useLabelableContext();
+  const registerControlId = useStableCallback((source, nextId) => {
+    const registrations = registrationsRef.current;
+    if (nextId === undefined) {
+      registrations.delete(source);
+      return;
+    }
+    registrations.set(source, nextId);
+    setControlIdState((prev) => {
+      if (registrations.size === 0) {
+        return;
+      }
+      let nextControlId;
+      for (const id of registrations.values()) {
+        if (prev !== undefined && id === prev) {
+          return prev;
+        }
+        if (nextControlId === undefined) {
+          nextControlId = id;
+        }
+      }
+      return nextControlId;
+    });
+  });
+  const getDescriptionProps = React92.useCallback((externalProps) => {
+    const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
+    ids.push(...parentMessageIds, ...messageIds);
+    return {
+      ...externalProps,
+      "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
+    };
+  }, [parentMessageIds, messageIds]);
+  const contextValue = React92.useMemo(() => ({
+    controlId,
+    registerControlId,
+    labelId,
+    setLabelId,
+    messageIds,
+    setMessageIds,
+    getDescriptionProps
+  }), [controlId, registerControlId, labelId, setLabelId, messageIds, setMessageIds, getDescriptionProps]);
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(LabelableContext.Provider, {
+    value: contextValue,
+    children: props.children
+  });
+};
+if (true)
+  LabelableProvider.displayName = "LabelableProvider";
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+var React93 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
+function getCombinedFieldValidityData(validityData, invalid) {
+  return {
+    ...validityData,
+    state: {
+      ...validityData.state,
+      valid: !invalid && validityData.state.valid
+    }
+  };
+}
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+"use client";
+var validityKeys = Object.keys(DEFAULT_VALIDITY_STATE);
+function isOnlyValueMissing(state) {
+  if (!state || state.valid || !state.valueMissing) {
+    return false;
+  }
+  let onlyValueMissing = false;
+  for (const key of validityKeys) {
+    if (key === "valid") {
+      continue;
+    }
+    if (key === "valueMissing") {
+      onlyValueMissing = state[key];
+    } else if (state[key]) {
+      onlyValueMissing = false;
+    }
+  }
+  return onlyValueMissing;
+}
+function findRepresentativeInput(inputs) {
+  let fallback = null;
+  for (const input of inputs) {
+    if (input.disabled) {
+      continue;
+    }
+    if (!input.validity.valid) {
+      return input;
+    }
+    fallback ??= input;
+  }
+  return fallback;
+}
+function clearCustomValidity(element, inputs) {
+  let didClearElement = false;
+  for (const input of inputs) {
+    input.setCustomValidity("");
+    didClearElement ||= input === element;
+  }
+  if (!didClearElement) {
+    element.setCustomValidity("");
+  }
+}
+function useFieldValidation(params) {
+  const {
+    formRef
+  } = useFormContext();
+  const {
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  } = params;
+  const {
+    controlId,
+    getDescriptionProps
+  } = useLabelableContext();
+  const timeout = useTimeout();
+  const inputRef = React93.useRef(null);
+  const registeredInputs = useRefWithInit(() => new Set).current;
+  const validationCommitIdRef = React93.useRef(0);
+  const registerInput = React93.useCallback((element) => {
+    if (!element) {
+      return;
+    }
+    registeredInputs.add(element);
+    return () => {
+      registeredInputs.delete(element);
+    };
+  }, [registeredInputs]);
+  const commit = useStableCallback(async (value, revalidate = false) => {
+    const element = findRepresentativeInput(registeredInputs) ?? inputRef.current;
+    if (!element) {
+      return;
+    }
+    validationCommitIdRef.current += 1;
+    const validationCommitId = validationCommitIdRef.current;
+    function updateRegisteredFieldValidity(nextValidityData2, externalInvalid = invalid) {
+      const fieldId = getRegisteredFieldId() ?? controlId;
+      if (fieldId == null) {
+        return;
+      }
+      const currentFieldData = formRef.current.fields.get(fieldId);
+      if (!currentFieldData) {
+        return;
+      }
+      const validityDataWithFormErrors = getCombinedFieldValidityData(nextValidityData2, externalInvalid);
+      formRef.current.fields.set(fieldId, {
+        ...currentFieldData,
+        validityData: validityDataWithFormErrors
+      });
+    }
+    if (revalidate) {
+      if (state.valid !== false) {
+        return;
+      }
+      const currentNativeValidity = element.validity;
+      if (!currentNativeValidity.valueMissing) {
+        const nextValidityData2 = {
+          value,
+          state: {
+            ...DEFAULT_VALIDITY_STATE,
+            valid: true
+          },
+          error: "",
+          errors: [],
+          initialValue: validityData.initialValue
+        };
+        clearCustomValidity(element, registeredInputs);
+        updateRegisteredFieldValidity(nextValidityData2, false);
+        setValidityData(nextValidityData2);
+        return;
+      }
+      const currentNativeValidityObject = validityKeys.reduce((acc, key) => {
+        acc[key] = currentNativeValidity[key];
+        return acc;
+      }, {});
+      if (!currentNativeValidityObject.valid && !isOnlyValueMissing(currentNativeValidityObject)) {
+        return;
+      }
+    }
+    function getState(el) {
+      const computedState = validityKeys.reduce((acc, key) => {
+        acc[key] = el.validity[key];
+        return acc;
+      }, {});
+      let hasOnlyValueMissingError = false;
+      for (const key of validityKeys) {
+        if (key === "valid") {
+          continue;
+        }
+        if (key === "valueMissing" && computedState[key]) {
+          hasOnlyValueMissingError = true;
+        } else if (computedState[key]) {
+          return computedState;
+        }
+      }
+      if (hasOnlyValueMissingError && !markedDirtyRef.current) {
+        computedState.valid = true;
+        computedState.valueMissing = false;
+      }
+      return computedState;
+    }
+    timeout.clear();
+    let result = null;
+    let validationErrors = [];
+    const nextState = getState(element);
+    let defaultValidationMessage;
+    const isValidatingOnChange = shouldValidateOnChange();
+    if (element.validationMessage && !isValidatingOnChange) {
+      defaultValidationMessage = element.validationMessage;
+      validationErrors = [element.validationMessage];
+    } else {
+      const formValues = Array.from(formRef.current.fields.values()).reduce((acc, field) => {
+        if (field.name) {
+          acc[field.name] = field.getValue();
+        }
+        return acc;
+      }, {});
+      const resultOrPromise = validate(value, formValues);
+      if (typeof resultOrPromise === "object" && resultOrPromise !== null && "then" in resultOrPromise) {
+        result = await resultOrPromise;
+        if (validationCommitId !== validationCommitIdRef.current) {
+          return;
+        }
+      } else {
+        result = resultOrPromise;
+      }
+      if (result !== null) {
+        nextState.valid = false;
+        nextState.customError = true;
+        if (Array.isArray(result)) {
+          validationErrors = result;
+          element.setCustomValidity(result.join(`
+`));
+        } else if (result) {
+          validationErrors = [result];
+          element.setCustomValidity(result);
+        }
+      } else if (isValidatingOnChange) {
+        clearCustomValidity(element, registeredInputs);
+        nextState.customError = false;
+        if (element.validationMessage) {
+          defaultValidationMessage = element.validationMessage;
+          validationErrors = [element.validationMessage];
+        } else if (element.validity.valid && !nextState.valid) {
+          nextState.valid = true;
+        }
+      }
+    }
+    const nextValidityData = {
+      value,
+      state: nextState,
+      error: defaultValidationMessage ?? (Array.isArray(result) ? result[0] : result ?? ""),
+      errors: validationErrors,
+      initialValue: validityData.initialValue
+    };
+    updateRegisteredFieldValidity(nextValidityData);
+    setValidityData(nextValidityData);
+  });
+  const change = useStableCallback((value) => {
+    timeout.clear();
+    const validateOnChange = shouldValidateOnChange();
+    if (validateOnChange && value !== "" && validationDebounceTime) {
+      validationCommitIdRef.current += 1;
+      timeout.start(validationDebounceTime, () => {
+        commit(value);
+      });
+    } else {
+      commit(value, !validateOnChange);
+    }
+  });
+  const getValidationProps = React93.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
+    "aria-invalid": true
+  } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
+  return React93.useMemo(() => ({
+    getValidationProps,
+    inputRef,
+    registerInput,
+    commit,
+    change
+  }), [getValidationProps, registerInput, commit, change]);
+}
+
+// node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
+var React94 = __toESM(require_react(), 1);
+"use client";
+function useFieldControlRegistration(params) {
+  const {
+    commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  } = params;
+  const {
+    formRef
+  } = useFormContext();
+  const activeFieldControlSourceRef = React94.useRef(null);
+  const registrationRef = React94.useRef(null);
+  const fallbackControlRef = React94.useRef(null);
+  const getValueForForm = useStableCallback(() => {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    if (registration.getValue) {
+      return registration.getValue();
+    }
+    return registration.value;
+  });
+  function getRegistrationValue(registration) {
+    return registration.value === undefined ? getValueForForm() : registration.value;
+  }
+  const validate = useStableCallback(() => {
+    const registration = registrationRef.current;
+    markedDirtyRef.current = true;
+    if (!registration) {
+      commit(validityData.value);
+      return;
+    }
+    commit(getRegistrationValue(registration));
+  });
+  function refreshRegistration() {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }
+  function deleteRegistration(id = registrationRef.current?.id) {
+    if (id) {
+      formRef.current.fields.delete(id);
+    }
+  }
+  function syncInitialValue() {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    const initialValue = getRegistrationValue(registration);
+    if (validityData.initialValue === null && initialValue !== null) {
+      setValidityData((prev) => ({
+        ...prev,
+        initialValue
+      }));
+    }
+  }
+  useIsoLayoutEffect(() => {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    setRegisteredFieldName(name ? undefined : registration.name);
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }, [formRef, getValueForForm, invalid, name, setRegisteredFieldName, validate, validityData]);
+  useIsoLayoutEffect(() => {
+    const fields = formRef.current.fields;
+    return () => {
+      const id = registrationRef.current?.id;
+      if (id) {
+        fields.delete(id);
+      }
+    };
+  }, [formRef]);
+  const register2 = useStableCallback((source, registration) => {
+    if (!registration) {
+      if (activeFieldControlSourceRef.current === source) {
+        activeFieldControlSourceRef.current = null;
+        deleteRegistration();
+        registrationRef.current = null;
+        setRegisteredFieldName(undefined);
+        setRegisteredFieldId(undefined);
+      }
+      return;
+    }
+    const previousId = registrationRef.current?.id;
+    activeFieldControlSourceRef.current = source;
+    registrationRef.current = registration;
+    if (!name) {
+      setRegisteredFieldName(registration.name);
+    }
+    setRegisteredFieldId(registration.id);
+    if (previousId && previousId !== registration.id) {
+      deleteRegistration(previousId);
+    }
+    syncInitialValue();
+    refreshRegistration();
+  });
+  return [validate, register2];
+}
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldRootInner = /* @__PURE__ */ React95.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
+  const {
+    errors,
+    validationMode: formValidationMode,
+    submitAttemptedRef
+  } = useFormContext();
+  const {
+    render,
+    className,
+    validate: validateProp,
+    validationDebounceTime = 0,
+    validationMode = formValidationMode,
+    name,
+    disabled: disabledProp = false,
+    invalid: invalidProp,
+    dirty: dirtyProp,
+    touched: touchedProp,
+    actionsRef,
+    style,
+    ...elementProps
+  } = componentProps;
+  const disabledFieldset = useFieldsetRootContext(true)?.disabled;
+  const validate = useStableCallback(validateProp || (() => null));
+  const disabled2 = disabledFieldset || disabledProp;
+  const [touchedState, setTouchedUnwrapped] = React95.useState(false);
+  const [dirtyState, setDirtyUnwrapped] = React95.useState(false);
+  const [filled, setFilled] = React95.useState(false);
+  const [focused, setFocused] = React95.useState(false);
+  const dirty = dirtyProp ?? dirtyState;
+  const touched = touchedProp ?? touchedState;
+  const markedDirtyRef = React95.useRef(dirty);
+  const registeredFieldIdRef = React95.useRef(undefined);
+  const [registeredFieldName, setRegisteredFieldName] = React95.useState();
+  const effectiveName = name ?? registeredFieldName;
+  useIsoLayoutEffect(() => {
+    if (dirtyProp !== undefined) {
+      markedDirtyRef.current = dirtyProp;
+    }
+  }, [dirtyProp]);
+  const getRegisteredFieldId = React95.useCallback(() => registeredFieldIdRef.current, []);
+  const setRegisteredFieldId = React95.useCallback((id) => {
+    registeredFieldIdRef.current = id;
+  }, []);
+  const setDirty = useStableCallback((value) => {
+    if (dirtyProp !== undefined) {
+      return;
+    }
+    if (value) {
+      markedDirtyRef.current = true;
+    }
+    setDirtyUnwrapped(value);
+  });
+  const setTouched = useStableCallback((value) => {
+    if (touchedProp !== undefined) {
+      return;
+    }
+    setTouchedUnwrapped(value);
+  });
+  const shouldValidateOnChange = useStableCallback(() => validationMode === "onChange" || validationMode === "onSubmit" && submitAttemptedRef.current);
+  const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const invalid = invalidProp === true || hasFormError;
+  const [validityData, setValidityData] = React95.useState({
+    state: DEFAULT_VALIDITY_STATE,
+    error: "",
+    errors: [],
+    value: null,
+    initialValue: null
+  });
+  const valid = disabled2 ? null : !invalid && validityData.state.valid;
+  const state = React95.useMemo(() => ({
+    disabled: disabled2,
+    touched,
+    dirty,
+    valid,
+    filled,
+    focused
+  }), [disabled2, touched, dirty, valid, filled, focused]);
+  const validation = useFieldValidation({
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  });
+  const [validateFieldControl, registerFieldControl] = useFieldControlRegistration({
+    commit: validation.commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  });
+  React95.useImperativeHandle(actionsRef, () => ({
+    validate: validateFieldControl
+  }), [validateFieldControl]);
+  const contextValue = React95.useMemo(() => ({
+    invalid,
+    name: effectiveName,
+    validityData,
+    setValidityData,
+    disabled: disabled2,
+    touched,
+    setTouched,
+    dirty,
+    setDirty,
+    filled,
+    setFilled,
+    focused,
+    setFocused,
+    validate,
+    validationMode,
+    validationDebounceTime,
+    shouldValidateOnChange,
+    state,
+    markedDirtyRef,
+    registerFieldControl,
+    validation
+  }), [invalid, effectiveName, validityData, disabled2, touched, setTouched, dirty, setDirty, filled, setFilled, focused, setFocused, validate, validationMode, validationDebounceTime, shouldValidateOnChange, state, registerFieldControl, validation]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(FieldRootContext.Provider, {
+    value: contextValue,
+    children: element
+  });
+});
+if (true)
+  FieldRootInner.displayName = "FieldRootInner";
+var FieldRoot = /* @__PURE__ */ React95.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(LabelableProvider, {
+    children: /* @__PURE__ */ import_jsx_runtime21.jsx(FieldRootInner, {
+      ...componentProps,
+      ref: forwardedRef
+    })
+  });
+});
+if (true)
+  FieldRoot.displayName = "FieldRoot";
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+var React97 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
+"use client";
+function useRegisteredLabelId(idProp, setLabelId) {
+  const id = useBaseUiId(idProp);
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [id, setLabelId]);
+  return id;
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabel.mjs
+"use client";
+function useLabel(params = {}) {
+  const {
+    id: idProp,
+    fallbackControlId,
+    native = false,
+    setLabelId: setLabelIdProp,
+    focusControl: focusControlProp
+  } = params;
+  const {
+    controlId: contextControlId,
+    setLabelId: setContextLabelId
+  } = useLabelableContext();
+  const syncLabelId = useStableCallback((nextLabelId) => {
+    setContextLabelId(nextLabelId);
+    setLabelIdProp?.(nextLabelId);
+  });
+  const id = useRegisteredLabelId(idProp, syncLabelId);
+  const resolvedControlId = contextControlId ?? fallbackControlId;
+  function focusControl(event) {
+    if (focusControlProp) {
+      focusControlProp(event, resolvedControlId);
+      return;
+    }
+    if (!resolvedControlId) {
+      return;
+    }
+    const controlElement = ownerDocument(event.currentTarget).getElementById(resolvedControlId);
+    if (isHTMLElement(controlElement)) {
+      focusElementWithVisible(controlElement);
+    }
+  }
+  function handleInteraction(event) {
+    const target = getTarget(event.nativeEvent);
+    if (target?.closest("button,input,select,textarea")) {
+      return;
+    }
+    if (!event.defaultPrevented && event.detail > 1) {
+      event.preventDefault();
+    }
+    if (native) {
+      return;
+    }
+    focusControl(event);
+  }
+  return native ? {
+    id,
+    htmlFor: resolvedControlId ?? undefined,
+    onMouseDown: handleInteraction
+  } : {
+    id,
+    onClick: handleInteraction,
+    onPointerDown(event) {
+      event.preventDefault();
+    }
+  };
+}
+function focusElementWithVisible(element) {
+  element.focus({
+    focusVisible: true
+  });
+}
+
+// node_modules/@base-ui/react/field/item/FieldItemContext.mjs
+var React96 = __toESM(require_react(), 1);
+"use client";
+var FieldItemContext = /* @__PURE__ */ React96.createContext({
+  disabled: false
+});
+if (true)
+  FieldItemContext.displayName = "FieldItemContext";
+function useFieldItemContext() {
+  const context = React96.useContext(FieldItemContext);
+  return context;
+}
+
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+"use client";
+var FieldLabel = /* @__PURE__ */ React97.forwardRef(function FieldLabel2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    nativeLabel = true,
+    ...elementProps
+  } = componentProps;
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    labelId
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  const labelRef = React97.useRef(null);
+  const labelProps = useLabel({
+    id: labelId ?? idProp,
+    native: nativeLabel
+  });
+  if (true) {
+    React97.useEffect(() => {
+      if (!labelRef.current) {
+        return;
+      }
+      const isLabelTag = labelRef.current.tagName === "LABEL";
+      if (nativeLabel) {
+        if (!isLabelTag) {
+          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+          const message = "<Field.Label> expected a <label> element because the `nativeLabel` prop is true. " + "Rendering a non-<label> disables native label association, so `htmlFor` will not " + "work. Use a real <label> in the `render` prop, or set `nativeLabel` to `false`.";
+          error(`${message}${ownerStackMessage}`);
+        }
+      } else if (isLabelTag) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        const message = "<Field.Label> expected a non-<label> element because the `nativeLabel` prop is false. " + "Rendering a <label> assumes native label behavior while Base UI treats it as " + "non-native, which can cause unexpected pointer behavior. Use a non-<label> in the " + "`render` prop, or set `nativeLabel` to `true`.";
+        error(`${message}${ownerStackMessage}`);
+      }
+    }, [nativeLabel]);
+  }
+  const element = useRenderElement("label", componentProps, {
+    ref: [forwardedRef, labelRef],
+    state,
+    props: [labelProps, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldLabel.displayName = "FieldLabel";
+// node_modules/@base-ui/react/field/error/FieldError.mjs
+var React98 = __toESM(require_react(), 1);
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...fieldValidityMapping,
+  ...transitionStatusMapping
+};
+var FieldError = /* @__PURE__ */ React98.forwardRef(function FieldError2(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    match,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const {
+    validityData,
+    state: fieldState,
+    name
+  } = useFieldRootContext(false);
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const {
+    errors
+  } = useFormContext();
+  const formError = name && Object.hasOwn(errors, name) ? errors[name] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const hasSpecificMatch = typeof match === "string";
+  let rendered = false;
+  if (match === true) {
+    rendered = true;
+  } else if (fieldState.disabled) {
+    rendered = false;
+  } else if (hasSpecificMatch) {
+    rendered = Boolean(validityData.state[match]);
+  } else {
+    rendered = hasFormError || validityData.state.valid === false;
+  }
+  const {
+    mounted,
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(rendered);
+  useIsoLayoutEffect(() => {
+    if (!rendered || !id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [rendered, id, setMessageIds]);
+  const errorRef = React98.useRef(null);
+  const [lastRenderedMessage, setLastRenderedMessage] = React98.useState(null);
+  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React98.useState(null);
+  let error2 = validityData.error;
+  if (!hasSpecificMatch && hasFormError) {
+    error2 = formError;
+  } else if (validityData.errors.length > 1) {
+    error2 = validityData.errors;
+  }
+  let errorMessage = error2 ?? "";
+  if (Array.isArray(error2)) {
+    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime22.jsx("ul", {
+      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime22.jsx("li", {
+        children: message
+      }, message))
+    }) : error2[0] ?? "";
+  }
+  const errorKey = Array.isArray(error2) ? JSON.stringify(error2) : error2;
+  if (rendered && errorKey !== lastRenderedMessageKey) {
+    setLastRenderedMessageKey(errorKey);
+    setLastRenderedMessage(errorMessage);
+  }
+  useOpenChangeComplete({
+    open: rendered,
+    ref: errorRef,
+    onComplete() {
+      if (!rendered) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    ...fieldState,
+    transitionStatus
+  };
+  const element = useRenderElement("div", componentProps, {
+    ref: [forwardedRef, errorRef],
+    state,
+    props: [{
+      id,
+      children: rendered ? errorMessage : lastRenderedMessage
+    }, elementProps],
+    stateAttributesMapping: stateAttributesMapping4,
+    enabled: mounted
+  });
+  if (!mounted) {
+    return null;
+  }
+  return element;
+});
+if (true)
+  FieldError.displayName = "FieldError";
+// node_modules/@base-ui/react/field/description/FieldDescription.mjs
+var React99 = __toESM(require_react(), 1);
+"use client";
+var FieldDescription = /* @__PURE__ */ React99.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  useIsoLayoutEffect(() => {
+    if (!id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [id, setMessageIds]);
+  const element = useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: [{
+      id
+    }, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldDescription.displayName = "FieldDescription";
+// node_modules/@base-ui/react/field/control/FieldControl.mjs
+var React102 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
+var React100 = __toESM(require_react(), 1);
+"use client";
+function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
+  const {
+    registerFieldControl
+  } = useFieldRootContext();
+  const sourceRef = React100.useRef(null);
+  if (!sourceRef.current) {
+    sourceRef.current = Symbol();
+  }
+  useIsoLayoutEffect(() => {
+    const source = sourceRef.current;
+    if (!source || !enabled) {
+      return;
+    }
+    const registration = {
+      controlRef,
+      getValue: getFormValueOverride,
+      id,
+      name,
+      value
+    };
+    registerFieldControl(source, registration);
+    return () => {
+      registerFieldControl(source, undefined);
+    };
+  }, [controlRef, enabled, getFormValueOverride, id, name, registerFieldControl, value]);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
+var React101 = __toESM(require_react(), 1);
+"use client";
+function useLabelableId(params = {}) {
+  const {
+    id,
+    implicit = false,
+    controlRef
+  } = params;
+  const {
+    controlId,
+    registerControlId
+  } = useLabelableContext();
+  const defaultId = useBaseUiId(id);
+  const controlIdForEffect = implicit ? controlId : undefined;
+  const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
+  const hasRegisteredRef = React101.useRef(false);
+  const hadExplicitIdRef = React101.useRef(id != null);
+  const unregisterControlId = useStableCallback(() => {
+    if (!hasRegisteredRef.current || registerControlId === NOOP) {
+      return;
+    }
+    hasRegisteredRef.current = false;
+    registerControlId(controlSourceRef.current, undefined);
+  });
+  useIsoLayoutEffect(() => {
+    if (registerControlId === NOOP) {
+      return;
+    }
+    let nextId;
+    if (implicit) {
+      const elem = controlRef?.current;
+      if (isElement(elem) && elem.closest("label") != null) {
+        nextId = id ?? null;
+      } else {
+        nextId = controlIdForEffect ?? defaultId;
+      }
+    } else if (id != null) {
+      hadExplicitIdRef.current = true;
+      nextId = id;
+    } else if (hadExplicitIdRef.current) {
+      nextId = defaultId;
+    } else {
+      unregisterControlId();
+      return;
+    }
+    if (nextId === undefined) {
+      unregisterControlId();
+      return;
+    }
+    hasRegisteredRef.current = true;
+    registerControlId(controlSourceRef.current, nextId);
+    return;
+  }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
+  React101.useEffect(() => {
+    return unregisterControlId;
+  }, [unregisterControlId]);
+  return controlId ?? defaultId;
+}
+
+// node_modules/@base-ui/react/field/control/FieldControl.mjs
+"use client";
+var FieldControl = /* @__PURE__ */ React102.forwardRef(function FieldControl2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    name: nameProp,
+    value: valueProp,
+    disabled: disabledProp = false,
+    onValueChange,
+    defaultValue,
+    autoFocus = false,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    name: fieldName,
+    disabled: fieldDisabled,
+    setTouched,
+    setDirty,
+    validityData,
+    setFocused,
+    setFilled,
+    validationMode,
+    validation
+  } = useFieldRootContext();
+  const {
+    clearErrors
+  } = useFormContext();
+  const disabled2 = fieldDisabled || disabledProp;
+  const name = fieldName ?? nameProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const {
+    labelId
+  } = useLabelableContext();
+  const id = useLabelableId({
+    id: idProp
+  });
+  useIsoLayoutEffect(() => {
+    const hasExternalValue = valueProp != null;
+    if (validation.inputRef.current?.value || hasExternalValue && valueProp !== "") {
+      setFilled(true);
+    } else if (hasExternalValue && valueProp === "") {
+      setFilled(false);
+    }
+  }, [validation.inputRef, setFilled, valueProp]);
+  const inputRef = React102.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
+      setFocused(true);
+    }
+  }, [autoFocus, setFocused]);
+  const [valueUnwrapped] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+    name: "FieldControl",
+    state: "value"
+  });
+  const isControlled = valueProp !== undefined;
+  const value = isControlled ? valueUnwrapped : undefined;
+  const getValueFromInput = useStableCallback(() => validation.inputRef.current?.value);
+  useRegisterFieldControl(validation.inputRef, id, value, getValueFromInput, !disabled2, nameProp);
+  const element = useRenderElement("input", componentProps, {
+    ref: [forwardedRef, inputRef],
+    state,
+    props: [{
+      id,
+      disabled: disabled2,
+      name,
+      ref: validation.inputRef,
+      "aria-labelledby": labelId,
+      autoFocus,
+      ...isControlled ? {
+        value
+      } : {
+        defaultValue
+      },
+      onChange(event) {
+        const inputValue = event.currentTarget.value;
+        onValueChange?.(inputValue, createChangeEventDetails(exports_reason_parts.none, event.nativeEvent));
+        setDirty(inputValue !== validityData.initialValue);
+        setFilled(inputValue !== "");
+        if (!event.nativeEvent.defaultPrevented) {
+          clearErrors(name);
+          validation.change(inputValue);
+        }
+      },
+      onFocus() {
+        setFocused(true);
+      },
+      onBlur(event) {
+        setTouched(true);
+        setFocused(false);
+        if (validationMode === "onBlur") {
+          validation.commit(event.currentTarget.value);
+        }
+      },
+      onKeyDown(event) {
+        if (event.currentTarget.tagName === "INPUT" && event.key === "Enter") {
+          setTouched(true);
+          validation.commit(event.currentTarget.value);
+        }
+      }
+    }, elementProps, (props) => validation.getValidationProps(disabled2, props)],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldControl.displayName = "FieldControl";
+// node_modules/@base-ui/react/field/validity/FieldValidity.mjs
+var React103 = __toESM(require_react(), 1);
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldValidity = function FieldValidity2(props) {
+  const {
+    children
+  } = props;
+  const {
+    validityData,
+    invalid
+  } = useFieldRootContext(false);
+  const combinedFieldValidityData = React103.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
+  const isInvalid = combinedFieldValidityData.state.valid === false;
+  const {
+    transitionStatus
+  } = useTransitionStatus(isInvalid);
+  const fieldValidityState = React103.useMemo(() => {
+    return {
+      ...combinedFieldValidityData,
+      validity: combinedFieldValidityData.state,
+      transitionStatus
+    };
+  }, [combinedFieldValidityData, transitionStatus]);
+  return /* @__PURE__ */ import_jsx_runtime23.jsx(React103.Fragment, {
+    children: children(fieldValidityState)
+  });
+};
+if (true)
+  FieldValidity.displayName = "FieldValidity";
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var React105 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
+var React104 = __toESM(require_react(), 1);
+"use client";
+var CheckboxGroupContext = /* @__PURE__ */ React104.createContext(undefined);
+if (true)
+  CheckboxGroupContext.displayName = "CheckboxGroupContext";
+function useCheckboxGroupContext(optional = true) {
+  const context = React104.useContext(CheckboxGroupContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldItem = /* @__PURE__ */ React105.forwardRef(function FieldItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabledProp = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    disabled: rootDisabled
+  } = useFieldRootContext(false);
+  const disabled2 = rootDisabled || disabledProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const checkboxGroupContext = useCheckboxGroupContext();
+  const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
+  const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
+  const fieldItemContext = React105.useMemo(() => ({
+    disabled: disabled2
+  }), [disabled2]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(LabelableProvider, {
+    controlId,
+    children: /* @__PURE__ */ import_jsx_runtime24.jsx(FieldItemContext.Provider, {
+      value: fieldItemContext,
+      children: element
+    })
+  });
+});
+if (true)
+  FieldItem.displayName = "FieldItem";
+// node_modules/@base-ui/react/input/Input.mjs
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var Input = /* @__PURE__ */ React106.forwardRef(function Input2(props, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime25.jsx(exports_index_parts3.Control, {
+    ref: forwardedRef,
+    ...props
+  });
+});
+if (true)
+  Input.displayName = "Input";
+// src/scriptorium/surface/ui/input.tsx
+var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+function Input3({ className, type, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Input, {
+    type,
+    "data-slot": "input",
+    className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/context/AddPath.tsx
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+var MAX_SUGGESTIONS = 8;
+function splitForCompletion(typed) {
+  if (!typed.startsWith("/") && !typed.startsWith("~"))
+    return null;
+  if (typed === "~")
+    return { dir: "~", prefix: "" };
+  const i = typed.lastIndexOf("/");
+  if (i === -1)
+    return null;
+  return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
+}
+function AddPath({
+  listDir,
+  onAdd
+}) {
+  const [value, setValue] = import_react7.useState("");
+  const [suggestions, setSuggestions] = import_react7.useState([]);
+  const [error2, setError] = import_react7.useState(null);
+  const [highlight, setHighlight] = import_react7.useState(-1);
+  const listId = import_react7.useId();
+  const seq = import_react7.useRef(0);
+  import_react7.useEffect(() => {
+    const split = splitForCompletion(value);
+    if (!split) {
+      setSuggestions([]);
+      setError(null);
+      return;
+    }
+    const mine = ++seq.current;
+    const t = setTimeout(async () => {
+      const listing = await listDir(split.dir);
+      if (mine !== seq.current)
+        return;
+      const p = split.prefix.toLowerCase();
+      setSuggestions(listing.entries.filter((e) => e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS));
+      setError(listing.error && split.prefix === "" ? listing.error : null);
+      setHighlight(-1);
+    }, 120);
+    return () => clearTimeout(t);
+  }, [value, listDir]);
+  const complete = (e) => {
+    const dir = splitForCompletion(value)?.dir ?? "";
+    setValue(`${dir === "/" ? "" : dir}/${e.name}${e.dir ? "/" : ""}`);
+  };
+  const submit = (path) => {
+    const p = path.trim().replace(/\/+$/, "");
+    if (!p)
+      return;
+    onAdd(p);
+    setValue("");
+    setSuggestions([]);
+  };
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+    className: "relative border-t border-edge p-2",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
+        value,
+        onChange: (e) => setValue(e.target.value),
+        placeholder: "Add a file or folder by path…",
+        "aria-label": "Add a file or folder by path",
+        "aria-autocomplete": "list",
+        "aria-controls": listId,
+        "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
+        spellCheck: false,
+        className: "h-8 font-mono text-xs",
+        onKeyDown: (e) => {
+          if (e.key === "ArrowDown" && suggestions.length) {
+            e.preventDefault();
+            setHighlight((h) => (h + 1) % suggestions.length);
+          } else if (e.key === "ArrowUp" && suggestions.length) {
+            e.preventDefault();
+            setHighlight((h) => h <= 0 ? suggestions.length - 1 : h - 1);
+          } else if (e.key === "Tab" && suggestions.length) {
+            const pick = suggestions[highlight >= 0 ? highlight : 0];
+            if (pick) {
+              e.preventDefault();
+              complete(pick);
+            }
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            const pick = highlight >= 0 ? suggestions[highlight] : undefined;
+            submit(pick ? pick.path : value);
+          } else if (e.key === "Escape") {
+            setValue("");
+          }
+        }
+      }, undefined, false, undefined, this),
+      (suggestions.length > 0 || error2) && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+        className: "absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg",
+        children: [
+          error2 && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("p", {
+            className: "px-2 py-1 text-xs text-attention",
+            children: error2
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+            id: listId,
+            role: "listbox",
+            "aria-label": "Matching files and folders",
+            className: "max-h-64 overflow-auto",
+            children: suggestions.map((s, i) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+              id: `${listId}-${i}`,
+              role: "option",
+              tabIndex: -1,
+              "aria-selected": i === highlight,
+              className: cn("flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 font-mono text-xs text-ink-dim", i === highlight ? "bg-edge text-ink" : "hover:bg-edge/60"),
+              onMouseDown: (e) => {
+                e.preventDefault();
+                if (s.dir)
+                  complete(s);
+                else
+                  submit(s.path);
+              },
+              children: [
+                s.dir ? /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Folder, {
+                  "aria-hidden": true,
+                  className: "size-3.5 shrink-0"
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FileText, {
+                  "aria-hidden": true,
+                  className: "size-3.5 shrink-0"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+                  className: "truncate",
+                  children: s.name
+                }, undefined, false, undefined, this),
+                s.dir && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+                  className: "ml-auto text-ink-faint",
+                  children: "/"
+                }, undefined, false, undefined, this)
+              ]
+            }, s.path, true, undefined, this))
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("p", {
+            className: "flex items-center gap-1 px-2 pt-1 text-[10px] text-ink-faint",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(CornerDownLeft, {
+                "aria-hidden": true,
+                className: "size-3"
+              }, undefined, false, undefined, this),
+              " adds · Tab completes"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// node_modules/@headless-tree/core/dist/index.mjs
+var __defProp2 = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => (key in obj) ? __defProp2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp2.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var __async = (__this, __arguments, generator) => {
+  return new Promise((resolve, reject) => {
+    var fulfilled = (value) => {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var rejected = (value) => {
+      try {
+        step(generator.throw(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+    step((generator = generator.apply(__this, __arguments)).next());
+  });
+};
+var memo2 = (deps, fn) => {
+  let value;
+  let oldDeps = null;
+  return (...a) => {
+    const newDeps = deps(...a);
+    if (!value) {
+      value = fn(...newDeps);
+      oldDeps = newDeps;
+      return value;
+    }
+    const match = oldDeps && oldDeps.length === newDeps.length && !oldDeps.some((dep, i) => dep !== newDeps[i]);
+    if (match) {
+      return value;
+    }
+    value = fn(...newDeps);
+    oldDeps = newDeps;
+    return value;
+  };
+};
+function functionalUpdate(updater, input) {
+  return typeof updater === "function" ? updater(input) : updater;
+}
+function makeStateUpdater(key, instance2) {
+  return (updater) => {
+    instance2.setState((old) => {
+      return __spreadProps(__spreadValues({}, old), {
+        [key]: functionalUpdate(updater, old[key])
+      });
+    });
+  };
+}
+var poll = (fn, interval = 100, timeout = 1000) => new Promise((resolve) => {
+  let clear;
+  const i = setInterval(() => {
+    if (fn()) {
+      resolve();
+      clearInterval(i);
+      clearTimeout(clear);
+    }
+  }, interval);
+  clear = setTimeout(() => {
+    clearInterval(i);
+    resolve();
+  }, timeout);
+});
+var prefix = "Headless Tree: ";
+var throwError = (message) => Error(prefix + message);
+var logWarning = (message) => console.warn(prefix + message);
+var treeFeature = {
+  key: "tree",
+  getInitialState: (initialState) => __spreadValues({
+    expandedItems: [],
+    focusedItem: null
+  }, initialState),
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    setExpandedItems: makeStateUpdater("expandedItems", tree),
+    setFocusedItem: makeStateUpdater("focusedItem", tree)
+  }, defaultConfig),
+  stateHandlerNames: {
+    expandedItems: "setExpandedItems",
+    focusedItem: "setFocusedItem"
+  },
+  treeInstance: {
+    getItemsMeta: ({ tree }) => {
+      const { rootItemId } = tree.getConfig();
+      const { expandedItems } = tree.getState();
+      const flatItems = [];
+      const expandedItemsSet = new Set(expandedItems);
+      const recursiveAdd = (itemId, path, level, setSize, posInSet) => {
+        var _a;
+        if (path.includes(itemId)) {
+          logWarning(`Circular reference for ${path.join(".")}`);
+          return;
+        }
+        flatItems.push({
+          itemId,
+          level,
+          index: flatItems.length,
+          parentId: path.at(-1),
+          setSize,
+          posInSet
+        });
+        if (expandedItemsSet.has(itemId)) {
+          const children2 = (_a = tree.retrieveChildrenIds(itemId)) != null ? _a : [];
+          let i2 = 0;
+          for (const childId of children2) {
+            recursiveAdd(childId, path.concat(itemId), level + 1, children2.length, i2++);
+          }
+        }
+      };
+      const children = tree.retrieveChildrenIds(rootItemId);
+      let i = 0;
+      for (const itemId of children) {
+        recursiveAdd(itemId, [rootItemId], 0, children.length, i++);
+      }
+      return flatItems;
+    },
+    getFocusedItem: ({ tree }) => {
+      var _a;
+      const focusedItemId = tree.getState().focusedItem;
+      return (_a = focusedItemId !== null ? tree.getItemInstance(focusedItemId) : null) != null ? _a : tree.getItems()[0];
+    },
+    getRootItem: ({ tree }) => {
+      const { rootItemId } = tree.getConfig();
+      return tree.getItemInstance(rootItemId);
+    },
+    focusNextItem: ({ tree }) => {
+      var _a;
+      const focused = tree.getFocusedItem().getItemMeta();
+      if (!focused)
+        return;
+      const nextIndex = Math.min(focused.index + 1, tree.getItems().length - 1);
+      (_a = tree.getItems()[nextIndex]) == null || _a.setFocused();
+    },
+    focusPreviousItem: ({ tree }) => {
+      var _a;
+      const focused = tree.getFocusedItem().getItemMeta();
+      if (!focused)
+        return;
+      const nextIndex = Math.max(focused.index - 1, 0);
+      (_a = tree.getItems()[nextIndex]) == null || _a.setFocused();
+    },
+    updateDomFocus: ({ tree }) => {
+      setTimeout(() => __async(null, null, function* () {
+        var _a, _b, _c, _d, _e2;
+        const focusedItem = tree.getFocusedItem();
+        (_b = (_a = tree.getConfig()).scrollToItem) == null || _b.call(_a, focusedItem);
+        yield poll(() => focusedItem.getElement() !== null, 20, 500);
+        const focusedElement = focusedItem.getElement();
+        if (!focusedElement) {
+          (_c = tree.getItems()[0]) == null || _c.setFocused();
+          (_e2 = (_d = tree.getItems()[0]) == null ? undefined : _d.getElement()) == null || _e2.focus();
+          return;
+        }
+        focusedElement.focus();
+      }));
+    },
+    getContainerProps: ({ prev, tree }, treeLabel) => __spreadProps(__spreadValues({}, prev == null ? undefined : prev()), {
+      role: "tree",
+      "aria-label": treeLabel != null ? treeLabel : "",
+      ref: tree.registerElement
+    }),
+    isSearchOpen: () => false
+  },
+  itemInstance: {
+    scrollTo: (_0, _1) => __async(null, [_0, _1], function* ({ tree, item }, scrollIntoViewArg) {
+      var _a, _b, _c;
+      (_b = (_a = tree.getConfig()).scrollToItem) == null || _b.call(_a, item);
+      yield poll(() => item.getElement() !== null, 20);
+      (_c = item.getElement()) == null || _c.scrollIntoView(scrollIntoViewArg);
+    }),
+    getId: ({ itemId }) => itemId,
+    getKey: ({ itemId }) => itemId,
+    getProps: ({ item, prev }) => {
+      const itemMeta = item.getItemMeta();
+      return __spreadProps(__spreadValues({}, prev == null ? undefined : prev()), {
+        ref: item.registerElement,
+        role: "treeitem",
+        "aria-setsize": itemMeta.setSize,
+        "aria-posinset": itemMeta.posInSet + 1,
+        "aria-selected": "false",
+        "aria-label": item.getItemName(),
+        "aria-level": itemMeta.level + 1,
+        "aria-expanded": item.isFolder() ? item.isExpanded() : undefined,
+        tabIndex: item.isFocused() ? 0 : -1,
+        onClick: (e) => {
+          item.setFocused();
+          item.primaryAction();
+          if (e.ctrlKey || e.shiftKey || e.metaKey) {
+            return;
+          }
+          if (!item.isFolder()) {
+            return;
+          }
+          if (item.isExpanded()) {
+            item.collapse();
+          } else {
+            item.expand();
+          }
+        }
+      });
+    },
+    expand: ({ tree, item, itemId }) => {
+      var _a;
+      if (!item.isFolder()) {
+        return;
+      }
+      if ((_a = tree.getState().loadingItemChildrens) == null ? undefined : _a.includes(itemId)) {
+        return;
+      }
+      tree.applySubStateUpdate("expandedItems", (expandedItems) => [
+        ...expandedItems,
+        itemId
+      ]);
+      tree.rebuildTree();
+    },
+    collapse: ({ tree, item, itemId }) => {
+      if (!item.isFolder()) {
+        return;
+      }
+      tree.applySubStateUpdate("expandedItems", (expandedItems) => expandedItems.filter((id) => id !== itemId));
+      tree.rebuildTree();
+    },
+    getItemData: ({ tree, itemId }) => tree.retrieveItemData(itemId),
+    equals: ({ item }, other) => item.getId() === (other == null ? undefined : other.getId()),
+    isExpanded: ({ tree, itemId }) => tree.getState().expandedItems.includes(itemId),
+    isDescendentOf: ({ item }, parentId) => {
+      const parent = item.getParent();
+      return Boolean((parent == null ? undefined : parent.getId()) === parentId || (parent == null ? undefined : parent.isDescendentOf(parentId)));
+    },
+    isFocused: ({ tree, item, itemId }) => tree.getState().focusedItem === itemId || tree.getState().focusedItem === null && item.getItemMeta().index === 0,
+    isFolder: ({ tree, item, itemId }) => itemId === tree.getConfig().rootItemId || tree.getConfig().isItemFolder(item),
+    getItemName: ({ tree, item }) => {
+      const config = tree.getConfig();
+      return config.getItemName(item);
+    },
+    setFocused: ({ tree, itemId }) => {
+      tree.applySubStateUpdate("focusedItem", itemId);
+    },
+    primaryAction: ({ tree, item }) => {
+      var _a, _b;
+      return (_b = (_a = tree.getConfig()).onPrimaryAction) == null ? undefined : _b.call(_a, item);
+    },
+    getParent: ({ tree, item }) => item.getItemMeta().parentId ? tree.getItemInstance(item.getItemMeta().parentId) : undefined,
+    getIndexInParent: ({ item }) => item.getItemMeta().posInSet,
+    getChildren: ({ tree, itemId }) => tree.retrieveChildrenIds(itemId).map((id) => tree.getItemInstance(id)),
+    getTree: ({ tree }) => tree,
+    getItemAbove: ({ tree, item }) => tree.getItems()[item.getItemMeta().index - 1],
+    getItemBelow: ({ tree, item }) => tree.getItems()[item.getItemMeta().index + 1]
+  },
+  hotkeys: {
+    focusNextItem: {
+      hotkey: "ArrowDown",
+      canRepeat: true,
+      preventDefault: true,
+      isEnabled: (tree) => {
+        var _a, _b;
+        return !((_b = (_a = tree.isSearchOpen) == null ? undefined : _a.call(tree)) != null ? _b : false) && !tree.getState().dnd;
+      },
+      handler: (e, tree) => {
+        tree.focusNextItem();
+        tree.updateDomFocus();
+      }
+    },
+    focusPreviousItem: {
+      hotkey: "ArrowUp",
+      canRepeat: true,
+      preventDefault: true,
+      isEnabled: (tree) => {
+        var _a, _b;
+        return !((_b = (_a = tree.isSearchOpen) == null ? undefined : _a.call(tree)) != null ? _b : false) && !tree.getState().dnd;
+      },
+      handler: (e, tree) => {
+        tree.focusPreviousItem();
+        tree.updateDomFocus();
+      }
+    },
+    expandOrDown: {
+      hotkey: "ArrowRight",
+      canRepeat: true,
+      handler: (e, tree) => {
+        const item = tree.getFocusedItem();
+        if (item.isExpanded() || !item.isFolder()) {
+          tree.focusNextItem();
+          tree.updateDomFocus();
+        } else {
+          item.expand();
+        }
+      }
+    },
+    collapseOrUp: {
+      hotkey: "ArrowLeft",
+      canRepeat: true,
+      handler: (e, tree) => {
+        var _a;
+        const item = tree.getFocusedItem();
+        if ((!item.isExpanded() || !item.isFolder()) && item.getItemMeta().level !== 0) {
+          (_a = item.getParent()) == null || _a.setFocused();
+          tree.updateDomFocus();
+        } else {
+          item.collapse();
+        }
+      }
+    },
+    focusFirstItem: {
+      hotkey: "Home",
+      handler: (e, tree) => {
+        var _a;
+        (_a = tree.getItems()[0]) == null || _a.setFocused();
+        tree.updateDomFocus();
+      }
+    },
+    focusLastItem: {
+      hotkey: "End",
+      handler: (e, tree) => {
+        var _a;
+        (_a = tree.getItems()[tree.getItems().length - 1]) == null || _a.setFocused();
+        tree.updateDomFocus();
+      }
+    }
+  }
+};
+var buildStaticInstance = (features, instanceType, buildOpts) => {
+  const instance2 = {};
+  const finalize = () => {
+    const opts = buildOpts(instance2);
+    featureLoop:
+      for (let i = 0;i < features.length; i++) {
+        const definition = features[i][instanceType];
+        if (!definition)
+          continue featureLoop;
+        methodLoop:
+          for (const [key, method] of Object.entries(definition)) {
+            if (!method)
+              continue methodLoop;
+            const prev = instance2[key];
+            instance2[key] = (...args) => {
+              return method(__spreadProps(__spreadValues({}, opts), { prev }), ...args);
+            };
+          }
+      }
+  };
+  return [instance2, finalize];
+};
+var verifyFeatures = (features) => {
+  var _a;
+  const loadedFeatures = features == null ? undefined : features.map((feature) => feature.key);
+  for (const feature of features != null ? features : []) {
+    const missingDependency = (_a = feature.deps) == null ? undefined : _a.find((dep) => !(loadedFeatures == null ? undefined : loadedFeatures.includes(dep)));
+    if (missingDependency) {
+      throw throwError(`${feature.key} needs ${missingDependency}`);
+    }
+  }
+};
+var exhaustiveSort = (arr, compareFn) => {
+  const n = arr.length;
+  for (let i = 0;i < n; i++) {
+    for (let j2 = i + 1;j2 < n; j2++) {
+      if (compareFn(arr[j2], arr[i]) < 0) {
+        [arr[i], arr[j2]] = [arr[j2], arr[i]];
+      }
+    }
+  }
+  return arr;
+};
+var compareFeatures = (originalOrder) => (feature1, feature2) => {
+  var _a, _b;
+  if (feature2.key && ((_a = feature1.overwrites) == null ? undefined : _a.includes(feature2.key))) {
+    return 1;
+  }
+  if (feature1.key && ((_b = feature2.overwrites) == null ? undefined : _b.includes(feature1.key))) {
+    return -1;
+  }
+  return originalOrder.indexOf(feature1) - originalOrder.indexOf(feature2);
+};
+var sortFeatures = (features = []) => exhaustiveSort(features, compareFeatures(features));
+var createTree = (initialConfig) => {
+  var _a, _b, _c, _d;
+  const buildInstance = (_a = initialConfig.instanceBuilder) != null ? _a : buildStaticInstance;
+  const additionalFeatures = [
+    treeFeature,
+    ...sortFeatures(initialConfig.features)
+  ];
+  verifyFeatures(additionalFeatures);
+  const features = [...additionalFeatures];
+  const [treeInstance, finalizeTree] = buildInstance(features, "treeInstance", (tree) => ({ tree }));
+  let state = additionalFeatures.reduce((acc, feature) => {
+    var _a2, _b2;
+    return (_b2 = (_a2 = feature.getInitialState) == null ? undefined : _a2.call(feature, acc, treeInstance)) != null ? _b2 : acc;
+  }, (_c = (_b = initialConfig.initialState) != null ? _b : initialConfig.state) != null ? _c : {});
+  let config = additionalFeatures.reduce((acc, feature) => {
+    var _a2, _b2;
+    return (_b2 = (_a2 = feature.getDefaultConfig) == null ? undefined : _a2.call(feature, acc, treeInstance)) != null ? _b2 : acc;
+  }, initialConfig);
+  const stateHandlerNames = additionalFeatures.reduce((acc, feature) => __spreadValues(__spreadValues({}, acc), feature.stateHandlerNames), {});
+  let treeElement;
+  const treeDataRef = { current: {} };
+  let rebuildScheduled = false;
+  const itemInstancesMap = {};
+  let itemInstances = [];
+  const itemElementsMap = {};
+  const itemDataRefs = {};
+  let itemMetaMap = {};
+  const hotkeyPresets = {};
+  const rebuildItemMeta = () => {
+    itemInstances = [];
+    itemMetaMap = {};
+    const [rootInstance, finalizeRootInstance] = buildInstance(features, "itemInstance", (item) => ({ item, tree: treeInstance, itemId: config.rootItemId }));
+    finalizeRootInstance();
+    itemInstancesMap[config.rootItemId] = rootInstance;
+    itemMetaMap[config.rootItemId] = {
+      itemId: config.rootItemId,
+      index: -1,
+      parentId: null,
+      level: -1,
+      posInSet: 0,
+      setSize: 1
+    };
+    for (const item of treeInstance.getItemsMeta()) {
+      itemMetaMap[item.itemId] = item;
+      if (!itemInstancesMap[item.itemId]) {
+        const [instance2, finalizeInstance] = buildInstance(features, "itemInstance", (instance22) => ({
+          item: instance22,
+          tree: treeInstance,
+          itemId: item.itemId
+        }));
+        finalizeInstance();
+        itemInstancesMap[item.itemId] = instance2;
+        itemInstances.push(instance2);
+      } else {
+        itemInstances.push(itemInstancesMap[item.itemId]);
+      }
+    }
+    rebuildScheduled = false;
+  };
+  const eachFeature = (fn) => {
+    for (const feature of additionalFeatures) {
+      fn(feature);
+    }
+  };
+  const mainFeature = {
+    key: "main",
+    treeInstance: {
+      getState: () => state,
+      setState: ({}, updater) => {
+        var _a2;
+        (_a2 = config.setState) == null || _a2.call(config, state);
+      },
+      setMounted: ({}, isMounted) => {
+        var _a2;
+        const ref = treeDataRef.current;
+        ref.isMounted = isMounted;
+        if (isMounted) {
+          (_a2 = ref.waitingForMount) == null || _a2.forEach((cb) => cb());
+          ref.waitingForMount = [];
+        }
+      },
+      applySubStateUpdate: ({}, stateName, updater) => {
+        var _a2;
+        const apply = () => {
+          state[stateName] = typeof updater === "function" ? updater(state[stateName]) : updater;
+          const externalStateSetter = config[stateHandlerNames[stateName]];
+          externalStateSetter == null || externalStateSetter(state[stateName]);
+        };
+        const ref = treeDataRef.current;
+        if (ref.isMounted) {
+          apply();
+        } else {
+          (_a2 = ref.waitingForMount) != null || (ref.waitingForMount = []);
+          ref.waitingForMount.push(apply);
+        }
+      },
+      rebuildTree: () => {
+        var _a2, _b2;
+        const ref = treeDataRef.current;
+        if (ref.isMounted) {
+          rebuildItemMeta();
+          (_a2 = config.setState) == null || _a2.call(config, state);
+        } else {
+          (_b2 = ref.waitingForMount) != null || (ref.waitingForMount = []);
+          ref.waitingForMount.push(() => {
+            var _a3;
+            rebuildItemMeta();
+            (_a3 = config.setState) == null || _a3.call(config, state);
+          });
+        }
+      },
+      scheduleRebuildTree: () => {
+        rebuildScheduled = true;
+      },
+      getConfig: () => config,
+      setConfig: (_, updater) => {
+        var _a2, _b2, _c2;
+        const newConfig = typeof updater === "function" ? updater(config) : updater;
+        const hasChangedExpandedItems = ((_a2 = newConfig.state) == null ? undefined : _a2.expandedItems) && ((_b2 = newConfig.state) == null ? undefined : _b2.expandedItems) !== state.expandedItems;
+        config = newConfig;
+        if (newConfig.state) {
+          state = __spreadValues(__spreadValues({}, state), newConfig.state);
+        }
+        if (hasChangedExpandedItems) {
+          rebuildItemMeta();
+          (_c2 = config.setState) == null || _c2.call(config, state);
+        }
+      },
+      getItemInstance: ({}, itemId) => {
+        const existingInstance = itemInstancesMap[itemId];
+        if (!existingInstance) {
+          const [instance2, finalizeInstance] = buildInstance(features, "itemInstance", (instance22) => ({
+            item: instance22,
+            tree: treeInstance,
+            itemId
+          }));
+          finalizeInstance();
+          return instance2;
+        }
+        return existingInstance;
+      },
+      getItems: () => {
+        if (rebuildScheduled)
+          rebuildItemMeta();
+        return itemInstances;
+      },
+      registerElement: ({}, element) => {
+        if (treeElement === element) {
+          return;
+        }
+        if (treeElement && !element) {
+          eachFeature((feature) => {
+            var _a2;
+            return (_a2 = feature.onTreeUnmount) == null ? undefined : _a2.call(feature, treeInstance, treeElement);
+          });
+        } else if (!treeElement && element) {
+          eachFeature((feature) => {
+            var _a2;
+            return (_a2 = feature.onTreeMount) == null ? undefined : _a2.call(feature, treeInstance, element);
+          });
+        }
+        treeElement = element;
+      },
+      getElement: () => treeElement,
+      getDataRef: () => treeDataRef,
+      getHotkeyPresets: () => hotkeyPresets
+    },
+    itemInstance: {
+      registerElement: ({ itemId, item }, element) => {
+        if (itemElementsMap[itemId] === element) {
+          return;
+        }
+        const oldElement = itemElementsMap[itemId];
+        if (oldElement && !element) {
+          eachFeature((feature) => {
+            var _a2;
+            return (_a2 = feature.onItemUnmount) == null ? undefined : _a2.call(feature, item, oldElement, treeInstance);
+          });
+        } else if (!oldElement && element) {
+          eachFeature((feature) => {
+            var _a2;
+            return (_a2 = feature.onItemMount) == null ? undefined : _a2.call(feature, item, element, treeInstance);
+          });
+        }
+        itemElementsMap[itemId] = element;
+      },
+      getElement: ({ itemId }) => itemElementsMap[itemId],
+      getDataRef: ({ itemId }) => {
+        var _a2;
+        return (_a2 = itemDataRefs[itemId]) != null ? _a2 : itemDataRefs[itemId] = { current: {} };
+      },
+      getItemMeta: ({ itemId }) => {
+        var _a2;
+        return (_a2 = itemMetaMap[itemId]) != null ? _a2 : {
+          itemId,
+          parentId: null,
+          level: -1,
+          index: -1,
+          posInSet: 0,
+          setSize: 1
+        };
+      }
+    }
+  };
+  features.unshift(mainFeature);
+  for (const feature of features) {
+    Object.assign(hotkeyPresets, (_d = feature.hotkeys) != null ? _d : {});
+  }
+  finalizeTree();
+  return treeInstance;
+};
+var selectionFeature = {
+  key: "selection",
+  getInitialState: (initialState) => __spreadValues({
+    selectedItems: []
+  }, initialState),
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    setSelectedItems: makeStateUpdater("selectedItems", tree)
+  }, defaultConfig),
+  stateHandlerNames: {
+    selectedItems: "setSelectedItems"
+  },
+  treeInstance: {
+    setSelectedItems: ({ tree }, selectedItems) => {
+      tree.applySubStateUpdate("selectedItems", selectedItems);
+    },
+    getSelectedItems: ({ tree }) => {
+      return tree.getState().selectedItems.map(tree.getItemInstance);
+    }
+  },
+  itemInstance: {
+    select: ({ tree, itemId }) => {
+      const { selectedItems } = tree.getState();
+      tree.setSelectedItems(selectedItems.includes(itemId) ? selectedItems : [...selectedItems, itemId]);
+    },
+    deselect: ({ tree, itemId }) => {
+      const { selectedItems } = tree.getState();
+      tree.setSelectedItems(selectedItems.filter((id) => id !== itemId));
+    },
+    isSelected: ({ tree, itemId }) => {
+      const { selectedItems } = tree.getState();
+      return selectedItems.includes(itemId);
+    },
+    selectUpTo: ({ tree, item, itemId }, ctrl) => {
+      const indexA = item.getItemMeta().index;
+      const dataRef = tree.getDataRef();
+      if (!dataRef.current.selectUpToAnchorId) {
+        dataRef.current.selectUpToAnchorId = itemId;
+        tree.setSelectedItems([itemId]);
+        return;
+      }
+      const itemB = tree.getItemInstance(dataRef.current.selectUpToAnchorId);
+      const indexB = itemB.getItemMeta().index;
+      const [a, b] = indexA < indexB ? [indexA, indexB] : [indexB, indexA];
+      const newSelectedItems = tree.getItems().slice(a, b + 1).map((treeItem) => treeItem.getItemMeta().itemId);
+      if (!ctrl) {
+        tree.setSelectedItems(newSelectedItems);
+        return;
+      }
+      const { selectedItems } = tree.getState();
+      const uniqueSelectedItems = [
+        .../* @__PURE__ */ new Set([...selectedItems, ...newSelectedItems])
+      ];
+      tree.setSelectedItems(uniqueSelectedItems);
+    },
+    toggleSelect: ({ item }) => {
+      if (item.isSelected()) {
+        item.deselect();
+      } else {
+        item.select();
+      }
+    },
+    getProps: ({ tree, item, itemId, prev }) => __spreadProps(__spreadValues({}, prev == null ? undefined : prev()), {
+      "aria-selected": item.isSelected() ? "true" : "false",
+      onClick: (e) => {
+        var _a, _b;
+        if (e.shiftKey) {
+          item.selectUpTo(e.ctrlKey || e.metaKey);
+        } else if (e.ctrlKey || e.metaKey) {
+          item.toggleSelect();
+        } else {
+          tree.setSelectedItems([itemId]);
+        }
+        if (!e.shiftKey) {
+          tree.getDataRef().current.selectUpToAnchorId = itemId;
+        }
+        (_b = (_a = prev == null ? undefined : prev()) == null ? undefined : _a.onClick) == null || _b.call(_a, e);
+      }
+    })
+  },
+  hotkeys: {
+    toggleSelectedItem: {
+      hotkey: "Control+Space",
+      preventDefault: true,
+      handler: (_, tree) => {
+        tree.getFocusedItem().toggleSelect();
+      }
+    },
+    selectUpwards: {
+      hotkey: "Shift+ArrowUp",
+      handler: (e, tree) => {
+        const focused = tree.getFocusedItem();
+        const above = focused.getItemAbove();
+        if (!above)
+          return;
+        if (focused.isSelected() && above.isSelected()) {
+          focused.deselect();
+        } else {
+          above.select();
+        }
+        above.setFocused();
+        tree.updateDomFocus();
+      }
+    },
+    selectDownwards: {
+      hotkey: "Shift+ArrowDown",
+      handler: (e, tree) => {
+        const focused = tree.getFocusedItem();
+        const below = focused.getItemBelow();
+        if (!below)
+          return;
+        if (focused.isSelected() && below.isSelected()) {
+          focused.deselect();
+        } else {
+          below.select();
+        }
+        below.setFocused();
+        tree.updateDomFocus();
+      }
+    },
+    selectAll: {
+      hotkey: "Control+KeyA",
+      preventDefault: true,
+      handler: (e, tree) => {
+        tree.setSelectedItems(tree.getItems().map((item) => item.getId()));
+      }
+    }
+  }
+};
+var resolveKeyCode = (event) => event.code !== "" && event.code !== "Unidentified" ? event.code : event.key;
+var specialKeys = {
+  letter: /^Key[A-Z]$/,
+  letterornumber: /^(Key[A-Z]|Digit[0-9])$/,
+  plus: /^(NumpadAdd|Plus)$/,
+  minus: /^(NumpadSubtract|Minus)$/,
+  control: /^(ControlLeft|ControlRight)$/,
+  shift: /^(ShiftLeft|ShiftRight)$/,
+  metaorcontrol: /^(MetaLeft|MetaRight|ControlLeft|ControlRight)$/,
+  enter: /^(Enter|NumpadEnter)$/
+};
+var modifierKeyCodes = /* @__PURE__ */ new Set([
+  "MetaLeft",
+  "MetaRight",
+  "Meta",
+  "ControlLeft",
+  "ControlRight",
+  "Control",
+  "AltLeft",
+  "AltRight",
+  "Alt",
+  "ShiftLeft",
+  "ShiftRight",
+  "Shift"
+]);
+var testHotkeyMatch = (pressedKeys, tree, hotkey) => {
+  const supposedKeys = hotkey.hotkey.toLowerCase().split("+");
+  const doKeysMatch = supposedKeys.every((key) => {
+    if (key in specialKeys) {
+      return [...pressedKeys].some((pressedKey) => specialKeys[key].test(pressedKey));
+    }
+    const pressedKeysLowerCase = [...pressedKeys].map((pressedKey) => pressedKey.toLowerCase());
+    return pressedKeysLowerCase.includes(key.toLowerCase()) || pressedKeysLowerCase.includes(`key${key.toLowerCase()}`);
+  });
+  const isEnabled = !hotkey.isEnabled || hotkey.isEnabled(tree);
+  return doKeysMatch && isEnabled && pressedKeys.size === supposedKeys.length;
+};
+var findHotkeyMatch = (pressedKeys, tree, config1, config2) => {
+  var _a;
+  return (_a = Object.entries(__spreadValues(__spreadValues({}, config1), config2)).find(([, hotkey]) => testHotkeyMatch(pressedKeys, tree, hotkey))) == null ? undefined : _a[0];
+};
+var hotkeysCoreController = {
+  clearPressedKeys: (dataRef) => {
+    dataRef.current.pressedKeys = /* @__PURE__ */ new Set;
+  },
+  dispatchKeyDown: (tree, dataRef, eventLike, options = {}) => {
+    var _a, _b, _c, _d, _e2;
+    const { isInputFocused = false, releaseAfterDispatch = false } = options;
+    const { ignoreHotkeysOnInputs, onTreeHotkey, hotkeys } = tree.getConfig();
+    if (isInputFocused && ignoreHotkeysOnInputs) {
+      return;
+    }
+    const resolvedCode = resolveKeyCode({
+      code: (_a = eventLike.code) != null ? _a : "",
+      key: (_b = eventLike.key) != null ? _b : ""
+    });
+    (_d = (_c = dataRef.current).pressedKeys) != null || (_c.pressedKeys = /* @__PURE__ */ new Set);
+    const isNewKey = !dataRef.current.pressedKeys.has(resolvedCode);
+    if (resolvedCode) {
+      dataRef.current.pressedKeys.add(resolvedCode);
+    }
+    const hotkeyName = findHotkeyMatch(dataRef.current.pressedKeys, tree, tree.getHotkeyPresets(), hotkeys);
+    if (releaseAfterDispatch && resolvedCode) {
+      dataRef.current.pressedKeys.delete(resolvedCode);
+    }
+    if (!hotkeyName) {
+      return;
+    }
+    const hotkeyConfig = __spreadValues(__spreadValues({}, tree.getHotkeyPresets()[hotkeyName]), hotkeys == null ? undefined : hotkeys[hotkeyName]);
+    if (!hotkeyConfig) {
+      return;
+    }
+    if (!hotkeyConfig.allowWhenInputFocused && isInputFocused) {
+      return;
+    }
+    if (!hotkeyConfig.canRepeat && !isNewKey) {
+      return;
+    }
+    if (hotkeyConfig.preventDefault) {
+      (_e2 = eventLike.preventDefault) == null || _e2.call(eventLike);
+    }
+    hotkeyConfig.handler(eventLike, tree);
+    onTreeHotkey == null || onTreeHotkey(hotkeyName, eventLike);
+  },
+  dispatchKeyUp: (dataRef, eventLike) => {
+    var _a, _b, _c, _d;
+    const resolvedCode = resolveKeyCode({
+      code: (_a = eventLike.code) != null ? _a : "",
+      key: (_b = eventLike.key) != null ? _b : ""
+    });
+    if (!resolvedCode) {
+      return;
+    }
+    (_d = (_c = dataRef.current).pressedKeys) != null || (_c.pressedKeys = /* @__PURE__ */ new Set);
+    if (modifierKeyCodes.has(resolvedCode)) {
+      dataRef.current.pressedKeys = new Set([...dataRef.current.pressedKeys].filter((pressedKey) => modifierKeyCodes.has(pressedKey)));
+    }
+    dataRef.current.pressedKeys.delete(resolvedCode);
+  }
+};
+var hotkeysCoreFeature = {
+  key: "hotkeys-core",
+  onTreeMount: (tree, element) => {
+    const data = tree.getDataRef();
+    const keydown = (e) => {
+      const isInputFocused = e.target instanceof HTMLInputElement;
+      hotkeysCoreController.dispatchKeyDown(tree, data, e, {
+        isInputFocused,
+        releaseAfterDispatch: isInputFocused
+      });
+    };
+    const keyup = (e) => {
+      hotkeysCoreController.dispatchKeyUp(data, e);
+    };
+    const reset = () => {
+      hotkeysCoreController.clearPressedKeys(data);
+    };
+    element.addEventListener("keydown", keydown);
+    document.addEventListener("keyup", keyup);
+    window.addEventListener("focus", reset);
+    data.current.keydownHandler = keydown;
+    data.current.keyupHandler = keyup;
+    data.current.resetHandler = reset;
+  },
+  onTreeUnmount: (tree, element) => {
+    const data = tree.getDataRef();
+    if (data.current.keyupHandler) {
+      document.removeEventListener("keyup", data.current.keyupHandler);
+      delete data.current.keyupHandler;
+    }
+    if (data.current.keydownHandler) {
+      element.removeEventListener("keydown", data.current.keydownHandler);
+      delete data.current.keydownHandler;
+    }
+    if (data.current.resetHandler) {
+      window.removeEventListener("focus", data.current.resetHandler);
+      delete data.current.resetHandler;
+    }
+  }
+};
+var undefErrorMessage = "sync dataLoader returned undefined";
+var promiseErrorMessage = "sync dataLoader returned promise";
+var unpromise = (data) => {
+  if (!data) {
+    throw throwError(undefErrorMessage);
+  }
+  if (typeof data === "object" && "then" in data) {
+    throw throwError(promiseErrorMessage);
+  }
+  return data;
+};
+var syncDataLoaderFeature = {
+  key: "sync-data-loader",
+  getInitialState: (initialState) => __spreadValues({
+    loadingItemData: [],
+    loadingItemChildrens: []
+  }, initialState),
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    setLoadingItemData: makeStateUpdater("loadingItemData", tree),
+    setLoadingItemChildrens: makeStateUpdater("loadingItemChildrens", tree)
+  }, defaultConfig),
+  stateHandlerNames: {
+    loadingItemData: "setLoadingItemData",
+    loadingItemChildrens: "setLoadingItemChildrens"
+  },
+  treeInstance: {
+    waitForItemDataLoaded: () => __async(null, null, function* () {}),
+    waitForItemChildrenLoaded: () => __async(null, null, function* () {}),
+    retrieveItemData: ({ tree }, itemId) => {
+      return unpromise(tree.getConfig().dataLoader.getItem(itemId));
+    },
+    retrieveChildrenIds: ({ tree }, itemId) => {
+      const { dataLoader } = tree.getConfig();
+      if ("getChildren" in dataLoader) {
+        return unpromise(dataLoader.getChildren(itemId));
+      }
+      return unpromise(dataLoader.getChildrenWithData(itemId)).map((c) => c.data);
+    },
+    loadItemData: ({ tree }, itemId) => tree.retrieveItemData(itemId),
+    loadChildrenIds: ({ tree }, itemId) => tree.retrieveChildrenIds(itemId)
+  },
+  itemInstance: {
+    isLoading: () => false,
+    hasLoadedData: () => true
+  }
+};
+var searchFeature = {
+  key: "search",
+  getInitialState: (initialState) => __spreadValues({
+    search: null
+  }, initialState),
+  getDefaultConfig: (defaultConfig, tree) => __spreadValues({
+    setSearch: makeStateUpdater("search", tree),
+    isSearchMatchingItem: (search, item) => search.length > 0 && item.getItemName().toLowerCase().includes(search.toLowerCase())
+  }, defaultConfig),
+  stateHandlerNames: {
+    search: "setSearch"
+  },
+  treeInstance: {
+    setSearch: ({ tree }, search) => {
+      var _a;
+      tree.applySubStateUpdate("search", search);
+      (_a = tree.getItems().find((item) => {
+        var _a2, _b;
+        return (_b = (_a2 = tree.getConfig()).isSearchMatchingItem) == null ? undefined : _b.call(_a2, tree.getSearchValue(), item);
+      })) == null || _a.setFocused();
+    },
+    openSearch: ({ tree }, initialValue = "") => {
+      var _a, _b;
+      tree.setSearch(initialValue);
+      (_b = (_a = tree.getConfig()).onOpenSearch) == null || _b.call(_a);
+      setTimeout(() => {
+        var _a2;
+        (_a2 = tree.getDataRef().current.searchInput) == null || _a2.focus();
+      });
+    },
+    closeSearch: ({ tree }) => {
+      var _a, _b;
+      tree.setSearch(null);
+      (_b = (_a = tree.getConfig()).onCloseSearch) == null || _b.call(_a);
+      tree.updateDomFocus();
+    },
+    isSearchOpen: ({ tree }) => tree.getState().search !== null,
+    getSearchValue: ({ tree }) => tree.getState().search || "",
+    registerSearchInputElement: ({ tree }, element) => {
+      const dataRef = tree.getDataRef();
+      dataRef.current.searchInput = element;
+      if (element && dataRef.current.keydownHandler) {
+        element.addEventListener("keydown", dataRef.current.keydownHandler);
+      }
+    },
+    getSearchInputElement: ({ tree }) => {
+      var _a;
+      return (_a = tree.getDataRef().current.searchInput) != null ? _a : null;
+    },
+    getSearchInputElementProps: ({ tree }) => ({
+      value: tree.getSearchValue(),
+      onChange: (e) => tree.setSearch(e.target.value),
+      onBlur: () => tree.closeSearch(),
+      ref: tree.registerSearchInputElement
+    }),
+    getSearchMatchingItems: memo2(({ tree }) => [
+      tree.getSearchValue(),
+      tree.getItems(),
+      tree.getConfig().isSearchMatchingItem
+    ], (search, items, isSearchMatchingItem) => items.filter((item) => search && (isSearchMatchingItem == null ? undefined : isSearchMatchingItem(search, item))))
+  },
+  itemInstance: {
+    isMatchingSearch: ({ tree, item }) => tree.getSearchMatchingItems().some((i) => i.getId() === item.getId())
+  },
+  hotkeys: {
+    openSearch: {
+      hotkey: "LetterOrNumber",
+      preventDefault: true,
+      isEnabled: (tree) => !tree.isSearchOpen(),
+      handler: (e, tree) => {
+        e.stopPropagation();
+        tree.openSearch(e.key);
+      }
+    },
+    closeSearch: {
+      hotkey: "Escape",
+      allowWhenInputFocused: true,
+      isEnabled: (tree) => tree.isSearchOpen(),
+      handler: (e, tree) => {
+        tree.closeSearch();
+      }
+    },
+    submitSearch: {
+      hotkey: "Enter",
+      allowWhenInputFocused: true,
+      isEnabled: (tree) => tree.isSearchOpen(),
+      handler: (e, tree) => {
+        tree.closeSearch();
+        tree.setSelectedItems([tree.getFocusedItem().getId()]);
+      }
+    },
+    nextSearchItem: {
+      hotkey: "ArrowDown",
+      allowWhenInputFocused: true,
+      canRepeat: true,
+      isEnabled: (tree) => tree.isSearchOpen(),
+      handler: (e, tree) => {
+        const focusItem = tree.getSearchMatchingItems().find((item) => item.getItemMeta().index > tree.getFocusedItem().getItemMeta().index);
+        focusItem == null || focusItem.setFocused();
+        focusItem == null || focusItem.scrollTo({ block: "nearest", inline: "nearest" });
+      }
+    },
+    previousSearchItem: {
+      hotkey: "ArrowUp",
+      allowWhenInputFocused: true,
+      canRepeat: true,
+      isEnabled: (tree) => tree.isSearchOpen(),
+      handler: (e, tree) => {
+        const focusItem = [...tree.getSearchMatchingItems()].reverse().find((item) => item.getItemMeta().index < tree.getFocusedItem().getItemMeta().index);
+        focusItem == null || focusItem.setFocused();
+        focusItem == null || focusItem.scrollTo({ block: "nearest", inline: "nearest" });
+      }
+    }
+  }
+};
+
+// node_modules/@headless-tree/react/dist/chunk-FWCSY2DS.mjs
+var __defProp3 = Object.defineProperty;
+var __defProps2 = Object.defineProperties;
+var __getOwnPropDescs2 = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols2 = Object.getOwnPropertySymbols;
+var __hasOwnProp3 = Object.prototype.hasOwnProperty;
+var __propIsEnum2 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp2 = (obj, key, value) => (key in obj) ? __defProp3(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues2 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp3.call(b, prop))
+      __defNormalProp2(a, prop, b[prop]);
+  if (__getOwnPropSymbols2)
+    for (var prop of __getOwnPropSymbols2(b)) {
+      if (__propIsEnum2.call(b, prop))
+        __defNormalProp2(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps2 = (a, b) => __defProps2(a, __getOwnPropDescs2(b));
+
+// node_modules/@headless-tree/react/dist/index.mjs
+var import_react8 = __toESM(require_react(), 1);
+var import_react9 = __toESM(require_react(), 1);
+var useTree = (config) => {
+  const [tree] = import_react9.useState(() => ({ current: createTree(config) }));
+  const [state, setState] = import_react9.useState(() => tree.current.getState());
+  import_react9.useEffect(() => {
+    tree.current.setMounted(true);
+    tree.current.rebuildTree();
+    return () => {
+      tree.current.setMounted(false);
+    };
+  }, [tree]);
+  tree.current.setConfig((prev) => __spreadProps2(__spreadValues2(__spreadValues2({}, prev), config), {
+    state: __spreadValues2(__spreadValues2({}, state), config.state),
+    setState: (state2) => {
+      var _a;
+      setState(state2);
+      (_a = config.setState) == null || _a.call(config, state2);
+    }
+  }));
+  return tree.current;
+};
+
+// src/scriptorium/surface/components/context/EntryTree.tsx
+var import_react11 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/components/context/model.ts
+function baseName(rel) {
+  const i = rel.lastIndexOf("/");
+  return i === -1 ? rel : rel.slice(i + 1);
+}
+function joinPath(root, rel) {
+  return root.endsWith("/") ? `${root}${rel}` : `${root}/${rel}`;
+}
+function tildify(path, home) {
+  if (!home)
+    return path;
+  if (path === home)
+    return "~";
+  return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+}
+function shortPath(path, home, keep = 2) {
+  const t = tildify(path, home);
+  const parts = t.split("/");
+  const lead = t.startsWith("~") ? 1 : t.startsWith("/") ? 1 : 0;
+  if (parts.length - lead <= keep + 1)
+    return t;
+  return `…/${parts.slice(-keep).join("/")}`;
+}
+var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+function sortNodes(nodes) {
+  return [...nodes].sort((a, b) => {
+    if (a.kind !== b.kind)
+      return a.kind === "group" ? -1 : 1;
+    return collator.compare(baseName(a.rel), baseName(b.rel));
+  });
+}
+function docsIn(nodes) {
+  const out = [];
+  for (const n of nodes) {
+    if (n.kind === "doc")
+      out.push(n);
+    else
+      out.push(...docsIn(n.children));
+  }
+  return out;
+}
+function singleDoc(entry) {
+  const [only, ...rest] = entry.nodes;
+  return only && rest.length === 0 && only.kind === "doc" ? only : null;
+}
+var ROOT_ID = "\x00root";
+function indexTree(nodes) {
+  const byId = new Map;
+  const children = new Map;
+  const walk = (parent, list) => {
+    const sorted = sortNodes(list);
+    children.set(parent, sorted.map((n) => n.rel));
+    for (const n of sorted) {
+      byId.set(n.rel, n);
+      if (n.kind === "group")
+        walk(n.rel, n.children);
+    }
+  };
+  walk(ROOT_ID, nodes);
+  return { byId, children };
+}
+function ancestorsOf(rel) {
+  const parts = rel.split("/");
+  const out = [];
+  for (let i = 1;i < parts.length; i++)
+    out.push(parts.slice(0, i).join("/"));
+  return out;
+}
+
+// src/scriptorium/surface/components/context/EntryTree.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var react = __toESM(require_react(), 1);
+var INDENT_PX = 14;
+function EntryTree({
+  entry,
+  activeRel,
+  onOpenDoc
+}) {
+  const index3 = import_react11.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
+  const indexRef = import_react11.useRef(index3);
+  indexRef.current = index3;
+  const openRef = import_react11.useRef(onOpenDoc);
+  openRef.current = onOpenDoc;
+  const tree = useTree({
+    rootItemId: ROOT_ID,
+    initialState: { expandedItems: activeRel ? ancestorsOf(activeRel) : [] },
+    getItemName: (item) => {
+      const node = item.getItemData();
+      return node ? baseName(node.rel) : entry.label;
+    },
+    isItemFolder: (item) => {
+      const node = item.getItemData();
+      return node === null || node.kind === "group";
+    },
+    dataLoader: {
+      getItem: (id) => id === ROOT_ID ? null : indexRef.current.byId.get(id) ?? null,
+      getChildren: (id) => indexRef.current.children.get(id) ?? []
+    },
+    onPrimaryAction: (item) => {
+      const node = item.getItemData();
+      if (node?.kind === "doc")
+        openRef.current(node.rel);
+    },
+    indent: INDENT_PX,
+    features: [syncDataLoaderFeature, selectionFeature, hotkeysCoreFeature]
+  });
+  import_react11.useEffect(() => {
+    tree.rebuildTree();
+  }, [index3, tree]);
+  const items = tree.getItems();
+  if (items.length === 0) {
+    return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+      className: "px-3 py-4 text-xs text-ink-faint",
+      children: "This folder has no documents yet."
+    }, undefined, false, undefined, this);
+  }
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    ...tree.getContainerProps(`${entry.label} documents`),
+    className: "flex flex-col py-1 outline-none",
+    children: items.map((item) => {
+      const node = item.getItemData();
+      if (!node)
+        return null;
+      const level = item.getItemMeta().level;
+      const isGroup = node.kind === "group";
+      const isActive = !isGroup && node.rel === activeRel;
+      const props = item.getProps();
+      return /* @__PURE__ */ react.createElement("button", {
+        ...props,
+        key: item.getId(),
+        type: "button",
+        onClick: (e) => {
+          props.onClick?.(e);
+          if (!isGroup)
+            onOpenDoc(node.rel);
+        },
+        style: { paddingLeft: `${8 + level * INDENT_PX}px` },
+        "data-active": isActive || undefined,
+        className: cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-surface-raised font-medium text-ink")
+      }, isGroup ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(jsx_dev_runtime7.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ChevronRight, {
+            "aria-hidden": true,
+            className: cn("size-3.5 shrink-0 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
+          }, undefined, false, undefined, this),
+          item.isExpanded() ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderOpen, {
+            "aria-hidden": true,
+            className: "size-4 shrink-0 text-ink-faint"
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Folder, {
+            "aria-hidden": true,
+            className: "size-4 shrink-0 text-ink-faint"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(jsx_dev_runtime7.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+            "aria-hidden": true,
+            className: "size-3.5 shrink-0"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FileText, {
+            "aria-hidden": true,
+            className: cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this), /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+        className: "truncate",
+        children: item.getItemName()
+      }, undefined, false, undefined, this));
+    })
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/context/ContextSidebar.tsx
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
+function openMenuOnShiftF10(e) {
+  if (e.key !== "F10" || !e.shiftKey)
+    return;
+  e.preventDefault();
+  const r2 = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.dispatchEvent(new MouseEvent("contextmenu", {
+    bubbles: true,
+    cancelable: true,
+    clientX: r2.left + 24,
+    clientY: r2.top + r2.height / 2
+  }));
+}
+function ContextSidebar({
+  entries,
+  activeDoc,
+  userHome,
+  onOpenDoc,
+  onAddPath,
+  onRemoveEntry,
+  listDir
+}) {
+  const [drilled, setDrilled] = import_react12.useState(null);
+  const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
+  import_react12.useEffect(() => {
+    if (drilled && !drilledEntry)
+      setDrilled(null);
+  }, [drilled, drilledEntry]);
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+    className: "flex min-h-0 flex-1 flex-col",
+    children: [
+      drilledEntry ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(SetView, {
+        entry: drilledEntry,
+        activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
+        userHome,
+        onBack: () => setDrilled(null),
+        onOpenDoc: (rel) => onOpenDoc(drilledEntry, rel)
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ListView, {
+        entries,
+        activeDoc,
+        userHome,
+        onOpenDoc,
+        onDrill: (e) => setDrilled(e.id),
+        onRemoveEntry
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(AddPath, {
+        listDir,
+        onAdd: onAddPath
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ListView({
+  entries,
+  activeDoc,
+  userHome,
+  onOpenDoc,
+  onDrill,
+  onRemoveEntry
+}) {
+  if (entries.length === 0) {
+    return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Empty, {
+      className: "flex-1",
+      children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyHeader, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyMedia, {
+            variant: "icon",
+            children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderTree, {}, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyTitle, {
+            children: "No context yet"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EmptyDescription, {
+            children: "Add a markdown file or a folder by path below — or ask the agent to add one."
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    }, undefined, false, undefined, this);
+  }
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("ul", {
+    className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1.5",
+    "aria-label": "Context",
+    children: entries.map((entry) => {
+      const only = singleDoc(entry);
+      const holdsActive = activeDoc?.entryId === entry.id;
+      const isActiveDoc = only !== null && holdsActive && activeDoc?.rel === only.rel;
+      const count = only ? 1 : docsIn(entry.nodes).length;
+      const full = only ? joinPath(entry.root, only.rel) : entry.root;
+      const where = shortPath(entry.root, userHome);
+      return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("li", {
+        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenu, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuTrigger3, {
+              render: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("button", {
+                type: "button",
+                onClick: () => only ? onOpenDoc(entry, only.rel) : onDrill(entry),
+                onKeyDown: openMenuOnShiftF10,
+                title: tildify(full, userHome),
+                className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-surface-raised")
+              }, undefined, false, undefined, this),
+              children: [
+                only ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {
+                  "aria-hidden": true,
+                  className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderTree, {
+                  "aria-hidden": true,
+                  className: cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+                  className: "flex min-w-0 flex-1 flex-col",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+                      className: cn("truncate text-sm", isActiveDoc ? "font-medium text-ink" : "text-ink"),
+                      children: only ? only.rel.split("/").pop() : entry.label
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+                      className: "truncate font-mono text-[11px] text-ink-faint",
+                      children: [
+                        only ? where : `${count} ${count === 1 ? "document" : "documents"} · ${where}`,
+                        entry.truncated ? " · truncated" : ""
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuContent, {
+              children: [
+                !only && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                      onClick: () => onDrill(entry),
+                      children: "Open set"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+                  variant: "destructive",
+                  onClick: () => onRemoveEntry(entry),
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(X, {}, undefined, false, undefined, this),
+                    "Remove from context"
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, entry.id, false, undefined, this);
+    })
+  }, undefined, false, undefined, this);
+}
+function SetView({
+  entry,
+  activeRel,
+  userHome,
+  onBack,
+  onOpenDoc
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+    className: "flex min-h-0 flex-1 flex-col",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+        className: "flex shrink-0 items-center gap-1 border-b border-edge px-1.5 py-1",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "icon-sm",
+            onClick: onBack,
+            "aria-label": "Back to the context list",
+            children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ArrowLeft, {}, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+            className: "flex min-w-0 flex-col",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+                className: "truncate text-sm font-medium text-ink",
+                children: entry.label
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+                className: "truncate font-mono text-[11px] text-ink-faint",
+                title: entry.root,
+                children: shortPath(entry.root, userHome)
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+        className: "min-h-0 flex-1 overflow-auto px-1",
+        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(EntryTree, {
+          entry,
+          activeRel,
+          onOpenDoc
+        }, entry.id, false, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/scriptorium/surface/components/DocumentPane.tsx
+var import_react15 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/state/stats.ts
+function contentStats(text) {
+  const trimmed = text.trim();
+  return { words: trimmed === "" ? 0 : trimmed.split(/\s+/).length, characters: text.length };
+}
+function relativeTime(ts, now) {
+  const s = Math.max(0, Math.round((now - ts) / 1000));
+  if (s < 45)
+    return "just now";
+  const m = Math.round(s / 60);
+  if (m < 60)
+    return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24)
+    return `${h} h ago`;
+  return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// node_modules/@marijn/find-cluster-break/src/index.js
+var rangeFrom = [];
+var rangeTo = [];
+(() => {
+  let numbers = "lc,34,7n,7,7b,19,,,,2,,2,,,20,b,1c,l,g,,2t,7,2,6,2,2,,4,z,,u,r,2j,b,1m,9,9,,o,4,,9,,3,,5,17,3,1n,9,16,o,,x,1i,3,,i,,7,a,2,t,3,1k,,,7,2,2,2,3,9,,a,2,q,,2,3,1k,,,5,4,2,2,3,3,,u,2,3,,b,3,1k,,,8,,3,,3,k,2,m,6,,3,1k,,,7,2,2,2,3,7,3,a,2,u,,1n,5,3,3,,4,9,,14,5,1j,,,7,,3,,4,7,2,b,2,t,3,1k,,,7,,3,,4,7,2,b,2,f,,c,4,1j,2,,7,,3,,4,9,,a,2,t,3,1y,,4,6,,,,8,i,2,1p,,,8,c,8,2q,,,a,b,7,21,2,r,,,,,,4,2,1d,k,,2,5,b,,10,9,,2u,b,,6,n,4,4,3,g,4,d,,,3,6,,f,,jj,3,qa,4,s,3,t,2,u,2,1s,w,9,,19,3,,,39,2,y,,3a,c,4,c,63,5,1l,a,,,,,2,o,2,,1c,1a,2,c,k,5,1b,h,12,9,c,3,u,d,1k,e,1c,k,48,3,,l,4,,6,,2,3,5i,1s,ek,,5f,x,2da,3,3x,,2o,w,fe,6,2x,2,n9w,4,,a,w,2,28,2,7k,,3,,4,,n,5,4,,2b,2,1e,i,q,i,d,,12,8,p,d,18,4,1b,e,10,,1v,e,c,,8,2,1a,,1f,,,3,2,2,5,2,,,15,5,5,2,6k,8,,2,fn4,,kh,g,g,g,a6,2,gt,,6a,,45,5,1ae,3,,2,5,4,14,3,4,,4l,2,fx,4,1t,5,8t,2,25,6,1y,b,1d,4,3e,3,1h,f,15,,2,2,a,4,19,b,7,,1p,3,10,e,g,2,18,,c,3,1c,e,8,4,,2,2k,c,6,,2,,4d,c,l,4,1j,2,,7,2,2,2,3,9,,a,2,2,7,3,5,1v,9,,,2,,,4,,5,,,e,2,2a,i,n,,29,k,6j,7,2,9,r,2,2a,h,2y,d,2t,3,2,a,74,f,6t,6,,2,2,4,,,,2,3x,7,2,7,3,,s,a,14,7,,4,8,,9,b,1a,g,5i,8,5j,8,,8,2a,m,,e,3e,6,3,,,2,,7,,,1u,5,,2,,5,9n,4,9,2,,,1c,7,3,5,n,,44l,,6,f,8ug,i,1xc,5,1n,7,t4,,,1j,7,4,29,,b,2,f57,2,3mp,1a,2,n,f2,5,3,6,8,8,2,7,u,4,44,3,1iz,1j,4,1e,8,,e,,m,5,,f,11s,7,,h,2,7,,2,,5,2s,,4g,7,af,,1p,4,e4,4,72,2,6r,,2,,7,2,5,,d6,7,31,7,240,5".split(",").map((s) => s ? parseInt(s, 36) : 1);
+  for (let i = 0, n = 0;i < numbers.length; i++)
+    (i % 2 ? rangeTo : rangeFrom).push(n = n + numbers[i]);
+})();
+function isExtendingChar(code) {
+  if (code < 768)
+    return false;
+  for (let from = 0, to = rangeFrom.length;; ) {
+    let mid = from + to >> 1;
+    if (code < rangeFrom[mid])
+      to = mid;
+    else if (code >= rangeTo[mid])
+      from = mid + 1;
+    else
+      return true;
+    if (from == to)
+      return false;
+  }
+}
+function isRegionalIndicator(code) {
+  return code >= 127462 && code <= 127487;
+}
+var ZWJ = 8205;
+function findClusterBreak(str, pos, forward = true, includeExtending = true) {
+  return (forward ? nextClusterBreak : prevClusterBreak)(str, pos, includeExtending);
+}
+function nextClusterBreak(str, pos, includeExtending) {
+  if (pos == str.length)
+    return pos;
+  if (pos && surrogateLow(str.charCodeAt(pos)) && surrogateHigh(str.charCodeAt(pos - 1)))
+    pos--;
+  let prev = codePointAt(str, pos);
+  pos += codePointSize(prev);
+  while (pos < str.length) {
+    let next = codePointAt(str, pos);
+    if (prev == ZWJ || next == ZWJ || includeExtending && isExtendingChar(next)) {
+      pos += codePointSize(next);
+      prev = next;
+    } else if (isRegionalIndicator(next)) {
+      let countBefore = 0, i = pos - 2;
+      while (i >= 0 && isRegionalIndicator(codePointAt(str, i))) {
+        countBefore++;
+        i -= 2;
+      }
+      if (countBefore % 2 == 0)
+        break;
+      else
+        pos += 2;
+    } else {
+      break;
+    }
+  }
+  return pos;
+}
+function prevClusterBreak(str, pos, includeExtending) {
+  while (pos > 1) {
+    let found = nextClusterBreak(str, pos - 2, includeExtending);
+    if (found < pos)
+      return found;
+    pos--;
+  }
+  return 0;
+}
+function codePointAt(str, pos) {
+  let code0 = str.charCodeAt(pos);
+  if (!surrogateHigh(code0) || pos + 1 == str.length)
+    return code0;
+  let code1 = str.charCodeAt(pos + 1);
+  if (!surrogateLow(code1))
+    return code0;
+  return (code0 - 55296 << 10) + (code1 - 56320) + 65536;
+}
+function surrogateLow(ch) {
+  return ch >= 56320 && ch < 57344;
+}
+function surrogateHigh(ch) {
+  return ch >= 55296 && ch < 56320;
+}
+function codePointSize(code) {
+  return code < 65536 ? 1 : 2;
+}
+
+// node_modules/@codemirror/state/dist/index.js
+class Text {
+  lineAt(pos) {
+    if (pos < 0 || pos > this.length)
+      throw new RangeError(`Invalid position ${pos} in document of length ${this.length}`);
+    return this.lineInner(pos, false, 1, 0);
+  }
+  line(n) {
+    if (n < 1 || n > this.lines)
+      throw new RangeError(`Invalid line number ${n} in ${this.lines}-line document`);
+    return this.lineInner(n, true, 1, 0);
+  }
+  replace(from, to, text) {
+    [from, to] = clip(this, from, to);
+    let parts = [];
+    this.decompose(0, from, parts, 2);
+    if (text.length)
+      text.decompose(0, text.length, parts, 1 | 2);
+    this.decompose(to, this.length, parts, 1);
+    return TextNode.from(parts, this.length - (to - from) + text.length);
+  }
+  append(other) {
+    return this.replace(this.length, this.length, other);
+  }
+  slice(from, to = this.length) {
+    [from, to] = clip(this, from, to);
+    let parts = [];
+    this.decompose(from, to, parts, 0);
+    return TextNode.from(parts, to - from);
+  }
+  eq(other) {
+    if (other == this)
+      return true;
+    if (other.length != this.length || other.lines != this.lines)
+      return false;
+    let start = this.scanIdentical(other, 1), end = this.length - this.scanIdentical(other, -1);
+    let a = new RawTextCursor(this), b = new RawTextCursor(other);
+    for (let skip = start, pos = start;; ) {
+      a.next(skip);
+      b.next(skip);
+      skip = 0;
+      if (a.lineBreak != b.lineBreak || a.done != b.done || a.value != b.value)
+        return false;
+      pos += a.value.length;
+      if (a.done || pos >= end)
+        return true;
+    }
+  }
+  iter(dir = 1) {
+    return new RawTextCursor(this, dir);
+  }
+  iterRange(from, to = this.length) {
+    return new PartialTextCursor(this, from, to);
+  }
+  iterLines(from, to) {
+    let inner;
+    if (from == null) {
+      inner = this.iter();
+    } else {
+      if (to == null)
+        to = this.lines + 1;
+      let start = this.line(from).from;
+      inner = this.iterRange(start, Math.max(start, to == this.lines + 1 ? this.length : to <= 1 ? 0 : this.line(to - 1).to));
+    }
+    return new LineCursor(inner);
+  }
+  toString() {
+    return this.sliceString(0);
+  }
+  toJSON() {
+    let lines = [];
+    this.flatten(lines);
+    return lines;
+  }
+  constructor() {}
+  static of(text) {
+    if (text.length == 0)
+      throw new RangeError("A document must have at least one line");
+    if (text.length == 1 && !text[0])
+      return Text.empty;
+    return text.length <= 32 ? new TextLeaf(text) : TextNode.from(TextLeaf.split(text, []));
+  }
+}
+
+class TextLeaf extends Text {
+  constructor(text, length = textLength(text)) {
+    super();
+    this.text = text;
+    this.length = length;
+  }
+  get lines() {
+    return this.text.length;
+  }
+  get children() {
+    return null;
+  }
+  lineInner(target, isLine, line, offset4) {
+    for (let i = 0;; i++) {
+      let string = this.text[i], end = offset4 + string.length;
+      if ((isLine ? line : end) >= target)
+        return new Line(offset4, end, line, string);
+      offset4 = end + 1;
+      line++;
+    }
+  }
+  decompose(from, to, target, open) {
+    let text = from <= 0 && to >= this.length ? this : new TextLeaf(sliceText(this.text, from, to), Math.min(to, this.length) - Math.max(0, from));
+    if (open & 1) {
+      let prev = target.pop();
+      let joined = appendText(text.text, prev.text.slice(), 0, text.length);
+      if (joined.length <= 32) {
+        target.push(new TextLeaf(joined, prev.length + text.length));
+      } else {
+        let mid = joined.length >> 1;
+        target.push(new TextLeaf(joined.slice(0, mid)), new TextLeaf(joined.slice(mid)));
+      }
+    } else {
+      target.push(text);
+    }
+  }
+  replace(from, to, text) {
+    if (!(text instanceof TextLeaf))
+      return super.replace(from, to, text);
+    [from, to] = clip(this, from, to);
+    let lines = appendText(this.text, appendText(text.text, sliceText(this.text, 0, from)), to);
+    let newLen = this.length + text.length - (to - from);
+    if (lines.length <= 32)
+      return new TextLeaf(lines, newLen);
+    return TextNode.from(TextLeaf.split(lines, []), newLen);
+  }
+  sliceString(from, to = this.length, lineSep = `
+`) {
+    [from, to] = clip(this, from, to);
+    let result = "";
+    for (let pos = 0, i = 0;pos <= to && i < this.text.length; i++) {
+      let line = this.text[i], end = pos + line.length;
+      if (pos > from && i)
+        result += lineSep;
+      if (from < end && to > pos)
+        result += line.slice(Math.max(0, from - pos), to - pos);
+      pos = end + 1;
+    }
+    return result;
+  }
+  flatten(target) {
+    for (let line of this.text)
+      target.push(line);
+  }
+  scanIdentical() {
+    return 0;
+  }
+  static split(text, target) {
+    let part = [], len = -1;
+    for (let line of text) {
+      part.push(line);
+      len += line.length + 1;
+      if (part.length == 32) {
+        target.push(new TextLeaf(part, len));
+        part = [];
+        len = -1;
+      }
+    }
+    if (len > -1)
+      target.push(new TextLeaf(part, len));
+    return target;
+  }
+}
+
+class TextNode extends Text {
+  constructor(children, length) {
+    super();
+    this.children = children;
+    this.length = length;
+    this.lines = 0;
+    for (let child of children)
+      this.lines += child.lines;
+  }
+  lineInner(target, isLine, line, offset4) {
+    for (let i = 0;; i++) {
+      let child = this.children[i], end = offset4 + child.length, endLine = line + child.lines - 1;
+      if ((isLine ? endLine : end) >= target)
+        return child.lineInner(target, isLine, line, offset4);
+      offset4 = end + 1;
+      line = endLine + 1;
+    }
+  }
+  decompose(from, to, target, open) {
+    for (let i = 0, pos = 0;pos <= to && i < this.children.length; i++) {
+      let child = this.children[i], end = pos + child.length;
+      if (from <= end && to >= pos) {
+        let childOpen = open & ((pos <= from ? 1 : 0) | (end >= to ? 2 : 0));
+        if (pos >= from && end <= to && !childOpen)
+          target.push(child);
+        else
+          child.decompose(from - pos, to - pos, target, childOpen);
+      }
+      pos = end + 1;
+    }
+  }
+  replace(from, to, text) {
+    [from, to] = clip(this, from, to);
+    if (text.lines < this.lines)
+      for (let i = 0, pos = 0;i < this.children.length; i++) {
+        let child = this.children[i], end = pos + child.length;
+        if (from >= pos && to <= end) {
+          let updated = child.replace(from - pos, to - pos, text);
+          let totalLines = this.lines - child.lines + updated.lines;
+          if (updated.lines < totalLines >> 5 - 1 && updated.lines > totalLines >> 5 + 1) {
+            let copy = this.children.slice();
+            copy[i] = updated;
+            return new TextNode(copy, this.length - (to - from) + text.length);
+          }
+          return super.replace(pos, end, updated);
+        }
+        pos = end + 1;
+      }
+    return super.replace(from, to, text);
+  }
+  sliceString(from, to = this.length, lineSep = `
+`) {
+    [from, to] = clip(this, from, to);
+    let result = "";
+    for (let i = 0, pos = 0;i < this.children.length && pos <= to; i++) {
+      let child = this.children[i], end = pos + child.length;
+      if (pos > from && i)
+        result += lineSep;
+      if (from < end && to > pos)
+        result += child.sliceString(from - pos, to - pos, lineSep);
+      pos = end + 1;
+    }
+    return result;
+  }
+  flatten(target) {
+    for (let child of this.children)
+      child.flatten(target);
+  }
+  scanIdentical(other, dir) {
+    if (!(other instanceof TextNode))
+      return 0;
+    let length = 0;
+    let [iA, iB, eA, eB] = dir > 0 ? [0, 0, this.children.length, other.children.length] : [this.children.length - 1, other.children.length - 1, -1, -1];
+    for (;; iA += dir, iB += dir) {
+      if (iA == eA || iB == eB)
+        return length;
+      let chA = this.children[iA], chB = other.children[iB];
+      if (chA != chB)
+        return length + chA.scanIdentical(chB, dir);
+      length += chA.length + 1;
+    }
+  }
+  static from(children, length = children.reduce((l, ch) => l + ch.length + 1, -1)) {
+    let lines = 0;
+    for (let ch of children)
+      lines += ch.lines;
+    if (lines < 32) {
+      let flat = [];
+      for (let ch of children)
+        ch.flatten(flat);
+      return new TextLeaf(flat, length);
+    }
+    let chunk = Math.max(32, lines >> 5), maxChunk = chunk << 1, minChunk = chunk >> 1;
+    let chunked = [], currentLines = 0, currentLen = -1, currentChunk = [];
+    function add(child) {
+      let last;
+      if (child.lines > maxChunk && child instanceof TextNode) {
+        for (let node of child.children)
+          add(node);
+      } else if (child.lines > minChunk && (currentLines > minChunk || !currentLines)) {
+        flush();
+        chunked.push(child);
+      } else if (child instanceof TextLeaf && currentLines && (last = currentChunk[currentChunk.length - 1]) instanceof TextLeaf && child.lines + last.lines <= 32) {
+        currentLines += child.lines;
+        currentLen += child.length + 1;
+        currentChunk[currentChunk.length - 1] = new TextLeaf(last.text.concat(child.text), last.length + 1 + child.length);
+      } else {
+        if (currentLines + child.lines > chunk)
+          flush();
+        currentLines += child.lines;
+        currentLen += child.length + 1;
+        currentChunk.push(child);
+      }
+    }
+    function flush() {
+      if (currentLines == 0)
+        return;
+      chunked.push(currentChunk.length == 1 ? currentChunk[0] : TextNode.from(currentChunk, currentLen));
+      currentLen = -1;
+      currentLines = currentChunk.length = 0;
+    }
+    for (let child of children)
+      add(child);
+    flush();
+    return chunked.length == 1 ? chunked[0] : new TextNode(chunked, length);
+  }
+}
+Text.empty = /* @__PURE__ */ new TextLeaf([""], 0);
+function textLength(text) {
+  let length = -1;
+  for (let line of text)
+    length += line.length + 1;
+  return length;
+}
+function appendText(text, target, from = 0, to = 1e9) {
+  for (let pos = 0, i = 0, first = true;i < text.length && pos <= to; i++) {
+    let line = text[i], end = pos + line.length;
+    if (end >= from) {
+      if (end > to)
+        line = line.slice(0, to - pos);
+      if (pos < from)
+        line = line.slice(from - pos);
+      if (first) {
+        target[target.length - 1] += line;
+        first = false;
+      } else
+        target.push(line);
+    }
+    pos = end + 1;
+  }
+  return target;
+}
+function sliceText(text, from, to) {
+  return appendText(text, [""], from, to);
+}
+
+class RawTextCursor {
+  constructor(text, dir = 1) {
+    this.dir = dir;
+    this.done = false;
+    this.lineBreak = false;
+    this.value = "";
+    this.nodes = [text];
+    this.offsets = [dir > 0 ? 1 : (text instanceof TextLeaf ? text.text.length : text.children.length) << 1];
+  }
+  nextInner(skip, dir) {
+    this.done = this.lineBreak = false;
+    for (;; ) {
+      let last = this.nodes.length - 1;
+      let top = this.nodes[last], offsetValue = this.offsets[last], offset4 = offsetValue >> 1;
+      let size4 = top instanceof TextLeaf ? top.text.length : top.children.length;
+      if (offset4 == (dir > 0 ? size4 : 0)) {
+        if (last == 0) {
+          this.done = true;
+          this.value = "";
+          return this;
+        }
+        if (dir > 0)
+          this.offsets[last - 1]++;
+        this.nodes.pop();
+        this.offsets.pop();
+      } else if ((offsetValue & 1) == (dir > 0 ? 0 : 1)) {
+        this.offsets[last] += dir;
+        if (skip == 0) {
+          this.lineBreak = true;
+          this.value = `
+`;
+          return this;
+        }
+        skip--;
+      } else if (top instanceof TextLeaf) {
+        let next = top.text[offset4 + (dir < 0 ? -1 : 0)];
+        this.offsets[last] += dir;
+        if (next.length > Math.max(0, skip)) {
+          this.value = skip == 0 ? next : dir > 0 ? next.slice(skip) : next.slice(0, next.length - skip);
+          return this;
+        }
+        skip -= next.length;
+      } else {
+        let next = top.children[offset4 + (dir < 0 ? -1 : 0)];
+        if (skip > next.length) {
+          skip -= next.length;
+          this.offsets[last] += dir;
+        } else {
+          if (dir < 0)
+            this.offsets[last]--;
+          this.nodes.push(next);
+          this.offsets.push(dir > 0 ? 1 : (next instanceof TextLeaf ? next.text.length : next.children.length) << 1);
+        }
+      }
+    }
+  }
+  next(skip = 0) {
+    if (skip < 0) {
+      this.nextInner(-skip, -this.dir);
+      skip = this.value.length;
+    }
+    return this.nextInner(skip, this.dir);
+  }
+}
+
+class PartialTextCursor {
+  constructor(text, start, end) {
+    this.value = "";
+    this.done = false;
+    this.cursor = new RawTextCursor(text, start > end ? -1 : 1);
+    this.pos = start > end ? text.length : 0;
+    this.from = Math.min(start, end);
+    this.to = Math.max(start, end);
+  }
+  nextInner(skip, dir) {
+    if (dir < 0 ? this.pos <= this.from : this.pos >= this.to) {
+      this.value = "";
+      this.done = true;
+      return this;
+    }
+    skip += Math.max(0, dir < 0 ? this.pos - this.to : this.from - this.pos);
+    let limit = dir < 0 ? this.pos - this.from : this.to - this.pos;
+    if (skip > limit)
+      skip = limit;
+    limit -= skip;
+    let { value } = this.cursor.next(skip);
+    this.pos += (value.length + skip) * dir;
+    this.value = value.length <= limit ? value : dir < 0 ? value.slice(value.length - limit) : value.slice(0, limit);
+    this.done = !this.value;
+    return this;
+  }
+  next(skip = 0) {
+    if (skip < 0)
+      skip = Math.max(skip, this.from - this.pos);
+    else if (skip > 0)
+      skip = Math.min(skip, this.to - this.pos);
+    return this.nextInner(skip, this.cursor.dir);
+  }
+  get lineBreak() {
+    return this.cursor.lineBreak && this.value != "";
+  }
+}
+
+class LineCursor {
+  constructor(inner) {
+    this.inner = inner;
+    this.afterBreak = true;
+    this.value = "";
+    this.done = false;
+  }
+  next(skip = 0) {
+    let { done, lineBreak, value } = this.inner.next(skip);
+    if (done && this.afterBreak) {
+      this.value = "";
+      this.afterBreak = false;
+    } else if (done) {
+      this.done = true;
+      this.value = "";
+    } else if (lineBreak) {
+      if (this.afterBreak) {
+        this.value = "";
+      } else {
+        this.afterBreak = true;
+        this.next();
+      }
+    } else {
+      this.value = value;
+      this.afterBreak = false;
+    }
+    return this;
+  }
+  get lineBreak() {
+    return false;
+  }
+}
+if (typeof Symbol != "undefined") {
+  Text.prototype[Symbol.iterator] = function() {
+    return this.iter();
+  };
+  RawTextCursor.prototype[Symbol.iterator] = PartialTextCursor.prototype[Symbol.iterator] = LineCursor.prototype[Symbol.iterator] = function() {
+    return this;
+  };
+}
+
+class Line {
+  constructor(from, to, number, text) {
+    this.from = from;
+    this.to = to;
+    this.number = number;
+    this.text = text;
+  }
+  get length() {
+    return this.to - this.from;
+  }
+}
+function clip(text, from, to) {
+  from = Math.max(0, Math.min(text.length, from));
+  return [from, Math.max(from, Math.min(text.length, to))];
+}
+function findClusterBreak2(str, pos, forward = true, includeExtending = true) {
+  return findClusterBreak(str, pos, forward, includeExtending);
+}
+var DefaultSplit = /\r\n?|\n/;
+var MapMode = /* @__PURE__ */ function(MapMode2) {
+  MapMode2[MapMode2["Simple"] = 0] = "Simple";
+  MapMode2[MapMode2["TrackDel"] = 1] = "TrackDel";
+  MapMode2[MapMode2["TrackBefore"] = 2] = "TrackBefore";
+  MapMode2[MapMode2["TrackAfter"] = 3] = "TrackAfter";
+  return MapMode2;
+}(MapMode || (MapMode = {}));
+
+class ChangeDesc {
+  constructor(sections) {
+    this.sections = sections;
+  }
+  get length() {
+    let result = 0;
+    for (let i = 0;i < this.sections.length; i += 2)
+      result += this.sections[i];
+    return result;
+  }
+  get newLength() {
+    let result = 0;
+    for (let i = 0;i < this.sections.length; i += 2) {
+      let ins = this.sections[i + 1];
+      result += ins < 0 ? this.sections[i] : ins;
+    }
+    return result;
+  }
+  get empty() {
+    return this.sections.length == 0 || this.sections.length == 2 && this.sections[1] < 0;
+  }
+  iterGaps(f) {
+    for (let i = 0, posA = 0, posB = 0;i < this.sections.length; ) {
+      let len = this.sections[i++], ins = this.sections[i++];
+      if (ins < 0) {
+        f(posA, posB, len);
+        posB += len;
+      } else {
+        posB += ins;
+      }
+      posA += len;
+    }
+  }
+  iterChangedRanges(f, individual = false) {
+    iterChanges(this, f, individual);
+  }
+  get invertedDesc() {
+    let sections = [];
+    for (let i = 0;i < this.sections.length; ) {
+      let len = this.sections[i++], ins = this.sections[i++];
+      if (ins < 0)
+        sections.push(len, ins);
+      else
+        sections.push(ins, len);
+    }
+    return new ChangeDesc(sections);
+  }
+  composeDesc(other) {
+    return this.empty ? other : other.empty ? this : composeSets(this, other);
+  }
+  mapDesc(other, before = false) {
+    return other.empty ? this : mapSet(this, other, before);
+  }
+  mapPos(pos, assoc = -1, mode = MapMode.Simple) {
+    let posA = 0, posB = 0;
+    for (let i = 0;i < this.sections.length; ) {
+      let len = this.sections[i++], ins = this.sections[i++], endA = posA + len;
+      if (ins < 0) {
+        if (endA > pos)
+          return posB + (pos - posA);
+        posB += len;
+      } else {
+        if (mode != MapMode.Simple && endA >= pos && (mode == MapMode.TrackDel && posA < pos && endA > pos || mode == MapMode.TrackBefore && posA < pos || mode == MapMode.TrackAfter && endA > pos))
+          return null;
+        if (endA > pos || endA == pos && assoc < 0 && !len)
+          return pos == posA || assoc < 0 ? posB : posB + ins;
+        posB += ins;
+      }
+      posA = endA;
+    }
+    if (pos > posA)
+      throw new RangeError(`Position ${pos} is out of range for changeset of length ${posA}`);
+    return posB;
+  }
+  touchesRange(from, to = from) {
+    for (let i = 0, pos = 0;i < this.sections.length && pos <= to; ) {
+      let len = this.sections[i++], ins = this.sections[i++], end = pos + len;
+      if (ins >= 0 && pos <= to && end >= from)
+        return pos < from && end > to ? "cover" : true;
+      pos = end;
+    }
+    return false;
+  }
+  toString() {
+    let result = "";
+    for (let i = 0;i < this.sections.length; ) {
+      let len = this.sections[i++], ins = this.sections[i++];
+      result += (result ? " " : "") + len + (ins >= 0 ? ":" + ins : "");
+    }
+    return result;
+  }
+  toJSON() {
+    return this.sections;
+  }
+  static fromJSON(json) {
+    if (!Array.isArray(json) || json.length % 2 || json.some((a) => typeof a != "number"))
+      throw new RangeError("Invalid JSON representation of ChangeDesc");
+    return new ChangeDesc(json);
+  }
+  static create(sections) {
+    return new ChangeDesc(sections);
+  }
+}
+
+class ChangeSet extends ChangeDesc {
+  constructor(sections, inserted) {
+    super(sections);
+    this.inserted = inserted;
+  }
+  apply(doc) {
+    if (this.length != doc.length)
+      throw new RangeError("Applying change set to a document with the wrong length");
+    iterChanges(this, (fromA, toA, fromB, _toB, text) => doc = doc.replace(fromB, fromB + (toA - fromA), text), false);
+    return doc;
+  }
+  mapDesc(other, before = false) {
+    return mapSet(this, other, before, true);
+  }
+  invert(doc) {
+    let sections = this.sections.slice(), inserted = [];
+    for (let i = 0, pos = 0;i < sections.length; i += 2) {
+      let len = sections[i], ins = sections[i + 1];
+      if (ins >= 0) {
+        sections[i] = ins;
+        sections[i + 1] = len;
+        let index3 = i >> 1;
+        while (inserted.length < index3)
+          inserted.push(Text.empty);
+        inserted.push(len ? doc.slice(pos, pos + len) : Text.empty);
+      }
+      pos += len;
+    }
+    return new ChangeSet(sections, inserted);
+  }
+  compose(other) {
+    return this.empty ? other : other.empty ? this : composeSets(this, other, true);
+  }
+  map(other, before = false) {
+    return other.empty ? this : mapSet(this, other, before, true);
+  }
+  iterChanges(f, individual = false) {
+    iterChanges(this, f, individual);
+  }
+  get desc() {
+    return ChangeDesc.create(this.sections);
+  }
+  filter(ranges) {
+    let resultSections = [], resultInserted = [], filteredSections = [];
+    let iter = new SectionIter(this);
+    done:
+      for (let i = 0, pos = 0;; ) {
+        let next = i == ranges.length ? 1e9 : ranges[i++];
+        while (pos < next || pos == next && iter.len == 0) {
+          if (iter.done)
+            break done;
+          let len = Math.min(iter.len, next - pos);
+          addSection(filteredSections, len, -1);
+          let ins = iter.ins == -1 ? -1 : iter.off == 0 ? iter.ins : 0;
+          addSection(resultSections, len, ins);
+          if (ins > 0)
+            addInsert(resultInserted, resultSections, iter.text);
+          iter.forward(len);
+          pos += len;
+        }
+        let end = ranges[i++];
+        while (pos < end) {
+          if (iter.done)
+            break done;
+          let len = Math.min(iter.len, end - pos);
+          addSection(resultSections, len, -1);
+          addSection(filteredSections, len, iter.ins == -1 ? -1 : iter.off == 0 ? iter.ins : 0);
+          iter.forward(len);
+          pos += len;
+        }
+      }
+    return {
+      changes: new ChangeSet(resultSections, resultInserted),
+      filtered: ChangeDesc.create(filteredSections)
+    };
+  }
+  toJSON() {
+    let parts = [];
+    for (let i = 0;i < this.sections.length; i += 2) {
+      let len = this.sections[i], ins = this.sections[i + 1];
+      if (ins < 0)
+        parts.push(len);
+      else if (ins == 0)
+        parts.push([len]);
+      else
+        parts.push([len].concat(this.inserted[i >> 1].toJSON()));
+    }
+    return parts;
+  }
+  static of(changes, length, lineSep) {
+    let sections = [], inserted = [], pos = 0;
+    let total = null;
+    function flush(force = false) {
+      if (!force && !sections.length)
+        return;
+      if (pos < length)
+        addSection(sections, length - pos, -1);
+      let set3 = new ChangeSet(sections, inserted);
+      total = total ? total.compose(set3.map(total)) : set3;
+      sections = [];
+      inserted = [];
+      pos = 0;
+    }
+    function process2(spec) {
+      if (Array.isArray(spec)) {
+        for (let sub of spec)
+          process2(sub);
+      } else if (spec instanceof ChangeSet) {
+        if (spec.length != length)
+          throw new RangeError(`Mismatched change set length (got ${spec.length}, expected ${length})`);
+        flush();
+        total = total ? total.compose(spec.map(total)) : spec;
+      } else {
+        let { from, to = from, insert } = spec;
+        if (from > to || from < 0 || to > length)
+          throw new RangeError(`Invalid change range ${from} to ${to} (in doc of length ${length})`);
+        let insText = !insert ? Text.empty : typeof insert == "string" ? Text.of(insert.split(lineSep || DefaultSplit)) : insert;
+        let insLen = insText.length;
+        if (from == to && insLen == 0)
+          return;
+        if (from < pos)
+          flush();
+        if (from > pos)
+          addSection(sections, from - pos, -1);
+        addSection(sections, to - from, insLen);
+        addInsert(inserted, sections, insText);
+        pos = to;
+      }
+    }
+    process2(changes);
+    flush(!total);
+    return total;
+  }
+  static empty(length) {
+    return new ChangeSet(length ? [length, -1] : [], []);
+  }
+  static fromJSON(json) {
+    if (!Array.isArray(json))
+      throw new RangeError("Invalid JSON representation of ChangeSet");
+    let sections = [], inserted = [];
+    for (let i = 0;i < json.length; i++) {
+      let part = json[i];
+      if (typeof part == "number") {
+        sections.push(part, -1);
+      } else if (!Array.isArray(part) || typeof part[0] != "number" || part.some((e, i2) => i2 && typeof e != "string")) {
+        throw new RangeError("Invalid JSON representation of ChangeSet");
+      } else if (part.length == 1) {
+        sections.push(part[0], 0);
+      } else {
+        while (inserted.length < i)
+          inserted.push(Text.empty);
+        inserted[i] = Text.of(part.slice(1));
+        sections.push(part[0], inserted[i].length);
+      }
+    }
+    return new ChangeSet(sections, inserted);
+  }
+  static createSet(sections, inserted) {
+    return new ChangeSet(sections, inserted);
+  }
+}
+function addSection(sections, len, ins, forceJoin = false) {
+  if (len == 0 && ins <= 0)
+    return;
+  let last = sections.length - 2;
+  if (last >= 0 && ins <= 0 && ins == sections[last + 1])
+    sections[last] += len;
+  else if (last >= 0 && len == 0 && sections[last] == 0)
+    sections[last + 1] += ins;
+  else if (forceJoin) {
+    sections[last] += len;
+    sections[last + 1] += ins;
+  } else
+    sections.push(len, ins);
+}
+function addInsert(values, sections, value) {
+  if (value.length == 0)
+    return;
+  let index3 = sections.length - 2 >> 1;
+  if (index3 < values.length) {
+    values[values.length - 1] = values[values.length - 1].append(value);
+  } else {
+    while (values.length < index3)
+      values.push(Text.empty);
+    values.push(value);
+  }
+}
+function iterChanges(desc, f, individual) {
+  let inserted = desc.inserted;
+  for (let posA = 0, posB = 0, i = 0;i < desc.sections.length; ) {
+    let len = desc.sections[i++], ins = desc.sections[i++];
+    if (ins < 0) {
+      posA += len;
+      posB += len;
+    } else {
+      let endA = posA, endB = posB, text = Text.empty;
+      for (;; ) {
+        endA += len;
+        endB += ins;
+        if (ins && inserted)
+          text = text.append(inserted[i - 2 >> 1]);
+        if (individual || i == desc.sections.length || desc.sections[i + 1] < 0)
+          break;
+        len = desc.sections[i++];
+        ins = desc.sections[i++];
+      }
+      f(posA, endA, posB, endB, text);
+      posA = endA;
+      posB = endB;
+    }
+  }
+}
+function mapSet(setA, setB, before, mkSet = false) {
+  let sections = [], insert = mkSet ? [] : null;
+  let a = new SectionIter(setA), b = new SectionIter(setB);
+  for (let inserted = -1;; ) {
+    if (a.done && b.len || b.done && a.len) {
+      throw new Error("Mismatched change set lengths");
+    } else if (a.ins == -1 && b.ins == -1) {
+      let len = Math.min(a.len, b.len);
+      addSection(sections, len, -1);
+      a.forward(len);
+      b.forward(len);
+    } else if (b.ins >= 0 && (a.ins < 0 || inserted == a.i || a.off == 0 && (b.len < a.len || b.len == a.len && !before))) {
+      let len = b.len;
+      addSection(sections, b.ins, -1);
+      while (len) {
+        let piece = Math.min(a.len, len);
+        if (a.ins >= 0 && inserted < a.i && a.len <= piece) {
+          addSection(sections, 0, a.ins);
+          if (insert)
+            addInsert(insert, sections, a.text);
+          inserted = a.i;
+        }
+        a.forward(piece);
+        len -= piece;
+      }
+      b.next();
+    } else if (a.ins >= 0) {
+      let len = 0, left = a.len;
+      while (left) {
+        if (b.ins == -1) {
+          let piece = Math.min(left, b.len);
+          len += piece;
+          left -= piece;
+          b.forward(piece);
+        } else if (b.ins == 0 && b.len < left) {
+          left -= b.len;
+          b.next();
+        } else {
+          break;
+        }
+      }
+      addSection(sections, len, inserted < a.i ? a.ins : 0);
+      if (insert && inserted < a.i)
+        addInsert(insert, sections, a.text);
+      inserted = a.i;
+      a.forward(a.len - left);
+    } else if (a.done && b.done) {
+      return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
+    } else {
+      throw new Error("Mismatched change set lengths");
+    }
+  }
+}
+function composeSets(setA, setB, mkSet = false) {
+  let sections = [];
+  let insert = mkSet ? [] : null;
+  let a = new SectionIter(setA), b = new SectionIter(setB);
+  for (let open = false;; ) {
+    if (a.done && b.done) {
+      return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
+    } else if (a.ins == 0) {
+      addSection(sections, a.len, 0, open);
+      a.next();
+    } else if (b.len == 0 && !b.done) {
+      addSection(sections, 0, b.ins, open);
+      if (insert)
+        addInsert(insert, sections, b.text);
+      b.next();
+    } else if (a.done || b.done) {
+      throw new Error("Mismatched change set lengths");
+    } else {
+      let len = Math.min(a.len2, b.len), sectionLen = sections.length;
+      if (a.ins == -1) {
+        let insB = b.ins == -1 ? -1 : b.off ? 0 : b.ins;
+        addSection(sections, len, insB, open);
+        if (insert && insB)
+          addInsert(insert, sections, b.text);
+      } else if (b.ins == -1) {
+        addSection(sections, a.off ? 0 : a.len, len, open);
+        if (insert)
+          addInsert(insert, sections, a.textBit(len));
+      } else {
+        addSection(sections, a.off ? 0 : a.len, b.off ? 0 : b.ins, open);
+        if (insert && !b.off)
+          addInsert(insert, sections, b.text);
+      }
+      open = (a.ins > len || b.ins >= 0 && b.len > len) && (open || sections.length > sectionLen);
+      a.forward2(len);
+      b.forward(len);
+    }
+  }
+}
+
+class SectionIter {
+  constructor(set3) {
+    this.set = set3;
+    this.i = 0;
+    this.next();
+  }
+  next() {
+    let { sections } = this.set;
+    if (this.i < sections.length) {
+      this.len = sections[this.i++];
+      this.ins = sections[this.i++];
+    } else {
+      this.len = 0;
+      this.ins = -2;
+    }
+    this.off = 0;
+  }
+  get done() {
+    return this.ins == -2;
+  }
+  get len2() {
+    return this.ins < 0 ? this.len : this.ins;
+  }
+  get text() {
+    let { inserted } = this.set, index3 = this.i - 2 >> 1;
+    return index3 >= inserted.length ? Text.empty : inserted[index3];
+  }
+  textBit(len) {
+    let { inserted } = this.set, index3 = this.i - 2 >> 1;
+    return index3 >= inserted.length && !len ? Text.empty : inserted[index3].slice(this.off, len == null ? undefined : this.off + len);
+  }
+  forward(len) {
+    if (len == this.len)
+      this.next();
+    else {
+      this.len -= len;
+      this.off += len;
+    }
+  }
+  forward2(len) {
+    if (this.ins == -1)
+      this.forward(len);
+    else if (len == this.ins)
+      this.next();
+    else {
+      this.ins -= len;
+      this.off += len;
+    }
+  }
+}
+
+class SelectionRange {
+  constructor(from, to, flags, goalColumn) {
+    this.from = from;
+    this.to = to;
+    this.flags = flags;
+    this.goalColumn = goalColumn;
+  }
+  get anchor() {
+    return this.flags & 32 ? this.to : this.from;
+  }
+  get head() {
+    return this.flags & 32 ? this.from : this.to;
+  }
+  get empty() {
+    return this.from == this.to;
+  }
+  get assoc() {
+    return this.flags & 8 ? -1 : this.flags & 16 ? 1 : 0;
+  }
+  get undirectional() {
+    return (this.flags & 64) > 0;
+  }
+  get bidiLevel() {
+    let level = this.flags & 7;
+    return level == 7 ? null : level;
+  }
+  map(change, assoc = -1) {
+    let from, to;
+    if (this.empty) {
+      from = to = change.mapPos(this.from, assoc);
+    } else {
+      from = change.mapPos(this.from, 1);
+      to = change.mapPos(this.to, -1);
+    }
+    return from == this.from && to == this.to ? this : new SelectionRange(from, to, this.flags, this.goalColumn);
+  }
+  extend(from, to = from, assoc = 0) {
+    if (from <= this.anchor && to >= this.anchor)
+      return EditorSelection.range(from, to, undefined, undefined, assoc);
+    let head = Math.abs(from - this.anchor) > Math.abs(to - this.anchor) ? from : to;
+    return EditorSelection.range(this.anchor, head, undefined, undefined, assoc);
+  }
+  eq(other, includeAssoc = false) {
+    return this.anchor == other.anchor && this.head == other.head && this.goalColumn == other.goalColumn && (!includeAssoc || !this.empty || this.assoc == other.assoc);
+  }
+  toJSON() {
+    return { anchor: this.anchor, head: this.head };
+  }
+  static fromJSON(json) {
+    if (!json || typeof json.anchor != "number" || typeof json.head != "number")
+      throw new RangeError("Invalid JSON representation for SelectionRange");
+    return EditorSelection.range(json.anchor, json.head);
+  }
+  static create(from, to, flags, goalColumn) {
+    return new SelectionRange(from, to, flags, goalColumn);
+  }
+}
+
+class EditorSelection {
+  constructor(ranges, mainIndex) {
+    this.ranges = ranges;
+    this.mainIndex = mainIndex;
+  }
+  map(change, assoc = -1) {
+    if (change.empty)
+      return this;
+    return EditorSelection.create(this.ranges.map((r2) => r2.map(change, assoc)), this.mainIndex);
+  }
+  eq(other, includeAssoc = false) {
+    if (this.ranges.length != other.ranges.length || this.mainIndex != other.mainIndex)
+      return false;
+    for (let i = 0;i < this.ranges.length; i++)
+      if (!this.ranges[i].eq(other.ranges[i], includeAssoc))
+        return false;
+    return true;
+  }
+  get main() {
+    return this.ranges[this.mainIndex];
+  }
+  asSingle() {
+    return this.ranges.length == 1 ? this : new EditorSelection([this.main], 0);
+  }
+  addRange(range, main = true) {
+    return EditorSelection.create([range].concat(this.ranges), main ? 0 : this.mainIndex + 1);
+  }
+  replaceRange(range, which = this.mainIndex) {
+    let ranges = this.ranges.slice();
+    ranges[which] = range;
+    return EditorSelection.create(ranges, this.mainIndex);
+  }
+  toJSON() {
+    return { ranges: this.ranges.map((r2) => r2.toJSON()), main: this.mainIndex };
+  }
+  static fromJSON(json) {
+    if (!json || !Array.isArray(json.ranges) || typeof json.main != "number" || json.main >= json.ranges.length)
+      throw new RangeError("Invalid JSON representation for EditorSelection");
+    return new EditorSelection(json.ranges.map((r2) => SelectionRange.fromJSON(r2)), json.main);
+  }
+  static single(anchor, head = anchor) {
+    return new EditorSelection([EditorSelection.range(anchor, head)], 0);
+  }
+  static create(ranges, mainIndex = 0) {
+    if (ranges.length == 0)
+      throw new RangeError("A selection needs at least one range");
+    for (let pos = 0, i = 0;i < ranges.length; i++) {
+      let range = ranges[i];
+      if (range.empty ? range.from <= pos : range.from < pos)
+        return EditorSelection.normalized(ranges.slice(), mainIndex);
+      pos = range.to;
+    }
+    return new EditorSelection(ranges, mainIndex);
+  }
+  static cursor(pos, assoc = 0, bidiLevel, goalColumn) {
+    return SelectionRange.create(pos, pos, (assoc == 0 ? 0 : assoc < 0 ? 8 : 16) | (bidiLevel == null ? 7 : Math.min(6, bidiLevel)), goalColumn);
+  }
+  static range(anchor, head, goalColumn, bidiLevel, assoc) {
+    let flags = bidiLevel == null ? 7 : Math.min(6, bidiLevel);
+    if (!assoc && anchor != head)
+      assoc = head < anchor ? 1 : -1;
+    if (assoc)
+      flags |= assoc < 0 ? 8 : 16;
+    return head < anchor ? SelectionRange.create(head, anchor, flags | 32, goalColumn) : SelectionRange.create(anchor, head, flags, goalColumn);
+  }
+  static undirectionalRange(from, to) {
+    return SelectionRange.create(from, to, 64, undefined);
+  }
+  static normalized(ranges, mainIndex = 0) {
+    let main = ranges[mainIndex];
+    ranges.sort((a, b) => a.from - b.from);
+    mainIndex = ranges.indexOf(main);
+    for (let i = 1;i < ranges.length; i++) {
+      let range = ranges[i], prev = ranges[i - 1];
+      if (range.empty ? range.from <= prev.to : range.from < prev.to) {
+        let from = prev.from, to = Math.max(range.to, prev.to);
+        if (i <= mainIndex)
+          mainIndex--;
+        ranges.splice(--i, 2, range.anchor > range.head ? EditorSelection.range(to, from) : EditorSelection.range(from, to));
+      }
+    }
+    return new EditorSelection(ranges, mainIndex);
+  }
+}
+function checkSelection(selection, docLength) {
+  for (let range of selection.ranges)
+    if (range.to > docLength)
+      throw new RangeError("Selection points outside of document");
+}
+var nextID = 0;
+
+class Facet {
+  constructor(combine, compareInput, compare, isStatic, enables) {
+    this.combine = combine;
+    this.compareInput = compareInput;
+    this.compare = compare;
+    this.isStatic = isStatic;
+    this.id = nextID++;
+    this.default = combine([]);
+    this.extensions = typeof enables == "function" ? enables(this) : enables;
+  }
+  get reader() {
+    return this;
+  }
+  static define(config = {}) {
+    return new Facet(config.combine || ((a) => a), config.compareInput || ((a, b) => a === b), config.compare || (!config.combine ? sameArray : (a, b) => a === b), !!config.static, config.enables);
+  }
+  of(value) {
+    return new FacetProvider([], this, 0, value);
+  }
+  compute(deps, get) {
+    if (this.isStatic)
+      throw new Error("Can't compute a static facet");
+    return new FacetProvider(deps, this, 1, get);
+  }
+  computeN(deps, get) {
+    if (this.isStatic)
+      throw new Error("Can't compute a static facet");
+    return new FacetProvider(deps, this, 2, get);
+  }
+  from(field, get) {
+    if (!get)
+      get = (x) => x;
+    return this.compute([field], (state) => get(state.field(field)));
+  }
+}
+function sameArray(a, b) {
+  return a == b || a.length == b.length && a.every((e, i) => e === b[i]);
+}
+
+class FacetProvider {
+  constructor(dependencies, facet, type, value) {
+    this.dependencies = dependencies;
+    this.facet = facet;
+    this.type = type;
+    this.value = value;
+    this.id = nextID++;
+  }
+  dynamicSlot(addresses) {
+    var _a;
+    let getter = this.value;
+    let compare = this.facet.compareInput;
+    let id = this.id, idx = addresses[id] >> 1, multi = this.type == 2;
+    let depDoc = false, depSel = false, depAddrs = [];
+    for (let dep of this.dependencies) {
+      if (dep == "doc")
+        depDoc = true;
+      else if (dep == "selection")
+        depSel = true;
+      else if ((((_a = addresses[dep.id]) !== null && _a !== undefined ? _a : 1) & 1) == 0)
+        depAddrs.push(addresses[dep.id]);
+    }
+    return {
+      create(state) {
+        state.values[idx] = getter(state);
+        return 1;
+      },
+      update(state, tr) {
+        if (depDoc && tr.docChanged || depSel && (tr.docChanged || tr.selection) || ensureAll(state, depAddrs)) {
+          let newVal = getter(state);
+          if (multi ? !compareArray(newVal, state.values[idx], compare) : !compare(newVal, state.values[idx])) {
+            state.values[idx] = newVal;
+            return 1;
+          }
+        }
+        return 0;
+      },
+      reconfigure: (state, oldState) => {
+        let newVal, oldAddr = oldState.config.address[id];
+        if (oldAddr != null) {
+          let oldVal = getAddr(oldState, oldAddr);
+          if (this.dependencies.every((dep) => {
+            return dep instanceof Facet ? oldState.facet(dep) === state.facet(dep) : dep instanceof StateField ? oldState.field(dep, false) == state.field(dep, false) : true;
+          }) || (multi ? compareArray(newVal = getter(state), oldVal, compare) : compare(newVal = getter(state), oldVal))) {
+            state.values[idx] = oldVal;
+            return 0;
+          }
+        } else {
+          newVal = getter(state);
+        }
+        state.values[idx] = newVal;
+        return 1;
+      }
+    };
+  }
+  get extension() {
+    return this;
+  }
+}
+function compareArray(a, b, compare) {
+  if (a.length != b.length)
+    return false;
+  for (let i = 0;i < a.length; i++)
+    if (!compare(a[i], b[i]))
+      return false;
+  return true;
+}
+function ensureAll(state, addrs) {
+  let changed = false;
+  for (let addr of addrs)
+    if (ensureAddr(state, addr) & 1)
+      changed = true;
+  return changed;
+}
+function dynamicFacetSlot(addresses, facet, providers) {
+  let providerAddrs = providers.map((p) => addresses[p.id]);
+  let providerTypes = providers.map((p) => p.type);
+  let dynamic = providerAddrs.filter((p) => !(p & 1));
+  let idx = addresses[facet.id] >> 1;
+  function get(state) {
+    let values = [];
+    for (let i = 0;i < providerAddrs.length; i++) {
+      let value = getAddr(state, providerAddrs[i]);
+      if (providerTypes[i] == 2)
+        for (let val of value)
+          values.push(val);
+      else
+        values.push(value);
+    }
+    return facet.combine(values);
+  }
+  return {
+    create(state) {
+      for (let addr of providerAddrs)
+        ensureAddr(state, addr);
+      state.values[idx] = get(state);
+      return 1;
+    },
+    update(state, tr) {
+      if (!ensureAll(state, dynamic))
+        return 0;
+      let value = get(state);
+      if (facet.compare(value, state.values[idx]))
+        return 0;
+      state.values[idx] = value;
+      return 1;
+    },
+    reconfigure(state, oldState) {
+      let depChanged = ensureAll(state, providerAddrs);
+      let oldProviders = oldState.config.facets[facet.id], oldValue = oldState.facet(facet);
+      if (oldProviders && !depChanged && sameArray(providers, oldProviders)) {
+        state.values[idx] = oldValue;
+        return 0;
+      }
+      let value = get(state);
+      if (facet.compare(value, oldValue)) {
+        state.values[idx] = oldValue;
+        return 0;
+      }
+      state.values[idx] = value;
+      return 1;
+    }
+  };
+}
+var initField = /* @__PURE__ */ Facet.define({ static: true });
+
+class StateField {
+  constructor(id, createF, updateF, compareF, spec) {
+    this.id = id;
+    this.createF = createF;
+    this.updateF = updateF;
+    this.compareF = compareF;
+    this.spec = spec;
+    this.provides = undefined;
+  }
+  static define(config) {
+    let field = new StateField(nextID++, config.create, config.update, config.compare || ((a, b) => a === b), config);
+    if (config.provide)
+      field.provides = config.provide(field);
+    return field;
+  }
+  create(state) {
+    let init = state.facet(initField).find((i) => i.field == this);
+    return ((init === null || init === undefined ? undefined : init.create) || this.createF)(state);
+  }
+  slot(addresses) {
+    let idx = addresses[this.id] >> 1;
+    return {
+      create: (state) => {
+        state.values[idx] = this.create(state);
+        return 1;
+      },
+      update: (state, tr) => {
+        let oldVal = state.values[idx];
+        let value = this.updateF(oldVal, tr);
+        if (this.compareF(oldVal, value))
+          return 0;
+        state.values[idx] = value;
+        return 1;
+      },
+      reconfigure: (state, oldState) => {
+        let init = state.facet(initField), oldInit = oldState.facet(initField), reInit;
+        if ((reInit = init.find((i) => i.field == this)) && reInit != oldInit.find((i) => i.field == this)) {
+          state.values[idx] = reInit.create(state);
+          return 1;
+        }
+        if (oldState.config.address[this.id] != null) {
+          state.values[idx] = oldState.field(this);
+          return 0;
+        }
+        state.values[idx] = this.create(state);
+        return 1;
+      }
+    };
+  }
+  init(create) {
+    return [this, initField.of({ field: this, create })];
+  }
+  get extension() {
+    return this;
+  }
+}
+var Prec_ = { lowest: 4, low: 3, default: 2, high: 1, highest: 0 };
+function prec(value) {
+  return (ext) => new PrecExtension(ext, value);
+}
+var Prec = {
+  highest: /* @__PURE__ */ prec(Prec_.highest),
+  high: /* @__PURE__ */ prec(Prec_.high),
+  default: /* @__PURE__ */ prec(Prec_.default),
+  low: /* @__PURE__ */ prec(Prec_.low),
+  lowest: /* @__PURE__ */ prec(Prec_.lowest)
+};
+
+class PrecExtension {
+  constructor(inner, prec2) {
+    this.inner = inner;
+    this.prec = prec2;
+  }
+  get extension() {
+    return this;
+  }
+}
+
+class Compartment {
+  of(ext) {
+    return new CompartmentInstance(this, ext);
+  }
+  reconfigure(content) {
+    return Compartment.reconfigure.of({ compartment: this, extension: content });
+  }
+  get(state) {
+    return state.config.compartments.get(this);
+  }
+}
+
+class CompartmentInstance {
+  constructor(compartment, inner) {
+    this.compartment = compartment;
+    this.inner = inner;
+  }
+  get extension() {
+    return this;
+  }
+}
+
+class Configuration {
+  constructor(base, compartments, dynamicSlots, address, staticValues, facets) {
+    this.base = base;
+    this.compartments = compartments;
+    this.dynamicSlots = dynamicSlots;
+    this.address = address;
+    this.staticValues = staticValues;
+    this.facets = facets;
+    this.statusTemplate = [];
+    while (this.statusTemplate.length < dynamicSlots.length)
+      this.statusTemplate.push(0);
+  }
+  staticFacet(facet) {
+    let addr = this.address[facet.id];
+    return addr == null ? facet.default : this.staticValues[addr >> 1];
+  }
+  static resolve(base, compartments, oldState) {
+    let fields = [];
+    let facets = Object.create(null);
+    let newCompartments = new Map;
+    for (let ext of flatten(base, compartments, newCompartments)) {
+      if (ext instanceof StateField)
+        fields.push(ext);
+      else
+        (facets[ext.facet.id] || (facets[ext.facet.id] = [])).push(ext);
+    }
+    let address = Object.create(null);
+    let staticValues = [];
+    let dynamicSlots = [];
+    for (let field of fields) {
+      address[field.id] = dynamicSlots.length << 1;
+      dynamicSlots.push((a) => field.slot(a));
+    }
+    let oldFacets = oldState === null || oldState === undefined ? undefined : oldState.config.facets;
+    for (let id in facets) {
+      let providers = facets[id], facet = providers[0].facet;
+      let oldProviders = oldFacets && oldFacets[id] || [];
+      if (providers.every((p) => p.type == 0)) {
+        address[facet.id] = staticValues.length << 1 | 1;
+        if (sameArray(oldProviders, providers)) {
+          staticValues.push(oldState.facet(facet));
+        } else {
+          let value = facet.combine(providers.map((p) => p.value));
+          staticValues.push(oldState && facet.compare(value, oldState.facet(facet)) ? oldState.facet(facet) : value);
+        }
+      } else {
+        for (let p of providers) {
+          if (p.type == 0) {
+            address[p.id] = staticValues.length << 1 | 1;
+            staticValues.push(p.value);
+          } else {
+            address[p.id] = dynamicSlots.length << 1;
+            dynamicSlots.push((a) => p.dynamicSlot(a));
+          }
+        }
+        address[facet.id] = dynamicSlots.length << 1;
+        dynamicSlots.push((a) => dynamicFacetSlot(a, facet, providers));
+      }
+    }
+    let dynamic = dynamicSlots.map((f) => f(address));
+    return new Configuration(base, newCompartments, dynamic, address, staticValues, facets);
+  }
+}
+function flatten(extension, compartments, newCompartments) {
+  let result = [[], [], [], [], []];
+  let seen = new Map;
+  function inner(ext, prec2) {
+    let known = seen.get(ext);
+    if (known != null) {
+      if (known <= prec2)
+        return;
+      let found = result[known].indexOf(ext);
+      if (found > -1)
+        result[known].splice(found, 1);
+      if (ext instanceof CompartmentInstance)
+        newCompartments.delete(ext.compartment);
+    }
+    seen.set(ext, prec2);
+    if (Array.isArray(ext)) {
+      for (let e of ext)
+        inner(e, prec2);
+    } else if (ext instanceof CompartmentInstance) {
+      if (newCompartments.has(ext.compartment))
+        throw new RangeError(`Duplicate use of compartment in extensions`);
+      let content = compartments.get(ext.compartment) || ext.inner;
+      newCompartments.set(ext.compartment, content);
+      inner(content, prec2);
+    } else if (ext instanceof PrecExtension) {
+      inner(ext.inner, ext.prec);
+    } else if (ext instanceof StateField) {
+      result[prec2].push(ext);
+      if (ext.provides)
+        inner(ext.provides, prec2);
+    } else if (ext instanceof FacetProvider) {
+      result[prec2].push(ext);
+      if (ext.facet.extensions)
+        inner(ext.facet.extensions, Prec_.default);
+    } else {
+      let content = ext.extension;
+      if (!content)
+        throw new Error(`Unrecognized extension value in extension set (${ext}).`);
+      if (content == ext)
+        throw new Error(`Unrecognized extension value in extension set (${ext}). This sometimes happens because multiple instances of @codemirror/state are loaded, breaking instanceof checks.`);
+      inner(content, prec2);
+    }
+  }
+  inner(extension, Prec_.default);
+  return result.reduce((a, b) => a.concat(b));
+}
+function ensureAddr(state, addr) {
+  if (addr & 1)
+    return 2;
+  let idx = addr >> 1;
+  let status = state.status[idx];
+  if (status == 4)
+    throw new Error("Cyclic dependency between fields and/or facets");
+  if (status & 2)
+    return status;
+  state.status[idx] = 4;
+  let changed = state.computeSlot(state, state.config.dynamicSlots[idx]);
+  return state.status[idx] = 2 | changed;
+}
+function getAddr(state, addr) {
+  return addr & 1 ? state.config.staticValues[addr >> 1] : state.values[addr >> 1];
+}
+var languageData = /* @__PURE__ */ Facet.define();
+var allowMultipleSelections = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.some((v) => v),
+  static: true
+});
+var lineSeparator = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.length ? values[0] : undefined,
+  static: true
+});
+var changeFilter = /* @__PURE__ */ Facet.define();
+var transactionFilter = /* @__PURE__ */ Facet.define();
+var transactionExtender = /* @__PURE__ */ Facet.define();
+var readOnly = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.length ? values[0] : false
+});
+
+class Annotation {
+  constructor(type, value) {
+    this.type = type;
+    this.value = value;
+  }
+  static define() {
+    return new AnnotationType;
+  }
+}
+
+class AnnotationType {
+  of(value) {
+    return new Annotation(this, value);
+  }
+}
+
+class StateEffectType {
+  constructor(map) {
+    this.map = map;
+  }
+  of(value) {
+    return new StateEffect(this, value);
+  }
+}
+
+class StateEffect {
+  constructor(type, value) {
+    this.type = type;
+    this.value = value;
+  }
+  map(mapping) {
+    let mapped = this.type.map(this.value, mapping);
+    return mapped === undefined ? undefined : mapped == this.value ? this : new StateEffect(this.type, mapped);
+  }
+  is(type) {
+    return this.type == type;
+  }
+  static define(spec = {}) {
+    return new StateEffectType(spec.map || ((v) => v));
+  }
+  static mapEffects(effects, mapping) {
+    if (!effects.length)
+      return effects;
+    let result = [];
+    for (let effect of effects) {
+      let mapped = effect.map(mapping);
+      if (mapped)
+        result.push(mapped);
+    }
+    return result;
+  }
+}
+StateEffect.reconfigure = /* @__PURE__ */ StateEffect.define();
+StateEffect.appendConfig = /* @__PURE__ */ StateEffect.define();
+
+class Transaction {
+  constructor(startState, changes, selection, effects, annotations, scrollIntoView) {
+    this.startState = startState;
+    this.changes = changes;
+    this.selection = selection;
+    this.effects = effects;
+    this.annotations = annotations;
+    this.scrollIntoView = scrollIntoView;
+    this._doc = null;
+    this._state = null;
+    if (selection)
+      checkSelection(selection, changes.newLength);
+    if (!annotations.some((a) => a.type == Transaction.time))
+      this.annotations = annotations.concat(Transaction.time.of(Date.now()));
+  }
+  static create(startState, changes, selection, effects, annotations, scrollIntoView) {
+    return new Transaction(startState, changes, selection, effects, annotations, scrollIntoView);
+  }
+  get newDoc() {
+    return this._doc || (this._doc = this.changes.apply(this.startState.doc));
+  }
+  get newSelection() {
+    return this.selection || this.startState.selection.map(this.changes);
+  }
+  get state() {
+    if (!this._state)
+      this.startState.applyTransaction(this);
+    return this._state;
+  }
+  annotation(type) {
+    for (let ann of this.annotations)
+      if (ann.type == type)
+        return ann.value;
+    return;
+  }
+  get docChanged() {
+    return !this.changes.empty;
+  }
+  get reconfigured() {
+    return this.startState.config != this.state.config;
+  }
+  isUserEvent(event) {
+    let e = this.annotation(Transaction.userEvent);
+    return !!(e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == "."));
+  }
+}
+Transaction.time = /* @__PURE__ */ Annotation.define();
+Transaction.userEvent = /* @__PURE__ */ Annotation.define();
+Transaction.addToHistory = /* @__PURE__ */ Annotation.define();
+Transaction.remote = /* @__PURE__ */ Annotation.define();
+function joinRanges(a, b) {
+  let result = [];
+  for (let iA = 0, iB = 0;; ) {
+    let from, to;
+    if (iA < a.length && (iB == b.length || b[iB] >= a[iA])) {
+      from = a[iA++];
+      to = a[iA++];
+    } else if (iB < b.length) {
+      from = b[iB++];
+      to = b[iB++];
+    } else
+      return result;
+    if (!result.length || result[result.length - 1] < from)
+      result.push(from, to);
+    else if (result[result.length - 1] < to)
+      result[result.length - 1] = to;
+  }
+}
+function mergeTransaction(a, b, sequential) {
+  var _a;
+  let mapForA, mapForB, changes;
+  if (sequential) {
+    mapForA = b.changes;
+    mapForB = ChangeSet.empty(b.changes.length);
+    changes = a.changes.compose(b.changes);
+  } else {
+    mapForA = b.changes.map(a.changes);
+    mapForB = a.changes.mapDesc(b.changes, true);
+    changes = a.changes.compose(mapForA);
+  }
+  return {
+    changes,
+    selection: b.selection ? b.selection.map(mapForB) : (_a = a.selection) === null || _a === undefined ? undefined : _a.map(mapForA),
+    effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
+    annotations: a.annotations.length ? a.annotations.concat(b.annotations) : b.annotations,
+    scrollIntoView: a.scrollIntoView || b.scrollIntoView
+  };
+}
+function resolveTransactionInner(state, spec, docSize) {
+  let sel = spec.selection, annotations = asArray(spec.annotations);
+  if (spec.userEvent)
+    annotations = annotations.concat(Transaction.userEvent.of(spec.userEvent));
+  return {
+    changes: spec.changes instanceof ChangeSet ? spec.changes : ChangeSet.of(spec.changes || [], docSize, state.facet(lineSeparator)),
+    selection: sel && (sel instanceof EditorSelection ? sel : EditorSelection.single(sel.anchor, sel.head)),
+    effects: asArray(spec.effects),
+    annotations,
+    scrollIntoView: !!spec.scrollIntoView
+  };
+}
+function resolveTransaction(state, specs, filter) {
+  let s = resolveTransactionInner(state, specs.length ? specs[0] : {}, state.doc.length);
+  if (specs.length && specs[0].filter === false)
+    filter = false;
+  for (let i = 1;i < specs.length; i++) {
+    if (specs[i].filter === false)
+      filter = false;
+    let seq = !!specs[i].sequential;
+    s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq);
+  }
+  let tr = Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
+  return extendTransaction(filter ? filterTransaction(tr) : tr);
+}
+function filterTransaction(tr) {
+  let state = tr.startState;
+  let result = true;
+  for (let filter of state.facet(changeFilter)) {
+    let value = filter(tr);
+    if (value === false) {
+      result = false;
+      break;
+    }
+    if (Array.isArray(value))
+      result = result === true ? value : joinRanges(result, value);
+  }
+  if (result !== true) {
+    let changes, back;
+    if (result === false) {
+      back = tr.changes.invertedDesc;
+      changes = ChangeSet.empty(state.doc.length);
+    } else {
+      let filtered = tr.changes.filter(result);
+      changes = filtered.changes;
+      back = filtered.filtered.mapDesc(filtered.changes).invertedDesc;
+    }
+    tr = Transaction.create(state, changes, tr.selection && tr.selection.map(back), StateEffect.mapEffects(tr.effects, back), tr.annotations, tr.scrollIntoView);
+  }
+  let filters = state.facet(transactionFilter);
+  for (let i = filters.length - 1;i >= 0; i--) {
+    let filtered = filters[i](tr);
+    if (filtered instanceof Transaction)
+      tr = filtered;
+    else if (Array.isArray(filtered) && filtered.length == 1 && filtered[0] instanceof Transaction)
+      tr = filtered[0];
+    else
+      tr = resolveTransaction(state, asArray(filtered), false);
+  }
+  return tr;
+}
+function extendTransaction(tr) {
+  let state = tr.startState, extenders = state.facet(transactionExtender), spec = tr;
+  for (let i = extenders.length - 1;i >= 0; i--) {
+    let extension = extenders[i](tr);
+    if (extension && Object.keys(extension).length)
+      spec = mergeTransaction(spec, resolveTransactionInner(state, extension, tr.changes.newLength), true);
+  }
+  return spec == tr ? tr : Transaction.create(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView);
+}
+var none2 = [];
+function asArray(value) {
+  return value == null ? none2 : Array.isArray(value) ? value : [value];
+}
+var CharCategory = /* @__PURE__ */ function(CharCategory2) {
+  CharCategory2[CharCategory2["Word"] = 0] = "Word";
+  CharCategory2[CharCategory2["Space"] = 1] = "Space";
+  CharCategory2[CharCategory2["Other"] = 2] = "Other";
+  return CharCategory2;
+}(CharCategory || (CharCategory = {}));
+var nonASCIISingleCaseWordChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
+var wordChar;
+try {
+  wordChar = /* @__PURE__ */ new RegExp("[\\p{Alphabetic}\\p{Number}_]", "u");
+} catch (_) {}
+function hasWordChar(str) {
+  if (wordChar)
+    return wordChar.test(str);
+  for (let i = 0;i < str.length; i++) {
+    let ch = str[i];
+    if (/\w/.test(ch) || ch > "" && (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseWordChar.test(ch)))
+      return true;
+  }
+  return false;
+}
+function makeCategorizer(wordChars) {
+  return (char) => {
+    if (!/\S/.test(char))
+      return CharCategory.Space;
+    if (hasWordChar(char))
+      return CharCategory.Word;
+    for (let i = 0;i < wordChars.length; i++)
+      if (char.indexOf(wordChars[i]) > -1)
+        return CharCategory.Word;
+    return CharCategory.Other;
+  };
+}
+
+class EditorState {
+  constructor(config, doc, selection, values, computeSlot, tr) {
+    this.config = config;
+    this.doc = doc;
+    this.selection = selection;
+    this.values = values;
+    this.status = config.statusTemplate.slice();
+    this.computeSlot = computeSlot;
+    if (tr)
+      tr._state = this;
+    for (let i = 0;i < this.config.dynamicSlots.length; i++)
+      ensureAddr(this, i << 1);
+    this.computeSlot = null;
+  }
+  field(field, require2 = true) {
+    let addr = this.config.address[field.id];
+    if (addr == null) {
+      if (require2)
+        throw new RangeError("Field is not present in this state");
+      return;
+    }
+    ensureAddr(this, addr);
+    return getAddr(this, addr);
+  }
+  update(...specs) {
+    return resolveTransaction(this, specs, true);
+  }
+  applyTransaction(tr) {
+    let conf = this.config, { base, compartments } = conf;
+    for (let effect of tr.effects) {
+      if (effect.is(Compartment.reconfigure)) {
+        if (conf) {
+          compartments = new Map;
+          conf.compartments.forEach((val, key) => compartments.set(key, val));
+          conf = null;
+        }
+        compartments.set(effect.value.compartment, effect.value.extension);
+      } else if (effect.is(StateEffect.reconfigure)) {
+        conf = null;
+        base = effect.value;
+      } else if (effect.is(StateEffect.appendConfig)) {
+        conf = null;
+        base = asArray(base).concat(effect.value);
+      }
+    }
+    let startValues;
+    if (!conf) {
+      conf = Configuration.resolve(base, compartments, this);
+      let intermediateState = new EditorState(conf, this.doc, this.selection, conf.dynamicSlots.map(() => null), (state, slot) => slot.reconfigure(state, this), null);
+      startValues = intermediateState.values;
+    } else {
+      startValues = tr.startState.values.slice();
+    }
+    let selection = tr.startState.facet(allowMultipleSelections) ? tr.newSelection : tr.newSelection.asSingle();
+    new EditorState(conf, tr.newDoc, selection, startValues, (state, slot) => slot.update(state, tr), tr);
+  }
+  replaceSelection(text) {
+    if (typeof text == "string")
+      text = this.toText(text);
+    return this.changeByRange((range) => ({
+      changes: { from: range.from, to: range.to, insert: text },
+      range: EditorSelection.cursor(range.from + text.length)
+    }));
+  }
+  changeByRange(f) {
+    let sel = this.selection;
+    let result1 = f(sel.ranges[0]);
+    let changes = this.changes(result1.changes), ranges = [result1.range];
+    let effects = asArray(result1.effects);
+    for (let i = 1;i < sel.ranges.length; i++) {
+      let result = f(sel.ranges[i]);
+      let newChanges = this.changes(result.changes), newMapped = newChanges.map(changes);
+      for (let j2 = 0;j2 < i; j2++)
+        ranges[j2] = ranges[j2].map(newMapped);
+      let mapBy = changes.mapDesc(newChanges, true);
+      ranges.push(result.range.map(mapBy));
+      changes = changes.compose(newMapped);
+      effects = StateEffect.mapEffects(effects, newMapped).concat(StateEffect.mapEffects(asArray(result.effects), mapBy));
+    }
+    return {
+      changes,
+      selection: EditorSelection.create(ranges, sel.mainIndex),
+      effects
+    };
+  }
+  changes(spec = []) {
+    if (spec instanceof ChangeSet)
+      return spec;
+    return ChangeSet.of(spec, this.doc.length, this.facet(EditorState.lineSeparator));
+  }
+  toText(string) {
+    return Text.of(string.split(this.facet(EditorState.lineSeparator) || DefaultSplit));
+  }
+  sliceDoc(from = 0, to = this.doc.length) {
+    return this.doc.sliceString(from, to, this.lineBreak);
+  }
+  facet(facet) {
+    let addr = this.config.address[facet.id];
+    if (addr == null)
+      return facet.default;
+    ensureAddr(this, addr);
+    return getAddr(this, addr);
+  }
+  toJSON(fields) {
+    let result = {
+      doc: this.sliceDoc(),
+      selection: this.selection.toJSON()
+    };
+    if (fields)
+      for (let prop in fields) {
+        let value = fields[prop];
+        if (value instanceof StateField && this.config.address[value.id] != null)
+          result[prop] = value.spec.toJSON(this.field(fields[prop]), this);
+      }
+    return result;
+  }
+  static fromJSON(json, config = {}, fields) {
+    if (!json || typeof json.doc != "string")
+      throw new RangeError("Invalid JSON representation for EditorState");
+    let fieldInit = [];
+    if (fields)
+      for (let prop in fields) {
+        if (Object.prototype.hasOwnProperty.call(json, prop)) {
+          let field = fields[prop], value = json[prop];
+          fieldInit.push(field.init((state) => field.spec.fromJSON(value, state)));
+        }
+      }
+    return EditorState.create({
+      doc: json.doc,
+      selection: EditorSelection.fromJSON(json.selection),
+      extensions: config.extensions ? fieldInit.concat([config.extensions]) : fieldInit
+    });
+  }
+  static create(config = {}) {
+    let configuration = Configuration.resolve(config.extensions || [], new Map);
+    let doc = config.doc instanceof Text ? config.doc : Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit));
+    let selection = !config.selection ? EditorSelection.single(0) : config.selection instanceof EditorSelection ? config.selection : EditorSelection.single(config.selection.anchor, config.selection.head);
+    checkSelection(selection, doc.length);
+    if (!configuration.staticFacet(allowMultipleSelections))
+      selection = selection.asSingle();
+    return new EditorState(configuration, doc, selection, configuration.dynamicSlots.map(() => null), (state, slot) => slot.create(state), null);
+  }
+  get tabSize() {
+    return this.facet(EditorState.tabSize);
+  }
+  get lineBreak() {
+    return this.facet(EditorState.lineSeparator) || `
+`;
+  }
+  get readOnly() {
+    return this.facet(readOnly);
+  }
+  phrase(phrase, ...insert) {
+    for (let map of this.facet(EditorState.phrases))
+      if (Object.prototype.hasOwnProperty.call(map, phrase)) {
+        phrase = map[phrase];
+        break;
+      }
+    if (insert.length)
+      phrase = phrase.replace(/\$(\$|\d*)/g, (m, i) => {
+        if (i == "$")
+          return "$";
+        let n = +(i || 1);
+        return !n || n > insert.length ? m : insert[n - 1];
+      });
+    return phrase;
+  }
+  languageDataAt(name, pos, side = -1) {
+    let values = [];
+    for (let provider of this.facet(languageData)) {
+      for (let result of provider(this, pos, side)) {
+        if (Object.prototype.hasOwnProperty.call(result, name))
+          values.push(result[name]);
+      }
+    }
+    return values;
+  }
+  charCategorizer(at2) {
+    let chars = this.languageDataAt("wordChars", at2);
+    return makeCategorizer(chars.length ? chars[0] : "");
+  }
+  wordAt(pos) {
+    let { text, from, length } = this.doc.lineAt(pos);
+    let cat = this.charCategorizer(pos);
+    let start = pos - from, end = pos - from;
+    while (start > 0) {
+      let prev = findClusterBreak2(text, start, false);
+      if (cat(text.slice(prev, start)) != CharCategory.Word)
+        break;
+      start = prev;
+    }
+    while (end < length) {
+      let next = findClusterBreak2(text, end);
+      if (cat(text.slice(end, next)) != CharCategory.Word)
+        break;
+      end = next;
+    }
+    return start == end ? null : EditorSelection.range(start + from, end + from);
+  }
+}
+EditorState.allowMultipleSelections = allowMultipleSelections;
+EditorState.tabSize = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.length ? values[0] : 4
+});
+EditorState.lineSeparator = lineSeparator;
+EditorState.readOnly = readOnly;
+EditorState.phrases = /* @__PURE__ */ Facet.define({
+  compare(a, b) {
+    let kA = Object.keys(a), kB = Object.keys(b);
+    return kA.length == kB.length && kA.every((k) => a[k] == b[k]);
+  }
+});
+EditorState.languageData = languageData;
+EditorState.changeFilter = changeFilter;
+EditorState.transactionFilter = transactionFilter;
+EditorState.transactionExtender = transactionExtender;
+Compartment.reconfigure = /* @__PURE__ */ StateEffect.define();
+class RangeValue {
+  eq(other) {
+    return this == other;
+  }
+  range(from, to = from) {
+    return Range.create(from, to, this);
+  }
+}
+RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0;
+RangeValue.prototype.point = false;
+RangeValue.prototype.mapMode = MapMode.TrackDel;
+function cmpVal(a, b) {
+  return a == b || a.constructor == b.constructor && a.eq(b);
+}
+
+class Range {
+  constructor(from, to, value) {
+    this.from = from;
+    this.to = to;
+    this.value = value;
+  }
+  static create(from, to, value) {
+    return new Range(from, to, value);
+  }
+}
+function cmpRange(a, b) {
+  return a.from - b.from || a.value.startSide - b.value.startSide;
+}
+
+class Chunk {
+  constructor(from, to, value, maxPoint) {
+    this.from = from;
+    this.to = to;
+    this.value = value;
+    this.maxPoint = maxPoint;
+  }
+  get length() {
+    return last(this.to);
+  }
+  findIndex(pos, side, end, startAt = 0) {
+    let arr = end ? this.to : this.from;
+    for (let lo = startAt, hi = arr.length;; ) {
+      if (lo == hi)
+        return lo;
+      let mid = lo + hi >> 1;
+      let diff = arr[mid] - pos || (end ? this.value[mid].endSide : this.value[mid].startSide) - side;
+      if (mid == lo)
+        return diff >= 0 ? lo : hi;
+      if (diff >= 0)
+        hi = mid;
+      else
+        lo = mid + 1;
+    }
+  }
+  between(offset4, from, to, f) {
+    for (let i = this.findIndex(from, -1e9, true), e = this.findIndex(to, 1e9, false, i);i < e; i++)
+      if (f(this.from[i] + offset4, this.to[i] + offset4, this.value[i]) === false)
+        return false;
+  }
+  map(offset4, changes, basePos, baseSide, spill) {
+    let value = [], from = [], to = [], newPos = -1, maxPoint = -1;
+    iter:
+      for (let i = 0;i < this.value.length; i++) {
+        let val = this.value[i], curFrom = this.from[i] + offset4, curTo = this.to[i] + offset4, newFrom, newTo;
+        if (curFrom == curTo) {
+          let mapped = changes.mapPos(curFrom, val.startSide, val.mapMode);
+          if (mapped == null)
+            continue;
+          newFrom = newTo = mapped;
+          if (val.startSide != val.endSide) {
+            newTo = changes.mapPos(curFrom, val.endSide);
+            if (newTo < newFrom)
+              continue;
+          }
+        } else {
+          newFrom = changes.mapPos(curFrom, val.startSide);
+          newTo = changes.mapPos(curTo, val.endSide);
+          if (newFrom > newTo || newFrom == newTo && val.startSide > 0 && val.endSide <= 0)
+            continue;
+        }
+        if ((newTo - newFrom || val.endSide - val.startSide) < 0)
+          continue;
+        if (newPos < 0)
+          newPos = newFrom;
+        if (val.point)
+          maxPoint = Math.max(maxPoint, newTo - newFrom);
+        if ((newFrom - basePos || val.startSide - baseSide) >= 0) {
+          value.push(val);
+          from.push(newFrom - newPos);
+          to.push(newTo - newPos);
+          basePos = newTo;
+          baseSide = val.endSide;
+        } else {
+          if (newFrom == newTo) {
+            for (let i2 = value.length;i2 > 0; i2--) {
+              if ((newFrom - (to[i2 - 1] + newPos) || val.startSide - value[i2 - 1].endSide) >= 0) {
+                value.splice(i2, 0, val);
+                from.splice(i2, 0, newFrom - newPos);
+                to.splice(i2, 0, newTo - newPos);
+                continue iter;
+              }
+              if ((newFrom - (from[i2 - 1] + newPos) || val.endSide - value[i2 - 1].startSide) > 0)
+                break;
+            }
+          }
+          spill(newFrom, newTo, val);
+        }
+      }
+    return { mapped: value.length ? new Chunk(from, to, value, maxPoint) : null, pos: newPos };
+  }
+}
+
+class RangeSet {
+  constructor(chunkPos, chunk, nextLayer, maxPoint) {
+    this.chunkPos = chunkPos;
+    this.chunk = chunk;
+    this.nextLayer = nextLayer;
+    this.maxPoint = maxPoint;
+  }
+  static create(chunkPos, chunk, nextLayer, maxPoint) {
+    return new RangeSet(chunkPos, chunk, nextLayer, maxPoint);
+  }
+  get length() {
+    let last = this.chunk.length - 1;
+    return last < 0 ? 0 : Math.max(this.chunkEnd(last), this.nextLayer.length);
+  }
+  get size() {
+    if (this.isEmpty)
+      return 0;
+    let size4 = this.nextLayer.size;
+    for (let chunk of this.chunk)
+      size4 += chunk.value.length;
+    return size4;
+  }
+  chunkEnd(index3) {
+    return this.chunkPos[index3] + this.chunk[index3].length;
+  }
+  update(updateSpec) {
+    let { add = [], sort = false, filterFrom = 0, filterTo = this.length } = updateSpec;
+    let filter = updateSpec.filter;
+    if (add.length == 0 && !filter)
+      return this;
+    if (sort)
+      add = add.slice().sort(cmpRange);
+    if (this.isEmpty)
+      return add.length ? RangeSet.of(add) : this;
+    let cur = new LayerCursor(this, null, -1).goto(0), i = 0, spill = [];
+    let builder = new RangeSetBuilder;
+    while (cur.value || i < add.length) {
+      if (i < add.length && (cur.from - add[i].from || cur.startSide - add[i].value.startSide) >= 0) {
+        let range = add[i++];
+        if (!builder.addInner(range.from, range.to, range.value, false))
+          spill.push(range);
+      } else if (cur.rangeIndex == 1 && cur.chunkIndex < this.chunk.length && (i == add.length || this.chunkEnd(cur.chunkIndex) < add[i].from) && (!filter || filterFrom > this.chunkEnd(cur.chunkIndex) || filterTo < this.chunkPos[cur.chunkIndex]) && builder.addChunk(this.chunkPos[cur.chunkIndex], this.chunk[cur.chunkIndex])) {
+        cur.nextChunk();
+      } else {
+        if (!filter || filterFrom > cur.to || filterTo < cur.from || filter(cur.from, cur.to, cur.value)) {
+          if (!builder.addInner(cur.from, cur.to, cur.value, false))
+            spill.push(Range.create(cur.from, cur.to, cur.value));
+        }
+        cur.next();
+      }
+    }
+    return builder.finishInner(this.nextLayer.isEmpty && !spill.length ? RangeSet.empty : this.nextLayer.update({ add: spill, filter, filterFrom, filterTo }));
+  }
+  map(changes) {
+    if (changes.empty || this.isEmpty)
+      return this;
+    let chunks = [], chunkPos = [], maxPoint = -1;
+    let spilled;
+    let spill = (from, to, value) => {
+      if (!spilled)
+        spilled = new RangeSetBuilder;
+      spilled.addRange(from, to, value, false);
+    };
+    for (let i = 0;i < this.chunk.length; i++) {
+      let start = this.chunkPos[i], chunk = this.chunk[i];
+      let touch = changes.touchesRange(start, start + chunk.length);
+      if (touch === false) {
+        maxPoint = Math.max(maxPoint, chunk.maxPoint);
+        chunks.push(chunk);
+        chunkPos.push(changes.mapPos(start));
+      } else if (touch === true) {
+        let [prevPos, prevSide] = !chunks.length ? [-1, -1] : [last(chunkPos) + last(chunks).length, last(last(chunks).value).endSide];
+        let { mapped, pos } = chunk.map(start, changes, prevPos, prevSide, spill);
+        if (mapped) {
+          maxPoint = Math.max(maxPoint, mapped.maxPoint);
+          chunks.push(mapped);
+          chunkPos.push(pos);
+        }
+      }
+    }
+    let next = this.nextLayer.map(changes);
+    if (spilled)
+      next = spilled.finishInner(next);
+    return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next || RangeSet.empty, maxPoint);
+  }
+  between(from, to, f) {
+    if (this.isEmpty)
+      return;
+    for (let i = 0;i < this.chunk.length; i++) {
+      let start = this.chunkPos[i], chunk = this.chunk[i];
+      if (to >= start && from <= start + chunk.length && chunk.between(start, from - start, to - start, f) === false)
+        return;
+    }
+    this.nextLayer.between(from, to, f);
+  }
+  iter(from = 0) {
+    return HeapCursor.from([this]).goto(from);
+  }
+  get isEmpty() {
+    return this.nextLayer == this;
+  }
+  static iter(sets, from = 0) {
+    return HeapCursor.from(sets).goto(from);
+  }
+  static compare(oldSets, newSets, textDiff, comparator, minPointSize = -1) {
+    let a = oldSets.filter((set3) => set3.maxPoint > 0 || !set3.isEmpty && set3.maxPoint >= minPointSize);
+    let b = newSets.filter((set3) => set3.maxPoint > 0 || !set3.isEmpty && set3.maxPoint >= minPointSize);
+    let sharedChunks = findSharedChunks(a, b, textDiff);
+    let sideA = new SpanCursor(a, sharedChunks, minPointSize);
+    let sideB = new SpanCursor(b, sharedChunks, minPointSize);
+    textDiff.iterGaps((fromA, fromB, length) => compare(sideA, fromA, sideB, fromB, length, comparator));
+    if (textDiff.empty && textDiff.length == 0)
+      compare(sideA, 0, sideB, 0, 0, comparator);
+  }
+  static eq(oldSets, newSets, from = 0, to) {
+    if (to == null)
+      to = 1e9 - 1;
+    let a = oldSets.filter((set3) => !set3.isEmpty && newSets.indexOf(set3) < 0);
+    let b = newSets.filter((set3) => !set3.isEmpty && oldSets.indexOf(set3) < 0);
+    if (a.length != b.length)
+      return false;
+    if (!a.length)
+      return true;
+    let sharedChunks = findSharedChunks(a, b);
+    let sideA = new SpanCursor(a, sharedChunks, 0).goto(from), sideB = new SpanCursor(b, sharedChunks, 0).goto(from);
+    for (;; ) {
+      if (sideA.to != sideB.to || !sameValues(sideA.active, sideB.active) || sideA.point && (!sideB.point || !cmpVal(sideA.point, sideB.point)))
+        return false;
+      if (sideA.to > to)
+        return true;
+      sideA.next();
+      sideB.next();
+    }
+  }
+  static spans(sets, from, to, iterator, minPointSize = -1) {
+    let cursor = new SpanCursor(sets, null, minPointSize).goto(from), pos = from;
+    let openRanges = cursor.openStart;
+    for (;; ) {
+      let curTo = Math.min(cursor.to, to);
+      if (cursor.point) {
+        let active = cursor.activeForPoint(cursor.to);
+        let openCount = cursor.pointFrom < from ? active.length + 1 : cursor.point.startSide < 0 ? active.length : Math.min(active.length, openRanges);
+        iterator.point(pos, curTo, cursor.point, active, openCount, cursor.pointRank);
+        openRanges = Math.min(cursor.openEnd(curTo), active.length);
+      } else if (curTo > pos) {
+        iterator.span(pos, curTo, cursor.active, openRanges);
+        openRanges = cursor.openEnd(curTo);
+      }
+      if (cursor.to > to)
+        return openRanges + (cursor.point && cursor.to > to ? 1 : 0);
+      pos = cursor.to;
+      cursor.next();
+    }
+  }
+  static of(ranges, sort = false) {
+    let build = new RangeSetBuilder;
+    for (let range of ranges instanceof Range ? [ranges] : sort ? lazySort(ranges) : ranges)
+      build.add(range.from, range.to, range.value);
+    return build.finish();
+  }
+  static join(sets) {
+    if (!sets.length)
+      return RangeSet.empty;
+    let result = last(sets);
+    for (let i = sets.length - 2;i >= 0; i--) {
+      for (let layer = sets[i];layer != RangeSet.empty; layer = layer.nextLayer)
+        result = new RangeSet(layer.chunkPos, layer.chunk, result, Math.max(layer.maxPoint, result.maxPoint));
+    }
+    return result;
+  }
+}
+RangeSet.empty = /* @__PURE__ */ new RangeSet([], [], null, -1);
+function last(arr) {
+  return arr[arr.length - 1];
+}
+function lazySort(ranges) {
+  if (ranges.length > 1)
+    for (let prev = ranges[0], i = 1;i < ranges.length; i++) {
+      let cur = ranges[i];
+      if (cmpRange(prev, cur) > 0)
+        return ranges.slice().sort(cmpRange);
+      prev = cur;
+    }
+  return ranges;
+}
+RangeSet.empty.nextLayer = RangeSet.empty;
+
+class RangeSetBuilder {
+  finishChunk(newArrays) {
+    this.chunks.push(new Chunk(this.from, this.to, this.value, this.maxPoint));
+    this.chunkPos.push(this.chunkStart);
+    this.chunkStart = -1;
+    this.setMaxPoint = Math.max(this.setMaxPoint, this.maxPoint);
+    this.maxPoint = -1;
+    if (newArrays) {
+      this.from = [];
+      this.to = [];
+      this.value = [];
+    }
+  }
+  constructor() {
+    this.chunks = [];
+    this.chunkPos = [];
+    this.chunkStart = -1;
+    this.last = null;
+    this.lastFrom = -1e9;
+    this.lastTo = -1e9;
+    this.from = [];
+    this.to = [];
+    this.value = [];
+    this.maxPoint = -1;
+    this.setMaxPoint = -1;
+    this.nextLayer = null;
+  }
+  add(from, to, value) {
+    this.addRange(from, to, value, true);
+  }
+  addRange(from, to, value, strict) {
+    if (!this.addInner(from, to, value, strict))
+      (this.nextLayer || (this.nextLayer = new RangeSetBuilder)).addRange(from, to, value, strict);
+  }
+  addInner(from, to, value, strict) {
+    let diff = from - this.lastTo || value.startSide - this.last.endSide;
+    if (strict && diff <= 0 && (from - this.lastFrom || value.startSide - this.last.startSide) < 0)
+      throw new Error("Ranges must be added sorted by `from` position and `startSide`");
+    if (diff < 0)
+      return false;
+    if (this.from.length == 250)
+      this.finishChunk(true);
+    if (this.chunkStart < 0)
+      this.chunkStart = from;
+    this.from.push(from - this.chunkStart);
+    this.to.push(to - this.chunkStart);
+    this.last = value;
+    this.lastFrom = from;
+    this.lastTo = to;
+    this.value.push(value);
+    if (value.point)
+      this.maxPoint = Math.max(this.maxPoint, to - from);
+    return true;
+  }
+  addChunk(from, chunk) {
+    if ((from - this.lastTo || chunk.value[0].startSide - this.last.endSide) < 0)
+      return false;
+    if (this.from.length)
+      this.finishChunk(true);
+    this.setMaxPoint = Math.max(this.setMaxPoint, chunk.maxPoint);
+    this.chunks.push(chunk);
+    this.chunkPos.push(from);
+    let last2 = chunk.value.length - 1;
+    this.last = chunk.value[last2];
+    this.lastFrom = chunk.from[last2] + from;
+    this.lastTo = chunk.to[last2] + from;
+    return true;
+  }
+  finish() {
+    return this.finishInner(RangeSet.empty);
+  }
+  finishInner(next) {
+    if (this.from.length)
+      this.finishChunk(false);
+    if (this.chunks.length == 0)
+      return next;
+    let result = RangeSet.create(this.chunkPos, this.chunks, this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint);
+    this.from = null;
+    return result;
+  }
+}
+function findSharedChunks(a, b, textDiff) {
+  let inA = new Map;
+  for (let set3 of a)
+    for (let i = 0;i < set3.chunk.length; i++)
+      if (set3.chunk[i].maxPoint <= 0)
+        inA.set(set3.chunk[i], set3.chunkPos[i]);
+  let shared = new Set;
+  for (let set3 of b)
+    for (let i = 0;i < set3.chunk.length; i++) {
+      let known = inA.get(set3.chunk[i]);
+      if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set3.chunkPos[i] && !(textDiff === null || textDiff === undefined ? undefined : textDiff.touchesRange(known, known + set3.chunk[i].length)))
+        shared.add(set3.chunk[i]);
+    }
+  return shared;
+}
+
+class LayerCursor {
+  constructor(layer, skip, minPoint, rank = 0) {
+    this.layer = layer;
+    this.skip = skip;
+    this.minPoint = minPoint;
+    this.rank = rank;
+  }
+  get startSide() {
+    return this.value ? this.value.startSide : 0;
+  }
+  get endSide() {
+    return this.value ? this.value.endSide : 0;
+  }
+  goto(pos, side = -1e9) {
+    this.chunkIndex = this.rangeIndex = 0;
+    this.gotoInner(pos, side, false);
+    return this;
+  }
+  gotoInner(pos, side, forward) {
+    while (this.chunkIndex < this.layer.chunk.length) {
+      let next = this.layer.chunk[this.chunkIndex];
+      if (!(this.skip && this.skip.has(next) || this.layer.chunkEnd(this.chunkIndex) < pos || next.maxPoint < this.minPoint))
+        break;
+      this.chunkIndex++;
+      forward = false;
+    }
+    if (this.chunkIndex < this.layer.chunk.length) {
+      let rangeIndex = this.layer.chunk[this.chunkIndex].findIndex(pos - this.layer.chunkPos[this.chunkIndex], side, true);
+      if (!forward || this.rangeIndex < rangeIndex)
+        this.setRangeIndex(rangeIndex);
+    }
+    this.next();
+  }
+  forward(pos, side) {
+    if ((this.to - pos || this.endSide - side) < 0)
+      this.gotoInner(pos, side, true);
+  }
+  next() {
+    for (;; ) {
+      if (this.chunkIndex == this.layer.chunk.length) {
+        this.from = this.to = 1e9;
+        this.value = null;
+        break;
+      } else {
+        let chunkPos = this.layer.chunkPos[this.chunkIndex], chunk = this.layer.chunk[this.chunkIndex];
+        let from = chunkPos + chunk.from[this.rangeIndex];
+        this.from = from;
+        this.to = chunkPos + chunk.to[this.rangeIndex];
+        this.value = chunk.value[this.rangeIndex];
+        this.setRangeIndex(this.rangeIndex + 1);
+        if (this.minPoint < 0 || this.value.point && this.to - this.from >= this.minPoint)
+          break;
+      }
+    }
+  }
+  setRangeIndex(index3) {
+    if (index3 == this.layer.chunk[this.chunkIndex].value.length) {
+      this.chunkIndex++;
+      if (this.skip) {
+        while (this.chunkIndex < this.layer.chunk.length && this.skip.has(this.layer.chunk[this.chunkIndex]))
+          this.chunkIndex++;
+      }
+      this.rangeIndex = 0;
+    } else {
+      this.rangeIndex = index3;
+    }
+  }
+  nextChunk() {
+    this.chunkIndex++;
+    this.rangeIndex = 0;
+    this.next();
+  }
+  compare(other) {
+    return this.from - other.from || this.startSide - other.startSide || this.rank - other.rank || this.to - other.to || this.endSide - other.endSide;
+  }
+}
+
+class HeapCursor {
+  constructor(heap) {
+    this.heap = heap;
+  }
+  static from(sets, skip = null, minPoint = -1) {
+    let heap = [];
+    for (let i = 0;i < sets.length; i++) {
+      for (let cur = sets[i];!cur.isEmpty; cur = cur.nextLayer) {
+        if (cur.maxPoint >= minPoint)
+          heap.push(new LayerCursor(cur, skip, minPoint, i));
+      }
+    }
+    return heap.length == 1 ? heap[0] : new HeapCursor(heap);
+  }
+  get startSide() {
+    return this.value ? this.value.startSide : 0;
+  }
+  goto(pos, side = -1e9) {
+    for (let cur of this.heap)
+      cur.goto(pos, side);
+    for (let i = this.heap.length >> 1;i >= 0; i--)
+      heapBubble(this.heap, i);
+    this.next();
+    return this;
+  }
+  forward(pos, side) {
+    for (let cur of this.heap)
+      cur.forward(pos, side);
+    for (let i = this.heap.length >> 1;i >= 0; i--)
+      heapBubble(this.heap, i);
+    if ((this.to - pos || this.value.endSide - side) < 0)
+      this.next();
+  }
+  next() {
+    if (this.heap.length == 0) {
+      this.from = this.to = 1e9;
+      this.value = null;
+      this.rank = -1;
+    } else {
+      let top = this.heap[0];
+      this.from = top.from;
+      this.to = top.to;
+      this.value = top.value;
+      this.rank = top.rank;
+      if (top.value)
+        top.next();
+      heapBubble(this.heap, 0);
+    }
+  }
+}
+function heapBubble(heap, index3) {
+  for (let cur = heap[index3];; ) {
+    let childIndex = (index3 << 1) + 1;
+    if (childIndex >= heap.length)
+      break;
+    let child = heap[childIndex];
+    if (childIndex + 1 < heap.length && child.compare(heap[childIndex + 1]) >= 0) {
+      child = heap[childIndex + 1];
+      childIndex++;
+    }
+    if (cur.compare(child) < 0)
+      break;
+    heap[childIndex] = cur;
+    heap[index3] = child;
+    index3 = childIndex;
+  }
+}
+
+class SpanCursor {
+  constructor(sets, skip, minPoint) {
+    this.minPoint = minPoint;
+    this.active = [];
+    this.activeTo = [];
+    this.activeRank = [];
+    this.minActive = -1;
+    this.point = null;
+    this.pointFrom = 0;
+    this.pointRank = 0;
+    this.to = -1e9;
+    this.endSide = 0;
+    this.openStart = -1;
+    this.cursor = HeapCursor.from(sets, skip, minPoint);
+  }
+  goto(pos, side = -1e9) {
+    this.cursor.goto(pos, side);
+    this.active.length = this.activeTo.length = this.activeRank.length = 0;
+    this.minActive = -1;
+    this.to = pos;
+    this.endSide = side;
+    this.openStart = -1;
+    this.next();
+    return this;
+  }
+  forward(pos, side) {
+    while (this.minActive > -1 && (this.activeTo[this.minActive] - pos || this.active[this.minActive].endSide - side) < 0)
+      this.removeActive(this.minActive);
+    this.cursor.forward(pos, side);
+  }
+  removeActive(index3) {
+    remove(this.active, index3);
+    remove(this.activeTo, index3);
+    remove(this.activeRank, index3);
+    this.minActive = findMinIndex(this.active, this.activeTo);
+  }
+  addActive(trackOpen) {
+    let i = 0, { value, to, rank } = this.cursor;
+    while (i < this.activeRank.length && (rank - this.activeRank[i] || to - this.activeTo[i]) > 0)
+      i++;
+    insert(this.active, i, value);
+    insert(this.activeTo, i, to);
+    insert(this.activeRank, i, rank);
+    if (trackOpen)
+      insert(trackOpen, i, this.cursor.from);
+    this.minActive = findMinIndex(this.active, this.activeTo);
+  }
+  next() {
+    let from = this.to, wasPoint = this.point;
+    this.point = null;
+    let trackOpen = this.openStart < 0 ? [] : null;
+    for (;; ) {
+      let a = this.minActive;
+      if (a > -1 && (this.activeTo[a] - this.cursor.from || this.active[a].endSide - this.cursor.startSide) < 0) {
+        if (this.activeTo[a] > from) {
+          this.to = this.activeTo[a];
+          this.endSide = this.active[a].endSide;
+          break;
+        }
+        this.removeActive(a);
+        if (trackOpen)
+          remove(trackOpen, a);
+      } else if (!this.cursor.value) {
+        this.to = this.endSide = 1e9;
+        break;
+      } else if (this.cursor.from > from) {
+        this.to = this.cursor.from;
+        this.endSide = this.cursor.startSide;
+        break;
+      } else {
+        let nextVal = this.cursor.value;
+        if (!nextVal.point) {
+          this.addActive(trackOpen);
+          this.cursor.next();
+        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to) {
+          this.cursor.next();
+        } else {
+          this.point = nextVal;
+          this.pointFrom = this.cursor.from;
+          this.pointRank = this.cursor.rank;
+          this.to = this.cursor.to;
+          this.endSide = nextVal.endSide;
+          this.cursor.next();
+          this.forward(this.to, this.endSide);
+          break;
+        }
+      }
+    }
+    if (trackOpen) {
+      this.openStart = 0;
+      for (let i = trackOpen.length - 1;i >= 0 && trackOpen[i] < from; i--)
+        this.openStart++;
+    }
+  }
+  activeForPoint(to) {
+    if (!this.active.length)
+      return this.active;
+    let active = [];
+    for (let i = this.active.length - 1;i >= 0; i--) {
+      if (this.activeRank[i] < this.pointRank)
+        break;
+      if (this.activeTo[i] > to || this.activeTo[i] == to && this.active[i].endSide >= this.point.endSide)
+        active.push(this.active[i]);
+    }
+    return active.reverse();
+  }
+  openEnd(to) {
+    let open = 0;
+    for (let i = this.activeTo.length - 1;i >= 0 && this.activeTo[i] > to; i--)
+      open++;
+    return open;
+  }
+}
+function compare(a, startA, b, startB, length, comparator) {
+  a.goto(startA);
+  b.goto(startB);
+  let endB = startB + length;
+  let pos = startB, dPos = startB - startA;
+  let bounds = !!comparator.boundChange;
+  for (let boundChange = false;; ) {
+    let dEnd = a.to + dPos - b.to, diff = dEnd || a.endSide - b.endSide;
+    let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB);
+    let point = a.point || b.point;
+    if (point) {
+      if (!(a.point && b.point && cmpVal(a.point, b.point) && sameValues(a.activeForPoint(a.to), b.activeForPoint(b.to))))
+        comparator.comparePoint(pos, clipEnd, a.point, b.point);
+      boundChange = false;
+    } else {
+      if (boundChange)
+        comparator.boundChange(pos);
+      if (clipEnd > pos && !sameValues(a.active, b.active))
+        comparator.compareRange(pos, clipEnd, a.active, b.active);
+      if (bounds && clipEnd < endB && (dEnd || a.openEnd(end) != b.openEnd(end)))
+        boundChange = true;
+    }
+    if (end > endB)
+      break;
+    pos = end;
+    if (diff <= 0)
+      a.next();
+    if (diff >= 0)
+      b.next();
+  }
+}
+function sameValues(a, b) {
+  if (a.length != b.length)
+    return false;
+  for (let i = 0;i < a.length; i++)
+    if (a[i] != b[i] && !cmpVal(a[i], b[i]))
+      return false;
+  return true;
+}
+function remove(array, index3) {
+  for (let i = index3, e = array.length - 1;i < e; i++)
+    array[i] = array[i + 1];
+  array.pop();
+}
+function insert(array, index3, value) {
+  for (let i = array.length - 1;i >= index3; i--)
+    array[i + 1] = array[i];
+  array[index3] = value;
+}
+function findMinIndex(value, array) {
+  let found = -1, foundPos = 1e9;
+  for (let i = 0;i < array.length; i++)
+    if ((array[i] - foundPos || value[i].endSide - value[found].endSide) < 0) {
+      found = i;
+      foundPos = array[i];
+    }
+  return found;
+}
+function findColumn(string, col, tabSize, strict) {
+  for (let i = 0, n = 0;; ) {
+    if (n >= col)
+      return i;
+    if (i == string.length)
+      break;
+    n += string.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
+    i = findClusterBreak2(string, i);
+  }
+  return strict === true ? -1 : string.length;
+}
+
+// node_modules/style-mod/src/style-mod.js
+var C2 = "ͼ";
+var COUNT = typeof Symbol == "undefined" ? "__" + C2 : Symbol.for(C2);
+var SET = typeof Symbol == "undefined" ? "__styleSet" + Math.floor(Math.random() * 1e8) : Symbol("styleSet");
+var top = typeof globalThis != "undefined" ? globalThis : typeof window != "undefined" ? window : {};
+
+class StyleModule {
+  constructor(spec, options) {
+    this.rules = [];
+    let { finish } = options || {};
+    function splitSelector(selector) {
+      return /^@/.test(selector) ? [selector] : selector.split(/,\s*/);
+    }
+    function render(selectors3, spec2, target, isKeyframes) {
+      let local = [], isAt = /^@(\w+)\b/.exec(selectors3[0]), keyframes = isAt && isAt[1] == "keyframes";
+      if (isAt && spec2 == null)
+        return target.push(selectors3[0] + ";");
+      for (let prop in spec2) {
+        let value = spec2[prop];
+        if (/&/.test(prop)) {
+          render(prop.split(/,\s*/).map((part) => selectors3.map((sel) => part.replace(/&/, sel))).reduce((a, b) => a.concat(b)), value, target);
+        } else if (value && typeof value == "object") {
+          if (!isAt)
+            throw new RangeError("The value of a property (" + prop + ") should be a primitive value.");
+          render(splitSelector(prop), value, local, keyframes);
+        } else if (value != null) {
+          local.push(prop.replace(/_.*/, "").replace(/[A-Z]/g, (l) => "-" + l.toLowerCase()) + ": " + value + ";");
+        }
+      }
+      if (local.length || keyframes) {
+        target.push((finish && !isAt && !isKeyframes ? selectors3.map(finish) : selectors3).join(", ") + " {" + local.join(" ") + "}");
+      }
+    }
+    for (let prop in spec)
+      render(splitSelector(prop), spec[prop], this.rules);
+  }
+  getRules() {
+    return this.rules.join(`
+`);
+  }
+  static newName() {
+    let id = top[COUNT] || 1;
+    top[COUNT] = id + 1;
+    return C2 + id.toString(36);
+  }
+  static mount(root, modules, options) {
+    let set3 = root[SET], nonce = options && options.nonce;
+    if (!set3)
+      set3 = new StyleSet(root, nonce);
+    else if (nonce)
+      set3.setNonce(nonce);
+    set3.mount(Array.isArray(modules) ? modules : [modules], root);
+  }
+}
+var adoptedSet = new Map;
+
+class StyleSet {
+  constructor(root, nonce) {
+    let doc = root.ownerDocument || root, win = doc.defaultView;
+    if (!root.head && root.adoptedStyleSheets && win.CSSStyleSheet) {
+      let adopted = adoptedSet.get(doc);
+      if (adopted)
+        return root[SET] = adopted;
+      this.sheet = new win.CSSStyleSheet;
+      adoptedSet.set(doc, this);
+    } else {
+      this.styleTag = doc.createElement("style");
+      if (nonce)
+        this.styleTag.setAttribute("nonce", nonce);
+    }
+    this.modules = [];
+    root[SET] = this;
+  }
+  mount(modules, root) {
+    let sheet = this.sheet;
+    let pos = 0, j2 = 0;
+    for (let i = 0;i < modules.length; i++) {
+      let mod = modules[i], index3 = this.modules.indexOf(mod);
+      if (index3 < j2 && index3 > -1) {
+        this.modules.splice(index3, 1);
+        j2--;
+        index3 = -1;
+      }
+      if (index3 == -1) {
+        this.modules.splice(j2++, 0, mod);
+        if (sheet)
+          for (let k = 0;k < mod.rules.length; k++)
+            sheet.insertRule(mod.rules[k], pos++);
+      } else {
+        while (j2 < index3)
+          pos += this.modules[j2++].rules.length;
+        pos += mod.rules.length;
+        j2++;
+      }
+    }
+    if (sheet) {
+      if (root.adoptedStyleSheets.indexOf(this.sheet) < 0)
+        root.adoptedStyleSheets = [this.sheet, ...root.adoptedStyleSheets];
+    } else {
+      let text = "";
+      for (let i = 0;i < this.modules.length; i++)
+        text += this.modules[i].getRules() + `
+`;
+      this.styleTag.textContent = text;
+      let target = root.head || root;
+      if (this.styleTag.parentNode != target)
+        target.insertBefore(this.styleTag, target.firstChild);
+    }
+  }
+  setNonce(nonce) {
+    if (this.styleTag && this.styleTag.getAttribute("nonce") != nonce)
+      this.styleTag.setAttribute("nonce", nonce);
+  }
+}
+
+// node_modules/w3c-keyname/index.js
+var base = {
+  8: "Backspace",
+  9: "Tab",
+  10: "Enter",
+  12: "NumLock",
+  13: "Enter",
+  16: "Shift",
+  17: "Control",
+  18: "Alt",
+  20: "CapsLock",
+  27: "Escape",
+  32: " ",
+  33: "PageUp",
+  34: "PageDown",
+  35: "End",
+  36: "Home",
+  37: "ArrowLeft",
+  38: "ArrowUp",
+  39: "ArrowRight",
+  40: "ArrowDown",
+  44: "PrintScreen",
+  45: "Insert",
+  46: "Delete",
+  59: ";",
+  61: "=",
+  91: "Meta",
+  92: "Meta",
+  106: "*",
+  107: "+",
+  108: ",",
+  109: "-",
+  110: ".",
+  111: "/",
+  144: "NumLock",
+  145: "ScrollLock",
+  160: "Shift",
+  161: "Shift",
+  162: "Control",
+  163: "Control",
+  164: "Alt",
+  165: "Alt",
+  173: "-",
+  186: ";",
+  187: "=",
+  188: ",",
+  189: "-",
+  190: ".",
+  191: "/",
+  192: "`",
+  219: "[",
+  220: "\\",
+  221: "]",
+  222: "'"
+};
+var shift4 = {
+  48: ")",
+  49: "!",
+  50: "@",
+  51: "#",
+  52: "$",
+  53: "%",
+  54: "^",
+  55: "&",
+  56: "*",
+  57: "(",
+  59: ":",
+  61: "+",
+  173: "_",
+  186: ":",
+  187: "+",
+  188: "<",
+  189: "_",
+  190: ">",
+  191: "?",
+  192: "~",
+  219: "{",
+  220: "|",
+  221: "}",
+  222: '"'
+};
+var mac2 = typeof navigator != "undefined" && /Mac/.test(navigator.platform);
+var ie2 = typeof navigator != "undefined" && /MSIE \d|Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(navigator.userAgent);
+for (i = 0;i < 10; i++)
+  base[48 + i] = base[96 + i] = String(i);
+var i;
+for (i = 1;i <= 24; i++)
+  base[i + 111] = "F" + i;
+var i;
+for (i = 65;i <= 90; i++) {
+  base[i] = String.fromCharCode(i + 32);
+  shift4[i] = String.fromCharCode(i);
+}
+var i;
+for (code in base)
+  if (!shift4.hasOwnProperty(code))
+    shift4[code] = base[code];
+var code;
+
+// node_modules/@codemirror/view/dist/index.js
+var nav = typeof navigator != "undefined" ? navigator : { userAgent: "", vendor: "", platform: "" };
+var doc = typeof document != "undefined" ? document : { documentElement: { style: {} } };
+var ie_edge = /* @__PURE__ */ /Edge\/(\d+)/.exec(nav.userAgent);
+var ie_upto10 = /* @__PURE__ */ /MSIE \d/.test(nav.userAgent);
+var ie_11up = /* @__PURE__ */ /Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(nav.userAgent);
+var ie3 = !!(ie_upto10 || ie_11up || ie_edge);
+var gecko2 = !ie3 && /* @__PURE__ */ /gecko\/(\d+)/i.test(nav.userAgent);
+var chrome = !ie3 && /* @__PURE__ */ /Chrome\/(\d+)/.exec(nav.userAgent);
+var webkit2 = "webkitFontSmoothing" in doc.documentElement.style;
+var safari = !ie3 && /* @__PURE__ */ /Apple Computer/.test(nav.vendor);
+var ios2 = safari && (/* @__PURE__ */ /Mobile\/\w+/.test(nav.userAgent) || nav.maxTouchPoints > 2);
+var browser = {
+  mac: ios2 || /* @__PURE__ */ /Mac/.test(nav.platform),
+  windows: /* @__PURE__ */ /Win/.test(nav.platform),
+  linux: /* @__PURE__ */ /Linux|X11/.test(nav.platform),
+  ie: ie3,
+  ie_version: ie_upto10 ? doc.documentMode || 6 : ie_11up ? +ie_11up[1] : ie_edge ? +ie_edge[1] : 0,
+  gecko: gecko2,
+  gecko_version: gecko2 ? +(/* @__PURE__ */ /Firefox\/(\d+)/.exec(nav.userAgent) || [0, 0])[1] : 0,
+  chrome: !!chrome,
+  chrome_version: chrome ? +chrome[1] : 0,
+  ios: ios2,
+  android: /* @__PURE__ */ /Android\b/.test(nav.userAgent),
+  webkit: webkit2,
+  webkit_version: webkit2 ? +(/* @__PURE__ */ /\bAppleWebKit\/(\d+)/.exec(nav.userAgent) || [0, 0])[1] : 0,
+  safari,
+  safari_version: safari ? +(/* @__PURE__ */ /\bVersion\/(\d+(\.\d+)?)/.exec(nav.userAgent) || [0, 0])[1] : 0,
+  tabSize: doc.documentElement.style.tabSize != null ? "tab-size" : "-moz-tab-size"
+};
+function combineAttrs(source, target) {
+  for (let name in source) {
+    if (name == "class" && target.class)
+      target.class += " " + source.class;
+    else if (name == "style" && target.style)
+      target.style += ";" + source.style;
+    else
+      target[name] = source[name];
+  }
+  return target;
+}
+var noAttrs = /* @__PURE__ */ Object.create(null);
+function attrsEq(a, b, ignore) {
+  if (a == b)
+    return true;
+  if (!a)
+    a = noAttrs;
+  if (!b)
+    b = noAttrs;
+  let keysA = Object.keys(a), keysB = Object.keys(b);
+  if (keysA.length - (ignore && keysA.indexOf(ignore) > -1 ? 1 : 0) != keysB.length - (ignore && keysB.indexOf(ignore) > -1 ? 1 : 0))
+    return false;
+  for (let key of keysA) {
+    if (key != ignore && (keysB.indexOf(key) == -1 || a[key] !== b[key]))
+      return false;
+  }
+  return true;
+}
+function setAttrs(dom, attrs) {
+  for (let i2 = dom.attributes.length - 1;i2 >= 0; i2--) {
+    let name = dom.attributes[i2].name;
+    if (attrs[name] == null)
+      dom.removeAttribute(name);
+  }
+  for (let name in attrs) {
+    let value = attrs[name];
+    if (name == "style")
+      dom.style.cssText = value;
+    else if (dom.getAttribute(name) != value)
+      dom.setAttribute(name, value);
+  }
+}
+function updateAttrs(dom, prev, attrs) {
+  let changed = false;
+  if (prev) {
+    for (let name in prev)
+      if (!(attrs && (name in attrs))) {
+        changed = true;
+        if (name == "style")
+          dom.style.cssText = "";
+        else
+          dom.removeAttribute(name);
+      }
+  }
+  if (attrs) {
+    for (let name in attrs)
+      if (!(prev && prev[name] == attrs[name])) {
+        changed = true;
+        if (name == "style")
+          dom.style.cssText = attrs[name];
+        else
+          dom.setAttribute(name, attrs[name]);
+      }
+  }
+  return changed;
+}
+function getAttrs(dom) {
+  let attrs = Object.create(null);
+  for (let i2 = 0;i2 < dom.attributes.length; i2++) {
+    let attr2 = dom.attributes[i2];
+    attrs[attr2.name] = attr2.value;
+  }
+  return attrs;
+}
+
+class WidgetType {
+  eq(widget) {
+    return false;
+  }
+  updateDOM(dom, view, from) {
+    return false;
+  }
+  compare(other) {
+    return this == other || this.constructor == other.constructor && this.eq(other);
+  }
+  get estimatedHeight() {
+    return -1;
+  }
+  get lineBreaks() {
+    return 0;
+  }
+  ignoreEvent(event) {
+    return true;
+  }
+  coordsAt(dom, pos, side) {
+    return null;
+  }
+  get isHidden() {
+    return false;
+  }
+  get editable() {
+    return false;
+  }
+  destroy(dom) {}
+}
+var BlockType = /* @__PURE__ */ function(BlockType2) {
+  BlockType2[BlockType2["Text"] = 0] = "Text";
+  BlockType2[BlockType2["WidgetBefore"] = 1] = "WidgetBefore";
+  BlockType2[BlockType2["WidgetAfter"] = 2] = "WidgetAfter";
+  BlockType2[BlockType2["WidgetRange"] = 3] = "WidgetRange";
+  return BlockType2;
+}(BlockType || (BlockType = {}));
+
+class Decoration extends RangeValue {
+  constructor(startSide, endSide, widget, spec) {
+    super();
+    this.startSide = startSide;
+    this.endSide = endSide;
+    this.widget = widget;
+    this.spec = spec;
+  }
+  get heightRelevant() {
+    return false;
+  }
+  static mark(spec) {
+    return new MarkDecoration(spec);
+  }
+  static widget(spec) {
+    let side = Math.max(-1e4, Math.min(1e4, spec.side || 0)), block = !!spec.block;
+    side += block && !spec.inlineOrder ? side > 0 ? 300000000 : -400000000 : side > 0 ? 1e8 : -1e8;
+    return new PointDecoration(spec, side, side, block, spec.widget || null, false);
+  }
+  static replace(spec) {
+    let block = !!spec.block, startSide, endSide;
+    if (spec.isBlockGap) {
+      startSide = -500000000;
+      endSide = 400000000;
+    } else {
+      let { start, end } = getInclusive(spec, block);
+      startSide = (start ? block ? -300000000 : -1 : 500000000) - 1;
+      endSide = (end ? block ? 200000000 : 1 : -600000000) + 1;
+    }
+    return new PointDecoration(spec, startSide, endSide, block, spec.widget || null, true);
+  }
+  static line(spec) {
+    return new LineDecoration(spec);
+  }
+  static set(of, sort = false) {
+    return RangeSet.of(of, sort);
+  }
+  hasHeight() {
+    return this.widget ? this.widget.estimatedHeight > -1 : false;
+  }
+}
+Decoration.none = RangeSet.empty;
+
+class MarkDecoration extends Decoration {
+  constructor(spec) {
+    let { start, end } = getInclusive(spec);
+    super(start ? -1 : 500000000, end ? 1 : -600000000, null, spec);
+    this.tagName = spec.tagName || "span";
+    this.attrs = spec.class && spec.attributes ? combineAttrs(spec.attributes, { class: spec.class }) : spec.class ? { class: spec.class } : spec.attributes || noAttrs;
+  }
+  eq(other) {
+    return this == other || other instanceof MarkDecoration && this.tagName == other.tagName && attrsEq(this.attrs, other.attrs);
+  }
+  range(from, to = from) {
+    if (from >= to)
+      throw new RangeError("Mark decorations may not be empty");
+    return super.range(from, to);
+  }
+}
+MarkDecoration.prototype.point = false;
+
+class LineDecoration extends Decoration {
+  constructor(spec) {
+    super(-200000000, -200000000, null, spec);
+  }
+  eq(other) {
+    return other instanceof LineDecoration && this.spec.class == other.spec.class && attrsEq(this.spec.attributes, other.spec.attributes);
+  }
+  range(from, to = from) {
+    if (to != from)
+      throw new RangeError("Line decoration ranges must be zero-length");
+    return super.range(from, to);
+  }
+}
+LineDecoration.prototype.mapMode = MapMode.TrackBefore;
+LineDecoration.prototype.point = true;
+
+class PointDecoration extends Decoration {
+  constructor(spec, startSide, endSide, block, widget, isReplace) {
+    super(startSide, endSide, widget, spec);
+    this.block = block;
+    this.isReplace = isReplace;
+    this.mapMode = !block ? MapMode.TrackDel : startSide <= 0 ? MapMode.TrackBefore : MapMode.TrackAfter;
+  }
+  get type() {
+    return this.startSide != this.endSide ? BlockType.WidgetRange : this.startSide <= 0 ? BlockType.WidgetBefore : BlockType.WidgetAfter;
+  }
+  get heightRelevant() {
+    return this.block || !!this.widget && (this.widget.estimatedHeight >= 5 || this.widget.lineBreaks > 0);
+  }
+  eq(other) {
+    return other instanceof PointDecoration && widgetsEq(this.widget, other.widget) && this.block == other.block && this.startSide == other.startSide && this.endSide == other.endSide;
+  }
+  range(from, to = from) {
+    if (this.isReplace && (from > to || from == to && this.startSide > 0 && this.endSide <= 0))
+      throw new RangeError("Invalid range for replacement decoration");
+    if (!this.isReplace && to != from)
+      throw new RangeError("Widget decorations can only have zero-length ranges");
+    return super.range(from, to);
+  }
+}
+PointDecoration.prototype.point = true;
+function getInclusive(spec, block = false) {
+  let { inclusiveStart: start, inclusiveEnd: end } = spec;
+  if (start == null)
+    start = spec.inclusive;
+  if (end == null)
+    end = spec.inclusive;
+  return { start: start !== null && start !== undefined ? start : block, end: end !== null && end !== undefined ? end : block };
+}
+function widgetsEq(a, b) {
+  return a == b || !!(a && b && a.compare(b));
+}
+function addRange(from, to, ranges, margin = 0) {
+  let last2 = ranges.length - 1;
+  if (last2 >= 0 && ranges[last2] + margin >= from)
+    ranges[last2] = Math.max(ranges[last2], to);
+  else
+    ranges.push(from, to);
+}
+
+class BlockWrapper extends RangeValue {
+  constructor(tagName, attributes, rank) {
+    super();
+    this.tagName = tagName;
+    this.attributes = attributes;
+    this.rank = rank;
+  }
+  eq(other) {
+    return other == this || other instanceof BlockWrapper && this.tagName == other.tagName && attrsEq(this.attributes, other.attributes);
+  }
+  static create(spec) {
+    return new BlockWrapper(spec.tagName, spec.attributes || noAttrs, spec.rank == null ? 50 : Math.max(0, Math.min(spec.rank, 100)));
+  }
+  static set(of, sort = false) {
+    return RangeSet.of(of, sort);
+  }
+}
+BlockWrapper.prototype.startSide = BlockWrapper.prototype.endSide = -1;
+function getSelection(root) {
+  let target;
+  if (root.nodeType == 11) {
+    target = root.getSelection ? root : root.ownerDocument;
+  } else {
+    target = root;
+  }
+  return target.getSelection();
+}
+function contains2(dom, node) {
+  return node ? dom == node || dom.contains(node.nodeType != 1 ? node.parentNode : node) : false;
+}
+function hasSelection(dom, selection) {
+  if (!selection.anchorNode)
+    return false;
+  try {
+    return contains2(dom, selection.anchorNode);
+  } catch (_) {
+    return false;
+  }
+}
+function clientRectsFor(dom) {
+  if (dom.nodeType == 3)
+    return textRange(dom, 0, dom.nodeValue.length).getClientRects();
+  else if (dom.nodeType == 1)
+    return dom.getClientRects();
+  else
+    return [];
+}
+function isEquivalentPosition(node, off, targetNode, targetOff) {
+  return targetNode ? scanFor(node, off, targetNode, targetOff, -1) || scanFor(node, off, targetNode, targetOff, 1) : false;
+}
+function domIndex(node) {
+  for (var index3 = 0;; index3++) {
+    node = node.previousSibling;
+    if (!node)
+      return index3;
+  }
+}
+function isBlockElement(node) {
+  return node.nodeType == 1 && /^(DIV|P|LI|UL|OL|BLOCKQUOTE|DD|DT|H\d|SECTION|PRE)$/.test(node.nodeName);
+}
+function scanFor(node, off, targetNode, targetOff, dir) {
+  for (;; ) {
+    if (node == targetNode && off == targetOff)
+      return true;
+    if (off == (dir < 0 ? 0 : maxOffset(node))) {
+      if (node.nodeName == "DIV")
+        return false;
+      let parent = node.parentNode;
+      if (!parent || parent.nodeType != 1)
+        return false;
+      off = domIndex(node) + (dir < 0 ? 0 : 1);
+      node = parent;
+    } else if (node.nodeType == 1) {
+      node = node.childNodes[off + (dir < 0 ? -1 : 0)];
+      if (node.nodeType == 1 && node.contentEditable == "false")
+        return false;
+      off = dir < 0 ? maxOffset(node) : 0;
+    } else {
+      return false;
+    }
+  }
+}
+function maxOffset(node) {
+  return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length;
+}
+function flattenRect(rect, toLeft) {
+  let { left, right } = rect;
+  if (left == right)
+    return rect;
+  let x = toLeft ? left : right;
+  return { left: x, right: x, top: rect.top, bottom: rect.bottom };
+}
+function windowRect(win) {
+  let vp = win.visualViewport;
+  if (vp)
+    return {
+      left: 0,
+      right: vp.width,
+      top: 0,
+      bottom: vp.height
+    };
+  return {
+    left: 0,
+    right: win.innerWidth,
+    top: 0,
+    bottom: win.innerHeight
+  };
+}
+function getScale2(elt, rect) {
+  let scaleX = rect.width / elt.offsetWidth;
+  let scaleY = rect.height / elt.offsetHeight;
+  if (scaleX > 0.995 && scaleX < 1.005 || !isFinite(scaleX) || Math.abs(rect.width - elt.offsetWidth) < 1)
+    scaleX = 1;
+  if (scaleY > 0.995 && scaleY < 1.005 || !isFinite(scaleY) || Math.abs(rect.height - elt.offsetHeight) < 1)
+    scaleY = 1;
+  return { scaleX, scaleY };
+}
+function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
+  let doc2 = dom.ownerDocument, win = doc2.defaultView || window;
+  for (let cur = dom, stop = false;cur && !stop; ) {
+    if (cur.nodeType == 1) {
+      let bounding, top2 = cur == doc2.body;
+      let scaleX = 1, scaleY = 1;
+      if (top2) {
+        bounding = windowRect(win);
+      } else {
+        if (/^(fixed|sticky)$/.test(getComputedStyle(cur).position))
+          stop = true;
+        if (cur.scrollHeight <= cur.clientHeight && cur.scrollWidth <= cur.clientWidth) {
+          cur = cur.assignedSlot || cur.parentNode;
+          continue;
+        }
+        let rect2 = cur.getBoundingClientRect();
+        ({ scaleX, scaleY } = getScale2(cur, rect2));
+        bounding = {
+          left: rect2.left,
+          right: rect2.left + cur.clientWidth * scaleX,
+          top: rect2.top,
+          bottom: rect2.top + cur.clientHeight * scaleY
+        };
+      }
+      let moveX = 0, moveY = 0;
+      if (y == "nearest") {
+        if (rect.top < bounding.top + yMargin) {
+          moveY = rect.top - (bounding.top + yMargin);
+          if (side > 0 && rect.bottom > bounding.bottom + moveY)
+            moveY = rect.bottom - bounding.bottom + yMargin;
+        } else if (rect.bottom > bounding.bottom - yMargin) {
+          moveY = rect.bottom - bounding.bottom + yMargin;
+          if (side < 0 && rect.top - moveY < bounding.top)
+            moveY = rect.top - (bounding.top + yMargin);
+        }
+      } else {
+        let rectHeight = rect.bottom - rect.top, boundingHeight = bounding.bottom - bounding.top;
+        let targetTop = y == "center" && rectHeight <= boundingHeight ? rect.top + rectHeight / 2 - boundingHeight / 2 : y == "start" || y == "center" && side < 0 ? rect.top - yMargin : rect.bottom - boundingHeight + yMargin;
+        moveY = targetTop - bounding.top;
+      }
+      if (x == "nearest") {
+        if (rect.left < bounding.left + xMargin) {
+          moveX = rect.left - (bounding.left + xMargin);
+          if (side > 0 && rect.right > bounding.right + moveX)
+            moveX = rect.right - bounding.right + xMargin;
+        } else if (rect.right > bounding.right - xMargin) {
+          moveX = rect.right - bounding.right + xMargin;
+          if (side < 0 && rect.left < bounding.left + moveX)
+            moveX = rect.left - (bounding.left + xMargin);
+        }
+      } else {
+        let targetLeft = x == "center" ? rect.left + (rect.right - rect.left) / 2 - (bounding.right - bounding.left) / 2 : x == "start" == ltr ? rect.left - xMargin : rect.right - (bounding.right - bounding.left) + xMargin;
+        moveX = targetLeft - bounding.left;
+      }
+      if (moveX || moveY) {
+        if (top2) {
+          win.scrollBy(moveX, moveY);
+        } else {
+          let movedX = 0, movedY = 0;
+          if (moveY) {
+            let start = cur.scrollTop;
+            cur.scrollTop += moveY / scaleY;
+            movedY = (cur.scrollTop - start) * scaleY;
+          }
+          if (moveX) {
+            let start = cur.scrollLeft;
+            cur.scrollLeft += moveX / scaleX;
+            movedX = (cur.scrollLeft - start) * scaleX;
+          }
+          rect = {
+            left: rect.left - movedX,
+            top: rect.top - movedY,
+            right: rect.right - movedX,
+            bottom: rect.bottom - movedY
+          };
+          if (movedX && Math.abs(movedX - moveX) < 1)
+            x = "nearest";
+          if (movedY && Math.abs(movedY - moveY) < 1)
+            y = "nearest";
+        }
+      }
+      if (top2)
+        break;
+      if (rect.top < bounding.top || rect.bottom > bounding.bottom || rect.left < bounding.left || rect.right > bounding.right)
+        rect = {
+          left: Math.max(rect.left, bounding.left),
+          right: Math.min(rect.right, bounding.right),
+          top: Math.max(rect.top, bounding.top),
+          bottom: Math.min(rect.bottom, bounding.bottom)
+        };
+      cur = cur.assignedSlot || cur.parentNode;
+    } else if (cur.nodeType == 11) {
+      cur = cur.host;
+    } else {
+      break;
+    }
+  }
+}
+function scrollableParents(dom, getX = true) {
+  let doc2 = dom.ownerDocument, x = null, y = null;
+  for (let cur = dom.parentNode;cur; ) {
+    if (cur == doc2.body || (!getX || x) && y) {
+      break;
+    } else if (cur.nodeType == 1) {
+      if (!y && cur.scrollHeight > cur.clientHeight)
+        y = cur;
+      if (getX && !x && cur.scrollWidth > cur.clientWidth)
+        x = cur;
+      cur = cur.assignedSlot || cur.parentNode;
+    } else if (cur.nodeType == 11) {
+      cur = cur.host;
+    } else {
+      break;
+    }
+  }
+  return { x, y };
+}
+
+class DOMSelectionState {
+  constructor() {
+    this.anchorNode = null;
+    this.anchorOffset = 0;
+    this.focusNode = null;
+    this.focusOffset = 0;
+  }
+  eq(domSel) {
+    return this.anchorNode == domSel.anchorNode && this.anchorOffset == domSel.anchorOffset && this.focusNode == domSel.focusNode && this.focusOffset == domSel.focusOffset;
+  }
+  setRange(range) {
+    let { anchorNode, focusNode } = range;
+    this.set(anchorNode, Math.min(range.anchorOffset, anchorNode ? maxOffset(anchorNode) : 0), focusNode, Math.min(range.focusOffset, focusNode ? maxOffset(focusNode) : 0));
+  }
+  set(anchorNode, anchorOffset, focusNode, focusOffset) {
+    this.anchorNode = anchorNode;
+    this.anchorOffset = anchorOffset;
+    this.focusNode = focusNode;
+    this.focusOffset = focusOffset;
+  }
+}
+function getScrollStack(target) {
+  let stack = [];
+  for (let cur = target;cur; cur = cur.nodeType == 11 ? cur.host : cur.parentNode) {
+    if (cur.nodeType == 1)
+      stack.push({ node: cur, left: cur.scrollLeft, top: cur.scrollTop });
+  }
+  return stack;
+}
+function restoreScrollStack(stack, vert = true) {
+  for (let { node, left, top: top2 } of stack) {
+    if (vert && node.scrollTop != top2)
+      node.scrollTop = top2;
+    if (node.scrollLeft != left)
+      node.scrollLeft = left;
+  }
+}
+var preventScrollSupported = null;
+if (browser.safari && browser.safari_version >= 26)
+  preventScrollSupported = false;
+function focusPreventScroll(dom) {
+  if (dom.setActive)
+    return dom.setActive();
+  if (preventScrollSupported)
+    return dom.focus(preventScrollSupported);
+  let stack = getScrollStack(dom);
+  dom.focus(preventScrollSupported == null ? {
+    get preventScroll() {
+      preventScrollSupported = { preventScroll: true };
+      return true;
+    }
+  } : undefined);
+  if (!preventScrollSupported) {
+    preventScrollSupported = false;
+    restoreScrollStack(stack);
+  }
+}
+var scratchRange;
+function textRange(node, from, to = from) {
+  let range = scratchRange || (scratchRange = document.createRange());
+  range.setEnd(node, to);
+  range.setStart(node, from);
+  return range;
+}
+function dispatchKey(elt, name, code2, mods) {
+  let options = { key: name, code: name, keyCode: code2, which: code2, cancelable: true };
+  if (mods)
+    ({ altKey: options.altKey, ctrlKey: options.ctrlKey, shiftKey: options.shiftKey, metaKey: options.metaKey } = mods);
+  let down = new KeyboardEvent("keydown", options);
+  down.synthetic = true;
+  elt.dispatchEvent(down);
+  let up = new KeyboardEvent("keyup", options);
+  up.synthetic = true;
+  elt.dispatchEvent(up);
+  return down.defaultPrevented || up.defaultPrevented;
+}
+function getRoot(node) {
+  while (node) {
+    if (node && (node.nodeType == 9 || node.nodeType == 11 && node.host))
+      return node;
+    node = node.assignedSlot || node.parentNode;
+  }
+  return null;
+}
+function atElementStart(doc2, selection) {
+  let { focusNode: node, focusOffset: offset4 } = selection;
+  if (!node || selection.anchorNode != node || selection.anchorOffset != offset4)
+    return false;
+  offset4 = Math.min(offset4, maxOffset(node));
+  for (;; ) {
+    if (offset4) {
+      if (node.nodeType != 1)
+        return false;
+      let prev = node.childNodes[offset4 - 1];
+      if (prev.contentEditable == "false")
+        offset4--;
+      else {
+        node = prev;
+        offset4 = maxOffset(node);
+      }
+    } else if (node == doc2) {
+      return true;
+    } else {
+      offset4 = domIndex(node);
+      node = node.parentNode;
+    }
+  }
+}
+function isScrolledToBottom(elt) {
+  if (elt instanceof Window)
+    return elt.pageYOffset > Math.max(0, elt.document.documentElement.scrollHeight - elt.innerHeight - 4);
+  return elt.scrollTop > Math.max(1, elt.scrollHeight - elt.clientHeight - 4);
+}
+function textNodeBefore(startNode, startOffset) {
+  for (let node = startNode, offset4 = startOffset;; ) {
+    if (node.nodeType == 3 && offset4 > 0) {
+      return { node, offset: offset4 };
+    } else if (node.nodeType == 1 && offset4 > 0) {
+      if (node.contentEditable == "false")
+        return null;
+      node = node.childNodes[offset4 - 1];
+      offset4 = maxOffset(node);
+    } else if (node.parentNode && !isBlockElement(node)) {
+      offset4 = domIndex(node);
+      node = node.parentNode;
+    } else {
+      return null;
+    }
+  }
+}
+function textNodeAfter(startNode, startOffset) {
+  for (let node = startNode, offset4 = startOffset;; ) {
+    if (node.nodeType == 3 && offset4 < node.nodeValue.length) {
+      return { node, offset: offset4 };
+    } else if (node.nodeType == 1 && offset4 < node.childNodes.length) {
+      if (node.contentEditable == "false")
+        return null;
+      node = node.childNodes[offset4];
+      offset4 = 0;
+    } else if (node.parentNode && !isBlockElement(node)) {
+      offset4 = domIndex(node) + 1;
+      node = node.parentNode;
+    } else {
+      return null;
+    }
+  }
+}
+
+class DOMPos {
+  constructor(node, offset4, precise = true) {
+    this.node = node;
+    this.offset = offset4;
+    this.precise = precise;
+  }
+  static before(dom, precise) {
+    return new DOMPos(dom.parentNode, domIndex(dom), precise);
+  }
+  static after(dom, precise) {
+    return new DOMPos(dom.parentNode, domIndex(dom) + 1, precise);
+  }
+}
+var Direction = /* @__PURE__ */ function(Direction2) {
+  Direction2[Direction2["LTR"] = 0] = "LTR";
+  Direction2[Direction2["RTL"] = 1] = "RTL";
+  return Direction2;
+}(Direction || (Direction = {}));
+var LTR = Direction.LTR;
+var RTL = Direction.RTL;
+function dec(str) {
+  let result = [];
+  for (let i2 = 0;i2 < str.length; i2++)
+    result.push(1 << +str[i2]);
+  return result;
+}
+var LowTypes = /* @__PURE__ */ dec("88888888888888888888888888888888888666888888787833333333337888888000000000000000000000000008888880000000000000000000000000088888888888888888888888888888888888887866668888088888663380888308888800000000000000000000000800000000000000000000000000000008");
+var ArabicTypes = /* @__PURE__ */ dec("4444448826627288999999999992222222222222222222222222222222222222222222222229999999999999999999994444444444644222822222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222999999949999999229989999223333333333");
+var Brackets = /* @__PURE__ */ Object.create(null);
+var BracketStack = [];
+for (let p of ["()", "[]", "{}"]) {
+  let l = /* @__PURE__ */ p.charCodeAt(0), r2 = /* @__PURE__ */ p.charCodeAt(1);
+  Brackets[l] = r2;
+  Brackets[r2] = -l;
+}
+function charType(ch) {
+  return ch <= 247 ? LowTypes[ch] : 1424 <= ch && ch <= 1524 ? 2 : 1536 <= ch && ch <= 1785 ? ArabicTypes[ch - 1536] : 1774 <= ch && ch <= 2220 ? 4 : 8192 <= ch && ch <= 8204 ? 256 : 64336 <= ch && ch <= 65023 ? 4 : 1;
+}
+var BidiRE = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac\ufb50-\ufdff]/;
+
+class BidiSpan {
+  get dir() {
+    return this.level % 2 ? RTL : LTR;
+  }
+  constructor(from, to, level) {
+    this.from = from;
+    this.to = to;
+    this.level = level;
+  }
+  side(end, dir) {
+    return this.dir == dir == end ? this.to : this.from;
+  }
+  forward(forward, dir) {
+    return forward == (this.dir == dir);
+  }
+  static find(order, index3, level, assoc) {
+    let maybe = -1;
+    for (let i2 = 0;i2 < order.length; i2++) {
+      let span = order[i2];
+      if (span.from <= index3 && span.to >= index3) {
+        if (span.level == level)
+          return i2;
+        if (maybe < 0 || (assoc != 0 ? assoc < 0 ? span.from < index3 : span.to > index3 : order[maybe].level > span.level))
+          maybe = i2;
+      }
+    }
+    if (maybe < 0)
+      throw new RangeError("Index out of range");
+    return maybe;
+  }
+}
+function isolatesEq(a, b) {
+  if (a.length != b.length)
+    return false;
+  for (let i2 = 0;i2 < a.length; i2++) {
+    let iA = a[i2], iB = b[i2];
+    if (iA.from != iB.from || iA.to != iB.to || iA.direction != iB.direction || !isolatesEq(iA.inner, iB.inner))
+      return false;
+  }
+  return true;
+}
+var types = [];
+function computeCharTypes(line, rFrom, rTo, isolates, outerType) {
+  for (let iI = 0;iI <= isolates.length; iI++) {
+    let from = iI ? isolates[iI - 1].to : rFrom, to = iI < isolates.length ? isolates[iI].from : rTo;
+    let prevType = iI ? 256 : outerType;
+    for (let i2 = from, prev = prevType, prevStrong = prevType;i2 < to; i2++) {
+      let type = charType(line.charCodeAt(i2));
+      if (type == 512)
+        type = prev;
+      else if (type == 8 && prevStrong == 4)
+        type = 16;
+      types[i2] = type == 4 ? 2 : type;
+      if (type & 7)
+        prevStrong = type;
+      prev = type;
+    }
+    for (let i2 = from, prev = prevType, prevStrong = prevType;i2 < to; i2++) {
+      let type = types[i2];
+      if (type == 128) {
+        if (i2 < to - 1 && prev == types[i2 + 1] && prev & 24)
+          type = types[i2] = prev;
+        else
+          types[i2] = 256;
+      } else if (type == 64) {
+        let end = i2 + 1;
+        while (end < to && types[end] == 64)
+          end++;
+        let replace = i2 && prev == 8 || end < rTo && types[end] == 8 ? prevStrong == 1 ? 1 : 8 : 256;
+        for (let j2 = i2;j2 < end; j2++)
+          types[j2] = replace;
+        i2 = end - 1;
+      } else if (type == 8 && prevStrong == 1) {
+        types[i2] = 1;
+      }
+      prev = type;
+      if (type & 7)
+        prevStrong = type;
+    }
+  }
+}
+function processBracketPairs(line, rFrom, rTo, isolates, outerType) {
+  let oppositeType = outerType == 1 ? 2 : 1;
+  for (let iI = 0, sI = 0, context = 0;iI <= isolates.length; iI++) {
+    let from = iI ? isolates[iI - 1].to : rFrom, to = iI < isolates.length ? isolates[iI].from : rTo;
+    for (let i2 = from, ch, br, type;i2 < to; i2++) {
+      if (br = Brackets[ch = line.charCodeAt(i2)]) {
+        if (br < 0) {
+          for (let sJ = sI - 3;sJ >= 0; sJ -= 3) {
+            if (BracketStack[sJ + 1] == -br) {
+              let flags = BracketStack[sJ + 2];
+              let type2 = flags & 2 ? outerType : !(flags & 4) ? 0 : flags & 1 ? oppositeType : outerType;
+              if (type2)
+                types[i2] = types[BracketStack[sJ]] = type2;
+              sI = sJ;
+              break;
+            }
+          }
+        } else if (BracketStack.length == 189) {
+          break;
+        } else {
+          BracketStack[sI++] = i2;
+          BracketStack[sI++] = ch;
+          BracketStack[sI++] = context;
+        }
+      } else if ((type = types[i2]) == 2 || type == 1) {
+        let embed = type == outerType;
+        context = embed ? 0 : 1;
+        for (let sJ = sI - 3;sJ >= 0; sJ -= 3) {
+          let cur = BracketStack[sJ + 2];
+          if (cur & 2)
+            break;
+          if (embed) {
+            BracketStack[sJ + 2] |= 2;
+          } else {
+            if (cur & 4)
+              break;
+            BracketStack[sJ + 2] |= 4;
+          }
+        }
+      }
+    }
+  }
+}
+function processNeutrals(rFrom, rTo, isolates, outerType) {
+  for (let iI = 0, prev = outerType;iI <= isolates.length; iI++) {
+    let from = iI ? isolates[iI - 1].to : rFrom, to = iI < isolates.length ? isolates[iI].from : rTo;
+    for (let i2 = from;i2 < to; ) {
+      let type = types[i2];
+      if (type == 256) {
+        let end = i2 + 1;
+        for (;; ) {
+          if (end == to) {
+            if (iI == isolates.length)
+              break;
+            end = isolates[iI++].to;
+            to = iI < isolates.length ? isolates[iI].from : rTo;
+          } else if (types[end] == 256) {
+            end++;
+          } else {
+            break;
+          }
+        }
+        let beforeL = prev == 1;
+        let afterL = (end < rTo ? types[end] : outerType) == 1;
+        let replace = beforeL == afterL ? beforeL ? 1 : 2 : outerType;
+        for (let j2 = end, jI = iI, fromJ = jI ? isolates[jI - 1].to : rFrom;j2 > i2; ) {
+          if (j2 == fromJ) {
+            j2 = isolates[--jI].from;
+            fromJ = jI ? isolates[jI - 1].to : rFrom;
+          }
+          types[--j2] = replace;
+        }
+        i2 = end;
+      } else {
+        prev = type;
+        i2++;
+      }
+    }
+  }
+}
+function emitSpans(line, from, to, level, baseLevel, isolates, order) {
+  let ourType = level % 2 ? 2 : 1;
+  if (level % 2 == baseLevel % 2) {
+    for (let iCh = from, iI = 0;iCh < to; ) {
+      let sameDir = true, isNum = false;
+      if (iI == isolates.length || iCh < isolates[iI].from) {
+        let next = types[iCh];
+        if (next != ourType) {
+          sameDir = false;
+          isNum = next == 16;
+        }
+      }
+      let recurse = !sameDir && ourType == 1 ? [] : null;
+      let localLevel = sameDir ? level : level + 1;
+      let iScan = iCh;
+      run:
+        for (;; ) {
+          if (iI < isolates.length && iScan == isolates[iI].from) {
+            if (isNum)
+              break run;
+            let iso = isolates[iI];
+            if (!sameDir)
+              for (let upto = iso.to, jI = iI + 1;; ) {
+                if (upto == to)
+                  break run;
+                if (jI < isolates.length && isolates[jI].from == upto)
+                  upto = isolates[jI++].to;
+                else if (types[upto] == ourType)
+                  break run;
+                else
+                  break;
+              }
+            iI++;
+            if (recurse) {
+              recurse.push(iso);
+            } else {
+              if (iso.from > iCh)
+                order.push(new BidiSpan(iCh, iso.from, localLevel));
+              let dirSwap = iso.direction == LTR != !(localLevel % 2);
+              computeSectionOrder(line, dirSwap ? level + 1 : level, baseLevel, iso.inner, iso.from, iso.to, order);
+              iCh = iso.to;
+            }
+            iScan = iso.to;
+          } else if (iScan == to || (sameDir ? types[iScan] != ourType : types[iScan] == ourType)) {
+            break;
+          } else {
+            iScan++;
+          }
+        }
+      if (recurse)
+        emitSpans(line, iCh, iScan, level + 1, baseLevel, recurse, order);
+      else if (iCh < iScan)
+        order.push(new BidiSpan(iCh, iScan, localLevel));
+      iCh = iScan;
+    }
+  } else {
+    for (let iCh = to, iI = isolates.length;iCh > from; ) {
+      let sameDir = true, isNum = false;
+      if (!iI || iCh > isolates[iI - 1].to) {
+        let next = types[iCh - 1];
+        if (next != ourType) {
+          sameDir = false;
+          isNum = next == 16;
+        }
+      }
+      let recurse = !sameDir && ourType == 1 ? [] : null;
+      let localLevel = sameDir ? level : level + 1;
+      let iScan = iCh;
+      run:
+        for (;; ) {
+          if (iI && iScan == isolates[iI - 1].to) {
+            if (isNum)
+              break run;
+            let iso = isolates[--iI];
+            if (!sameDir)
+              for (let upto = iso.from, jI = iI;; ) {
+                if (upto == from)
+                  break run;
+                if (jI && isolates[jI - 1].to == upto)
+                  upto = isolates[--jI].from;
+                else if (types[upto - 1] == ourType)
+                  break run;
+                else
+                  break;
+              }
+            if (recurse) {
+              recurse.push(iso);
+            } else {
+              if (iso.to < iCh)
+                order.push(new BidiSpan(iso.to, iCh, localLevel));
+              let dirSwap = iso.direction == LTR != !(localLevel % 2);
+              computeSectionOrder(line, dirSwap ? level + 1 : level, baseLevel, iso.inner, iso.from, iso.to, order);
+              iCh = iso.from;
+            }
+            iScan = iso.from;
+          } else if (iScan == from || (sameDir ? types[iScan - 1] != ourType : types[iScan - 1] == ourType)) {
+            break;
+          } else {
+            iScan--;
+          }
+        }
+      if (recurse)
+        emitSpans(line, iScan, iCh, level + 1, baseLevel, recurse, order);
+      else if (iScan < iCh)
+        order.push(new BidiSpan(iScan, iCh, localLevel));
+      iCh = iScan;
+    }
+  }
+}
+function computeSectionOrder(line, level, baseLevel, isolates, from, to, order) {
+  let outerType = level % 2 ? 2 : 1;
+  computeCharTypes(line, from, to, isolates, outerType);
+  processBracketPairs(line, from, to, isolates, outerType);
+  processNeutrals(from, to, isolates, outerType);
+  emitSpans(line, from, to, level, baseLevel, isolates, order);
+}
+function computeOrder(line, direction, isolates) {
+  if (!line)
+    return [new BidiSpan(0, 0, direction == RTL ? 1 : 0)];
+  if (direction == LTR && !isolates.length && !BidiRE.test(line))
+    return trivialOrder(line.length);
+  if (isolates.length)
+    while (line.length > types.length)
+      types[types.length] = 256;
+  let order = [], level = direction == LTR ? 0 : 1;
+  computeSectionOrder(line, level, level, isolates, 0, line.length, order);
+  return order;
+}
+function trivialOrder(length) {
+  return [new BidiSpan(0, length, 0)];
+}
+var movedOver = "";
+function moveVisually(line, order, dir, start, forward) {
+  var _a;
+  let startIndex = start.head - line.from;
+  let spanI = BidiSpan.find(order, startIndex, (_a = start.bidiLevel) !== null && _a !== undefined ? _a : -1, start.assoc);
+  let span = order[spanI], spanEnd = span.side(forward, dir);
+  if (startIndex == spanEnd) {
+    let nextI = spanI += forward ? 1 : -1;
+    if (nextI < 0 || nextI >= order.length)
+      return null;
+    span = order[spanI = nextI];
+    startIndex = span.side(!forward, dir);
+    spanEnd = span.side(forward, dir);
+  }
+  let nextIndex = findClusterBreak2(line.text, startIndex, span.forward(forward, dir));
+  if (nextIndex < span.from || nextIndex > span.to)
+    nextIndex = spanEnd;
+  movedOver = line.text.slice(Math.min(startIndex, nextIndex), Math.max(startIndex, nextIndex));
+  let nextSpan = spanI == (forward ? order.length - 1 : 0) ? null : order[spanI + (forward ? 1 : -1)];
+  if (nextSpan && nextIndex == spanEnd && nextSpan.level + (forward ? 0 : 1) < span.level)
+    return EditorSelection.cursor(nextSpan.side(!forward, dir) + line.from, nextSpan.forward(forward, dir) ? 1 : -1, nextSpan.level);
+  return EditorSelection.cursor(nextIndex + line.from, span.forward(forward, dir) ? -1 : 1, span.level);
+}
+function autoDirection(text, from, to) {
+  for (let i2 = from;i2 < to; i2++) {
+    let type = charType(text.charCodeAt(i2));
+    if (type == 1)
+      return LTR;
+    if (type == 2 || type == 4)
+      return RTL;
+  }
+  return LTR;
+}
+var clickAddsSelectionRange = /* @__PURE__ */ Facet.define();
+var dragMovesSelection$1 = /* @__PURE__ */ Facet.define();
+var mouseSelectionStyle = /* @__PURE__ */ Facet.define();
+var exceptionSink = /* @__PURE__ */ Facet.define();
+var updateListener = /* @__PURE__ */ Facet.define();
+var inputHandler = /* @__PURE__ */ Facet.define();
+var focusChangeEffect = /* @__PURE__ */ Facet.define();
+var clipboardInputFilter = /* @__PURE__ */ Facet.define();
+var clipboardOutputFilter = /* @__PURE__ */ Facet.define();
+var perLineTextDirection = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.some((x) => x)
+});
+var nativeSelectionHidden = /* @__PURE__ */ Facet.define({
+  combine: (values) => values.some((x) => x)
+});
+var scrollHandler = /* @__PURE__ */ Facet.define();
+
+class ScrollTarget {
+  constructor(range, y, x, yMargin, xMargin, isSnapshot = false) {
+    this.range = range;
+    this.y = y;
+    this.x = x;
+    this.yMargin = yMargin;
+    this.xMargin = xMargin;
+    this.isSnapshot = isSnapshot;
+  }
+  map(changes) {
+    return changes.empty ? this : new ScrollTarget(this.range.map(changes), this.y, this.x, this.yMargin, this.xMargin, this.isSnapshot);
+  }
+  clip(state) {
+    return this.range.to <= state.doc.length ? this : new ScrollTarget(EditorSelection.cursor(state.doc.length), this.y, this.x, this.yMargin, this.xMargin, this.isSnapshot);
+  }
+}
+var scrollIntoView = /* @__PURE__ */ StateEffect.define({ map: (t, ch) => t.map(ch) });
+var setEditContextFormatting = /* @__PURE__ */ StateEffect.define();
+function logException(state, exception, context) {
+  let handler = state.facet(exceptionSink);
+  if (handler.length)
+    handler[0](exception);
+  else if (window.onerror && window.onerror(String(exception), context, undefined, undefined, exception))
+    ;
+  else if (context)
+    console.error(context + ":", exception);
+  else
+    console.error(exception);
+}
+var editable = /* @__PURE__ */ Facet.define({ combine: (values) => values.length ? values[0] : true });
+var nextPluginID = 0;
+var viewPlugin = /* @__PURE__ */ Facet.define({
+  combine(plugins) {
+    return plugins.filter((p, i2) => {
+      for (let j2 = 0;j2 < i2; j2++)
+        if (plugins[j2].plugin == p.plugin)
+          return false;
+      return true;
+    });
+  }
+});
+
+class ViewPlugin {
+  constructor(id, create, domEventHandlers, domEventObservers, buildExtensions) {
+    this.id = id;
+    this.create = create;
+    this.domEventHandlers = domEventHandlers;
+    this.domEventObservers = domEventObservers;
+    this.baseExtensions = buildExtensions(this);
+    this.extension = this.baseExtensions.concat(viewPlugin.of({ plugin: this, arg: undefined }));
+  }
+  of(arg) {
+    return this.baseExtensions.concat(viewPlugin.of({ plugin: this, arg }));
+  }
+  static define(create, spec) {
+    const { eventHandlers, eventObservers, provide, decorations: deco } = spec || {};
+    return new ViewPlugin(nextPluginID++, create, eventHandlers, eventObservers, (plugin) => {
+      let ext = [];
+      if (deco)
+        ext.push(decorations.of((view) => {
+          let pluginInst = view.plugin(plugin);
+          return pluginInst ? deco(pluginInst) : Decoration.none;
+        }));
+      if (provide)
+        ext.push(provide(plugin));
+      return ext;
+    });
+  }
+  static fromClass(cls, spec) {
+    return ViewPlugin.define((view, arg) => new cls(view, arg), spec);
+  }
+}
+
+class PluginInstance {
+  constructor(spec) {
+    this.spec = spec;
+    this.mustUpdate = null;
+    this.value = null;
+  }
+  get plugin() {
+    return this.spec && this.spec.plugin;
+  }
+  update(view) {
+    if (!this.value) {
+      if (this.spec) {
+        try {
+          this.value = this.spec.plugin.create(view, this.spec.arg);
+        } catch (e) {
+          logException(view.state, e, "CodeMirror plugin crashed");
+          this.deactivate();
+        }
+      }
+    } else if (this.mustUpdate) {
+      let update2 = this.mustUpdate;
+      this.mustUpdate = null;
+      if (this.value.update) {
+        try {
+          this.value.update(update2);
+        } catch (e) {
+          logException(update2.state, e, "CodeMirror plugin crashed");
+          if (this.value.destroy)
+            try {
+              this.value.destroy();
+            } catch (_) {}
+          this.deactivate();
+        }
+      }
+    }
+    return this;
+  }
+  destroy(view) {
+    var _a;
+    if ((_a = this.value) === null || _a === undefined ? undefined : _a.destroy) {
+      try {
+        this.value.destroy();
+      } catch (e) {
+        logException(view.state, e, "CodeMirror plugin crashed");
+      }
+    }
+  }
+  deactivate() {
+    this.spec = this.value = null;
+  }
+}
+var editorAttributes = /* @__PURE__ */ Facet.define();
+var contentAttributes = /* @__PURE__ */ Facet.define();
+var decorations = /* @__PURE__ */ Facet.define();
+var blockWrappers = /* @__PURE__ */ Facet.define();
+var outerDecorations = /* @__PURE__ */ Facet.define();
+var atomicRanges = /* @__PURE__ */ Facet.define();
+var bidiIsolatedRanges = /* @__PURE__ */ Facet.define();
+function getIsolatedRanges(view, line) {
+  let isolates = view.state.facet(bidiIsolatedRanges);
+  if (!isolates.length)
+    return isolates;
+  let sets = isolates.map((i2) => i2 instanceof Function ? i2(view) : i2);
+  let result = [];
+  RangeSet.spans(sets, line.from, line.to, {
+    point() {},
+    span(fromDoc, toDoc, active, open) {
+      let from = fromDoc - line.from, to = toDoc - line.from;
+      let level = result;
+      for (let i2 = active.length - 1;i2 >= 0; i2--, open--) {
+        let direction = active[i2].spec.bidiIsolate, update2;
+        if (direction == null)
+          direction = autoDirection(line.text, from, to);
+        if (open > 0 && level.length && (update2 = level[level.length - 1]).to == from && update2.direction == direction) {
+          update2.to = to;
+          level = update2.inner;
+        } else {
+          let add = { from, to, direction, inner: [] };
+          level.push(add);
+          level = add.inner;
+        }
+      }
+    }
+  });
+  return result;
+}
+var scrollMargins = /* @__PURE__ */ Facet.define();
+function getScrollMargins(view) {
+  let left = 0, right = 0, top2 = 0, bottom = 0;
+  for (let source of view.state.facet(scrollMargins)) {
+    let m = source(view);
+    if (m) {
+      if (m.left != null)
+        left = Math.max(left, m.left);
+      if (m.right != null)
+        right = Math.max(right, m.right);
+      if (m.top != null)
+        top2 = Math.max(top2, m.top);
+      if (m.bottom != null)
+        bottom = Math.max(bottom, m.bottom);
+    }
+  }
+  return { left, right, top: top2, bottom };
+}
+var styleModule = /* @__PURE__ */ Facet.define();
+
+class ChangedRange {
+  constructor(fromA, toA, fromB, toB) {
+    this.fromA = fromA;
+    this.toA = toA;
+    this.fromB = fromB;
+    this.toB = toB;
+  }
+  join(other) {
+    return new ChangedRange(Math.min(this.fromA, other.fromA), Math.max(this.toA, other.toA), Math.min(this.fromB, other.fromB), Math.max(this.toB, other.toB));
+  }
+  addToSet(set3) {
+    let i2 = set3.length, me2 = this;
+    for (;i2 > 0; i2--) {
+      let range = set3[i2 - 1];
+      if (range.fromA > me2.toA)
+        continue;
+      if (range.toA < me2.fromA)
+        break;
+      me2 = me2.join(range);
+      set3.splice(i2 - 1, 1);
+    }
+    set3.splice(i2, 0, me2);
+    return set3;
+  }
+  static extendWithRanges(diff, ranges) {
+    if (ranges.length == 0)
+      return diff;
+    let result = [];
+    for (let dI = 0, rI = 0, off = 0;; ) {
+      let nextD = dI < diff.length ? diff[dI].fromB : 1e9;
+      let nextR = rI < ranges.length ? ranges[rI] : 1e9;
+      let fromB = Math.min(nextD, nextR);
+      if (fromB == 1e9)
+        break;
+      let fromA = fromB + off, toB = fromB, toA = fromA;
+      for (;; ) {
+        if (rI < ranges.length && ranges[rI] <= toB) {
+          let end = ranges[rI + 1];
+          rI += 2;
+          toB = Math.max(toB, end);
+          for (let i2 = dI;i2 < diff.length && diff[i2].fromB <= toB; i2++)
+            off = diff[i2].toA - diff[i2].toB;
+          toA = Math.max(toA, end + off);
+        } else if (dI < diff.length && diff[dI].fromB <= toB) {
+          let next = diff[dI++];
+          toB = Math.max(toB, next.toB);
+          toA = Math.max(toA, next.toA);
+          off = next.toA - next.toB;
+        } else {
+          break;
+        }
+      }
+      result.push(new ChangedRange(fromA, toA, fromB, toB));
+    }
+    return result;
+  }
+}
+
+class ViewUpdate {
+  constructor(view, state, transactions) {
+    this.view = view;
+    this.state = state;
+    this.transactions = transactions;
+    this.flags = 0;
+    this.startState = view.state;
+    this.changes = ChangeSet.empty(this.startState.doc.length);
+    for (let tr of transactions)
+      this.changes = this.changes.compose(tr.changes);
+    let changedRanges = [];
+    this.changes.iterChangedRanges((fromA, toA, fromB, toB) => changedRanges.push(new ChangedRange(fromA, toA, fromB, toB)));
+    this.changedRanges = changedRanges;
+  }
+  static create(view, state, transactions) {
+    return new ViewUpdate(view, state, transactions);
+  }
+  get viewportChanged() {
+    return (this.flags & 4) > 0;
+  }
+  get viewportMoved() {
+    return (this.flags & 8) > 0;
+  }
+  get heightChanged() {
+    return (this.flags & 2) > 0;
+  }
+  get geometryChanged() {
+    return this.docChanged || (this.flags & (16 | 2)) > 0;
+  }
+  get focusChanged() {
+    return (this.flags & 1) > 0;
+  }
+  get docChanged() {
+    return !this.changes.empty;
+  }
+  get selectionSet() {
+    return this.transactions.some((tr) => tr.selection);
+  }
+  get empty() {
+    return this.flags == 0 && this.transactions.length == 0;
+  }
+}
+var noChildren = [];
+
+class Tile {
+  constructor(dom, length, flags = 0) {
+    this.dom = dom;
+    this.length = length;
+    this.flags = flags;
+    this.parent = null;
+    dom.cmTile = this;
+  }
+  get breakAfter() {
+    return this.flags & 1;
+  }
+  get children() {
+    return noChildren;
+  }
+  isWidget() {
+    return false;
+  }
+  get isHidden() {
+    return false;
+  }
+  isComposite() {
+    return false;
+  }
+  isLine() {
+    return false;
+  }
+  isText() {
+    return false;
+  }
+  isBlock() {
+    return false;
+  }
+  get domAttrs() {
+    return null;
+  }
+  sync(track) {
+    this.flags |= 2;
+    if (this.flags & 4) {
+      this.flags &= ~4;
+      let attrs = this.domAttrs;
+      if (attrs)
+        setAttrs(this.dom, attrs);
+    }
+  }
+  toString() {
+    return this.constructor.name + (this.children.length ? `(${this.children})` : "") + (this.breakAfter ? "#" : "");
+  }
+  destroy() {
+    this.parent = null;
+  }
+  setDOM(dom) {
+    this.dom = dom;
+    dom.cmTile = this;
+  }
+  get posAtStart() {
+    return this.parent ? this.parent.posBefore(this) : 0;
+  }
+  get posAtEnd() {
+    return this.posAtStart + this.length;
+  }
+  posBefore(tile, start = this.posAtStart) {
+    let pos = start;
+    for (let child of this.children) {
+      if (child == tile)
+        return pos;
+      pos += child.length + child.breakAfter;
+    }
+    throw new RangeError("Invalid child in posBefore");
+  }
+  posAfter(tile) {
+    return this.posBefore(tile) + tile.length;
+  }
+  covers(side) {
+    return true;
+  }
+  coordsIn(pos, side, rtl) {
+    return null;
+  }
+  domPosFor(off, side) {
+    let index3 = domIndex(this.dom);
+    let after = this.length ? off > 0 : side > 0;
+    return new DOMPos(this.parent.dom, index3 + (after ? 1 : 0), off == 0 || off == this.length);
+  }
+  markDirty(attrs) {
+    this.flags &= ~2;
+    if (attrs)
+      this.flags |= 4;
+    if (this.parent && this.parent.flags & 2)
+      this.parent.markDirty(false);
+  }
+  get overrideDOMText() {
+    return null;
+  }
+  get root() {
+    for (let t = this;t; t = t.parent)
+      if (t instanceof DocTile)
+        return t;
+    return null;
+  }
+  static get(dom) {
+    return dom.cmTile;
+  }
+}
+
+class CompositeTile extends Tile {
+  constructor(dom) {
+    super(dom, 0);
+    this._children = [];
+  }
+  isComposite() {
+    return true;
+  }
+  get children() {
+    return this._children;
+  }
+  get lastChild() {
+    return this.children.length ? this.children[this.children.length - 1] : null;
+  }
+  append(child) {
+    this.children.push(child);
+    child.parent = this;
+  }
+  sync(track) {
+    if (this.flags & 2)
+      return;
+    super.sync(track);
+    let parent = this.dom, prev = null, next;
+    let tracking = (track === null || track === undefined ? undefined : track.node) == parent ? track : null;
+    let length = 0;
+    for (let child of this.children) {
+      child.sync(track);
+      length += child.length + child.breakAfter;
+      next = prev ? prev.nextSibling : parent.firstChild;
+      if (tracking && next != child.dom)
+        tracking.written = true;
+      if (child.dom.parentNode == parent) {
+        while (next && next != child.dom)
+          next = rm$1(next);
+      } else {
+        parent.insertBefore(child.dom, next);
+      }
+      prev = child.dom;
+    }
+    next = prev ? prev.nextSibling : parent.firstChild;
+    if (tracking && next)
+      tracking.written = true;
+    while (next)
+      next = rm$1(next);
+    this.length = length;
+  }
+}
+function rm$1(dom) {
+  let next = dom.nextSibling;
+  dom.parentNode.removeChild(dom);
+  return next;
+}
+
+class DocTile extends CompositeTile {
+  constructor(view, dom) {
+    super(dom);
+    this.view = view;
+  }
+  owns(tile) {
+    for (;tile; tile = tile.parent)
+      if (tile == this)
+        return true;
+    return false;
+  }
+  isBlock() {
+    return true;
+  }
+  nearest(dom) {
+    for (;; ) {
+      if (!dom)
+        return null;
+      let tile = Tile.get(dom);
+      if (tile && this.owns(tile))
+        return tile;
+      dom = dom.parentNode;
+    }
+  }
+  blockTiles(f) {
+    for (let stack = [], cur = this, i2 = 0, pos = 0;; ) {
+      if (i2 == cur.children.length) {
+        if (!stack.length)
+          return;
+        cur = cur.parent;
+        if (cur.breakAfter)
+          pos++;
+        i2 = stack.pop();
+      } else {
+        let next = cur.children[i2++];
+        if (next instanceof BlockWrapperTile) {
+          stack.push(i2);
+          cur = next;
+          i2 = 0;
+        } else {
+          let end = pos + next.length;
+          let result = f(next, pos);
+          if (result !== undefined)
+            return result;
+          pos = end + next.breakAfter;
+        }
+      }
+    }
+  }
+  resolveBlock(pos, side) {
+    let before, beforeOff = -1, after, afterOff = -1;
+    this.blockTiles((tile, off) => {
+      let end = off + tile.length;
+      if (pos >= off && pos <= end) {
+        if (tile.isWidget() && side >= -1 && side <= 1) {
+          if (tile.flags & 32)
+            return true;
+          if (tile.flags & 16)
+            before = undefined;
+        }
+        if ((off < pos || pos == end && (side < -1 ? tile.length : tile.covers(1))) && (!before || !tile.isWidget() && before.isWidget())) {
+          before = tile;
+          beforeOff = pos - off;
+        }
+        if ((end > pos || pos == off && (side > 1 ? tile.length : tile.covers(-1))) && (!after || !tile.isWidget() && after.isWidget())) {
+          after = tile;
+          afterOff = pos - off;
+        }
+      }
+    });
+    if (!before && !after)
+      throw new Error("No tile at position " + pos);
+    return before && side < 0 || !after ? { tile: before, offset: beforeOff } : { tile: after, offset: afterOff };
+  }
+}
+
+class BlockWrapperTile extends CompositeTile {
+  constructor(dom, wrapper) {
+    super(dom);
+    this.wrapper = wrapper;
+  }
+  isBlock() {
+    return true;
+  }
+  covers(side) {
+    if (!this.children.length)
+      return false;
+    return side < 0 ? this.children[0].covers(-1) : this.lastChild.covers(1);
+  }
+  get domAttrs() {
+    return this.wrapper.attributes;
+  }
+  static of(wrapper, dom) {
+    let tile = new BlockWrapperTile(dom || document.createElement(wrapper.tagName), wrapper);
+    if (!dom)
+      tile.flags |= 4;
+    return tile;
+  }
+}
+
+class LineTile extends CompositeTile {
+  constructor(dom, attrs) {
+    super(dom);
+    this.attrs = attrs;
+  }
+  isLine() {
+    return true;
+  }
+  static start(attrs, dom, keepAttrs) {
+    let line = new LineTile(dom || document.createElement("div"), attrs);
+    if (!dom || !keepAttrs)
+      line.flags |= 4;
+    return line;
+  }
+  get domAttrs() {
+    return this.attrs;
+  }
+  resolveInline(pos, side, forCoords) {
+    let before = null, beforeOff = -1, after = null, afterOff = -1;
+    function scan(tile, pos2) {
+      for (let i2 = 0, off = 0;i2 < tile.children.length && off <= pos2; i2++) {
+        let child = tile.children[i2], end = off + child.length;
+        if (end >= pos2) {
+          if (child.isComposite()) {
+            scan(child, pos2 - off);
+          } else if ((!after || after.isHidden && (side > 0 && !(after.flags & 32) || forCoords && onSameLine(after, child))) && (end > pos2 || child.flags & 32 && side <= 1)) {
+            after = child;
+            afterOff = pos2 - off;
+          } else if (off < pos2 || child.flags & 16 && !child.isHidden && side >= -1) {
+            before = child;
+            beforeOff = pos2 - off;
+          }
+        }
+        off = end;
+      }
+    }
+    scan(this, pos);
+    let target = (side < 0 ? before : after) || before || after;
+    return target ? { tile: target, offset: target == before ? beforeOff : afterOff } : null;
+  }
+  coordsIn(pos, side, rtl) {
+    let found = this.resolveInline(pos, side, true);
+    if (!found)
+      return fallbackRect(this);
+    return found.tile.coordsIn(Math.max(0, found.offset), side, rtl);
+  }
+  domIn(pos, side) {
+    let found = this.resolveInline(pos, side);
+    if (found) {
+      let { tile, offset: offset4 } = found;
+      if (this.dom.contains(tile.dom)) {
+        if (tile.isText())
+          return new DOMPos(tile.dom, Math.min(tile.dom.nodeValue.length, offset4));
+        return tile.domPosFor(offset4, tile.flags & 16 ? 1 : tile.flags & 32 ? -1 : side);
+      }
+      let parent = found.tile.parent, saw = false;
+      for (let ch of parent.children) {
+        if (saw)
+          return new DOMPos(ch.dom, 0);
+        if (ch == found.tile) {
+          saw = true;
+        }
+      }
+    }
+    return new DOMPos(this.dom, 0);
+  }
+}
+function fallbackRect(tile) {
+  let last2 = tile.dom.lastChild;
+  if (!last2)
+    return tile.dom.getBoundingClientRect();
+  let rects = clientRectsFor(last2);
+  return rects[rects.length - 1] || null;
+}
+function onSameLine(a, b) {
+  let posA = a.coordsIn(0, 1), posB = b.coordsIn(0, 1);
+  return posA && posB && posB.top < posA.bottom;
+}
+
+class MarkTile extends CompositeTile {
+  constructor(dom, mark) {
+    super(dom);
+    this.mark = mark;
+  }
+  get domAttrs() {
+    return this.mark.attrs;
+  }
+  static of(mark, dom) {
+    let tile = new MarkTile(dom || document.createElement(mark.tagName), mark);
+    if (!dom)
+      tile.flags |= 4;
+    return tile;
+  }
+}
+
+class TextTile extends Tile {
+  constructor(dom, text) {
+    super(dom, text.length);
+    this.text = text;
+  }
+  sync(track) {
+    if (this.flags & 2)
+      return;
+    super.sync(track);
+    if (this.dom.nodeValue != this.text) {
+      if (track && track.node == this.dom)
+        track.written = true;
+      this.dom.nodeValue = this.text;
+    }
+  }
+  isText() {
+    return true;
+  }
+  toString() {
+    return JSON.stringify(this.text);
+  }
+  coordsIn(pos, side, rtl) {
+    let length = this.dom.nodeValue.length;
+    if (pos > length)
+      pos = length;
+    let from = pos, to = pos, flatten2 = 0;
+    if (pos == 0 && side < 0 || pos == length && side >= 0) {
+      if (!(browser.chrome || browser.gecko)) {
+        if (pos) {
+          from--;
+          flatten2 = 1;
+        } else if (to < length) {
+          to++;
+          flatten2 = -1;
+        }
+      }
+    } else {
+      if (side < 0)
+        from--;
+      else if (to < length)
+        to++;
+    }
+    let rects = textRange(this.dom, from, to).getClientRects();
+    if (!rects.length)
+      return null;
+    let rect = rects[(flatten2 ? flatten2 < 0 : side >= 0) ? 0 : rects.length - 1];
+    if (browser.safari && !flatten2 && rect.width == 0)
+      rect = Array.prototype.find.call(rects, (r2) => r2.width) || rect;
+    return rtl == null ? rect : flattenRect(rect, (flatten2 ? flatten2 > 0 : side < 0) == rtl);
+  }
+  static of(text, dom) {
+    let tile = new TextTile(dom || document.createTextNode(text), text);
+    if (!dom)
+      tile.flags |= 2;
+    return tile;
+  }
+}
+
+class WidgetTile extends Tile {
+  constructor(dom, length, widget, flags) {
+    super(dom, length, flags);
+    this.widget = widget;
+  }
+  isWidget() {
+    return true;
+  }
+  get isHidden() {
+    return this.widget.isHidden;
+  }
+  covers(side) {
+    if (this.flags & 48)
+      return false;
+    return (this.flags & (side < 0 ? 64 : 128)) > 0;
+  }
+  coordsIn(pos, side) {
+    return this.coordsInWidget(pos, side, false);
+  }
+  coordsInWidget(pos, side, block) {
+    let custom = this.widget.coordsAt(this.dom, pos, side);
+    if (custom)
+      return custom;
+    if (block) {
+      return flattenRect(this.dom.getBoundingClientRect(), this.length ? pos == 0 : side <= 0);
+    } else {
+      let rects = this.dom.getClientRects(), rect = null;
+      if (!rects.length)
+        return null;
+      let fromBack = this.flags & 16 ? true : this.flags & 32 ? false : pos > 0;
+      for (let i2 = fromBack ? rects.length - 1 : 0;; i2 += fromBack ? -1 : 1) {
+        rect = rects[i2];
+        if (pos > 0 ? i2 == 0 : i2 == rects.length - 1 || rect.top < rect.bottom)
+          break;
+      }
+      return flattenRect(rect, !fromBack);
+    }
+  }
+  get overrideDOMText() {
+    if (!this.length)
+      return Text.empty;
+    let { root } = this;
+    if (!root)
+      return Text.empty;
+    let start = this.posAtStart;
+    return root.view.state.doc.slice(start, start + this.length);
+  }
+  destroy() {
+    super.destroy();
+    this.widget.destroy(this.dom);
+  }
+  static of(widget, view, length, flags, dom) {
+    if (!dom) {
+      dom = widget.toDOM(view);
+      if (!widget.editable)
+        dom.contentEditable = "false";
+    }
+    return new WidgetTile(dom, length, widget, flags);
+  }
+}
+
+class WidgetBufferTile extends Tile {
+  constructor(flags) {
+    let img = document.createElement("img");
+    img.className = "cm-widgetBuffer";
+    img.setAttribute("aria-hidden", "true");
+    super(img, 0, flags);
+  }
+  get isHidden() {
+    return true;
+  }
+  get overrideDOMText() {
+    return Text.empty;
+  }
+  coordsIn(pos, side, rtl) {
+    let rect = this.dom.getBoundingClientRect();
+    return rtl == null ? rect : flattenRect(rect, side > 0 == rtl);
+  }
+}
+
+class TilePointer {
+  constructor(top2) {
+    this.index = 0;
+    this.beforeBreak = false;
+    this.parents = [];
+    this.tile = top2;
+  }
+  advance(dist, side, walker) {
+    let { tile, index: index3, beforeBreak, parents } = this;
+    while (dist || side > 0) {
+      if (!tile.isComposite()) {
+        let len = tile.length;
+        if (index3 < len && dist) {
+          let take = Math.min(dist, len - index3);
+          if (walker)
+            walker.skip(tile, index3, index3 + take);
+          dist -= take;
+          index3 += take;
+        }
+        if (index3 == len) {
+          beforeBreak = !!tile.breakAfter;
+          ({ tile, index: index3 } = parents.pop());
+          index3++;
+        } else if (!dist) {
+          break;
+        }
+      } else if (beforeBreak) {
+        if (!dist)
+          break;
+        if (walker)
+          walker.break();
+        dist--;
+        beforeBreak = false;
+      } else if (index3 == tile.children.length) {
+        if (!dist && !parents.length)
+          break;
+        if (walker)
+          walker.leave(tile);
+        beforeBreak = !!tile.breakAfter;
+        ({ tile, index: index3 } = parents.pop());
+        index3++;
+      } else {
+        let next = tile.children[index3], brk = next.breakAfter;
+        if ((side > 0 ? next.length <= dist : next.length < dist) && (!walker || walker.skip(next, 0, next.length) !== false || !next.isComposite)) {
+          beforeBreak = !!brk;
+          index3++;
+          dist -= next.length;
+        } else {
+          parents.push({ tile, index: index3 });
+          tile = next;
+          index3 = 0;
+          if (walker && next.isComposite())
+            walker.enter(next);
+        }
+      }
+    }
+    this.tile = tile;
+    this.index = index3;
+    this.beforeBreak = beforeBreak;
+    return this;
+  }
+  get root() {
+    return this.parents.length ? this.parents[0].tile : this.tile;
+  }
+}
+
+class OpenWrapper {
+  constructor(from, to, wrapper, rank) {
+    this.from = from;
+    this.to = to;
+    this.wrapper = wrapper;
+    this.rank = rank;
+  }
+}
+
+class TileBuilder {
+  constructor(cache, root, blockWrappers2) {
+    this.cache = cache;
+    this.root = root;
+    this.blockWrappers = blockWrappers2;
+    this.curLine = null;
+    this.lastBlock = null;
+    this.afterWidget = null;
+    this.pos = 0;
+    this.wrappers = [];
+    this.wrapperPos = 0;
+  }
+  addText(text, marks, openStart, tile) {
+    var _a;
+    this.flushBuffer();
+    let parent = this.ensureMarks(marks, openStart);
+    let prev = parent.lastChild;
+    if (prev && prev.isText() && !(prev.flags & 8) && prev.length + text.length < 512) {
+      this.cache.reused.set(prev, 2);
+      let tile2 = parent.children[parent.children.length - 1] = new TextTile(prev.dom, prev.text + text);
+      tile2.parent = parent;
+    } else {
+      parent.append(tile || TextTile.of(text, (_a = this.cache.find(TextTile)) === null || _a === undefined ? undefined : _a.dom));
+    }
+    this.pos += text.length;
+    this.afterWidget = null;
+  }
+  addComposition(composition, context) {
+    let line = this.curLine;
+    if (line.dom != context.line.dom) {
+      line.setDOM(this.cache.reused.has(context.line) ? freeNode(context.line.dom) : context.line.dom);
+      this.cache.reused.set(context.line, 2);
+    }
+    let head = line;
+    for (let i2 = context.marks.length - 1;i2 >= 0; i2--) {
+      let mark = context.marks[i2];
+      let last2 = head.lastChild;
+      if (last2 instanceof MarkTile && last2.mark.eq(mark.mark)) {
+        if (last2.dom != mark.dom)
+          last2.setDOM(freeNode(mark.dom));
+        head = last2;
+      } else {
+        if (this.cache.reused.get(mark)) {
+          let tile = Tile.get(mark.dom);
+          if (tile)
+            tile.setDOM(freeNode(mark.dom));
+        }
+        let nw = MarkTile.of(mark.mark, mark.dom);
+        head.append(nw);
+        head = nw;
+      }
+      this.cache.reused.set(mark, 2);
+    }
+    let oldTile = Tile.get(composition.text);
+    if (oldTile)
+      this.cache.reused.set(oldTile, 2);
+    let text = new TextTile(composition.text, composition.text.nodeValue);
+    text.flags |= 8;
+    this.pos = composition.range.toB;
+    head.append(text);
+  }
+  addInlineWidget(widget, marks, openStart) {
+    let noSpace = this.afterWidget && widget.flags & 48 && (this.afterWidget.flags & 48) == (widget.flags & 48);
+    if (!noSpace)
+      this.flushBuffer();
+    let parent = this.ensureMarks(marks, openStart);
+    if (!noSpace && !(widget.flags & 16))
+      parent.append(this.getBuffer(1));
+    parent.append(widget);
+    this.pos += widget.length;
+    this.afterWidget = widget;
+  }
+  addMark(tile, marks, openStart) {
+    this.flushBuffer();
+    let parent = this.ensureMarks(marks, openStart);
+    parent.append(tile);
+    this.pos += tile.length;
+    this.afterWidget = null;
+  }
+  addBlockWidget(widget) {
+    this.getBlockPos().append(widget);
+    this.pos += widget.length;
+    this.lastBlock = widget;
+    this.endLine();
+  }
+  continueWidget(length) {
+    let widget = this.afterWidget || this.lastBlock;
+    widget.length += length;
+    this.pos += length;
+  }
+  addLineStart(attrs, dom) {
+    var _a;
+    if (!attrs)
+      attrs = lineBaseAttrs;
+    let tile = LineTile.start(attrs, dom || ((_a = this.cache.find(LineTile)) === null || _a === undefined ? undefined : _a.dom), !!dom);
+    this.getBlockPos().append(this.lastBlock = this.curLine = tile);
+  }
+  addLine(tile) {
+    this.getBlockPos().append(tile);
+    this.pos += tile.length;
+    this.lastBlock = tile;
+    this.endLine();
+  }
+  addBreak() {
+    this.lastBlock.flags |= 1;
+    this.endLine();
+    this.pos++;
+  }
+  addLineStartIfNotCovered(attrs) {
+    if (!this.blockPosCovered())
+      this.addLineStart(attrs);
+  }
+  ensureLine(attrs) {
+    if (!this.curLine)
+      this.addLineStart(attrs);
+  }
+  ensureMarks(marks, openStart) {
+    var _a;
+    let parent = this.curLine;
+    for (let i2 = marks.length - 1;i2 >= 0; i2--) {
+      let mark = marks[i2], last2;
+      if (openStart > 0 && (last2 = parent.lastChild) && last2 instanceof MarkTile && last2.mark.eq(mark)) {
+        parent = last2;
+        openStart--;
+      } else {
+        let tile = MarkTile.of(mark, (_a = this.cache.find(MarkTile, (m) => m.mark.eq(mark))) === null || _a === undefined ? undefined : _a.dom);
+        parent.append(tile);
+        parent = tile;
+        openStart = 0;
+      }
+    }
+    return parent;
+  }
+  endLine() {
+    if (this.curLine) {
+      this.flushBuffer();
+      let last2 = this.curLine.lastChild;
+      if (!last2 || !hasContent(this.curLine, false) || last2.dom.nodeName != "BR" && last2.isWidget() && !(browser.ios && hasContent(this.curLine, true)))
+        this.curLine.append(this.cache.findWidget(BreakWidget, 0, 32) || new WidgetTile(BreakWidget.toDOM(), 0, BreakWidget, 32));
+      this.curLine = this.afterWidget = null;
+    }
+  }
+  updateBlockWrappers() {
+    if (this.wrapperPos > this.pos + 1e4) {
+      this.blockWrappers.goto(this.pos);
+      this.wrappers.length = 0;
+    }
+    for (let i2 = this.wrappers.length - 1;i2 >= 0; i2--)
+      if (this.wrappers[i2].to < this.pos)
+        this.wrappers.splice(i2, 1);
+    for (let cur = this.blockWrappers;cur.value && cur.from <= this.pos; cur.next())
+      if (cur.to >= this.pos) {
+        let rank = cur.rank * 102 + cur.value.rank;
+        let wrap = new OpenWrapper(cur.from, cur.to, cur.value, rank), i2 = this.wrappers.length;
+        while (i2 > 0 && (this.wrappers[i2 - 1].rank - wrap.rank || this.wrappers[i2 - 1].to - wrap.to) < 0)
+          i2--;
+        this.wrappers.splice(i2, 0, wrap);
+      }
+    this.wrapperPos = this.pos;
+  }
+  getBlockPos() {
+    var _a;
+    this.updateBlockWrappers();
+    let parent = this.root;
+    for (let wrap of this.wrappers) {
+      let last2 = parent.lastChild;
+      if (wrap.from < this.pos && last2 instanceof BlockWrapperTile && last2.wrapper.eq(wrap.wrapper)) {
+        parent = last2;
+      } else {
+        let tile = BlockWrapperTile.of(wrap.wrapper, (_a = this.cache.find(BlockWrapperTile, (t) => t.wrapper.eq(wrap.wrapper))) === null || _a === undefined ? undefined : _a.dom);
+        parent.append(tile);
+        parent = tile;
+      }
+    }
+    return parent;
+  }
+  blockPosCovered() {
+    let last2 = this.lastBlock;
+    return last2 != null && !last2.breakAfter && (!last2.isWidget() || (last2.flags & (32 | 128)) > 0);
+  }
+  getBuffer(side) {
+    let flags = 2 | (side < 0 ? 16 : 32);
+    let found = this.cache.find(WidgetBufferTile, undefined, 1);
+    if (found)
+      found.flags = flags;
+    return found || new WidgetBufferTile(flags);
+  }
+  flushBuffer() {
+    if (this.afterWidget && !(this.afterWidget.flags & 32)) {
+      this.afterWidget.parent.append(this.getBuffer(-1));
+      this.afterWidget = null;
+    }
+  }
+}
+
+class TextStream {
+  constructor(doc2) {
+    this.skipCount = 0;
+    this.text = "";
+    this.textOff = 0;
+    this.cursor = doc2.iter();
+  }
+  skip(len) {
+    if (this.textOff + len <= this.text.length) {
+      this.textOff += len;
+    } else {
+      this.skipCount += len - (this.text.length - this.textOff);
+      this.text = "";
+      this.textOff = 0;
+    }
+  }
+  next(maxLen) {
+    if (this.textOff == this.text.length) {
+      let { value, lineBreak, done } = this.cursor.next(this.skipCount);
+      this.skipCount = 0;
+      if (done)
+        throw new Error("Ran out of text content when drawing inline views");
+      this.text = value;
+      let len = this.textOff = Math.min(maxLen, value.length);
+      return lineBreak ? null : value.slice(0, len);
+    }
+    let end = Math.min(this.text.length, this.textOff + maxLen);
+    let chars = this.text.slice(this.textOff, end);
+    this.textOff = end;
+    return chars;
+  }
+}
+var buckets = [WidgetTile, LineTile, TextTile, MarkTile, WidgetBufferTile, BlockWrapperTile, DocTile];
+for (let i2 = 0;i2 < buckets.length; i2++)
+  buckets[i2].bucket = i2;
+
+class TileCache {
+  constructor(view) {
+    this.view = view;
+    this.buckets = buckets.map(() => []);
+    this.index = buckets.map(() => 0);
+    this.reused = new Map;
+  }
+  add(tile) {
+    let i2 = tile.constructor.bucket, bucket = this.buckets[i2];
+    if (bucket.length < 6)
+      bucket.push(tile);
+    else
+      bucket[this.index[i2] = (this.index[i2] + 1) % 6] = tile;
+  }
+  find(cls, test, type = 2) {
+    let i2 = cls.bucket;
+    let bucket = this.buckets[i2], off = this.index[i2];
+    for (let j2 = 0;j2 < bucket.length; j2++) {
+      let index3 = (j2 + off) % bucket.length, tile = bucket[index3];
+      if ((!test || test(tile)) && !this.reused.has(tile)) {
+        bucket.splice(index3, 1);
+        if (index3 < off)
+          this.index[i2]--;
+        this.reused.set(tile, type);
+        return tile;
+      }
+    }
+    return null;
+  }
+  findWidget(widget, length, flags) {
+    let widgets = this.buckets[0];
+    if (widgets.length)
+      for (let i2 = 0, pass = 0;; i2++) {
+        if (i2 == widgets.length) {
+          if (pass)
+            return null;
+          pass = 1;
+          i2 = 0;
+        }
+        let tile = widgets[i2];
+        if (!this.reused.has(tile) && (pass == 0 ? tile.widget.compare(widget) : tile.widget.constructor == widget.constructor && widget.updateDOM(tile.dom, this.view, tile.widget))) {
+          widgets.splice(i2, 1);
+          if (i2 < this.index[0])
+            this.index[0]--;
+          if (tile.widget == widget && tile.length == length && (tile.flags & (496 | 1)) == flags) {
+            this.reused.set(tile, 1);
+            return tile;
+          } else {
+            this.reused.set(tile, 2);
+            return new WidgetTile(tile.dom, length, widget, tile.flags & ~(496 | 1) | flags);
+          }
+        }
+      }
+  }
+  reuse(tile) {
+    this.reused.set(tile, 1);
+    return tile;
+  }
+  maybeReuse(tile, type = 2) {
+    if (this.reused.has(tile))
+      return;
+    this.reused.set(tile, type);
+    return tile.dom;
+  }
+  clear() {
+    for (let i2 = 0;i2 < this.buckets.length; i2++)
+      this.buckets[i2].length = this.index[i2] = 0;
+  }
+}
+
+class TileUpdate {
+  constructor(view, old, blockWrappers2, decorations2, disallowBlockEffectsFor) {
+    this.view = view;
+    this.decorations = decorations2;
+    this.disallowBlockEffectsFor = disallowBlockEffectsFor;
+    this.openWidget = false;
+    this.openMarks = 0;
+    this.cache = new TileCache(view);
+    this.text = new TextStream(view.state.doc);
+    this.builder = new TileBuilder(this.cache, new DocTile(view, view.contentDOM), RangeSet.iter(blockWrappers2));
+    this.cache.reused.set(old, 2);
+    this.old = new TilePointer(old);
+    this.reuseWalker = {
+      skip: (tile, from, to) => {
+        this.cache.add(tile);
+        if (tile.isComposite())
+          return false;
+      },
+      enter: (tile) => this.cache.add(tile),
+      leave: () => {},
+      break: () => {}
+    };
+  }
+  run(changes, composition) {
+    let compositionContext = composition && this.getCompositionContext(composition.text);
+    for (let posA = 0, posB = 0, i2 = 0;; ) {
+      let next = i2 < changes.length ? changes[i2++] : null;
+      let skipA = next ? next.fromA : this.old.root.length;
+      if (skipA > posA) {
+        let len = skipA - posA;
+        this.preserve(len, !i2, !next);
+        posA = skipA;
+        posB += len;
+      }
+      if (!next)
+        break;
+      if (composition && next.fromA <= composition.range.fromA && next.toA >= composition.range.toA) {
+        this.forward(next.fromA, composition.range.fromA, composition.range.fromA < composition.range.toA ? 1 : -1);
+        this.emit(posB, composition.range.fromB);
+        this.builder.flushBuffer();
+        this.cache.clear();
+        this.builder.addComposition(composition, compositionContext);
+        this.text.skip(composition.range.toB - composition.range.fromB);
+        this.forward(composition.range.fromA, next.toA);
+        this.emit(composition.range.toB, next.toB);
+      } else {
+        this.forward(next.fromA, next.toA);
+        this.emit(posB, next.toB);
+      }
+      posB = next.toB;
+      posA = next.toA;
+    }
+    if (this.builder.curLine)
+      this.builder.endLine();
+    return this.builder.root;
+  }
+  preserve(length, incStart, incEnd) {
+    let activeMarks = getMarks(this.old), openMarks = this.openMarks;
+    this.old.advance(length, incEnd ? 1 : -1, {
+      skip: (tile, from, to) => {
+        if (tile.isWidget()) {
+          if (this.openWidget) {
+            this.builder.continueWidget(to - from);
+          } else {
+            let widget = to > 0 || from < tile.length ? WidgetTile.of(tile.widget, this.view, to - from, tile.flags & 496, this.cache.maybeReuse(tile)) : this.cache.reuse(tile);
+            if (widget.flags & 256) {
+              widget.flags &= ~1;
+              this.builder.addBlockWidget(widget);
+            } else {
+              this.builder.ensureLine(null);
+              this.builder.addInlineWidget(widget, activeMarks, openMarks);
+              openMarks = activeMarks.length;
+            }
+          }
+        } else if (tile.isText()) {
+          this.builder.ensureLine(null);
+          if (!from && to == tile.length && !this.cache.reused.has(tile)) {
+            this.builder.addText(tile.text, activeMarks, openMarks, this.cache.reuse(tile));
+          } else {
+            this.cache.add(tile);
+            this.builder.addText(tile.text.slice(from, to), activeMarks, openMarks);
+          }
+          openMarks = activeMarks.length;
+        } else if (tile.isLine()) {
+          tile.flags &= ~1;
+          this.cache.reused.set(tile, 1);
+          this.builder.addLine(tile);
+        } else if (tile instanceof WidgetBufferTile) {
+          this.cache.add(tile);
+        } else if (tile instanceof MarkTile) {
+          this.builder.ensureLine(null);
+          this.builder.addMark(tile, activeMarks, openMarks);
+          this.cache.reused.set(tile, 1);
+          openMarks = activeMarks.length;
+        } else {
+          return false;
+        }
+        this.openWidget = false;
+      },
+      enter: (tile) => {
+        if (tile.isLine()) {
+          this.builder.addLineStart(tile.attrs, this.cache.maybeReuse(tile));
+        } else {
+          this.cache.add(tile);
+          if (tile instanceof MarkTile)
+            activeMarks.unshift(tile.mark);
+        }
+        this.openWidget = false;
+      },
+      leave: (tile) => {
+        if (tile.isLine()) {
+          if (activeMarks.length)
+            activeMarks.length = openMarks = 0;
+        } else if (tile instanceof MarkTile) {
+          activeMarks.shift();
+          openMarks = Math.min(openMarks, activeMarks.length);
+        }
+      },
+      break: () => {
+        this.builder.addBreak();
+        this.openWidget = false;
+      }
+    });
+    this.text.skip(length);
+  }
+  emit(from, to) {
+    let pendingLineAttrs = null;
+    let b = this.builder, markCount = -1;
+    let openEnd = RangeSet.spans(this.decorations, from, to, {
+      point: (from2, to2, deco, active, openStart, index3) => {
+        if (deco instanceof PointDecoration) {
+          if (this.disallowBlockEffectsFor[index3]) {
+            if (deco.block)
+              throw new RangeError("Block decorations may not be specified via plugins");
+            if (to2 > this.view.state.doc.lineAt(from2).to)
+              throw new RangeError("Decorations that replace line breaks may not be specified via plugins");
+          }
+          markCount = active.length;
+          if (openStart > active.length) {
+            b.continueWidget(to2 - from2);
+          } else {
+            let widget = deco.widget || (deco.block ? NullWidget.block : NullWidget.inline);
+            let flags = widgetFlags(deco);
+            let tile = this.cache.findWidget(widget, to2 - from2, flags) || WidgetTile.of(widget, this.view, to2 - from2, flags);
+            if (deco.block) {
+              if (deco.startSide > 0)
+                b.addLineStartIfNotCovered(pendingLineAttrs);
+              b.addBlockWidget(tile);
+            } else {
+              b.ensureLine(pendingLineAttrs);
+              b.addInlineWidget(tile, active, openStart);
+            }
+          }
+          pendingLineAttrs = null;
+        } else {
+          pendingLineAttrs = addLineDeco(pendingLineAttrs, deco);
+        }
+        if (to2 > from2)
+          this.text.skip(to2 - from2);
+      },
+      span: (from2, to2, active, openStart) => {
+        for (let pos = from2;pos < to2; ) {
+          let chars = this.text.next(Math.min(512, to2 - pos));
+          if (chars == null) {
+            b.addLineStartIfNotCovered(pendingLineAttrs);
+            b.addBreak();
+            pos++;
+          } else {
+            b.ensureLine(pendingLineAttrs);
+            b.addText(chars, active, pos == from2 ? openStart : active.length);
+            pos += chars.length;
+          }
+          pendingLineAttrs = null;
+        }
+        markCount = active.length;
+      }
+    });
+    if (markCount > -1)
+      this.openWidget = openEnd > markCount;
+    if (!this.openWidget)
+      b.addLineStartIfNotCovered(pendingLineAttrs);
+    this.openMarks = openEnd;
+  }
+  forward(from, to, side = 1) {
+    if (to - from <= 10) {
+      this.old.advance(to - from, side, this.reuseWalker);
+    } else {
+      this.old.advance(5, -1, this.reuseWalker);
+      this.old.advance(to - from - 10, -1);
+      this.old.advance(5, side, this.reuseWalker);
+    }
+  }
+  getCompositionContext(text) {
+    let marks = [], line = null;
+    for (let parent = text.parentNode;; parent = parent.parentNode) {
+      let tile = Tile.get(parent);
+      if (parent == this.view.contentDOM)
+        break;
+      if (tile instanceof MarkTile)
+        marks.push(tile);
+      else if (tile === null || tile === undefined ? undefined : tile.isLine())
+        line = tile;
+      else if (tile instanceof BlockWrapperTile)
+        ;
+      else if (parent.nodeName == "DIV" && !line && parent != this.view.contentDOM)
+        line = new LineTile(parent, lineBaseAttrs);
+      else if (!line)
+        marks.push(MarkTile.of(new MarkDecoration({ tagName: parent.nodeName.toLowerCase(), attributes: getAttrs(parent) }), parent));
+    }
+    return { line, marks };
+  }
+}
+function hasContent(tile, requireText) {
+  let scan = (tile2) => {
+    for (let ch of tile2.children)
+      if ((requireText ? ch.isText() : ch.length) || scan(ch))
+        return true;
+    return false;
+  };
+  return scan(tile);
+}
+function widgetFlags(deco) {
+  let flags = deco.isReplace ? (deco.startSide < 0 ? 64 : 0) | (deco.endSide > 0 ? 128 : 0) : deco.startSide > 0 ? 32 : 16;
+  if (deco.block)
+    flags |= 256;
+  return flags;
+}
+var lineBaseAttrs = { class: "cm-line" };
+function addLineDeco(value, deco) {
+  let attrs = deco.spec.attributes, cls = deco.spec.class;
+  if (!attrs && !cls)
+    return value;
+  if (!value)
+    value = { class: "cm-line" };
+  if (attrs)
+    combineAttrs(attrs, value);
+  if (cls)
+    value.class += " " + cls;
+  return value;
+}
+function getMarks(ptr) {
+  let found = [];
+  for (let i2 = ptr.parents.length;i2 > 1; i2--) {
+    let tile = i2 == ptr.parents.length ? ptr.tile : ptr.parents[i2].tile;
+    if (tile instanceof MarkTile)
+      found.push(tile.mark);
+  }
+  return found;
+}
+function freeNode(node) {
+  let tile = Tile.get(node);
+  if (tile)
+    tile.setDOM(node.cloneNode());
+  return node;
+}
+
+class NullWidget extends WidgetType {
+  constructor(tag) {
+    super();
+    this.tag = tag;
+  }
+  eq(other) {
+    return other.tag == this.tag;
+  }
+  toDOM() {
+    return document.createElement(this.tag);
+  }
+  updateDOM(elt) {
+    return elt.nodeName.toLowerCase() == this.tag;
+  }
+  get isHidden() {
+    return true;
+  }
+}
+NullWidget.inline = /* @__PURE__ */ new NullWidget("span");
+NullWidget.block = /* @__PURE__ */ new NullWidget("div");
+var BreakWidget = /* @__PURE__ */ new class extends WidgetType {
+  toDOM() {
+    return document.createElement("br");
+  }
+  get isHidden() {
+    return true;
+  }
+  get editable() {
+    return true;
+  }
+};
+
+class DocView {
+  constructor(view) {
+    this.view = view;
+    this.decorations = [];
+    this.blockWrappers = [];
+    this.dynamicDecorationMap = [false];
+    this.domChanged = null;
+    this.hasComposition = null;
+    this.editContextFormatting = Decoration.none;
+    this.lastCompositionAfterCursor = false;
+    this.minWidth = 0;
+    this.minWidthFrom = 0;
+    this.minWidthTo = 0;
+    this.impreciseAnchor = null;
+    this.impreciseHead = null;
+    this.forceSelection = false;
+    this.lastUpdate = Date.now();
+    this.updateDeco();
+    this.tile = new DocTile(view, view.contentDOM);
+    this.updateInner([new ChangedRange(0, 0, 0, view.state.doc.length)], null);
+  }
+  update(update2) {
+    var _a;
+    let changedRanges = update2.changedRanges;
+    if (this.minWidth > 0 && changedRanges.length) {
+      if (!changedRanges.every(({ fromA, toA }) => toA < this.minWidthFrom || fromA > this.minWidthTo)) {
+        this.minWidth = this.minWidthFrom = this.minWidthTo = 0;
+      } else {
+        this.minWidthFrom = update2.changes.mapPos(this.minWidthFrom, 1);
+        this.minWidthTo = update2.changes.mapPos(this.minWidthTo, 1);
+      }
+    }
+    this.updateEditContextFormatting(update2);
+    let readCompositionAt = -1;
+    if (this.view.inputState.composing >= 0 && !this.view.observer.editContext) {
+      if ((_a = this.domChanged) === null || _a === undefined ? undefined : _a.newSel)
+        readCompositionAt = this.domChanged.newSel.head;
+      else if (!touchesComposition(update2.changes, this.hasComposition) && !update2.selectionSet)
+        readCompositionAt = update2.state.selection.main.head;
+    }
+    let composition = readCompositionAt > -1 ? findCompositionRange(this.view, update2.changes, readCompositionAt) : null;
+    this.domChanged = null;
+    if (this.hasComposition) {
+      let { from, to } = this.hasComposition;
+      changedRanges = new ChangedRange(from, to, update2.changes.mapPos(from, -1), update2.changes.mapPos(to, 1)).addToSet(changedRanges.slice());
+    }
+    this.hasComposition = composition ? { from: composition.range.fromB, to: composition.range.toB } : null;
+    if ((browser.ie || browser.chrome) && !composition && update2 && update2.state.doc.lines != update2.startState.doc.lines)
+      this.forceSelection = true;
+    let prevDeco = this.decorations, prevWrappers = this.blockWrappers;
+    this.updateDeco();
+    let decoDiff = findChangedDeco(prevDeco, this.decorations, update2.changes);
+    if (decoDiff.length)
+      changedRanges = ChangedRange.extendWithRanges(changedRanges, decoDiff);
+    let blockDiff = findChangedWrappers(prevWrappers, this.blockWrappers, update2.changes);
+    if (blockDiff.length)
+      changedRanges = ChangedRange.extendWithRanges(changedRanges, blockDiff);
+    if (composition && !changedRanges.some((r2) => r2.fromA <= composition.range.fromA && r2.toA >= composition.range.toA))
+      changedRanges = composition.range.addToSet(changedRanges.slice());
+    if (this.tile.flags & 2 && changedRanges.length == 0) {
+      return false;
+    } else {
+      this.updateInner(changedRanges, composition);
+      if (update2.transactions.length)
+        this.lastUpdate = Date.now();
+      return true;
+    }
+  }
+  updateInner(changes, composition) {
+    this.view.viewState.mustMeasureContent = true;
+    let { observer } = this.view;
+    observer.ignore(() => {
+      if (composition || changes.length) {
+        let oldTile = this.tile;
+        let builder = new TileUpdate(this.view, oldTile, this.blockWrappers, this.decorations, this.dynamicDecorationMap);
+        if (composition && Tile.get(composition.text))
+          builder.cache.reused.set(Tile.get(composition.text), 2);
+        this.tile = builder.run(changes, composition);
+        destroyDropped(oldTile, builder.cache.reused);
+      }
+      this.tile.dom.style.height = this.view.viewState.contentHeight / this.view.scaleY + "px";
+      this.tile.dom.style.flexBasis = this.minWidth ? this.minWidth + "px" : "";
+      let track = browser.chrome || browser.ios ? { node: observer.selectionRange.focusNode, written: false } : undefined;
+      this.tile.sync(track);
+      if (track && (track.written || observer.selectionRange.focusNode != track.node || !this.tile.dom.contains(track.node)))
+        this.forceSelection = true;
+      this.tile.dom.style.height = "";
+    });
+    let gaps = [];
+    if (this.view.viewport.from || this.view.viewport.to < this.view.state.doc.length) {
+      for (let child of this.tile.children)
+        if (child.isWidget() && child.widget instanceof BlockGapWidget)
+          gaps.push(child.dom);
+    }
+    observer.updateGaps(gaps);
+  }
+  updateEditContextFormatting(update2) {
+    this.editContextFormatting = this.editContextFormatting.map(update2.changes);
+    for (let tr of update2.transactions)
+      for (let effect of tr.effects)
+        if (effect.is(setEditContextFormatting)) {
+          this.editContextFormatting = effect.value;
+        }
+  }
+  updateSelection(mustRead = false, fromPointer = false) {
+    if (mustRead || !this.view.observer.selectionRange.focusNode)
+      this.view.observer.readSelectionRange();
+    let { dom } = this.tile;
+    let activeElt = this.view.root.activeElement, focused = activeElt == dom;
+    let selectionNotFocus = !focused && !(this.view.state.facet(editable) || dom.tabIndex > -1) && hasSelection(dom, this.view.observer.selectionRange) && !(activeElt && dom.contains(activeElt));
+    if (!(focused || fromPointer || selectionNotFocus))
+      return;
+    let force = this.forceSelection;
+    this.forceSelection = false;
+    let main = this.view.state.selection.main, anchor, head;
+    if (main.empty) {
+      head = anchor = this.inlineDOMNearPos(main.anchor, main.assoc || 1);
+    } else {
+      head = this.inlineDOMNearPos(main.head, main.head == main.from ? 1 : -1);
+      anchor = this.inlineDOMNearPos(main.anchor, main.anchor == main.from ? 1 : -1);
+    }
+    if (browser.gecko && main.empty && !this.hasComposition && betweenUneditable(anchor)) {
+      let dummy = document.createTextNode("");
+      this.view.observer.ignore(() => anchor.node.insertBefore(dummy, anchor.node.childNodes[anchor.offset] || null));
+      anchor = head = new DOMPos(dummy, 0);
+      force = true;
+    }
+    let domSel = this.view.observer.selectionRange;
+    if (force || !domSel.focusNode || (!isEquivalentPosition(anchor.node, anchor.offset, domSel.anchorNode, domSel.anchorOffset) || !isEquivalentPosition(head.node, head.offset, domSel.focusNode, domSel.focusOffset)) && !this.suppressWidgetCursorChange(domSel, main)) {
+      this.view.observer.ignore(() => {
+        if (browser.android && browser.chrome && dom.contains(domSel.focusNode) && inUneditable(domSel.focusNode, dom)) {
+          dom.blur();
+          dom.focus({ preventScroll: true });
+        }
+        let rawSel = getSelection(this.view.root);
+        if (!rawSel)
+          ;
+        else if (main.empty) {
+          if (browser.gecko) {
+            let nextTo = nextToUneditable(anchor.node, anchor.offset);
+            if (nextTo && nextTo != (1 | 2)) {
+              let text = (nextTo == 1 ? textNodeBefore : textNodeAfter)(anchor.node, anchor.offset);
+              if (text)
+                anchor = new DOMPos(text.node, text.offset);
+            }
+          }
+          rawSel.collapse(anchor.node, anchor.offset);
+          if (main.bidiLevel != null && rawSel.caretBidiLevel !== undefined)
+            rawSel.caretBidiLevel = main.bidiLevel;
+        } else if (rawSel.extend) {
+          rawSel.collapse(anchor.node, anchor.offset);
+          try {
+            rawSel.extend(head.node, head.offset);
+          } catch (_) {}
+        } else {
+          let range = document.createRange();
+          if (main.anchor > main.head)
+            [anchor, head] = [head, anchor];
+          range.setEnd(head.node, head.offset);
+          range.setStart(anchor.node, anchor.offset);
+          rawSel.removeAllRanges();
+          rawSel.addRange(range);
+        }
+        if (selectionNotFocus && this.view.root.activeElement == dom) {
+          dom.blur();
+          if (activeElt)
+            activeElt.focus();
+        }
+      });
+      this.view.observer.setSelectionRange(anchor, head);
+    }
+    this.impreciseAnchor = anchor.precise ? null : new DOMPos(domSel.anchorNode, domSel.anchorOffset);
+    this.impreciseHead = head.precise ? null : new DOMPos(domSel.focusNode, domSel.focusOffset);
+  }
+  suppressWidgetCursorChange(sel, cursor) {
+    return this.hasComposition && cursor.empty && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset) && this.posFromDOM(sel.focusNode, sel.focusOffset) == cursor.head;
+  }
+  enforceCursorAssoc() {
+    if (this.hasComposition)
+      return;
+    let { view } = this, cursor = view.state.selection.main;
+    let sel = getSelection(view.root);
+    let { anchorNode, anchorOffset } = view.observer.selectionRange;
+    if (!sel || !cursor.empty || !cursor.assoc || !sel.modify)
+      return;
+    let line = this.lineAt(cursor.head, cursor.assoc);
+    if (!line)
+      return;
+    let lineStart = line.posAtStart;
+    if (cursor.head == lineStart || cursor.head == lineStart + line.length)
+      return;
+    let before = this.coordsAt(cursor.head, -1), after = this.coordsAt(cursor.head, 1);
+    if (!before || !after || before.bottom > after.top)
+      return;
+    let dom = this.domAtPos(cursor.head + cursor.assoc, cursor.assoc);
+    sel.collapse(dom.node, dom.offset);
+    sel.modify("move", cursor.assoc < 0 ? "forward" : "backward", "lineboundary");
+    view.observer.readSelectionRange();
+    let newRange = view.observer.selectionRange;
+    if (view.docView.posFromDOM(newRange.anchorNode, newRange.anchorOffset) != cursor.from)
+      sel.collapse(anchorNode, anchorOffset);
+  }
+  posFromDOM(node, offset4) {
+    let tile = this.tile.nearest(node);
+    if (!tile)
+      return this.tile.dom.compareDocumentPosition(node) & 2 ? 0 : this.view.state.doc.length;
+    let start = tile.posAtStart;
+    if (tile.isComposite()) {
+      let after;
+      if (node == tile.dom) {
+        after = tile.dom.childNodes[offset4];
+      } else {
+        let bias = maxOffset(node) == 0 ? 0 : offset4 == 0 ? -1 : 1;
+        for (;; ) {
+          let parent = node.parentNode;
+          if (parent == tile.dom)
+            break;
+          if (bias == 0 && parent.firstChild != parent.lastChild) {
+            if (node == parent.firstChild)
+              bias = -1;
+            else
+              bias = 1;
+          }
+          node = parent;
+        }
+        if (bias < 0)
+          after = node;
+        else
+          after = node.nextSibling;
+      }
+      if (after == tile.dom.firstChild)
+        return start;
+      while (after && !Tile.get(after))
+        after = after.nextSibling;
+      if (!after)
+        return start + tile.length;
+      for (let i2 = 0, pos = start;; i2++) {
+        let child = tile.children[i2];
+        if (child.dom == after)
+          return pos;
+        pos += child.length + child.breakAfter;
+      }
+    } else if (tile.isText()) {
+      return node == tile.dom ? start + offset4 : start + (offset4 ? tile.length : 0);
+    } else {
+      return start;
+    }
+  }
+  domAtPos(pos, side) {
+    let { tile, offset: offset4 } = this.tile.resolveBlock(pos, side);
+    if (tile.isWidget())
+      return tile.domPosFor(offset4, side);
+    return tile.domIn(offset4, side);
+  }
+  inlineDOMNearPos(pos, side) {
+    let before, beforeOff = -1, beforeBad = false;
+    let after, afterOff = -1, afterBad = false;
+    this.tile.blockTiles((tile, off) => {
+      if (tile.isWidget()) {
+        if (tile.flags & 32 && off >= pos)
+          return true;
+        if (tile.flags & 16)
+          beforeBad = true;
+      } else {
+        let end = off + tile.length;
+        if (off <= pos) {
+          before = tile;
+          beforeOff = pos - off;
+          beforeBad = end < pos;
+        }
+        if (end >= pos && !after) {
+          after = tile;
+          afterOff = pos - off;
+          afterBad = off > pos;
+        }
+        if (off > pos && after)
+          return true;
+      }
+    });
+    if (!before && !after)
+      return this.domAtPos(pos, side);
+    if (beforeBad && after)
+      before = null;
+    else if (afterBad && before)
+      after = null;
+    return before && side < 0 || !after ? before.domIn(beforeOff, side) : after.domIn(afterOff, side);
+  }
+  coordsAt(pos, side, rtl) {
+    let { tile, offset: offset4 } = this.tile.resolveBlock(pos, side);
+    if (tile.isWidget()) {
+      if (tile.widget instanceof BlockGapWidget)
+        return null;
+      return tile.coordsInWidget(offset4, side, true);
+    }
+    return tile.coordsIn(offset4, side, rtl);
+  }
+  lineAt(pos, side) {
+    let { tile } = this.tile.resolveBlock(pos, side);
+    return tile.isLine() ? tile : null;
+  }
+  coordsForChar(pos) {
+    let { tile, offset: offset4 } = this.tile.resolveBlock(pos, 1);
+    if (!tile.isLine())
+      return null;
+    function scan(tile2, offset5) {
+      if (tile2.isComposite()) {
+        for (let ch of tile2.children) {
+          if (ch.length >= offset5) {
+            let found = scan(ch, offset5);
+            if (found)
+              return found;
+          }
+          offset5 -= ch.length;
+          if (offset5 < 0)
+            break;
+        }
+      } else if (tile2.isText() && offset5 < tile2.length) {
+        let end = findClusterBreak2(tile2.text, offset5);
+        if (end == offset5)
+          return null;
+        let rects = textRange(tile2.dom, offset5, end).getClientRects();
+        for (let i2 = 0;i2 < rects.length; i2++) {
+          let rect = rects[i2];
+          if (i2 == rects.length - 1 || rect.top < rect.bottom && rect.left < rect.right)
+            return rect;
+        }
+      }
+      return null;
+    }
+    return scan(tile, offset4);
+  }
+  measureVisibleLineHeights(viewport) {
+    let result = [], { from, to } = viewport;
+    let contentWidth = this.view.contentDOM.clientWidth;
+    let isWider = contentWidth > Math.max(this.view.scrollDOM.clientWidth, this.minWidth) + 1;
+    let widest = -1, ltr = this.view.textDirection == Direction.LTR;
+    let spaceAbove = 0;
+    let scan = (tile, pos, measureBounds) => {
+      for (let i2 = 0;i2 < tile.children.length; i2++) {
+        if (pos > to)
+          break;
+        let child = tile.children[i2], end = pos + child.length;
+        let childRect = child.dom.getBoundingClientRect(), { height } = childRect;
+        if (measureBounds && !i2)
+          spaceAbove += childRect.top - measureBounds.top;
+        if (child instanceof BlockWrapperTile) {
+          if (end > from)
+            scan(child, pos, childRect);
+        } else if (pos >= from) {
+          if (spaceAbove > 0)
+            result.push(-spaceAbove);
+          result.push(height + spaceAbove);
+          spaceAbove = 0;
+          if (isWider) {
+            let last2 = child.dom.lastChild;
+            let rects = last2 ? clientRectsFor(last2) : [];
+            if (rects.length) {
+              let rect = rects[rects.length - 1];
+              let width = ltr ? rect.right - childRect.left : childRect.right - rect.left;
+              if (width > widest) {
+                widest = width;
+                this.minWidth = contentWidth;
+                this.minWidthFrom = pos;
+                this.minWidthTo = end;
+              }
+            }
+          }
+        }
+        if (measureBounds && i2 == tile.children.length - 1)
+          spaceAbove += measureBounds.bottom - childRect.bottom;
+        pos = end + child.breakAfter;
+      }
+    };
+    scan(this.tile, 0, null);
+    return result;
+  }
+  textDirectionAt(pos) {
+    let { tile } = this.tile.resolveBlock(pos, 1);
+    return getComputedStyle(tile.dom).direction == "rtl" ? Direction.RTL : Direction.LTR;
+  }
+  measureTextSize() {
+    let lineMeasure = this.tile.blockTiles((tile) => {
+      if (tile.isLine() && tile.children.length && tile.length <= 20) {
+        let totalWidth = 0, textHeight2;
+        for (let child of tile.children) {
+          if (!child.isText() || /[^ -~]/.test(child.text))
+            return;
+          let rects = clientRectsFor(child.dom);
+          if (rects.length != 1)
+            return;
+          totalWidth += rects[0].width;
+          textHeight2 = rects[0].height;
+        }
+        if (totalWidth)
+          return {
+            lineHeight: tile.dom.getBoundingClientRect().height,
+            charWidth: totalWidth / tile.length,
+            textHeight: textHeight2
+          };
+      }
+    });
+    if (lineMeasure)
+      return lineMeasure;
+    let dummy = document.createElement("div"), lineHeight, charWidth, textHeight;
+    dummy.className = "cm-line";
+    dummy.style.width = "99999px";
+    dummy.style.position = "absolute";
+    dummy.textContent = "abc def ghi jkl mno pqr stu";
+    this.view.observer.ignore(() => {
+      this.tile.dom.appendChild(dummy);
+      let rect = clientRectsFor(dummy.firstChild)[0];
+      lineHeight = dummy.getBoundingClientRect().height;
+      charWidth = rect && rect.width ? rect.width / 27 : 7;
+      textHeight = rect && rect.height ? rect.height : lineHeight;
+      dummy.remove();
+    });
+    return { lineHeight, charWidth, textHeight };
+  }
+  computeBlockGapDeco() {
+    let deco = [], vs = this.view.viewState;
+    for (let pos = 0, i2 = 0;; i2++) {
+      let next = i2 == vs.viewports.length ? null : vs.viewports[i2];
+      let end = next ? next.from - 1 : this.view.state.doc.length;
+      if (end > pos) {
+        let height = (vs.lineBlockAt(end).bottom - vs.lineBlockAt(pos).top) / this.view.scaleY;
+        deco.push(Decoration.replace({
+          widget: new BlockGapWidget(height),
+          block: true,
+          inclusive: true,
+          isBlockGap: true
+        }).range(pos, end));
+      }
+      if (!next)
+        break;
+      pos = next.to + 1;
+    }
+    return Decoration.set(deco);
+  }
+  updateDeco() {
+    let i2 = 1;
+    let allDeco = this.view.state.facet(decorations).map((d) => {
+      let dynamic = this.dynamicDecorationMap[i2++] = typeof d == "function";
+      return dynamic ? d(this.view) : d;
+    });
+    let dynamicOuter = false, outerDeco = this.view.state.facet(outerDecorations).map((d, i3) => {
+      let dynamic = typeof d == "function";
+      if (dynamic)
+        dynamicOuter = true;
+      return dynamic ? d(this.view) : d;
+    });
+    if (outerDeco.length) {
+      this.dynamicDecorationMap[i2++] = dynamicOuter;
+      allDeco.push(RangeSet.join(outerDeco));
+    }
+    this.decorations = [
+      this.editContextFormatting,
+      ...allDeco,
+      this.computeBlockGapDeco(),
+      this.view.viewState.lineGapDeco
+    ];
+    while (i2 < this.decorations.length)
+      this.dynamicDecorationMap[i2++] = false;
+    this.blockWrappers = this.view.state.facet(blockWrappers).map((v) => typeof v == "function" ? v(this.view) : v);
+  }
+  scrollIntoView(target) {
+    if (target.isSnapshot) {
+      let ref = this.view.viewState.lineBlockAt(target.range.head);
+      this.view.scrollDOM.scrollTop = ref.top - target.yMargin;
+      this.view.scrollDOM.scrollLeft = target.xMargin;
+      return;
+    }
+    for (let handler of this.view.state.facet(scrollHandler)) {
+      try {
+        if (handler(this.view, target.range, target))
+          return true;
+      } catch (e) {
+        logException(this.view.state, e, "scroll handler");
+      }
+    }
+    let { range } = target;
+    let rect = this.coordsAt(range.head, range.assoc || (range.head > range.anchor ? -1 : 1)), other;
+    if (!rect)
+      return;
+    if (!range.empty && (other = this.coordsAt(range.anchor, range.anchor > range.head ? -1 : 1)))
+      rect = {
+        left: Math.min(rect.left, other.left),
+        top: Math.min(rect.top, other.top),
+        right: Math.max(rect.right, other.right),
+        bottom: Math.max(rect.bottom, other.bottom)
+      };
+    let margins = getScrollMargins(this.view);
+    let targetRect = {
+      left: rect.left - margins.left,
+      top: rect.top - margins.top,
+      right: rect.right + margins.right,
+      bottom: rect.bottom + margins.bottom
+    };
+    let { offsetWidth, offsetHeight } = this.view.scrollDOM;
+    scrollRectIntoView(this.view.scrollDOM, targetRect, range.head < range.anchor ? -1 : 1, target.x, target.y, Math.max(Math.min(target.xMargin, offsetWidth), -offsetWidth), Math.max(Math.min(target.yMargin, offsetHeight), -offsetHeight), this.view.textDirection == Direction.LTR);
+    if (window.visualViewport && window.innerHeight - window.visualViewport.height > 1 && (rect.top > window.visualViewport.offsetTop + window.visualViewport.height || rect.bottom < window.visualViewport.offsetTop)) {
+      let line = this.view.docView.lineAt(range.head, 1);
+      if (line) {
+        let stack = getScrollStack(line.dom);
+        line.dom.scrollIntoView({ block: "nearest" });
+        restoreScrollStack(stack, false);
+      }
+    }
+  }
+  lineHasWidget(pos) {
+    let scan = (child) => child.isWidget() || child.children.some(scan);
+    return scan(this.tile.resolveBlock(pos, 1).tile);
+  }
+  destroy() {
+    destroyDropped(this.tile);
+  }
+}
+function destroyDropped(tile, reused) {
+  let r2 = reused === null || reused === undefined ? undefined : reused.get(tile);
+  if (r2 != 1) {
+    if (r2 == null)
+      tile.destroy();
+    for (let ch of tile.children)
+      destroyDropped(ch, reused);
+  }
+}
+function betweenUneditable(pos) {
+  return pos.node.nodeType == 1 && pos.node.firstChild && (pos.offset == 0 || pos.node.childNodes[pos.offset - 1].contentEditable == "false") && (pos.offset == pos.node.childNodes.length || pos.node.childNodes[pos.offset].contentEditable == "false");
+}
+function findCompositionNode(view, headPos) {
+  let sel = view.observer.selectionRange;
+  if (!sel.focusNode)
+    return null;
+  let textBefore = textNodeBefore(sel.focusNode, sel.focusOffset);
+  let textAfter = textNodeAfter(sel.focusNode, sel.focusOffset);
+  let textNode = textBefore || textAfter;
+  if (textAfter && textBefore && textAfter.node != textBefore.node) {
+    let tileAfter = Tile.get(textAfter.node);
+    if (!tileAfter || tileAfter.isText() && tileAfter.text != textAfter.node.nodeValue) {
+      textNode = textAfter;
+    } else if (view.docView.lastCompositionAfterCursor) {
+      let tileBefore = Tile.get(textBefore.node);
+      if (!(!tileBefore || tileBefore.isText() && tileBefore.text != textBefore.node.nodeValue))
+        textNode = textAfter;
+    }
+  }
+  view.docView.lastCompositionAfterCursor = textNode != textBefore;
+  if (!textNode)
+    return null;
+  let from = headPos - textNode.offset;
+  return { from, to: from + textNode.node.nodeValue.length, node: textNode.node };
+}
+function findCompositionRange(view, changes, headPos) {
+  let found = findCompositionNode(view, headPos);
+  if (!found)
+    return null;
+  let { node: textNode, from, to } = found, text = textNode.nodeValue;
+  if (/[\n\r]/.test(text))
+    return null;
+  if (view.state.doc.sliceString(found.from, found.to) != text)
+    return null;
+  let inv = changes.invertedDesc;
+  return { range: new ChangedRange(inv.mapPos(from), inv.mapPos(to), from, to), text: textNode };
+}
+function nextToUneditable(node, offset4) {
+  if (node.nodeType != 1)
+    return 0;
+  return (offset4 && node.childNodes[offset4 - 1].contentEditable == "false" ? 1 : 0) | (offset4 < node.childNodes.length && node.childNodes[offset4].contentEditable == "false" ? 2 : 0);
+}
+var DecorationComparator$1 = class DecorationComparator {
+  constructor() {
+    this.changes = [];
+  }
+  compareRange(from, to) {
+    addRange(from, to, this.changes);
+  }
+  comparePoint(from, to) {
+    addRange(from, to, this.changes);
+  }
+  boundChange(pos) {
+    addRange(pos, pos, this.changes);
+  }
+};
+function findChangedDeco(a, b, diff) {
+  let comp = new DecorationComparator$1;
+  RangeSet.compare(a, b, diff, comp);
+  return comp.changes;
+}
+
+class WrapperComparator {
+  constructor() {
+    this.changes = [];
+  }
+  compareRange(from, to) {
+    addRange(from, to, this.changes);
+  }
+  comparePoint() {}
+  boundChange(pos) {
+    addRange(pos, pos, this.changes);
+  }
+}
+function findChangedWrappers(a, b, diff) {
+  let comp = new WrapperComparator;
+  RangeSet.compare(a, b, diff, comp);
+  return comp.changes;
+}
+function inUneditable(node, inside) {
+  for (let cur = node;cur && cur != inside; cur = cur.assignedSlot || cur.parentNode) {
+    if (cur.nodeType == 1 && cur.contentEditable == "false") {
+      return true;
+    }
+  }
+  return false;
+}
+function touchesComposition(changes, composition) {
+  let touched = false;
+  if (composition)
+    changes.iterChangedRanges((from, to) => {
+      if (from < composition.to && to > composition.from)
+        touched = true;
+    });
+  return touched;
+}
+
+class BlockGapWidget extends WidgetType {
+  constructor(height) {
+    super();
+    this.height = height;
+  }
+  toDOM() {
+    let elt = document.createElement("div");
+    elt.className = "cm-gap";
+    this.updateDOM(elt);
+    return elt;
+  }
+  eq(other) {
+    return other.height == this.height;
+  }
+  updateDOM(elt) {
+    elt.style.height = this.height + "px";
+    return true;
+  }
+  get editable() {
+    return true;
+  }
+  get estimatedHeight() {
+    return this.height;
+  }
+  ignoreEvent() {
+    return false;
+  }
+}
+function groupAt(state, pos, bias = 1) {
+  let categorize = state.charCategorizer(pos);
+  let line = state.doc.lineAt(pos), linePos = pos - line.from;
+  if (line.length == 0)
+    return EditorSelection.cursor(pos);
+  if (linePos == 0)
+    bias = 1;
+  else if (linePos == line.length)
+    bias = -1;
+  let from = linePos, to = linePos;
+  if (bias < 0)
+    from = findClusterBreak2(line.text, linePos, false);
+  else
+    to = findClusterBreak2(line.text, linePos);
+  let cat = categorize(line.text.slice(from, to));
+  while (from > 0) {
+    let prev = findClusterBreak2(line.text, from, false);
+    if (categorize(line.text.slice(prev, from)) != cat)
+      break;
+    from = prev;
+  }
+  while (to < line.length) {
+    let next = findClusterBreak2(line.text, to);
+    if (categorize(line.text.slice(to, next)) != cat)
+      break;
+    to = next;
+  }
+  return EditorSelection.undirectionalRange(from + line.from, to + line.from);
+}
+function posAtCoordsImprecise(view, contentRect, block, x, y) {
+  let into = Math.round((x - contentRect.left) * view.defaultCharacterWidth);
+  if (view.lineWrapping && block.height > view.defaultLineHeight * 1.5) {
+    let textHeight = view.viewState.heightOracle.textHeight;
+    let line = Math.floor((y - block.top - (view.defaultLineHeight - textHeight) * 0.5) / textHeight);
+    into += line * view.viewState.heightOracle.lineLength;
+  }
+  let content = view.state.sliceDoc(block.from, block.to);
+  return block.from + findColumn(content, into, view.state.tabSize);
+}
+function blockAt(view, pos, side) {
+  let line = view.lineBlockAt(pos);
+  if (Array.isArray(line.type)) {
+    let best;
+    for (let l of line.type) {
+      if (l.from > pos)
+        break;
+      if (l.to < pos)
+        continue;
+      if (l.from < pos && l.to > pos)
+        return l;
+      if (!best || l.type == BlockType.Text && (best.type != l.type || (side < 0 ? l.from < pos : l.to > pos)))
+        best = l;
+    }
+    return best || line;
+  }
+  return line;
+}
+function moveToLineBoundary(view, start, forward, includeWrap) {
+  let line = blockAt(view, start.head, start.assoc || -1);
+  let coords = !includeWrap || line.type != BlockType.Text || !(view.lineWrapping || line.widgetLineBreaks) ? null : view.coordsAtPos(start.assoc < 0 && start.head > line.from ? start.head - 1 : start.head);
+  if (coords) {
+    let editorRect = view.dom.getBoundingClientRect();
+    let direction = view.textDirectionAt(line.from);
+    let pos = view.posAtCoords({
+      x: forward == (direction == Direction.LTR) ? editorRect.right - 1 : editorRect.left + 1,
+      y: (coords.top + coords.bottom) / 2
+    });
+    if (pos != null)
+      return EditorSelection.cursor(pos, forward ? -1 : 1);
+  }
+  return EditorSelection.cursor(forward ? line.to : line.from, forward ? -1 : 1);
+}
+function moveByChar(view, start, forward, by) {
+  let line = view.state.doc.lineAt(start.head), spans = view.bidiSpans(line);
+  let direction = view.textDirectionAt(line.from);
+  for (let cur = start, check = null;; ) {
+    let next = moveVisually(line, spans, direction, cur, forward), char = movedOver;
+    if (!next) {
+      if (line.number == (forward ? view.state.doc.lines : 1))
+        return cur;
+      char = `
+`;
+      line = view.state.doc.line(line.number + (forward ? 1 : -1));
+      spans = view.bidiSpans(line);
+      next = view.visualLineSide(line, !forward);
+    }
+    if (!check) {
+      if (!by)
+        return next;
+      check = by(char);
+    } else if (!check(char)) {
+      return cur;
+    }
+    cur = next;
+  }
+}
+function byGroup(view, pos, start) {
+  let categorize = view.state.charCategorizer(pos);
+  let cat = categorize(start);
+  return (next) => {
+    let nextCat = categorize(next);
+    if (cat == CharCategory.Space)
+      cat = nextCat;
+    return cat == nextCat;
+  };
+}
+function moveVertically(view, start, forward, distance) {
+  let startPos = start.head, dir = forward ? 1 : -1;
+  if (startPos == (forward ? view.state.doc.length : 0))
+    return EditorSelection.cursor(startPos, start.assoc);
+  let goal = start.goalColumn, startY;
+  let rect = view.contentDOM.getBoundingClientRect();
+  let startCoords = view.coordsAtPos(startPos, start.assoc || ((start.empty ? forward : start.head == start.from) ? 1 : -1));
+  let docTop = view.documentTop;
+  if (startCoords) {
+    if (goal == null)
+      goal = startCoords.left - rect.left;
+    startY = dir < 0 ? startCoords.top : startCoords.bottom;
+  } else {
+    let line = view.viewState.lineBlockAt(startPos);
+    if (goal == null)
+      goal = Math.min(rect.right - rect.left, view.defaultCharacterWidth * (startPos - line.from));
+    startY = (dir < 0 ? line.top : line.bottom) + docTop;
+  }
+  let resolvedGoal = rect.left + goal;
+  let halfText = view.viewState.heightOracle.textHeight >> 1, dist = distance !== null && distance !== undefined ? distance : halfText;
+  for (let scan = 0;; scan += halfText) {
+    let y = startY + (dist + scan) * dir;
+    let pos = posAtCoords(view, { x: resolvedGoal, y }, false, dir);
+    if (forward ? y > rect.bottom : y < rect.top)
+      return EditorSelection.cursor(pos.pos, pos.assoc);
+    let posCoords = view.coordsAtPos(pos.pos, pos.assoc), mid = posCoords ? (posCoords.top + posCoords.bottom) / 2 : 0;
+    if (!posCoords || (forward ? mid > startY : mid < startY))
+      return EditorSelection.cursor(pos.pos, pos.assoc, undefined, goal);
+  }
+}
+function skipAtomicRanges(atoms, pos, bias) {
+  for (;; ) {
+    let moved = 0;
+    for (let set3 of atoms) {
+      set3.between(pos - 1, pos + 1, (from, to, value) => {
+        if (pos > from && pos < to) {
+          let side = moved || bias || (pos - from < to - pos ? -1 : 1);
+          pos = side < 0 ? from : to;
+          moved = side;
+        }
+      });
+    }
+    if (!moved)
+      return pos;
+  }
+}
+function skipAtomsForSelection(atoms, sel) {
+  let ranges = null;
+  for (let i2 = 0;i2 < sel.ranges.length; i2++) {
+    let range = sel.ranges[i2], updated = null;
+    if (range.empty) {
+      let pos = skipAtomicRanges(atoms, range.from, 0);
+      if (pos != range.from)
+        updated = EditorSelection.cursor(pos, -1);
+    } else {
+      let from = skipAtomicRanges(atoms, range.from, -1);
+      let to = skipAtomicRanges(atoms, range.to, 1);
+      if (from != range.from || to != range.to) {
+        if (range.undirectional)
+          updated = EditorSelection.undirectionalRange(range.from, range.to);
+        else
+          updated = EditorSelection.range(range.from == range.anchor ? from : to, range.from == range.head ? from : to);
+      }
+    }
+    if (updated) {
+      if (!ranges)
+        ranges = sel.ranges.slice();
+      ranges[i2] = updated;
+    }
+  }
+  return ranges ? EditorSelection.create(ranges, sel.mainIndex) : sel;
+}
+function skipAtoms(view, oldPos, pos) {
+  let newPos = skipAtomicRanges(view.state.facet(atomicRanges).map((f) => f(view)), pos.from, oldPos.head > pos.from ? -1 : 1);
+  return newPos == pos.from ? pos : EditorSelection.cursor(newPos, newPos < pos.from ? 1 : -1);
+}
+
+class PosAssoc {
+  constructor(pos, assoc) {
+    this.pos = pos;
+    this.assoc = assoc;
+  }
+}
+function posAtCoords(view, coords, precise, scanY) {
+  let content = view.contentDOM.getBoundingClientRect(), docTop = content.top + view.viewState.paddingTop;
+  let { x, y } = coords, yOffset = y - docTop, block;
+  for (;; ) {
+    if (yOffset < 0)
+      return new PosAssoc(0, 1);
+    if (yOffset > view.viewState.docHeight)
+      return new PosAssoc(view.state.doc.length, -1);
+    block = view.elementAtHeight(yOffset);
+    if (scanY == null)
+      break;
+    if (block.type == BlockType.Text) {
+      if (scanY < 0 ? block.to < view.viewport.from : block.from > view.viewport.to)
+        break;
+      let rect = view.docView.coordsAt(scanY < 0 ? block.from : block.to, scanY > 0 ? -1 : 1);
+      if (rect && (scanY < 0 ? rect.top <= yOffset + docTop : rect.bottom >= yOffset + docTop))
+        break;
+    }
+    let halfLine = view.viewState.heightOracle.textHeight / 2;
+    yOffset = scanY > 0 ? block.bottom + halfLine : block.top - halfLine;
+  }
+  if (view.viewport.from >= block.to || view.viewport.to <= block.from) {
+    if (precise)
+      return null;
+    if (block.type == BlockType.Text) {
+      let pos = posAtCoordsImprecise(view, content, block, x, y);
+      return new PosAssoc(pos, pos == block.from ? 1 : -1);
+    }
+  }
+  if (block.type != BlockType.Text)
+    return yOffset < (block.top + block.bottom) / 2 ? new PosAssoc(block.from, 1) : new PosAssoc(block.to, -1);
+  let line = view.docView.lineAt(block.from, 2);
+  if (!line || line.length != block.length)
+    line = view.docView.lineAt(block.from, -2);
+  return new InlineCoordsScan(view, x, y, view.textDirectionAt(block.from)).scanTile(line, block.from);
+}
+
+class InlineCoordsScan {
+  constructor(view, x, y, baseDir) {
+    this.view = view;
+    this.x = x;
+    this.y = y;
+    this.baseDir = baseDir;
+    this.line = null;
+    this.spans = null;
+  }
+  bidiSpansAt(pos) {
+    if (!this.line || this.line.from > pos || this.line.to < pos) {
+      this.line = this.view.state.doc.lineAt(pos);
+      this.spans = this.view.bidiSpans(this.line);
+    }
+    return this;
+  }
+  baseDirAt(pos, side) {
+    let { line, spans } = this.bidiSpansAt(pos);
+    let level = spans[BidiSpan.find(spans, pos - line.from, -1, side)].level;
+    return level == this.baseDir;
+  }
+  dirAt(pos, side) {
+    let { line, spans } = this.bidiSpansAt(pos);
+    return spans[BidiSpan.find(spans, pos - line.from, -1, side)].dir;
+  }
+  bidiIn(from, to) {
+    let { spans, line } = this.bidiSpansAt(from);
+    return spans.length > 1 || spans.length && (spans[0].level != this.baseDir || spans[0].to + line.from < to);
+  }
+  scan(positions, getRects, recursed = false) {
+    let lo = 0, hi = positions.length - 1, seen = new Set;
+    let bidi = this.bidiIn(positions[0], positions[hi]);
+    let above, below;
+    let closestI = -1, closestDx = 1e9, closestRect;
+    search:
+      while (lo < hi) {
+        let dist = hi - lo, mid = lo + hi >> 1;
+        adjust:
+          if (seen.has(mid)) {
+            for (let i2 = 1;i2 < dist; i2++) {
+              let scan = mid + i2;
+              if (scan >= hi)
+                scan -= dist;
+              if (!seen.has(scan)) {
+                mid = scan;
+                break adjust;
+              }
+            }
+            break search;
+          }
+        seen.add(mid);
+        let rects = getRects(mid), side = 0;
+        if (rects)
+          for (let i2 = 0;i2 < rects.length; i2++) {
+            let rect = rects[i2];
+            if (rect.width == 0 && rects.length > 1)
+              continue;
+            if (rect.bottom < this.y) {
+              if (!above || above.bottom < rect.bottom)
+                above = rect;
+              side = 1;
+            } else if (rect.top > this.y) {
+              if (!below || below.top > rect.top)
+                below = rect;
+              side = -1;
+            } else {
+              let off = rect.left > this.x ? this.x - rect.left : rect.right < this.x ? this.x - rect.right : 0;
+              let dx = Math.abs(off);
+              if (dx < closestDx) {
+                closestI = mid;
+                closestDx = dx;
+                closestRect = rect;
+              }
+              if (off)
+                side = off < 0 == (this.baseDir == Direction.LTR) ? -1 : 1;
+            }
+          }
+        if (side == -1 && (!bidi || this.baseDirAt(positions[mid], 1)))
+          hi = mid;
+        else if (side == 1 && (!bidi || this.baseDirAt(positions[mid + 1], -1)))
+          lo = mid + 1;
+      }
+    if (!closestRect) {
+      if (!below && !above)
+        return { i: 0, after: false };
+      let side = above && (!below || this.y - above.bottom < below.top - this.y) ? above : below;
+      this.y = (side.top + side.bottom) / 2;
+      return this.scan(positions, getRects, true);
+    }
+    if (closestDx && !recursed) {
+      let { top: top2, bottom } = closestRect;
+      if (above && above.bottom > (top2 + top2 + bottom) / 3) {
+        this.y = above.bottom - 1;
+        return this.scan(positions, getRects, true);
+      }
+      if (below && below.top < (top2 + bottom + bottom) / 3) {
+        this.y = below.top + 1;
+        return this.scan(positions, getRects, true);
+      }
+    }
+    let ltr = (bidi ? this.dirAt(positions[closestI], 1) : this.baseDir) == Direction.LTR;
+    return {
+      i: closestI,
+      after: this.x > (closestRect.left + closestRect.right) / 2 == ltr
+    };
+  }
+  scanText(tile, offset4) {
+    let positions = [];
+    for (let i2 = 0;i2 < tile.length; i2 = findClusterBreak2(tile.text, i2))
+      positions.push(offset4 + i2);
+    positions.push(offset4 + tile.length);
+    let scan = this.scan(positions, (i2) => {
+      let off = positions[i2] - offset4, end = positions[i2 + 1] - offset4;
+      return textRange(tile.dom, off, end).getClientRects();
+    });
+    return scan.after ? new PosAssoc(positions[scan.i + 1], -1) : new PosAssoc(positions[scan.i], 1);
+  }
+  scanTile(tile, offset4) {
+    if (!tile.length)
+      return new PosAssoc(offset4, 1);
+    if (tile.children.length == 1) {
+      let child2 = tile.children[0];
+      if (child2.isText())
+        return this.scanText(child2, offset4);
+      else if (child2.isComposite())
+        return this.scanTile(child2, offset4);
+    }
+    let positions = [offset4];
+    for (let i2 = 0, pos2 = offset4;i2 < tile.children.length; i2++)
+      positions.push(pos2 += tile.children[i2].length);
+    let scan = this.scan(positions, (i2) => {
+      let child2 = tile.children[i2];
+      if (child2.flags & 48)
+        return null;
+      return (child2.dom.nodeType == 1 ? child2.dom : textRange(child2.dom, 0, child2.length)).getClientRects();
+    });
+    let child = tile.children[scan.i], pos = positions[scan.i];
+    if (child.isText())
+      return this.scanText(child, pos);
+    if (child.isComposite())
+      return this.scanTile(child, pos);
+    return scan.after ? new PosAssoc(positions[scan.i + 1], -1) : new PosAssoc(pos, 1);
+  }
+}
+var LineBreakPlaceholder = "￿";
+
+class DOMReader {
+  constructor(points, view) {
+    this.points = points;
+    this.view = view;
+    this.text = "";
+    this.lineSeparator = view.state.facet(EditorState.lineSeparator);
+  }
+  append(text) {
+    this.text += text;
+  }
+  lineBreak() {
+    this.text += LineBreakPlaceholder;
+  }
+  readRange(start, end) {
+    if (!start)
+      return this;
+    let parent = start.parentNode;
+    for (let cur = start;; ) {
+      this.findPointBefore(parent, cur);
+      let oldLen = this.text.length;
+      this.readNode(cur);
+      let tile = Tile.get(cur), next = cur.nextSibling;
+      if (next == end) {
+        if ((tile === null || tile === undefined ? undefined : tile.breakAfter) && !next && parent != this.view.contentDOM)
+          this.lineBreak();
+        break;
+      }
+      let nextTile = Tile.get(next);
+      if ((tile && nextTile ? tile.breakAfter : (tile ? tile.breakAfter : isBlockElement(cur)) || isBlockElement(next) && (cur.nodeName != "BR" || (tile === null || tile === undefined ? undefined : tile.isWidget())) && this.text.length > oldLen) && !isEmptyToEnd(next, end))
+        this.lineBreak();
+      cur = next;
+    }
+    this.findPointBefore(parent, end);
+    return this;
+  }
+  readTextNode(node) {
+    let text = node.nodeValue;
+    for (let point of this.points)
+      if (point.node == node)
+        point.pos = this.text.length + Math.min(point.offset, text.length);
+    for (let off = 0, re2 = this.lineSeparator ? null : /\r\n?|\n/g;; ) {
+      let nextBreak = -1, breakSize = 1, m;
+      if (this.lineSeparator) {
+        nextBreak = text.indexOf(this.lineSeparator, off);
+        breakSize = this.lineSeparator.length;
+      } else if (m = re2.exec(text)) {
+        nextBreak = m.index;
+        breakSize = m[0].length;
+      }
+      this.append(text.slice(off, nextBreak < 0 ? text.length : nextBreak));
+      if (nextBreak < 0)
+        break;
+      this.lineBreak();
+      if (breakSize > 1) {
+        for (let point of this.points)
+          if (point.node == node && point.pos > this.text.length)
+            point.pos -= breakSize - 1;
+      }
+      off = nextBreak + breakSize;
+    }
+  }
+  readNode(node) {
+    let tile = Tile.get(node);
+    let fromView = tile && tile.overrideDOMText;
+    if (fromView != null) {
+      this.findPointInside(node, fromView.length);
+      for (let i2 = fromView.iter();!i2.next().done; ) {
+        if (i2.lineBreak)
+          this.lineBreak();
+        else
+          this.append(i2.value);
+      }
+    } else if (node.nodeType == 3) {
+      this.readTextNode(node);
+    } else if (node.nodeName == "BR") {
+      if (node.nextSibling)
+        this.lineBreak();
+    } else if (node.nodeType == 1) {
+      this.readRange(node.firstChild, null);
+    }
+  }
+  findPointBefore(node, next) {
+    for (let point of this.points)
+      if (point.node == node && node.childNodes[point.offset] == next)
+        point.pos = this.text.length;
+  }
+  findPointInside(node, length) {
+    for (let point of this.points)
+      if (node.nodeType == 3 ? point.node == node : node.contains(point.node))
+        point.pos = this.text.length + (isAtEnd(node, point.node, point.offset) ? length : 0);
+  }
+}
+function isAtEnd(parent, node, offset4) {
+  for (;; ) {
+    if (!node || offset4 < maxOffset(node))
+      return false;
+    if (node == parent)
+      return true;
+    offset4 = domIndex(node) + 1;
+    node = node.parentNode;
+  }
+}
+function isEmptyToEnd(node, end) {
+  let widgets;
+  for (;; node = node.nextSibling) {
+    if (node == end || !node)
+      break;
+    let view = Tile.get(node);
+    if (!(view === null || view === undefined ? undefined : view.isWidget()))
+      return false;
+    if (view)
+      (widgets || (widgets = [])).push(view);
+  }
+  if (widgets)
+    for (let w of widgets) {
+      let override = w.overrideDOMText;
+      if (override === null || override === undefined ? undefined : override.length)
+        return false;
+    }
+  return true;
+}
+
+class DOMPoint {
+  constructor(node, offset4) {
+    this.node = node;
+    this.offset = offset4;
+    this.pos = -1;
+  }
+}
+
+class DOMChange {
+  constructor(view, start, end, typeOver) {
+    this.typeOver = typeOver;
+    this.bounds = null;
+    this.text = "";
+    this.domChanged = start > -1;
+    let { impreciseHead: iHead, impreciseAnchor: iAnchor } = view.docView, curSel = view.state.selection;
+    if (view.state.readOnly && start > -1) {
+      this.newSel = null;
+    } else if (start > -1 && (this.bounds = domBoundsAround(view.docView.tile, start, end, 0))) {
+      let selPoints = iHead || iAnchor ? [] : selectionPoints(view);
+      let reader = new DOMReader(selPoints, view);
+      reader.readRange(this.bounds.startDOM, this.bounds.endDOM);
+      this.text = reader.text;
+      this.newSel = selectionFromPoints(selPoints, this.bounds.from);
+    } else {
+      let domSel = view.observer.selectionRange;
+      let head = iHead && iHead.node == domSel.focusNode && iHead.offset == domSel.focusOffset || !contains2(view.contentDOM, domSel.focusNode) ? curSel.main.head : view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset);
+      let anchor = iAnchor && iAnchor.node == domSel.anchorNode && iAnchor.offset == domSel.anchorOffset || !contains2(view.contentDOM, domSel.anchorNode) ? curSel.main.anchor : view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset);
+      let vp = view.viewport;
+      if ((browser.ios || browser.chrome) && head != anchor && Math.min(head, anchor) <= curSel.main.from && Math.max(head, anchor) >= curSel.main.to && (vp.from > 0 || vp.to < view.state.doc.length)) {
+        let from = Math.min(head, anchor), to = Math.max(head, anchor);
+        let offFrom = vp.from - from, offTo = vp.to - to;
+        if ((offFrom == 0 || offFrom == 1 || from == 0) && (offTo == 0 || offTo == -1 || to == view.state.doc.length)) {
+          head = 0;
+          anchor = view.state.doc.length;
+        }
+      }
+      if (view.inputState.composing > -1 && curSel.ranges.length > 1) {
+        this.newSel = curSel.replaceRange(EditorSelection.range(anchor, head));
+      } else if (view.lineWrapping && anchor == head && !(curSel.main.empty && curSel.main.head == head) && view.inputState.lastTouchTime > Date.now() - 100) {
+        let before = view.coordsAtPos(head, -1), assoc = 0;
+        if (before)
+          assoc = view.inputState.lastTouchY <= before.bottom ? -1 : 1;
+        this.newSel = EditorSelection.create([EditorSelection.cursor(head, assoc)]);
+      } else {
+        this.newSel = EditorSelection.single(anchor, head);
+      }
+    }
+  }
+}
+function domBoundsAround(tile, from, to, offset4) {
+  if (tile.isComposite()) {
+    let fromI = -1, fromStart = -1, toI = -1, toEnd = -1;
+    for (let i2 = 0, pos = offset4, prevEnd = offset4;i2 < tile.children.length; i2++) {
+      let child = tile.children[i2], end = pos + child.length;
+      if (pos < from && end > to)
+        return domBoundsAround(child, from, to, pos);
+      if (end >= from && fromI == -1) {
+        fromI = i2;
+        fromStart = pos;
+      }
+      if (pos > to && child.dom.parentNode == tile.dom) {
+        toI = i2;
+        toEnd = prevEnd;
+        break;
+      }
+      prevEnd = end;
+      pos = end + child.breakAfter;
+    }
+    return {
+      from: fromStart,
+      to: toEnd < 0 ? offset4 + tile.length : toEnd,
+      startDOM: (fromI ? tile.children[fromI - 1].dom.nextSibling : null) || tile.dom.firstChild,
+      endDOM: toI < tile.children.length && toI >= 0 ? tile.children[toI].dom : null
+    };
+  } else if (tile.isText()) {
+    return { from: offset4, to: offset4 + tile.length, startDOM: tile.dom, endDOM: tile.dom.nextSibling };
+  } else {
+    return null;
+  }
+}
+function applyDOMChange(view, domChange) {
+  let change;
+  let { newSel } = domChange, { state } = view, sel = state.selection.main;
+  let lastKey = view.inputState.lastKeyTime > Date.now() - 100 ? view.inputState.lastKeyCode : -1;
+  if (domChange.bounds) {
+    let { from, to } = domChange.bounds;
+    let preferredPos = sel.from, preferredSide = null;
+    if (lastKey === 8 || browser.android && domChange.text.length < to - from) {
+      preferredPos = sel.to;
+      preferredSide = "end";
+    }
+    let cmp = state.doc.sliceString(from, to, LineBreakPlaceholder), selEnd, diff;
+    if (!sel.empty && sel.from >= from && sel.to <= to && (domChange.typeOver || cmp != domChange.text) && cmp.slice(0, sel.from - from) == domChange.text.slice(0, sel.from - from) && cmp.slice(sel.to - from) == domChange.text.slice(selEnd = domChange.text.length - (cmp.length - (sel.to - from)))) {
+      change = {
+        from: sel.from,
+        to: sel.to,
+        insert: Text.of(domChange.text.slice(sel.from - from, selEnd).split(LineBreakPlaceholder))
+      };
+    } else if (diff = findDiff(cmp, domChange.text, preferredPos - from, preferredSide)) {
+      if (browser.chrome && lastKey == 13 && diff.toB == diff.from + 2 && domChange.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
+        diff.toB--;
+      change = {
+        from: from + diff.from,
+        to: from + diff.toA,
+        insert: Text.of(domChange.text.slice(diff.from, diff.toB).split(LineBreakPlaceholder))
+      };
+    }
+  } else if (newSel && (!view.hasFocus && state.facet(editable) || sameSelPos(newSel, sel))) {
+    newSel = null;
+  }
+  if (!change && !newSel)
+    return false;
+  if ((browser.mac || browser.android) && change && change.from == change.to && change.from == sel.head - 1 && /^\. ?$/.test(change.insert.toString()) && view.contentDOM.getAttribute("autocorrect") == "off") {
+    if (newSel && change.insert.length == 2)
+      newSel = EditorSelection.single(newSel.main.anchor - 1, newSel.main.head - 1);
+    change = { from: change.from, to: change.to, insert: Text.of([change.insert.toString().replace(".", " ")]) };
+  } else if (state.doc.lineAt(sel.from).to < sel.to && view.docView.lineHasWidget(sel.to) && view.inputState.insertingTextAt > Date.now() - 50) {
+    change = {
+      from: sel.from,
+      to: sel.to,
+      insert: state.toText(view.inputState.insertingText)
+    };
+  } else if (browser.chrome && change && change.from == change.to && change.from == sel.head && change.insert.toString() == `
+ ` && view.lineWrapping) {
+    if (newSel)
+      newSel = EditorSelection.single(newSel.main.anchor - 1, newSel.main.head - 1);
+    change = { from: sel.from, to: sel.to, insert: Text.of([" "]) };
+  }
+  if (change) {
+    return applyDOMChangeInner(view, change, newSel, lastKey);
+  } else if (newSel && !sameSelPos(newSel, sel)) {
+    let scrollIntoView2 = false, userEvent = "select";
+    if (view.inputState.lastSelectionTime > Date.now() - 50) {
+      if (view.inputState.lastSelectionOrigin == "select")
+        scrollIntoView2 = true;
+      userEvent = view.inputState.lastSelectionOrigin;
+      if (userEvent == "select.pointer")
+        newSel = skipAtomsForSelection(state.facet(atomicRanges).map((f) => f(view)), newSel);
+    }
+    view.dispatch({ selection: newSel, scrollIntoView: scrollIntoView2, userEvent });
+    return true;
+  } else {
+    return false;
+  }
+}
+function applyDOMChangeInner(view, change, newSel, lastKey = -1) {
+  if (browser.ios && view.inputState.flushIOSKey(change))
+    return true;
+  let sel = view.state.selection.main;
+  if (browser.android && (change.to == sel.to && (change.from == sel.from || change.from == sel.from - 1 && view.state.sliceDoc(change.from, sel.from) == " ") && change.insert.length == 1 && change.insert.lines == 2 && dispatchKey(view.contentDOM, "Enter", 13) || (change.from == sel.from - 1 && change.to == sel.to && change.insert.length == 0 || lastKey == 8 && change.insert.length < change.to - change.from && change.to > sel.head) && dispatchKey(view.contentDOM, "Backspace", 8) || change.from == sel.from && change.to == sel.to + 1 && change.insert.length == 0 && dispatchKey(view.contentDOM, "Delete", 46)))
+    return true;
+  let text = change.insert.toString();
+  if (view.inputState.composing >= 0)
+    view.inputState.composing++;
+  let defaultTr;
+  let defaultInsert = () => defaultTr || (defaultTr = applyDefaultInsert(view, change, newSel));
+  if (!view.state.facet(inputHandler).some((h) => h(view, change.from, change.to, text, defaultInsert)))
+    view.dispatch(defaultInsert());
+  return true;
+}
+function applyDefaultInsert(view, change, newSel) {
+  let tr, startState = view.state, sel = startState.selection.main, inAtomic = -1;
+  if (change.from == change.to && change.from < sel.from || change.from > sel.to) {
+    let side = change.from < sel.from ? -1 : 1, pos = side < 0 ? sel.from : sel.to;
+    let moved = skipAtomicRanges(startState.facet(atomicRanges).map((f) => f(view)), pos, side);
+    if (change.from == moved)
+      inAtomic = moved;
+  }
+  if (inAtomic > -1) {
+    tr = {
+      changes: change,
+      selection: EditorSelection.cursor(change.from + change.insert.length, -1)
+    };
+  } else if (change.from >= sel.from && change.to <= sel.to && change.to - change.from >= (sel.to - sel.from) / 3 && (!newSel || newSel.main.empty && newSel.main.from == change.from + change.insert.length) && view.inputState.composing < 0) {
+    let before = sel.from < change.from ? startState.sliceDoc(sel.from, change.from) : "";
+    let after = sel.to > change.to ? startState.sliceDoc(change.to, sel.to) : "";
+    tr = startState.replaceSelection(view.state.toText(before + change.insert.sliceString(0, undefined, view.state.lineBreak) + after));
+  } else {
+    let changes = startState.changes(change);
+    let mainSel = newSel && newSel.main.to <= changes.newLength ? newSel.main : undefined;
+    if (startState.selection.ranges.length > 1 && (view.inputState.composing >= 0 || view.inputState.compositionPendingChange) && change.to <= sel.to + 10 && change.to >= sel.to - 10) {
+      let replaced = view.state.sliceDoc(change.from, change.to);
+      let compositionRange, composition = newSel && findCompositionNode(view, newSel.main.head);
+      if (composition) {
+        let dLen = change.insert.length - (change.to - change.from);
+        compositionRange = { from: composition.from, to: composition.to - dLen };
+      } else {
+        compositionRange = view.state.doc.lineAt(sel.head);
+      }
+      let offset4 = sel.to - change.to;
+      tr = startState.changeByRange((range) => {
+        if (range.from == sel.from && range.to == sel.to)
+          return { changes, range: mainSel || range.map(changes) };
+        let to = range.to - offset4, from = to - replaced.length;
+        if (view.state.sliceDoc(from, to) != replaced || to >= compositionRange.from && from <= compositionRange.to)
+          return { range };
+        let rangeChanges = startState.changes({ from, to, insert: change.insert }), selOff = range.to - sel.to;
+        return {
+          changes: rangeChanges,
+          range: !mainSel ? range.map(rangeChanges) : EditorSelection.range(Math.max(0, mainSel.anchor + selOff), Math.max(0, mainSel.head + selOff))
+        };
+      });
+    } else {
+      tr = {
+        changes,
+        selection: mainSel && startState.selection.replaceRange(mainSel)
+      };
+    }
+  }
+  let userEvent = "input.type";
+  if (view.composing || view.inputState.compositionPendingChange && view.inputState.compositionEndedAt > Date.now() - 50) {
+    view.inputState.compositionPendingChange = false;
+    userEvent += ".compose";
+    if (view.inputState.compositionFirstChange) {
+      userEvent += ".start";
+      view.inputState.compositionFirstChange = false;
+    }
+  }
+  return startState.update(tr, { userEvent, scrollIntoView: true });
+}
+function findDiff(a, b, preferredPos, preferredSide) {
+  let minLen = Math.min(a.length, b.length);
+  let from = 0;
+  while (from < minLen && a.charCodeAt(from) == b.charCodeAt(from))
+    from++;
+  if (from == minLen && a.length == b.length)
+    return null;
+  let toA = a.length, toB = b.length;
+  while (toA > 0 && toB > 0 && a.charCodeAt(toA - 1) == b.charCodeAt(toB - 1)) {
+    toA--;
+    toB--;
+  }
+  if (preferredSide == "end") {
+    let adjust = Math.max(0, from - Math.min(toA, toB));
+    preferredPos -= toA + adjust - from;
+  }
+  if (toA < from && a.length < b.length) {
+    let move = preferredPos <= from && preferredPos >= toA ? from - preferredPos : 0;
+    from -= move;
+    toB = from + (toB - toA);
+    toA = from;
+  } else if (toB < from) {
+    let move = preferredPos <= from && preferredPos >= toB ? from - preferredPos : 0;
+    from -= move;
+    toA = from + (toA - toB);
+    toB = from;
+  }
+  return { from, toA, toB };
+}
+function selectionPoints(view) {
+  let result = [];
+  if (view.root.activeElement != view.contentDOM)
+    return result;
+  let { anchorNode, anchorOffset, focusNode, focusOffset } = view.observer.selectionRange;
+  if (anchorNode) {
+    result.push(new DOMPoint(anchorNode, anchorOffset));
+    if (focusNode != anchorNode || focusOffset != anchorOffset)
+      result.push(new DOMPoint(focusNode, focusOffset));
+  }
+  return result;
+}
+function selectionFromPoints(points, base2) {
+  if (points.length == 0)
+    return null;
+  let anchor = points[0].pos, head = points.length == 2 ? points[1].pos : anchor;
+  return anchor > -1 && head > -1 ? EditorSelection.single(anchor + base2, head + base2) : null;
+}
+function sameSelPos(selection, range) {
+  return range.head == selection.main.head && range.anchor == selection.main.anchor;
+}
+
+class InputState {
+  setSelectionOrigin(origin) {
+    this.lastSelectionOrigin = origin;
+    this.lastSelectionTime = Date.now();
+  }
+  constructor(view) {
+    this.view = view;
+    this.lastKeyCode = 0;
+    this.lastKeyTime = 0;
+    this.touchActive = false;
+    this.lastTouchTime = 0;
+    this.lastTouchX = 0;
+    this.lastTouchY = 0;
+    this.lastFocusTime = 0;
+    this.lastScrollTop = 0;
+    this.lastScrollLeft = 0;
+    this.lastWheelEvent = 0;
+    this.pendingIOSKey = undefined;
+    this.lastIOSMomentumScroll = 0;
+    this.tabFocusMode = -1;
+    this.lastSelectionOrigin = null;
+    this.lastSelectionTime = 0;
+    this.lastContextMenu = 0;
+    this.scrollHandlers = [];
+    this.handlers = Object.create(null);
+    this.composing = -1;
+    this.compositionFirstChange = null;
+    this.compositionEndedAt = 0;
+    this.compositionPendingKey = false;
+    this.compositionPendingChange = false;
+    this.insertingText = "";
+    this.insertingTextAt = 0;
+    this.mouseSelection = null;
+    this.draggedContent = null;
+    this.handleEvent = this.handleEvent.bind(this);
+    this.notifiedFocused = view.hasFocus;
+    if (browser.safari)
+      view.contentDOM.addEventListener("input", () => null);
+    if (browser.gecko)
+      firefoxCopyCutHack(view.contentDOM.ownerDocument);
+  }
+  handleEvent(event) {
+    if (!eventBelongsToEditor(this.view, event) || this.ignoreDuringComposition(event))
+      return;
+    if (event.type == "keydown" && this.keydown(event))
+      return;
+    if (this.view.updateState != 0)
+      Promise.resolve().then(() => this.runHandlers(event.type, event));
+    else
+      this.runHandlers(event.type, event);
+  }
+  runHandlers(type, event) {
+    let handlers = this.handlers[type];
+    if (handlers) {
+      for (let observer of handlers.observers)
+        observer(this.view, event);
+      for (let handler of handlers.handlers) {
+        if (event.defaultPrevented)
+          break;
+        if (handler(this.view, event)) {
+          event.preventDefault();
+          break;
+        }
+      }
+    }
+  }
+  ensureHandlers(plugins) {
+    let handlers = computeHandlers(plugins), prev = this.handlers, dom = this.view.contentDOM;
+    for (let type in handlers)
+      if (type != "scroll") {
+        let passive = !handlers[type].handlers.length;
+        let exists = prev[type];
+        if (exists && passive != !exists.handlers.length) {
+          dom.removeEventListener(type, this.handleEvent);
+          exists = null;
+        }
+        if (!exists)
+          dom.addEventListener(type, this.handleEvent, { passive });
+      }
+    for (let type in prev)
+      if (type != "scroll" && !handlers[type])
+        dom.removeEventListener(type, this.handleEvent);
+    this.handlers = handlers;
+  }
+  keydown(event) {
+    this.lastKeyCode = event.keyCode;
+    this.lastKeyTime = Date.now();
+    if (event.keyCode == 9 && this.tabFocusMode > -1 && (!this.tabFocusMode || Date.now() <= this.tabFocusMode))
+      return true;
+    if (this.tabFocusMode > 0 && event.keyCode != 27 && modifierCodes.indexOf(event.keyCode) < 0)
+      this.tabFocusMode = -1;
+    if (browser.android && browser.chrome && !event.synthetic && (event.keyCode == 13 || event.keyCode == 8)) {
+      this.view.observer.delayAndroidKey(event.key, event.keyCode);
+      return true;
+    }
+    if (browser.ios && !event.synthetic && !event.altKey && !event.metaKey && (PendingKeys.some((key) => key.keyCode == event.keyCode) && !event.ctrlKey || EmacsyPendingKeys.indexOf(event.key) > -1 && event.ctrlKey)) {
+      let mods = { ctrlKey: event.ctrlKey, altKey: event.altKey, metaKey: event.metaKey, shiftKey: event.shiftKey };
+      if (mods.shiftKey && browser.ios && !/^(off|none)$/.test(this.view.contentDOM.autocapitalize) && iosVirtualKeyboardOpen(this.view.win))
+        mods.shiftKey = false;
+      this.pendingIOSKey = { key: event.key, keyCode: event.keyCode, mods };
+      setTimeout(() => this.flushIOSKey(), 50);
+      return true;
+    }
+    if (event.keyCode != 229)
+      this.view.observer.forceFlush();
+    return false;
+  }
+  flushIOSKey(change) {
+    let key = this.pendingIOSKey;
+    if (!key || this.view.observer.pendingRecords().length)
+      return false;
+    if (key.key == "Enter" && change && change.from < change.to && /^\S+$/.test(change.insert.toString()))
+      return false;
+    this.pendingIOSKey = undefined;
+    return dispatchKey(this.view.contentDOM, key.key, key.keyCode, key.mods);
+  }
+  ignoreDuringComposition(event) {
+    if (!/^key/.test(event.type) || event.synthetic)
+      return false;
+    if (this.composing > 0)
+      return true;
+    if (browser.safari && !browser.ios && this.compositionPendingKey && Date.now() - this.compositionEndedAt < 100) {
+      this.compositionPendingKey = false;
+      return true;
+    }
+    return false;
+  }
+  startMouseSelection(mouseSelection) {
+    if (this.mouseSelection)
+      this.mouseSelection.destroy();
+    this.mouseSelection = mouseSelection;
+  }
+  update(update2) {
+    this.view.observer.update(update2);
+    if (this.mouseSelection)
+      this.mouseSelection.update(update2);
+    if (this.draggedContent && update2.docChanged)
+      this.draggedContent = this.draggedContent.map(update2.changes);
+    if (update2.transactions.length)
+      this.lastKeyCode = this.lastSelectionTime = 0;
+  }
+  destroy() {
+    if (this.mouseSelection)
+      this.mouseSelection.destroy();
+  }
+}
+function iosVirtualKeyboardOpen(win) {
+  if (!win.visualViewport)
+    return false;
+  return win.visualViewport.height * win.visualViewport.scale / win.document.documentElement.clientHeight < 0.85;
+}
+function bindHandler(plugin, handler) {
+  return (view, event) => {
+    try {
+      return handler.call(plugin, event, view);
+    } catch (e) {
+      logException(view.state, e);
+    }
+  };
+}
+function computeHandlers(plugins) {
+  let result = Object.create(null);
+  function record(type) {
+    return result[type] || (result[type] = { observers: [], handlers: [] });
+  }
+  for (let plugin of plugins) {
+    let spec = plugin.spec, handlers = spec && spec.plugin.domEventHandlers, observers = spec && spec.plugin.domEventObservers;
+    if (handlers)
+      for (let type in handlers) {
+        let f = handlers[type];
+        if (f)
+          record(type).handlers.push(bindHandler(plugin.value, f));
+      }
+    if (observers)
+      for (let type in observers) {
+        let f = observers[type];
+        if (f)
+          record(type).observers.push(bindHandler(plugin.value, f));
+      }
+  }
+  for (let type in handlers)
+    record(type).handlers.push(handlers[type]);
+  for (let type in observers)
+    record(type).observers.push(observers[type]);
+  return result;
+}
+var PendingKeys = [
+  { key: "Backspace", keyCode: 8, inputType: "deleteContentBackward" },
+  { key: "Enter", keyCode: 13, inputType: "insertParagraph" },
+  { key: "Enter", keyCode: 13, inputType: "insertLineBreak" },
+  { key: "Delete", keyCode: 46, inputType: "deleteContentForward" }
+];
+var EmacsyPendingKeys = "dthko";
+var modifierCodes = [16, 17, 18, 20, 91, 92, 224, 225];
+var dragScrollMargin = 6;
+function dragScrollSpeed(dist) {
+  return Math.max(0, dist) * 0.7 + 8;
+}
+function dist(a, b) {
+  return Math.max(Math.abs(a.clientX - b.clientX), Math.abs(a.clientY - b.clientY));
+}
+
+class MouseSelection {
+  constructor(view, startEvent, style, mustSelect) {
+    this.view = view;
+    this.startEvent = startEvent;
+    this.style = style;
+    this.mustSelect = mustSelect;
+    this.scrollSpeed = { x: 0, y: 0 };
+    this.scrolling = -1;
+    this.lastEvent = startEvent;
+    this.scrollParents = scrollableParents(view.contentDOM);
+    this.atoms = view.state.facet(atomicRanges).map((f) => f(view));
+    let doc2 = view.contentDOM.ownerDocument;
+    doc2.addEventListener("mousemove", this.move = this.move.bind(this));
+    doc2.addEventListener("mouseup", this.up = this.up.bind(this));
+    this.extend = startEvent.shiftKey;
+    this.multiple = view.state.facet(EditorState.allowMultipleSelections) && addsSelectionRange(view, startEvent);
+    this.dragging = isInPrimarySelection(view, startEvent) && getClickType(startEvent) == 1 ? null : false;
+  }
+  start(event) {
+    if (this.dragging === false)
+      this.select(event);
+  }
+  move(event) {
+    if (event.buttons == 0)
+      return this.destroy();
+    if (this.dragging || this.dragging == null && dist(this.startEvent, event) < 10)
+      return;
+    this.select(this.lastEvent = event);
+    let sx = 0, sy = 0;
+    let left = 0, top2 = 0, right = this.view.win.innerWidth, bottom = this.view.win.innerHeight;
+    if (this.scrollParents.x)
+      ({ left, right } = this.scrollParents.x.getBoundingClientRect());
+    if (this.scrollParents.y)
+      ({ top: top2, bottom } = this.scrollParents.y.getBoundingClientRect());
+    let margins = getScrollMargins(this.view);
+    if (event.clientX - margins.left <= left + dragScrollMargin)
+      sx = -dragScrollSpeed(left - event.clientX);
+    else if (event.clientX + margins.right >= right - dragScrollMargin)
+      sx = dragScrollSpeed(event.clientX - right);
+    if (event.clientY - margins.top <= top2 + dragScrollMargin)
+      sy = -dragScrollSpeed(top2 - event.clientY);
+    else if (event.clientY + margins.bottom >= bottom - dragScrollMargin)
+      sy = dragScrollSpeed(event.clientY - bottom);
+    this.setScrollSpeed(sx, sy);
+  }
+  up(event) {
+    if (this.dragging == null)
+      this.select(this.lastEvent);
+    if (!this.dragging)
+      event.preventDefault();
+    this.destroy();
+  }
+  destroy() {
+    this.setScrollSpeed(0, 0);
+    let doc2 = this.view.contentDOM.ownerDocument;
+    doc2.removeEventListener("mousemove", this.move);
+    doc2.removeEventListener("mouseup", this.up);
+    this.view.inputState.mouseSelection = this.view.inputState.draggedContent = null;
+  }
+  setScrollSpeed(sx, sy) {
+    this.scrollSpeed = { x: sx, y: sy };
+    if (sx || sy) {
+      if (this.scrolling < 0)
+        this.scrolling = setInterval(() => this.scroll(), 50);
+    } else if (this.scrolling > -1) {
+      clearInterval(this.scrolling);
+      this.scrolling = -1;
+    }
+  }
+  scroll() {
+    let { x, y } = this.scrollSpeed;
+    if (x && this.scrollParents.x) {
+      this.scrollParents.x.scrollLeft += x;
+      x = 0;
+    }
+    if (y && this.scrollParents.y) {
+      this.scrollParents.y.scrollTop += y;
+      y = 0;
+    }
+    if (x || y)
+      this.view.win.scrollBy(x, y);
+    if (this.dragging === false)
+      this.select(this.lastEvent);
+  }
+  select(event) {
+    let { view } = this, selection = skipAtomsForSelection(this.atoms, this.style.get(event, this.extend, this.multiple));
+    if (this.mustSelect || !selection.eq(view.state.selection, this.dragging === false))
+      this.view.dispatch({
+        selection,
+        userEvent: "select.pointer"
+      });
+    this.mustSelect = false;
+  }
+  update(update2) {
+    if (update2.transactions.some((tr) => tr.isUserEvent("input.type")))
+      this.destroy();
+    else if (this.style.update(update2))
+      setTimeout(() => this.select(this.lastEvent), 20);
+  }
+}
+function addsSelectionRange(view, event) {
+  let facet = view.state.facet(clickAddsSelectionRange);
+  return facet.length ? facet[0](event) : browser.mac ? event.metaKey : event.ctrlKey;
+}
+function dragMovesSelection(view, event) {
+  let facet = view.state.facet(dragMovesSelection$1);
+  return facet.length ? facet[0](event) : browser.mac ? !event.altKey : !event.ctrlKey;
+}
+function isInPrimarySelection(view, event) {
+  let { main } = view.state.selection;
+  if (main.empty)
+    return false;
+  let sel = getSelection(view.root);
+  if (!sel || sel.rangeCount == 0)
+    return true;
+  let rects = sel.getRangeAt(0).getClientRects();
+  for (let i2 = 0;i2 < rects.length; i2++) {
+    let rect = rects[i2];
+    if (rect.left <= event.clientX && rect.right >= event.clientX && rect.top <= event.clientY && rect.bottom >= event.clientY)
+      return true;
+  }
+  return false;
+}
+function eventBelongsToEditor(view, event) {
+  if (!event.bubbles)
+    return true;
+  if (event.defaultPrevented)
+    return false;
+  for (let node = event.target, tile;node != view.contentDOM; node = node.parentNode)
+    if (!node || node.nodeType == 11 || (tile = Tile.get(node)) && tile.isWidget() && !tile.isHidden && tile.widget.ignoreEvent(event))
+      return false;
+  return true;
+}
+var handlers = /* @__PURE__ */ Object.create(null);
+var observers = /* @__PURE__ */ Object.create(null);
+var brokenClipboardAPI = browser.ie && browser.ie_version < 15 || browser.ios && browser.webkit_version < 604;
+function capturePaste(view) {
+  let parent = view.dom.parentNode;
+  if (!parent)
+    return;
+  let target = parent.appendChild(document.createElement("textarea"));
+  target.style.cssText = "position: fixed; left: -10000px; top: 10px";
+  target.focus();
+  setTimeout(() => {
+    view.focus();
+    target.remove();
+    doPaste(view, target.value);
+  }, 50);
+}
+function textFilter(state, facet, text) {
+  for (let filter of state.facet(facet))
+    text = filter(text, state);
+  return text;
+}
+function doPaste(view, input) {
+  input = textFilter(view.state, clipboardInputFilter, input);
+  let { state } = view, changes, i2 = 1, text = state.toText(input);
+  let byLine = text.lines == state.selection.ranges.length;
+  let linewise = lastLinewiseCopy != null && state.selection.ranges.every((r2) => r2.empty) && lastLinewiseCopy == text.toString();
+  if (linewise) {
+    let lastLine = -1;
+    changes = state.changeByRange((range) => {
+      let line = state.doc.lineAt(range.from);
+      if (line.from == lastLine)
+        return { range };
+      lastLine = line.from;
+      let insert2 = state.toText((byLine ? text.line(i2++).text : input) + state.lineBreak);
+      return {
+        changes: { from: line.from, insert: insert2 },
+        range: EditorSelection.cursor(range.from + insert2.length)
+      };
+    });
+  } else if (byLine) {
+    changes = state.changeByRange((range) => {
+      let line = text.line(i2++);
+      return {
+        changes: { from: range.from, to: range.to, insert: line.text },
+        range: EditorSelection.cursor(range.from + line.length)
+      };
+    });
+  } else {
+    changes = state.replaceSelection(text);
+  }
+  view.dispatch(changes, {
+    userEvent: "input.paste",
+    scrollIntoView: true
+  });
+}
+observers.scroll = (view) => {
+  let iState = view.inputState;
+  iState.lastScrollTop = view.scrollDOM.scrollTop;
+  iState.lastScrollLeft = view.scrollDOM.scrollLeft;
+  if (browser.ios && !iState.touchActive)
+    iState.lastIOSMomentumScroll = Date.now();
+};
+observers.wheel = observers.mousewheel = (view) => {
+  view.inputState.lastWheelEvent = Date.now();
+};
+handlers.keydown = (view, event) => {
+  view.inputState.setSelectionOrigin("select");
+  if (event.keyCode == 27 && view.inputState.tabFocusMode != 0)
+    view.inputState.tabFocusMode = Date.now() + 2000;
+  return false;
+};
+observers.touchstart = (view, e) => {
+  let iState = view.inputState, touch = e.targetTouches[0];
+  iState.touchActive = true;
+  iState.lastTouchTime = Date.now();
+  if (touch) {
+    iState.lastTouchX = touch.clientX;
+    iState.lastTouchY = touch.clientY;
+  }
+  iState.setSelectionOrigin("select.pointer");
+};
+observers.touchmove = (view) => {
+  view.inputState.setSelectionOrigin("select.pointer");
+};
+observers.touchend = (view, e) => {
+  view.inputState.touchActive = false;
+};
+handlers.mousedown = (view, event) => {
+  view.observer.flush();
+  if (view.inputState.lastTouchTime > Date.now() - 2000)
+    return false;
+  let style = null;
+  for (let makeStyle of view.state.facet(mouseSelectionStyle)) {
+    style = makeStyle(view, event);
+    if (style)
+      break;
+  }
+  if (!style && event.button == 0)
+    style = basicMouseSelection(view, event);
+  if (style) {
+    let mustFocus = !view.hasFocus;
+    view.inputState.startMouseSelection(new MouseSelection(view, event, style, mustFocus));
+    if (mustFocus)
+      view.observer.ignore(() => {
+        focusPreventScroll(view.contentDOM);
+        let active = view.root.activeElement;
+        if (active && !active.contains(view.contentDOM))
+          active.blur();
+      });
+    let mouseSel = view.inputState.mouseSelection;
+    if (mouseSel) {
+      mouseSel.start(event);
+      return mouseSel.dragging === false;
+    }
+  } else {
+    view.inputState.setSelectionOrigin("select.pointer");
+  }
+  return false;
+};
+function rangeForClick(view, pos, bias, type) {
+  if (type == 1) {
+    return EditorSelection.cursor(pos, bias);
+  } else if (type == 2) {
+    return groupAt(view.state, pos, bias);
+  } else {
+    let visual = view.docView.lineAt(pos, bias), line = view.state.doc.lineAt(visual ? visual.posAtEnd : pos);
+    let from = visual ? visual.posAtStart : line.from, to = visual ? visual.posAtEnd : line.to;
+    if (to < view.state.doc.length && to == line.to)
+      to++;
+    return EditorSelection.undirectionalRange(from, to);
+  }
+}
+var BadMouseDetail = browser.ie && browser.ie_version <= 11;
+var lastMouseDown = null;
+var lastMouseDownCount = 0;
+var lastMouseDownTime = 0;
+function getClickType(event) {
+  if (!BadMouseDetail)
+    return event.detail;
+  let last2 = lastMouseDown, lastTime = lastMouseDownTime;
+  lastMouseDown = event;
+  lastMouseDownTime = Date.now();
+  return lastMouseDownCount = !last2 || lastTime > Date.now() - 400 && Math.abs(last2.clientX - event.clientX) < 2 && Math.abs(last2.clientY - event.clientY) < 2 ? (lastMouseDownCount + 1) % 3 : 1;
+}
+function basicMouseSelection(view, event) {
+  let start = view.posAndSideAtCoords({ x: event.clientX, y: event.clientY }, false), type = getClickType(event);
+  let startSel = view.state.selection;
+  return {
+    update(update2) {
+      if (update2.docChanged) {
+        start.pos = update2.changes.mapPos(start.pos);
+        startSel = startSel.map(update2.changes);
+      }
+    },
+    get(event2, extend, multiple) {
+      let cur = view.posAndSideAtCoords({ x: event2.clientX, y: event2.clientY }, false), removed;
+      let range = rangeForClick(view, cur.pos, cur.assoc, type);
+      if (start.pos != cur.pos && !extend) {
+        let startRange = rangeForClick(view, start.pos, start.assoc, type);
+        let from = Math.min(startRange.from, range.from), to = Math.max(startRange.to, range.to);
+        range = from < range.from ? EditorSelection.range(from, to, range.assoc) : EditorSelection.range(to, from, range.assoc);
+      }
+      if (extend)
+        return startSel.replaceRange(startSel.main.extend(range.from, range.to, range.assoc));
+      else if (multiple && type == 1 && startSel.ranges.length > 1 && (removed = removeRangeAround(startSel, cur.pos)))
+        return removed;
+      else if (multiple)
+        return startSel.addRange(range);
+      else
+        return EditorSelection.create([range]);
+    }
+  };
+}
+function removeRangeAround(sel, pos) {
+  for (let i2 = 0;i2 < sel.ranges.length; i2++) {
+    let { from, to } = sel.ranges[i2];
+    if (from <= pos && to >= pos)
+      return EditorSelection.create(sel.ranges.slice(0, i2).concat(sel.ranges.slice(i2 + 1)), sel.mainIndex == i2 ? 0 : sel.mainIndex - (sel.mainIndex > i2 ? 1 : 0));
+  }
+  return null;
+}
+handlers.dragstart = (view, event) => {
+  let { selection: { main: range } } = view.state;
+  if (event.target.draggable) {
+    let tile = view.docView.tile.nearest(event.target);
+    if (tile && tile.isWidget()) {
+      let from = tile.posAtStart, to = from + tile.length;
+      if (from >= range.to || to <= range.from)
+        range = EditorSelection.undirectionalRange(from, to);
+    }
+  }
+  let { inputState } = view;
+  if (inputState.mouseSelection)
+    inputState.mouseSelection.dragging = true;
+  inputState.draggedContent = range;
+  if (event.dataTransfer) {
+    event.dataTransfer.setData("Text", textFilter(view.state, clipboardOutputFilter, view.state.sliceDoc(range.from, range.to)));
+    event.dataTransfer.effectAllowed = "copyMove";
+  }
+  return false;
+};
+handlers.dragend = (view) => {
+  view.inputState.draggedContent = null;
+  return false;
+};
+function dropText(view, event, text, direct) {
+  text = textFilter(view.state, clipboardInputFilter, text);
+  if (!text)
+    return;
+  let dropPos = view.posAtCoords({ x: event.clientX, y: event.clientY }, false);
+  let { draggedContent } = view.inputState;
+  let del = direct && draggedContent && dragMovesSelection(view, event) ? { from: draggedContent.from, to: draggedContent.to } : null;
+  let ins = { from: dropPos, insert: text };
+  let changes = view.state.changes(del ? [del, ins] : ins);
+  view.focus();
+  view.dispatch({
+    changes,
+    selection: { anchor: changes.mapPos(dropPos, -1), head: changes.mapPos(dropPos, 1) },
+    userEvent: del ? "move.drop" : "input.drop"
+  });
+  view.inputState.draggedContent = null;
+}
+handlers.drop = (view, event) => {
+  if (!event.dataTransfer)
+    return false;
+  if (view.state.readOnly)
+    return true;
+  let files = event.dataTransfer.files;
+  if (files && files.length) {
+    let text = Array(files.length), read = 0;
+    let finishFile = () => {
+      if (++read == files.length)
+        dropText(view, event, text.filter((s) => s != null).join(view.state.lineBreak), false);
+    };
+    for (let i2 = 0;i2 < files.length; i2++) {
+      let reader = new FileReader;
+      reader.onerror = finishFile;
+      reader.onload = () => {
+        if (!/[\x00-\x08\x0e-\x1f]{2}/.test(reader.result))
+          text[i2] = reader.result;
+        finishFile();
+      };
+      reader.readAsText(files[i2]);
+    }
+    return true;
+  } else {
+    let text = event.dataTransfer.getData("Text");
+    if (text) {
+      dropText(view, event, text, true);
+      return true;
+    }
+  }
+  return false;
+};
+handlers.paste = (view, event) => {
+  if (view.state.readOnly)
+    return true;
+  view.observer.flush();
+  let data = brokenClipboardAPI ? null : event.clipboardData;
+  if (data) {
+    doPaste(view, data.getData("text/plain") || data.getData("text/uri-list"));
+    return true;
+  } else {
+    capturePaste(view);
+    return false;
+  }
+};
+function captureCopy(view, text) {
+  let parent = view.dom.parentNode;
+  if (!parent)
+    return;
+  let target = parent.appendChild(document.createElement("textarea"));
+  target.style.cssText = "position: fixed; left: -10000px; top: 10px";
+  target.value = text;
+  target.focus();
+  target.selectionEnd = text.length;
+  target.selectionStart = 0;
+  setTimeout(() => {
+    target.remove();
+    view.focus();
+  }, 50);
+}
+function copiedRange(state) {
+  let content = [], ranges = [], linewise = false;
+  for (let range of state.selection.ranges)
+    if (!range.empty) {
+      content.push(state.sliceDoc(range.from, range.to));
+      ranges.push(range);
+    }
+  if (!content.length) {
+    let upto = -1;
+    for (let { from } of state.selection.ranges) {
+      let line = state.doc.lineAt(from);
+      if (line.number > upto) {
+        content.push(line.text);
+        ranges.push({ from: line.from, to: Math.min(state.doc.length, line.to + 1) });
+      }
+      upto = line.number;
+    }
+    linewise = true;
+  }
+  return { text: textFilter(state, clipboardOutputFilter, content.join(state.lineBreak)), ranges, linewise };
+}
+var lastLinewiseCopy = null;
+handlers.copy = handlers.cut = (view, event) => {
+  if (!hasSelection(view.contentDOM, view.observer.selectionRange))
+    return false;
+  let { text, ranges, linewise } = copiedRange(view.state);
+  if (!text && !linewise)
+    return false;
+  lastLinewiseCopy = linewise ? text : null;
+  if (event.type == "cut" && !view.state.readOnly)
+    view.dispatch({
+      changes: ranges,
+      scrollIntoView: true,
+      userEvent: "delete.cut"
+    });
+  let data = brokenClipboardAPI ? null : event.clipboardData;
+  if (data) {
+    data.clearData();
+    data.setData("text/plain", text);
+    return true;
+  } else {
+    captureCopy(view, text);
+    return false;
+  }
+};
+var isFocusChange = /* @__PURE__ */ Annotation.define();
+function focusChangeTransaction(state, focus) {
+  let effects = [];
+  for (let getEffect of state.facet(focusChangeEffect)) {
+    let effect = getEffect(state, focus);
+    if (effect)
+      effects.push(effect);
+  }
+  return effects.length ? state.update({ effects, annotations: isFocusChange.of(true) }) : null;
+}
+function updateForFocusChange(view) {
+  setTimeout(() => {
+    let focus = view.hasFocus;
+    if (focus != view.inputState.notifiedFocused) {
+      let tr = focusChangeTransaction(view.state, focus);
+      if (tr)
+        view.dispatch(tr);
+      else
+        view.update([]);
+    }
+  }, 10);
+}
+observers.focus = (view) => {
+  view.inputState.lastFocusTime = Date.now();
+  if (!view.scrollDOM.scrollTop && (view.inputState.lastScrollTop || view.inputState.lastScrollLeft)) {
+    view.scrollDOM.scrollTop = view.inputState.lastScrollTop;
+    view.scrollDOM.scrollLeft = view.inputState.lastScrollLeft;
+  }
+  updateForFocusChange(view);
+};
+observers.blur = (view) => {
+  view.observer.clearSelectionRange();
+  updateForFocusChange(view);
+};
+observers.compositionstart = observers.compositionupdate = (view) => {
+  if (view.observer.editContext)
+    return;
+  if (view.inputState.compositionFirstChange == null)
+    view.inputState.compositionFirstChange = true;
+  if (view.inputState.composing < 0) {
+    view.inputState.composing = 0;
+  }
+};
+observers.compositionend = (view) => {
+  if (view.observer.editContext)
+    return;
+  view.inputState.composing = -1;
+  view.inputState.compositionEndedAt = Date.now();
+  view.inputState.compositionPendingKey = true;
+  view.inputState.compositionPendingChange = view.observer.pendingRecords().length > 0;
+  view.inputState.compositionFirstChange = null;
+  if (browser.chrome && browser.android) {
+    view.observer.flushSoon();
+  } else if (view.inputState.compositionPendingChange) {
+    Promise.resolve().then(() => view.observer.flush());
+  } else {
+    setTimeout(() => {
+      if (view.inputState.composing < 0 && view.docView.hasComposition)
+        view.update([]);
+    }, 50);
+  }
+};
+observers.contextmenu = (view) => {
+  view.inputState.lastContextMenu = Date.now();
+};
+handlers.beforeinput = (view, event) => {
+  var _a, _b;
+  if (event.inputType == "insertText" || event.inputType == "insertCompositionText") {
+    view.inputState.insertingText = event.data;
+    view.inputState.insertingTextAt = Date.now();
+  }
+  if (event.inputType == "insertReplacementText" && view.observer.editContext) {
+    let text = (_a = event.dataTransfer) === null || _a === undefined ? undefined : _a.getData("text/plain"), ranges = event.getTargetRanges();
+    if (text && ranges.length) {
+      let r2 = ranges[0];
+      let from = view.posAtDOM(r2.startContainer, r2.startOffset), to = view.posAtDOM(r2.endContainer, r2.endOffset);
+      applyDOMChangeInner(view, { from, to, insert: view.state.toText(text) }, null);
+      return true;
+    }
+  }
+  let pending;
+  if (browser.chrome && browser.android && (pending = PendingKeys.find((key) => key.inputType == event.inputType))) {
+    view.observer.delayAndroidKey(pending.key, pending.keyCode);
+    if (pending.key == "Backspace" || pending.key == "Delete") {
+      let startViewHeight = ((_b = window.visualViewport) === null || _b === undefined ? undefined : _b.height) || 0;
+      setTimeout(() => {
+        var _a2;
+        if ((((_a2 = window.visualViewport) === null || _a2 === undefined ? undefined : _a2.height) || 0) > startViewHeight + 10 && view.hasFocus) {
+          view.contentDOM.blur();
+          view.focus();
+        }
+      }, 100);
+    }
+  }
+  if (browser.ios && event.inputType == "deleteContentForward") {
+    view.observer.flushSoon();
+  }
+  if (browser.safari && event.inputType == "insertText" && view.inputState.composing >= 0) {
+    setTimeout(() => observers.compositionend(view, event), 20);
+  }
+  return false;
+};
+var appliedFirefoxHack = /* @__PURE__ */ new Set;
+function firefoxCopyCutHack(doc2) {
+  if (!appliedFirefoxHack.has(doc2)) {
+    appliedFirefoxHack.add(doc2);
+    doc2.addEventListener("copy", () => {});
+    doc2.addEventListener("cut", () => {});
+  }
+}
+var wrappingWhiteSpace = ["pre-wrap", "normal", "pre-line", "break-spaces"];
+var heightChangeFlag = false;
+function clearHeightChangeFlag() {
+  heightChangeFlag = false;
+}
+
+class HeightOracle {
+  constructor(lineWrapping) {
+    this.lineWrapping = lineWrapping;
+    this.doc = Text.empty;
+    this.heightSamples = {};
+    this.lineHeight = 14;
+    this.charWidth = 7;
+    this.textHeight = 14;
+    this.lineLength = 30;
+  }
+  heightForGap(from, to) {
+    let lines = this.doc.lineAt(to).number - this.doc.lineAt(from).number + 1;
+    if (this.lineWrapping)
+      lines += Math.max(0, Math.ceil((to - from - lines * this.lineLength * 0.5) / this.lineLength));
+    return this.lineHeight * lines;
+  }
+  heightForLine(length) {
+    if (!this.lineWrapping)
+      return this.lineHeight;
+    let lines = 1 + Math.max(0, Math.ceil((length - this.lineLength) / Math.max(1, this.lineLength - 5)));
+    return lines * this.lineHeight;
+  }
+  setDoc(doc2) {
+    this.doc = doc2;
+    return this;
+  }
+  mustRefreshForWrapping(whiteSpace) {
+    return wrappingWhiteSpace.indexOf(whiteSpace) > -1 != this.lineWrapping;
+  }
+  mustRefreshForHeights(lineHeights) {
+    let newHeight = false;
+    for (let i2 = 0;i2 < lineHeights.length; i2++) {
+      let h = lineHeights[i2];
+      if (h < 0) {
+        i2++;
+      } else if (!this.heightSamples[Math.floor(h * 10)]) {
+        newHeight = true;
+        this.heightSamples[Math.floor(h * 10)] = true;
+      }
+    }
+    return newHeight;
+  }
+  refresh(whiteSpace, lineHeight, charWidth, textHeight, lineLength, knownHeights) {
+    let lineWrapping = wrappingWhiteSpace.indexOf(whiteSpace) > -1;
+    let changed = Math.abs(lineHeight - this.lineHeight) > 0.3 || this.lineWrapping != lineWrapping;
+    this.lineWrapping = lineWrapping;
+    this.lineHeight = lineHeight;
+    this.charWidth = charWidth;
+    this.textHeight = textHeight;
+    this.lineLength = lineLength;
+    if (changed) {
+      this.heightSamples = {};
+      for (let i2 = 0;i2 < knownHeights.length; i2++) {
+        let h = knownHeights[i2];
+        if (h < 0)
+          i2++;
+        else
+          this.heightSamples[Math.floor(h * 10)] = true;
+      }
+    }
+    return changed;
+  }
+}
+
+class MeasuredHeights {
+  constructor(from, heights) {
+    this.from = from;
+    this.heights = heights;
+    this.index = 0;
+  }
+  get more() {
+    return this.index < this.heights.length;
+  }
+}
+
+class BlockInfo {
+  constructor(from, length, top2, height, _content) {
+    this.from = from;
+    this.length = length;
+    this.top = top2;
+    this.height = height;
+    this._content = _content;
+  }
+  get type() {
+    return typeof this._content == "number" ? BlockType.Text : Array.isArray(this._content) ? this._content : this._content.type;
+  }
+  get to() {
+    return this.from + this.length;
+  }
+  get bottom() {
+    return this.top + this.height;
+  }
+  get widget() {
+    return this._content instanceof PointDecoration ? this._content.widget : null;
+  }
+  get widgetLineBreaks() {
+    return typeof this._content == "number" ? this._content : 0;
+  }
+  join(other) {
+    let content = (Array.isArray(this._content) ? this._content : [this]).concat(Array.isArray(other._content) ? other._content : [other]);
+    return new BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, content);
+  }
+}
+var QueryType = /* @__PURE__ */ function(QueryType2) {
+  QueryType2[QueryType2["ByPos"] = 0] = "ByPos";
+  QueryType2[QueryType2["ByHeight"] = 1] = "ByHeight";
+  QueryType2[QueryType2["ByPosNoHeight"] = 2] = "ByPosNoHeight";
+  return QueryType2;
+}(QueryType || (QueryType = {}));
+var Epsilon = 0.001;
+
+class HeightMap {
+  constructor(length, height, flags = 2) {
+    this.length = length;
+    this.height = height;
+    this.flags = flags;
+  }
+  get outdated() {
+    return (this.flags & 2) > 0;
+  }
+  set outdated(value) {
+    this.flags = (value ? 2 : 0) | this.flags & ~2;
+  }
+  setHeight(height) {
+    if (this.height != height) {
+      if (Math.abs(this.height - height) > Epsilon)
+        heightChangeFlag = true;
+      this.height = height;
+    }
+  }
+  replace(_from, _to, nodes) {
+    return HeightMap.of(nodes);
+  }
+  decomposeLeft(_to, result) {
+    result.push(this);
+  }
+  decomposeRight(_from, result) {
+    result.push(this);
+  }
+  applyChanges(decorations2, oldDoc, oracle, changes) {
+    let me2 = this, doc2 = oracle.doc;
+    for (let i2 = changes.length - 1;i2 >= 0; i2--) {
+      let { fromA, toA, fromB, toB } = changes[i2];
+      let start = me2.lineAt(fromA, QueryType.ByPosNoHeight, oracle.setDoc(oldDoc), 0, 0);
+      let end = start.to >= toA ? start : me2.lineAt(toA, QueryType.ByPosNoHeight, oracle, 0, 0);
+      toB += end.to - toA;
+      toA = end.to;
+      while (i2 > 0 && start.from <= changes[i2 - 1].toA) {
+        fromA = changes[i2 - 1].fromA;
+        fromB = changes[i2 - 1].fromB;
+        i2--;
+        if (fromA < start.from)
+          start = me2.lineAt(fromA, QueryType.ByPosNoHeight, oracle, 0, 0);
+      }
+      fromB += start.from - fromA;
+      fromA = start.from;
+      let nodes = NodeBuilder.build(oracle.setDoc(doc2), decorations2, fromB, toB);
+      me2 = replace(me2, me2.replace(fromA, toA, nodes));
+    }
+    return me2.updateHeight(oracle, 0);
+  }
+  static empty() {
+    return new HeightMapText(0, 0, 0);
+  }
+  static of(nodes) {
+    if (nodes.length == 1)
+      return nodes[0];
+    let i2 = 0, j2 = nodes.length, before = 0, after = 0;
+    for (;; ) {
+      if (i2 == j2) {
+        if (before > after * 2) {
+          let split = nodes[i2 - 1];
+          if (split.break)
+            nodes.splice(--i2, 1, split.left, null, split.right);
+          else
+            nodes.splice(--i2, 1, split.left, split.right);
+          j2 += 1 + split.break;
+          before -= split.size;
+        } else if (after > before * 2) {
+          let split = nodes[j2];
+          if (split.break)
+            nodes.splice(j2, 1, split.left, null, split.right);
+          else
+            nodes.splice(j2, 1, split.left, split.right);
+          j2 += 2 + split.break;
+          after -= split.size;
+        } else {
+          break;
+        }
+      } else if (before < after) {
+        let next = nodes[i2++];
+        if (next)
+          before += next.size;
+      } else {
+        let next = nodes[--j2];
+        if (next)
+          after += next.size;
+      }
+    }
+    let brk = 0;
+    if (nodes[i2 - 1] == null) {
+      brk = 1;
+      i2--;
+    } else if (nodes[i2] == null) {
+      brk = 1;
+      j2++;
+    }
+    return new HeightMapBranch(HeightMap.of(nodes.slice(0, i2)), brk, HeightMap.of(nodes.slice(j2)));
+  }
+}
+function replace(old, val) {
+  if (old == val)
+    return old;
+  if (old.constructor != val.constructor)
+    heightChangeFlag = true;
+  return val;
+}
+HeightMap.prototype.size = 1;
+var SpaceDeco = /* @__PURE__ */ Decoration.replace({});
+
+class HeightMapBlock extends HeightMap {
+  constructor(length, height, deco) {
+    super(length, height);
+    this.deco = deco;
+    this.spaceAbove = 0;
+  }
+  mainBlock(top2, offset4) {
+    return new BlockInfo(offset4, this.length, top2 + this.spaceAbove, this.height - this.spaceAbove, this.deco || 0);
+  }
+  blockAt(height, _oracle, top2, offset4) {
+    return this.spaceAbove && height < top2 + this.spaceAbove ? new BlockInfo(offset4, 0, top2, this.spaceAbove, SpaceDeco) : this.mainBlock(top2, offset4);
+  }
+  lineAt(_value, _type, oracle, top2, offset4) {
+    let main = this.mainBlock(top2, offset4);
+    return this.spaceAbove ? this.blockAt(0, oracle, top2, offset4).join(main) : main;
+  }
+  forEachLine(from, to, oracle, top2, offset4, f) {
+    if (from <= offset4 + this.length && to >= offset4)
+      f(this.lineAt(0, QueryType.ByPos, oracle, top2, offset4));
+  }
+  setMeasuredHeight(measured) {
+    let next = measured.heights[measured.index++];
+    if (next < 0) {
+      this.spaceAbove = -next;
+      next = measured.heights[measured.index++];
+    } else {
+      this.spaceAbove = 0;
+    }
+    this.setHeight(next);
+  }
+  updateHeight(oracle, offset4 = 0, _force = false, measured) {
+    if (measured && measured.from <= offset4 && measured.more)
+      this.setMeasuredHeight(measured);
+    this.outdated = false;
+    return this;
+  }
+  toString() {
+    return `block(${this.length})`;
+  }
+}
+
+class HeightMapText extends HeightMapBlock {
+  constructor(length, height, above) {
+    super(length, height, null);
+    this.collapsed = 0;
+    this.widgetHeight = 0;
+    this.breaks = 0;
+    this.spaceAbove = above;
+  }
+  mainBlock(top2, offset4) {
+    return new BlockInfo(offset4, this.length, top2 + this.spaceAbove, this.height - this.spaceAbove, this.breaks);
+  }
+  replace(_from, _to, nodes) {
+    let node = nodes[0];
+    if (nodes.length == 1 && (node instanceof HeightMapText || node instanceof HeightMapGap && node.flags & 4) && Math.abs(this.length - node.length) < 10) {
+      if (node instanceof HeightMapGap)
+        node = new HeightMapText(node.length, this.height, this.spaceAbove);
+      else
+        node.height = this.height;
+      if (!this.outdated)
+        node.outdated = false;
+      return node;
+    } else {
+      return HeightMap.of(nodes);
+    }
+  }
+  updateHeight(oracle, offset4 = 0, force = false, measured) {
+    if (measured && measured.from <= offset4 && measured.more) {
+      this.setMeasuredHeight(measured);
+    } else if (force || this.outdated) {
+      this.spaceAbove = 0;
+      this.setHeight(Math.max(this.widgetHeight, oracle.heightForLine(this.length - this.collapsed)) + this.breaks * oracle.lineHeight);
+    }
+    this.outdated = false;
+    return this;
+  }
+  toString() {
+    return `line(${this.length}${this.collapsed ? -this.collapsed : ""}${this.widgetHeight ? ":" + this.widgetHeight : ""})`;
+  }
+}
+
+class HeightMapGap extends HeightMap {
+  constructor(length) {
+    super(length, 0);
+  }
+  heightMetrics(oracle, offset4) {
+    let firstLine = oracle.doc.lineAt(offset4).number, lastLine = oracle.doc.lineAt(offset4 + this.length).number;
+    let lines = lastLine - firstLine + 1;
+    let perLine, perChar = 0;
+    if (oracle.lineWrapping) {
+      let totalPerLine = Math.min(this.height, oracle.lineHeight * lines);
+      perLine = totalPerLine / lines;
+      if (this.length > lines + 1)
+        perChar = (this.height - totalPerLine) / (this.length - lines - 1);
+    } else {
+      perLine = this.height / lines;
+    }
+    return { firstLine, lastLine, perLine, perChar };
+  }
+  blockAt(height, oracle, top2, offset4) {
+    let { firstLine, lastLine, perLine, perChar } = this.heightMetrics(oracle, offset4);
+    if (oracle.lineWrapping) {
+      let guess = offset4 + (height < oracle.lineHeight ? 0 : Math.round(Math.max(0, Math.min(1, (height - top2) / this.height)) * this.length));
+      let line = oracle.doc.lineAt(guess), lineHeight = perLine + line.length * perChar;
+      let lineTop = Math.max(top2, height - lineHeight / 2);
+      return new BlockInfo(line.from, line.length, lineTop, lineHeight, 0);
+    } else {
+      let line = Math.max(0, Math.min(lastLine - firstLine, Math.floor((height - top2) / perLine)));
+      let { from, length } = oracle.doc.line(firstLine + line);
+      return new BlockInfo(from, length, top2 + perLine * line, perLine, 0);
+    }
+  }
+  lineAt(value, type, oracle, top2, offset4) {
+    if (type == QueryType.ByHeight)
+      return this.blockAt(value, oracle, top2, offset4);
+    if (type == QueryType.ByPosNoHeight) {
+      let { from, to } = oracle.doc.lineAt(value);
+      return new BlockInfo(from, to - from, 0, 0, 0);
+    }
+    let { firstLine, perLine, perChar } = this.heightMetrics(oracle, offset4);
+    let line = oracle.doc.lineAt(value), lineHeight = perLine + line.length * perChar;
+    let linesAbove = line.number - firstLine;
+    let lineTop = top2 + perLine * linesAbove + perChar * (line.from - offset4 - linesAbove);
+    return new BlockInfo(line.from, line.length, Math.max(top2, Math.min(lineTop, top2 + this.height - lineHeight)), lineHeight, 0);
+  }
+  forEachLine(from, to, oracle, top2, offset4, f) {
+    from = Math.max(from, offset4);
+    to = Math.min(to, offset4 + this.length);
+    let { firstLine, perLine, perChar } = this.heightMetrics(oracle, offset4);
+    for (let pos = from, lineTop = top2;pos <= to; ) {
+      let line = oracle.doc.lineAt(pos);
+      if (pos == from) {
+        let linesAbove = line.number - firstLine;
+        lineTop += perLine * linesAbove + perChar * (from - offset4 - linesAbove);
+      }
+      let lineHeight = perLine + perChar * line.length;
+      f(new BlockInfo(line.from, line.length, lineTop, lineHeight, 0));
+      lineTop += lineHeight;
+      pos = line.to + 1;
+    }
+  }
+  replace(from, to, nodes) {
+    let after = this.length - to;
+    if (after > 0) {
+      let last2 = nodes[nodes.length - 1];
+      if (last2 instanceof HeightMapGap)
+        nodes[nodes.length - 1] = new HeightMapGap(last2.length + after);
+      else
+        nodes.push(null, new HeightMapGap(after - 1));
+    }
+    if (from > 0) {
+      let first = nodes[0];
+      if (first instanceof HeightMapGap)
+        nodes[0] = new HeightMapGap(from + first.length);
+      else
+        nodes.unshift(new HeightMapGap(from - 1), null);
+    }
+    return HeightMap.of(nodes);
+  }
+  decomposeLeft(to, result) {
+    result.push(new HeightMapGap(to - 1), null);
+  }
+  decomposeRight(from, result) {
+    result.push(null, new HeightMapGap(this.length - from - 1));
+  }
+  updateHeight(oracle, offset4 = 0, force = false, measured) {
+    let end = offset4 + this.length;
+    if (measured && measured.from <= offset4 + this.length && measured.more) {
+      let nodes = [], pos = Math.max(offset4, measured.from), singleHeight = -1;
+      if (measured.from > offset4)
+        nodes.push(new HeightMapGap(measured.from - offset4 - 1).updateHeight(oracle, offset4));
+      while (pos <= end && measured.more) {
+        let len = oracle.doc.lineAt(pos).length;
+        if (nodes.length)
+          nodes.push(null);
+        let height = measured.heights[measured.index++], above = 0;
+        if (height < 0) {
+          above = -height;
+          height = measured.heights[measured.index++];
+        }
+        if (singleHeight == -1)
+          singleHeight = height;
+        else if (Math.abs(height - singleHeight) >= Epsilon)
+          singleHeight = -2;
+        let line = new HeightMapText(len, height, above);
+        line.outdated = false;
+        nodes.push(line);
+        pos += len + 1;
+      }
+      if (pos <= end)
+        nodes.push(null, new HeightMapGap(end - pos).updateHeight(oracle, pos));
+      let result = HeightMap.of(nodes);
+      if (singleHeight < 0 || Math.abs(result.height - this.height) >= Epsilon || Math.abs(singleHeight - this.heightMetrics(oracle, offset4).perLine) >= Epsilon)
+        heightChangeFlag = true;
+      return replace(this, result);
+    } else if (force || this.outdated) {
+      this.setHeight(oracle.heightForGap(offset4, offset4 + this.length));
+      this.outdated = false;
+    }
+    return this;
+  }
+  toString() {
+    return `gap(${this.length})`;
+  }
+}
+
+class HeightMapBranch extends HeightMap {
+  constructor(left, brk, right) {
+    super(left.length + brk + right.length, left.height + right.height, brk | (left.outdated || right.outdated ? 2 : 0));
+    this.left = left;
+    this.right = right;
+    this.size = left.size + right.size;
+  }
+  get break() {
+    return this.flags & 1;
+  }
+  blockAt(height, oracle, top2, offset4) {
+    let mid = top2 + this.left.height;
+    return height < mid ? this.left.blockAt(height, oracle, top2, offset4) : this.right.blockAt(height, oracle, mid, offset4 + this.left.length + this.break);
+  }
+  lineAt(value, type, oracle, top2, offset4) {
+    let rightTop = top2 + this.left.height, rightOffset = offset4 + this.left.length + this.break;
+    let left = type == QueryType.ByHeight ? value < rightTop : value < rightOffset;
+    let base2 = left ? this.left.lineAt(value, type, oracle, top2, offset4) : this.right.lineAt(value, type, oracle, rightTop, rightOffset);
+    if (this.break || (left ? base2.to < rightOffset : base2.from > rightOffset))
+      return base2;
+    let subQuery = type == QueryType.ByPosNoHeight ? QueryType.ByPosNoHeight : QueryType.ByPos;
+    if (left)
+      return base2.join(this.right.lineAt(rightOffset, subQuery, oracle, rightTop, rightOffset));
+    else
+      return this.left.lineAt(rightOffset, subQuery, oracle, top2, offset4).join(base2);
+  }
+  forEachLine(from, to, oracle, top2, offset4, f) {
+    let rightTop = top2 + this.left.height, rightOffset = offset4 + this.left.length + this.break;
+    if (this.break) {
+      if (from < rightOffset)
+        this.left.forEachLine(from, to, oracle, top2, offset4, f);
+      if (to >= rightOffset)
+        this.right.forEachLine(from, to, oracle, rightTop, rightOffset, f);
+    } else {
+      let mid = this.lineAt(rightOffset, QueryType.ByPos, oracle, top2, offset4);
+      if (from < mid.from)
+        this.left.forEachLine(from, mid.from - 1, oracle, top2, offset4, f);
+      if (mid.to >= from && mid.from <= to)
+        f(mid);
+      if (to > mid.to)
+        this.right.forEachLine(mid.to + 1, to, oracle, rightTop, rightOffset, f);
+    }
+  }
+  replace(from, to, nodes) {
+    let rightStart = this.left.length + this.break;
+    if (to < rightStart)
+      return this.balanced(this.left.replace(from, to, nodes), this.right);
+    if (from > this.left.length)
+      return this.balanced(this.left, this.right.replace(from - rightStart, to - rightStart, nodes));
+    let result = [];
+    if (from > 0)
+      this.decomposeLeft(from, result);
+    let left = result.length;
+    for (let node of nodes)
+      result.push(node);
+    if (from > 0)
+      mergeGaps(result, left - 1);
+    if (to < this.length) {
+      let right = result.length;
+      this.decomposeRight(to, result);
+      mergeGaps(result, right);
+    }
+    return HeightMap.of(result);
+  }
+  decomposeLeft(to, result) {
+    let left = this.left.length;
+    if (to <= left)
+      return this.left.decomposeLeft(to, result);
+    result.push(this.left);
+    if (this.break) {
+      left++;
+      if (to >= left)
+        result.push(null);
+    }
+    if (to > left)
+      this.right.decomposeLeft(to - left, result);
+  }
+  decomposeRight(from, result) {
+    let left = this.left.length, right = left + this.break;
+    if (from >= right)
+      return this.right.decomposeRight(from - right, result);
+    if (from < left)
+      this.left.decomposeRight(from, result);
+    if (this.break && from < right)
+      result.push(null);
+    result.push(this.right);
+  }
+  balanced(left, right) {
+    if (left.size > 2 * right.size || right.size > 2 * left.size)
+      return HeightMap.of(this.break ? [left, null, right] : [left, right]);
+    this.left = replace(this.left, left);
+    this.right = replace(this.right, right);
+    this.setHeight(left.height + right.height);
+    this.outdated = left.outdated || right.outdated;
+    this.size = left.size + right.size;
+    this.length = left.length + this.break + right.length;
+    return this;
+  }
+  updateHeight(oracle, offset4 = 0, force = false, measured) {
+    let { left, right } = this, rightStart = offset4 + left.length + this.break, rebalance = null;
+    if (measured && measured.from <= offset4 + left.length && measured.more)
+      rebalance = left = left.updateHeight(oracle, offset4, force, measured);
+    else
+      left.updateHeight(oracle, offset4, force);
+    if (measured && measured.from <= rightStart + right.length && measured.more)
+      rebalance = right = right.updateHeight(oracle, rightStart, force, measured);
+    else
+      right.updateHeight(oracle, rightStart, force);
+    if (rebalance)
+      return this.balanced(left, right);
+    this.height = this.left.height + this.right.height;
+    this.outdated = false;
+    return this;
+  }
+  toString() {
+    return this.left + (this.break ? " " : "-") + this.right;
+  }
+}
+function mergeGaps(nodes, around) {
+  let before, after;
+  if (nodes[around] == null && (before = nodes[around - 1]) instanceof HeightMapGap && (after = nodes[around + 1]) instanceof HeightMapGap)
+    nodes.splice(around - 1, 3, new HeightMapGap(before.length + 1 + after.length));
+}
+var relevantWidgetHeight = 5;
+
+class NodeBuilder {
+  constructor(pos, oracle) {
+    this.pos = pos;
+    this.oracle = oracle;
+    this.nodes = [];
+    this.lineStart = -1;
+    this.lineEnd = -1;
+    this.covering = null;
+    this.writtenTo = pos;
+  }
+  get isCovered() {
+    return this.covering && this.nodes[this.nodes.length - 1] == this.covering;
+  }
+  span(_from, to) {
+    if (this.lineStart > -1) {
+      let end = Math.min(to, this.lineEnd), last2 = this.nodes[this.nodes.length - 1];
+      if (last2 instanceof HeightMapText)
+        last2.length += end - this.pos;
+      else if (end > this.pos || !this.isCovered)
+        this.nodes.push(new HeightMapText(end - this.pos, -1, 0));
+      this.writtenTo = end;
+      if (to > end) {
+        this.nodes.push(null);
+        this.writtenTo++;
+        this.lineStart = -1;
+      }
+    }
+    this.pos = to;
+  }
+  point(from, to, deco) {
+    if (from < to || deco.heightRelevant) {
+      let height = deco.widget ? deco.widget.estimatedHeight : 0;
+      let breaks = deco.widget ? deco.widget.lineBreaks : 0;
+      if (height < 0)
+        height = this.oracle.lineHeight;
+      let len = to - from;
+      if (deco.block) {
+        this.addBlock(new HeightMapBlock(len, height, deco));
+      } else if (len || breaks || height >= relevantWidgetHeight) {
+        this.addLineDeco(height, breaks, len);
+      }
+    } else if (to > from) {
+      this.span(from, to);
+    }
+    if (this.lineEnd > -1 && this.lineEnd < this.pos)
+      this.lineEnd = this.oracle.doc.lineAt(this.pos).to;
+  }
+  enterLine() {
+    if (this.lineStart > -1)
+      return;
+    let { from, to } = this.oracle.doc.lineAt(this.pos);
+    this.lineStart = from;
+    this.lineEnd = to;
+    if (this.writtenTo < from) {
+      if (this.writtenTo < from - 1 || this.nodes[this.nodes.length - 1] == null)
+        this.nodes.push(this.blankContent(this.writtenTo, from - 1));
+      this.nodes.push(null);
+    }
+    if (this.pos > from)
+      this.nodes.push(new HeightMapText(this.pos - from, -1, 0));
+    this.writtenTo = this.pos;
+  }
+  blankContent(from, to) {
+    let gap = new HeightMapGap(to - from);
+    if (this.oracle.doc.lineAt(from).to == to)
+      gap.flags |= 4;
+    return gap;
+  }
+  ensureLine() {
+    this.enterLine();
+    let last2 = this.nodes.length ? this.nodes[this.nodes.length - 1] : null;
+    if (last2 instanceof HeightMapText)
+      return last2;
+    let line = new HeightMapText(0, -1, 0);
+    this.nodes.push(line);
+    return line;
+  }
+  addBlock(block) {
+    this.enterLine();
+    let deco = block.deco;
+    if (deco && deco.startSide > 0 && !this.isCovered)
+      this.ensureLine();
+    this.nodes.push(block);
+    this.writtenTo = this.pos = this.pos + block.length;
+    if (deco && deco.endSide > 0)
+      this.covering = block;
+  }
+  addLineDeco(height, breaks, length) {
+    let line = this.ensureLine();
+    line.length += length;
+    line.collapsed += length;
+    line.widgetHeight = Math.max(line.widgetHeight, height);
+    line.breaks += breaks;
+    this.writtenTo = this.pos = this.pos + length;
+  }
+  finish(from) {
+    let last2 = this.nodes.length == 0 ? null : this.nodes[this.nodes.length - 1];
+    if (this.lineStart > -1 && !(last2 instanceof HeightMapText) && !this.isCovered)
+      this.nodes.push(new HeightMapText(0, -1, 0));
+    else if (this.writtenTo < this.pos || last2 == null)
+      this.nodes.push(this.blankContent(this.writtenTo, this.pos));
+    let pos = from;
+    for (let node of this.nodes) {
+      if (node instanceof HeightMapText)
+        node.updateHeight(this.oracle, pos);
+      pos += node ? node.length : 1;
+    }
+    return this.nodes;
+  }
+  static build(oracle, decorations2, from, to) {
+    let builder = new NodeBuilder(from, oracle);
+    RangeSet.spans(decorations2, from, to, builder, 0);
+    return builder.finish(from);
+  }
+}
+function heightRelevantDecoChanges(a, b, diff) {
+  let comp = new DecorationComparator2;
+  RangeSet.compare(a, b, diff, comp, 0);
+  return comp.changes;
+}
+
+class DecorationComparator2 {
+  constructor() {
+    this.changes = [];
+  }
+  compareRange() {}
+  comparePoint(from, to, a, b) {
+    if (from < to || a && a.heightRelevant || b && b.heightRelevant)
+      addRange(from, to, this.changes, 5);
+  }
+}
+function visiblePixelRange(dom, paddingTop) {
+  let rect = dom.getBoundingClientRect();
+  let doc2 = dom.ownerDocument, win = doc2.defaultView || window;
+  let left = Math.max(0, rect.left), right = Math.min(win.innerWidth, rect.right);
+  let top2 = Math.max(0, rect.top), bottom = Math.min(win.innerHeight, rect.bottom);
+  for (let parent = dom.parentNode;parent && parent != doc2.body; ) {
+    if (parent.nodeType == 1) {
+      let elt = parent;
+      let style = window.getComputedStyle(elt);
+      if ((elt.scrollHeight > elt.clientHeight || elt.scrollWidth > elt.clientWidth) && style.overflow != "visible") {
+        let parentRect = elt.getBoundingClientRect();
+        left = Math.max(left, parentRect.left);
+        right = Math.min(right, parentRect.right);
+        top2 = Math.max(top2, parentRect.top);
+        bottom = Math.min(parent == dom.parentNode ? win.innerHeight : bottom, parentRect.bottom);
+      }
+      parent = style.position == "absolute" || style.position == "fixed" ? elt.offsetParent : elt.parentNode;
+    } else if (parent.nodeType == 11) {
+      parent = parent.host;
+    } else {
+      break;
+    }
+  }
+  return {
+    left: left - rect.left,
+    right: Math.max(left, right) - rect.left,
+    top: top2 - (rect.top + paddingTop),
+    bottom: Math.max(top2, bottom) - (rect.top + paddingTop)
+  };
+}
+function inWindow(elt) {
+  let rect = elt.getBoundingClientRect(), win = elt.ownerDocument.defaultView || window;
+  return rect.left < win.innerWidth && rect.right > 0 && rect.top < win.innerHeight && rect.bottom > 0;
+}
+function fullPixelRange(dom, paddingTop) {
+  let rect = dom.getBoundingClientRect();
+  return {
+    left: 0,
+    right: rect.right - rect.left,
+    top: paddingTop,
+    bottom: rect.bottom - (rect.top + paddingTop)
+  };
+}
+
+class LineGap {
+  constructor(from, to, size4, displaySize) {
+    this.from = from;
+    this.to = to;
+    this.size = size4;
+    this.displaySize = displaySize;
+  }
+  static same(a, b) {
+    if (a.length != b.length)
+      return false;
+    for (let i2 = 0;i2 < a.length; i2++) {
+      let gA = a[i2], gB = b[i2];
+      if (gA.from != gB.from || gA.to != gB.to || gA.size != gB.size)
+        return false;
+    }
+    return true;
+  }
+  draw(viewState, wrapping) {
+    return Decoration.replace({
+      widget: new LineGapWidget(this.displaySize * (wrapping ? viewState.scaleY : viewState.scaleX), wrapping)
+    }).range(this.from, this.to);
+  }
+}
+
+class LineGapWidget extends WidgetType {
+  constructor(size4, vertical) {
+    super();
+    this.size = size4;
+    this.vertical = vertical;
+  }
+  eq(other) {
+    return other.size == this.size && other.vertical == this.vertical;
+  }
+  toDOM() {
+    let elt = document.createElement("div");
+    if (this.vertical) {
+      elt.style.height = this.size + "px";
+    } else {
+      elt.style.width = this.size + "px";
+      elt.style.height = "2px";
+      elt.style.display = "inline-block";
+    }
+    return elt;
+  }
+  get estimatedHeight() {
+    return this.vertical ? this.size : -1;
+  }
+}
+
+class ViewState {
+  constructor(view, state) {
+    this.view = view;
+    this.state = state;
+    this.pixelViewport = { left: 0, right: window.innerWidth, top: 0, bottom: 0 };
+    this.inView = true;
+    this.paddingTop = 0;
+    this.paddingBottom = 0;
+    this.contentDOMWidth = 0;
+    this.contentDOMHeight = 0;
+    this.editorHeight = 0;
+    this.editorWidth = 0;
+    this.scaleX = 1;
+    this.scaleY = 1;
+    this.scrollOffset = 0;
+    this.scrolledToBottom = false;
+    this.scrollAnchorPos = 0;
+    this.scrollAnchorHeight = -1;
+    this.scaler = IdScaler;
+    this.scrollTarget = null;
+    this.printing = false;
+    this.mustMeasureContent = true;
+    this.defaultTextDirection = Direction.LTR;
+    this.visibleRanges = [];
+    this.mustEnforceCursorAssoc = false;
+    let guessWrapping = state.facet(contentAttributes).some((v) => typeof v != "function" && v.class == "cm-lineWrapping");
+    this.heightOracle = new HeightOracle(guessWrapping);
+    this.stateDeco = staticDeco(state);
+    this.heightMap = HeightMap.empty().applyChanges(this.stateDeco, Text.empty, this.heightOracle.setDoc(state.doc), [new ChangedRange(0, 0, 0, state.doc.length)]);
+    for (let i2 = 0;i2 < 2; i2++) {
+      this.viewport = this.getViewport(0, null);
+      if (!this.updateForViewport())
+        break;
+    }
+    this.updateViewportLines();
+    this.lineGaps = this.ensureLineGaps([]);
+    this.lineGapDeco = Decoration.set(this.lineGaps.map((gap) => gap.draw(this, false)));
+    this.scrollParent = view.scrollDOM;
+    this.computeVisibleRanges();
+  }
+  updateForViewport() {
+    let viewports = [this.viewport], { main } = this.state.selection;
+    for (let i2 = 0;i2 <= 1; i2++) {
+      let pos = i2 ? main.head : main.anchor;
+      if (!viewports.some(({ from, to }) => pos >= from && pos <= to)) {
+        let { from, to } = this.lineBlockAt(pos);
+        viewports.push(new Viewport(from, to));
+      }
+    }
+    this.viewports = viewports.sort((a, b) => a.from - b.from);
+    return this.updateScaler();
+  }
+  updateScaler() {
+    let scaler = this.scaler;
+    this.scaler = this.heightMap.height <= 7000000 ? IdScaler : new BigScaler(this.heightOracle, this.heightMap, this.viewports);
+    return scaler.eq(this.scaler) ? 0 : 2;
+  }
+  updateViewportLines() {
+    this.viewportLines = [];
+    this.heightMap.forEachLine(this.viewport.from, this.viewport.to, this.heightOracle.setDoc(this.state.doc), 0, 0, (block) => {
+      this.viewportLines.push(scaleBlock(block, this.scaler));
+    });
+  }
+  update(update2, scrollTarget = null) {
+    this.state = update2.state;
+    let prevDeco = this.stateDeco;
+    this.stateDeco = staticDeco(this.state);
+    let contentChanges = update2.changedRanges;
+    let heightChanges = ChangedRange.extendWithRanges(contentChanges, heightRelevantDecoChanges(prevDeco, this.stateDeco, update2 ? update2.changes : ChangeSet.empty(this.state.doc.length)));
+    let prevHeight = this.heightMap.height;
+    let scrollAnchor = this.scrolledToBottom ? null : this.scrollAnchorAt(this.scrollOffset);
+    clearHeightChangeFlag();
+    this.heightMap = this.heightMap.applyChanges(this.stateDeco, update2.startState.doc, this.heightOracle.setDoc(this.state.doc), heightChanges);
+    if (this.heightMap.height != prevHeight || heightChangeFlag)
+      update2.flags |= 2;
+    if (scrollAnchor) {
+      this.scrollAnchorPos = update2.changes.mapPos(scrollAnchor.from, -1);
+      this.scrollAnchorHeight = scrollAnchor.top;
+    } else {
+      this.scrollAnchorPos = -1;
+      this.scrollAnchorHeight = prevHeight;
+    }
+    let viewport = heightChanges.length ? this.mapViewport(this.viewport, update2.changes) : this.viewport;
+    if (scrollTarget && (scrollTarget.range.head < viewport.from || scrollTarget.range.head > viewport.to) || !this.viewportIsAppropriate(viewport))
+      viewport = this.getViewport(0, scrollTarget);
+    let viewportChange = viewport.from != this.viewport.from || viewport.to != this.viewport.to;
+    this.viewport = viewport;
+    update2.flags |= this.updateForViewport();
+    if (viewportChange || !update2.changes.empty || update2.flags & 2)
+      this.updateViewportLines();
+    if (this.lineGaps.length || this.viewport.to - this.viewport.from > 2000 << 1)
+      this.updateLineGaps(this.ensureLineGaps(this.mapLineGaps(this.lineGaps, update2.changes)));
+    update2.flags |= this.computeVisibleRanges(update2.changes);
+    if (scrollTarget)
+      this.scrollTarget = scrollTarget;
+    if (!this.mustEnforceCursorAssoc && (update2.selectionSet || update2.focusChanged) && update2.view.lineWrapping && update2.state.selection.main.empty && update2.state.selection.main.assoc && !update2.state.facet(nativeSelectionHidden))
+      this.mustEnforceCursorAssoc = true;
+  }
+  measure() {
+    let { view } = this, dom = view.contentDOM, style = window.getComputedStyle(dom);
+    let oracle = this.heightOracle;
+    let whiteSpace = style.whiteSpace;
+    this.defaultTextDirection = style.direction == "rtl" ? Direction.RTL : Direction.LTR;
+    let refresh = this.heightOracle.mustRefreshForWrapping(whiteSpace) || this.mustMeasureContent === "refresh";
+    let domRect = dom.getBoundingClientRect();
+    let measureContent = refresh || this.mustMeasureContent || this.contentDOMHeight != domRect.height;
+    this.contentDOMHeight = domRect.height;
+    this.mustMeasureContent = false;
+    let result = 0, bias = 0;
+    if (domRect.width && domRect.height) {
+      let { scaleX, scaleY } = getScale2(dom, domRect);
+      if (scaleX > 0.005 && Math.abs(this.scaleX - scaleX) > 0.005 || scaleY > 0.005 && Math.abs(this.scaleY - scaleY) > 0.005) {
+        this.scaleX = scaleX;
+        this.scaleY = scaleY;
+        result |= 16;
+        refresh = measureContent = true;
+      }
+    }
+    let paddingTop = (parseInt(style.paddingTop) || 0) * this.scaleY;
+    let paddingBottom = (parseInt(style.paddingBottom) || 0) * this.scaleY;
+    if (this.paddingTop != paddingTop || this.paddingBottom != paddingBottom) {
+      this.paddingTop = paddingTop;
+      this.paddingBottom = paddingBottom;
+      result |= 16 | 2;
+    }
+    if (this.editorWidth != view.scrollDOM.clientWidth) {
+      if (oracle.lineWrapping)
+        measureContent = true;
+      this.editorWidth = view.scrollDOM.clientWidth;
+      result |= 16;
+    }
+    let scrollParent = scrollableParents(this.view.contentDOM, false).y;
+    if (scrollParent != this.scrollParent) {
+      this.scrollParent = scrollParent;
+      this.scrollAnchorHeight = -1;
+      this.scrollOffset = 0;
+    }
+    let scrollOffset = this.getScrollOffset();
+    if (this.scrollOffset != scrollOffset) {
+      this.scrollAnchorHeight = -1;
+      this.scrollOffset = scrollOffset;
+    }
+    this.scrolledToBottom = isScrolledToBottom(this.scrollParent || view.win);
+    let pixelViewport = (this.printing ? fullPixelRange : visiblePixelRange)(dom, this.paddingTop);
+    let dTop = pixelViewport.top - this.pixelViewport.top, dBottom = pixelViewport.bottom - this.pixelViewport.bottom;
+    this.pixelViewport = pixelViewport;
+    let inView = this.pixelViewport.bottom > this.pixelViewport.top && this.pixelViewport.right > this.pixelViewport.left;
+    if (inView != this.inView) {
+      this.inView = inView;
+      if (inView)
+        measureContent = true;
+    }
+    if (!this.inView && !this.scrollTarget && !inWindow(view.dom))
+      return 0;
+    let contentWidth = domRect.width;
+    if (this.contentDOMWidth != contentWidth || this.editorHeight != view.scrollDOM.clientHeight) {
+      this.contentDOMWidth = domRect.width;
+      this.editorHeight = view.scrollDOM.clientHeight;
+      result |= 16;
+    }
+    if (measureContent) {
+      let lineHeights = view.docView.measureVisibleLineHeights(this.viewport);
+      if (oracle.mustRefreshForHeights(lineHeights))
+        refresh = true;
+      if (refresh || oracle.lineWrapping && Math.abs(contentWidth - this.contentDOMWidth) > oracle.charWidth) {
+        let { lineHeight, charWidth, textHeight } = view.docView.measureTextSize();
+        refresh = lineHeight > 0 && oracle.refresh(whiteSpace, lineHeight, charWidth, textHeight, Math.max(5, contentWidth / charWidth), lineHeights);
+        if (refresh) {
+          view.docView.minWidth = 0;
+          result |= 16;
+        }
+      }
+      if (dTop > 0 && dBottom > 0)
+        bias = Math.max(dTop, dBottom);
+      else if (dTop < 0 && dBottom < 0)
+        bias = Math.min(dTop, dBottom);
+      clearHeightChangeFlag();
+      for (let vp of this.viewports) {
+        let heights = vp.from == this.viewport.from ? lineHeights : view.docView.measureVisibleLineHeights(vp);
+        this.heightMap = (refresh ? HeightMap.empty().applyChanges(this.stateDeco, Text.empty, this.heightOracle, [new ChangedRange(0, 0, 0, view.state.doc.length)]) : this.heightMap).updateHeight(oracle, 0, refresh, new MeasuredHeights(vp.from, heights));
+      }
+      if (heightChangeFlag)
+        result |= 2;
+    }
+    let viewportChange = !this.viewportIsAppropriate(this.viewport, bias) || this.scrollTarget && (this.scrollTarget.range.head < this.viewport.from || this.scrollTarget.range.head > this.viewport.to);
+    if (viewportChange) {
+      if (result & 2)
+        result |= this.updateScaler();
+      this.viewport = this.getViewport(bias, this.scrollTarget);
+      result |= this.updateForViewport();
+    }
+    if (result & 2 || viewportChange)
+      this.updateViewportLines();
+    if (this.lineGaps.length || this.viewport.to - this.viewport.from > 2000 << 1)
+      this.updateLineGaps(this.ensureLineGaps(refresh ? [] : this.lineGaps, view));
+    result |= this.computeVisibleRanges();
+    if (this.mustEnforceCursorAssoc) {
+      this.mustEnforceCursorAssoc = false;
+      view.docView.enforceCursorAssoc();
+    }
+    return result;
+  }
+  get visibleTop() {
+    return this.scaler.fromDOM(this.pixelViewport.top);
+  }
+  get visibleBottom() {
+    return this.scaler.fromDOM(this.pixelViewport.bottom);
+  }
+  getViewport(bias, scrollTarget) {
+    let marginTop = 0.5 - Math.max(-0.5, Math.min(0.5, bias / 1000 / 2));
+    let map = this.heightMap, oracle = this.heightOracle;
+    let { visibleTop, visibleBottom } = this;
+    let viewport = new Viewport(map.lineAt(visibleTop - marginTop * 1000, QueryType.ByHeight, oracle, 0, 0).from, map.lineAt(visibleBottom + (1 - marginTop) * 1000, QueryType.ByHeight, oracle, 0, 0).to);
+    if (scrollTarget) {
+      let { head } = scrollTarget.range;
+      if (head < viewport.from || head > viewport.to) {
+        let viewHeight = Math.min(this.editorHeight, this.pixelViewport.bottom - this.pixelViewport.top);
+        let block = map.lineAt(head, QueryType.ByPos, oracle, 0, 0), topPos;
+        if (scrollTarget.y == "center")
+          topPos = (block.top + block.bottom) / 2 - viewHeight / 2;
+        else if (scrollTarget.y == "start" || scrollTarget.y == "nearest" && head < viewport.from)
+          topPos = block.top;
+        else
+          topPos = block.bottom - viewHeight;
+        viewport = new Viewport(map.lineAt(topPos - 1000 / 2, QueryType.ByHeight, oracle, 0, 0).from, map.lineAt(topPos + viewHeight + 1000 / 2, QueryType.ByHeight, oracle, 0, 0).to);
+      }
+    }
+    return viewport;
+  }
+  mapViewport(viewport, changes) {
+    let from = changes.mapPos(viewport.from, -1), to = changes.mapPos(viewport.to, 1);
+    return new Viewport(this.heightMap.lineAt(from, QueryType.ByPos, this.heightOracle, 0, 0).from, this.heightMap.lineAt(to, QueryType.ByPos, this.heightOracle, 0, 0).to);
+  }
+  viewportIsAppropriate({ from, to }, bias = 0) {
+    if (!this.inView)
+      return true;
+    let { top: top2 } = this.heightMap.lineAt(from, QueryType.ByPos, this.heightOracle, 0, 0);
+    let { bottom } = this.heightMap.lineAt(to, QueryType.ByPos, this.heightOracle, 0, 0);
+    let { visibleTop, visibleBottom } = this;
+    return (from == 0 || top2 <= visibleTop - Math.max(10, Math.min(-bias, 250))) && (to == this.state.doc.length || bottom >= visibleBottom + Math.max(10, Math.min(bias, 250))) && (top2 > visibleTop - 2 * 1000 && bottom < visibleBottom + 2 * 1000);
+  }
+  mapLineGaps(gaps, changes) {
+    if (!gaps.length || changes.empty)
+      return gaps;
+    let mapped = [];
+    for (let gap of gaps)
+      if (!changes.touchesRange(gap.from, gap.to))
+        mapped.push(new LineGap(changes.mapPos(gap.from), changes.mapPos(gap.to), gap.size, gap.displaySize));
+    return mapped;
+  }
+  ensureLineGaps(current, mayMeasure) {
+    let wrapping = this.heightOracle.lineWrapping;
+    let margin = wrapping ? 1e4 : 2000, halfMargin = margin >> 1, doubleMargin = margin << 1;
+    if (this.defaultTextDirection != Direction.LTR && !wrapping)
+      return [];
+    let gaps = [];
+    let addGap = (from, to, line, structure) => {
+      if (to - from < halfMargin)
+        return;
+      let sel = this.state.selection.main, avoid = [sel.from];
+      if (!sel.empty)
+        avoid.push(sel.to);
+      for (let pos of avoid) {
+        if (pos > from && pos < to) {
+          addGap(from, pos - 10, line, structure);
+          addGap(pos + 10, to, line, structure);
+          return;
+        }
+      }
+      let gap = find(current, (gap2) => gap2.from >= line.from && gap2.to <= line.to && Math.abs(gap2.from - from) < halfMargin && Math.abs(gap2.to - to) < halfMargin && !avoid.some((pos) => gap2.from < pos && gap2.to > pos));
+      if (!gap) {
+        if (to < line.to && mayMeasure && wrapping && mayMeasure.visibleRanges.some((r2) => r2.from <= to && r2.to >= to)) {
+          let lineStart = mayMeasure.moveToLineBoundary(EditorSelection.cursor(to), false, true).head;
+          if (lineStart > from)
+            to = lineStart;
+        }
+        let size4 = this.gapSize(line, from, to, structure);
+        let displaySize = wrapping || size4 < 2000000 ? size4 : 2000000;
+        gap = new LineGap(from, to, size4, displaySize);
+      }
+      gaps.push(gap);
+    };
+    let checkLine = (line) => {
+      if (line.length < doubleMargin || line.type != BlockType.Text)
+        return;
+      let structure = lineStructure(line.from, line.to, this.stateDeco);
+      if (structure.total < doubleMargin)
+        return;
+      let target = this.scrollTarget ? this.scrollTarget.range.head : null;
+      let viewFrom, viewTo;
+      if (wrapping) {
+        let marginHeight = margin / this.heightOracle.lineLength * this.heightOracle.lineHeight;
+        let top2, bot;
+        if (target != null) {
+          let targetFrac = findFraction(structure, target);
+          let spaceFrac = ((this.visibleBottom - this.visibleTop) / 2 + marginHeight) / line.height;
+          top2 = targetFrac - spaceFrac;
+          bot = targetFrac + spaceFrac;
+        } else {
+          top2 = (this.visibleTop - line.top - marginHeight) / line.height;
+          bot = (this.visibleBottom - line.top + marginHeight) / line.height;
+        }
+        viewFrom = findPosition(structure, top2);
+        viewTo = findPosition(structure, bot);
+      } else {
+        let totalWidth = structure.total * this.heightOracle.charWidth;
+        let marginWidth = margin * this.heightOracle.charWidth;
+        let horizOffset = 0;
+        if (totalWidth > 2000000)
+          for (let old of current) {
+            if (old.from >= line.from && old.from < line.to && old.size != old.displaySize && old.from * this.heightOracle.charWidth + horizOffset < this.pixelViewport.left)
+              horizOffset = old.size - old.displaySize;
+          }
+        let pxLeft = this.pixelViewport.left + horizOffset, pxRight = this.pixelViewport.right + horizOffset;
+        let left, right;
+        if (target != null) {
+          let targetFrac = findFraction(structure, target);
+          let spaceFrac = ((pxRight - pxLeft) / 2 + marginWidth) / totalWidth;
+          left = targetFrac - spaceFrac;
+          right = targetFrac + spaceFrac;
+        } else {
+          left = (pxLeft - marginWidth) / totalWidth;
+          right = (pxRight + marginWidth) / totalWidth;
+        }
+        viewFrom = findPosition(structure, left);
+        viewTo = findPosition(structure, right);
+      }
+      if (viewFrom > line.from)
+        addGap(line.from, viewFrom, line, structure);
+      if (viewTo < line.to)
+        addGap(viewTo, line.to, line, structure);
+    };
+    for (let line of this.viewportLines) {
+      if (Array.isArray(line.type))
+        line.type.forEach(checkLine);
+      else
+        checkLine(line);
+    }
+    return gaps;
+  }
+  gapSize(line, from, to, structure) {
+    let fraction = findFraction(structure, to) - findFraction(structure, from);
+    if (this.heightOracle.lineWrapping) {
+      return line.height * fraction;
+    } else {
+      return structure.total * this.heightOracle.charWidth * fraction;
+    }
+  }
+  updateLineGaps(gaps) {
+    if (!LineGap.same(gaps, this.lineGaps)) {
+      this.lineGaps = gaps;
+      this.lineGapDeco = Decoration.set(gaps.map((gap) => gap.draw(this, this.heightOracle.lineWrapping)));
+    }
+  }
+  computeVisibleRanges(changes) {
+    let deco = this.stateDeco;
+    if (this.lineGaps.length)
+      deco = deco.concat(this.lineGapDeco);
+    let ranges = [];
+    RangeSet.spans(deco, this.viewport.from, this.viewport.to, {
+      span(from, to) {
+        ranges.push({ from, to });
+      },
+      point() {}
+    }, 20);
+    let changed = 0;
+    if (ranges.length != this.visibleRanges.length) {
+      changed = 8 | 4;
+    } else {
+      for (let i2 = 0;i2 < ranges.length && !(changed & 8); i2++) {
+        let old = this.visibleRanges[i2], nw = ranges[i2];
+        if (old.from != nw.from || old.to != nw.to) {
+          changed |= 4;
+          if (!(changes && changes.mapPos(old.from, -1) == nw.from && changes.mapPos(old.to, 1) == nw.to))
+            changed |= 8;
+        }
+      }
+    }
+    this.visibleRanges = ranges;
+    return changed;
+  }
+  lineBlockAt(pos) {
+    return pos >= this.viewport.from && pos <= this.viewport.to && this.viewportLines.find((b) => b.from <= pos && b.to >= pos) || scaleBlock(this.heightMap.lineAt(pos, QueryType.ByPos, this.heightOracle, 0, 0), this.scaler);
+  }
+  lineBlockAtHeight(height) {
+    return height >= this.viewportLines[0].top && height <= this.viewportLines[this.viewportLines.length - 1].bottom && this.viewportLines.find((l) => l.top <= height && l.bottom >= height) || scaleBlock(this.heightMap.lineAt(this.scaler.fromDOM(height), QueryType.ByHeight, this.heightOracle, 0, 0), this.scaler);
+  }
+  getScrollOffset() {
+    return this.scrollParent == this.view.scrollDOM ? this.scrollParent.scrollTop * this.scaleY : (this.scrollParent ? this.scrollParent.getBoundingClientRect().top : 0) - this.view.contentDOM.getBoundingClientRect().top;
+  }
+  scrollAnchorAt(scrollOffset) {
+    let block = this.lineBlockAtHeight(scrollOffset + 8);
+    return block.from >= this.viewport.from || this.viewportLines[0].top - scrollOffset > 200 ? block : this.viewportLines[0];
+  }
+  elementAtHeight(height) {
+    return scaleBlock(this.heightMap.blockAt(this.scaler.fromDOM(height), this.heightOracle, 0, 0), this.scaler);
+  }
+  get docHeight() {
+    return this.scaler.toDOM(this.heightMap.height);
+  }
+  get contentHeight() {
+    return this.docHeight + this.paddingTop + this.paddingBottom;
+  }
+}
+
+class Viewport {
+  constructor(from, to) {
+    this.from = from;
+    this.to = to;
+  }
+}
+function lineStructure(from, to, stateDeco) {
+  let ranges = [], pos = from, total = 0;
+  RangeSet.spans(stateDeco, from, to, {
+    span() {},
+    point(from2, to2) {
+      if (from2 > pos) {
+        ranges.push({ from: pos, to: from2 });
+        total += from2 - pos;
+      }
+      pos = to2;
+    }
+  }, 20);
+  if (pos < to) {
+    ranges.push({ from: pos, to });
+    total += to - pos;
+  }
+  return { total, ranges };
+}
+function findPosition({ total, ranges }, ratio) {
+  if (ratio <= 0)
+    return ranges[0].from;
+  if (ratio >= 1)
+    return ranges[ranges.length - 1].to;
+  let dist2 = Math.floor(total * ratio);
+  for (let i2 = 0;; i2++) {
+    let { from, to } = ranges[i2], size4 = to - from;
+    if (dist2 <= size4)
+      return from + dist2;
+    dist2 -= size4;
+  }
+}
+function findFraction(structure, pos) {
+  let counted = 0;
+  for (let { from, to } of structure.ranges) {
+    if (pos <= to) {
+      counted += pos - from;
+      break;
+    }
+    counted += to - from;
+  }
+  return counted / structure.total;
+}
+function find(array, f) {
+  for (let val of array)
+    if (f(val))
+      return val;
+  return;
+}
+var IdScaler = {
+  toDOM(n) {
+    return n;
+  },
+  fromDOM(n) {
+    return n;
+  },
+  scale: 1,
+  eq(other) {
+    return other == this;
+  }
+};
+function staticDeco(state) {
+  let deco = state.facet(decorations).filter((d) => typeof d != "function");
+  let outer = state.facet(outerDecorations).filter((d) => typeof d != "function");
+  if (outer.length)
+    deco.push(RangeSet.join(outer));
+  return deco;
+}
+
+class BigScaler {
+  constructor(oracle, heightMap, viewports) {
+    let vpHeight = 0, base2 = 0, domBase = 0;
+    this.viewports = viewports.map(({ from, to }) => {
+      let top2 = heightMap.lineAt(from, QueryType.ByPos, oracle, 0, 0).top;
+      let bottom = heightMap.lineAt(to, QueryType.ByPos, oracle, 0, 0).bottom;
+      vpHeight += bottom - top2;
+      return { from, to, top: top2, bottom, domTop: 0, domBottom: 0 };
+    });
+    this.scale = (7000000 - vpHeight) / (heightMap.height - vpHeight);
+    for (let obj of this.viewports) {
+      obj.domTop = domBase + (obj.top - base2) * this.scale;
+      domBase = obj.domBottom = obj.domTop + (obj.bottom - obj.top);
+      base2 = obj.bottom;
+    }
+  }
+  toDOM(n) {
+    for (let i2 = 0, base2 = 0, domBase = 0;; i2++) {
+      let vp = i2 < this.viewports.length ? this.viewports[i2] : null;
+      if (!vp || n < vp.top)
+        return domBase + (n - base2) * this.scale;
+      if (n <= vp.bottom)
+        return vp.domTop + (n - vp.top);
+      base2 = vp.bottom;
+      domBase = vp.domBottom;
+    }
+  }
+  fromDOM(n) {
+    for (let i2 = 0, base2 = 0, domBase = 0;; i2++) {
+      let vp = i2 < this.viewports.length ? this.viewports[i2] : null;
+      if (!vp || n < vp.domTop)
+        return base2 + (n - domBase) / this.scale;
+      if (n <= vp.domBottom)
+        return vp.top + (n - vp.domTop);
+      base2 = vp.bottom;
+      domBase = vp.domBottom;
+    }
+  }
+  eq(other) {
+    if (!(other instanceof BigScaler))
+      return false;
+    return this.scale == other.scale && this.viewports.length == other.viewports.length && this.viewports.every((vp, i2) => vp.from == other.viewports[i2].from && vp.to == other.viewports[i2].to);
+  }
+}
+function scaleBlock(block, scaler) {
+  if (scaler.scale == 1)
+    return block;
+  let bTop = scaler.toDOM(block.top), bBottom = scaler.toDOM(block.bottom);
+  return new BlockInfo(block.from, block.length, bTop, bBottom - bTop, Array.isArray(block._content) ? block._content.map((b) => scaleBlock(b, scaler)) : block._content);
+}
+var theme = /* @__PURE__ */ Facet.define({ combine: (strs) => strs.join(" ") });
+var darkTheme = /* @__PURE__ */ Facet.define({ combine: (values) => values.indexOf(true) > -1 });
+var baseThemeID = /* @__PURE__ */ StyleModule.newName();
+var baseLightID = /* @__PURE__ */ StyleModule.newName();
+var baseDarkID = /* @__PURE__ */ StyleModule.newName();
+var lightDarkIDs = { "&light": "." + baseLightID, "&dark": "." + baseDarkID };
+function buildTheme(main, spec, scopes) {
+  return new StyleModule(spec, {
+    finish(sel) {
+      return /&/.test(sel) ? sel.replace(/&\w*/, (m) => {
+        if (m == "&")
+          return main;
+        if (!scopes || !scopes[m])
+          throw new RangeError(`Unsupported selector: ${m}`);
+        return scopes[m];
+      }) : main + " " + sel;
+    }
+  });
+}
+var baseTheme$1 = /* @__PURE__ */ buildTheme("." + baseThemeID, {
+  "&": {
+    position: "relative !important",
+    boxSizing: "border-box",
+    "&.cm-focused": {
+      outline: "1px dotted #212121"
+    },
+    display: "flex !important",
+    flexDirection: "column"
+  },
+  ".cm-scroller": {
+    display: "flex !important",
+    alignItems: "flex-start !important",
+    fontFamily: "monospace",
+    lineHeight: 1.4,
+    height: "100%",
+    overflowX: "auto",
+    position: "relative",
+    zIndex: 0,
+    overflowAnchor: "none"
+  },
+  ".cm-content": {
+    margin: 0,
+    flexGrow: 2,
+    flexShrink: 0,
+    display: "block",
+    whiteSpace: "pre",
+    wordWrap: "normal",
+    boxSizing: "border-box",
+    minHeight: "100%",
+    padding: "4px 0",
+    outline: "none",
+    "&[contenteditable=true]": {
+      WebkitUserModify: "read-write-plaintext-only"
+    }
+  },
+  ".cm-lineWrapping": {
+    whiteSpace_fallback: "pre-wrap",
+    whiteSpace: "break-spaces",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+    flexShrink: 1
+  },
+  "&light .cm-content": { caretColor: "black" },
+  "&dark .cm-content": { caretColor: "white" },
+  ".cm-line": {
+    display: "block",
+    padding: "0 2px 0 6px"
+  },
+  ".cm-layer": {
+    userSelect: "none",
+    position: "absolute",
+    left: 0,
+    top: 0,
+    contain: "size style",
+    "& > *": {
+      position: "absolute"
+    }
+  },
+  "&light .cm-selectionBackground": {
+    background: "#d9d9d9"
+  },
+  "&dark .cm-selectionBackground": {
+    background: "#222"
+  },
+  "&light.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+    background: "#d7d4f0"
+  },
+  "&dark.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+    background: "#233"
+  },
+  ".cm-cursorLayer": {
+    pointerEvents: "none"
+  },
+  "&.cm-focused > .cm-scroller > .cm-cursorLayer": {
+    animation: "steps(1) cm-blink 1.2s infinite"
+  },
+  "@keyframes cm-blink": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+  "@keyframes cm-blink2": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeft: "1.2px solid black",
+    marginLeft: "-0.6px",
+    pointerEvents: "none"
+  },
+  ".cm-cursor": {
+    display: "none"
+  },
+  "&dark .cm-cursor": {
+    borderLeftColor: "#ddd"
+  },
+  ".cm-selectionHandle": {
+    backgroundColor: "currentColor",
+    width: "1.5px"
+  },
+  ".cm-selectionHandle-start::before, .cm-selectionHandle-end::before": {
+    content: '""',
+    backgroundColor: "inherit",
+    borderRadius: "50%",
+    width: "8px",
+    height: "8px",
+    position: "absolute",
+    left: "-3.25px"
+  },
+  ".cm-selectionHandle-start::before": { top: "-8px" },
+  ".cm-selectionHandle-end::before": { bottom: "-8px" },
+  ".cm-dropCursor": {
+    position: "absolute"
+  },
+  "&.cm-focused > .cm-scroller > .cm-cursorLayer .cm-cursor": {
+    display: "block"
+  },
+  ".cm-iso": {
+    unicodeBidi: "isolate"
+  },
+  ".cm-announced": {
+    position: "fixed",
+    top: "-10000px"
+  },
+  "@media print": {
+    ".cm-announced": { display: "none" }
+  },
+  "&light .cm-activeLine": { backgroundColor: "#cceeff44" },
+  "&dark .cm-activeLine": { backgroundColor: "#99eeff33" },
+  "&light .cm-specialChar": { color: "red" },
+  "&dark .cm-specialChar": { color: "#f78" },
+  ".cm-gutters": {
+    flexShrink: 0,
+    display: "flex",
+    height: "100%",
+    boxSizing: "border-box",
+    zIndex: 200
+  },
+  ".cm-gutters-before": { insetInlineStart: 0 },
+  ".cm-gutters-after": { insetInlineEnd: 0 },
+  "&light .cm-gutters": {
+    backgroundColor: "#f5f5f5",
+    color: "#6c6c6c",
+    border: "0px solid #ddd",
+    "&.cm-gutters-before": { borderRightWidth: "1px" },
+    "&.cm-gutters-after": { borderLeftWidth: "1px" }
+  },
+  "&dark .cm-gutters": {
+    backgroundColor: "#333338",
+    color: "#ccc"
+  },
+  ".cm-gutter": {
+    display: "flex !important",
+    flexDirection: "column",
+    flexShrink: 0,
+    boxSizing: "border-box",
+    minHeight: "100%",
+    overflow: "hidden"
+  },
+  ".cm-gutterElement": {
+    boxSizing: "border-box"
+  },
+  ".cm-lineNumbers .cm-gutterElement": {
+    padding: "0 3px 0 5px",
+    minWidth: "20px",
+    textAlign: "right",
+    whiteSpace: "nowrap"
+  },
+  "&light .cm-activeLineGutter": {
+    backgroundColor: "#e2f2ff"
+  },
+  "&dark .cm-activeLineGutter": {
+    backgroundColor: "#222227"
+  },
+  ".cm-panels": {
+    boxSizing: "border-box",
+    position: "sticky",
+    left: 0,
+    right: 0,
+    zIndex: 300
+  },
+  "&light .cm-panels": {
+    backgroundColor: "#f5f5f5",
+    color: "black"
+  },
+  ".cm-panels-top": { top: "0" },
+  ".cm-panels-bottom": { bottom: "0" },
+  "&light .cm-panels-top": {
+    borderBottom: "1px solid #ddd"
+  },
+  "&light .cm-panels-bottom": {
+    borderTop: "1px solid #ddd"
+  },
+  "&dark .cm-panels": {
+    backgroundColor: "#333338",
+    color: "white"
+  },
+  ".cm-dialog": {
+    padding: "2px 19px 4px 6px",
+    position: "relative",
+    "& label": { fontSize: "80%" }
+  },
+  ".cm-dialog-close": {
+    position: "absolute",
+    top: "3px",
+    right: "4px",
+    backgroundColor: "inherit",
+    border: "none",
+    font: "inherit",
+    fontSize: "14px",
+    padding: "0"
+  },
+  ".cm-tab": {
+    display: "inline-block",
+    overflow: "hidden",
+    verticalAlign: "bottom"
+  },
+  ".cm-widgetBuffer": {
+    verticalAlign: "text-top",
+    height: "1em",
+    width: 0,
+    display: "inline"
+  },
+  ".cm-placeholder": {
+    color: "#888",
+    display: "inline-block",
+    verticalAlign: "top",
+    userSelect: "none"
+  },
+  ".cm-highlightSpace": {
+    background: "radial-gradient(circle at 50% 55%, #aaa 20%, transparent 0) no-repeat",
+    backgroundSize: ".4em",
+    backgroundPosition: "calc(min(50%, 0px)) center"
+  },
+  ".cm-highlightTab": {
+    backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20"><path stroke="%23888" stroke-width="1" fill="none" d="M1 10H196L190 5M190 15L196 10M197 4L197 16"/></svg>')`,
+    backgroundSize: "auto 100%",
+    backgroundPosition: "right 90%",
+    backgroundRepeat: "no-repeat"
+  },
+  ".cm-trailingSpace": {
+    backgroundColor: "#ff332255"
+  },
+  ".cm-button": {
+    verticalAlign: "middle",
+    color: "inherit",
+    fontSize: "70%",
+    padding: ".2em 1em",
+    borderRadius: "1px"
+  },
+  "&light .cm-button": {
+    backgroundImage: "linear-gradient(#eff1f5, #d9d9df)",
+    border: "1px solid #888",
+    "&:active": {
+      backgroundImage: "linear-gradient(#b4b4b4, #d0d3d6)"
+    }
+  },
+  "&dark .cm-button": {
+    backgroundImage: "linear-gradient(#393939, #111)",
+    border: "1px solid #888",
+    "&:active": {
+      backgroundImage: "linear-gradient(#111, #333)"
+    }
+  },
+  ".cm-textfield": {
+    verticalAlign: "middle",
+    color: "inherit",
+    fontSize: "70%",
+    border: "1px solid silver",
+    padding: ".2em .5em"
+  },
+  "&light .cm-textfield": {
+    backgroundColor: "white"
+  },
+  "&dark .cm-textfield": {
+    border: "1px solid #555",
+    backgroundColor: "inherit"
+  }
+}, lightDarkIDs);
+var observeOptions = {
+  childList: true,
+  characterData: true,
+  subtree: true,
+  attributes: true,
+  characterDataOldValue: true
+};
+var useCharData = browser.ie && browser.ie_version <= 11;
+
+class DOMObserver {
+  constructor(view) {
+    this.view = view;
+    this.active = false;
+    this.editContext = null;
+    this.selectionRange = new DOMSelectionState;
+    this.selectionChanged = false;
+    this.delayedFlush = -1;
+    this.resizeTimeout = -1;
+    this.queue = [];
+    this.delayedAndroidKey = null;
+    this.flushingAndroidKey = -1;
+    this.lastChange = 0;
+    this.scrollTargets = [];
+    this.intersection = null;
+    this.resizeScroll = null;
+    this.intersecting = false;
+    this.gapIntersection = null;
+    this.gaps = [];
+    this.printQuery = null;
+    this.parentCheck = -1;
+    this.dom = view.contentDOM;
+    this.observer = new MutationObserver((mutations) => {
+      for (let mut of mutations)
+        this.queue.push(mut);
+      if ((browser.ie && browser.ie_version <= 11 || browser.ios && view.composing) && mutations.some((m) => m.type == "childList" && m.removedNodes.length || m.type == "characterData" && m.oldValue.length > m.target.nodeValue.length))
+        this.flushSoon();
+      else
+        this.flush();
+    });
+    if (window.EditContext && browser.android && view.constructor.EDIT_CONTEXT !== false && !(browser.chrome && browser.chrome_version < 126)) {
+      this.editContext = new EditContextManager(view);
+      if (view.state.facet(editable))
+        view.contentDOM.editContext = this.editContext.editContext;
+    }
+    if (useCharData)
+      this.onCharData = (event) => {
+        this.queue.push({
+          target: event.target,
+          type: "characterData",
+          oldValue: event.prevValue
+        });
+        this.flushSoon();
+      };
+    this.onSelectionChange = this.onSelectionChange.bind(this);
+    this.onResize = this.onResize.bind(this);
+    this.onPrint = this.onPrint.bind(this);
+    this.onScroll = this.onScroll.bind(this);
+    if (window.matchMedia)
+      this.printQuery = window.matchMedia("print");
+    if (typeof ResizeObserver == "function") {
+      this.resizeScroll = new ResizeObserver(() => {
+        var _a;
+        if (((_a = this.view.docView) === null || _a === undefined ? undefined : _a.lastUpdate) < Date.now() - 75)
+          this.onResize();
+      });
+      this.resizeScroll.observe(view.scrollDOM);
+    }
+    this.addWindowListeners(this.win = view.win);
+    this.start();
+    if (typeof IntersectionObserver == "function") {
+      this.intersection = new IntersectionObserver((entries) => {
+        if (this.parentCheck < 0)
+          this.parentCheck = setTimeout(this.listenForScroll.bind(this), 1000);
+        if (entries.length > 0 && entries[entries.length - 1].intersectionRatio > 0 != this.intersecting) {
+          this.intersecting = !this.intersecting;
+          if (this.intersecting != this.view.inView)
+            this.onScrollChanged(document.createEvent("Event"));
+        }
+      }, { threshold: [0, 0.001] });
+      this.intersection.observe(this.dom);
+      this.gapIntersection = new IntersectionObserver((entries) => {
+        if (entries.length > 0 && entries[entries.length - 1].intersectionRatio > 0)
+          this.onScrollChanged(document.createEvent("Event"));
+      }, {});
+    }
+    this.listenForScroll();
+    this.readSelectionRange();
+  }
+  onScrollChanged(e) {
+    this.view.inputState.runHandlers("scroll", e);
+    if (this.intersecting)
+      this.view.measure();
+  }
+  onScroll(e) {
+    if (this.intersecting)
+      this.flush(false);
+    if (this.editContext)
+      this.view.requestMeasure(this.editContext.measureReq);
+    this.onScrollChanged(e);
+  }
+  onResize() {
+    if (this.resizeTimeout < 0)
+      this.resizeTimeout = setTimeout(() => {
+        this.resizeTimeout = -1;
+        this.view.requestMeasure();
+      }, 50);
+  }
+  onPrint(event) {
+    if ((event.type == "change" || !event.type) && !event.matches)
+      return;
+    this.view.viewState.printing = true;
+    this.view.measure();
+    setTimeout(() => {
+      this.view.viewState.printing = false;
+      this.view.requestMeasure();
+    }, 500);
+  }
+  updateGaps(gaps) {
+    if (this.gapIntersection && (gaps.length != this.gaps.length || this.gaps.some((g, i2) => g != gaps[i2]))) {
+      this.gapIntersection.disconnect();
+      for (let gap of gaps)
+        this.gapIntersection.observe(gap);
+      this.gaps = gaps;
+    }
+  }
+  onSelectionChange(event) {
+    let wasChanged = this.selectionChanged;
+    if (!this.readSelectionRange() || this.delayedAndroidKey)
+      return;
+    let { view } = this, sel = this.selectionRange;
+    if (view.state.facet(editable) ? view.root.activeElement != this.dom : !hasSelection(this.dom, sel))
+      return;
+    let context = sel.anchorNode && view.docView.tile.nearest(sel.anchorNode);
+    if (context && context.isWidget() && context.widget.ignoreEvent(event)) {
+      if (!wasChanged)
+        this.selectionChanged = false;
+      return;
+    }
+    if ((browser.ie && browser.ie_version <= 11 || browser.android && browser.chrome) && !view.state.selection.main.empty && sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
+      this.flushSoon();
+    else
+      this.flush(false);
+  }
+  readSelectionRange() {
+    let { view } = this;
+    let selection = getSelection(view.root);
+    if (!selection)
+      return false;
+    let range = browser.safari && view.root.nodeType == 11 && view.root.activeElement == this.dom && safariSelectionRangeHack(this.view, selection) || selection;
+    if (!range || this.selectionRange.eq(range))
+      return false;
+    let local = hasSelection(this.dom, range);
+    if (local && !this.selectionChanged && view.inputState.lastFocusTime > Date.now() - 200 && view.inputState.lastTouchTime < Date.now() - 300 && atElementStart(this.dom, range)) {
+      this.view.inputState.lastFocusTime = 0;
+      view.docView.updateSelection();
+      return false;
+    }
+    this.selectionRange.setRange(range);
+    if (local)
+      this.selectionChanged = true;
+    return true;
+  }
+  setSelectionRange(anchor, head) {
+    this.selectionRange.set(anchor.node, anchor.offset, head.node, head.offset);
+    this.selectionChanged = false;
+  }
+  clearSelectionRange() {
+    this.selectionRange.set(null, 0, null, 0);
+  }
+  listenForScroll() {
+    this.parentCheck = -1;
+    let i2 = 0, changed = null;
+    for (let dom = this.dom;dom; ) {
+      if (dom.nodeType == 1) {
+        if (!changed && i2 < this.scrollTargets.length && this.scrollTargets[i2] == dom)
+          i2++;
+        else if (!changed)
+          changed = this.scrollTargets.slice(0, i2);
+        if (changed)
+          changed.push(dom);
+        dom = dom.assignedSlot || dom.parentNode;
+      } else if (dom.nodeType == 11) {
+        dom = dom.host;
+      } else {
+        break;
+      }
+    }
+    if (i2 < this.scrollTargets.length && !changed)
+      changed = this.scrollTargets.slice(0, i2);
+    if (changed) {
+      for (let dom of this.scrollTargets)
+        dom.removeEventListener("scroll", this.onScroll);
+      for (let dom of this.scrollTargets = changed)
+        dom.addEventListener("scroll", this.onScroll);
+    }
+  }
+  ignore(f) {
+    if (!this.active)
+      return f();
+    try {
+      this.stop();
+      return f();
+    } finally {
+      this.start();
+      this.clear();
+    }
+  }
+  start() {
+    if (this.active)
+      return;
+    this.observer.observe(this.dom, observeOptions);
+    if (useCharData)
+      this.dom.addEventListener("DOMCharacterDataModified", this.onCharData);
+    this.active = true;
+  }
+  stop() {
+    if (!this.active)
+      return;
+    this.active = false;
+    this.observer.disconnect();
+    if (useCharData)
+      this.dom.removeEventListener("DOMCharacterDataModified", this.onCharData);
+  }
+  clear() {
+    this.processRecords();
+    this.queue.length = 0;
+    this.selectionChanged = false;
+  }
+  delayAndroidKey(key, keyCode) {
+    var _a;
+    if (!this.delayedAndroidKey) {
+      let flush = () => {
+        let key2 = this.delayedAndroidKey;
+        if (key2) {
+          this.clearDelayedAndroidKey();
+          this.view.inputState.lastKeyCode = key2.keyCode;
+          this.view.inputState.lastKeyTime = Date.now();
+          let flushed = this.flush();
+          if (!flushed && key2.force)
+            dispatchKey(this.dom, key2.key, key2.keyCode);
+        }
+      };
+      this.flushingAndroidKey = this.view.win.requestAnimationFrame(flush);
+    }
+    if (!this.delayedAndroidKey || key == "Enter")
+      this.delayedAndroidKey = {
+        key,
+        keyCode,
+        force: this.lastChange < Date.now() - 50 || !!((_a = this.delayedAndroidKey) === null || _a === undefined ? undefined : _a.force)
+      };
+  }
+  clearDelayedAndroidKey() {
+    this.win.cancelAnimationFrame(this.flushingAndroidKey);
+    this.delayedAndroidKey = null;
+    this.flushingAndroidKey = -1;
+  }
+  flushSoon() {
+    if (this.delayedFlush < 0)
+      this.delayedFlush = this.view.win.requestAnimationFrame(() => {
+        this.delayedFlush = -1;
+        this.flush();
+      });
+  }
+  forceFlush() {
+    if (this.delayedFlush >= 0) {
+      this.view.win.cancelAnimationFrame(this.delayedFlush);
+      this.delayedFlush = -1;
+    }
+    this.flush();
+  }
+  pendingRecords() {
+    for (let mut of this.observer.takeRecords())
+      this.queue.push(mut);
+    return this.queue;
+  }
+  processRecords() {
+    let records = this.pendingRecords();
+    if (records.length)
+      this.queue = [];
+    let from = -1, to = -1, typeOver = false;
+    for (let record of records) {
+      let range = this.readMutation(record);
+      if (!range)
+        continue;
+      if (range.typeOver)
+        typeOver = true;
+      if (from == -1) {
+        ({ from, to } = range);
+      } else {
+        from = Math.min(range.from, from);
+        to = Math.max(range.to, to);
+      }
+    }
+    return { from, to, typeOver };
+  }
+  readChange() {
+    let { from, to, typeOver } = this.processRecords();
+    let newSel = this.selectionChanged && hasSelection(this.dom, this.selectionRange);
+    if (from < 0 && !newSel)
+      return null;
+    if (from > -1)
+      this.lastChange = Date.now();
+    this.view.inputState.lastFocusTime = 0;
+    this.selectionChanged = false;
+    let change = new DOMChange(this.view, from, to, typeOver);
+    this.view.docView.domChanged = { newSel: change.newSel ? change.newSel.main : null };
+    return change;
+  }
+  flush(readSelection = true) {
+    if (this.delayedFlush >= 0 || this.delayedAndroidKey)
+      return false;
+    if (readSelection)
+      this.readSelectionRange();
+    let domChange = this.readChange();
+    if (!domChange) {
+      this.view.requestMeasure();
+      return false;
+    }
+    let startState = this.view.state;
+    let handled = applyDOMChange(this.view, domChange);
+    if (this.view.state == startState && (domChange.domChanged || domChange.newSel && !sameSelPos(this.view.state.selection, domChange.newSel.main)))
+      this.view.update([]);
+    return handled;
+  }
+  readMutation(rec) {
+    let tile = this.view.docView.tile.nearest(rec.target);
+    if (!tile || tile.isWidget())
+      return null;
+    tile.markDirty(rec.type == "attributes");
+    if (rec.type == "childList") {
+      let childBefore = findChild(tile, rec.previousSibling || rec.target.previousSibling, -1);
+      let childAfter = findChild(tile, rec.nextSibling || rec.target.nextSibling, 1);
+      return {
+        from: childBefore ? tile.posAfter(childBefore) : tile.posAtStart,
+        to: childAfter ? tile.posBefore(childAfter) : tile.posAtEnd,
+        typeOver: false
+      };
+    } else if (rec.type == "characterData") {
+      return { from: tile.posAtStart, to: tile.posAtEnd, typeOver: rec.target.nodeValue == rec.oldValue };
+    } else {
+      return null;
+    }
+  }
+  setWindow(win) {
+    if (win != this.win) {
+      this.removeWindowListeners(this.win);
+      this.win = win;
+      this.addWindowListeners(this.win);
+    }
+  }
+  addWindowListeners(win) {
+    win.addEventListener("resize", this.onResize);
+    if (this.printQuery) {
+      if (this.printQuery.addEventListener)
+        this.printQuery.addEventListener("change", this.onPrint);
+      else
+        this.printQuery.addListener(this.onPrint);
+    } else
+      win.addEventListener("beforeprint", this.onPrint);
+    win.addEventListener("scroll", this.onScroll);
+    win.document.addEventListener("selectionchange", this.onSelectionChange);
+  }
+  removeWindowListeners(win) {
+    win.removeEventListener("scroll", this.onScroll);
+    win.removeEventListener("resize", this.onResize);
+    if (this.printQuery) {
+      if (this.printQuery.removeEventListener)
+        this.printQuery.removeEventListener("change", this.onPrint);
+      else
+        this.printQuery.removeListener(this.onPrint);
+    } else
+      win.removeEventListener("beforeprint", this.onPrint);
+    win.document.removeEventListener("selectionchange", this.onSelectionChange);
+  }
+  update(update2) {
+    if (this.editContext) {
+      this.editContext.update(update2);
+      if (update2.startState.facet(editable) != update2.state.facet(editable))
+        update2.view.contentDOM.editContext = update2.state.facet(editable) ? this.editContext.editContext : null;
+    }
+  }
+  destroy() {
+    var _a, _b, _c;
+    this.stop();
+    (_a = this.intersection) === null || _a === undefined || _a.disconnect();
+    (_b = this.gapIntersection) === null || _b === undefined || _b.disconnect();
+    (_c = this.resizeScroll) === null || _c === undefined || _c.disconnect();
+    for (let dom of this.scrollTargets)
+      dom.removeEventListener("scroll", this.onScroll);
+    this.removeWindowListeners(this.win);
+    clearTimeout(this.parentCheck);
+    clearTimeout(this.resizeTimeout);
+    this.win.cancelAnimationFrame(this.delayedFlush);
+    this.win.cancelAnimationFrame(this.flushingAndroidKey);
+    if (this.editContext) {
+      this.view.contentDOM.editContext = null;
+      this.editContext.destroy();
+    }
+  }
+}
+function findChild(tile, dom, dir) {
+  while (dom) {
+    let curTile = Tile.get(dom);
+    if (curTile && curTile.parent == tile)
+      return curTile;
+    let parent = dom.parentNode;
+    dom = parent != tile.dom ? parent : dir > 0 ? dom.nextSibling : dom.previousSibling;
+  }
+  return null;
+}
+function buildSelectionRangeFromRange(view, range) {
+  let { startContainer: anchorNode, startOffset: anchorOffset } = range;
+  let { endContainer: focusNode, endOffset: focusOffset } = range;
+  let curAnchor = view.docView.domAtPos(view.state.selection.main.anchor, 1);
+  if (isEquivalentPosition(curAnchor.node, curAnchor.offset, focusNode, focusOffset))
+    [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
+  return { anchorNode, anchorOffset, focusNode, focusOffset };
+}
+function safariSelectionRangeHack(view, selection) {
+  if (selection.getComposedRanges) {
+    let range = selection.getComposedRanges(view.root)[0];
+    if (range)
+      return buildSelectionRangeFromRange(view, range);
+  }
+  let found = null;
+  function read(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    found = event.getTargetRanges()[0];
+  }
+  view.contentDOM.addEventListener("beforeinput", read, true);
+  view.dom.ownerDocument.execCommand("indent");
+  view.contentDOM.removeEventListener("beforeinput", read, true);
+  return found ? buildSelectionRangeFromRange(view, found) : null;
+}
+
+class EditContextManager {
+  constructor(view) {
+    this.from = 0;
+    this.to = 0;
+    this.pendingContextChange = null;
+    this.handlers = Object.create(null);
+    this.composing = null;
+    this.resetRange(view.state);
+    let context = this.editContext = new window.EditContext({
+      text: view.state.doc.sliceString(this.from, this.to),
+      selectionStart: this.toContextPos(Math.max(this.from, Math.min(this.to, view.state.selection.main.anchor))),
+      selectionEnd: this.toContextPos(view.state.selection.main.head)
+    });
+    this.handlers.textupdate = (e) => {
+      let main = view.state.selection.main, { anchor, head } = main;
+      let from = this.toEditorPos(e.updateRangeStart), to = this.toEditorPos(e.updateRangeEnd);
+      if (view.inputState.composing >= 0 && !this.composing)
+        this.composing = { contextBase: e.updateRangeStart, editorBase: from, drifted: false };
+      let deletes = to - from > e.text.length;
+      if (from == this.from && anchor < this.from)
+        from = anchor;
+      else if (to == this.to && anchor > this.to)
+        to = anchor;
+      let diff = findDiff(view.state.sliceDoc(from, to), e.text, (deletes ? main.from : main.to) - from, deletes ? "end" : null);
+      if (!diff) {
+        let newSel = EditorSelection.single(this.toEditorPos(e.selectionStart), this.toEditorPos(e.selectionEnd));
+        if (!sameSelPos(newSel, main))
+          view.dispatch({ selection: newSel, userEvent: "select" });
+        return;
+      }
+      let change = {
+        from: diff.from + from,
+        to: diff.toA + from,
+        insert: Text.of(e.text.slice(diff.from, diff.toB).split(`
+`))
+      };
+      if ((browser.mac || browser.android) && change.from == head - 1 && /^\. ?$/.test(e.text) && view.contentDOM.getAttribute("autocorrect") == "off")
+        change = { from, to, insert: Text.of([e.text.replace(".", " ")]) };
+      this.pendingContextChange = change;
+      if (!view.state.readOnly) {
+        let newLen = this.to - this.from + (change.to - change.from + change.insert.length);
+        applyDOMChangeInner(view, change, EditorSelection.single(this.toEditorPos(e.selectionStart, newLen), this.toEditorPos(e.selectionEnd, newLen)));
+      }
+      if (this.pendingContextChange) {
+        this.revertPending(view.state);
+        this.setSelection(view.state);
+      }
+      if (change.from < change.to && !change.insert.length && view.inputState.composing >= 0 && !/[\\p{Alphabetic}\\p{Number}_]/.test(context.text.slice(Math.max(0, e.updateRangeStart - 1), Math.min(context.text.length, e.updateRangeStart + 1))))
+        this.handlers.compositionend(e);
+    };
+    this.handlers.characterboundsupdate = (e) => {
+      let rects = [], prev = null;
+      for (let i2 = this.toEditorPos(e.rangeStart), end = this.toEditorPos(e.rangeEnd);i2 < end; i2++) {
+        let rect = view.coordsForChar(i2);
+        prev = rect && new DOMRect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top) || prev || new DOMRect;
+        rects.push(prev);
+      }
+      context.updateCharacterBounds(e.rangeStart, rects);
+    };
+    this.handlers.textformatupdate = (e) => {
+      let deco = [];
+      for (let format of e.getTextFormats()) {
+        let { underlineStyle: lineStyle, underlineThickness: thickness } = format;
+        if (!/none/i.test(lineStyle) && !/none/i.test(thickness)) {
+          let from = this.toEditorPos(format.rangeStart), to = this.toEditorPos(format.rangeEnd);
+          if (from < to) {
+            let style = `text-decoration: underline ${/^[a-z]/.test(lineStyle) ? lineStyle + " " : lineStyle == "Dashed" ? "dashed " : lineStyle == "Squiggle" ? "wavy " : ""}${/thin/i.test(thickness) ? 1 : 2}px`;
+            deco.push(Decoration.mark({ attributes: { style } }).range(from, to));
+          }
+        }
+      }
+      view.dispatch({ effects: setEditContextFormatting.of(Decoration.set(deco)) });
+    };
+    this.handlers.compositionstart = () => {
+      if (view.inputState.composing < 0) {
+        view.inputState.composing = 0;
+        view.inputState.compositionFirstChange = true;
+      }
+    };
+    this.handlers.compositionend = () => {
+      view.inputState.composing = -1;
+      view.inputState.compositionFirstChange = null;
+      if (this.composing) {
+        let { drifted } = this.composing;
+        this.composing = null;
+        if (drifted)
+          this.reset(view.state);
+      }
+    };
+    for (let event in this.handlers)
+      context.addEventListener(event, this.handlers[event]);
+    this.measureReq = { read: (view2) => {
+      let sel = getSelection(view2.root);
+      if (sel && sel.rangeCount)
+        this.editContext.updateSelectionBounds(sel.getRangeAt(0).getBoundingClientRect());
+    } };
+  }
+  applyEdits(update2) {
+    let off = 0, abort = false, pending = this.pendingContextChange;
+    update2.changes.iterChanges((fromA, toA, _fromB, _toB, insert2) => {
+      if (abort)
+        return;
+      let dLen = insert2.length - (toA - fromA);
+      if (pending && toA >= pending.to) {
+        if (pending.from == fromA && pending.to == toA && pending.insert.eq(insert2)) {
+          pending = this.pendingContextChange = null;
+          off += dLen;
+          this.to += dLen;
+          return;
+        } else {
+          pending = null;
+          this.revertPending(update2.state);
+        }
+      }
+      fromA += off;
+      toA += off;
+      if (toA <= this.from) {
+        this.from += dLen;
+        this.to += dLen;
+      } else if (fromA < this.to) {
+        if (fromA < this.from || toA > this.to || this.to - this.from + insert2.length > 30000) {
+          abort = true;
+          return;
+        }
+        this.editContext.updateText(this.toContextPos(fromA), this.toContextPos(toA), insert2.toString());
+        this.to += dLen;
+      }
+      off += dLen;
+    });
+    if (pending && !abort)
+      this.revertPending(update2.state);
+    return !abort;
+  }
+  update(update2) {
+    let reverted = this.pendingContextChange, startSel = update2.startState.selection.main;
+    if (this.composing && (this.composing.drifted || !update2.changes.touchesRange(startSel.from, startSel.to) && update2.transactions.some((tr) => !tr.isUserEvent("input.type") && tr.changes.touchesRange(this.from, this.to)))) {
+      this.composing.drifted = true;
+      this.composing.editorBase = update2.changes.mapPos(this.composing.editorBase);
+    } else if (!this.applyEdits(update2) || !this.rangeIsValid(update2.state)) {
+      this.pendingContextChange = null;
+      this.reset(update2.state);
+    } else if (update2.docChanged || update2.selectionSet || reverted) {
+      this.setSelection(update2.state);
+    }
+    if (update2.geometryChanged || update2.docChanged || update2.selectionSet)
+      update2.view.requestMeasure(this.measureReq);
+  }
+  resetRange(state) {
+    let { head } = state.selection.main;
+    this.from = Math.max(0, head - 1e4);
+    this.to = Math.min(state.doc.length, head + 1e4);
+  }
+  reset(state) {
+    this.resetRange(state);
+    this.editContext.updateText(0, this.editContext.text.length, state.doc.sliceString(this.from, this.to));
+    this.setSelection(state);
+  }
+  revertPending(state) {
+    let pending = this.pendingContextChange;
+    this.pendingContextChange = null;
+    this.editContext.updateText(this.toContextPos(pending.from), this.toContextPos(pending.from + pending.insert.length), state.doc.sliceString(pending.from, pending.to));
+  }
+  setSelection(state) {
+    let { main } = state.selection;
+    let start = this.toContextPos(Math.max(this.from, Math.min(this.to, main.anchor)));
+    let end = this.toContextPos(main.head);
+    if (this.editContext.selectionStart != start || this.editContext.selectionEnd != end)
+      this.editContext.updateSelection(start, end);
+  }
+  rangeIsValid(state) {
+    let { head } = state.selection.main;
+    return !(this.from > 0 && head - this.from < 500 || this.to < state.doc.length && this.to - head < 500 || this.to - this.from > 1e4 * 3);
+  }
+  toEditorPos(contextPos, clipLen = this.to - this.from) {
+    contextPos = Math.min(contextPos, clipLen);
+    let c = this.composing;
+    return c && c.drifted ? c.editorBase + (contextPos - c.contextBase) : contextPos + this.from;
+  }
+  toContextPos(editorPos) {
+    let c = this.composing;
+    return c && c.drifted ? c.contextBase + (editorPos - c.editorBase) : editorPos - this.from;
+  }
+  destroy() {
+    for (let event in this.handlers)
+      this.editContext.removeEventListener(event, this.handlers[event]);
+  }
+}
+
+class EditorView {
+  get state() {
+    return this.viewState.state;
+  }
+  get viewport() {
+    return this.viewState.viewport;
+  }
+  get visibleRanges() {
+    return this.viewState.visibleRanges;
+  }
+  get inView() {
+    return this.viewState.inView;
+  }
+  get composing() {
+    return !!this.inputState && this.inputState.composing > 0;
+  }
+  get compositionStarted() {
+    return !!this.inputState && this.inputState.composing >= 0;
+  }
+  get root() {
+    return this._root;
+  }
+  get win() {
+    return this.dom.ownerDocument.defaultView || window;
+  }
+  constructor(config = {}) {
+    var _a;
+    this.plugins = [];
+    this.pluginMap = new Map;
+    this.editorAttrs = {};
+    this.contentAttrs = {};
+    this.bidiCache = [];
+    this.destroyed = false;
+    this.updateState = 2;
+    this.measureScheduled = -1;
+    this.measureRequests = [];
+    this.contentDOM = document.createElement("div");
+    this.scrollDOM = document.createElement("div");
+    this.scrollDOM.tabIndex = -1;
+    this.scrollDOM.className = "cm-scroller";
+    this.scrollDOM.appendChild(this.contentDOM);
+    this.announceDOM = document.createElement("div");
+    this.announceDOM.className = "cm-announced";
+    this.announceDOM.setAttribute("aria-live", "polite");
+    this.dom = document.createElement("div");
+    this.dom.appendChild(this.announceDOM);
+    this.dom.appendChild(this.scrollDOM);
+    if (config.parent)
+      config.parent.appendChild(this.dom);
+    let { dispatch } = config;
+    this.dispatchTransactions = config.dispatchTransactions || dispatch && ((trs) => trs.forEach((tr) => dispatch(tr, this))) || ((trs) => this.update(trs));
+    this.dispatch = this.dispatch.bind(this);
+    this._root = config.root || getRoot(config.parent) || document;
+    this.viewState = new ViewState(this, config.state || EditorState.create(config));
+    if (config.scrollTo && config.scrollTo.is(scrollIntoView))
+      this.viewState.scrollTarget = config.scrollTo.value.clip(this.viewState.state);
+    this.plugins = this.state.facet(viewPlugin).map((spec) => new PluginInstance(spec));
+    for (let plugin of this.plugins)
+      plugin.update(this);
+    this.observer = new DOMObserver(this);
+    this.inputState = new InputState(this);
+    this.inputState.ensureHandlers(this.plugins);
+    this.docView = new DocView(this);
+    this.mountStyles();
+    this.updateAttrs();
+    this.updateState = 0;
+    this.requestMeasure();
+    if ((_a = document.fonts) === null || _a === undefined ? undefined : _a.ready)
+      document.fonts.ready.then(() => {
+        this.viewState.mustMeasureContent = "refresh";
+        this.requestMeasure();
+      });
+  }
+  dispatch(...input) {
+    let trs = input.length == 1 && input[0] instanceof Transaction ? input : input.length == 1 && Array.isArray(input[0]) ? input[0] : [this.state.update(...input)];
+    this.dispatchTransactions(trs, this);
+  }
+  update(transactions) {
+    if (this.updateState != 0)
+      throw new Error("Calls to EditorView.update are not allowed while an update is in progress");
+    let redrawn = false, attrsChanged = false, update2;
+    let state = this.state;
+    for (let tr of transactions) {
+      if (tr.startState != state)
+        throw new RangeError("Trying to update state with a transaction that doesn't start from the previous state.");
+      state = tr.state;
+    }
+    if (this.destroyed) {
+      this.viewState.state = state;
+      return;
+    }
+    let focus = this.hasFocus, focusFlag = 0, dispatchFocus = null;
+    if (transactions.some((tr) => tr.annotation(isFocusChange))) {
+      this.inputState.notifiedFocused = focus;
+      focusFlag = 1;
+    } else if (focus != this.inputState.notifiedFocused) {
+      this.inputState.notifiedFocused = focus;
+      dispatchFocus = focusChangeTransaction(state, focus);
+      if (!dispatchFocus)
+        focusFlag = 1;
+    }
+    let pendingKey = this.observer.delayedAndroidKey, domChange = null;
+    if (pendingKey) {
+      this.observer.clearDelayedAndroidKey();
+      domChange = this.observer.readChange();
+      if (domChange && !this.state.doc.eq(state.doc) || !this.state.selection.eq(state.selection))
+        domChange = null;
+    } else {
+      this.observer.clear();
+    }
+    if (state.facet(EditorState.phrases) != this.state.facet(EditorState.phrases))
+      return this.setState(state);
+    update2 = ViewUpdate.create(this, state, transactions);
+    update2.flags |= focusFlag;
+    let scrollTarget = this.viewState.scrollTarget;
+    try {
+      this.updateState = 2;
+      for (let tr of transactions) {
+        if (scrollTarget)
+          scrollTarget = scrollTarget.map(tr.changes);
+        if (tr.scrollIntoView) {
+          let { main } = tr.state.selection;
+          let { x, y } = this.state.facet(EditorView.cursorScrollMargin);
+          scrollTarget = new ScrollTarget(main.empty ? main : EditorSelection.cursor(main.head, main.head > main.anchor ? -1 : 1), "nearest", "nearest", y, x);
+        }
+        for (let e of tr.effects)
+          if (e.is(scrollIntoView))
+            scrollTarget = e.value.clip(this.state);
+      }
+      this.viewState.update(update2, scrollTarget);
+      this.bidiCache = CachedOrder.update(this.bidiCache, update2.changes);
+      if (!update2.empty) {
+        this.updatePlugins(update2);
+        this.inputState.update(update2);
+      }
+      redrawn = this.docView.update(update2);
+      if (this.state.facet(styleModule) != this.styleModules)
+        this.mountStyles();
+      attrsChanged = this.updateAttrs();
+      this.showAnnouncements(transactions);
+      this.docView.updateSelection(redrawn, transactions.some((tr) => tr.isUserEvent("select.pointer")));
+    } finally {
+      this.updateState = 0;
+    }
+    if (update2.startState.facet(theme) != update2.state.facet(theme))
+      this.viewState.mustMeasureContent = true;
+    if (redrawn || attrsChanged || scrollTarget || this.viewState.mustEnforceCursorAssoc || this.viewState.mustMeasureContent)
+      this.requestMeasure();
+    if (redrawn)
+      this.docViewUpdate();
+    if (!update2.empty)
+      for (let listener of this.state.facet(updateListener)) {
+        try {
+          listener(update2);
+        } catch (e) {
+          logException(this.state, e, "update listener");
+        }
+      }
+    if (dispatchFocus || domChange)
+      Promise.resolve().then(() => {
+        if (dispatchFocus && this.state == dispatchFocus.startState)
+          this.dispatch(dispatchFocus);
+        if (domChange) {
+          if (!applyDOMChange(this, domChange) && pendingKey.force)
+            dispatchKey(this.contentDOM, pendingKey.key, pendingKey.keyCode);
+        }
+      });
+  }
+  setState(newState) {
+    if (this.updateState != 0)
+      throw new Error("Calls to EditorView.setState are not allowed while an update is in progress");
+    if (this.destroyed) {
+      this.viewState.state = newState;
+      return;
+    }
+    this.updateState = 2;
+    let hadFocus = this.hasFocus;
+    try {
+      for (let plugin of this.plugins)
+        plugin.destroy(this);
+      this.viewState = new ViewState(this, newState);
+      this.plugins = newState.facet(viewPlugin).map((spec) => new PluginInstance(spec));
+      this.pluginMap.clear();
+      for (let plugin of this.plugins)
+        plugin.update(this);
+      this.docView.destroy();
+      this.docView = new DocView(this);
+      this.inputState.ensureHandlers(this.plugins);
+      this.mountStyles();
+      this.updateAttrs();
+      this.bidiCache = [];
+    } finally {
+      this.updateState = 0;
+    }
+    if (hadFocus)
+      this.focus();
+    this.requestMeasure();
+  }
+  updatePlugins(update2) {
+    let prevSpecs = update2.startState.facet(viewPlugin), specs = update2.state.facet(viewPlugin);
+    if (prevSpecs != specs) {
+      let newPlugins = [];
+      for (let spec of specs) {
+        let found = prevSpecs.indexOf(spec);
+        if (found < 0) {
+          newPlugins.push(new PluginInstance(spec));
+        } else {
+          let plugin = this.plugins[found];
+          plugin.mustUpdate = update2;
+          newPlugins.push(plugin);
+        }
+      }
+      for (let plugin of this.plugins)
+        if (plugin.mustUpdate != update2)
+          plugin.destroy(this);
+      this.plugins = newPlugins;
+      this.pluginMap.clear();
+    } else {
+      for (let p of this.plugins)
+        p.mustUpdate = update2;
+    }
+    for (let i2 = 0;i2 < this.plugins.length; i2++)
+      this.plugins[i2].update(this);
+    if (prevSpecs != specs)
+      this.inputState.ensureHandlers(this.plugins);
+  }
+  docViewUpdate() {
+    for (let plugin of this.plugins) {
+      let val = plugin.value;
+      if (val && val.docViewUpdate) {
+        try {
+          val.docViewUpdate(this);
+        } catch (e) {
+          logException(this.state, e, "doc view update listener");
+        }
+      }
+    }
+  }
+  measure(flush = true) {
+    if (this.destroyed)
+      return;
+    if (this.measureScheduled > -1)
+      this.win.cancelAnimationFrame(this.measureScheduled);
+    if (this.observer.delayedAndroidKey) {
+      this.measureScheduled = -1;
+      this.requestMeasure();
+      return;
+    }
+    this.measureScheduled = 0;
+    if (flush)
+      this.observer.forceFlush();
+    let updated = null;
+    let scroll = this.viewState.scrollParent, scrollOffset = this.viewState.getScrollOffset();
+    let { scrollAnchorPos, scrollAnchorHeight, scaleY: scrollScale } = this.viewState;
+    if (Math.abs(scrollOffset - this.viewState.scrollOffset) > 1)
+      scrollAnchorHeight = -1;
+    this.viewState.scrollAnchorHeight = -1;
+    try {
+      for (let i2 = 0;; i2++) {
+        if (scrollAnchorHeight < 0) {
+          if (isScrolledToBottom(scroll || this.win)) {
+            scrollAnchorPos = -1;
+            scrollAnchorHeight = this.viewState.heightMap.height / this.viewState.scaleY;
+          } else {
+            let block = this.viewState.scrollAnchorAt(scrollOffset);
+            scrollAnchorPos = block.from;
+            scrollAnchorHeight = block.top;
+          }
+          scrollScale = this.viewState.scaleY;
+        }
+        this.updateState = 1;
+        let changed = this.viewState.measure();
+        if (!changed && !this.measureRequests.length && this.viewState.scrollTarget == null)
+          break;
+        if (i2 > 5) {
+          console.warn(this.measureRequests.length ? "Measure loop restarted more than 5 times" : "Viewport failed to stabilize");
+          break;
+        }
+        let measuring = [];
+        if (!(changed & 4))
+          [this.measureRequests, measuring] = [measuring, this.measureRequests];
+        let measured = measuring.map((m) => {
+          try {
+            return m.read(this);
+          } catch (e) {
+            logException(this.state, e);
+            return BadMeasure;
+          }
+        });
+        let update2 = ViewUpdate.create(this, this.state, []), redrawn = false;
+        update2.flags |= changed;
+        if (!updated)
+          updated = update2;
+        else
+          updated.flags |= changed;
+        this.updateState = 2;
+        if (!update2.empty) {
+          this.updatePlugins(update2);
+          this.inputState.update(update2);
+          this.updateAttrs();
+          redrawn = this.docView.update(update2);
+          if (redrawn)
+            this.docViewUpdate();
+        }
+        for (let i3 = 0;i3 < measuring.length; i3++)
+          if (measured[i3] != BadMeasure) {
+            try {
+              let m = measuring[i3];
+              if (m.write)
+                m.write(measured[i3], this);
+            } catch (e) {
+              logException(this.state, e);
+            }
+          }
+        if (redrawn)
+          this.docView.updateSelection(true);
+        if (!update2.viewportChanged && this.measureRequests.length == 0) {
+          if (this.viewState.editorHeight) {
+            if (this.viewState.scrollTarget) {
+              this.docView.scrollIntoView(this.viewState.scrollTarget);
+              this.viewState.scrollTarget = null;
+              scrollAnchorHeight = -1;
+              continue;
+            } else {
+              let newAnchorHeight = scrollAnchorPos < 0 ? this.viewState.heightMap.height : this.viewState.lineBlockAt(scrollAnchorPos).top;
+              let diff = newAnchorHeight / this.viewState.scaleY - scrollAnchorHeight / scrollScale;
+              if ((diff > 1 || diff < -1) && !(browser.ios && this.inputState.lastIOSMomentumScroll > Date.now() - 100) && (scroll == this.scrollDOM || this.hasFocus || Math.max(this.inputState.lastWheelEvent, this.inputState.lastTouchTime) > Date.now() - 100)) {
+                scrollOffset = scrollOffset + diff;
+                if (!scroll)
+                  this.win.scrollBy(0, diff);
+                else if (scrollAnchorPos < 0)
+                  scroll.scrollTop = scroll.scrollHeight;
+                else
+                  scroll.scrollTop += diff;
+                scrollAnchorHeight = -1;
+                continue;
+              }
+            }
+          }
+          break;
+        }
+      }
+    } finally {
+      this.updateState = 0;
+      this.measureScheduled = -1;
+    }
+    if (updated && !updated.empty)
+      for (let listener of this.state.facet(updateListener))
+        listener(updated);
+  }
+  get themeClasses() {
+    return baseThemeID + " " + (this.state.facet(darkTheme) ? baseDarkID : baseLightID) + " " + this.state.facet(theme);
+  }
+  updateAttrs() {
+    let editorAttrs = attrsFromFacet(this, editorAttributes, {
+      class: "cm-editor" + (this.hasFocus ? " cm-focused " : " ") + this.themeClasses
+    });
+    let contentAttrs = {
+      spellcheck: "false",
+      autocorrect: "off",
+      autocapitalize: "off",
+      writingsuggestions: "false",
+      translate: "no",
+      contenteditable: !this.state.facet(editable) ? "false" : "true",
+      class: "cm-content",
+      style: `${browser.tabSize}: ${this.state.tabSize}`,
+      role: "textbox",
+      "aria-multiline": "true"
+    };
+    if (this.state.readOnly)
+      contentAttrs["aria-readonly"] = "true";
+    attrsFromFacet(this, contentAttributes, contentAttrs);
+    let changed = this.observer.ignore(() => {
+      let changedContent = updateAttrs(this.contentDOM, this.contentAttrs, contentAttrs);
+      let changedEditor = updateAttrs(this.dom, this.editorAttrs, editorAttrs);
+      return changedContent || changedEditor;
+    });
+    this.editorAttrs = editorAttrs;
+    this.contentAttrs = contentAttrs;
+    return changed;
+  }
+  showAnnouncements(trs) {
+    let first = true;
+    for (let tr of trs)
+      for (let effect of tr.effects)
+        if (effect.is(EditorView.announce)) {
+          if (first)
+            this.announceDOM.textContent = "";
+          first = false;
+          let div = this.announceDOM.appendChild(document.createElement("div"));
+          div.textContent = effect.value;
+        }
+  }
+  mountStyles() {
+    this.styleModules = this.state.facet(styleModule);
+    let nonce = this.state.facet(EditorView.cspNonce);
+    StyleModule.mount(this.root, this.styleModules.concat(baseTheme$1).reverse(), nonce ? { nonce } : undefined);
+  }
+  readMeasured() {
+    if (this.updateState == 2)
+      throw new Error("Reading the editor layout isn't allowed during an update");
+    if (this.updateState == 0 && this.measureScheduled > -1)
+      this.measure(false);
+  }
+  requestMeasure(request) {
+    if (this.measureScheduled < 0)
+      this.measureScheduled = this.win.requestAnimationFrame(() => this.measure());
+    if (request) {
+      if (this.measureRequests.indexOf(request) > -1)
+        return;
+      if (request.key != null)
+        for (let i2 = 0;i2 < this.measureRequests.length; i2++) {
+          if (this.measureRequests[i2].key === request.key) {
+            this.measureRequests[i2] = request;
+            return;
+          }
+        }
+      this.measureRequests.push(request);
+    }
+  }
+  plugin(plugin) {
+    let known = this.pluginMap.get(plugin);
+    if (known === undefined || known && known.plugin != plugin)
+      this.pluginMap.set(plugin, known = this.plugins.find((p) => p.plugin == plugin) || null);
+    return known && known.update(this).value;
+  }
+  get documentTop() {
+    return this.contentDOM.getBoundingClientRect().top + this.viewState.paddingTop;
+  }
+  get documentPadding() {
+    return { top: this.viewState.paddingTop, bottom: this.viewState.paddingBottom };
+  }
+  get scaleX() {
+    return this.viewState.scaleX;
+  }
+  get scaleY() {
+    return this.viewState.scaleY;
+  }
+  elementAtHeight(height) {
+    this.readMeasured();
+    return this.viewState.elementAtHeight(height);
+  }
+  lineBlockAtHeight(height) {
+    this.readMeasured();
+    return this.viewState.lineBlockAtHeight(height);
+  }
+  get viewportLineBlocks() {
+    return this.viewState.viewportLines;
+  }
+  lineBlockAt(pos) {
+    return this.viewState.lineBlockAt(pos);
+  }
+  get contentHeight() {
+    return this.viewState.contentHeight;
+  }
+  moveByChar(start, forward, by) {
+    return skipAtoms(this, start, moveByChar(this, start, forward, by));
+  }
+  moveByGroup(start, forward) {
+    return skipAtoms(this, start, moveByChar(this, start, forward, (initial2) => byGroup(this, start.head, initial2)));
+  }
+  visualLineSide(line, end) {
+    let order = this.bidiSpans(line), dir = this.textDirectionAt(line.from);
+    let span = order[end ? order.length - 1 : 0];
+    return EditorSelection.cursor(span.side(end, dir) + line.from, span.forward(!end, dir) ? 1 : -1);
+  }
+  moveToLineBoundary(start, forward, includeWrap = true) {
+    return moveToLineBoundary(this, start, forward, includeWrap);
+  }
+  moveVertically(start, forward, distance) {
+    return skipAtoms(this, start, moveVertically(this, start, forward, distance));
+  }
+  domAtPos(pos, side = 1) {
+    return this.docView.domAtPos(pos, side);
+  }
+  posAtDOM(node, offset4 = 0) {
+    return this.docView.posFromDOM(node, offset4);
+  }
+  posAtCoords(coords, precise = true) {
+    this.readMeasured();
+    let found = posAtCoords(this, coords, precise);
+    return found && found.pos;
+  }
+  posAndSideAtCoords(coords, precise = true) {
+    this.readMeasured();
+    return posAtCoords(this, coords, precise);
+  }
+  coordsAtPos(pos, side = 1) {
+    this.readMeasured();
+    let line = this.state.doc.lineAt(pos), order = this.bidiSpans(line);
+    let span = order[BidiSpan.find(order, pos - line.from, -1, side)];
+    return this.docView.coordsAt(pos, side, span.dir == Direction.RTL);
+  }
+  coordsForChar(pos) {
+    this.readMeasured();
+    return this.docView.coordsForChar(pos);
+  }
+  get defaultCharacterWidth() {
+    return this.viewState.heightOracle.charWidth;
+  }
+  get defaultLineHeight() {
+    return this.viewState.heightOracle.lineHeight;
+  }
+  get textDirection() {
+    return this.viewState.defaultTextDirection;
+  }
+  textDirectionAt(pos) {
+    let perLine = this.state.facet(perLineTextDirection);
+    if (!perLine || pos < this.viewport.from || pos > this.viewport.to)
+      return this.textDirection;
+    this.readMeasured();
+    return this.docView.textDirectionAt(pos);
+  }
+  get lineWrapping() {
+    return this.viewState.heightOracle.lineWrapping;
+  }
+  bidiSpans(line) {
+    if (line.length > MaxBidiLine)
+      return trivialOrder(line.length);
+    let dir = this.textDirectionAt(line.from), isolates;
+    for (let entry of this.bidiCache) {
+      if (entry.from == line.from && entry.dir == dir && (entry.fresh || isolatesEq(entry.isolates, isolates = getIsolatedRanges(this, line))))
+        return entry.order;
+    }
+    if (!isolates)
+      isolates = getIsolatedRanges(this, line);
+    let order = computeOrder(line.text, dir, isolates);
+    this.bidiCache.push(new CachedOrder(line.from, line.to, dir, isolates, true, order));
+    return order;
+  }
+  get hasFocus() {
+    var _a;
+    return (this.dom.ownerDocument.hasFocus() || browser.safari && ((_a = this.inputState) === null || _a === undefined ? undefined : _a.lastContextMenu) > Date.now() - 30000) && this.root.activeElement == this.contentDOM;
+  }
+  focus() {
+    this.observer.ignore(() => {
+      focusPreventScroll(this.contentDOM);
+      this.docView.updateSelection();
+    });
+  }
+  setRoot(root) {
+    if (this._root != root) {
+      this._root = root;
+      this.observer.setWindow((root.nodeType == 9 ? root : root.ownerDocument).defaultView || window);
+      this.mountStyles();
+    }
+  }
+  destroy() {
+    if (this.root.activeElement == this.contentDOM)
+      this.contentDOM.blur();
+    for (let plugin of this.plugins)
+      plugin.destroy(this);
+    this.plugins = [];
+    this.inputState.destroy();
+    this.docView.destroy();
+    this.dom.remove();
+    this.observer.destroy();
+    if (this.measureScheduled > -1)
+      this.win.cancelAnimationFrame(this.measureScheduled);
+    this.destroyed = true;
+  }
+  static scrollIntoView(pos, options = {}) {
+    var _a, _b, _c, _d;
+    return scrollIntoView.of(new ScrollTarget(typeof pos == "number" ? EditorSelection.cursor(pos) : pos, (_a = options.y) !== null && _a !== undefined ? _a : "nearest", (_b = options.x) !== null && _b !== undefined ? _b : "nearest", (_c = options.yMargin) !== null && _c !== undefined ? _c : 5, (_d = options.xMargin) !== null && _d !== undefined ? _d : 5));
+  }
+  scrollSnapshot() {
+    let { scrollTop, scrollLeft } = this.scrollDOM;
+    let ref = this.viewState.scrollAnchorAt(scrollTop);
+    return scrollIntoView.of(new ScrollTarget(EditorSelection.cursor(ref.from), "start", "start", ref.top - scrollTop, scrollLeft, true));
+  }
+  setTabFocusMode(to) {
+    if (to == null)
+      this.inputState.tabFocusMode = this.inputState.tabFocusMode < 0 ? 0 : -1;
+    else if (typeof to == "boolean")
+      this.inputState.tabFocusMode = to ? 0 : -1;
+    else if (this.inputState.tabFocusMode != 0)
+      this.inputState.tabFocusMode = Date.now() + to;
+  }
+  static domEventHandlers(handlers2) {
+    return ViewPlugin.define(() => ({}), { eventHandlers: handlers2 });
+  }
+  static domEventObservers(observers2) {
+    return ViewPlugin.define(() => ({}), { eventObservers: observers2 });
+  }
+  static theme(spec, options) {
+    let prefix2 = StyleModule.newName();
+    let result = [theme.of(prefix2), styleModule.of(buildTheme(`.${prefix2}`, spec))];
+    if (options && options.dark)
+      result.push(darkTheme.of(true));
+    return result;
+  }
+  static baseTheme(spec) {
+    return Prec.lowest(styleModule.of(buildTheme("." + baseThemeID, spec, lightDarkIDs)));
+  }
+  static findFromDOM(dom) {
+    var _a;
+    let content = dom.querySelector(".cm-content");
+    let tile = content && Tile.get(content) || Tile.get(dom);
+    return ((_a = tile === null || tile === undefined ? undefined : tile.root) === null || _a === undefined ? undefined : _a.view) || null;
+  }
+}
+EditorView.styleModule = styleModule;
+EditorView.inputHandler = inputHandler;
+EditorView.clipboardInputFilter = clipboardInputFilter;
+EditorView.clipboardOutputFilter = clipboardOutputFilter;
+EditorView.scrollHandler = scrollHandler;
+EditorView.focusChangeEffect = focusChangeEffect;
+EditorView.perLineTextDirection = perLineTextDirection;
+EditorView.exceptionSink = exceptionSink;
+EditorView.updateListener = updateListener;
+EditorView.editable = editable;
+EditorView.mouseSelectionStyle = mouseSelectionStyle;
+EditorView.dragMovesSelection = dragMovesSelection$1;
+EditorView.clickAddsSelectionRange = clickAddsSelectionRange;
+EditorView.decorations = decorations;
+EditorView.blockWrappers = blockWrappers;
+EditorView.outerDecorations = outerDecorations;
+EditorView.atomicRanges = atomicRanges;
+EditorView.bidiIsolatedRanges = bidiIsolatedRanges;
+EditorView.cursorScrollMargin = /* @__PURE__ */ Facet.define({
+  combine: (inputs) => {
+    let x = 5, y = 5;
+    for (let i2 of inputs) {
+      if (typeof i2 == "number")
+        x = y = i2;
+      else
+        ({ x, y } = i2);
+    }
+    return { x, y };
+  }
+});
+EditorView.scrollMargins = scrollMargins;
+EditorView.darkTheme = darkTheme;
+EditorView.cspNonce = /* @__PURE__ */ Facet.define({ combine: (values) => values.length ? values[0] : "" });
+EditorView.contentAttributes = contentAttributes;
+EditorView.editorAttributes = editorAttributes;
+EditorView.lineWrapping = /* @__PURE__ */ EditorView.contentAttributes.of({ class: "cm-lineWrapping" });
+EditorView.announce = /* @__PURE__ */ StateEffect.define();
+var MaxBidiLine = 4096;
+var BadMeasure = {};
+
+class CachedOrder {
+  constructor(from, to, dir, isolates, fresh, order) {
+    this.from = from;
+    this.to = to;
+    this.dir = dir;
+    this.isolates = isolates;
+    this.fresh = fresh;
+    this.order = order;
+  }
+  static update(cache, changes) {
+    if (changes.empty && !cache.some((c) => c.fresh))
+      return cache;
+    let result = [], lastDir = cache.length ? cache[cache.length - 1].dir : Direction.LTR;
+    for (let i2 = Math.max(0, cache.length - 10);i2 < cache.length; i2++) {
+      let entry = cache[i2];
+      if (entry.dir == lastDir && !changes.touchesRange(entry.from, entry.to))
+        result.push(new CachedOrder(changes.mapPos(entry.from, 1), changes.mapPos(entry.to, -1), entry.dir, entry.isolates, false, entry.order));
+    }
+    return result;
+  }
+}
+function attrsFromFacet(view, facet, base2) {
+  for (let sources = view.state.facet(facet), i2 = sources.length - 1;i2 >= 0; i2--) {
+    let source = sources[i2], value = typeof source == "function" ? source(view) : source;
+    if (value)
+      combineAttrs(value, base2);
+  }
+  return base2;
+}
+var currentPlatform = browser.mac ? "mac" : browser.windows ? "win" : browser.linux ? "linux" : "key";
+var selectionBg = browser.gecko && browser.gecko_version == 153 ? "#ffffff01" : "transparent";
+var hideNativeSelection = /* @__PURE__ */ Prec.highest(/* @__PURE__ */ EditorView.theme({
+  ".cm-line": {
+    "& ::selection, &::selection": { backgroundColor: `${selectionBg} !important` },
+    caretColor: "transparent !important"
+  },
+  ".cm-content": {
+    caretColor: "transparent !important",
+    "& :focus": {
+      caretColor: "initial !important",
+      "&::selection, & ::selection": {
+        backgroundColor: "Highlight !important"
+      }
+    }
+  }
+}));
+var UnicodeRegexpSupport = /x/.unicode != null ? "gu" : "g";
+var baseTheme = /* @__PURE__ */ EditorView.baseTheme({
+  ".cm-tooltip": {
+    zIndex: 500,
+    boxSizing: "border-box"
+  },
+  "&light .cm-tooltip": {
+    border: "1px solid #bbb",
+    backgroundColor: "#f5f5f5"
+  },
+  "&light .cm-tooltip-section:not(:first-child)": {
+    borderTop: "1px solid #bbb"
+  },
+  "&dark .cm-tooltip": {
+    backgroundColor: "#333338",
+    color: "white"
+  },
+  ".cm-tooltip-arrow": {
+    height: `${7}px`,
+    width: `${7 * 2}px`,
+    position: "absolute",
+    zIndex: -1,
+    overflow: "hidden",
+    "&:before, &:after": {
+      content: "''",
+      position: "absolute",
+      width: 0,
+      height: 0,
+      borderLeft: `${7}px solid transparent`,
+      borderRight: `${7}px solid transparent`
+    },
+    ".cm-tooltip-above &": {
+      bottom: `-${7}px`,
+      "&:before": {
+        borderTop: `${7}px solid #bbb`
+      },
+      "&:after": {
+        borderTop: `${7}px solid #f5f5f5`,
+        bottom: "1px"
+      }
+    },
+    ".cm-tooltip-below &": {
+      top: `-${7}px`,
+      "&:before": {
+        borderBottom: `${7}px solid #bbb`
+      },
+      "&:after": {
+        borderBottom: `${7}px solid #f5f5f5`,
+        top: "1px"
+      }
+    }
+  },
+  "&dark .cm-tooltip .cm-tooltip-arrow": {
+    "&:before": {
+      borderTopColor: "#333338",
+      borderBottomColor: "#333338"
+    },
+    "&:after": {
+      borderTopColor: "transparent",
+      borderBottomColor: "transparent"
+    }
+  }
+});
+class GutterMarker extends RangeValue {
+  compare(other) {
+    return this == other || this.constructor == other.constructor && this.eq(other);
+  }
+  eq(other) {
+    return false;
+  }
+  destroy(dom) {}
+}
+GutterMarker.prototype.elementClass = "";
+GutterMarker.prototype.toDOM = undefined;
+GutterMarker.prototype.mapMode = MapMode.TrackBefore;
+GutterMarker.prototype.startSide = GutterMarker.prototype.endSide = -1;
+GutterMarker.prototype.point = true;
+
+// src/scriptorium/surface/components/DocumentView.tsx
+var import_react13 = __toESM(require_react(), 1);
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var scriptoriumTheme = EditorView.theme({
+  "&": {
+    height: "100%",
+    color: "var(--color-ink)",
+    backgroundColor: "var(--color-bg)",
+    fontSize: "14px"
+  },
+  ".cm-scroller": {
+    fontFamily: "var(--font-mono)",
+    lineHeight: "1.65"
+  },
+  ".cm-content": {
+    maxWidth: "76ch",
+    margin: "0 auto",
+    padding: "28px 32px 64px",
+    caretColor: "var(--color-rubric)"
+  },
+  "&.cm-focused": { outline: "none" },
+  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": {
+    backgroundColor: "color-mix(in srgb, var(--color-rubric) 28%, transparent)"
+  },
+  ".cm-activeLine": { backgroundColor: "transparent" }
+});
+function DocumentView({ docKey, text }) {
+  const host = import_react13.useRef(null);
+  const view = import_react13.useRef(null);
+  const initial2 = import_react13.useRef(text);
+  initial2.current = text;
+  import_react13.useEffect(() => {
+    if (!host.current)
+      return;
+    const v = new EditorView({
+      parent: host.current,
+      state: EditorState.create({
+        doc: initial2.current,
+        extensions: [
+          EditorView.lineWrapping,
+          EditorState.readOnly.of(true),
+          EditorView.editable.of(false),
+          scriptoriumTheme
+        ]
+      })
+    });
+    view.current = v;
+    return () => {
+      v.destroy();
+      view.current = null;
+    };
+  }, [docKey]);
+  import_react13.useEffect(() => {
+    const v = view.current;
+    if (!v || v.state.doc.toString() === text)
+      return;
+    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: text } });
+  }, [text]);
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+    ref: host,
+    className: "min-h-0 flex-1 overflow-hidden",
+    "data-slot": "document-view"
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/StatusStrip.tsx
+var import_react14 = __toESM(require_react(), 1);
+// src/scriptorium/surface/ui/separator.tsx
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -21768,43 +46698,120 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
-var PLACEHOLDER_SEGMENTS = [
-  { label: "Version", value: "v1" },
-  { label: "Author", value: "Human" },
-  { label: "Updated", value: "—" },
-  { value: "Saved" },
-  { label: "Words", value: "0" },
-  { label: "Characters", value: "0" }
-];
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-faint",
-    children: segments.map((s, i) => /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(import_react6.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(import_react14.Fragment, {
       children: [
-        i > 0 && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator2, {
           orientation: "vertical",
           className: "my-1.5"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
           className: "flex items-baseline gap-1",
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
               className: "text-ink-dim tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
       ]
-    }, `${s.label ?? ""}:${i}`, true, undefined, this))
+    }, `${s.label ?? ""}:${i2}`, true, undefined, this))
   }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/DocumentPane.tsx
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+function useDebouncedStats(text, ms = 300) {
+  const [stats, setStats] = import_react15.useState(() => contentStats(text ?? ""));
+  import_react15.useEffect(() => {
+    const t = setTimeout(() => setStats(contentStats(text ?? "")), ms);
+    return () => clearTimeout(t);
+  }, [text, ms]);
+  return stats;
+}
+function useNow(everyMs = 30000) {
+  const [now, setNow] = import_react15.useState(() => Date.now());
+  import_react15.useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), everyMs);
+    return () => clearInterval(t);
+  }, [everyMs]);
+  return now;
+}
+function DocumentPane({ doc: doc2, text }) {
+  const stats = useDebouncedStats(text);
+  const now = useNow();
+  const active = doc2?.versions.find((v) => v.n === doc2.active);
+  const segments = doc2 ? [
+    { label: "Version", value: `v${doc2.active}${active?.label ? ` · ${active.label}` : ""}` },
+    { label: "Author", value: active?.author === "agent" ? "Agent" : "Human" },
+    { label: "Updated", value: active ? relativeTime(active.createdAt, now) : "—" },
+    { value: doc2.outsideChanged ? "Changed on disk" : doc2.dirty ? "Unsaved" : "Saved" },
+    { label: "Words", value: stats.words.toLocaleString() },
+    { label: "Characters", value: stats.characters.toLocaleString() }
+  ] : [];
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FileText, {
+              "aria-hidden": true,
+              className: "size-3.5 shrink-0 text-ink-faint"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+              className: "truncate text-sm text-ink",
+              title: doc2.original,
+              children: doc2.name
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+              className: "ml-auto shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint",
+              children: "read-only"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+          className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
+          children: "Document"
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Empty, {
+        className: "flex-1",
+        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyHeader, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyMedia, {
+              variant: "icon",
+              children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FileText, {}, undefined, false, undefined, this)
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyTitle, {
+              children: "No document open"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyDescription, {
+              children: "Pick a document from the context pane to read it here."
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this) : text === undefined ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: "flex-1",
+        "aria-busy": "true"
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(DocumentView, {
+        docKey: `${doc2.slug}@${doc2.active}`,
+        text
+      }, undefined, false, undefined, this),
+      doc2 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(StatusStrip, {
+        segments
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
 }
 
 // src/scriptorium/surface/state/storage.ts
@@ -21825,22 +46832,25 @@ var safeStorage = {
 
 // src/scriptorium/surface/state/theme.ts
 var THEME_STORAGE_KEY = "scriptorium:theme";
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  safeStorage.setItem(THEME_STORAGE_KEY, theme);
+function applyTheme(theme2) {
+  document.documentElement.dataset.theme = theme2;
+  safeStorage.setItem(THEME_STORAGE_KEY, theme2);
 }
 function readAppliedTheme() {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react7 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
+var textKey = (doc2, version2) => `${doc2}@${version2}`;
 function useDaemon() {
-  const [state, setState] = import_react7.useState(null);
-  const [connection, setConnection] = import_react7.useState("connecting");
-  const [lastError, setLastError] = import_react7.useState(null);
-  const wsRef = import_react7.useRef(null);
-  import_react7.useEffect(() => {
+  const [state, setState] = import_react16.useState(null);
+  const [connection, setConnection] = import_react16.useState("connecting");
+  const [lastError, setLastError] = import_react16.useState(null);
+  const [texts, setTexts] = import_react16.useState(() => new Map);
+  const wsRef = import_react16.useRef(null);
+  const pending = import_react16.useRef(new Map);
+  import_react16.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer;
@@ -21864,9 +46874,28 @@ function useDaemon() {
           setState(msg.state);
         else if (msg.type === "error")
           setLastError(msg.message);
+        else if (msg.type === "version.text") {
+          const key = textKey(msg.doc, msg.version);
+          setTexts((prev) => {
+            if (prev.get(key) === msg.text)
+              return prev;
+            const next = new Map(prev);
+            next.set(key, msg.text);
+            return next;
+          });
+        } else if (msg.type === "fs.list") {
+          const waiters = pending.current.get(msg.path);
+          pending.current.delete(msg.path);
+          for (const w of waiters ?? [])
+            w({ entries: msg.entries, error: msg.error });
+        }
       };
       ws.onclose = () => {
         setConnection("closed");
+        for (const waiters of pending.current.values())
+          for (const w of waiters)
+            w({ entries: [], error: "disconnected" });
+        pending.current.clear();
         if (stopped)
           return;
         timer = setTimeout(connect, delay);
@@ -21881,16 +46910,30 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react7.useCallback((msg) => {
+  const send = import_react16.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  return { state, connection, lastError, send };
+  const listDir = import_react16.useCallback((path) => new Promise((resolve) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      resolve({ entries: [], error: "disconnected" });
+      return;
+    }
+    const waiters = pending.current.get(path);
+    if (waiters) {
+      waiters.push(resolve);
+      return;
+    }
+    pending.current.set(path, [resolve]);
+    ws.send(JSON.stringify({ type: "fs.list", path }));
+  }), []);
+  return { state, connection, lastError, texts, send, listDir };
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var CONNECTION_LABEL = {
@@ -21898,142 +46941,157 @@ var CONNECTION_LABEL = {
   open: "connected",
   closed: "daemon unreachable — retrying"
 };
-function Placeholder({
-  icon: Icon2,
-  title,
-  description
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Empty, {
-    className: "h-full",
-    children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(EmptyHeader, {
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(EmptyMedia, {
-          variant: "icon",
-          children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Icon2, {}, undefined, false, undefined, this)
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(EmptyTitle, {
-          children: title
-        }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(EmptyDescription, {
-          children: description
-        }, undefined, false, undefined, this)
-      ]
-    }, undefined, true, undefined, this)
-  }, undefined, false, undefined, this);
-}
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
 }
+var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0, 64);
 function App() {
-  const { state, connection } = useDaemon();
-  const [theme, setTheme] = import_react8.useState(readAppliedTheme);
-  const layout = an({ id: LAYOUT_ID, panelIds: [...PANES], storage: safeStorage });
+  const daemon = useDaemon();
+  const { state, connection } = daemon;
+  const [theme2, setTheme] = import_react17.useState(readAppliedTheme);
   const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
+    const next = theme2 === "dark" ? "light" : "dark";
     applyTheme(next);
     setTheme(next);
   };
-  const entries = state?.context.length ?? 0;
-  const docs = state?.docs.length ?? 0;
-  const open = state?.docs.find((d) => d.slug === state.openDoc) ?? null;
-  const messages = state?.chat.length ?? 0;
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
-            "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizablePanelGroup, {
-        orientation: "horizontal",
-        className: "min-h-0 flex-1",
-        defaultLayout: layout.defaultLayout,
-        onLayoutChanged: layout.onLayoutChanged,
+      state ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Workspace, {
+        state,
+        daemon
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "flex-1",
+        "aria-busy": "true"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function Workspace({
+  state,
+  daemon
+}) {
+  const { send, texts, listDir } = daemon;
+  const prefsRef = import_react17.useRef(state.prefs);
+  prefsRef.current = state.prefs;
+  const storage = import_react17.useMemo(() => ({
+    getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
+    setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
+  }), [send]);
+  const layout = an({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+  const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
+  const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
+  const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
+  const asked = import_react17.useRef(new Set);
+  import_react17.useEffect(() => {
+    if (!open || text !== undefined)
+      return;
+    const key = textKey(open.slug, open.active);
+    if (asked.current.has(key))
+      return;
+    asked.current.add(key);
+    send({ type: "read", doc: open.slug, version: open.active });
+  }, [open, text, send]);
+  const onOpenDoc = import_react17.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanelGroup, {
+    orientation: "horizontal",
+    className: "min-h-0 flex-1",
+    defaultLayout: layout.defaultLayout,
+    onLayoutChanged: layout.onLayoutChanged,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+        id: "context",
+        defaultSize: "22",
+        minSize: "12",
+        className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizablePanel, {
-            id: "context",
-            defaultSize: "22",
-            minSize: "12",
-            className: "flex flex-col bg-surface",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(PaneHeading, {
-                children: "Context"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Placeholder, {
-                icon: FolderTree,
-                title: !state ? "Waiting for the session…" : entries === 0 ? "No context yet" : `${entries} context ${entries === 1 ? "entry" : "entries"}`,
-                description: "Files and folders added to this session appear here. Add one from the agent: cli.ts add <path>."
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizableHandle, {
-            withHandle: true
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PaneHeading, {
+            children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizablePanel, {
-            id: "document",
-            defaultSize: "50",
-            minSize: "25",
-            className: "flex flex-col bg-bg",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(PaneHeading, {
-                children: "Document"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Placeholder, {
-                icon: FileText,
-                title: !state ? "Waiting for the session…" : open ? open.name : "No document open",
-                description: docs === 0 ? "Pick a document from the context pane to read it here." : `${docs} ${docs === 1 ? "document" : "documents"} in this session.`
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(StatusStrip, {
-                segments: PLACEHOLDER_SEGMENTS
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizableHandle, {
-            withHandle: true
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ContextSidebar, {
+            entries: state.context,
+            activeDoc,
+            userHome: state.userHome,
+            onOpenDoc,
+            onAddPath: (path) => send({ type: "context.add", path }),
+            onRemoveEntry: (entry) => send({ type: "context.remove", id: entry.id }),
+            listDir
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizableHandle, {
+        withHandle: true
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+        id: "document",
+        defaultSize: "50",
+        minSize: "25",
+        className: "flex flex-col bg-bg",
+        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(DocumentPane, {
+          doc: open,
+          text
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizableHandle, {
+        withHandle: true
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(ResizablePanel, {
+        id: "chat",
+        defaultSize: "28",
+        minSize: "15",
+        className: "flex flex-col bg-surface",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PaneHeading, {
+            children: "Conversation"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(ResizablePanel, {
-            id: "chat",
-            defaultSize: "28",
-            minSize: "15",
-            className: "flex flex-col bg-surface",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(PaneHeading, {
-                children: "Conversation"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Placeholder, {
-                icon: MessagesSquare,
-                title: !state ? "Waiting for the session…" : messages === 0 ? "No messages yet" : `${messages} ${messages === 1 ? "message" : "messages"}`,
-                description: "The conversation with the agent lives here."
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this)
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Empty, {
+            className: "h-full",
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyHeader, {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyMedia, {
+                  variant: "icon",
+                  children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyTitle, {
+                  children: state.chat.length === 0 ? "No messages yet" : `${state.chat.length} ${state.chat.length === 1 ? "message" : "messages"}`
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyDescription, {
+                  children: "The conversation with the agent lives here."
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this)
     ]
@@ -22041,7 +47099,7 @@ function App() {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime7.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime14.jsxDEV(App, {}, undefined, false, undefined, this));
