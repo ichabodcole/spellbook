@@ -22,6 +22,7 @@ import {
   FolderTreeIcon,
   HomeIcon,
   PencilIcon,
+  SquarePenIcon,
   XIcon,
 } from "lucide-react";
 import {
@@ -46,7 +47,7 @@ import type { ContextEntry, StructureOp } from "../../../backend/protocol";
 import type { Listing } from "../../state/useDaemon";
 import { AddPath } from "./AddPath";
 import { EntryTree } from "./EntryTree";
-import { carriesFiles, droppedFiles, MoveToMenu } from "./menus";
+import { carriesFiles, droppedFiles, MoveToMenu, RevealItem } from "./menus";
 import {
   dirOf,
   docsIn,
@@ -85,6 +86,8 @@ export type ContextSidebarProps = {
   onAddPath: (path: string) => void;
   /** Every organizing change — the daemon does it on disk (E24). */
   onStructure: (op: StructureOp) => void;
+  /** Show a path in the OS file manager. */
+  onReveal: (path: string) => void;
   listDir: (path: string) => Promise<Listing>;
   /** A new document or folder this viewer just made: shown in rename mode. `seq` makes a repeat new. */
   created?: { path: string; seq: number } | null;
@@ -122,6 +125,7 @@ export function ContextSidebar({
   onOpenDoc,
   onAddPath,
   onStructure,
+  onReveal,
   listDir,
   created,
   notice,
@@ -202,6 +206,7 @@ export function ContextSidebar({
           moveTargetsFor={moveTargetsFor}
           renamePath={renamePath}
           onRenameStarted={renameStarted}
+          onReveal={onReveal}
         />
       ) : (
         <ListView
@@ -216,6 +221,7 @@ export function ContextSidebar({
           moveTargetsFor={moveTargetsFor}
           renamePath={renamePath}
           onRenameStarted={renameStarted}
+          onReveal={onReveal}
         />
       )}
       {shown && (
@@ -234,20 +240,25 @@ export function ContextSidebar({
           </button>
         </div>
       )}
-      <div className="flex items-center gap-1.5 border-t border-edge px-2.5 pt-1.5 text-[11px] text-ink-dim">
-        <HomeIcon aria-hidden className="size-3 shrink-0 text-ink-faint" />
+      <div className="flex items-center gap-2 border-t border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim">
+        <HomeIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
         <span className="shrink-0">Workspace</span>
         <span className="min-w-0 flex-1 truncate font-mono" title={workspace}>
           {shortPath(workspace, userHome, 3)}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setEditingWorkspace((v) => !v)}
-          className="shrink-0 rounded-sm px-1 text-ink-dim hover:bg-surface-raised hover:text-ink"
-          title="Where dropped files are copied and new top-level documents are made"
+          aria-label={editingWorkspace ? "Cancel changing the workspace" : "Change the workspace"}
+          title={
+            editingWorkspace
+              ? "Cancel"
+              : "Change the workspace — where dropped files are copied and new top-level documents are made"
+          }
         >
-          {editingWorkspace ? "Cancel" : "Change"}
-        </button>
+          {editingWorkspace ? <XIcon /> : <SquarePenIcon />}
+        </Button>
       </div>
       {editingWorkspace ? (
         <AddPath
@@ -263,9 +274,10 @@ export function ContextSidebar({
             setEditingWorkspace(false);
           }}
           onCancel={() => setEditingWorkspace(false)}
+          className="border-t-0 pt-0"
         />
       ) : (
-        <AddPath key="add" listDir={listDir} onAdd={onAddPath} />
+        <AddPath key="add" listDir={listDir} onAdd={onAddPath} className="border-t-0 pt-0" />
       )}
     </div>
   );
@@ -339,6 +351,7 @@ function ListView({
   moveTargetsFor,
   renamePath,
   onRenameStarted,
+  onReveal,
 }: {
   entries: readonly ContextEntry[];
   activeDoc: ContextSidebarProps["activeDoc"];
@@ -351,6 +364,7 @@ function ListView({
   moveTargetsFor: (path: string) => ReturnType<typeof moveTargets>;
   renamePath: string | null;
   onRenameStarted: () => void;
+  onReveal: (path: string) => void;
 }) {
   const [menuFor, setMenuFor] = useState<ContextEntry | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -464,6 +478,7 @@ function ListView({
           </ContextMenuItem>
         </>
       )}
+      <RevealItem onReveal={() => onReveal(menuFor ? entryPath(menuFor) : workspace)} />
       {menuFor && (
         <>
           <ContextMenuSeparator />
@@ -638,6 +653,7 @@ function SetView({
   moveTargetsFor,
   renamePath,
   onRenameStarted,
+  onReveal,
 }: {
   entry: ContextEntry;
   activeRel: string | null;
@@ -649,6 +665,7 @@ function SetView({
   moveTargetsFor: (path: string) => ReturnType<typeof moveTargets>;
   renamePath: string | null;
   onRenameStarted: () => void;
+  onReveal: (path: string) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -696,6 +713,7 @@ function SetView({
           renamePath={renamePath}
           onRenameStarted={onRenameStarted}
           onMenuKey={openMenuOnShiftF10}
+          onReveal={onReveal}
         />
       </div>
     </div>

@@ -17587,23 +17587,35 @@ var __iconNode = [
   ]
 ];
 var House = createLucideIcon("house", __iconNode);
-// node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
+// node_modules/lucide-react/dist/esm/icons/square-pen.mjs
 var __iconNode2 = [
+  ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
+  [
+    "path",
+    {
+      d: "M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z",
+      key: "ohrbg2"
+    }
+  ]
+];
+var SquarePen = createLucideIcon("square-pen", __iconNode2);
+// node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
+var __iconNode3 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode2);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode3);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode3 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode3);
+var __iconNode4 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode4);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode4 = [
+var __iconNode5 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode4);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode5 = [
+var __iconNode6 = [
   [
     "path",
     {
@@ -17613,9 +17625,9 @@ var __iconNode5 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode5);
+var Eye = createLucideIcon("eye", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode6 = [
+var __iconNode7 = [
   [
     "path",
     {
@@ -17627,9 +17639,9 @@ var __iconNode6 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode6);
+var FilePlus = createLucideIcon("file-plus", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode7 = [
+var __iconNode8 = [
   [
     "path",
     {
@@ -17642,9 +17654,9 @@ var __iconNode7 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode7);
+var FileText = createLucideIcon("file-text", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode8 = [
+var __iconNode9 = [
   [
     "path",
     {
@@ -17655,9 +17667,9 @@ var __iconNode8 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode8);
+var FolderInput = createLucideIcon("folder-input", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode9 = [
+var __iconNode10 = [
   [
     "path",
     {
@@ -17666,9 +17678,9 @@ var __iconNode9 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode9);
+var FolderOpen = createLucideIcon("folder-open", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode10 = [
+var __iconNode11 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -17679,9 +17691,22 @@ var __iconNode10 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode10);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode11);
+// node_modules/lucide-react/dist/esm/icons/folder-search.mjs
+var __iconNode12 = [
+  [
+    "path",
+    {
+      d: "M10.7 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v4.1",
+      key: "1bw5m7"
+    }
+  ],
+  ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
+  ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
+];
+var FolderSearch = createLucideIcon("folder-search", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode11 = [
+var __iconNode13 = [
   [
     "path",
     {
@@ -17699,9 +17724,9 @@ var __iconNode11 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode11);
+var FolderTree = createLucideIcon("folder-tree", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode12 = [
+var __iconNode14 = [
   [
     "path",
     {
@@ -17710,9 +17735,9 @@ var __iconNode12 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode12);
+var Folder = createLucideIcon("folder", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode13 = [
+var __iconNode15 = [
   [
     "path",
     {
@@ -17728,9 +17753,9 @@ var __iconNode13 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode13);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode14 = [
+var __iconNode16 = [
   [
     "path",
     {
@@ -17739,9 +17764,9 @@ var __iconNode14 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode14);
+var Moon = createLucideIcon("moon", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode15 = [
+var __iconNode17 = [
   [
     "path",
     {
@@ -17751,9 +17776,9 @@ var __iconNode15 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode15);
+var Pencil = createLucideIcon("pencil", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode16 = [
+var __iconNode18 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -17764,13 +17789,13 @@ var __iconNode16 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode16);
+var Sun = createLucideIcon("sun", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode17 = [
+var __iconNode19 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode17);
+var X = createLucideIcon("x", __iconNode19);
 // src/scriptorium/surface/App.tsx
 var import_react17 = __toESM(require_react(), 1);
 
@@ -34491,7 +34516,8 @@ function AddPath({
   foldersOnly = false,
   initialValue = "",
   autoFocus = false,
-  onCancel
+  onCancel,
+  className
 }) {
   const [value, setValue] = import_react7.useState(initialValue);
   const [listed, setListed] = import_react7.useState({
@@ -34537,7 +34563,7 @@ function AddPath({
     setValue("");
   };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-    className: "relative border-t border-edge p-2",
+    className: cn("relative border-t border-edge p-2", className),
     children: [
       /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
         value,
@@ -36265,6 +36291,16 @@ function droppedFiles(dt) {
   });
   return { files, folders };
 }
+var revealLabel = () => /Mac/i.test(navigator.userAgent) ? "Reveal in Finder" : "Show in file manager";
+function RevealItem({ onReveal }) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuItem, {
+    onClick: onReveal,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderSearch, {}, undefined, false, undefined, this),
+      revealLabel()
+    ]
+  }, undefined, true, undefined, this);
+}
 
 // src/scriptorium/surface/components/context/model.ts
 function baseName(rel) {
@@ -36390,7 +36426,8 @@ function EntryTree({
   moveTargetsFor,
   renamePath,
   onRenameStarted,
-  onMenuKey
+  onMenuKey,
+  onReveal
 }) {
   const index3 = import_react11.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = import_react11.useRef(index3);
@@ -36572,6 +36609,9 @@ function EntryTree({
               "Use as workspace"
             ]
           }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(RevealItem, {
+            onReveal: () => onReveal(menuPath)
+          }, undefined, false, undefined, this),
           !menuFor && hiddenCount > 0 && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "unhide", entry: entry.id }),
             children: [
@@ -36724,6 +36764,7 @@ function ContextSidebar({
   onOpenDoc,
   onAddPath,
   onStructure,
+  onReveal,
   listDir,
   created,
   notice,
@@ -36787,7 +36828,8 @@ function ContextSidebar({
         onImportFiles: importFiles,
         moveTargetsFor,
         renamePath,
-        onRenameStarted: renameStarted
+        onRenameStarted: renameStarted,
+        onReveal
       }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ListView, {
         entries,
         activeDoc,
@@ -36799,7 +36841,8 @@ function ContextSidebar({
         onImportFiles: importFiles,
         moveTargetsFor,
         renamePath,
-        onRenameStarted: renameStarted
+        onRenameStarted: renameStarted,
+        onReveal
       }, undefined, false, undefined, this),
       shown && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         role: "alert",
@@ -36821,11 +36864,11 @@ function ContextSidebar({
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
-        className: "flex items-center gap-1.5 border-t border-edge px-2.5 pt-1.5 text-[11px] text-ink-dim",
+        className: "flex items-center gap-2 border-t border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim",
         children: [
           /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {
             "aria-hidden": true,
-            className: "size-3 shrink-0 text-ink-faint"
+            className: "size-3.5 shrink-0 text-ink-faint"
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
             className: "shrink-0",
@@ -36836,12 +36879,13 @@ function ContextSidebar({
             title: workspace,
             children: shortPath(workspace, userHome, 3)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
-            type: "button",
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "icon-sm",
             onClick: () => setEditingWorkspace((v) => !v),
-            className: "shrink-0 rounded-sm px-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
-            title: "Where dropped files are copied and new top-level documents are made",
-            children: editingWorkspace ? "Cancel" : "Change"
+            "aria-label": editingWorkspace ? "Cancel changing the workspace" : "Change the workspace",
+            title: editingWorkspace ? "Cancel" : "Change the workspace — where dropped files are copied and new top-level documents are made",
+            children: editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SquarePen, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
@@ -36856,10 +36900,12 @@ function ContextSidebar({
           onStructure({ type: "workspace.set", path: expand(path, userHome) });
           setEditingWorkspace(false);
         },
-        onCancel: () => setEditingWorkspace(false)
+        onCancel: () => setEditingWorkspace(false),
+        className: "border-t-0 pt-0"
       }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
         listDir,
-        onAdd: onAddPath
+        onAdd: onAddPath,
+        className: "border-t-0 pt-0"
       }, "add", false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -36922,7 +36968,8 @@ function ListView({
   onImportFiles,
   moveTargetsFor,
   renamePath,
-  onRenameStarted
+  onRenameStarted,
+  onReveal
 }) {
   const [menuFor, setMenuFor] = import_react12.useState(null);
   const [renaming, setRenaming] = import_react12.useState(null);
@@ -37057,6 +37104,9 @@ function ListView({
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(RevealItem, {
+        onReveal: () => onReveal(menuFor ? entryPath(menuFor) : workspace)
+      }, undefined, false, undefined, this),
       menuFor && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
         children: [
           /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
@@ -37214,7 +37264,8 @@ function SetView({
   onImportFiles,
   moveTargetsFor,
   renamePath,
-  onRenameStarted
+  onRenameStarted,
+  onReveal
 }) {
   return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
@@ -37269,7 +37320,8 @@ function SetView({
           moveTargetsFor,
           renamePath,
           onRenameStarted,
-          onMenuKey: openMenuOnShiftF10
+          onMenuKey: openMenuOnShiftF10,
+          onReveal
         }, entry.id, false, undefined, this)
       }, undefined, false, undefined, this)
     ]
@@ -48420,6 +48472,7 @@ function Workspace({
             onOpenDoc,
             onAddPath: (path) => send({ type: "context.add", path }),
             onStructure: send,
+            onReveal: (path) => send({ type: "reveal", path }),
             listDir,
             created,
             notice: lastError,

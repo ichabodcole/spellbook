@@ -38,6 +38,7 @@ export function AddPath({
   initialValue = "",
   autoFocus = false,
   onCancel,
+  className,
 }: {
   listDir: (path: string) => Promise<Listing>;
   onAdd: (path: string) => void;
@@ -50,6 +51,7 @@ export function AddPath({
   autoFocus?: boolean;
   /** Escape on an already-empty box, or blur: the caller closes it. */
   onCancel?: () => void;
+  className?: string;
 }) {
   const [value, setValue] = useState(initialValue);
   // The suggestions carry the value they were computed FOR: a Tab or Enter
@@ -105,7 +107,7 @@ export function AddPath({
   };
 
   return (
-    <div className="relative border-t border-edge p-2">
+    <div className={cn("relative border-t border-edge p-2", className)}>
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}

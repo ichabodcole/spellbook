@@ -864,6 +864,22 @@ export class Session {
     throw new SessionError(`${abs} is not shown in this session's context`, 404);
   }
 
+  /**
+   * `rawPath` if the context shows it — a document or folder in a set, a
+   * listed document, a set's own folder — or it is the workspace; refused
+   * otherwise. For acts that reach outside the spell (revealing a path in the
+   * file manager), so a page cannot aim them at an arbitrary path.
+   */
+  shownPath(rawPath: string): string {
+    const abs = this.spell(resolve(rawPath));
+    if (this.itemAt(abs)) return abs;
+    try {
+      return this.destinationOrDie(abs);
+    } catch {
+      throw new SessionError(`${abs} is not shown in this session`, 400);
+    }
+  }
+
   /** Refuse a name that is not one plain file or folder name. */
   private nameOrDie(name: string): string {
     const n = name.trim();

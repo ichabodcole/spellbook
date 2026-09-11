@@ -412,7 +412,7 @@ export async function startDaemon(opts: StartOpts) {
 
   const handleClientMsg = (ws: import("bun").ServerWebSocket<unknown>, msg: ClientMsg) => {
     if (isStructureOp(msg)) {
-      const r = structure(msg, "human");
+      const r = structure(anchorSurfacePaths(msg), "human");
       if (typeof r.path === "string")
         reply(ws, { type: "structure.done", op: msg.type, path: r.path });
       return;
@@ -511,8 +511,20 @@ export async function startDaemon(opts: StartOpts) {
         return;
       }
       case "context.add":
-        addPaths([msg.path]);
+        addPaths([surfacePath(msg.path)]);
         return;
+      case "reveal": {
+        const path = session.shownPath(surfacePath(msg.path));
+        // An argv, never a shell string: the path is data, whatever it holds.
+        const [cmd, ...args] =
+          process.platform === "darwin"
+            ? ["open", "-R", path]
+            : process.platform === "win32"
+              ? ["explorer", `/select,${path}`]
+              : ["xdg-open", dirname(path)];
+        Bun.spawn([cmd as string, ...args], { stdio: ["ignore", "ignore", "ignore"] }).unref();
+        return;
+      }
       case "context.remove":
         session.removeContext(msg.id);
         syncWatchers();
@@ -853,6 +865,30 @@ export function sameOrigin(req: Request, port: number | undefined): boolean {
   const origin = req.headers.get("origin");
   if (origin === null) return true;
   return origin === `http://127.0.0.1:${port}` || origin === `http://localhost:${port}`;
+}
+
+/**
+ * A path typed in the SURFACE. The page has no working directory, so a path
+ * from it must be absolute or start at `~` — which is expanded HERE. Before
+ * this, `~/Documents` reached `resolve()` and was taken as relative to the
+ * daemon's cwd (the skill folder): the path box completed `~/…` (listing
+ * expands it) and then Enter failed with "no such file or folder:
+ * …/skills/scriptorium/~/Documents/…" (Cole, 2026-09-11).
+ */
+export function surfacePath(p: string): string {
+  const t = p.trim();
+  if (t === "~" || t.startsWith("~/")) return expandHome(t);
+  if (!isAbsolute(t))
+    throw new SessionError(`"${p}" is not a full path — start it with / or ~/`, 400);
+  return resolve(t);
+}
+
+/** A structure op from the surface, with every path field through `surfacePath`. */
+function anchorSurfacePaths(op: StructureOp): StructureOp {
+  const out: Record<string, unknown> = { ...op };
+  for (const k of ["dir", "path", "into"] as const)
+    if (typeof out[k] === "string") out[k] = surfacePath(out[k] as string);
+  return out as StructureOp;
 }
 
 function expandHome(p: string): string {

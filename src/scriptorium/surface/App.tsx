@@ -166,6 +166,7 @@ function Workspace({
           onOpenDoc={onOpenDoc}
           onAddPath={(path) => send({ type: "context.add", path })}
           onStructure={send}
+          onReveal={(path) => send({ type: "reveal", path })}
           listDir={listDir}
           created={created}
           notice={lastError}

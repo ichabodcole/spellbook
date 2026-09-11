@@ -42,7 +42,7 @@ import {
   ContextMenuTrigger,
 } from "@/ui/context-menu";
 import type { ContextEntry, ContextNode, StructureOp } from "../../../backend/protocol";
-import { carriesFiles, MoveToMenu } from "./menus";
+import { carriesFiles, MoveToMenu, RevealItem } from "./menus";
 import {
   ancestorsOf,
   baseName,
@@ -83,6 +83,7 @@ export function EntryTree({
   renamePath,
   onRenameStarted,
   onMenuKey,
+  onReveal,
 }: {
   entry: ContextEntry;
   /** The open document's rel within THIS entry, or null. */
@@ -96,6 +97,7 @@ export function EntryTree({
   renamePath: string | null;
   onRenameStarted: () => void;
   onMenuKey: (e: KeyboardEvent<HTMLElement>) => void;
+  onReveal: (path: string) => void;
 }) {
   const index = useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = useRef<TreeIndex>(index);
@@ -287,6 +289,7 @@ export function EntryTree({
             Use as workspace
           </ContextMenuItem>
         )}
+        <RevealItem onReveal={() => onReveal(menuPath)} />
         {!menuFor && hiddenCount > 0 && (
           <ContextMenuItem onClick={() => onStructure({ type: "unhide", entry: entry.id })}>
             <EyeIcon />

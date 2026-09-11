@@ -175,6 +175,8 @@ export type ClientMsg =
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { type: "read"; doc: string; version: number }
   | { type: "prefs.set"; key: string; value: string }
+  /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
+  | { type: "reveal"; path: string }
   | StructureOp;
 
 /** Daemon → surface, over the WebSocket. */

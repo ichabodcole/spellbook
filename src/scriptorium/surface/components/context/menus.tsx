@@ -1,6 +1,6 @@
 // Menu pieces the list and the tree share — so a document gets the SAME
 // actions wherever it is shown (E24: equal capabilities, and one vocabulary).
-import { FolderInputIcon } from "lucide-react";
+import { FolderInputIcon, FolderSearchIcon } from "lucide-react";
 import {
   ContextMenuItem,
   ContextMenuSub,
@@ -54,4 +54,18 @@ export function droppedFiles(dt: DataTransfer): { files: File[]; folders: string
     else files.push(f);
   });
   return { files, folders };
+}
+
+/** "Reveal in Finder" on a Mac, the file manager's plain name elsewhere. */
+const revealLabel = (): string =>
+  /Mac/i.test(navigator.userAgent) ? "Reveal in Finder" : "Show in file manager";
+
+/** The daemon opens the OS file manager at the path — a local app's affordance a web page alone cannot have. */
+export function RevealItem({ onReveal }: { onReveal: () => void }) {
+  return (
+    <ContextMenuItem onClick={onReveal}>
+      <FolderSearchIcon />
+      {revealLabel()}
+    </ContextMenuItem>
+  );
 }

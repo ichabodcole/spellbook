@@ -231,6 +231,17 @@ describe("import — E23's drop is a copy", () => {
   });
 });
 
+describe("shownPath — what a reveal may be aimed at", () => {
+  test("a shown document, a set folder and the workspace pass; anything else is refused", () => {
+    const s = session();
+    expect(s.shownPath(join(set, "part", "b.md"))).toBe(join(set, "part", "b.md"));
+    expect(s.shownPath(set)).toBe(set);
+    expect(s.shownPath(ws)).toBe(ws);
+    expect(refusal(() => s.shownPath(join(root, "solo.md"))).status).toBe(400);
+    expect(refusal(() => s.shownPath("/etc/passwd")).status).toBe(400);
+  });
+});
+
 describe("the workspace", () => {
   test("defaults to what the session was created with, persists, and must be a folder", () => {
     const s = session();
