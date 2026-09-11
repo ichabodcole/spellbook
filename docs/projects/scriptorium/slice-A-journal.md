@@ -182,3 +182,47 @@ originals. The transcript is `scratchpad/drive2/transcript.txt`.
 - No cold verification pass; that is the lead's next step.
 - dist-check's reproduction arm was run locally on the committed tree (exit 0);
   CI remains the authority (Contract 18).
+
+## Verify-pass fixes
+
+The slice-A verify pass (drive scripts in `scratchpad/verify-scriptorium/`) held
+E7 everywhere and found nine things to fix. Each is fixed on this branch,
+re-driven with the verifier's own script, and made a cell where practical. The
+re-run outputs are in `scratchpad/vruns/`.
+
+| #   | finding                                                                                 | fix                                                                                                                                                                                                                                         | evidence                                                                                                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | any web page could overwrite any file (foreign-origin WS → `open` any path → `save`)    | (a) `/ws`, `/cmd`, `/fs/*` refuse a present, foreign `Origin` (403); (b) `open` admits only a doc-type file inside a context entry; (c) `save` writes only an admitted original                                                             | `f-origin-v2.ts`: foreign socket never opens, `/cmd` 403, same-origin open of the `.rc` refused, victim unchanged. Cells: foreign upgrade, own-origin connect, foreign `/cmd`, non-context open/save, tampered-manifest save |
+| 2   | an outside change while the session was closed was overwritten on restore               | restore compares the manifest's original hash with the disk → `outsideChanged` + a system message (and on the tail)                                                                                                                         | `a-safety.ts`: `outsideChanged true` after restore; unit and integration cells                                                                                                                                               |
+| 3   | a symlinked original's (and a symlinked home's) outside changes were missed             | every root is watched at its realpath and events are reported under the stored path form; a symlinked original maps back by realpath                                                                                                        | `e-symdir.ts`: both announcements now fire; `a-safety.ts`: the link target's change reloads. Cells: symlinked original, symlinked home                                                                                       |
+| 4   | an outside write just before a keystroke was clobbered unannounced (60 ms settle timer) | check-before-write: the edit is staged in a sibling file, the active file is hashed, a foreign text is kept as a new agent version and announced, then the edit is renamed in; the watcher path does the same and restores the human's text | `b-e2-preserve.ts`: 25/25 preserved and announced at 30 ms and at 250 ms over five runs (the unstaged first version lost 1 of 20 at 30 ms). `b-e2.ts`: 0 self-writes misreported. Cells                                      |
+| 5   | `open <doc> <non-doc>` left an orphan session                                           | every path validated before spawning; non-doc → usage with the extensions as `choices`                                                                                                                                                      | `c-cli.ts`: exit 2, no new pointer, `state` → not_found. Cell asserts an empty TMPDIR                                                                                                                                        |
+| 6   | daemon logs piled up                                                                    | `open` keeps the newest ten; a clean close deletes its own empty log (`--log` to the daemon)                                                                                                                                                | integration cell: 14 old logs → ≤ 10; the closed session's log is gone. The verifier's home holds 9 after its runs                                                                                                           |
+| 7   | the SKILL loop failed: the agent could not act on a doc the human had not opened        | `version-new --doc <path>` opens a context doc implicitly (same admission rule), without moving the human's view; the draft's loop rewritten to match                                                                                       | `d-doc.ts`: `--doc <abs path>` of an unopened doc → exit 0; cell from a subdirectory with a relative path                                                                                                                    |
+| 8   | `--doc` resolved relative paths against the daemon's cwd                                | the CLI resolves path-shaped `--doc` against its own cwd; the daemon takes only absolute keys as paths                                                                                                                                      | `d-doc.ts`: `sub/ch3.md`, `./sub/ch3.md` and `ch3.md` from other cwds all exit 0. Cells                                                                                                                                      |
+| 9   | `tail --since abc` replayed everything                                                  | non-integer → usage, exit 2                                                                                                                                                                                                                 | `c-cli.ts`: exit 2 with the envelope. Cell                                                                                                                                                                                   |
+
+**Semantics changed, said here so it is not read as a regression.** A write to
+the active version from outside is no longer adopted: it is kept as a new
+version (`author: agent`, label `outside write to vN`) and the active version
+goes back to the human's text. The human's buffer is never touched by an agent
+write. And a Save after a closed-session change still writes the human's version
+— E7's rule — but it is no longer silent: the flag and the message came first.
+(The verifier's `a-safety.ts` still prints "SILENTLY CLOBBERED" for that last
+step because its label predates the announcement.)
+
+**Not closed, and named.** The check-before-write leaves the microseconds
+between its read and its rename; two unco-operating writers on one path cannot
+be made safe without one of them locking. The other eight daemons also accept
+any Origin:
+`docs/backlog/2026-09-11-spell-daemons-accept-any-websocket-origin.md`.
+`f-origin.ts` itself now hangs at `onopen` (the socket it expects is refused),
+so it was re-run as `f-origin-v2.ts`, which reports each layer.
+
+**Exits after the fixes:** `bun run gate` → 0 (2,183 pass) ·
+`bun scripts/dist-check.ts` → 0 (scriptorium 5/5) · acc from the skill directory
+→ CONFORMANT L0 (16/17 core, 0 failures). The `choices` census moved 26/8 →
+27/9.
+
+_(The surface-dep-cap question raised above was since ruled by the lead in
+house-style as E19, `de48e841`.)_

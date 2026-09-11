@@ -38,7 +38,8 @@ and the conversation.
 2. **You never write the active version** (E2) — the one the human is editing.
    To propose an edit: `version-new`, then edit the file it prints with your own
    Edit/Write tools. The surface shows your changes live. A write to the active
-   version is detected and announced to both of you.
+   version is detected, kept as a new version of its own, and announced to both
+   of you; the active version keeps the human's text.
 3. **Every message carries its context.** A human message on the tail carries
    the selection (`doc`, `version`, `path`, `fromLine`, `toLine`, `text`) and
    the active version's `path`. Read the path; do not ask what they mean.
@@ -54,33 +55,40 @@ bun $S/scripts/cli.ts open ~/notes/chapter-3.md ~/notes/research/   # prints {ur
 bun $S/scripts/cli.ts tail            # wrap with Monitor: one JSON line per event
 ```
 
-On a `{"type":"message", …}` line:
+On a `{"type":"message", …}` line, name the document the message is about —
+`selection.doc` when there is a selection, else `active.doc`:
 
 ```bash
-bun $S/scripts/cli.ts version-new --label "tighter opening"   # prints {doc, version, path}
-# … edit <path> with your Edit tool …
+bun $S/scripts/cli.ts version-new --doc <selection.doc or active.doc> --label "tighter opening"
+#   → {doc, version, path}; edit <path> with your Edit tool
 bun $S/scripts/cli.ts say --body-file /tmp/reply.md          # prose ALWAYS through a file
 ```
+
+When the human has opened nothing yet (`active` is `null`) — or asks about a
+document by name — pass its PATH: `version-new --doc ~/notes/research/b.md`
+opens any document in the context for you (without moving the human's view) and
+copies its v1. A path outside the context is refused; `add` it first. `state`
+lists the context entries and every opened doc.
 
 The human makes a version active in the surface (or asks you to: `activate v2`),
 and saves when they are happy.
 
 ## Verbs
 
-| verb                                                  | does                                                                                        |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `open [<path>…] [--no-open] [--restore <id>]`         | spawn a session (opens the browser), adding files/folders; `--restore` reloads a closed one |
-| `add <path>…`                                         | add files or folders to the context list                                                    |
-| `state [--full]`                                      | context, docs with every version's `path`, the active version, dirty, selection             |
-| `tail [--since <n>]`                                  | the human's messages and the session's facts as JSON lines                                  |
-| `version-new [--doc <d>] [--from <vN>] [--label <t>]` | copy a version (default: the active one) to a new file; prints its `path`                   |
-| `say <text…>` · `say --body-file <p>` · `say --stdin` | a chat message from you                                                                     |
-| `activate <vN> [--doc <d>]`                           | make a version the active one                                                               |
-| `info` · `close` · `schema` · `help` · `--version`    | discovery JSON · end the session (the manifest stays) · acc declaration                     |
+| verb                                                  | does                                                                                                     |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `open [<path>…] [--no-open] [--restore <id>]`         | spawn a session (opens the browser), adding files/folders; `--restore` reloads a closed one              |
+| `add <path>…`                                         | add files or folders to the context list                                                                 |
+| `state [--full]`                                      | context, docs with every version's `path`, the active version, dirty, selection                          |
+| `tail [--since <n>]`                                  | the human's messages and the session's facts as JSON lines                                               |
+| `version-new [--doc <d>] [--from <vN>] [--label <t>]` | copy a version (default: the active one) to a new file; prints its `path`; a context doc's path opens it |
+| `say <text…>` · `say --body-file <p>` · `say --stdin` | a chat message from you                                                                                  |
+| `activate <vN> [--doc <d>]`                           | make a version the active one                                                                            |
+| `info` · `close` · `schema` · `help` · `--version`    | discovery JSON · end the session (the manifest stays) · acc declaration                                  |
 
 `--session <id>` targets a session other than the most recent. `--doc` accepts a
-slug (`state` lists them), an original's path, or a unique file name. Put every
-flag to the LEFT of `--`: after it, a flag is text.
+slug (`state` lists them), a path (resolved against YOUR cwd), or a unique file
+name. Put every flag to the LEFT of `--`: after it, a flag is text.
 
 **Prose goes through `--body-file`** (or `--stdin` from a quoted heredoc), never
 as arguments from an unquoted heredoc — the shell eats backticks first.
