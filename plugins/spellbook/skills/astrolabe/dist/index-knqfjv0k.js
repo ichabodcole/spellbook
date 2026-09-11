@@ -17787,7 +17787,10 @@ function hashString(s) {
   return h;
 }
 function avatarRing(name) {
-  return RINGS[hashString((name || "").toLowerCase()) % RINGS.length];
+  const ring = RINGS[hashString((name || "").toLowerCase()) % RINGS.length];
+  if (ring === undefined)
+    return "";
+  return ring;
 }
 
 // src/astrolabe/surface/components/Nudge.tsx

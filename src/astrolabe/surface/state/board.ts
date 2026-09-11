@@ -64,5 +64,10 @@ function hashString(s: string): number {
 }
 
 export function avatarRing(name: string): string {
-  return RINGS[hashString((name || "").toLowerCase()) % RINGS.length];
+  const ring = RINGS[hashString((name || "").toLowerCase()) % RINGS.length];
+  // Unreachable: a non-empty literal indexed modulo its own length. If the list
+  // were ever emptied, no ring classes is the harmless answer — the avatar
+  // renders unringed — and `"undefined"` never reaches a className.
+  if (ring === undefined) return "";
+  return ring;
 }

@@ -64,7 +64,9 @@ import {
   applyStatus,
   emptyState,
   type ObservatoryState,
+  type ObservatoryView,
   type Project,
+  type ProjectCard,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
@@ -279,7 +281,10 @@ async function main(argv: string[]): Promise<number> {
   // (readback-parity: an agent reading `state` sees what the surface renders).
   // `zone` is the coarse floor (attention > active > quiet); t5's surface
   // refines idle/stale/done from `connected` + `lastUpdated`.
-  function projectCards() {
+  // Annotated with the wire types `state.ts` publishes, so the projection the
+  // board and `GET /state` receive cannot drift from the declared shape — and so
+  // a caller that types a response as `ObservatoryView` is backed by the compiler.
+  function projectCards(): ProjectCard[] {
     return state.projects.map((p) => {
       const connected = state.presence[p.id]?.connected ?? false;
       const st = state.status[p.id];
@@ -294,7 +299,7 @@ async function main(argv: string[]): Promise<number> {
       };
     });
   }
-  const projectState = () => ({ title: state.title, projects: projectCards() });
+  const projectState = (): ObservatoryView => ({ title: state.title, projects: projectCards() });
 
   function broadcastState() {
     const s = JSON.stringify({ type: "state", ...projectState() });
@@ -488,7 +493,13 @@ async function main(argv: string[]): Promise<number> {
       : undefined;
   const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
-  let server: ReturnType<typeof Bun.serve>;
+  // `Bun.Server<undefined>`, not `ReturnType<typeof Bun.serve>`: the return type
+  // of a GENERIC function resolves its type parameter to `unknown`, and that
+  // annotation then flows back into the call as its contextual type — so
+  // `WebSocketData` was inferred as `unknown`, and `srv.upgrade(req)` demanded a
+  // `data` option this daemon has never needed. It stores nothing on a socket
+  // (no handler reads `ws.data`), which is exactly what `undefined` says.
+  let server: Bun.Server<undefined>;
   try {
     server = Bun.serve({
       port,

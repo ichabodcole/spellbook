@@ -108,10 +108,12 @@ function resolveAs(flags: Record<string, string | boolean>): string | undefined 
   return env?.trim() ? env.trim() : undefined;
 }
 
+// `Bun.stdin.text()` — the house's own shape (magpie, bounty, mind-mapper).
+// The loop it replaces iterated `Bun.stdin.stream()` with `for await`, which Bun
+// supports at run time but the root tsconfig's DOM `ReadableStream` does not
+// declare; same UTF-8 decode, same trim.
 async function readStdin(): Promise<string> {
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of Bun.stdin.stream()) chunks.push(chunk);
-  return Buffer.concat(chunks).toString("utf8").trim();
+  return (await Bun.stdin.text()).trim();
 }
 
 // ── daemon discovery + HTTP ──────────────────────────────────────────
