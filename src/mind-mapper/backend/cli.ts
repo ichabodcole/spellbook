@@ -820,7 +820,10 @@ async function dispatch(argv: string[]): Promise<number> {
       // forever would just spin silently. `passOrThrow` always throws here, and
       // the throw propagates out of the client into `main`'s catch, which is
       // strictly better than a raise reachable from inside a reconnect loop.
-      onHttpError: async (res) => {
+      // Annotated: an async arrow's `return "retry"` widens to `Promise<string>`
+      // unless the return type is stated, and the client accepts only the
+      // literal (type-debt T36).
+      onHttpError: async (res): Promise<"retry"> => {
         if (res.status === 409 || res.status === 404) await passOrThrow(res);
         return "retry";
       },

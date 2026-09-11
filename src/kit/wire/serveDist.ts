@@ -150,17 +150,22 @@ const TRANSITIVE_EXTS = [".js", ".css"];
 const whitelistCache = new Map<string, ReadonlySet<string>>();
 
 function refsIn(text: string, re: RegExp): string[] {
-  return [...text.matchAll(re)]
-    .map(([, ref]) => ref)
-    .filter(
-      (ref) =>
-        !!ref &&
-        !ref.includes("/") &&
-        !ref.includes("..") &&
-        !ref.includes(":") &&
-        !ref.startsWith("#") &&
-        !ref.startsWith("?"),
-    );
+  return (
+    [...text.matchAll(re)]
+      .map(([, ref]) => ref)
+      // A TYPE PREDICATE, and honest only because its first clause was already
+      // here: `!!ref` is the runtime check that makes `ref is string` true (the
+      // FELL sentence's predicate route, taken with its clause — type-debt T36).
+      .filter(
+        (ref): ref is string =>
+          !!ref &&
+          !ref.includes("/") &&
+          !ref.includes("..") &&
+          !ref.includes(":") &&
+          !ref.startsWith("#") &&
+          !ref.startsWith("?"),
+      )
+  );
 }
 
 /**
