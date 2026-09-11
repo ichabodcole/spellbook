@@ -112,3 +112,47 @@ the house precedents):**
 **Open, deliberately:** global vs per-folder/project scoping — start global.
 **Not taken:** a prompt that auto-sends on click (removes the chance to adjust,
 and imago's experience chose against it).
+
+## E10 · A revision the human asks for on a PENDING agent version — revise it or make a new one? (open)
+
+**Raised in the prototype, 2026-09-11.** Cole asked for habaneros (agent wrote
+v2), then "make this jalapeños" before accepting v2. The agent revised **v2 in
+place** — it was its own unaccepted proposal — rather than writing v3.
+**Tentative rule:** an agent version the human has not made active is the
+agent's draft, and a follow-up revises it; once the human has activated or
+merged from it, a new request makes a new version. **Not taken yet:** always a
+new version (keeps every step, but a conversation of small corrections would
+litter the version list — E4 shows only two at a time). To confirm with use.
+
+## E11 · The prototype has done its job; the first real slice is the FOUNDATION, not the diff
+
+**Ruled:** Cole, 2026-09-11, after driving the prototype ("this already proves …
+the experience works"): stop iterating the throwaway and build the real spell on
+the house build process, getting the foundations right before app-specific
+editing mechanics. E10's revise-in-place stays as is for now — the agent says
+what it did, and the human can ask for a v3.
+
+**The foundation slice (supersedes E5's ordering):**
+
+1. **Context sidebar** — single documents _and_ folder trees, with a genuinely
+   good file-tree experience (drill in, back out to the context list).
+2. **Centre editor** — CodeMirror 6, one file at a time, undo/redo, explicit
+   Save/Revert (E7).
+3. **Chat sidebar** — consistent with the other spells (the message-surface
+   paradigm; shadcn's chat primitives are the candidate).
+4. **Selection as context** on every message.
+5. **Right-click context menu** for quick actions — pre-canned messages.
+6. **Saved prompts** (E9).
+
+**Deferred:** the split-screen diff and granular merge, annotations, rendered
+view, links. The version model (E2/E8) is still built into the daemon from the
+start — it is how the agent edits — so the diff UI arrives later as a view over
+data that already exists, not a re-architecture.
+
+**Prototype findings carried forward** (`scratchpad` code, not kept): a human
+typing into v1 while the agent appends to v2 never collided (20 keystrokes, 5
+agent writes, v1 matched the human buffer exactly); a write to the active
+version from outside was detected and announced; `@parcel/watcher` on the
+session folder caught the agent's Edit-tool writes; the SSE tail needs a
+heartbeat and a resuming reconnect (the first run lost its stream to the idle
+timeout — the kit's `heartbeat` + `tailEvents` already solve both).
