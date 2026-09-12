@@ -6,6 +6,7 @@ import {
   ColumnsIcon,
   FileCodeIcon,
   FileTextIcon,
+  GitCompareIcon,
   SaveIcon,
   UndoDotIcon,
 } from "lucide-react";
@@ -13,14 +14,21 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
-import type { DocView } from "../../backend/protocol";
+import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
 import { contentStats, relativeTime } from "../state/stats";
+import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
 import { type StatusSegment, StatusStrip } from "./StatusStrip";
 
-/** E29: the three modes Operator's editor has — raw, rendered, and both. */
-export const VIEW_MODES = ["raw", "rendered", "split"] as const;
+/**
+ * E29's three modes from Operator's editor — raw, rendered, and both — plus
+ * E36's `compare`, which is a different KIND of thing and shares the toolbar
+ * anyway: the other three show one text, compare shows two. It sits here
+ * because "how am I looking at this document" is the question the toolbar
+ * answers, and a comparison is an answer to it.
+ */
+export const VIEW_MODES = ["raw", "rendered", "split", "compare"] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
 /**
@@ -51,6 +59,7 @@ const MODE_BUTTONS: { mode: ViewMode; label: string; icon: typeof FileTextIcon }
   { mode: "raw", label: "Raw markdown", icon: FileCodeIcon },
   { mode: "rendered", label: "Rendered", icon: BookOpenIcon },
   { mode: "split", label: "Raw and rendered side by side", icon: ColumnsIcon },
+  { mode: "compare", label: "Compare with another version", icon: GitCompareIcon },
 ];
 
 /** Recount after typing pauses, as Operator's useContentStats does (300 ms). */
@@ -78,6 +87,9 @@ export function DocumentPane({
   text,
   mode,
   onMode,
+  diff,
+  onAgainst,
+  onTake,
   splitLayout,
   onEdit,
   onSave,
@@ -89,6 +101,11 @@ export function DocumentPane({
   text: string | undefined;
   mode: ViewMode;
   onMode: (mode: ViewMode) => void;
+  /** The daemon's comparison — null until the first answer arrives (E36). */
+  diff: DiffPayload | null;
+  /** The side the picker changes to; which side is SHOWN comes from the payload. */
+  onAgainst: (side: DiffSide) => void;
+  onTake: (hunks: number[]) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -254,6 +271,20 @@ export function DocumentPane({
         </Empty>
       ) : shown === undefined ? (
         <div className="flex-1" aria-busy="true" />
+      ) : showing === "compare" ? (
+        // The payload is asked for by App whenever the document, the active
+        // version or the chosen side changes; until the first one lands the
+        // pane holds its space rather than flashing an empty comparison.
+        diff && diff.doc === doc.slug ? (
+          <CompareView
+            payload={diff}
+            versions={doc.versions}
+            onAgainst={onAgainst}
+            onTake={onTake}
+          />
+        ) : (
+          <div className="flex-1" aria-busy="true" />
+        )
       ) : showing === "raw" ? (
         <DocumentView docKey={doc.slug} text={shown} editable onChange={onEdit} onSave={onSave} />
       ) : showing === "rendered" ? (

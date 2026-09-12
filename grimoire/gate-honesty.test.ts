@@ -335,7 +335,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 2,
   "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 254,
+  "src/scriptorium/surface/styles.css": 265,
 };
 
 type BlindReport = {

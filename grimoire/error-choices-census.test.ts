@@ -137,7 +137,11 @@ const EXPECTED: Record<
   // 31/10 -> 32/10 (E35): `meta-set` refuses a positional that is not
   // `key=value`, with the shape in the hint rather than a set of choices — the
   // keys are the document's own vocabulary, so there is no closed set to name.
-  scriptorium: { sites: 32, choices: 10, verbRoster: true, flagMap: true },
+  // 32/10 -> 33/10 (E36): `merge` refuses a hunk id the current diff does not
+  // hold, naming the range it does have. No `choices`: the ids are positions in
+  // a comparison that has already moved, so listing them would invite a retry
+  // against numbers that are themselves stale — the hint says re-run `diff`.
+  scriptorium: { sites: 33, choices: 10, verbRoster: true, flagMap: true },
 };
 
 /**

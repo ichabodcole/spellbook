@@ -748,3 +748,61 @@ reason `description` is left EMPTY rather than invented.
 
 **`generated.by` is recorded honestly:** `human` when the human clicked,
 whatever the agent passed to `--by` otherwise, `unknown` when nobody said.
+
+## E36 · One diff, computed in the daemon, rendered by the surface
+
+**Built:** 2026-09-12 — the comparison slice, chosen over the chat slice
+deliberately. Chat needs objects to carry; a comparison and (next) a comment are
+those objects. The versions model already existed and a human had no way to READ
+a version before making it active, which is a hole in what shipped rather than a
+new feature, and it widens the moment chat makes versions easy to make.
+
+**`@codemirror/merge` was measured, not dismissed.** Its dependencies are
+`@codemirror/language`, `state`, `view` and `@lezer/highlight` — every one
+already in the surface — so ward 1b has nothing to say about it and the bundle
+argument that killed `lang-markdown` in E20 does not apply. It is still not
+used, for a different reason: it would give the SURFACE its own diff while the
+`diff` CLI verb used ours, and a hunk the human accepted would be a hunk a
+different engine found. Two engines over one document is the lockstep-mirror
+drift this house has already paid for once. The daemon computes; the surface
+renders what it computed; "Take" sends hunk IDS back, never text.
+
+**The left side is always the ACTIVE version, and that is a rule.** E2 says the
+active version is the only one the human writes, so making it the left side of
+every comparison means a merge has exactly one legal destination. Comparing two
+versions neither of which is active would be readable and un-mergeable — a view
+with a dead verb — so the shape does not offer it: activate the one you mean to
+change first.
+
+**A merge is written through `edit`**, the same path a keystroke takes, so it
+obeys every rule a keystroke obeys: it lands on the active version and never the
+original (E7), and check-before-write preserves an outside write as a new
+version first (E2). Verified live: taking one hunk left the original saying
+`status: draft` while the buffer said `stable`.
+
+**Hunk ids are valid only against the text the diff saw.** The daemon re-diffs
+on every merge and REFUSES an id it cannot find, naming the range it does have,
+rather than applying a number to a document that moved underneath it. Driven:
+after taking hunk 2, asking for hunk 2 again exits 6 with "run diff again".
+
+**Line diff, then word refinement inside PAIRED lines only.** A hunk replacing
+three lines with three is paired line by line; a 1-for-many hunk gets no spans
+rather than an arbitrary pairing, because a word diff against the wrong line is
+worse than none. A moved paragraph reads as a delete and an add — the honest
+answer for a line diff, not a wrong clever one.
+
+**The engine says when it gives up.** Past 3000 edits Myers stops and the whole
+difference becomes ONE hunk with `coarse: true`, and the view prints a banner —
+a human told "1 change" would read that as a small edit.
+
+**Scrolling is synced by CONSTRUCTION, not by listeners.** The two halves are
+cells of one grid inside one scroller, so they cannot drift. This does NOT fix
+the raw/rendered split next door: those are two renderings with different line
+counts and two independent scrollers, and syncing them is approximate work of
+its own. Still on the list.
+
+**A diff needed a second hue and the palette had none** — `rubric` and `danger`
+are both reds, so additions and deletions looked the same. Measured in the
+browser, not predicted. `--color-added` / `--color-removed` join the spell's
+semantic tokens; they mean added and removed, and nothing else may borrow them
+to mean good and bad.

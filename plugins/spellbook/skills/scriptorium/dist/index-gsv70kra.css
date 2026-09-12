@@ -44,6 +44,8 @@
     --color-on-rubric: #1a120e;
     --color-attention: #e2a94b;
     --color-danger: #e5675a;
+    --color-added: #7f9c6a;
+    --color-removed: #c2705f;
     --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
     --color-background: var(--color-bg);
     --color-foreground: var(--color-ink);
@@ -404,12 +406,20 @@
     inset: calc(var(--spacing) * 6);
   }
 
+  .top-0 {
+    top: calc(var(--spacing) * 0);
+  }
+
   .top-1\/2 {
     top: 50%;
   }
 
   .top-full {
     top: 100%;
+  }
+
+  .right-1 {
+    right: calc(var(--spacing) * 1);
   }
 
   .right-2 {
@@ -547,6 +557,10 @@
     display: inline;
   }
 
+  .inline-block {
+    display: inline-block;
+  }
+
   .inline-flex {
     display: inline-flex;
   }
@@ -599,6 +613,10 @@
   .size-9 {
     width: calc(var(--spacing) * 9);
     height: calc(var(--spacing) * 9);
+  }
+
+  .h-5 {
+    height: calc(var(--spacing) * 5);
   }
 
   .h-6 {
@@ -657,6 +675,10 @@
     width: calc(var(--spacing) * 1);
   }
 
+  .w-10 {
+    width: calc(var(--spacing) * 10);
+  }
+
   .w-\[calc\(100vw-2rem\)\] {
     width: calc(100vw - 2rem);
   }
@@ -696,6 +718,11 @@
 
   .min-w-36 {
     min-width: calc(var(--spacing) * 36);
+  }
+
+  .min-w-fit {
+    min-width: -moz-fit-content;
+    min-width: fit-content;
   }
 
   .flex-1 {
@@ -761,6 +788,10 @@
     cursor: pointer;
   }
 
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .grid-cols-\[auto_1fr\] {
     grid-template-columns: auto 1fr;
   }
@@ -783,6 +814,10 @@
 
   .items-start {
     align-items:  flex-start;
+  }
+
+  .items-stretch {
+    align-items: stretch;
   }
 
   .justify-center {
@@ -963,6 +998,26 @@
     border-color: #0000;
   }
 
+  .bg-added\/12 {
+    background-color: #7f9c6a1f;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-added\/12 {
+      background-color: color-mix(in oklab, var(--color-added) 12%, transparent);
+    }
+  }
+
+  .bg-added\/28 {
+    background-color: #7f9c6a47;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-added\/28 {
+      background-color: color-mix(in oklab, var(--color-added) 28%, transparent);
+    }
+  }
+
   .bg-attention\/10 {
     background-color: #e2a94b1a;
   }
@@ -1073,6 +1128,26 @@
     background-color: var(--color-primary);
   }
 
+  .bg-removed\/10 {
+    background-color: #c2705f1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-removed\/10 {
+      background-color: color-mix(in oklab, var(--color-removed) 10%, transparent);
+    }
+  }
+
+  .bg-removed\/28 {
+    background-color: #c2705f47;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-removed\/28 {
+      background-color: color-mix(in oklab, var(--color-removed) 28%, transparent);
+    }
+  }
+
   .bg-rubric {
     background-color: var(--color-rubric);
   }
@@ -1117,6 +1192,16 @@
 
   .bg-surface-raised {
     background-color: var(--color-surface-raised);
+  }
+
+  .bg-surface-raised\/40 {
+    background-color: #25221b66;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-surface-raised\/40 {
+      background-color: color-mix(in oklab, var(--color-surface-raised) 40%, transparent);
+    }
   }
 
   .bg-surface-raised\/60 {
@@ -1261,6 +1346,11 @@
     padding-block: calc(var(--spacing) * 4);
   }
 
+  .py-px {
+    padding-block-start: 1px;
+    padding-block-end: 1px;
+  }
+
   .pt-0 {
     padding-top: calc(var(--spacing) * 0);
   }
@@ -1281,8 +1371,16 @@
     padding-right: calc(var(--spacing) * 2);
   }
 
+  .pr-3 {
+    padding-right: calc(var(--spacing) * 3);
+  }
+
   .pr-8 {
     padding-right: calc(var(--spacing) * 8);
+  }
+
+  .pr-16 {
+    padding-right: calc(var(--spacing) * 16);
   }
 
   .pb-2 {
@@ -1311,6 +1409,10 @@
 
   .text-left {
     text-align: left;
+  }
+
+  .text-right {
+    text-align: right;
   }
 
   .font-manuscript {
@@ -1355,6 +1457,15 @@
 
   .text-\[11px\] {
     font-size: 11px;
+  }
+
+  .text-\[13px\] {
+    font-size: 13px;
+  }
+
+  .leading-\[1\.65\] {
+    --tw-leading: 1.65;
+    line-height: 1.65;
   }
 
   .leading-normal {
@@ -1402,6 +1513,10 @@
 
   .whitespace-nowrap {
     white-space: nowrap;
+  }
+
+  .whitespace-pre-wrap {
+    white-space: pre-wrap;
   }
 
   .text-attention {
@@ -2459,6 +2574,8 @@
   --color-on-rubric: #fff8f0;
   --color-attention: #9a6212;
   --color-danger: #b33a2e;
+  --color-added: #4e7040;
+  --color-removed: #a8432a;
 }
 
 :root {

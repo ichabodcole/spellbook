@@ -61,10 +61,11 @@ import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
+import { unified } from "./diff";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type { AgentCmd, ClientMsg, Selection, ServerMsg, StructureOp } from "./protocol";
-import { type FileEvent, Session, SessionError } from "./session";
+import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -545,6 +546,37 @@ export async function startDaemon(opts: StartOpts) {
         });
         return;
       }
+      case "diff": {
+        reply(ws, { type: "diff", ...session.compare({ doc: msg.doc, against: msg.against }) });
+        return;
+      }
+      case "merge": {
+        const r = session.merge({ doc: msg.doc, against: msg.against, hunks: msg.hunks });
+        // The buffer the human is looking at must be told: the merge wrote the
+        // active version's FILE, and the editor's text is now behind it.
+        send({
+          type: "version.text",
+          doc: r.slug,
+          version: r.version,
+          text: r.text,
+          origin: "remote",
+        });
+        const m = session.addMessage(
+          "system",
+          `Took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(msg.against)} into v${r.version} of ${r.slug}.`,
+        );
+        log.emit({
+          type: "merged",
+          doc: r.slug,
+          version: r.version,
+          against: msg.against,
+          hunks: msg.hunks,
+          by: "human",
+          ts: m.ts,
+        });
+        broadcastState();
+        return;
+      }
       case "prefs.set": {
         if (
           !PREF_KEY.test(msg.key) ||
@@ -761,6 +793,37 @@ export async function startDaemon(opts: StartOpts) {
           { fact: "meta.set", by: "agent", ...r },
         );
         return r;
+      }
+      case "diff": {
+        const p = session.compare({ doc: cmd.doc, against: cmd.against });
+        return {
+          doc: p.doc,
+          active: p.active,
+          against: p.against,
+          same: p.diff.same,
+          coarse: p.diff.coarse,
+          hunks: p.diff.hunks,
+          unified: unified(p.diff, {
+            from: `v${p.active}`,
+            to: sideName(p.against),
+            ...(cmd.context === undefined ? {} : { context: cmd.context }),
+          }),
+        };
+      }
+      case "merge": {
+        const r = session.merge({ doc: cmd.doc, against: cmd.against, hunks: cmd.hunks });
+        send({
+          type: "version.text",
+          doc: r.slug,
+          version: r.version,
+          text: r.text,
+          origin: "remote",
+        });
+        announce(
+          `Agent took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(cmd.against)} into v${r.version} of ${r.slug}.`,
+          { fact: "merged", doc: r.slug, version: r.version, hunks: cmd.hunks, by: "agent" },
+        );
+        return { doc: r.slug, version: r.version, applied: r.applied };
       }
       case "find":
         return session.find(cmd.filter);

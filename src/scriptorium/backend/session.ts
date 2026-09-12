@@ -42,6 +42,7 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { applyHunks, diffText } from "./diff";
 import {
   buildBlock,
   guessType,
@@ -58,6 +59,8 @@ import type {
   ChatMessage,
   ChatWho,
   ContextEntry,
+  DiffPayload,
+  DiffSide,
   DocMeta,
   DocSummary,
   DocView,
@@ -652,6 +655,76 @@ export class Session {
     this.adoptActive(d, readFileSync(this.versionPath(d, d.active), "utf8"));
     this.persist();
     return { slug: d.slug, previous };
+  }
+
+  // ── comparing and merging (E36) ────────────────────────────────────────────
+
+  /**
+   * The text of one side of a comparison. `"original"` is read from DISK, not
+   * from a cache: the whole point of comparing against it is to see what the
+   * file of record actually says right now, including a change someone else
+   * made while this session was open.
+   */
+  private sideText(d: DocRecord, side: DiffSide): string {
+    if (side === "original") return readFileSync(d.original, "utf8");
+    this.versionOrDie(d, side);
+    return readFileSync(this.versionPath(d, side), "utf8");
+  }
+
+  /** Compare the ACTIVE version (left) against another side (right). */
+  compare(opts: { doc?: string; against: DiffSide }): DiffPayload {
+    const d = this.docOrDie(opts.doc);
+    if (opts.against === d.active)
+      throw new SessionError(
+        `v${d.active} is the active version of ${d.slug} — comparing it with itself says nothing`,
+        400,
+      );
+    const left = readFileSync(this.versionPath(d, d.active), "utf8");
+    return {
+      doc: d.slug,
+      active: d.active,
+      against: opts.against,
+      diff: diffText(left, this.sideText(d, opts.against)),
+    };
+  }
+
+  /**
+   * Take named hunks from `against` into the active version.
+   *
+   * ⛔ THE WRITE GOES THROUGH `edit`, which is what makes a merge obey every
+   * rule an ordinary keystroke obeys: it lands on the active version and never
+   * the original (E7), and check-before-write preserves an outside write as a
+   * new version first (E2). A merge writing the file directly would be the one
+   * path into the document that could silently clobber the agent.
+   */
+  merge(opts: { doc?: string; against: DiffSide; hunks: number[] }): {
+    slug: string;
+    version: number;
+    text: string;
+    applied: number;
+    preserved: Version | null;
+  } {
+    const d = this.docOrDie(opts.doc);
+    const payload = this.compare({ doc: d.slug, against: opts.against });
+    const known = new Set(payload.diff.hunks.map((h) => h.id));
+    const missing = opts.hunks.filter((id) => !known.has(id));
+    if (missing.length)
+      throw new SessionError(
+        `${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against)} — ` +
+          `it has ${known.size === 0 ? "none" : `1..${Math.max(...known)}`}. Run diff again: ` +
+          `the text changed under the numbers.`,
+        409,
+      );
+    const before = readFileSync(this.versionPath(d, d.active), "utf8");
+    const text = applyHunks(before, payload.diff.hunks, opts.hunks);
+    const { preserved } = this.edit(d.slug, d.active, text);
+    return {
+      slug: d.slug,
+      version: d.active,
+      text,
+      applied: opts.hunks.filter((id) => known.has(id)).length,
+      preserved,
+    };
   }
 
   /** Save: the active version's text over the original. The ONLY write to it (E7). */
@@ -1542,4 +1615,9 @@ function countDocs(dir: string): number {
   };
   walk(dir);
   return n;
+}
+
+/** How a comparison side reads in a message to a human or an agent. */
+export function sideName(side: DiffSide): string {
+  return side === "original" ? "the original" : `v${side}`;
 }

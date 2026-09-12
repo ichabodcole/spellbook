@@ -189,14 +189,17 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
 const CLI_OPTIONS = {
   "body-file": { type: "string" },
   by: { type: "string" },
+  context: { type: "string" },
   doc: { type: "string" },
   entry: { type: "string" },
   from: { type: "string" },
   full: { type: "boolean" },
+  hunks: { type: "string" },
   into: { type: "string" },
   lifecycle: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
+  patch: { type: "boolean" },
   restore: { type: "string" },
   session: { type: "string" },
   since: { type: "string" },
@@ -275,6 +278,24 @@ export function parseVersion(token: string, what: string): number {
       hint: "run: cli.ts state (each doc lists its versions)",
     });
   return Number(m[1]);
+}
+
+/** A non-negative whole number from a flag, refused rather than coerced. */
+export function parseCount(token: string, what: string): number {
+  const t = token.trim();
+  if (!/^\d+$/.test(t)) die(`${what}: "${token}" is not a whole number`, "usage");
+  return Number(t);
+}
+
+/**
+ * A comparison side: a version, or the file of record. `original` is spelled
+ * out rather than offered as `v0` — a zeroth version would read like the
+ * earliest one, and the original is not part of the version line at all.
+ */
+export function parseSide(token: string, what: string): number | "original" {
+  const t = token.trim().toLowerCase();
+  if (t === "original" || t === "file") return "original";
+  return parseVersion(token, what);
 }
 
 // ── verbs ──────────────────────────────────────────────────────────────
@@ -683,6 +704,61 @@ const COMMANDS: CommandSpec[] = [
     describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
     run: async (pos, flags, session) => {
       printJson(await postCmd(session, { type: "say", text: await readSayBody(pos, flags) }));
+    },
+  },
+  {
+    name: "diff",
+    flags: [...SESSION, "doc", "context", "patch"],
+    positionals: [{ name: "against", required: true }],
+    describe:
+      "compare the active version with another (vN or 'original'); --patch for plain unified text",
+    run: async (pos, flags, session) => {
+      const r = (await postCmd(session, {
+        type: "diff",
+        against: parseSide(pos[0] ?? "", "diff"),
+        ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        ...(typeof flags.context === "string"
+          ? { context: parseCount(flags.context, "--context") }
+          : {}),
+      })) as Record<string, unknown>;
+      if (flags.patch) process.stdout.write(String(r.unified ?? ""));
+      else printJson(r);
+    },
+  },
+  {
+    name: "merge",
+    flags: [...SESSION, "doc", "hunks"],
+    positionals: [{ name: "against", required: true }],
+    describe:
+      "take changes from another version into the active one (--hunks 1,3; default: all of them)",
+    run: async (pos, flags, session) => {
+      const against = parseSide(pos[0] ?? "", "merge");
+      // ⛔ Without --hunks this takes EVERY hunk, which is the whole-document
+      // merge. The ids come from `diff` and are only valid against the text it
+      // saw: the daemon re-diffs and refuses ids it cannot find rather than
+      // applying a number to a document that has moved underneath it.
+      const listed =
+        typeof flags.hunks === "string"
+          ? flags.hunks.split(",").map((h) => parseCount(h, "--hunks"))
+          : null;
+      const hunks =
+        listed ??
+        (
+          (await postCmd(session, {
+            type: "diff",
+            against,
+            ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+          })) as { hunks?: { id: number }[] }
+        ).hunks?.map((h) => h.id) ??
+        [];
+      printJson(
+        await postCmd(session, {
+          type: "merge",
+          against,
+          hunks,
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
     },
   },
   {

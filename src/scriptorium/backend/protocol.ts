@@ -93,6 +93,73 @@ export type DocSummary = {
   error?: string;
 };
 
+// ── comparing and merging (E36) ───────────────────────────────────────────────
+//
+// The engine that produces these lives in `diff.ts`; the shapes live HERE
+// because the surface renders exactly what the daemon computed. That is the
+// point of putting them on the wire: there is no second diff implementation to
+// disagree with the first, so a hunk the human accepts is the hunk the merge
+// applies.
+
+/** What happened to one line between the two sides. */
+export type DiffOp = "same" | "add" | "del";
+
+/** A run within a refined line: `changed` marks what differs from its pair. */
+export type DiffSpan = { text: string; changed: boolean };
+
+export type DiffLine = {
+  op: DiffOp;
+  /** 0-based index in the LEFT text, when the line is present there. */
+  a?: number;
+  /** 0-based index in the RIGHT text, when the line is present there. */
+  b?: number;
+  text: string;
+  /** Word-level refinement — only on lines the engine could pair. */
+  spans?: DiffSpan[];
+};
+
+/**
+ * One contiguous difference: the left's `[aFrom, aTo)` lines become the
+ * right's `[bFrom, bTo)`. A pure insertion has `aFrom === aTo`; a pure
+ * deletion has `bFrom === bTo`.
+ */
+export type DiffHunk = {
+  id: number;
+  aFrom: number;
+  aTo: number;
+  bFrom: number;
+  bTo: number;
+  del: string[];
+  add: string[];
+};
+
+export type Diff = {
+  lines: DiffLine[];
+  hunks: DiffHunk[];
+  /** The two texts are identical. */
+  same: boolean;
+  /** The line diff gave up; the whole difference is ONE hunk, and it says so. */
+  coarse: boolean;
+};
+
+/** What a comparison can be against: another version, or the file of record. */
+export type DiffSide = number | "original";
+
+/**
+ * ⛔ THE LEFT SIDE IS ALWAYS THE ACTIVE VERSION, and that is a rule, not a
+ * default. E2 says the active version is the only one the human writes, so
+ * making it the left side of every comparison means a merge always has exactly
+ * one legal destination. Comparing two versions NEITHER of which is active
+ * would be readable and un-mergeable — a view with a disabled verb — so the
+ * shape simply does not offer it: activate the one you mean to change first.
+ */
+export type DiffPayload = {
+  doc: string;
+  active: number;
+  against: DiffSide;
+  diff: Diff;
+};
+
 export type VersionAuthor = "human" | "agent";
 
 export type Version = {
@@ -270,6 +337,10 @@ export type ClientMsg =
   | { type: "fs.list"; path: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { type: "read"; doc: string; version: number }
+  /** Compare the active version against another (answered with `diff`). */
+  | { type: "diff"; doc?: string; against: DiffSide }
+  /** Take named hunks from `against` into the active version's buffer. */
+  | { type: "merge"; doc?: string; against: DiffSide; hunks: number[] }
   /** What would a move do? Answered with `move.plan`; changes nothing (E26). */
   | { type: "move.plan"; path: string; into: string }
   /** A set's map (E33) — answered with `graph`. */
@@ -293,6 +364,7 @@ export type ClientMsg =
 export type ServerMsg =
   | { type: "state"; state: PublicState }
   | { type: "version.text"; doc: string; version: number; text: string; origin: "load" | "remote" }
+  | ({ type: "diff" } & DiffPayload)
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   | { type: "move.plan"; path: string; into: string; plan?: MovePlan; error?: string }
   | { type: "graph"; entry: string; graph?: GraphPayload; error?: string }
@@ -326,6 +398,8 @@ export type AgentCmd =
   | { type: "version.new"; doc?: string; from?: number; label?: string }
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
+  | { type: "diff"; doc?: string; against: DiffSide; context?: number }
+  | { type: "merge"; doc?: string; against: DiffSide; hunks: number[] }
   | { type: "close" }
   /** A document's frontmatter as read, or every context document's (E32). */
   | { type: "meta"; path?: string }

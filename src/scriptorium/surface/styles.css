@@ -23,6 +23,15 @@
   --color-on-rubric: #1a120e;
   --color-attention: #e2a94b;
   --color-danger: #e5675a;
+  /* ⛔ E36 — THE DIFF NEEDS A SECOND HUE AND THE PALETTE HAS NONE. Every
+     token above is warm (rubric and danger are both reds), so tinting
+     additions with one and deletions with the other made the two sides of a
+     comparison look the same — measured in the browser, not guessed. These
+     are the one concession: a muted sage that still belongs on parchment,
+     against the existing red. They are SEMANTIC (added/removed), not a
+     palette, so nothing else may reach for them to mean "good" and "bad". */
+  --color-added: #7f9c6a;
+  --color-removed: #c2705f;
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -67,6 +76,8 @@
   --color-on-rubric: #fff8f0;
   --color-attention: #9a6212;
   --color-danger: #b33a2e;
+  --color-added: #4e7040;
+  --color-removed: #a8432a;
 }
 
 /* Two recipes reach past the utility layer with a raw var() (the secondary

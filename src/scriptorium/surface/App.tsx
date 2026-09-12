@@ -9,7 +9,13 @@ import { useDefaultLayout } from "react-resizable-panels";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
-import type { ChatMessage, ContextEntry, DocView, PublicState } from "../backend/protocol";
+import type {
+  ChatMessage,
+  ContextEntry,
+  DiffSide,
+  DocView,
+  PublicState,
+} from "../backend/protocol";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
@@ -112,6 +118,7 @@ function Workspace({
     send,
     texts,
     noteText,
+    diff,
     listDir,
     planMove,
     mapOf,
@@ -142,6 +149,11 @@ function Workspace({
     ? (saved as ViewMode)
     : "rendered";
 
+  // What the comparison is against (E36). Deliberately NOT persisted: which
+  // version you wanted to look at last session says nothing about this one,
+  // and the original is the side that always exists.
+  const [against, setAgainst] = useState<DiffSide>("original");
+
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
@@ -157,6 +169,19 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text, send]);
+
+  // Ask for the comparison whenever anything it depends on moves — the
+  // document, the active version, the chosen side, or the text itself. A merge
+  // lands as a new text, so this is also what refreshes the view after one:
+  // the hunks the human sees are always the hunks the daemon would apply.
+  useEffect(() => {
+    if (mode !== "compare" || !open) return;
+    if (against === open.active) {
+      setAgainst("original");
+      return;
+    }
+    send({ type: "diff", doc: open.slug, against });
+  }, [mode, open, against, text, send]);
 
   // ⌘S belongs to the SESSION, not to the editor's focus: in rendered mode the
   // editor is not mounted at all, and the browser's own Save-page dialog is
@@ -228,6 +253,11 @@ function Workspace({
           text={text}
           mode={mode}
           onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
+          diff={diff}
+          onAgainst={setAgainst}
+          onTake={(hunks) => {
+            if (open) send({ type: "merge", doc: open.slug, against, hunks });
+          }}
           splitLayout={splitLayout}
           onAddFrontmatter={async () => {
             if (!open) return;

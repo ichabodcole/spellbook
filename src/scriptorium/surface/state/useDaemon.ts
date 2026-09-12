@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ClientMsg,
+  DiffPayload,
   FsListEntry,
   GraphPayload,
   MovePlan,
@@ -42,6 +43,7 @@ export function useDaemon(): {
   noteText: (doc: string, version: number, text: string) => void;
   done: Done | null;
   send: (msg: ClientMsg) => void;
+  diff: DiffPayload | null;
   listDir: (path: string) => Promise<Listing>;
   planMove: (path: string, into: string) => Promise<Planning>;
   mapOf: (entry: string) => Promise<Mapping>;
@@ -52,6 +54,9 @@ export function useDaemon(): {
   const [lastError, setLastError] = useState<string | null>(null);
   const [texts, setTexts] = useState<ReadonlyMap<string, string>>(() => new Map());
   const [done, setDone] = useState<Done | null>(null);
+  // The latest comparison the daemon computed (E36). Live state rather than a
+  // promise: a merge changes the document, and the view must re-read itself.
+  const [diff, setDiff] = useState<DiffPayload | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
@@ -92,6 +97,8 @@ export function useDaemon(): {
             next.set(key, msg.text);
             return next;
           });
+        } else if (msg.type === "diff") {
+          setDiff(msg);
         } else if (msg.type === "structure.done") {
           setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
         } else if (msg.type === "move.plan") {
@@ -253,6 +260,7 @@ export function useDaemon(): {
     texts,
     noteText,
     done,
+    diff,
     send,
     listDir,
     planMove,
