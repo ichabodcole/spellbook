@@ -134,6 +134,8 @@ test("the brief's verb roster is exactly the table's", () => {
       "find",
       "graph",
       "backlinks",
+      "meta-init",
+      "meta-set",
     ].sort(),
   );
 });

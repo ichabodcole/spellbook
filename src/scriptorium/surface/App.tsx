@@ -108,7 +108,18 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, noteText, listDir, planMove, mapOf, lastError, clearError, done } = daemon;
+  const {
+    send,
+    texts,
+    noteText,
+    listDir,
+    planMove,
+    mapOf,
+    suggestMeta,
+    lastError,
+    clearError,
+    done,
+  } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -218,6 +229,16 @@ function Workspace({
           mode={mode}
           onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
           splitLayout={splitLayout}
+          onAddFrontmatter={async () => {
+            if (!open) return;
+            const { block, error } = await suggestMeta(open.original);
+            if (!block || error) return;
+            // The block goes into the BUFFER, not the file: the human reads it,
+            // fills the blank description, and Save puts it on disk (E7).
+            const next = `${block}${text ?? ""}`;
+            noteText(open.slug, open.active, next);
+            send({ type: "edit", doc: open.slug, version: open.active, text: next });
+          }}
           onFollowLink={(target) => {
             if (open) send({ type: "link.open", from: open.original, target });
           }}

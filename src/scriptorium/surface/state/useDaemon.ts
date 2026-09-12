@@ -26,6 +26,9 @@ export type Planning = { plan?: MovePlan; error?: string };
 
 export type Mapping = { graph?: GraphPayload; error?: string };
 
+/** A frontmatter block the human may insert — suggested, never written for them. */
+export type Suggestion = { block?: string; suggestedType?: string; error?: string };
+
 /** The last structure op THIS viewer sent that landed — `seq` makes a repeat a new value. */
 export type Done = { op: StructureOpType; path: string; seq: number };
 
@@ -42,6 +45,7 @@ export function useDaemon(): {
   listDir: (path: string) => Promise<Listing>;
   planMove: (path: string, into: string) => Promise<Planning>;
   mapOf: (entry: string) => Promise<Mapping>;
+  suggestMeta: (path: string) => Promise<Suggestion>;
 } {
   const [state, setState] = useState<PublicState | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
@@ -55,6 +59,8 @@ export function useDaemon(): {
   const plans = useRef(new Map<string, ((p: Planning) => void)[]>());
   // One pending map per entry (E33).
   const maps = useRef(new Map<string, ((m: Mapping) => void)[]>());
+  // One pending frontmatter suggestion per path (E35).
+  const suggestions = useRef(new Map<string, ((s: Suggestion) => void)[]>());
 
   useEffect(() => {
     let stopped = false;
@@ -97,6 +103,11 @@ export function useDaemon(): {
           const waiters = maps.current.get(msg.entry);
           maps.current.delete(msg.entry);
           for (const w of waiters ?? []) w({ graph: msg.graph, error: msg.error });
+        } else if (msg.type === "meta.suggestion") {
+          const waiters = suggestions.current.get(msg.path);
+          suggestions.current.delete(msg.path);
+          for (const w of waiters ?? [])
+            w({ block: msg.block, suggestedType: msg.suggestedType, error: msg.error });
         } else if (msg.type === "link.target") {
           // A link that left the bundle, or answered nothing: say so. Following
           // one INSIDE the bundle needs no notice — the document just opens.
@@ -124,6 +135,9 @@ export function useDaemon(): {
         for (const waiters of maps.current.values())
           for (const w of waiters) w({ error: "disconnected" });
         maps.current.clear();
+        for (const waiters of suggestions.current.values())
+          for (const w of waiters) w({ error: "disconnected" });
+        suggestions.current.clear();
         if (stopped) return;
         timer = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
@@ -200,6 +214,25 @@ export function useDaemon(): {
     [],
   );
 
+  const suggestMeta = useCallback(
+    (path: string) =>
+      new Promise<Suggestion>((resolve) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          resolve({ error: "disconnected" });
+          return;
+        }
+        const waiters = suggestions.current.get(path);
+        if (waiters) {
+          waiters.push(resolve);
+          return;
+        }
+        suggestions.current.set(path, [resolve]);
+        ws.send(JSON.stringify({ type: "meta.suggest", path } satisfies ClientMsg));
+      }),
+    [],
+  );
+
   const noteText = useCallback((doc: string, version: number, text: string) => {
     setTexts((prev) => {
       const key = textKey(doc, version);
@@ -224,5 +257,6 @@ export function useDaemon(): {
     listDir,
     planMove,
     mapOf,
+    suggestMeta,
   };
 }

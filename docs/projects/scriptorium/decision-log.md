@@ -715,3 +715,36 @@ each node's own, gives the names room.
 Also in this chapter: `@codemirror/legacy-modes` left the manifest. It was
 installed for E31's tokenizer and turned out to carry 310 modes and no markdown
 — a dependency that earns nothing should not sit in the file.
+
+## E35 · Frontmatter is OFFERED to a human and WRITTEN by a verb
+
+**Built:** 2026-09-12, slice 4 — the last of the OKF plan.
+
+**The two paths differ, and the difference is E24's rule rather than an
+inconsistency.** A document with no block gets a line in the document header —
+"This document has no frontmatter. Add a block" — and clicking it puts the block
+in the HUMAN'S BUFFER, not on disk: they read it, fill the blank description,
+and Save writes it (E7). The agent's `meta-init` writes the ORIGINAL and says so
+in the conversation, meeting the conflict bar when the human has unsaved edits
+(E32's ruling). Same capability; the affordance each party needs is not the
+same.
+
+**Every write is a TEXT EDIT, never a reserialisation.** A new block is BUILT
+(there is nothing to preserve yet); an existing one is edited a LINE at a time,
+so key order, comments, spacing and keys this spell never heard of survive byte
+for byte — which is exactly what the spec's "preserve unknown keys when
+round-tripping" asks for and what a parse-and-print would lose. Driven on a
+block carrying a comment and a `hivemind_source_id`:
+`meta-set status=stable lifecycle=live` changed two lines and moved nothing
+else.
+
+**The suggested `type` comes from the NEIGHBOURS, never a fixed list.** OKF says
+`type` is "not centrally registered" and every corpus invents its own, so the
+only honest source is what the documents beside this one already say; the
+folder's name, de-pluralised, is the fallback (`decisions/` → `decision`). When
+neither answers, nothing is suggested — a blank the human fills beats a
+plausible guess, which is SCHEMA.md's own rule about `generated.by` and the
+reason `description` is left EMPTY rather than invented.
+
+**`generated.by` is recorded honestly:** `human` when the human clicked,
+whatever the agent passed to `--by` otherwise, `unknown` when nobody said.

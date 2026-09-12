@@ -3,13 +3,18 @@
 import { describe, expect, test } from "bun:test";
 import { splitFrontmatter as splitInSurface } from "../surface/state/markdown";
 import {
+  buildBlock,
   generatedAt,
+  guessType,
   isStale,
   matchesFilter,
   readMeta,
+  setKey,
   splitFrontmatter,
   summarize,
+  titleFromBody,
   trustTier,
+  withBlock,
 } from "./frontmatter";
 
 const doc = (fm: string, body = "# Title\n\nProse.\n") => `---\n${fm}\n---\n${body}`;
@@ -159,4 +164,104 @@ test("summarize keeps the sidebar's fields and drops the heavy ones", () => {
     stale: false,
   });
   expect(summarize(null)).toBeNull();
+});
+
+describe("writing (E35) — a new block is built, an existing one is line-edited", () => {
+  test("the title comes from the document's own H1", () => {
+    expect(titleFromBody("# A study\n\nProse.\n")).toBe("A study");
+    expect(titleFromBody("\n\n#   Spaced   \n")).toBe("Spaced");
+    // Prose before any heading: nothing is claimed.
+    expect(titleFromBody("Just prose.\n\n# Late heading\n")).toBeUndefined();
+    expect(titleFromBody("## Only an H2\n")).toBeUndefined();
+  });
+
+  test("the type is guessed from the NEIGHBOURS, then the folder, then not at all", () => {
+    expect(guessType(["research", "research", "report"], "notes")).toBe("research");
+    // No neighbours: the folder names the kind, de-pluralised.
+    expect(guessType([], "decisions")).toBe("decision");
+    expect(guessType([], "archetypes")).toBe("archetype");
+    expect(guessType([], "stories")).toBe("story");
+    expect(guessType([], "wiki")).toBe("wiki");
+    // Nothing to go on is answered with nothing — a blank beats a guess.
+    expect(guessType([], "")).toBeUndefined();
+    expect(guessType([], "/")).toBeUndefined();
+  });
+
+  test("a built block parses back, and leaves description EMPTY for the author", () => {
+    const block = buildBlock({
+      type: "research",
+      title: "A study",
+      by: "claude-opus-5",
+      at: "2026-09-12",
+    });
+    const meta = readMeta(withBlock("# A study\n\nProse.\n", block));
+    expect(meta?.type).toBe("research");
+    expect(meta?.title).toBe("A study");
+    expect(meta?.status).toBe("draft");
+    expect(meta?.description).toBeUndefined();
+    expect(meta?.date).toBe("2026-09-12");
+    expect(meta?.fields.generated).toEqual({ by: "claude-opus-5", at: "2026-09-12" });
+  });
+
+  test("a title with punctuation is quoted so the block still parses", () => {
+    const block = buildBlock({ type: "note", title: 'The "one" rule: it holds' });
+    expect(readMeta(withBlock("body\n", block))?.title).toBe('The "one" rule: it holds');
+  });
+
+  test("the block goes ABOVE the document, and the body is untouched", () => {
+    const text = withBlock("# A study\n\nProse.\n", buildBlock({ type: "x" }));
+    expect(text.startsWith("---\n")).toBe(true);
+    expect(splitFrontmatter(text).body).toBe("# A study\n\nProse.\n");
+  });
+
+  describe("setKey — everything it does not name survives byte for byte", () => {
+    const doc = [
+      "---",
+      "type: research",
+      "# a comment the spell must not eat",
+      "tags: [bun, io]",
+      "hivemind_source_id: abc-123",
+      "status: draft",
+      "---",
+      "# Body",
+      "",
+      "Prose.",
+    ].join("\n");
+
+    test("an existing key is replaced in place", () => {
+      const next = setKey(doc, "status", "stable");
+      expect(readMeta(next)?.status).toBe("stable");
+      expect(next).toContain("# a comment the spell must not eat");
+      expect(next).toContain("hivemind_source_id: abc-123");
+      expect(next.indexOf("type:")).toBeLessThan(next.indexOf("tags:")); // order kept
+      expect(splitFrontmatter(next).body).toBe("# Body\n\nProse.");
+    });
+
+    test("a key that is not there is appended, and nothing else moves", () => {
+      const next = setKey(doc, "lifecycle", "live");
+      expect(readMeta(next)?.lifecycle).toBe("live");
+      expect(readMeta(next)?.fields.hivemind_source_id).toBe("abc-123");
+    });
+
+    test("a MULTI-LINE value is replaced whole, not left half-standing", () => {
+      const folded = [
+        "---",
+        "type: x",
+        "description:",
+        "  A sentence that",
+        "  wrapped onto two lines.",
+        "status: draft",
+        "---",
+        "body",
+      ].join("\n");
+      const next = setKey(folded, "description", "One line now.");
+      expect(readMeta(next)?.description).toBe("One line now.");
+      expect(next).not.toContain("wrapped onto two lines");
+      expect(readMeta(next)?.status).toBe("draft");
+    });
+
+    test("a document with no block refuses rather than inventing one", () => {
+      expect(() => setKey("# No frontmatter\n", "status", "stable")).toThrow();
+    });
+  });
 });

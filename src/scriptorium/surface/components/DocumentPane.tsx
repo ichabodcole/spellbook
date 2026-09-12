@@ -83,6 +83,7 @@ export function DocumentPane({
   onSave,
   onRevert,
   onFollowLink,
+  onAddFrontmatter,
 }: {
   doc: DocView | null;
   text: string | undefined;
@@ -96,6 +97,8 @@ export function DocumentPane({
   onRevert: () => void;
   /** A link inside the rendered document — the daemon resolves it (E33). */
   onFollowLink: (target: string) => void;
+  /** Offer a frontmatter block for a document that has none (E35). */
+  onAddFrontmatter: () => void;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -198,6 +201,21 @@ export function DocumentPane({
           <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">Document</span>
         )}
       </div>
+      {doc && shown !== undefined && doc.meta === null && (
+        // E35: OFFERED, never written for them. A document dropped in from
+        // elsewhere is somebody else's file; the block lands in the BUFFER, so
+        // the human reads it before Save puts it on disk.
+        <div className="flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim">
+          <span>This document has no frontmatter.</span>
+          <button
+            type="button"
+            onClick={onAddFrontmatter}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+          >
+            Add a block
+          </button>
+        </div>
+      )}
       {doc?.outsideChanged && (
         <div
           role="alert"

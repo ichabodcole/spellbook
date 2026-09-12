@@ -188,6 +188,7 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
 
 const CLI_OPTIONS = {
   "body-file": { type: "string" },
+  by: { type: "string" },
   doc: { type: "string" },
   entry: { type: "string" },
   from: { type: "string" },
@@ -838,6 +839,46 @@ const COMMANDS: CommandSpec[] = [
     describe: "what cites a document — `related` (frontmatter) and `links` (body), kept apart",
     run: async (pos, _flags, session) => {
       printJson(await postCmd(session, { type: "backlinks", path: resolve(pos[0] as string) }));
+    },
+  },
+  {
+    name: "meta-init",
+    flags: [...SESSION, "type", "by"],
+    positionals: [{ name: "path", required: true }],
+    describe:
+      "add a frontmatter block to a document that has none (type guessed from its neighbours)",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "meta.init",
+          path: resolve(pos[0] as string),
+          ...(typeof flags.type === "string" ? { metaType: flags.type } : {}),
+          ...(typeof flags.by === "string" ? { by: flags.by } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "meta-set",
+    flags: SESSION,
+    positionals: [
+      { name: "path", required: true },
+      { name: "key=value", required: true, variadic: true },
+    ],
+    describe: "set frontmatter keys — one line edit each, everything else untouched",
+    run: async (pos, _flags, session) => {
+      const fields: Record<string, string> = {};
+      for (const pair of pos.slice(1)) {
+        const eq = pair.indexOf("=");
+        if (eq <= 0)
+          die(`"${pair}" is not key=value`, "usage", {
+            hint: "meta-set <path> status=stable lifecycle=live",
+          });
+        fields[pair.slice(0, eq)] = pair.slice(eq + 1);
+      }
+      printJson(
+        await postCmd(session, { type: "meta.set", path: resolve(pos[0] as string), fields }),
+      );
     },
   },
   {

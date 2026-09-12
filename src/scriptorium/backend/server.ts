@@ -601,6 +601,24 @@ export async function startDaemon(opts: StartOpts) {
         });
         return;
       }
+      case "meta.suggest": {
+        try {
+          const r = session.suggestMeta(msg.path, "human");
+          reply(ws, {
+            type: "meta.suggestion",
+            path: msg.path,
+            block: r.block,
+            ...(r.type ? { suggestedType: r.type } : {}),
+          });
+        } catch (e) {
+          reply(ws, {
+            type: "meta.suggestion",
+            path: msg.path,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+        return;
+      }
       case "move.plan": {
         try {
           reply(ws, {
@@ -724,6 +742,26 @@ export async function startDaemon(opts: StartOpts) {
         return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
       case "backlinks":
         return session.backlinks(cmd.path);
+      case "meta.init": {
+        const r = session.metaInit(cmd.path, {
+          ...(cmd.metaType ? { type: cmd.metaType } : {}),
+          by: cmd.by ?? "agent",
+        });
+        announce(`Agent added frontmatter to ${session.display(String(r.path))}.`, {
+          fact: "meta.init",
+          by: "agent",
+          ...r,
+        });
+        return r;
+      }
+      case "meta.set": {
+        const r = session.metaSet(cmd.path, cmd.fields);
+        announce(
+          `Agent set ${(r.set as string[]).join(", ")} on ${session.display(String(r.path))}.`,
+          { fact: "meta.set", by: "agent", ...r },
+        );
+        return r;
+      }
       case "find":
         return session.find(cmd.filter);
       case "context.add": {
@@ -782,6 +820,8 @@ export async function startDaemon(opts: StartOpts) {
             "find",
             "graph",
             "backlinks",
+            "meta.init",
+            "meta.set",
             ...STRUCTURE_OPS,
           ],
         );

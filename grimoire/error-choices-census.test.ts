@@ -134,7 +134,10 @@ const EXPECTED: Record<
   // and `workspace` reports a daemon refusal on its `/state` read.
   // 30/10 -> 31/10 (E32): `find --since` refuses a non-date, so a typo cannot
   // silently widen a search — the same shape as `tail --since`'s refusal.
-  scriptorium: { sites: 31, choices: 10, verbRoster: true, flagMap: true },
+  // 31/10 -> 32/10 (E35): `meta-set` refuses a positional that is not
+  // `key=value`, with the shape in the hint rather than a set of choices — the
+  // keys are the document's own vocabulary, so there is no closed set to name.
+  scriptorium: { sites: 32, choices: 10, verbRoster: true, flagMap: true },
 };
 
 /**

@@ -276,6 +276,8 @@ export type ClientMsg =
   | { type: "graph"; entry: string }
   /** Follow a link from a rendered document (E33) — answered with `link.target`. */
   | { type: "link.open"; from: string; target: string }
+  /** What a frontmatter block would say for this document (E35) — answered with `meta.suggestion`. */
+  | { type: "meta.suggest"; path: string }
   | { type: "prefs.set"; key: string; value: string }
   /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
   | { type: "reveal"; path: string }
@@ -294,6 +296,15 @@ export type ServerMsg =
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   | { type: "move.plan"; path: string; into: string; plan?: MovePlan; error?: string }
   | { type: "graph"; entry: string; graph?: GraphPayload; error?: string }
+  /** A block the HUMAN may insert into their buffer — suggested, never written for them. */
+  | {
+      type: "meta.suggestion";
+      path: string;
+      block?: string;
+      /** The type the neighbours suggest — named `suggestedType` because `type` is the frame's own. */
+      suggestedType?: string;
+      error?: string;
+    }
   /**
    * Where a link went. `in-bundle` means the daemon opened it; `outside` names
    * a real file the human may add; `missing` is a dangling link, said and
@@ -322,6 +333,10 @@ export type AgentCmd =
   | { type: "graph"; entry?: string }
   /** What cites a document — `related` and body `links` kept apart, as pdocs keeps them. */
   | { type: "backlinks"; path: string }
+  /** Add a frontmatter block to a document that has none (E35). */
+  | { type: "meta.init"; path: string; metaType?: string; by?: string }
+  /** Set keys in an existing block — one line edit each. */
+  | { type: "meta.set"; path: string; fields: Record<string, string> }
   /** pdocs's filter vocabulary over the context — ANDed, all optional. */
   | { type: "find"; filter: MetaFilter }
   | StructureOp;

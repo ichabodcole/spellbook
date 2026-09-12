@@ -42,7 +42,17 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
-import { matchesFilter, readMeta, splitFrontmatter, summarize } from "./frontmatter";
+import {
+  buildBlock,
+  guessType,
+  matchesFilter,
+  readMeta,
+  setKey,
+  splitFrontmatter,
+  summarize,
+  titleFromBody,
+  withBlock,
+} from "./frontmatter";
 import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./links";
 import type {
   ChatMessage,
@@ -1396,6 +1406,79 @@ export class Session {
       exists: (p) => existsSync(p),
       repoRoot: gitRootOf(root),
     });
+  }
+
+  /**
+   * What a frontmatter block for this document WOULD say (E35). Suggested, not
+   * written: the type comes from the documents beside it, the title from its
+   * own H1, and `description` is left blank for whoever fills it in.
+   */
+  suggestMeta(rawPath: string, by?: string): { path: string; block: string; type?: string } {
+    const abs = this.shownPath(rawPath);
+    const text = readFileSync(abs, "utf8");
+    if (splitFrontmatter(text).raw !== null)
+      throw new SessionError(`${basename(abs)} already has frontmatter`, 409);
+    const folder = dirname(abs);
+    const siblings: string[] = [];
+    for (const e of this.m.context)
+      for (const p of docPaths(e))
+        if (p !== abs && dirname(p) === folder) {
+          const t = readMeta(readHead(p))?.type;
+          if (t) siblings.push(t);
+        }
+    const type = guessType(siblings, basename(folder));
+    return {
+      path: abs,
+      type,
+      block: buildBlock({
+        ...(type ? { type } : {}),
+        ...(titleFromBody(text) ? { title: titleFromBody(text) as string } : {}),
+        ...(by ? { by } : {}),
+      }),
+    };
+  }
+
+  /**
+   * Write a new block into a document that has none (E35).
+   *
+   * ⛔ THIS WRITES THE ORIGINAL, which E7 otherwise reserves for Save — and
+   * that is the ruling, not an oversight: the agent's verb writes the file, and
+   * if the human has unsaved edits to it the CONFLICT BAR appears and they
+   * choose (Cole: "we can adjust if needed after getting actual usage behind
+   * us"). Refusing while a buffer is dirty would let an open document block the
+   * agent indefinitely. The HUMAN's own path never comes here: their "add
+   * frontmatter" is an edit to their buffer, which Save writes like any other.
+   */
+  metaInit(rawPath: string, opts: { type?: string; by?: string } = {}): Record<string, unknown> {
+    const suggested = this.suggestMeta(rawPath, opts.by);
+    const abs = suggested.path;
+    const text = readFileSync(abs, "utf8");
+    const block = opts.type
+      ? buildBlock({
+          type: opts.type,
+          ...(titleFromBody(text) ? { title: titleFromBody(text) as string } : {}),
+          ...(opts.by ? { by: opts.by } : {}),
+        })
+      : suggested.block;
+    writeFileSync(abs, withBlock(text, block));
+    this.metaCache.delete(abs);
+    return { path: abs, type: opts.type ?? suggested.type ?? null, added: true };
+  }
+
+  /** Set keys in an existing block — a LINE edit each, so nothing else moves. */
+  metaSet(rawPath: string, pairs: Record<string, string>): Record<string, unknown> {
+    const abs = this.shownPath(rawPath);
+    let text = readFileSync(abs, "utf8");
+    if (splitFrontmatter(text).raw === null)
+      throw new SessionError(`${basename(abs)} has no frontmatter — add it first (meta-init)`, 409);
+    for (const [key, value] of Object.entries(pairs)) {
+      if (!/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(key))
+        throw new SessionError(`"${key}" is not a frontmatter key`, 400);
+      text = setKey(text, key, value);
+    }
+    writeFileSync(abs, text);
+    this.metaCache.delete(abs);
+    return { path: abs, set: Object.keys(pairs) };
   }
 
   /** The session's half of `PublicState`; the daemon adds the home-level `prefs` and `userHome`. */

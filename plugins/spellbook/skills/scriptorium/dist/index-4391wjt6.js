@@ -62422,7 +62422,8 @@ function DocumentPane({
   onEdit,
   onSave,
   onRevert,
-  onFollowLink
+  onFollowLink,
+  onAddFrontmatter
 }) {
   const lastShown = import_react19.useRef(null);
   if (doc2 && text4 !== undefined)
@@ -62523,6 +62524,20 @@ function DocumentPane({
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
+      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+        className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+            children: "This document has no frontmatter."
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("button", {
+            type: "button",
+            onClick: onAddFrontmatter,
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            children: "Add a block"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
       doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
@@ -62655,6 +62670,7 @@ function useDaemon() {
   const pending = import_react20.useRef(new Map);
   const plans = import_react20.useRef(new Map);
   const maps = import_react20.useRef(new Map);
+  const suggestions = import_react20.useRef(new Map);
   import_react20.useEffect(() => {
     let stopped = false;
     let delay = 250;
@@ -62701,6 +62717,11 @@ function useDaemon() {
           maps.current.delete(msg.entry);
           for (const w of waiters ?? [])
             w({ graph: msg.graph, error: msg.error });
+        } else if (msg.type === "meta.suggestion") {
+          const waiters = suggestions.current.get(msg.path);
+          suggestions.current.delete(msg.path);
+          for (const w of waiters ?? [])
+            w({ block: msg.block, suggestedType: msg.suggestedType, error: msg.error });
         } else if (msg.type === "link.target") {
           if (msg.state === "missing")
             setLastError(`That link points at ${msg.target}, which is not in this set.`);
@@ -62727,6 +62748,10 @@ function useDaemon() {
           for (const w of waiters)
             w({ error: "disconnected" });
         maps.current.clear();
+        for (const waiters of suggestions.current.values())
+          for (const w of waiters)
+            w({ error: "disconnected" });
+        suggestions.current.clear();
         if (stopped)
           return;
         timer2 = setTimeout(connect, delay);
@@ -62789,6 +62814,20 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
+  const suggestMeta = import_react20.useCallback((path2) => new Promise((resolve) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      resolve({ error: "disconnected" });
+      return;
+    }
+    const waiters = suggestions.current.get(path2);
+    if (waiters) {
+      waiters.push(resolve);
+      return;
+    }
+    suggestions.current.set(path2, [resolve]);
+    ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
+  }), []);
   const noteText = import_react20.useCallback((doc2, version2, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version2);
@@ -62811,7 +62850,8 @@ function useDaemon() {
     send,
     listDir,
     planMove,
-    mapOf
+    mapOf,
+    suggestMeta
   };
 }
 
@@ -62896,7 +62936,18 @@ function Workspace({
   state,
   daemon
 }) {
-  const { send, texts, noteText, listDir, planMove, mapOf, lastError, clearError, done } = daemon;
+  const {
+    send,
+    texts,
+    noteText,
+    listDir,
+    planMove,
+    mapOf,
+    suggestMeta,
+    lastError,
+    clearError,
+    done
+  } = daemon;
   const prefsRef = import_react21.useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = import_react21.useMemo(() => ({
@@ -62994,6 +63045,16 @@ function Workspace({
           mode,
           onMode: (next) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
           splitLayout,
+          onAddFrontmatter: async () => {
+            if (!open)
+              return;
+            const { block, error: error2 } = await suggestMeta(open.original);
+            if (!block || error2)
+              return;
+            const next = `${block}${text4 ?? ""}`;
+            noteText(open.slug, open.active, next);
+            send({ type: "edit", doc: open.slug, version: open.active, text: next });
+          },
           onFollowLink: (target) => {
             if (open)
               send({ type: "link.open", from: open.original, target });
