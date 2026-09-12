@@ -3,7 +3,7 @@
 // showing the wrong name, or burying the version you are editing.
 import { describe, expect, test } from "bun:test";
 import type { Version } from "../../backend/protocol";
-import { ordered, versionLabel } from "./VersionMenu";
+import { ordered, versionLabel, versionSummary } from "./VersionMenu";
 
 const v = (n: number, extra: Partial<Version> = {}): Version => ({
   n,
@@ -60,5 +60,35 @@ describe("ordered", () => {
 
   test("a single version is simply itself", () => {
     expect(ordered([v(1)], 1).map((r) => r.n)).toEqual([1]);
+  });
+});
+
+describe("versionSummary", () => {
+  test("the number alone when the version has no name", () => {
+    expect(versionSummary(v(2), 2)).toBe("v2");
+  });
+
+  test("the number and the name when it has one", () => {
+    expect(versionSummary(v(2, { label: "tighter prose" }), 2)).toBe("v2 · tighter prose");
+  });
+
+  test("a long name is CUT, so it cannot push the counts off the strip", () => {
+    const long = "a name far longer than the strip can reasonably carry";
+    const out = versionSummary(v(3, { label: long }), 3, 12);
+    expect(out).toBe("v3 · a name far…");
+    expect(out.length).toBeLessThan(long.length);
+  });
+
+  test("a cut landing on a space does not leave a gap before the ellipsis", () => {
+    // max 5 cuts at index 4, which is the space after "one".
+    expect(versionSummary(v(5, { label: "one two three" }), 5, 5)).toBe("v5 · one…");
+  });
+
+  test("a name exactly at the limit is not cut", () => {
+    expect(versionSummary(v(4, { label: "123456789012" }), 4, 12)).toBe("v4 · 123456789012");
+  });
+
+  test("a missing version still names the number it was asked about", () => {
+    expect(versionSummary(undefined, 7)).toBe("v7");
   });
 });

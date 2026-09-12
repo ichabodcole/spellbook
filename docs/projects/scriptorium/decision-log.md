@@ -855,3 +855,55 @@ number is already known and the only thing a human can add is why.
 **`StatusSegment` grew a `node`**, rendered instead of the value. `value` stays
 required as the segment's plain-text truth, so a node is a richer rendering of
 the same fact and never a different one.
+
+## E38 · The version control moves to the header, beside the title
+
+**Ruled by Cole, 2026-09-12, within an hour of E37 shipping.** The menu was
+built onto the STATUS STRIP's version segment, and his read of it is the
+correction:
+
+> "In the footer, one, it's the only button. So everything else is read only and
+> then that one, you know, version property has a value, but it's really hard to
+> read as a button. Like it's just not something I look towards."
+
+**A lone control in a read-only row does not read as a control.** The strip is
+status — words, characters, saved/unsaved — and putting the single interactive
+thing among them made it invisible as an affordance, whatever its hover state
+did. E37 chose that spot to avoid adding a seventh control to the header; the
+cost it did not price was that the header is where a human LOOKS for an action,
+and a button's neighbours are part of whether it reads as one.
+
+**And which version you are in is not a status property.** Cole: _"the first
+thing I tend to look at is the title… I think it's good to have that version
+number really obvious rather than scanning towards the bottom of the app."_
+Version is part of the identity of what is open, so it sits with the name —
+`v2 · the agent's tighter prose │ note.md` — rather than among the measurements
+below.
+
+**So the trigger became a button in fact and not only in role:** a border, the
+header's control height, and a chevron. The label gives way before the number
+when the pane narrows, because the number is the identity and the name is the
+useful half.
+
+**Then the button shed its label, in the same conversation.** Carrying
+`v2 · the agent's tighter prose` beside `note.md` put two titles side by side,
+and Cole read the failure mode before it bit: _"if you get a longer one… they
+can almost start to run together or just be a lot of text."_ The header button
+is now the NUMBER alone — the identity, nothing else — and the name lives in the
+menu it opens.
+
+**And the name came back to the strip, read-only, which is where it belongs.**
+Cole: _"it might make sense to then show that version information in the status
+bar at the bottom as read-only… so that you're still able to glance at that
+information but it's not taking up as much space in that top bar."_ So the two
+places divide honestly: the header is where you go to CHANGE the version, the
+strip is where you glance to see WHICH —
+`Version: v2 · the agent's tighter prose` — and nothing competes with it down
+there.
+
+The strip's copy is truncated in JS rather than by CSS: the strip is one nowrap
+row, so a long name left to itself would push the word counts off the end
+instead of clipping itself.
+
+`StatusSegment.node` — added in E37 so one segment could be a control — is gone
+again. A field with no consumer is a surface waiting to be misused.

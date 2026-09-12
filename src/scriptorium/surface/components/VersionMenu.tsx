@@ -21,6 +21,7 @@ import { cn } from "cn";
 import {
   BadgeCheckIcon,
   BookmarkPlusIcon,
+  ChevronDownIcon,
   GitCompareIcon,
   SparklesIcon,
   UserIcon,
@@ -48,6 +49,19 @@ export function ordered(versions: Version[], active: number): Version[] {
     if (b.n === active) return 1;
     return b.createdAt - a.createdAt;
   });
+}
+
+/**
+ * The version as one read-only line for the status strip: the number, and as
+ * much of the name as fits. Truncated HERE rather than by CSS, because the
+ * strip is one nowrap row — a long name would push the counts off the end
+ * instead of clipping itself.
+ */
+export function versionSummary(v: Version | undefined, active: number, max = 32): string {
+  const label = v?.label?.trim();
+  if (!label) return `v${active}`;
+  // `trimEnd` so a cut landing on a space does not leave "a name far …".
+  return `v${active} · ${label.length > max ? `${label.slice(0, max - 1).trimEnd()}…` : label}`;
 }
 
 const when = (ms: number) =>
@@ -79,17 +93,26 @@ export function VersionMenu({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
+      {/* ⛔ IT HAS TO LOOK LIKE A BUTTON. In the status strip this was a bare
+          span with a hover state, sitting among read-only values — "it's just
+          not something I look towards" (Cole). A border, a height that matches
+          the header's other controls, and a chevron: the affordance is the
+          point, not the decoration. */}
       <DropdownMenuTrigger
         className={cn(
-          "flex items-baseline gap-1 rounded-sm px-1 text-ink outline-none",
-          "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
+          "flex h-7 shrink-0 items-center gap-1 rounded-md border border-edge px-2",
+          "text-xs text-ink outline-none hover:bg-surface-raised",
+          "focus-visible:ring-2 focus-visible:ring-ring/60",
         )}
         aria-label={`Version ${active}${current?.label ? ` — ${current.label}` : ""}: ${versions.length} version${versions.length === 1 ? "" : "s"}`}
       >
-        <span className="tabular-nums">
-          v{active}
-          {current?.label ? ` · ${current.label}` : ""}
-        </span>
+        {/* ⛔ THE NUMBER ONLY (Cole, E38). The name used to ride along here and
+            it competed with the DOCUMENT's title two inches to the right —
+            "they can almost start to run together or just be a lot of text".
+            The name is not lost: it is in the menu this opens, and read-only in
+            the status strip. */}
+        <span className="font-medium tabular-nums">v{active}</span>
+        <ChevronDownIcon aria-hidden className="size-3 shrink-0 text-ink-faint" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
         <div className="border-b border-edge px-2 py-1.5">

@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
+import { Separator } from "@/ui/separator";
 import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
 import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
@@ -21,7 +22,7 @@ import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
 import { NewVersionDialog } from "./NewVersionDialog";
 import { type StatusSegment, StatusStrip } from "./StatusStrip";
-import { VersionMenu } from "./VersionMenu";
+import { VersionMenu, versionSummary } from "./VersionMenu";
 
 /**
  * E29's three modes from Operator's editor — raw, rendered, and both — plus
@@ -147,22 +148,10 @@ export function DocumentPane({
 
   const segments: StatusSegment[] = doc
     ? [
-        {
-          label: "Version",
-          value: `v${doc.active}${active?.label ? ` · ${active.label}` : ""}`,
-          node: (
-            <VersionMenu
-              versions={doc.versions}
-              active={doc.active}
-              onActivate={onActivate}
-              onCompare={(n) => {
-                onAgainst(n);
-                onMode("compare");
-              }}
-              onNewVersion={() => setNaming(true)}
-            />
-          ),
-        },
+        // Read-only here, and a control in the header (E38): the strip is where
+        // you glance to see WHICH version, the header is where you go to change
+        // it. The name is shown here precisely because nothing competes with it.
+        { label: "Version", value: versionSummary(active, doc.active) },
         { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
         {
           label: "Updated",
@@ -180,6 +169,23 @@ export function DocumentPane({
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3">
         {doc ? (
           <>
+            {/* ⛔ LEFT OF THE TITLE, AND THAT IS THE POINT (Cole, E38). The
+                strip below is read-only status, so the one control down there
+                did not read as a control at all — and which version you are in
+                is not a status property, it is part of what you are looking
+                at. It reads with the name now: "v2 · the agent's pass —
+                note.md". */}
+            <VersionMenu
+              versions={doc.versions}
+              active={doc.active}
+              onActivate={onActivate}
+              onCompare={(n) => {
+                onAgainst(n);
+                onMode("compare");
+              }}
+              onNewVersion={() => setNaming(true)}
+            />
+            <Separator orientation="vertical" className="my-2 shrink-0" />
             <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
             <span className="truncate text-sm text-ink" title={doc.original}>
               {doc.name}
