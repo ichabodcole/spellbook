@@ -521,11 +521,15 @@ registry uses the registry's `cn` throughout, one semantics per spell.
     `@headless-tree/core` + `@headless-tree/react` (the context tree),
     `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`,
     `@codemirror/language`, `@codemirror/lang-markdown`, and later
-    `@codemirror/merge` (the diff view). Declared in
-    `src/scriptorium/package.json` only. ⚠ `react-resizable-panels` was added
-    before this ruling was recorded — the rule's "before `bun add`" was missed
-    and is recorded here as such. The ruling is scoped to scriptorium: another
-    spell wanting one of these still needs its own.
+    `@codemirror/merge` (the diff view), plus `micromark-extension-gfm` (E29's
+    rendered view — tables, task lists and strikethrough over the `micromark`
+    the root already carries for mind-mapper; NOT a second renderer, and no
+    sanitiser, because micromark encodes raw HTML and refuses a scheme it does
+    not allow). Declared in `src/scriptorium/package.json` only. ⚠
+    `react-resizable-panels` was added before this ruling was recorded — the
+    rule's "before `bun add`" was missed and is recorded here as such. The
+    ruling is scoped to scriptorium: another spell wanting one of these still
+    needs its own.
 
 ### Honor the exit-code contract.
 

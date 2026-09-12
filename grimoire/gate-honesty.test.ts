@@ -329,9 +329,11 @@ const DECLARED_BLIND: Record<string, number> = {
   // the token stylesheet. Declared in the chapter that writes them.
   // styles.css 84 -> 88: the menu surface's popover tokens (`bg-popover` had
   // no definition, so context menus rendered transparent).
+  // 88 -> 212 (E29): the rendered view's `.md-prose` rules — ELEMENT styling
+  // for micromark's classless output, which no utility can express.
   "src/scriptorium/bunfig.toml": 2,
   "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 88,
+  "src/scriptorium/surface/styles.css": 212,
 };
 
 type BlindReport = {

@@ -467,3 +467,45 @@ deleted"**: the inverse of making a file is removing it. Ruled for the build:
 remove it only while it is still empty (a new document) or unchanged since the
 import, and otherwise refuse in words. An inverse whose ground has shifted (the
 file moved again since) refuses too, rather than guessing.
+
+## E29 · Rendering markdown: micromark, and three modes with split earned by width
+
+**Ruled:** Cole, 2026-09-11, before editing rather than after — "I definitely
+want to have that feature … editing is going to happen in the raw file format,
+but we should also have a mode where you can see the rendered content", pointing
+at Operator's three modes (raw · rendered · split) and noting the real-estate
+worry: "within edit mode, we're also thinking of adding a split view where you
+could have multiple versions displayed … if it feels like it's going to be
+complicated, we could just go with a toggle for raw or rendered."
+
+**All three modes, and split is offered only when the pane can hold it** (720px,
+which is where two 76ch columns stop being two columns of broken lines). Below
+that the button is disabled and says why, and a SAVED split falls back to
+rendered until there is room — the panes are resizable and the chat pane is
+beside them (E11), so "enough room" is something the human changes minute to
+minute. That answers the real-estate worry without dropping the mode: when the
+version split arrives, it competes for the same width and the same rule applies.
+The choice is a pref in the home, like the theme (E21), and the split's own
+sizes are persisted like the outer panes.
+
+**The renderer is `micromark` + `micromark-extension-gfm`, and NOT digestify's
+`marked` + DOMPurify.** The roster already had two answers; the difference is
+which renderer can emit a tag it did not write. micromark encodes raw HTML
+unless `allowDangerousHtml` is set, so there is no sanitiser to lose — that is
+mind-mapper's C2 ruling, and `micromark` is already a root dependency. GFM is
+one extension on top (tables, task lists, strikethrough), declared in
+scriptorium's manifest under E19's exception.
+
+**MEASURED, against this seat's own assumption:** micromark also refuses a link
+scheme it does not allow (`javascript:`, `data:`, `vbscript:` compile to
+`href=""`). A backlog note claiming mind-mapper's renderer carried that hole was
+filed and then WITHDRAWN on the measurement. scriptorium keeps its own
+`safeHref` as a second layer, and an empty target now renders struck through, so
+a refused link reads as refused instead of looking live and doing nothing.
+`src/scriptorium/sinks.test.ts` (digestify's shape) holds the one HTML sink.
+
+**Not built, and named:** images with a relative source do not load — the page
+has no route to a file beside the document. A daemon asset route restricted to
+the entry's own folder is the fix, and it is the next chapter's, not this one's.
+Scroll is not synced between the two halves of a split; Operator syncs, and it
+matters more once editing lands.

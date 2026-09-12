@@ -9,6 +9,7 @@
     "@headless-tree/react": "^1.7.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.5",
+    "micromark-extension-gfm": "^3.0.0",
     "react-resizable-panels": "^4.12.4"
   }
 }

@@ -17482,6 +17482,451 @@ var require_with_selector = __commonJS(function(exports, module) {
   }
 });
 
+// node_modules/ms/index.js
+var require_ms = __commonJS(function(exports, module) {
+  var s = 1000;
+  var m = s * 60;
+  var h = m * 60;
+  var d = h * 24;
+  var w = d * 7;
+  var y = d * 365.25;
+  module.exports = function(val, options) {
+    options = options || {};
+    var type = typeof val;
+    if (type === "string" && val.length > 0) {
+      return parse(val);
+    } else if (type === "number" && isFinite(val)) {
+      return options.long ? fmtLong(val) : fmtShort(val);
+    }
+    throw new Error("val is not a non-empty string or a valid number. val=" + JSON.stringify(val));
+  };
+  function parse(str) {
+    str = String(str);
+    if (str.length > 100) {
+      return;
+    }
+    var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(str);
+    if (!match) {
+      return;
+    }
+    var n = parseFloat(match[1]);
+    var type = (match[2] || "ms").toLowerCase();
+    switch (type) {
+      case "years":
+      case "year":
+      case "yrs":
+      case "yr":
+      case "y":
+        return n * y;
+      case "weeks":
+      case "week":
+      case "w":
+        return n * w;
+      case "days":
+      case "day":
+      case "d":
+        return n * d;
+      case "hours":
+      case "hour":
+      case "hrs":
+      case "hr":
+      case "h":
+        return n * h;
+      case "minutes":
+      case "minute":
+      case "mins":
+      case "min":
+      case "m":
+        return n * m;
+      case "seconds":
+      case "second":
+      case "secs":
+      case "sec":
+      case "s":
+        return n * s;
+      case "milliseconds":
+      case "millisecond":
+      case "msecs":
+      case "msec":
+      case "ms":
+        return n;
+      default:
+        return;
+    }
+  }
+  function fmtShort(ms) {
+    var msAbs = Math.abs(ms);
+    if (msAbs >= d) {
+      return Math.round(ms / d) + "d";
+    }
+    if (msAbs >= h) {
+      return Math.round(ms / h) + "h";
+    }
+    if (msAbs >= m) {
+      return Math.round(ms / m) + "m";
+    }
+    if (msAbs >= s) {
+      return Math.round(ms / s) + "s";
+    }
+    return ms + "ms";
+  }
+  function fmtLong(ms) {
+    var msAbs = Math.abs(ms);
+    if (msAbs >= d) {
+      return plural(ms, msAbs, d, "day");
+    }
+    if (msAbs >= h) {
+      return plural(ms, msAbs, h, "hour");
+    }
+    if (msAbs >= m) {
+      return plural(ms, msAbs, m, "minute");
+    }
+    if (msAbs >= s) {
+      return plural(ms, msAbs, s, "second");
+    }
+    return ms + " ms";
+  }
+  function plural(ms, msAbs, n, name) {
+    var isPlural = msAbs >= n * 1.5;
+    return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
+  }
+});
+
+// node_modules/debug/src/common.js
+var require_common = __commonJS(function(exports, module) {
+  function setup(env) {
+    createDebug.debug = createDebug;
+    createDebug.default = createDebug;
+    createDebug.coerce = coerce;
+    createDebug.disable = disable2;
+    createDebug.enable = enable;
+    createDebug.enabled = enabled;
+    createDebug.humanize = require_ms();
+    createDebug.destroy = destroy;
+    Object.keys(env).forEach((key) => {
+      createDebug[key] = env[key];
+    });
+    createDebug.names = [];
+    createDebug.skips = [];
+    createDebug.formatters = {};
+    function selectColor(namespace) {
+      let hash = 0;
+      for (let i2 = 0;i2 < namespace.length; i2++) {
+        hash = (hash << 5) - hash + namespace.charCodeAt(i2);
+        hash |= 0;
+      }
+      return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
+    }
+    createDebug.selectColor = selectColor;
+    function createDebug(namespace) {
+      let prevTime;
+      let enableOverride = null;
+      let namespacesCache;
+      let enabledCache;
+      function debug(...args) {
+        if (!debug.enabled) {
+          return;
+        }
+        const self = debug;
+        const curr = Number(new Date);
+        const ms = curr - (prevTime || curr);
+        self.diff = ms;
+        self.prev = prevTime;
+        self.curr = curr;
+        prevTime = curr;
+        args[0] = createDebug.coerce(args[0]);
+        if (typeof args[0] !== "string") {
+          args.unshift("%O");
+        }
+        let index3 = 0;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
+          if (match === "%%") {
+            return "%";
+          }
+          index3++;
+          const formatter = createDebug.formatters[format];
+          if (typeof formatter === "function") {
+            const val = args[index3];
+            match = formatter.call(self, val);
+            args.splice(index3, 1);
+            index3--;
+          }
+          return match;
+        });
+        createDebug.formatArgs.call(self, args);
+        const logFn = self.log || createDebug.log;
+        logFn.apply(self, args);
+      }
+      debug.namespace = namespace;
+      debug.useColors = createDebug.useColors();
+      debug.color = createDebug.selectColor(namespace);
+      debug.extend = extend;
+      debug.destroy = createDebug.destroy;
+      Object.defineProperty(debug, "enabled", {
+        enumerable: true,
+        configurable: false,
+        get: () => {
+          if (enableOverride !== null) {
+            return enableOverride;
+          }
+          if (namespacesCache !== createDebug.namespaces) {
+            namespacesCache = createDebug.namespaces;
+            enabledCache = createDebug.enabled(namespace);
+          }
+          return enabledCache;
+        },
+        set: (v) => {
+          enableOverride = v;
+        }
+      });
+      if (typeof createDebug.init === "function") {
+        createDebug.init(debug);
+      }
+      return debug;
+    }
+    function extend(namespace, delimiter) {
+      const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
+      newDebug.log = this.log;
+      return newDebug;
+    }
+    function enable(namespaces) {
+      createDebug.save(namespaces);
+      createDebug.namespaces = namespaces;
+      createDebug.names = [];
+      createDebug.skips = [];
+      const split = (typeof namespaces === "string" ? namespaces : "").trim().replace(/\s+/g, ",").split(",").filter(Boolean);
+      for (const ns of split) {
+        if (ns[0] === "-") {
+          createDebug.skips.push(ns.slice(1));
+        } else {
+          createDebug.names.push(ns);
+        }
+      }
+    }
+    function matchesTemplate(search, template) {
+      let searchIndex = 0;
+      let templateIndex = 0;
+      let starIndex = -1;
+      let matchIndex = 0;
+      while (searchIndex < search.length) {
+        if (templateIndex < template.length && (template[templateIndex] === search[searchIndex] || template[templateIndex] === "*")) {
+          if (template[templateIndex] === "*") {
+            starIndex = templateIndex;
+            matchIndex = searchIndex;
+            templateIndex++;
+          } else {
+            searchIndex++;
+            templateIndex++;
+          }
+        } else if (starIndex !== -1) {
+          templateIndex = starIndex + 1;
+          matchIndex++;
+          searchIndex = matchIndex;
+        } else {
+          return false;
+        }
+      }
+      while (templateIndex < template.length && template[templateIndex] === "*") {
+        templateIndex++;
+      }
+      return templateIndex === template.length;
+    }
+    function disable2() {
+      const namespaces = [
+        ...createDebug.names,
+        ...createDebug.skips.map((namespace) => "-" + namespace)
+      ].join(",");
+      createDebug.enable("");
+      return namespaces;
+    }
+    function enabled(name) {
+      for (const skip of createDebug.skips) {
+        if (matchesTemplate(name, skip)) {
+          return false;
+        }
+      }
+      for (const ns of createDebug.names) {
+        if (matchesTemplate(name, ns)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function coerce(val) {
+      if (val instanceof Error) {
+        return val.stack || val.message;
+      }
+      return val;
+    }
+    function destroy() {
+      console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
+    }
+    createDebug.enable(createDebug.load());
+    return createDebug;
+  }
+  module.exports = setup;
+});
+
+// node_modules/debug/src/browser.js
+var require_browser = __commonJS(function(exports, module) {
+  exports.formatArgs = formatArgs;
+  exports.save = save;
+  exports.load = load;
+  exports.useColors = useColors;
+  exports.storage = localstorage();
+  exports.destroy = (() => {
+    let warned = false;
+    return () => {
+      if (!warned) {
+        warned = true;
+        console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
+      }
+    };
+  })();
+  exports.colors = [
+    "#0000CC",
+    "#0000FF",
+    "#0033CC",
+    "#0033FF",
+    "#0066CC",
+    "#0066FF",
+    "#0099CC",
+    "#0099FF",
+    "#00CC00",
+    "#00CC33",
+    "#00CC66",
+    "#00CC99",
+    "#00CCCC",
+    "#00CCFF",
+    "#3300CC",
+    "#3300FF",
+    "#3333CC",
+    "#3333FF",
+    "#3366CC",
+    "#3366FF",
+    "#3399CC",
+    "#3399FF",
+    "#33CC00",
+    "#33CC33",
+    "#33CC66",
+    "#33CC99",
+    "#33CCCC",
+    "#33CCFF",
+    "#6600CC",
+    "#6600FF",
+    "#6633CC",
+    "#6633FF",
+    "#66CC00",
+    "#66CC33",
+    "#9900CC",
+    "#9900FF",
+    "#9933CC",
+    "#9933FF",
+    "#99CC00",
+    "#99CC33",
+    "#CC0000",
+    "#CC0033",
+    "#CC0066",
+    "#CC0099",
+    "#CC00CC",
+    "#CC00FF",
+    "#CC3300",
+    "#CC3333",
+    "#CC3366",
+    "#CC3399",
+    "#CC33CC",
+    "#CC33FF",
+    "#CC6600",
+    "#CC6633",
+    "#CC9900",
+    "#CC9933",
+    "#CCCC00",
+    "#CCCC33",
+    "#FF0000",
+    "#FF0033",
+    "#FF0066",
+    "#FF0099",
+    "#FF00CC",
+    "#FF00FF",
+    "#FF3300",
+    "#FF3333",
+    "#FF3366",
+    "#FF3399",
+    "#FF33CC",
+    "#FF33FF",
+    "#FF6600",
+    "#FF6633",
+    "#FF9900",
+    "#FF9933",
+    "#FFCC00",
+    "#FFCC33"
+  ];
+  function useColors() {
+    if (typeof window !== "undefined" && window.process && (window.process.type === "renderer" || window.process.__nwjs)) {
+      return true;
+    }
+    if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+      return false;
+    }
+    let m;
+    return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+  }
+  function formatArgs(args) {
+    args[0] = (this.useColors ? "%c" : "") + this.namespace + (this.useColors ? " %c" : " ") + args[0] + (this.useColors ? "%c " : " ") + "+" + module.exports.humanize(this.diff);
+    if (!this.useColors) {
+      return;
+    }
+    const c = "color: " + this.color;
+    args.splice(1, 0, c, "color: inherit");
+    let index3 = 0;
+    let lastC = 0;
+    args[0].replace(/%[a-zA-Z%]/g, (match) => {
+      if (match === "%%") {
+        return;
+      }
+      index3++;
+      if (match === "%c") {
+        lastC = index3;
+      }
+    });
+    args.splice(lastC, 0, c);
+  }
+  exports.log = console.debug || console.log || (() => {});
+  function save(namespaces) {
+    try {
+      if (namespaces) {
+        exports.storage.setItem("debug", namespaces);
+      } else {
+        exports.storage.removeItem("debug");
+      }
+    } catch (error2) {}
+  }
+  function load() {
+    let r2;
+    try {
+      r2 = exports.storage.getItem("debug") || exports.storage.getItem("DEBUG");
+    } catch (error2) {}
+    if (!r2 && typeof process !== "undefined" && "env" in process) {
+      r2 = process.env.DEBUG;
+    }
+    return r2;
+  }
+  function localstorage() {
+    try {
+      return localStorage;
+    } catch (error2) {}
+  }
+  module.exports = require_common()(exports);
+  var { formatters } = module.exports;
+  formatters.j = function(v) {
+    try {
+      return JSON.stringify(v);
+    } catch (error2) {
+      return "[UnexpectedJSONParseError]: " + error2.message;
+    }
+  };
+});
+
 // src/scriptorium/surface/main.tsx
 var import_client = __toESM(require_client(), 1);
 // node_modules/lucide-react/dist/esm/createLucideIcon.mjs
@@ -17575,8 +18020,14 @@ var createLucideIcon = (iconName, iconNode) => {
   return Component;
 };
 
-// node_modules/lucide-react/dist/esm/icons/house.mjs
+// node_modules/lucide-react/dist/esm/icons/columns-2.mjs
 var __iconNode = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M12 3v18", key: "108xh3" }]
+];
+var Columns2 = createLucideIcon("columns-2", __iconNode);
+// node_modules/lucide-react/dist/esm/icons/house.mjs
+var __iconNode2 = [
   ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
   [
     "path",
@@ -17586,9 +18037,9 @@ var __iconNode = [
     }
   ]
 ];
-var House = createLucideIcon("house", __iconNode);
+var House = createLucideIcon("house", __iconNode2);
 // node_modules/lucide-react/dist/esm/icons/square-pen.mjs
-var __iconNode2 = [
+var __iconNode3 = [
   ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
   [
     "path",
@@ -17598,24 +18049,36 @@ var __iconNode2 = [
     }
   ]
 ];
-var SquarePen = createLucideIcon("square-pen", __iconNode2);
+var SquarePen = createLucideIcon("square-pen", __iconNode3);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode3 = [
+var __iconNode4 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode3);
-// node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode4 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode4);
-// node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/book-open.mjs
 var __iconNode5 = [
+  ["path", { d: "M12 7v14", key: "1akyts" }],
+  [
+    "path",
+    {
+      d: "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+      key: "ruj8y"
+    }
+  ]
+];
+var BookOpen = createLucideIcon("book-open", __iconNode5);
+// node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
+var __iconNode6 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode6);
+// node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
+var __iconNode7 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode5);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode6 = [
+var __iconNode8 = [
   [
     "path",
     {
@@ -17625,9 +18088,23 @@ var __iconNode6 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode6);
+var Eye = createLucideIcon("eye", __iconNode8);
+// node_modules/lucide-react/dist/esm/icons/file-code.mjs
+var __iconNode9 = [
+  [
+    "path",
+    {
+      d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+      key: "1oefj6"
+    }
+  ],
+  ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }],
+  ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
+  ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
+];
+var FileCode = createLucideIcon("file-code", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode7 = [
+var __iconNode10 = [
   [
     "path",
     {
@@ -17639,9 +18116,9 @@ var __iconNode7 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode7);
+var FilePlus = createLucideIcon("file-plus", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode8 = [
+var __iconNode11 = [
   [
     "path",
     {
@@ -17654,9 +18131,9 @@ var __iconNode8 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode8);
+var FileText = createLucideIcon("file-text", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode9 = [
+var __iconNode12 = [
   [
     "path",
     {
@@ -17667,9 +18144,9 @@ var __iconNode9 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode9);
+var FolderInput = createLucideIcon("folder-input", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode10 = [
+var __iconNode13 = [
   [
     "path",
     {
@@ -17678,9 +18155,9 @@ var __iconNode10 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode10);
+var FolderOpen = createLucideIcon("folder-open", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode11 = [
+var __iconNode14 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -17691,9 +18168,9 @@ var __iconNode11 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode11);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode12 = [
+var __iconNode15 = [
   [
     "path",
     {
@@ -17704,9 +18181,9 @@ var __iconNode12 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode12);
+var FolderSearch = createLucideIcon("folder-search", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode13 = [
+var __iconNode16 = [
   [
     "path",
     {
@@ -17724,9 +18201,9 @@ var __iconNode13 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode13);
+var FolderTree = createLucideIcon("folder-tree", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode14 = [
+var __iconNode17 = [
   [
     "path",
     {
@@ -17735,9 +18212,9 @@ var __iconNode14 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode14);
+var Folder = createLucideIcon("folder", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode15 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -17753,9 +18230,9 @@ var __iconNode15 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode15);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode16 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -17764,9 +18241,9 @@ var __iconNode16 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode16);
+var Moon = createLucideIcon("moon", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode17 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -17776,9 +18253,9 @@ var __iconNode17 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode17);
+var Pencil = createLucideIcon("pencil", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode18 = [
+var __iconNode21 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -17789,15 +18266,15 @@ var __iconNode18 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode18);
+var Sun = createLucideIcon("sun", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode19 = [
+var __iconNode22 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode19);
+var X = createLucideIcon("x", __iconNode22);
 // src/scriptorium/surface/App.tsx
-var import_react18 = __toESM(require_react(), 1);
+var import_react19 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -38317,7 +38794,7 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react16 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/state/stats.ts
 function contentStats(text) {
@@ -49072,12 +49549,6475 @@ function DocumentView({ docKey, text }) {
   }, undefined, false, undefined, this);
 }
 
-// src/scriptorium/surface/components/StatusStrip.tsx
+// src/scriptorium/surface/components/MarkdownView.tsx
 var import_react15 = __toESM(require_react(), 1);
-// src/scriptorium/surface/ui/separator.tsx
+
+// node_modules/decode-named-character-reference/index.dom.js
+var element = document.createElement("i");
+function decodeNamedCharacterReference(value) {
+  const characterReference = "&" + value + ";";
+  element.innerHTML = characterReference;
+  const character = element.textContent;
+  if (character.charCodeAt(character.length - 1) === 59 && value !== "semi") {
+    return false;
+  }
+  return character === characterReference ? false : character;
+}
+
+// node_modules/devlop/lib/development.js
+var codesWarned = new Set;
+
+class AssertionError extends Error {
+  name = "Assertion";
+  code = "ERR_ASSERTION";
+  constructor(message, actual, expected, operator, generated) {
+    super(message);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+    this.actual = actual;
+    this.expected = expected;
+    this.generated = generated;
+    this.operator = operator;
+  }
+}
+function ok(value, message) {
+  assert(Boolean(value), false, true, "ok", "Expected value to be truthy", message);
+}
+function assert(bool, actual, expected, operator, defaultMessage, userMessage) {
+  if (!bool) {
+    throw userMessage instanceof Error ? userMessage : new AssertionError(userMessage || defaultMessage, actual, expected, operator, !userMessage);
+  }
+}
+
+// node_modules/micromark-util-symbol/lib/codes.js
+var codes = {
+  carriageReturn: -5,
+  lineFeed: -4,
+  carriageReturnLineFeed: -3,
+  horizontalTab: -2,
+  virtualSpace: -1,
+  eof: null,
+  nul: 0,
+  soh: 1,
+  stx: 2,
+  etx: 3,
+  eot: 4,
+  enq: 5,
+  ack: 6,
+  bel: 7,
+  bs: 8,
+  ht: 9,
+  lf: 10,
+  vt: 11,
+  ff: 12,
+  cr: 13,
+  so: 14,
+  si: 15,
+  dle: 16,
+  dc1: 17,
+  dc2: 18,
+  dc3: 19,
+  dc4: 20,
+  nak: 21,
+  syn: 22,
+  etb: 23,
+  can: 24,
+  em: 25,
+  sub: 26,
+  esc: 27,
+  fs: 28,
+  gs: 29,
+  rs: 30,
+  us: 31,
+  space: 32,
+  exclamationMark: 33,
+  quotationMark: 34,
+  numberSign: 35,
+  dollarSign: 36,
+  percentSign: 37,
+  ampersand: 38,
+  apostrophe: 39,
+  leftParenthesis: 40,
+  rightParenthesis: 41,
+  asterisk: 42,
+  plusSign: 43,
+  comma: 44,
+  dash: 45,
+  dot: 46,
+  slash: 47,
+  digit0: 48,
+  digit1: 49,
+  digit2: 50,
+  digit3: 51,
+  digit4: 52,
+  digit5: 53,
+  digit6: 54,
+  digit7: 55,
+  digit8: 56,
+  digit9: 57,
+  colon: 58,
+  semicolon: 59,
+  lessThan: 60,
+  equalsTo: 61,
+  greaterThan: 62,
+  questionMark: 63,
+  atSign: 64,
+  uppercaseA: 65,
+  uppercaseB: 66,
+  uppercaseC: 67,
+  uppercaseD: 68,
+  uppercaseE: 69,
+  uppercaseF: 70,
+  uppercaseG: 71,
+  uppercaseH: 72,
+  uppercaseI: 73,
+  uppercaseJ: 74,
+  uppercaseK: 75,
+  uppercaseL: 76,
+  uppercaseM: 77,
+  uppercaseN: 78,
+  uppercaseO: 79,
+  uppercaseP: 80,
+  uppercaseQ: 81,
+  uppercaseR: 82,
+  uppercaseS: 83,
+  uppercaseT: 84,
+  uppercaseU: 85,
+  uppercaseV: 86,
+  uppercaseW: 87,
+  uppercaseX: 88,
+  uppercaseY: 89,
+  uppercaseZ: 90,
+  leftSquareBracket: 91,
+  backslash: 92,
+  rightSquareBracket: 93,
+  caret: 94,
+  underscore: 95,
+  graveAccent: 96,
+  lowercaseA: 97,
+  lowercaseB: 98,
+  lowercaseC: 99,
+  lowercaseD: 100,
+  lowercaseE: 101,
+  lowercaseF: 102,
+  lowercaseG: 103,
+  lowercaseH: 104,
+  lowercaseI: 105,
+  lowercaseJ: 106,
+  lowercaseK: 107,
+  lowercaseL: 108,
+  lowercaseM: 109,
+  lowercaseN: 110,
+  lowercaseO: 111,
+  lowercaseP: 112,
+  lowercaseQ: 113,
+  lowercaseR: 114,
+  lowercaseS: 115,
+  lowercaseT: 116,
+  lowercaseU: 117,
+  lowercaseV: 118,
+  lowercaseW: 119,
+  lowercaseX: 120,
+  lowercaseY: 121,
+  lowercaseZ: 122,
+  leftCurlyBrace: 123,
+  verticalBar: 124,
+  rightCurlyBrace: 125,
+  tilde: 126,
+  del: 127,
+  byteOrderMarker: 65279,
+  replacementCharacter: 65533
+};
+// node_modules/micromark-util-symbol/lib/constants.js
+var constants = {
+  attentionSideAfter: 2,
+  attentionSideBefore: 1,
+  atxHeadingOpeningFenceSizeMax: 6,
+  autolinkDomainSizeMax: 63,
+  autolinkSchemeSizeMax: 32,
+  cdataOpeningString: "CDATA[",
+  characterGroupPunctuation: 2,
+  characterGroupWhitespace: 1,
+  characterReferenceDecimalSizeMax: 7,
+  characterReferenceHexadecimalSizeMax: 6,
+  characterReferenceNamedSizeMax: 31,
+  codeFencedSequenceSizeMin: 3,
+  contentTypeContent: "content",
+  contentTypeDocument: "document",
+  contentTypeFlow: "flow",
+  contentTypeString: "string",
+  contentTypeText: "text",
+  hardBreakPrefixSizeMin: 2,
+  htmlBasic: 6,
+  htmlCdata: 5,
+  htmlComment: 2,
+  htmlComplete: 7,
+  htmlDeclaration: 4,
+  htmlInstruction: 3,
+  htmlRawSizeMax: 8,
+  htmlRaw: 1,
+  linkResourceDestinationBalanceMax: 32,
+  linkReferenceSizeMax: 999,
+  listItemValueSizeMax: 10,
+  numericBaseDecimal: 10,
+  numericBaseHexadecimal: 16,
+  tabSize: 4,
+  thematicBreakMarkerCountMin: 3,
+  v8MaxSafeChunkSize: 1e4
+};
+// node_modules/micromark-util-symbol/lib/types.js
+var types2 = {
+  data: "data",
+  whitespace: "whitespace",
+  lineEnding: "lineEnding",
+  lineEndingBlank: "lineEndingBlank",
+  linePrefix: "linePrefix",
+  lineSuffix: "lineSuffix",
+  atxHeading: "atxHeading",
+  atxHeadingSequence: "atxHeadingSequence",
+  atxHeadingText: "atxHeadingText",
+  autolink: "autolink",
+  autolinkEmail: "autolinkEmail",
+  autolinkMarker: "autolinkMarker",
+  autolinkProtocol: "autolinkProtocol",
+  characterEscape: "characterEscape",
+  characterEscapeValue: "characterEscapeValue",
+  characterReference: "characterReference",
+  characterReferenceMarker: "characterReferenceMarker",
+  characterReferenceMarkerNumeric: "characterReferenceMarkerNumeric",
+  characterReferenceMarkerHexadecimal: "characterReferenceMarkerHexadecimal",
+  characterReferenceValue: "characterReferenceValue",
+  codeFenced: "codeFenced",
+  codeFencedFence: "codeFencedFence",
+  codeFencedFenceSequence: "codeFencedFenceSequence",
+  codeFencedFenceInfo: "codeFencedFenceInfo",
+  codeFencedFenceMeta: "codeFencedFenceMeta",
+  codeFlowValue: "codeFlowValue",
+  codeIndented: "codeIndented",
+  codeText: "codeText",
+  codeTextData: "codeTextData",
+  codeTextPadding: "codeTextPadding",
+  codeTextSequence: "codeTextSequence",
+  content: "content",
+  definition: "definition",
+  definitionDestination: "definitionDestination",
+  definitionDestinationLiteral: "definitionDestinationLiteral",
+  definitionDestinationLiteralMarker: "definitionDestinationLiteralMarker",
+  definitionDestinationRaw: "definitionDestinationRaw",
+  definitionDestinationString: "definitionDestinationString",
+  definitionLabel: "definitionLabel",
+  definitionLabelMarker: "definitionLabelMarker",
+  definitionLabelString: "definitionLabelString",
+  definitionMarker: "definitionMarker",
+  definitionTitle: "definitionTitle",
+  definitionTitleMarker: "definitionTitleMarker",
+  definitionTitleString: "definitionTitleString",
+  emphasis: "emphasis",
+  emphasisSequence: "emphasisSequence",
+  emphasisText: "emphasisText",
+  escapeMarker: "escapeMarker",
+  hardBreakEscape: "hardBreakEscape",
+  hardBreakTrailing: "hardBreakTrailing",
+  htmlFlow: "htmlFlow",
+  htmlFlowData: "htmlFlowData",
+  htmlText: "htmlText",
+  htmlTextData: "htmlTextData",
+  image: "image",
+  label: "label",
+  labelText: "labelText",
+  labelLink: "labelLink",
+  labelImage: "labelImage",
+  labelMarker: "labelMarker",
+  labelImageMarker: "labelImageMarker",
+  labelEnd: "labelEnd",
+  link: "link",
+  paragraph: "paragraph",
+  reference: "reference",
+  referenceMarker: "referenceMarker",
+  referenceString: "referenceString",
+  resource: "resource",
+  resourceDestination: "resourceDestination",
+  resourceDestinationLiteral: "resourceDestinationLiteral",
+  resourceDestinationLiteralMarker: "resourceDestinationLiteralMarker",
+  resourceDestinationRaw: "resourceDestinationRaw",
+  resourceDestinationString: "resourceDestinationString",
+  resourceMarker: "resourceMarker",
+  resourceTitle: "resourceTitle",
+  resourceTitleMarker: "resourceTitleMarker",
+  resourceTitleString: "resourceTitleString",
+  setextHeading: "setextHeading",
+  setextHeadingText: "setextHeadingText",
+  setextHeadingLine: "setextHeadingLine",
+  setextHeadingLineSequence: "setextHeadingLineSequence",
+  strong: "strong",
+  strongSequence: "strongSequence",
+  strongText: "strongText",
+  thematicBreak: "thematicBreak",
+  thematicBreakSequence: "thematicBreakSequence",
+  blockQuote: "blockQuote",
+  blockQuotePrefix: "blockQuotePrefix",
+  blockQuoteMarker: "blockQuoteMarker",
+  blockQuotePrefixWhitespace: "blockQuotePrefixWhitespace",
+  listOrdered: "listOrdered",
+  listUnordered: "listUnordered",
+  listItemIndent: "listItemIndent",
+  listItemMarker: "listItemMarker",
+  listItemPrefix: "listItemPrefix",
+  listItemPrefixWhitespace: "listItemPrefixWhitespace",
+  listItemValue: "listItemValue",
+  chunkDocument: "chunkDocument",
+  chunkContent: "chunkContent",
+  chunkFlow: "chunkFlow",
+  chunkText: "chunkText",
+  chunkString: "chunkString"
+};
+// node_modules/micromark-util-symbol/lib/values.js
+var values = {
+  ht: "\t",
+  lf: `
+`,
+  cr: "\r",
+  space: " ",
+  exclamationMark: "!",
+  quotationMark: '"',
+  numberSign: "#",
+  dollarSign: "$",
+  percentSign: "%",
+  ampersand: "&",
+  apostrophe: "'",
+  leftParenthesis: "(",
+  rightParenthesis: ")",
+  asterisk: "*",
+  plusSign: "+",
+  comma: ",",
+  dash: "-",
+  dot: ".",
+  slash: "/",
+  digit0: "0",
+  digit1: "1",
+  digit2: "2",
+  digit3: "3",
+  digit4: "4",
+  digit5: "5",
+  digit6: "6",
+  digit7: "7",
+  digit8: "8",
+  digit9: "9",
+  colon: ":",
+  semicolon: ";",
+  lessThan: "<",
+  equalsTo: "=",
+  greaterThan: ">",
+  questionMark: "?",
+  atSign: "@",
+  uppercaseA: "A",
+  uppercaseB: "B",
+  uppercaseC: "C",
+  uppercaseD: "D",
+  uppercaseE: "E",
+  uppercaseF: "F",
+  uppercaseG: "G",
+  uppercaseH: "H",
+  uppercaseI: "I",
+  uppercaseJ: "J",
+  uppercaseK: "K",
+  uppercaseL: "L",
+  uppercaseM: "M",
+  uppercaseN: "N",
+  uppercaseO: "O",
+  uppercaseP: "P",
+  uppercaseQ: "Q",
+  uppercaseR: "R",
+  uppercaseS: "S",
+  uppercaseT: "T",
+  uppercaseU: "U",
+  uppercaseV: "V",
+  uppercaseW: "W",
+  uppercaseX: "X",
+  uppercaseY: "Y",
+  uppercaseZ: "Z",
+  leftSquareBracket: "[",
+  backslash: "\\",
+  rightSquareBracket: "]",
+  caret: "^",
+  underscore: "_",
+  graveAccent: "`",
+  lowercaseA: "a",
+  lowercaseB: "b",
+  lowercaseC: "c",
+  lowercaseD: "d",
+  lowercaseE: "e",
+  lowercaseF: "f",
+  lowercaseG: "g",
+  lowercaseH: "h",
+  lowercaseI: "i",
+  lowercaseJ: "j",
+  lowercaseK: "k",
+  lowercaseL: "l",
+  lowercaseM: "m",
+  lowercaseN: "n",
+  lowercaseO: "o",
+  lowercaseP: "p",
+  lowercaseQ: "q",
+  lowercaseR: "r",
+  lowercaseS: "s",
+  lowercaseT: "t",
+  lowercaseU: "u",
+  lowercaseV: "v",
+  lowercaseW: "w",
+  lowercaseX: "x",
+  lowercaseY: "y",
+  lowercaseZ: "z",
+  leftCurlyBrace: "{",
+  verticalBar: "|",
+  rightCurlyBrace: "}",
+  tilde: "~",
+  replacementCharacter: "�"
+};
+// node_modules/micromark-util-chunked/dev/index.js
+function splice(list, start, remove2, items) {
+  const end = list.length;
+  let chunkStart = 0;
+  let parameters;
+  if (start < 0) {
+    start = -start > end ? 0 : end + start;
+  } else {
+    start = start > end ? end : start;
+  }
+  remove2 = remove2 > 0 ? remove2 : 0;
+  if (items.length < constants.v8MaxSafeChunkSize) {
+    parameters = Array.from(items);
+    parameters.unshift(start, remove2);
+    list.splice(...parameters);
+  } else {
+    if (remove2)
+      list.splice(start, remove2);
+    while (chunkStart < items.length) {
+      parameters = items.slice(chunkStart, chunkStart + constants.v8MaxSafeChunkSize);
+      parameters.unshift(start, 0);
+      list.splice(...parameters);
+      chunkStart += constants.v8MaxSafeChunkSize;
+      start += constants.v8MaxSafeChunkSize;
+    }
+  }
+}
+function push(list, items) {
+  if (list.length > 0) {
+    splice(list, list.length, 0, items);
+    return list;
+  }
+  return items;
+}
+
+// node_modules/micromark-util-combine-extensions/index.js
+var hasOwnProperty = {}.hasOwnProperty;
+function combineExtensions(extensions) {
+  const all = {};
+  let index3 = -1;
+  while (++index3 < extensions.length) {
+    syntaxExtension(all, extensions[index3]);
+  }
+  return all;
+}
+function syntaxExtension(all, extension) {
+  let hook;
+  for (hook in extension) {
+    const maybe = hasOwnProperty.call(all, hook) ? all[hook] : undefined;
+    const left = maybe || (all[hook] = {});
+    const right = extension[hook];
+    let code2;
+    if (right) {
+      for (code2 in right) {
+        if (!hasOwnProperty.call(left, code2))
+          left[code2] = [];
+        const value = right[code2];
+        constructs(left[code2], Array.isArray(value) ? value : value ? [value] : []);
+      }
+    }
+  }
+}
+function constructs(existing, list) {
+  let index3 = -1;
+  const before = [];
+  while (++index3 < list.length) {
+    (list[index3].add === "after" ? existing : before).push(list[index3]);
+  }
+  splice(existing, 0, 0, before);
+}
+function combineHtmlExtensions(htmlExtensions) {
+  const handlers2 = {};
+  let index3 = -1;
+  while (++index3 < htmlExtensions.length) {
+    htmlExtension(handlers2, htmlExtensions[index3]);
+  }
+  return handlers2;
+}
+function htmlExtension(all, extension) {
+  let hook;
+  for (hook in extension) {
+    const maybe = hasOwnProperty.call(all, hook) ? all[hook] : undefined;
+    const left = maybe || (all[hook] = {});
+    const right = extension[hook];
+    let type;
+    if (right) {
+      for (type in right) {
+        left[type] = right[type];
+      }
+    }
+  }
+}
+
+// node_modules/micromark-util-decode-numeric-character-reference/dev/index.js
+function decodeNumericCharacterReference(value, base2) {
+  const code2 = Number.parseInt(value, base2);
+  if (code2 < codes.ht || code2 === codes.vt || code2 > codes.cr && code2 < codes.space || code2 > codes.tilde && code2 < 160 || code2 > 55295 && code2 < 57344 || code2 > 64975 && code2 < 65008 || (code2 & 65535) === 65535 || (code2 & 65535) === 65534 || code2 > 1114111) {
+    return values.replacementCharacter;
+  }
+  return String.fromCodePoint(code2);
+}
+
+// node_modules/micromark-util-encode/index.js
+var characterReferences = { '"': "quot", "&": "amp", "<": "lt", ">": "gt" };
+function encode(value) {
+  return value.replace(/["&<>]/g, replace2);
+  function replace2(value2) {
+    return "&" + characterReferences[value2] + ";";
+  }
+}
+
+// node_modules/micromark-util-normalize-identifier/dev/index.js
+function normalizeIdentifier(value) {
+  return value.replace(/[\t\n\r ]+/g, values.space).replace(/^ | $/g, "").toLowerCase().toUpperCase();
+}
+
+// node_modules/micromark-util-character/dev/index.js
+var asciiAlpha = regexCheck(/[A-Za-z]/);
+var asciiAlphanumeric = regexCheck(/[\dA-Za-z]/);
+var asciiAtext = regexCheck(/[#-'*+\--9=?A-Z^-~]/);
+function asciiControl(code2) {
+  return code2 !== null && (code2 < codes.space || code2 === codes.del);
+}
+var asciiDigit = regexCheck(/\d/);
+var asciiHexDigit = regexCheck(/[\dA-Fa-f]/);
+var asciiPunctuation = regexCheck(/[!-/:-@[-`{-~]/);
+function markdownLineEnding(code2) {
+  return code2 !== null && code2 < codes.horizontalTab;
+}
+function markdownLineEndingOrSpace(code2) {
+  return code2 !== null && (code2 < codes.nul || code2 === codes.space);
+}
+function markdownSpace(code2) {
+  return code2 === codes.horizontalTab || code2 === codes.virtualSpace || code2 === codes.space;
+}
+var unicodePunctuation = regexCheck(/\p{P}|\p{S}/u);
+var unicodeWhitespace = regexCheck(/\s/);
+function regexCheck(regex) {
+  return check;
+  function check(code2) {
+    return code2 !== null && code2 > -1 && regex.test(String.fromCharCode(code2));
+  }
+}
+
+// node_modules/micromark-util-sanitize-uri/dev/index.js
+function sanitizeUri(url, protocol) {
+  const value = encode(normalizeUri(url || ""));
+  if (!protocol) {
+    return value;
+  }
+  const colon = value.indexOf(":");
+  const questionMark = value.indexOf("?");
+  const numberSign = value.indexOf("#");
+  const slash = value.indexOf("/");
+  if (colon < 0 || slash > -1 && colon > slash || questionMark > -1 && colon > questionMark || numberSign > -1 && colon > numberSign || protocol.test(value.slice(0, colon))) {
+    return value;
+  }
+  return "";
+}
+function normalizeUri(value) {
+  const result = [];
+  let index3 = -1;
+  let start = 0;
+  let skip = 0;
+  while (++index3 < value.length) {
+    const code2 = value.charCodeAt(index3);
+    let replace2 = "";
+    if (code2 === codes.percentSign && asciiAlphanumeric(value.charCodeAt(index3 + 1)) && asciiAlphanumeric(value.charCodeAt(index3 + 2))) {
+      skip = 2;
+    } else if (code2 < 128) {
+      if (!/[!#$&-;=?-Z_a-z~]/.test(String.fromCharCode(code2))) {
+        replace2 = String.fromCharCode(code2);
+      }
+    } else if (code2 > 55295 && code2 < 57344) {
+      const next = value.charCodeAt(index3 + 1);
+      if (code2 < 56320 && next > 56319 && next < 57344) {
+        replace2 = String.fromCharCode(code2, next);
+        skip = 1;
+      } else {
+        replace2 = values.replacementCharacter;
+      }
+    } else {
+      replace2 = String.fromCharCode(code2);
+    }
+    if (replace2) {
+      result.push(value.slice(start, index3), encodeURIComponent(replace2));
+      start = index3 + skip + 1;
+      replace2 = "";
+    }
+    if (skip) {
+      index3 += skip;
+      skip = 0;
+    }
+  }
+  return result.join("") + value.slice(start);
+}
+
+// node_modules/micromark/dev/lib/compile.js
+var hasOwnProperty2 = {}.hasOwnProperty;
+var protocolHref = /^(https?|ircs?|mailto|xmpp)$/i;
+var protocolSource = /^https?$/i;
+function compile(options) {
+  const settings = options || {};
+  let tags = true;
+  const definitions = {};
+  const buffers = [[]];
+  const mediaStack = [];
+  const tightStack = [];
+  const defaultHandlers = {
+    enter: {
+      blockQuote: onenterblockquote,
+      codeFenced: onentercodefenced,
+      codeFencedFenceInfo: buffer,
+      codeFencedFenceMeta: buffer,
+      codeIndented: onentercodeindented,
+      codeText: onentercodetext,
+      content: onentercontent,
+      definition: onenterdefinition,
+      definitionDestinationString: onenterdefinitiondestinationstring,
+      definitionLabelString: buffer,
+      definitionTitleString: buffer,
+      emphasis: onenteremphasis,
+      htmlFlow: onenterhtmlflow,
+      htmlText: onenterhtml,
+      image: onenterimage,
+      label: buffer,
+      link: onenterlink,
+      listItemMarker: onenterlistitemmarker,
+      listItemValue: onenterlistitemvalue,
+      listOrdered: onenterlistordered,
+      listUnordered: onenterlistunordered,
+      paragraph: onenterparagraph,
+      reference: buffer,
+      resource: onenterresource,
+      resourceDestinationString: onenterresourcedestinationstring,
+      resourceTitleString: buffer,
+      setextHeading: onentersetextheading,
+      strong: onenterstrong
+    },
+    exit: {
+      atxHeading: onexitatxheading,
+      atxHeadingSequence: onexitatxheadingsequence,
+      autolinkEmail: onexitautolinkemail,
+      autolinkProtocol: onexitautolinkprotocol,
+      blockQuote: onexitblockquote,
+      characterEscapeValue: onexitdata,
+      characterReferenceMarkerHexadecimal: onexitcharacterreferencemarker,
+      characterReferenceMarkerNumeric: onexitcharacterreferencemarker,
+      characterReferenceValue: onexitcharacterreferencevalue,
+      codeFenced: onexitflowcode,
+      codeFencedFence: onexitcodefencedfence,
+      codeFencedFenceInfo: onexitcodefencedfenceinfo,
+      codeFencedFenceMeta: onresumedrop,
+      codeFlowValue: onexitcodeflowvalue,
+      codeIndented: onexitflowcode,
+      codeText: onexitcodetext,
+      codeTextData: onexitdata,
+      data: onexitdata,
+      definition: onexitdefinition,
+      definitionDestinationString: onexitdefinitiondestinationstring,
+      definitionLabelString: onexitdefinitionlabelstring,
+      definitionTitleString: onexitdefinitiontitlestring,
+      emphasis: onexitemphasis,
+      hardBreakEscape: onexithardbreak,
+      hardBreakTrailing: onexithardbreak,
+      htmlFlow: onexithtml,
+      htmlFlowData: onexitdata,
+      htmlText: onexithtml,
+      htmlTextData: onexitdata,
+      image: onexitmedia,
+      label: onexitlabel,
+      labelText: onexitlabeltext,
+      lineEnding: onexitlineending,
+      link: onexitmedia,
+      listOrdered: onexitlistordered,
+      listUnordered: onexitlistunordered,
+      paragraph: onexitparagraph,
+      reference: onresumedrop,
+      referenceString: onexitreferencestring,
+      resource: onresumedrop,
+      resourceDestinationString: onexitresourcedestinationstring,
+      resourceTitleString: onexitresourcetitlestring,
+      setextHeading: onexitsetextheading,
+      setextHeadingLineSequence: onexitsetextheadinglinesequence,
+      setextHeadingText: onexitsetextheadingtext,
+      strong: onexitstrong,
+      thematicBreak: onexitthematicbreak
+    }
+  };
+  const handlers2 = combineHtmlExtensions([defaultHandlers, ...settings.htmlExtensions || []]);
+  const data = {
+    definitions,
+    tightStack
+  };
+  const context = {
+    buffer,
+    encode: encode2,
+    getData,
+    lineEndingIfNeeded,
+    options: settings,
+    raw,
+    resume,
+    setData,
+    tag
+  };
+  let lineEndingStyle = settings.defaultLineEnding;
+  return compile2;
+  function compile2(events) {
+    let index3 = -1;
+    let start = 0;
+    const listStack = [];
+    let head = [];
+    let body = [];
+    while (++index3 < events.length) {
+      if (!lineEndingStyle && (events[index3][1].type === types2.lineEnding || events[index3][1].type === types2.lineEndingBlank)) {
+        lineEndingStyle = events[index3][2].sliceSerialize(events[index3][1]);
+      }
+      if (events[index3][1].type === types2.listOrdered || events[index3][1].type === types2.listUnordered) {
+        if (events[index3][0] === "enter") {
+          listStack.push(index3);
+        } else {
+          prepareList(events.slice(listStack.pop(), index3));
+        }
+      }
+      if (events[index3][1].type === types2.definition) {
+        if (events[index3][0] === "enter") {
+          body = push(body, events.slice(start, index3));
+          start = index3;
+        } else {
+          head = push(head, events.slice(start, index3 + 1));
+          start = index3 + 1;
+        }
+      }
+    }
+    head = push(head, body);
+    head = push(head, events.slice(start));
+    index3 = -1;
+    const result = head;
+    if (handlers2.enter.null) {
+      handlers2.enter.null.call(context);
+    }
+    while (++index3 < events.length) {
+      const handles = handlers2[result[index3][0]];
+      const kind = result[index3][1].type;
+      const handle = handles[kind];
+      if (hasOwnProperty2.call(handles, kind) && handle) {
+        handle.call({ sliceSerialize: result[index3][2].sliceSerialize, ...context }, result[index3][1]);
+      }
+    }
+    if (handlers2.exit.null) {
+      handlers2.exit.null.call(context);
+    }
+    return buffers[0].join("");
+  }
+  function prepareList(slice) {
+    const length = slice.length;
+    let index3 = 0;
+    let containerBalance = 0;
+    let loose = false;
+    let atMarker;
+    while (++index3 < length) {
+      const event = slice[index3];
+      if (event[1]._container) {
+        atMarker = undefined;
+        if (event[0] === "enter") {
+          containerBalance++;
+        } else {
+          containerBalance--;
+        }
+      } else
+        switch (event[1].type) {
+          case types2.listItemPrefix: {
+            if (event[0] === "exit") {
+              atMarker = true;
+            }
+            break;
+          }
+          case types2.linePrefix: {
+            break;
+          }
+          case types2.lineEndingBlank: {
+            if (event[0] === "enter" && !containerBalance) {
+              if (atMarker) {
+                atMarker = undefined;
+              } else {
+                loose = true;
+              }
+            }
+            break;
+          }
+          default: {
+            atMarker = undefined;
+          }
+        }
+    }
+    slice[0][1]._loose = loose;
+  }
+  function setData(key, value) {
+    data[key] = value;
+  }
+  function getData(key) {
+    return data[key];
+  }
+  function buffer() {
+    buffers.push([]);
+  }
+  function resume() {
+    const buf = buffers.pop();
+    ok(buf !== undefined, "Cannot resume w/o buffer");
+    return buf.join("");
+  }
+  function tag(value) {
+    if (!tags)
+      return;
+    setData("lastWasTag", true);
+    buffers[buffers.length - 1].push(value);
+  }
+  function raw(value) {
+    setData("lastWasTag");
+    buffers[buffers.length - 1].push(value);
+  }
+  function lineEnding() {
+    raw(lineEndingStyle || `
+`);
+  }
+  function lineEndingIfNeeded() {
+    const buffer2 = buffers[buffers.length - 1];
+    const slice = buffer2[buffer2.length - 1];
+    const previous = slice ? slice.charCodeAt(slice.length - 1) : codes.eof;
+    if (previous === codes.lf || previous === codes.cr || previous === codes.eof) {
+      return;
+    }
+    lineEnding();
+  }
+  function encode2(value) {
+    return getData("ignoreEncode") ? value : encode(value);
+  }
+  function onresumedrop() {
+    resume();
+  }
+  function onenterlistordered(token) {
+    tightStack.push(!token._loose);
+    lineEndingIfNeeded();
+    tag("<ol");
+    setData("expectFirstItem", true);
+  }
+  function onenterlistunordered(token) {
+    tightStack.push(!token._loose);
+    lineEndingIfNeeded();
+    tag("<ul");
+    setData("expectFirstItem", true);
+  }
+  function onenterlistitemvalue(token) {
+    if (getData("expectFirstItem")) {
+      const value = Number.parseInt(this.sliceSerialize(token), constants.numericBaseDecimal);
+      if (value !== 1) {
+        tag(' start="' + encode2(String(value)) + '"');
+      }
+    }
+  }
+  function onenterlistitemmarker() {
+    if (getData("expectFirstItem")) {
+      tag(">");
+    } else {
+      onexitlistitem();
+    }
+    lineEndingIfNeeded();
+    tag("<li>");
+    setData("expectFirstItem");
+    setData("lastWasTag");
+  }
+  function onexitlistordered() {
+    onexitlistitem();
+    tightStack.pop();
+    lineEnding();
+    tag("</ol>");
+  }
+  function onexitlistunordered() {
+    onexitlistitem();
+    tightStack.pop();
+    lineEnding();
+    tag("</ul>");
+  }
+  function onexitlistitem() {
+    if (getData("lastWasTag") && !getData("slurpAllLineEndings")) {
+      lineEndingIfNeeded();
+    }
+    tag("</li>");
+    setData("slurpAllLineEndings");
+  }
+  function onenterblockquote() {
+    tightStack.push(false);
+    lineEndingIfNeeded();
+    tag("<blockquote>");
+  }
+  function onexitblockquote() {
+    tightStack.pop();
+    lineEndingIfNeeded();
+    tag("</blockquote>");
+    setData("slurpAllLineEndings");
+  }
+  function onenterparagraph() {
+    if (!tightStack[tightStack.length - 1]) {
+      lineEndingIfNeeded();
+      tag("<p>");
+    }
+    setData("slurpAllLineEndings");
+  }
+  function onexitparagraph() {
+    if (tightStack[tightStack.length - 1]) {
+      setData("slurpAllLineEndings", true);
+    } else {
+      tag("</p>");
+    }
+  }
+  function onentercodefenced() {
+    lineEndingIfNeeded();
+    tag("<pre><code");
+    setData("fencesCount", 0);
+  }
+  function onexitcodefencedfenceinfo() {
+    const value = resume();
+    tag(' class="language-' + value + '"');
+  }
+  function onexitcodefencedfence() {
+    const count = getData("fencesCount") || 0;
+    if (!count) {
+      tag(">");
+      setData("slurpOneLineEnding", true);
+    }
+    setData("fencesCount", count + 1);
+  }
+  function onentercodeindented() {
+    lineEndingIfNeeded();
+    tag("<pre><code>");
+  }
+  function onexitflowcode() {
+    const count = getData("fencesCount");
+    if (count !== undefined && count < 2 && data.tightStack.length > 0 && !getData("lastWasTag")) {
+      lineEnding();
+    }
+    if (getData("flowCodeSeenData")) {
+      lineEndingIfNeeded();
+    }
+    tag("</code></pre>");
+    if (count !== undefined && count < 2)
+      lineEndingIfNeeded();
+    setData("flowCodeSeenData");
+    setData("fencesCount");
+    setData("slurpOneLineEnding");
+  }
+  function onenterimage() {
+    mediaStack.push({ image: true });
+    tags = undefined;
+  }
+  function onenterlink() {
+    mediaStack.push({});
+  }
+  function onexitlabeltext(token) {
+    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
+  }
+  function onexitlabel() {
+    mediaStack[mediaStack.length - 1].label = resume();
+  }
+  function onexitreferencestring(token) {
+    mediaStack[mediaStack.length - 1].referenceId = this.sliceSerialize(token);
+  }
+  function onenterresource() {
+    buffer();
+    mediaStack[mediaStack.length - 1].destination = "";
+  }
+  function onenterresourcedestinationstring() {
+    buffer();
+    setData("ignoreEncode", true);
+  }
+  function onexitresourcedestinationstring() {
+    mediaStack[mediaStack.length - 1].destination = resume();
+    setData("ignoreEncode");
+  }
+  function onexitresourcetitlestring() {
+    mediaStack[mediaStack.length - 1].title = resume();
+  }
+  function onexitmedia() {
+    let index3 = mediaStack.length - 1;
+    const media = mediaStack[index3];
+    const id = media.referenceId || media.labelId;
+    ok(id !== undefined, "media should have `referenceId` or `labelId`");
+    ok(media.label !== undefined, "media should have `label`");
+    const context2 = media.destination === undefined ? definitions[normalizeIdentifier(id)] : media;
+    tags = true;
+    while (index3--) {
+      if (mediaStack[index3].image) {
+        tags = undefined;
+        break;
+      }
+    }
+    if (media.image) {
+      tag('<img src="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolSource) + '" alt="');
+      raw(media.label);
+      tag('"');
+    } else {
+      tag('<a href="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolHref) + '"');
+    }
+    tag(context2.title ? ' title="' + context2.title + '"' : "");
+    if (media.image) {
+      tag(" />");
+    } else {
+      tag(">");
+      raw(media.label);
+      tag("</a>");
+    }
+    mediaStack.pop();
+  }
+  function onenterdefinition() {
+    buffer();
+    mediaStack.push({});
+  }
+  function onexitdefinitionlabelstring(token) {
+    resume();
+    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
+  }
+  function onenterdefinitiondestinationstring() {
+    buffer();
+    setData("ignoreEncode", true);
+  }
+  function onexitdefinitiondestinationstring() {
+    mediaStack[mediaStack.length - 1].destination = resume();
+    setData("ignoreEncode");
+  }
+  function onexitdefinitiontitlestring() {
+    mediaStack[mediaStack.length - 1].title = resume();
+  }
+  function onexitdefinition() {
+    const media = mediaStack[mediaStack.length - 1];
+    ok(media.labelId !== undefined, "media should have `labelId`");
+    const id = normalizeIdentifier(media.labelId);
+    resume();
+    if (!hasOwnProperty2.call(definitions, id)) {
+      definitions[id] = mediaStack[mediaStack.length - 1];
+    }
+    mediaStack.pop();
+  }
+  function onentercontent() {
+    setData("slurpAllLineEndings", true);
+  }
+  function onexitatxheadingsequence(token) {
+    if (getData("headingRank"))
+      return;
+    setData("headingRank", this.sliceSerialize(token).length);
+    lineEndingIfNeeded();
+    tag("<h" + getData("headingRank") + ">");
+  }
+  function onentersetextheading() {
+    buffer();
+    setData("slurpAllLineEndings");
+  }
+  function onexitsetextheadingtext() {
+    setData("slurpAllLineEndings", true);
+  }
+  function onexitatxheading() {
+    tag("</h" + getData("headingRank") + ">");
+    setData("headingRank");
+  }
+  function onexitsetextheadinglinesequence(token) {
+    setData("headingRank", this.sliceSerialize(token).charCodeAt(0) === codes.equalsTo ? 1 : 2);
+  }
+  function onexitsetextheading() {
+    const value = resume();
+    lineEndingIfNeeded();
+    tag("<h" + getData("headingRank") + ">");
+    raw(value);
+    tag("</h" + getData("headingRank") + ">");
+    setData("slurpAllLineEndings");
+    setData("headingRank");
+  }
+  function onexitdata(token) {
+    raw(encode2(this.sliceSerialize(token)));
+  }
+  function onexitlineending(token) {
+    if (getData("slurpAllLineEndings")) {
+      return;
+    }
+    if (getData("slurpOneLineEnding")) {
+      setData("slurpOneLineEnding");
+      return;
+    }
+    if (getData("inCodeText")) {
+      raw(" ");
+      return;
+    }
+    raw(encode2(this.sliceSerialize(token)));
+  }
+  function onexitcodeflowvalue(token) {
+    raw(encode2(this.sliceSerialize(token)));
+    setData("flowCodeSeenData", true);
+  }
+  function onexithardbreak() {
+    tag("<br />");
+  }
+  function onenterhtmlflow() {
+    lineEndingIfNeeded();
+    onenterhtml();
+  }
+  function onexithtml() {
+    setData("ignoreEncode");
+  }
+  function onenterhtml() {
+    if (settings.allowDangerousHtml) {
+      setData("ignoreEncode", true);
+    }
+  }
+  function onenteremphasis() {
+    tag("<em>");
+  }
+  function onenterstrong() {
+    tag("<strong>");
+  }
+  function onentercodetext() {
+    setData("inCodeText", true);
+    tag("<code>");
+  }
+  function onexitcodetext() {
+    setData("inCodeText");
+    tag("</code>");
+  }
+  function onexitemphasis() {
+    tag("</em>");
+  }
+  function onexitstrong() {
+    tag("</strong>");
+  }
+  function onexitthematicbreak() {
+    lineEndingIfNeeded();
+    tag("<hr />");
+  }
+  function onexitcharacterreferencemarker(token) {
+    setData("characterReferenceType", token.type);
+  }
+  function onexitcharacterreferencevalue(token) {
+    const value = this.sliceSerialize(token);
+    const decoded = getData("characterReferenceType") ? decodeNumericCharacterReference(value, getData("characterReferenceType") === types2.characterReferenceMarkerNumeric ? constants.numericBaseDecimal : constants.numericBaseHexadecimal) : decodeNamedCharacterReference(value);
+    raw(encode2(decoded));
+    setData("characterReferenceType");
+  }
+  function onexitautolinkprotocol(token) {
+    const uri = this.sliceSerialize(token);
+    tag('<a href="' + sanitizeUri(uri, settings.allowDangerousProtocol ? undefined : protocolHref) + '">');
+    raw(encode2(uri));
+    tag("</a>");
+  }
+  function onexitautolinkemail(token) {
+    const uri = this.sliceSerialize(token);
+    tag('<a href="' + sanitizeUri("mailto:" + uri) + '">');
+    raw(encode2(uri));
+    tag("</a>");
+  }
+}
+
+// node_modules/micromark-factory-space/dev/index.js
+function factorySpace(effects, ok2, type, max2) {
+  const limit = max2 ? max2 - 1 : Number.POSITIVE_INFINITY;
+  let size4 = 0;
+  return start;
+  function start(code2) {
+    if (markdownSpace(code2)) {
+      effects.enter(type);
+      return prefix2(code2);
+    }
+    return ok2(code2);
+  }
+  function prefix2(code2) {
+    if (markdownSpace(code2) && size4++ < limit) {
+      effects.consume(code2);
+      return prefix2;
+    }
+    effects.exit(type);
+    return ok2(code2);
+  }
+}
+
+// node_modules/micromark/dev/lib/initialize/content.js
+var content = { tokenize: initializeContent };
+function initializeContent(effects) {
+  const contentStart = effects.attempt(this.parser.constructs.contentInitial, afterContentStartConstruct, paragraphInitial);
+  let previous;
+  return contentStart;
+  function afterContentStartConstruct(code2) {
+    ok(code2 === codes.eof || markdownLineEnding(code2), "expected eol or eof");
+    if (code2 === codes.eof) {
+      effects.consume(code2);
+      return;
+    }
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return factorySpace(effects, contentStart, types2.linePrefix);
+  }
+  function paragraphInitial(code2) {
+    ok(code2 !== codes.eof && !markdownLineEnding(code2), "expected anything other than a line ending or EOF");
+    effects.enter(types2.paragraph);
+    return lineStart(code2);
+  }
+  function lineStart(code2) {
+    const token = effects.enter(types2.chunkText, {
+      contentType: constants.contentTypeText,
+      previous
+    });
+    if (previous) {
+      previous.next = token;
+    }
+    previous = token;
+    return data(code2);
+  }
+  function data(code2) {
+    if (code2 === codes.eof) {
+      effects.exit(types2.chunkText);
+      effects.exit(types2.paragraph);
+      effects.consume(code2);
+      return;
+    }
+    if (markdownLineEnding(code2)) {
+      effects.consume(code2);
+      effects.exit(types2.chunkText);
+      return lineStart;
+    }
+    effects.consume(code2);
+    return data;
+  }
+}
+
+// node_modules/micromark/dev/lib/initialize/document.js
+var document2 = { tokenize: initializeDocument };
+var containerConstruct = { tokenize: tokenizeContainer };
+function initializeDocument(effects) {
+  const self = this;
+  const stack = [];
+  let continued = 0;
+  let childFlow;
+  let childToken;
+  let lineStartOffset;
+  return start;
+  function start(code2) {
+    if (continued < stack.length) {
+      const item = stack[continued];
+      self.containerState = item[1];
+      ok(item[0].continuation, "expected `continuation` to be defined on container construct");
+      return effects.attempt(item[0].continuation, documentContinue, checkNewContainers)(code2);
+    }
+    return checkNewContainers(code2);
+  }
+  function documentContinue(code2) {
+    ok(self.containerState, "expected `containerState` to be defined after continuation");
+    continued++;
+    if (self.containerState._closeFlow) {
+      self.containerState._closeFlow = undefined;
+      if (childFlow) {
+        closeFlow();
+      }
+      const indexBeforeExits = self.events.length;
+      let indexBeforeFlow = indexBeforeExits;
+      let point;
+      while (indexBeforeFlow--) {
+        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === types2.chunkFlow) {
+          point = self.events[indexBeforeFlow][1].end;
+          break;
+        }
+      }
+      ok(point, "could not find previous flow chunk");
+      exitContainers(continued);
+      let index3 = indexBeforeExits;
+      while (index3 < self.events.length) {
+        self.events[index3][1].end = { ...point };
+        index3++;
+      }
+      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
+      self.events.length = index3;
+      return checkNewContainers(code2);
+    }
+    return start(code2);
+  }
+  function checkNewContainers(code2) {
+    if (continued === stack.length) {
+      if (!childFlow) {
+        return documentContinued(code2);
+      }
+      if (childFlow.currentConstruct && childFlow.currentConstruct.concrete) {
+        return flowStart(code2);
+      }
+      self.interrupt = Boolean(childFlow.currentConstruct && !childFlow._gfmTableDynamicInterruptHack);
+    }
+    self.containerState = {};
+    return effects.check(containerConstruct, thereIsANewContainer, thereIsNoNewContainer)(code2);
+  }
+  function thereIsANewContainer(code2) {
+    if (childFlow)
+      closeFlow();
+    exitContainers(continued);
+    return documentContinued(code2);
+  }
+  function thereIsNoNewContainer(code2) {
+    self.parser.lazy[self.now().line] = continued !== stack.length;
+    lineStartOffset = self.now().offset;
+    return flowStart(code2);
+  }
+  function documentContinued(code2) {
+    self.containerState = {};
+    return effects.attempt(containerConstruct, containerContinue, flowStart)(code2);
+  }
+  function containerContinue(code2) {
+    ok(self.currentConstruct, "expected `currentConstruct` to be defined on tokenizer");
+    ok(self.containerState, "expected `containerState` to be defined on tokenizer");
+    continued++;
+    stack.push([self.currentConstruct, self.containerState]);
+    return documentContinued(code2);
+  }
+  function flowStart(code2) {
+    if (code2 === codes.eof) {
+      if (childFlow)
+        closeFlow();
+      exitContainers(0);
+      effects.consume(code2);
+      return;
+    }
+    childFlow = childFlow || self.parser.flow(self.now());
+    effects.enter(types2.chunkFlow, {
+      _tokenizer: childFlow,
+      contentType: constants.contentTypeFlow,
+      previous: childToken
+    });
+    return flowContinue(code2);
+  }
+  function flowContinue(code2) {
+    if (code2 === codes.eof) {
+      writeToChild(effects.exit(types2.chunkFlow), true);
+      exitContainers(0);
+      effects.consume(code2);
+      return;
+    }
+    if (markdownLineEnding(code2)) {
+      effects.consume(code2);
+      writeToChild(effects.exit(types2.chunkFlow));
+      continued = 0;
+      self.interrupt = undefined;
+      return start;
+    }
+    effects.consume(code2);
+    return flowContinue;
+  }
+  function writeToChild(token, endOfFile) {
+    ok(childFlow, "expected `childFlow` to be defined when continuing");
+    const stream = self.sliceStream(token);
+    if (endOfFile)
+      stream.push(null);
+    token.previous = childToken;
+    if (childToken)
+      childToken.next = token;
+    childToken = token;
+    childFlow.defineSkip(token.start);
+    childFlow.write(stream);
+    if (self.parser.lazy[token.start.line]) {
+      let index3 = childFlow.events.length;
+      while (index3--) {
+        if (childFlow.events[index3][1].start.offset < lineStartOffset && (!childFlow.events[index3][1].end || childFlow.events[index3][1].end.offset > lineStartOffset)) {
+          return;
+        }
+      }
+      const indexBeforeExits = self.events.length;
+      let indexBeforeFlow = indexBeforeExits;
+      let seen;
+      let point;
+      while (indexBeforeFlow--) {
+        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === types2.chunkFlow) {
+          if (seen) {
+            point = self.events[indexBeforeFlow][1].end;
+            break;
+          }
+          seen = true;
+        }
+      }
+      ok(point, "could not find previous flow chunk");
+      exitContainers(continued);
+      index3 = indexBeforeExits;
+      while (index3 < self.events.length) {
+        self.events[index3][1].end = { ...point };
+        index3++;
+      }
+      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
+      self.events.length = index3;
+    }
+  }
+  function exitContainers(size4) {
+    let index3 = stack.length;
+    while (index3-- > size4) {
+      const entry = stack[index3];
+      self.containerState = entry[1];
+      ok(entry[0].exit, "expected `exit` to be defined on container construct");
+      entry[0].exit.call(self, effects);
+    }
+    stack.length = size4;
+  }
+  function closeFlow() {
+    ok(self.containerState, "expected `containerState` to be defined when closing flow");
+    ok(childFlow, "expected `childFlow` to be defined when closing it");
+    childFlow.write([codes.eof]);
+    childToken = undefined;
+    childFlow = undefined;
+    self.containerState._closeFlow = undefined;
+  }
+}
+function tokenizeContainer(effects, ok2, nok) {
+  ok(this.parser.constructs.disable.null, "expected `disable.null` to be populated");
+  return factorySpace(effects, effects.attempt(this.parser.constructs.document, ok2, nok), types2.linePrefix, this.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize);
+}
+
+// node_modules/micromark-util-classify-character/dev/index.js
+function classifyCharacter(code2) {
+  if (code2 === codes.eof || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
+    return constants.characterGroupWhitespace;
+  }
+  if (unicodePunctuation(code2)) {
+    return constants.characterGroupPunctuation;
+  }
+}
+
+// node_modules/micromark-util-resolve-all/index.js
+function resolveAll(constructs2, events, context) {
+  const called = [];
+  let index3 = -1;
+  while (++index3 < constructs2.length) {
+    const resolve = constructs2[index3].resolveAll;
+    if (resolve && !called.includes(resolve)) {
+      events = resolve(events, context);
+      called.push(resolve);
+    }
+  }
+  return events;
+}
+
+// node_modules/micromark-core-commonmark/dev/lib/attention.js
+var attention = {
+  name: "attention",
+  resolveAll: resolveAllAttention,
+  tokenize: tokenizeAttention
+};
+function resolveAllAttention(events, context) {
+  let index3 = -1;
+  let open;
+  let group;
+  let text;
+  let openingSequence;
+  let closingSequence;
+  let use;
+  let nextEvents;
+  let offset4;
+  while (++index3 < events.length) {
+    if (events[index3][0] === "enter" && events[index3][1].type === "attentionSequence" && events[index3][1]._close) {
+      open = index3;
+      while (open--) {
+        if (events[open][0] === "exit" && events[open][1].type === "attentionSequence" && events[open][1]._open && context.sliceSerialize(events[open][1]).charCodeAt(0) === context.sliceSerialize(events[index3][1]).charCodeAt(0)) {
+          if ((events[open][1]._close || events[index3][1]._open) && (events[index3][1].end.offset - events[index3][1].start.offset) % 3 && !((events[open][1].end.offset - events[open][1].start.offset + events[index3][1].end.offset - events[index3][1].start.offset) % 3)) {
+            continue;
+          }
+          use = events[open][1].end.offset - events[open][1].start.offset > 1 && events[index3][1].end.offset - events[index3][1].start.offset > 1 ? 2 : 1;
+          const start = { ...events[open][1].end };
+          const end = { ...events[index3][1].start };
+          movePoint(start, -use);
+          movePoint(end, use);
+          openingSequence = {
+            type: use > 1 ? types2.strongSequence : types2.emphasisSequence,
+            start,
+            end: { ...events[open][1].end }
+          };
+          closingSequence = {
+            type: use > 1 ? types2.strongSequence : types2.emphasisSequence,
+            start: { ...events[index3][1].start },
+            end
+          };
+          text = {
+            type: use > 1 ? types2.strongText : types2.emphasisText,
+            start: { ...events[open][1].end },
+            end: { ...events[index3][1].start }
+          };
+          group = {
+            type: use > 1 ? types2.strong : types2.emphasis,
+            start: { ...openingSequence.start },
+            end: { ...closingSequence.end }
+          };
+          events[open][1].end = { ...openingSequence.start };
+          events[index3][1].start = { ...closingSequence.end };
+          nextEvents = [];
+          if (events[open][1].end.offset - events[open][1].start.offset) {
+            nextEvents = push(nextEvents, [
+              ["enter", events[open][1], context],
+              ["exit", events[open][1], context]
+            ]);
+          }
+          nextEvents = push(nextEvents, [
+            ["enter", group, context],
+            ["enter", openingSequence, context],
+            ["exit", openingSequence, context],
+            ["enter", text, context]
+          ]);
+          ok(context.parser.constructs.insideSpan.null, "expected `insideSpan` to be populated");
+          nextEvents = push(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index3), context));
+          nextEvents = push(nextEvents, [
+            ["exit", text, context],
+            ["enter", closingSequence, context],
+            ["exit", closingSequence, context],
+            ["exit", group, context]
+          ]);
+          if (events[index3][1].end.offset - events[index3][1].start.offset) {
+            offset4 = 2;
+            nextEvents = push(nextEvents, [
+              ["enter", events[index3][1], context],
+              ["exit", events[index3][1], context]
+            ]);
+          } else {
+            offset4 = 0;
+          }
+          splice(events, open - 1, index3 - open + 3, nextEvents);
+          index3 = open + nextEvents.length - offset4 - 2;
+          break;
+        }
+      }
+    }
+  }
+  index3 = -1;
+  while (++index3 < events.length) {
+    if (events[index3][1].type === "attentionSequence") {
+      events[index3][1].type = "data";
+    }
+  }
+  return events;
+}
+function tokenizeAttention(effects, ok2) {
+  const attentionMarkers = this.parser.constructs.attentionMarkers.null;
+  const previous = this.previous;
+  const before = classifyCharacter(previous);
+  let marker;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.asterisk || code2 === codes.underscore, "expected asterisk or underscore");
+    marker = code2;
+    effects.enter("attentionSequence");
+    return inside(code2);
+  }
+  function inside(code2) {
+    if (code2 === marker) {
+      effects.consume(code2);
+      return inside;
+    }
+    const token = effects.exit("attentionSequence");
+    const after = classifyCharacter(code2);
+    ok(attentionMarkers, "expected `attentionMarkers` to be populated");
+    const open = !after || after === constants.characterGroupPunctuation && before || attentionMarkers.includes(code2);
+    const close = !before || before === constants.characterGroupPunctuation && after || attentionMarkers.includes(previous);
+    token._open = Boolean(marker === codes.asterisk ? open : open && (before || !close));
+    token._close = Boolean(marker === codes.asterisk ? close : close && (after || !open));
+    return ok2(code2);
+  }
+}
+function movePoint(point, offset4) {
+  point.column += offset4;
+  point.offset += offset4;
+  point._bufferIndex += offset4;
+}
+// node_modules/micromark-core-commonmark/dev/lib/autolink.js
+var autolink = { name: "autolink", tokenize: tokenizeAutolink };
+function tokenizeAutolink(effects, ok2, nok) {
+  let size4 = 0;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.lessThan, "expected `<`");
+    effects.enter(types2.autolink);
+    effects.enter(types2.autolinkMarker);
+    effects.consume(code2);
+    effects.exit(types2.autolinkMarker);
+    effects.enter(types2.autolinkProtocol);
+    return open;
+  }
+  function open(code2) {
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      return schemeOrEmailAtext;
+    }
+    if (code2 === codes.atSign) {
+      return nok(code2);
+    }
+    return emailAtext(code2);
+  }
+  function schemeOrEmailAtext(code2) {
+    if (code2 === codes.plusSign || code2 === codes.dash || code2 === codes.dot || asciiAlphanumeric(code2)) {
+      size4 = 1;
+      return schemeInsideOrEmailAtext(code2);
+    }
+    return emailAtext(code2);
+  }
+  function schemeInsideOrEmailAtext(code2) {
+    if (code2 === codes.colon) {
+      effects.consume(code2);
+      size4 = 0;
+      return urlInside;
+    }
+    if ((code2 === codes.plusSign || code2 === codes.dash || code2 === codes.dot || asciiAlphanumeric(code2)) && size4++ < constants.autolinkSchemeSizeMax) {
+      effects.consume(code2);
+      return schemeInsideOrEmailAtext;
+    }
+    size4 = 0;
+    return emailAtext(code2);
+  }
+  function urlInside(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.exit(types2.autolinkProtocol);
+      effects.enter(types2.autolinkMarker);
+      effects.consume(code2);
+      effects.exit(types2.autolinkMarker);
+      effects.exit(types2.autolink);
+      return ok2;
+    }
+    if (code2 === codes.eof || code2 === codes.space || code2 === codes.lessThan || asciiControl(code2)) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return urlInside;
+  }
+  function emailAtext(code2) {
+    if (code2 === codes.atSign) {
+      effects.consume(code2);
+      return emailAtSignOrDot;
+    }
+    if (asciiAtext(code2)) {
+      effects.consume(code2);
+      return emailAtext;
+    }
+    return nok(code2);
+  }
+  function emailAtSignOrDot(code2) {
+    return asciiAlphanumeric(code2) ? emailLabel(code2) : nok(code2);
+  }
+  function emailLabel(code2) {
+    if (code2 === codes.dot) {
+      effects.consume(code2);
+      size4 = 0;
+      return emailAtSignOrDot;
+    }
+    if (code2 === codes.greaterThan) {
+      effects.exit(types2.autolinkProtocol).type = types2.autolinkEmail;
+      effects.enter(types2.autolinkMarker);
+      effects.consume(code2);
+      effects.exit(types2.autolinkMarker);
+      effects.exit(types2.autolink);
+      return ok2;
+    }
+    return emailValue(code2);
+  }
+  function emailValue(code2) {
+    if ((code2 === codes.dash || asciiAlphanumeric(code2)) && size4++ < constants.autolinkDomainSizeMax) {
+      const next = code2 === codes.dash ? emailValue : emailLabel;
+      effects.consume(code2);
+      return next;
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/blank-line.js
+var blankLine = { partial: true, tokenize: tokenizeBlankLine };
+function tokenizeBlankLine(effects, ok2, nok) {
+  return start;
+  function start(code2) {
+    return markdownSpace(code2) ? factorySpace(effects, after, types2.linePrefix)(code2) : after(code2);
+  }
+  function after(code2) {
+    return code2 === codes.eof || markdownLineEnding(code2) ? ok2(code2) : nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/block-quote.js
+var blockQuote = {
+  continuation: { tokenize: tokenizeBlockQuoteContinuation },
+  exit,
+  name: "blockQuote",
+  tokenize: tokenizeBlockQuoteStart
+};
+function tokenizeBlockQuoteStart(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    if (code2 === codes.greaterThan) {
+      const state = self.containerState;
+      ok(state, "expected `containerState` to be defined in container");
+      if (!state.open) {
+        effects.enter(types2.blockQuote, { _container: true });
+        state.open = true;
+      }
+      effects.enter(types2.blockQuotePrefix);
+      effects.enter(types2.blockQuoteMarker);
+      effects.consume(code2);
+      effects.exit(types2.blockQuoteMarker);
+      return after;
+    }
+    return nok(code2);
+  }
+  function after(code2) {
+    if (markdownSpace(code2)) {
+      effects.enter(types2.blockQuotePrefixWhitespace);
+      effects.consume(code2);
+      effects.exit(types2.blockQuotePrefixWhitespace);
+      effects.exit(types2.blockQuotePrefix);
+      return ok2;
+    }
+    effects.exit(types2.blockQuotePrefix);
+    return ok2(code2);
+  }
+}
+function tokenizeBlockQuoteContinuation(effects, ok2, nok) {
+  const self = this;
+  return contStart;
+  function contStart(code2) {
+    if (markdownSpace(code2)) {
+      ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+      return factorySpace(effects, contBefore, types2.linePrefix, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize)(code2);
+    }
+    return contBefore(code2);
+  }
+  function contBefore(code2) {
+    return effects.attempt(blockQuote, ok2, nok)(code2);
+  }
+}
+function exit(effects) {
+  effects.exit(types2.blockQuote);
+}
+// node_modules/micromark-core-commonmark/dev/lib/character-escape.js
+var characterEscape = {
+  name: "characterEscape",
+  tokenize: tokenizeCharacterEscape
+};
+function tokenizeCharacterEscape(effects, ok2, nok) {
+  return start;
+  function start(code2) {
+    ok(code2 === codes.backslash, "expected `\\`");
+    effects.enter(types2.characterEscape);
+    effects.enter(types2.escapeMarker);
+    effects.consume(code2);
+    effects.exit(types2.escapeMarker);
+    return inside;
+  }
+  function inside(code2) {
+    if (asciiPunctuation(code2)) {
+      effects.enter(types2.characterEscapeValue);
+      effects.consume(code2);
+      effects.exit(types2.characterEscapeValue);
+      effects.exit(types2.characterEscape);
+      return ok2;
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/character-reference.js
+var characterReference = {
+  name: "characterReference",
+  tokenize: tokenizeCharacterReference
+};
+function tokenizeCharacterReference(effects, ok2, nok) {
+  const self = this;
+  let size4 = 0;
+  let max2;
+  let test;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.ampersand, "expected `&`");
+    effects.enter(types2.characterReference);
+    effects.enter(types2.characterReferenceMarker);
+    effects.consume(code2);
+    effects.exit(types2.characterReferenceMarker);
+    return open;
+  }
+  function open(code2) {
+    if (code2 === codes.numberSign) {
+      effects.enter(types2.characterReferenceMarkerNumeric);
+      effects.consume(code2);
+      effects.exit(types2.characterReferenceMarkerNumeric);
+      return numeric;
+    }
+    effects.enter(types2.characterReferenceValue);
+    max2 = constants.characterReferenceNamedSizeMax;
+    test = asciiAlphanumeric;
+    return value(code2);
+  }
+  function numeric(code2) {
+    if (code2 === codes.uppercaseX || code2 === codes.lowercaseX) {
+      effects.enter(types2.characterReferenceMarkerHexadecimal);
+      effects.consume(code2);
+      effects.exit(types2.characterReferenceMarkerHexadecimal);
+      effects.enter(types2.characterReferenceValue);
+      max2 = constants.characterReferenceHexadecimalSizeMax;
+      test = asciiHexDigit;
+      return value;
+    }
+    effects.enter(types2.characterReferenceValue);
+    max2 = constants.characterReferenceDecimalSizeMax;
+    test = asciiDigit;
+    return value(code2);
+  }
+  function value(code2) {
+    if (code2 === codes.semicolon && size4) {
+      const token = effects.exit(types2.characterReferenceValue);
+      if (test === asciiAlphanumeric && !decodeNamedCharacterReference(self.sliceSerialize(token))) {
+        return nok(code2);
+      }
+      effects.enter(types2.characterReferenceMarker);
+      effects.consume(code2);
+      effects.exit(types2.characterReferenceMarker);
+      effects.exit(types2.characterReference);
+      return ok2;
+    }
+    if (test(code2) && size4++ < max2) {
+      effects.consume(code2);
+      return value;
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/code-fenced.js
+var nonLazyContinuation = {
+  partial: true,
+  tokenize: tokenizeNonLazyContinuation
+};
+var codeFenced = {
+  concrete: true,
+  name: "codeFenced",
+  tokenize: tokenizeCodeFenced
+};
+function tokenizeCodeFenced(effects, ok2, nok) {
+  const self = this;
+  const closeStart = { partial: true, tokenize: tokenizeCloseStart };
+  let initialPrefix = 0;
+  let sizeOpen = 0;
+  let marker;
+  return start;
+  function start(code2) {
+    return beforeSequenceOpen(code2);
+  }
+  function beforeSequenceOpen(code2) {
+    ok(code2 === codes.graveAccent || code2 === codes.tilde, "expected `` ` `` or `~`");
+    const tail = self.events[self.events.length - 1];
+    initialPrefix = tail && tail[1].type === types2.linePrefix ? tail[2].sliceSerialize(tail[1], true).length : 0;
+    marker = code2;
+    effects.enter(types2.codeFenced);
+    effects.enter(types2.codeFencedFence);
+    effects.enter(types2.codeFencedFenceSequence);
+    return sequenceOpen(code2);
+  }
+  function sequenceOpen(code2) {
+    if (code2 === marker) {
+      sizeOpen++;
+      effects.consume(code2);
+      return sequenceOpen;
+    }
+    if (sizeOpen < constants.codeFencedSequenceSizeMin) {
+      return nok(code2);
+    }
+    effects.exit(types2.codeFencedFenceSequence);
+    return markdownSpace(code2) ? factorySpace(effects, infoBefore, types2.whitespace)(code2) : infoBefore(code2);
+  }
+  function infoBefore(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.codeFencedFence);
+      return self.interrupt ? ok2(code2) : effects.check(nonLazyContinuation, atNonLazyBreak, after)(code2);
+    }
+    effects.enter(types2.codeFencedFenceInfo);
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return info(code2);
+  }
+  function info(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.chunkString);
+      effects.exit(types2.codeFencedFenceInfo);
+      return infoBefore(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.exit(types2.chunkString);
+      effects.exit(types2.codeFencedFenceInfo);
+      return factorySpace(effects, metaBefore, types2.whitespace)(code2);
+    }
+    if (code2 === codes.graveAccent && code2 === marker) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return info;
+  }
+  function metaBefore(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return infoBefore(code2);
+    }
+    effects.enter(types2.codeFencedFenceMeta);
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return meta(code2);
+  }
+  function meta(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.chunkString);
+      effects.exit(types2.codeFencedFenceMeta);
+      return infoBefore(code2);
+    }
+    if (code2 === codes.graveAccent && code2 === marker) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return meta;
+  }
+  function atNonLazyBreak(code2) {
+    ok(markdownLineEnding(code2), "expected eol");
+    return effects.attempt(closeStart, after, contentBefore)(code2);
+  }
+  function contentBefore(code2) {
+    ok(markdownLineEnding(code2), "expected eol");
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return contentStart;
+  }
+  function contentStart(code2) {
+    return initialPrefix > 0 && markdownSpace(code2) ? factorySpace(effects, beforeContentChunk, types2.linePrefix, initialPrefix + 1)(code2) : beforeContentChunk(code2);
+  }
+  function beforeContentChunk(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return effects.check(nonLazyContinuation, atNonLazyBreak, after)(code2);
+    }
+    effects.enter(types2.codeFlowValue);
+    return contentChunk(code2);
+  }
+  function contentChunk(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.codeFlowValue);
+      return beforeContentChunk(code2);
+    }
+    effects.consume(code2);
+    return contentChunk;
+  }
+  function after(code2) {
+    effects.exit(types2.codeFenced);
+    return ok2(code2);
+  }
+  function tokenizeCloseStart(effects2, ok3, nok2) {
+    let size4 = 0;
+    return startBefore;
+    function startBefore(code2) {
+      ok(markdownLineEnding(code2), "expected eol");
+      effects2.enter(types2.lineEnding);
+      effects2.consume(code2);
+      effects2.exit(types2.lineEnding);
+      return start2;
+    }
+    function start2(code2) {
+      ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+      effects2.enter(types2.codeFencedFence);
+      return markdownSpace(code2) ? factorySpace(effects2, beforeSequenceClose, types2.linePrefix, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize)(code2) : beforeSequenceClose(code2);
+    }
+    function beforeSequenceClose(code2) {
+      if (code2 === marker) {
+        effects2.enter(types2.codeFencedFenceSequence);
+        return sequenceClose(code2);
+      }
+      return nok2(code2);
+    }
+    function sequenceClose(code2) {
+      if (code2 === marker) {
+        size4++;
+        effects2.consume(code2);
+        return sequenceClose;
+      }
+      if (size4 >= sizeOpen) {
+        effects2.exit(types2.codeFencedFenceSequence);
+        return markdownSpace(code2) ? factorySpace(effects2, sequenceCloseAfter, types2.whitespace)(code2) : sequenceCloseAfter(code2);
+      }
+      return nok2(code2);
+    }
+    function sequenceCloseAfter(code2) {
+      if (code2 === codes.eof || markdownLineEnding(code2)) {
+        effects2.exit(types2.codeFencedFence);
+        return ok3(code2);
+      }
+      return nok2(code2);
+    }
+  }
+}
+function tokenizeNonLazyContinuation(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    ok(markdownLineEnding(code2), "expected eol");
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return lineStart;
+  }
+  function lineStart(code2) {
+    return self.parser.lazy[self.now().line] ? nok(code2) : ok2(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/code-indented.js
+var codeIndented = {
+  name: "codeIndented",
+  tokenize: tokenizeCodeIndented
+};
+var furtherStart = { partial: true, tokenize: tokenizeFurtherStart };
+function tokenizeCodeIndented(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    ok(markdownSpace(code2));
+    effects.enter(types2.codeIndented);
+    return factorySpace(effects, afterPrefix, types2.linePrefix, constants.tabSize + 1)(code2);
+  }
+  function afterPrefix(code2) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === types2.linePrefix && tail[2].sliceSerialize(tail[1], true).length >= constants.tabSize ? atBreak(code2) : nok(code2);
+  }
+  function atBreak(code2) {
+    if (code2 === codes.eof) {
+      return after(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      return effects.attempt(furtherStart, atBreak, after)(code2);
+    }
+    effects.enter(types2.codeFlowValue);
+    return inside(code2);
+  }
+  function inside(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.codeFlowValue);
+      return atBreak(code2);
+    }
+    effects.consume(code2);
+    return inside;
+  }
+  function after(code2) {
+    effects.exit(types2.codeIndented);
+    return ok2(code2);
+  }
+}
+function tokenizeFurtherStart(effects, ok2, nok) {
+  const self = this;
+  return furtherStart2;
+  function furtherStart2(code2) {
+    if (self.parser.lazy[self.now().line]) {
+      return nok(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      return furtherStart2;
+    }
+    return factorySpace(effects, afterPrefix, types2.linePrefix, constants.tabSize + 1)(code2);
+  }
+  function afterPrefix(code2) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === types2.linePrefix && tail[2].sliceSerialize(tail[1], true).length >= constants.tabSize ? ok2(code2) : markdownLineEnding(code2) ? furtherStart2(code2) : nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/code-text.js
+var codeText = {
+  name: "codeText",
+  previous,
+  resolve: resolveCodeText,
+  tokenize: tokenizeCodeText
+};
+function resolveCodeText(events) {
+  let tailExitIndex = events.length - 4;
+  let headEnterIndex = 3;
+  let index3;
+  let enter;
+  if ((events[headEnterIndex][1].type === types2.lineEnding || events[headEnterIndex][1].type === "space") && (events[tailExitIndex][1].type === types2.lineEnding || events[tailExitIndex][1].type === "space")) {
+    index3 = headEnterIndex;
+    while (++index3 < tailExitIndex) {
+      if (events[index3][1].type === types2.codeTextData) {
+        events[headEnterIndex][1].type = types2.codeTextPadding;
+        events[tailExitIndex][1].type = types2.codeTextPadding;
+        headEnterIndex += 2;
+        tailExitIndex -= 2;
+        break;
+      }
+    }
+  }
+  index3 = headEnterIndex - 1;
+  tailExitIndex++;
+  while (++index3 <= tailExitIndex) {
+    if (enter === undefined) {
+      if (index3 !== tailExitIndex && events[index3][1].type !== types2.lineEnding) {
+        enter = index3;
+      }
+    } else if (index3 === tailExitIndex || events[index3][1].type === types2.lineEnding) {
+      events[enter][1].type = types2.codeTextData;
+      if (index3 !== enter + 2) {
+        events[enter][1].end = events[index3 - 1][1].end;
+        events.splice(enter + 2, index3 - enter - 2);
+        tailExitIndex -= index3 - enter - 2;
+        index3 = enter + 2;
+      }
+      enter = undefined;
+    }
+  }
+  return events;
+}
+function previous(code2) {
+  return code2 !== codes.graveAccent || this.events[this.events.length - 1][1].type === types2.characterEscape;
+}
+function tokenizeCodeText(effects, ok2, nok) {
+  const self = this;
+  let sizeOpen = 0;
+  let size4;
+  let token;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.graveAccent, "expected `` ` ``");
+    ok(previous.call(self, self.previous), "expected correct previous");
+    effects.enter(types2.codeText);
+    effects.enter(types2.codeTextSequence);
+    return sequenceOpen(code2);
+  }
+  function sequenceOpen(code2) {
+    if (code2 === codes.graveAccent) {
+      effects.consume(code2);
+      sizeOpen++;
+      return sequenceOpen;
+    }
+    effects.exit(types2.codeTextSequence);
+    return between(code2);
+  }
+  function between(code2) {
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (code2 === codes.space) {
+      effects.enter("space");
+      effects.consume(code2);
+      effects.exit("space");
+      return between;
+    }
+    if (code2 === codes.graveAccent) {
+      token = effects.enter(types2.codeTextSequence);
+      size4 = 0;
+      return sequenceClose(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      return between;
+    }
+    effects.enter(types2.codeTextData);
+    return data(code2);
+  }
+  function data(code2) {
+    if (code2 === codes.eof || code2 === codes.space || code2 === codes.graveAccent || markdownLineEnding(code2)) {
+      effects.exit(types2.codeTextData);
+      return between(code2);
+    }
+    effects.consume(code2);
+    return data;
+  }
+  function sequenceClose(code2) {
+    if (code2 === codes.graveAccent) {
+      effects.consume(code2);
+      size4++;
+      return sequenceClose;
+    }
+    if (size4 === sizeOpen) {
+      effects.exit(types2.codeTextSequence);
+      effects.exit(types2.codeText);
+      return ok2(code2);
+    }
+    token.type = types2.codeTextData;
+    return data(code2);
+  }
+}
+// node_modules/micromark-util-subtokenize/dev/lib/splice-buffer.js
+class SpliceBuffer {
+  constructor(initial2) {
+    this.left = initial2 ? [...initial2] : [];
+    this.right = [];
+  }
+  get(index3) {
+    if (index3 < 0 || index3 >= this.left.length + this.right.length) {
+      throw new RangeError("Cannot access index `" + index3 + "` in a splice buffer of size `" + (this.left.length + this.right.length) + "`");
+    }
+    if (index3 < this.left.length)
+      return this.left[index3];
+    return this.right[this.right.length - index3 + this.left.length - 1];
+  }
+  get length() {
+    return this.left.length + this.right.length;
+  }
+  shift() {
+    this.setCursor(0);
+    return this.right.pop();
+  }
+  slice(start, end) {
+    const stop = end === null || end === undefined ? Number.POSITIVE_INFINITY : end;
+    if (stop < this.left.length) {
+      return this.left.slice(start, stop);
+    }
+    if (start > this.left.length) {
+      return this.right.slice(this.right.length - stop + this.left.length, this.right.length - start + this.left.length).reverse();
+    }
+    return this.left.slice(start).concat(this.right.slice(this.right.length - stop + this.left.length).reverse());
+  }
+  splice(start, deleteCount, items) {
+    const count = deleteCount || 0;
+    this.setCursor(Math.trunc(start));
+    const removed = this.right.splice(this.right.length - count, Number.POSITIVE_INFINITY);
+    if (items)
+      chunkedPush(this.left, items);
+    return removed.reverse();
+  }
+  pop() {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    return this.left.pop();
+  }
+  push(item) {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    this.left.push(item);
+  }
+  pushMany(items) {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    chunkedPush(this.left, items);
+  }
+  unshift(item) {
+    this.setCursor(0);
+    this.right.push(item);
+  }
+  unshiftMany(items) {
+    this.setCursor(0);
+    chunkedPush(this.right, items.reverse());
+  }
+  setCursor(n) {
+    if (n === this.left.length || n > this.left.length && this.right.length === 0 || n < 0 && this.left.length === 0)
+      return;
+    if (n < this.left.length) {
+      const removed = this.left.splice(n, Number.POSITIVE_INFINITY);
+      chunkedPush(this.right, removed.reverse());
+    } else {
+      const removed = this.right.splice(this.left.length + this.right.length - n, Number.POSITIVE_INFINITY);
+      chunkedPush(this.left, removed.reverse());
+    }
+  }
+}
+function chunkedPush(list, right) {
+  let chunkStart = 0;
+  if (right.length < constants.v8MaxSafeChunkSize) {
+    list.push(...right);
+  } else {
+    while (chunkStart < right.length) {
+      list.push(...right.slice(chunkStart, chunkStart + constants.v8MaxSafeChunkSize));
+      chunkStart += constants.v8MaxSafeChunkSize;
+    }
+  }
+}
+
+// node_modules/micromark-util-subtokenize/dev/index.js
+function subtokenize(eventsArray) {
+  const jumps = {};
+  let index3 = -1;
+  let event;
+  let lineIndex;
+  let otherIndex;
+  let otherEvent;
+  let parameters;
+  let subevents;
+  let more;
+  const events = new SpliceBuffer(eventsArray);
+  while (++index3 < events.length) {
+    while (index3 in jumps) {
+      index3 = jumps[index3];
+    }
+    event = events.get(index3);
+    if (index3 && event[1].type === types2.chunkFlow && events.get(index3 - 1)[1].type === types2.listItemPrefix) {
+      ok(event[1]._tokenizer, "expected `_tokenizer` on subtokens");
+      subevents = event[1]._tokenizer.events;
+      otherIndex = 0;
+      if (otherIndex < subevents.length && subevents[otherIndex][1].type === types2.lineEndingBlank) {
+        otherIndex += 2;
+      }
+      if (otherIndex < subevents.length && subevents[otherIndex][1].type === types2.content) {
+        while (++otherIndex < subevents.length) {
+          if (subevents[otherIndex][1].type === types2.content) {
+            break;
+          }
+          if (subevents[otherIndex][1].type === types2.chunkText) {
+            subevents[otherIndex][1]._isInFirstContentOfListItem = true;
+            otherIndex++;
+          }
+        }
+      }
+    }
+    if (event[0] === "enter") {
+      if (event[1].contentType) {
+        Object.assign(jumps, subcontent(events, index3));
+        index3 = jumps[index3];
+        more = true;
+      }
+    } else if (event[1]._container) {
+      otherIndex = index3;
+      lineIndex = undefined;
+      while (otherIndex--) {
+        otherEvent = events.get(otherIndex);
+        if (otherEvent[1].type === types2.lineEnding || otherEvent[1].type === types2.lineEndingBlank) {
+          if (otherEvent[0] === "enter") {
+            if (lineIndex) {
+              events.get(lineIndex)[1].type = types2.lineEndingBlank;
+            }
+            otherEvent[1].type = types2.lineEnding;
+            lineIndex = otherIndex;
+          }
+        } else if (otherEvent[1].type === types2.linePrefix || otherEvent[1].type === types2.listItemIndent) {} else {
+          break;
+        }
+      }
+      if (lineIndex) {
+        event[1].end = { ...events.get(lineIndex)[1].start };
+        parameters = events.slice(lineIndex, index3);
+        parameters.unshift(event);
+        events.splice(lineIndex, index3 - lineIndex + 1, parameters);
+      }
+    }
+  }
+  splice(eventsArray, 0, Number.POSITIVE_INFINITY, events.slice(0));
+  return !more;
+}
+function subcontent(events, eventIndex) {
+  const token = events.get(eventIndex)[1];
+  const context = events.get(eventIndex)[2];
+  let startPosition = eventIndex - 1;
+  const startPositions = [];
+  ok(token.contentType, "expected `contentType` on subtokens");
+  let tokenizer = token._tokenizer;
+  if (!tokenizer) {
+    tokenizer = context.parser[token.contentType](token.start);
+    if (token._contentTypeTextTrailing) {
+      tokenizer._contentTypeTextTrailing = true;
+    }
+  }
+  const childEvents = tokenizer.events;
+  const jumps = [];
+  const gaps = {};
+  let stream;
+  let previous2;
+  let index3 = -1;
+  let current = token;
+  let adjust = 0;
+  let start = 0;
+  const breaks = [start];
+  while (current) {
+    while (events.get(++startPosition)[1] !== current) {}
+    ok(!previous2 || current.previous === previous2, "expected previous to match");
+    ok(!previous2 || previous2.next === current, "expected next to match");
+    startPositions.push(startPosition);
+    if (!current._tokenizer) {
+      stream = context.sliceStream(current);
+      if (!current.next) {
+        stream.push(codes.eof);
+      }
+      if (previous2) {
+        tokenizer.defineSkip(current.start);
+      }
+      if (current._isInFirstContentOfListItem) {
+        tokenizer._gfmTasklistFirstContentOfListItem = true;
+      }
+      tokenizer.write(stream);
+      if (current._isInFirstContentOfListItem) {
+        tokenizer._gfmTasklistFirstContentOfListItem = undefined;
+      }
+    }
+    previous2 = current;
+    current = current.next;
+  }
+  current = token;
+  while (++index3 < childEvents.length) {
+    if (childEvents[index3][0] === "exit" && childEvents[index3 - 1][0] === "enter" && childEvents[index3][1].type === childEvents[index3 - 1][1].type && childEvents[index3][1].start.line !== childEvents[index3][1].end.line) {
+      ok(current, "expected a current token");
+      start = index3 + 1;
+      breaks.push(start);
+      current._tokenizer = undefined;
+      current.previous = undefined;
+      current = current.next;
+    }
+  }
+  tokenizer.events = [];
+  if (current) {
+    current._tokenizer = undefined;
+    current.previous = undefined;
+    ok(!current.next, "expected no next token");
+  } else {
+    breaks.pop();
+  }
+  index3 = breaks.length;
+  while (index3--) {
+    const slice = childEvents.slice(breaks[index3], breaks[index3 + 1]);
+    const start2 = startPositions.pop();
+    ok(start2 !== undefined, "expected a start position when splicing");
+    jumps.push([start2, start2 + slice.length - 1]);
+    events.splice(start2, 2, slice);
+  }
+  jumps.reverse();
+  index3 = -1;
+  while (++index3 < jumps.length) {
+    gaps[adjust + jumps[index3][0]] = adjust + jumps[index3][1];
+    adjust += jumps[index3][1] - jumps[index3][0] - 1;
+  }
+  return gaps;
+}
+
+// node_modules/micromark-core-commonmark/dev/lib/content.js
+var content2 = { resolve: resolveContent, tokenize: tokenizeContent };
+var continuationConstruct = { partial: true, tokenize: tokenizeContinuation };
+function resolveContent(events) {
+  subtokenize(events);
+  return events;
+}
+function tokenizeContent(effects, ok2) {
+  let previous2;
+  return chunkStart;
+  function chunkStart(code2) {
+    ok(code2 !== codes.eof && !markdownLineEnding(code2), "expected no eof or eol");
+    effects.enter(types2.content);
+    previous2 = effects.enter(types2.chunkContent, {
+      contentType: constants.contentTypeContent
+    });
+    return chunkInside(code2);
+  }
+  function chunkInside(code2) {
+    if (code2 === codes.eof) {
+      return contentEnd(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      return effects.check(continuationConstruct, contentContinue, contentEnd)(code2);
+    }
+    effects.consume(code2);
+    return chunkInside;
+  }
+  function contentEnd(code2) {
+    effects.exit(types2.chunkContent);
+    effects.exit(types2.content);
+    return ok2(code2);
+  }
+  function contentContinue(code2) {
+    ok(markdownLineEnding(code2), "expected eol");
+    effects.consume(code2);
+    effects.exit(types2.chunkContent);
+    ok(previous2, "expected previous token");
+    previous2.next = effects.enter(types2.chunkContent, {
+      contentType: constants.contentTypeContent,
+      previous: previous2
+    });
+    previous2 = previous2.next;
+    return chunkInside;
+  }
+}
+function tokenizeContinuation(effects, ok2, nok) {
+  const self = this;
+  return startLookahead;
+  function startLookahead(code2) {
+    ok(markdownLineEnding(code2), "expected a line ending");
+    effects.exit(types2.chunkContent);
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return factorySpace(effects, prefixed, types2.linePrefix);
+  }
+  function prefixed(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return nok(code2);
+    }
+    ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+    const tail = self.events[self.events.length - 1];
+    if (!self.parser.constructs.disable.null.includes("codeIndented") && tail && tail[1].type === types2.linePrefix && tail[2].sliceSerialize(tail[1], true).length >= constants.tabSize) {
+      return ok2(code2);
+    }
+    return effects.interrupt(self.parser.constructs.flow, nok, ok2)(code2);
+  }
+}
+// node_modules/micromark-factory-destination/dev/index.js
+function factoryDestination(effects, ok2, nok, type, literalType, literalMarkerType, rawType, stringType, max2) {
+  const limit = max2 || Number.POSITIVE_INFINITY;
+  let balance = 0;
+  return start;
+  function start(code2) {
+    if (code2 === codes.lessThan) {
+      effects.enter(type);
+      effects.enter(literalType);
+      effects.enter(literalMarkerType);
+      effects.consume(code2);
+      effects.exit(literalMarkerType);
+      return enclosedBefore;
+    }
+    if (code2 === codes.eof || code2 === codes.space || code2 === codes.rightParenthesis || asciiControl(code2)) {
+      return nok(code2);
+    }
+    effects.enter(type);
+    effects.enter(rawType);
+    effects.enter(stringType);
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return raw(code2);
+  }
+  function enclosedBefore(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.enter(literalMarkerType);
+      effects.consume(code2);
+      effects.exit(literalMarkerType);
+      effects.exit(literalType);
+      effects.exit(type);
+      return ok2;
+    }
+    effects.enter(stringType);
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return enclosed(code2);
+  }
+  function enclosed(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.exit(types2.chunkString);
+      effects.exit(stringType);
+      return enclosedBefore(code2);
+    }
+    if (code2 === codes.eof || code2 === codes.lessThan || markdownLineEnding(code2)) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return code2 === codes.backslash ? enclosedEscape : enclosed;
+  }
+  function enclosedEscape(code2) {
+    if (code2 === codes.lessThan || code2 === codes.greaterThan || code2 === codes.backslash) {
+      effects.consume(code2);
+      return enclosed;
+    }
+    return enclosed(code2);
+  }
+  function raw(code2) {
+    if (!balance && (code2 === codes.eof || code2 === codes.rightParenthesis || markdownLineEndingOrSpace(code2))) {
+      effects.exit(types2.chunkString);
+      effects.exit(stringType);
+      effects.exit(rawType);
+      effects.exit(type);
+      return ok2(code2);
+    }
+    if (balance < limit && code2 === codes.leftParenthesis) {
+      effects.consume(code2);
+      balance++;
+      return raw;
+    }
+    if (code2 === codes.rightParenthesis) {
+      effects.consume(code2);
+      balance--;
+      return raw;
+    }
+    if (code2 === codes.eof || code2 === codes.space || code2 === codes.leftParenthesis || asciiControl(code2)) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return code2 === codes.backslash ? rawEscape : raw;
+  }
+  function rawEscape(code2) {
+    if (code2 === codes.leftParenthesis || code2 === codes.rightParenthesis || code2 === codes.backslash) {
+      effects.consume(code2);
+      return raw;
+    }
+    return raw(code2);
+  }
+}
+
+// node_modules/micromark-factory-label/dev/index.js
+function factoryLabel(effects, ok2, nok, type, markerType, stringType) {
+  const self = this;
+  let size4 = 0;
+  let seen;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.leftSquareBracket, "expected `[`");
+    effects.enter(type);
+    effects.enter(markerType);
+    effects.consume(code2);
+    effects.exit(markerType);
+    effects.enter(stringType);
+    return atBreak;
+  }
+  function atBreak(code2) {
+    if (size4 > constants.linkReferenceSizeMax || code2 === codes.eof || code2 === codes.leftSquareBracket || code2 === codes.rightSquareBracket && !seen || code2 === codes.caret && !size4 && "_hiddenFootnoteSupport" in self.parser.constructs) {
+      return nok(code2);
+    }
+    if (code2 === codes.rightSquareBracket) {
+      effects.exit(stringType);
+      effects.enter(markerType);
+      effects.consume(code2);
+      effects.exit(markerType);
+      effects.exit(type);
+      return ok2;
+    }
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      return atBreak;
+    }
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return labelInside(code2);
+  }
+  function labelInside(code2) {
+    if (code2 === codes.eof || code2 === codes.leftSquareBracket || code2 === codes.rightSquareBracket || markdownLineEnding(code2) || size4++ > constants.linkReferenceSizeMax) {
+      effects.exit(types2.chunkString);
+      return atBreak(code2);
+    }
+    effects.consume(code2);
+    if (!seen)
+      seen = !markdownSpace(code2);
+    return code2 === codes.backslash ? labelEscape : labelInside;
+  }
+  function labelEscape(code2) {
+    if (code2 === codes.leftSquareBracket || code2 === codes.backslash || code2 === codes.rightSquareBracket) {
+      effects.consume(code2);
+      size4++;
+      return labelInside;
+    }
+    return labelInside(code2);
+  }
+}
+
+// node_modules/micromark-factory-title/dev/index.js
+function factoryTitle(effects, ok2, nok, type, markerType, stringType) {
+  let marker;
+  return start;
+  function start(code2) {
+    if (code2 === codes.quotationMark || code2 === codes.apostrophe || code2 === codes.leftParenthesis) {
+      effects.enter(type);
+      effects.enter(markerType);
+      effects.consume(code2);
+      effects.exit(markerType);
+      marker = code2 === codes.leftParenthesis ? codes.rightParenthesis : code2;
+      return begin;
+    }
+    return nok(code2);
+  }
+  function begin(code2) {
+    if (code2 === marker) {
+      effects.enter(markerType);
+      effects.consume(code2);
+      effects.exit(markerType);
+      effects.exit(type);
+      return ok2;
+    }
+    effects.enter(stringType);
+    return atBreak(code2);
+  }
+  function atBreak(code2) {
+    if (code2 === marker) {
+      effects.exit(stringType);
+      return begin(marker);
+    }
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      return factorySpace(effects, atBreak, types2.linePrefix);
+    }
+    effects.enter(types2.chunkString, { contentType: constants.contentTypeString });
+    return inside(code2);
+  }
+  function inside(code2) {
+    if (code2 === marker || code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.chunkString);
+      return atBreak(code2);
+    }
+    effects.consume(code2);
+    return code2 === codes.backslash ? escape : inside;
+  }
+  function escape(code2) {
+    if (code2 === marker || code2 === codes.backslash) {
+      effects.consume(code2);
+      return inside;
+    }
+    return inside(code2);
+  }
+}
+
+// node_modules/micromark-factory-whitespace/dev/index.js
+function factoryWhitespace(effects, ok2) {
+  let seen;
+  return start;
+  function start(code2) {
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      seen = true;
+      return start;
+    }
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, start, seen ? types2.linePrefix : types2.lineSuffix)(code2);
+    }
+    return ok2(code2);
+  }
+}
+
+// node_modules/micromark-core-commonmark/dev/lib/definition.js
+var definition = { name: "definition", tokenize: tokenizeDefinition };
+var titleBefore = { partial: true, tokenize: tokenizeTitleBefore };
+function tokenizeDefinition(effects, ok2, nok) {
+  const self = this;
+  let identifier;
+  return start;
+  function start(code2) {
+    effects.enter(types2.definition);
+    return before(code2);
+  }
+  function before(code2) {
+    ok(code2 === codes.leftSquareBracket, "expected `[`");
+    return factoryLabel.call(self, effects, labelAfter, nok, types2.definitionLabel, types2.definitionLabelMarker, types2.definitionLabelString)(code2);
+  }
+  function labelAfter(code2) {
+    identifier = normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1));
+    if (code2 === codes.colon) {
+      effects.enter(types2.definitionMarker);
+      effects.consume(code2);
+      effects.exit(types2.definitionMarker);
+      return markerAfter;
+    }
+    return nok(code2);
+  }
+  function markerAfter(code2) {
+    return markdownLineEndingOrSpace(code2) ? factoryWhitespace(effects, destinationBefore)(code2) : destinationBefore(code2);
+  }
+  function destinationBefore(code2) {
+    return factoryDestination(effects, destinationAfter, nok, types2.definitionDestination, types2.definitionDestinationLiteral, types2.definitionDestinationLiteralMarker, types2.definitionDestinationRaw, types2.definitionDestinationString)(code2);
+  }
+  function destinationAfter(code2) {
+    return effects.attempt(titleBefore, after, after)(code2);
+  }
+  function after(code2) {
+    return markdownSpace(code2) ? factorySpace(effects, afterWhitespace, types2.whitespace)(code2) : afterWhitespace(code2);
+  }
+  function afterWhitespace(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.definition);
+      self.parser.defined.push(identifier);
+      return ok2(code2);
+    }
+    return nok(code2);
+  }
+}
+function tokenizeTitleBefore(effects, ok2, nok) {
+  return titleBefore2;
+  function titleBefore2(code2) {
+    return markdownLineEndingOrSpace(code2) ? factoryWhitespace(effects, beforeMarker)(code2) : nok(code2);
+  }
+  function beforeMarker(code2) {
+    return factoryTitle(effects, titleAfter, nok, types2.definitionTitle, types2.definitionTitleMarker, types2.definitionTitleString)(code2);
+  }
+  function titleAfter(code2) {
+    return markdownSpace(code2) ? factorySpace(effects, titleAfterOptionalWhitespace, types2.whitespace)(code2) : titleAfterOptionalWhitespace(code2);
+  }
+  function titleAfterOptionalWhitespace(code2) {
+    return code2 === codes.eof || markdownLineEnding(code2) ? ok2(code2) : nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/hard-break-escape.js
+var hardBreakEscape = {
+  name: "hardBreakEscape",
+  tokenize: tokenizeHardBreakEscape
+};
+function tokenizeHardBreakEscape(effects, ok2, nok) {
+  return start;
+  function start(code2) {
+    ok(code2 === codes.backslash, "expected `\\`");
+    effects.enter(types2.hardBreakEscape);
+    effects.consume(code2);
+    return after;
+  }
+  function after(code2) {
+    if (markdownLineEnding(code2)) {
+      effects.exit(types2.hardBreakEscape);
+      return ok2(code2);
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/heading-atx.js
+var headingAtx = {
+  name: "headingAtx",
+  resolve: resolveHeadingAtx,
+  tokenize: tokenizeHeadingAtx
+};
+function resolveHeadingAtx(events, context) {
+  let contentEnd = events.length - 2;
+  let contentStart = 3;
+  let content3;
+  let text;
+  if (events[contentStart][1].type === types2.whitespace) {
+    contentStart += 2;
+  }
+  if (contentEnd - 2 > contentStart && events[contentEnd][1].type === types2.whitespace) {
+    contentEnd -= 2;
+  }
+  if (events[contentEnd][1].type === types2.atxHeadingSequence && (contentStart === contentEnd - 1 || contentEnd - 4 > contentStart && events[contentEnd - 2][1].type === types2.whitespace)) {
+    contentEnd -= contentStart + 1 === contentEnd ? 2 : 4;
+  }
+  if (contentEnd > contentStart) {
+    content3 = {
+      type: types2.atxHeadingText,
+      start: events[contentStart][1].start,
+      end: events[contentEnd][1].end
+    };
+    text = {
+      type: types2.chunkText,
+      start: events[contentStart][1].start,
+      end: events[contentEnd][1].end,
+      contentType: constants.contentTypeText
+    };
+    splice(events, contentStart, contentEnd - contentStart + 1, [
+      ["enter", content3, context],
+      ["enter", text, context],
+      ["exit", text, context],
+      ["exit", content3, context]
+    ]);
+  }
+  return events;
+}
+function tokenizeHeadingAtx(effects, ok2, nok) {
+  let size4 = 0;
+  return start;
+  function start(code2) {
+    effects.enter(types2.atxHeading);
+    return before(code2);
+  }
+  function before(code2) {
+    ok(code2 === codes.numberSign, "expected `#`");
+    effects.enter(types2.atxHeadingSequence);
+    return sequenceOpen(code2);
+  }
+  function sequenceOpen(code2) {
+    if (code2 === codes.numberSign && size4++ < constants.atxHeadingOpeningFenceSizeMax) {
+      effects.consume(code2);
+      return sequenceOpen;
+    }
+    if (code2 === codes.eof || markdownLineEndingOrSpace(code2)) {
+      effects.exit(types2.atxHeadingSequence);
+      return atBreak(code2);
+    }
+    return nok(code2);
+  }
+  function atBreak(code2) {
+    if (code2 === codes.numberSign) {
+      effects.enter(types2.atxHeadingSequence);
+      return sequenceFurther(code2);
+    }
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.atxHeading);
+      return ok2(code2);
+    }
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, atBreak, types2.whitespace)(code2);
+    }
+    effects.enter(types2.atxHeadingText);
+    return data(code2);
+  }
+  function sequenceFurther(code2) {
+    if (code2 === codes.numberSign) {
+      effects.consume(code2);
+      return sequenceFurther;
+    }
+    effects.exit(types2.atxHeadingSequence);
+    return atBreak(code2);
+  }
+  function data(code2) {
+    if (code2 === codes.eof || code2 === codes.numberSign || markdownLineEndingOrSpace(code2)) {
+      effects.exit(types2.atxHeadingText);
+      return atBreak(code2);
+    }
+    effects.consume(code2);
+    return data;
+  }
+}
+// node_modules/micromark-util-html-tag-name/index.js
+var htmlBlockNames = [
+  "address",
+  "article",
+  "aside",
+  "base",
+  "basefont",
+  "blockquote",
+  "body",
+  "caption",
+  "center",
+  "col",
+  "colgroup",
+  "dd",
+  "details",
+  "dialog",
+  "dir",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "frame",
+  "frameset",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hr",
+  "html",
+  "iframe",
+  "legend",
+  "li",
+  "link",
+  "main",
+  "menu",
+  "menuitem",
+  "nav",
+  "noframes",
+  "ol",
+  "optgroup",
+  "option",
+  "p",
+  "param",
+  "search",
+  "section",
+  "summary",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "title",
+  "tr",
+  "track",
+  "ul"
+];
+var htmlRawNames = ["pre", "script", "style", "textarea"];
+
+// node_modules/micromark-core-commonmark/dev/lib/html-flow.js
+var htmlFlow = {
+  concrete: true,
+  name: "htmlFlow",
+  resolveTo: resolveToHtmlFlow,
+  tokenize: tokenizeHtmlFlow
+};
+var blankLineBefore = { partial: true, tokenize: tokenizeBlankLineBefore };
+var nonLazyContinuationStart = {
+  partial: true,
+  tokenize: tokenizeNonLazyContinuationStart
+};
+function resolveToHtmlFlow(events) {
+  let index3 = events.length;
+  while (index3--) {
+    if (events[index3][0] === "enter" && events[index3][1].type === types2.htmlFlow) {
+      break;
+    }
+  }
+  if (index3 > 1 && events[index3 - 2][1].type === types2.linePrefix) {
+    events[index3][1].start = events[index3 - 2][1].start;
+    events[index3 + 1][1].start = events[index3 - 2][1].start;
+    events.splice(index3 - 2, 2);
+  }
+  return events;
+}
+function tokenizeHtmlFlow(effects, ok2, nok) {
+  const self = this;
+  let marker;
+  let closingTag;
+  let buffer;
+  let index3;
+  let markerB;
+  return start;
+  function start(code2) {
+    return before(code2);
+  }
+  function before(code2) {
+    ok(code2 === codes.lessThan, "expected `<`");
+    effects.enter(types2.htmlFlow);
+    effects.enter(types2.htmlFlowData);
+    effects.consume(code2);
+    return open;
+  }
+  function open(code2) {
+    if (code2 === codes.exclamationMark) {
+      effects.consume(code2);
+      return declarationOpen;
+    }
+    if (code2 === codes.slash) {
+      effects.consume(code2);
+      closingTag = true;
+      return tagCloseStart;
+    }
+    if (code2 === codes.questionMark) {
+      effects.consume(code2);
+      marker = constants.htmlInstruction;
+      return self.interrupt ? ok2 : continuationDeclarationInside;
+    }
+    if (asciiAlpha(code2)) {
+      ok(code2 !== null);
+      effects.consume(code2);
+      buffer = String.fromCharCode(code2);
+      return tagName;
+    }
+    return nok(code2);
+  }
+  function declarationOpen(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      marker = constants.htmlComment;
+      return commentOpenInside;
+    }
+    if (code2 === codes.leftSquareBracket) {
+      effects.consume(code2);
+      marker = constants.htmlCdata;
+      index3 = 0;
+      return cdataOpenInside;
+    }
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      marker = constants.htmlDeclaration;
+      return self.interrupt ? ok2 : continuationDeclarationInside;
+    }
+    return nok(code2);
+  }
+  function commentOpenInside(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return self.interrupt ? ok2 : continuationDeclarationInside;
+    }
+    return nok(code2);
+  }
+  function cdataOpenInside(code2) {
+    const value = constants.cdataOpeningString;
+    if (code2 === value.charCodeAt(index3++)) {
+      effects.consume(code2);
+      if (index3 === value.length) {
+        return self.interrupt ? ok2 : continuation;
+      }
+      return cdataOpenInside;
+    }
+    return nok(code2);
+  }
+  function tagCloseStart(code2) {
+    if (asciiAlpha(code2)) {
+      ok(code2 !== null);
+      effects.consume(code2);
+      buffer = String.fromCharCode(code2);
+      return tagName;
+    }
+    return nok(code2);
+  }
+  function tagName(code2) {
+    if (code2 === codes.eof || code2 === codes.slash || code2 === codes.greaterThan || markdownLineEndingOrSpace(code2)) {
+      const slash = code2 === codes.slash;
+      const name = buffer.toLowerCase();
+      if (!slash && !closingTag && htmlRawNames.includes(name)) {
+        marker = constants.htmlRaw;
+        return self.interrupt ? ok2(code2) : continuation(code2);
+      }
+      if (htmlBlockNames.includes(buffer.toLowerCase())) {
+        marker = constants.htmlBasic;
+        if (slash) {
+          effects.consume(code2);
+          return basicSelfClosing;
+        }
+        return self.interrupt ? ok2(code2) : continuation(code2);
+      }
+      marker = constants.htmlComplete;
+      return self.interrupt && !self.parser.lazy[self.now().line] ? nok(code2) : closingTag ? completeClosingTagAfter(code2) : completeAttributeNameBefore(code2);
+    }
+    if (code2 === codes.dash || asciiAlphanumeric(code2)) {
+      effects.consume(code2);
+      buffer += String.fromCharCode(code2);
+      return tagName;
+    }
+    return nok(code2);
+  }
+  function basicSelfClosing(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.consume(code2);
+      return self.interrupt ? ok2 : continuation;
+    }
+    return nok(code2);
+  }
+  function completeClosingTagAfter(code2) {
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return completeClosingTagAfter;
+    }
+    return completeEnd(code2);
+  }
+  function completeAttributeNameBefore(code2) {
+    if (code2 === codes.slash) {
+      effects.consume(code2);
+      return completeEnd;
+    }
+    if (code2 === codes.colon || code2 === codes.underscore || asciiAlpha(code2)) {
+      effects.consume(code2);
+      return completeAttributeName;
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return completeAttributeNameBefore;
+    }
+    return completeEnd(code2);
+  }
+  function completeAttributeName(code2) {
+    if (code2 === codes.dash || code2 === codes.dot || code2 === codes.colon || code2 === codes.underscore || asciiAlphanumeric(code2)) {
+      effects.consume(code2);
+      return completeAttributeName;
+    }
+    return completeAttributeNameAfter(code2);
+  }
+  function completeAttributeNameAfter(code2) {
+    if (code2 === codes.equalsTo) {
+      effects.consume(code2);
+      return completeAttributeValueBefore;
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return completeAttributeNameAfter;
+    }
+    return completeAttributeNameBefore(code2);
+  }
+  function completeAttributeValueBefore(code2) {
+    if (code2 === codes.eof || code2 === codes.lessThan || code2 === codes.equalsTo || code2 === codes.greaterThan || code2 === codes.graveAccent) {
+      return nok(code2);
+    }
+    if (code2 === codes.quotationMark || code2 === codes.apostrophe) {
+      effects.consume(code2);
+      markerB = code2;
+      return completeAttributeValueQuoted;
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return completeAttributeValueBefore;
+    }
+    return completeAttributeValueUnquoted(code2);
+  }
+  function completeAttributeValueQuoted(code2) {
+    if (code2 === markerB) {
+      effects.consume(code2);
+      markerB = null;
+      return completeAttributeValueQuotedAfter;
+    }
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return nok(code2);
+    }
+    effects.consume(code2);
+    return completeAttributeValueQuoted;
+  }
+  function completeAttributeValueUnquoted(code2) {
+    if (code2 === codes.eof || code2 === codes.quotationMark || code2 === codes.apostrophe || code2 === codes.slash || code2 === codes.lessThan || code2 === codes.equalsTo || code2 === codes.greaterThan || code2 === codes.graveAccent || markdownLineEndingOrSpace(code2)) {
+      return completeAttributeNameAfter(code2);
+    }
+    effects.consume(code2);
+    return completeAttributeValueUnquoted;
+  }
+  function completeAttributeValueQuotedAfter(code2) {
+    if (code2 === codes.slash || code2 === codes.greaterThan || markdownSpace(code2)) {
+      return completeAttributeNameBefore(code2);
+    }
+    return nok(code2);
+  }
+  function completeEnd(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.consume(code2);
+      return completeAfter;
+    }
+    return nok(code2);
+  }
+  function completeAfter(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return continuation(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return completeAfter;
+    }
+    return nok(code2);
+  }
+  function continuation(code2) {
+    if (code2 === codes.dash && marker === constants.htmlComment) {
+      effects.consume(code2);
+      return continuationCommentInside;
+    }
+    if (code2 === codes.lessThan && marker === constants.htmlRaw) {
+      effects.consume(code2);
+      return continuationRawTagOpen;
+    }
+    if (code2 === codes.greaterThan && marker === constants.htmlDeclaration) {
+      effects.consume(code2);
+      return continuationClose;
+    }
+    if (code2 === codes.questionMark && marker === constants.htmlInstruction) {
+      effects.consume(code2);
+      return continuationDeclarationInside;
+    }
+    if (code2 === codes.rightSquareBracket && marker === constants.htmlCdata) {
+      effects.consume(code2);
+      return continuationCdataInside;
+    }
+    if (markdownLineEnding(code2) && (marker === constants.htmlBasic || marker === constants.htmlComplete)) {
+      effects.exit(types2.htmlFlowData);
+      return effects.check(blankLineBefore, continuationAfter, continuationStart)(code2);
+    }
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.htmlFlowData);
+      return continuationStart(code2);
+    }
+    effects.consume(code2);
+    return continuation;
+  }
+  function continuationStart(code2) {
+    return effects.check(nonLazyContinuationStart, continuationStartNonLazy, continuationAfter)(code2);
+  }
+  function continuationStartNonLazy(code2) {
+    ok(markdownLineEnding(code2));
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return continuationBefore;
+  }
+  function continuationBefore(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      return continuationStart(code2);
+    }
+    effects.enter(types2.htmlFlowData);
+    return continuation(code2);
+  }
+  function continuationCommentInside(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return continuationDeclarationInside;
+    }
+    return continuation(code2);
+  }
+  function continuationRawTagOpen(code2) {
+    if (code2 === codes.slash) {
+      effects.consume(code2);
+      buffer = "";
+      return continuationRawEndTag;
+    }
+    return continuation(code2);
+  }
+  function continuationRawEndTag(code2) {
+    if (code2 === codes.greaterThan) {
+      const name = buffer.toLowerCase();
+      if (htmlRawNames.includes(name)) {
+        effects.consume(code2);
+        return continuationClose;
+      }
+      return continuation(code2);
+    }
+    if (asciiAlpha(code2) && buffer.length < constants.htmlRawSizeMax) {
+      ok(code2 !== null);
+      effects.consume(code2);
+      buffer += String.fromCharCode(code2);
+      return continuationRawEndTag;
+    }
+    return continuation(code2);
+  }
+  function continuationCdataInside(code2) {
+    if (code2 === codes.rightSquareBracket) {
+      effects.consume(code2);
+      return continuationDeclarationInside;
+    }
+    return continuation(code2);
+  }
+  function continuationDeclarationInside(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.consume(code2);
+      return continuationClose;
+    }
+    if (code2 === codes.dash && marker === constants.htmlComment) {
+      effects.consume(code2);
+      return continuationDeclarationInside;
+    }
+    return continuation(code2);
+  }
+  function continuationClose(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.htmlFlowData);
+      return continuationAfter(code2);
+    }
+    effects.consume(code2);
+    return continuationClose;
+  }
+  function continuationAfter(code2) {
+    effects.exit(types2.htmlFlow);
+    return ok2(code2);
+  }
+}
+function tokenizeNonLazyContinuationStart(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    if (markdownLineEnding(code2)) {
+      effects.enter(types2.lineEnding);
+      effects.consume(code2);
+      effects.exit(types2.lineEnding);
+      return after;
+    }
+    return nok(code2);
+  }
+  function after(code2) {
+    return self.parser.lazy[self.now().line] ? nok(code2) : ok2(code2);
+  }
+}
+function tokenizeBlankLineBefore(effects, ok2, nok) {
+  return start;
+  function start(code2) {
+    ok(markdownLineEnding(code2), "expected a line ending");
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return effects.attempt(blankLine, ok2, nok);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/html-text.js
+var htmlText = { name: "htmlText", tokenize: tokenizeHtmlText };
+function tokenizeHtmlText(effects, ok2, nok) {
+  const self = this;
+  let marker;
+  let index3;
+  let returnState;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.lessThan, "expected `<`");
+    effects.enter(types2.htmlText);
+    effects.enter(types2.htmlTextData);
+    effects.consume(code2);
+    return open;
+  }
+  function open(code2) {
+    if (code2 === codes.exclamationMark) {
+      effects.consume(code2);
+      return declarationOpen;
+    }
+    if (code2 === codes.slash) {
+      effects.consume(code2);
+      return tagCloseStart;
+    }
+    if (code2 === codes.questionMark) {
+      effects.consume(code2);
+      return instruction;
+    }
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      return tagOpen;
+    }
+    return nok(code2);
+  }
+  function declarationOpen(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return commentOpenInside;
+    }
+    if (code2 === codes.leftSquareBracket) {
+      effects.consume(code2);
+      index3 = 0;
+      return cdataOpenInside;
+    }
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      return declaration;
+    }
+    return nok(code2);
+  }
+  function commentOpenInside(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return commentEnd;
+    }
+    return nok(code2);
+  }
+  function comment(code2) {
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return commentClose;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = comment;
+      return lineEndingBefore(code2);
+    }
+    effects.consume(code2);
+    return comment;
+  }
+  function commentClose(code2) {
+    if (code2 === codes.dash) {
+      effects.consume(code2);
+      return commentEnd;
+    }
+    return comment(code2);
+  }
+  function commentEnd(code2) {
+    return code2 === codes.greaterThan ? end(code2) : code2 === codes.dash ? commentClose(code2) : comment(code2);
+  }
+  function cdataOpenInside(code2) {
+    const value = constants.cdataOpeningString;
+    if (code2 === value.charCodeAt(index3++)) {
+      effects.consume(code2);
+      return index3 === value.length ? cdata : cdataOpenInside;
+    }
+    return nok(code2);
+  }
+  function cdata(code2) {
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (code2 === codes.rightSquareBracket) {
+      effects.consume(code2);
+      return cdataClose;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = cdata;
+      return lineEndingBefore(code2);
+    }
+    effects.consume(code2);
+    return cdata;
+  }
+  function cdataClose(code2) {
+    if (code2 === codes.rightSquareBracket) {
+      effects.consume(code2);
+      return cdataEnd;
+    }
+    return cdata(code2);
+  }
+  function cdataEnd(code2) {
+    if (code2 === codes.greaterThan) {
+      return end(code2);
+    }
+    if (code2 === codes.rightSquareBracket) {
+      effects.consume(code2);
+      return cdataEnd;
+    }
+    return cdata(code2);
+  }
+  function declaration(code2) {
+    if (code2 === codes.eof || code2 === codes.greaterThan) {
+      return end(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = declaration;
+      return lineEndingBefore(code2);
+    }
+    effects.consume(code2);
+    return declaration;
+  }
+  function instruction(code2) {
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (code2 === codes.questionMark) {
+      effects.consume(code2);
+      return instructionClose;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = instruction;
+      return lineEndingBefore(code2);
+    }
+    effects.consume(code2);
+    return instruction;
+  }
+  function instructionClose(code2) {
+    return code2 === codes.greaterThan ? end(code2) : instruction(code2);
+  }
+  function tagCloseStart(code2) {
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      return tagClose;
+    }
+    return nok(code2);
+  }
+  function tagClose(code2) {
+    if (code2 === codes.dash || asciiAlphanumeric(code2)) {
+      effects.consume(code2);
+      return tagClose;
+    }
+    return tagCloseBetween(code2);
+  }
+  function tagCloseBetween(code2) {
+    if (markdownLineEnding(code2)) {
+      returnState = tagCloseBetween;
+      return lineEndingBefore(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return tagCloseBetween;
+    }
+    return end(code2);
+  }
+  function tagOpen(code2) {
+    if (code2 === codes.dash || asciiAlphanumeric(code2)) {
+      effects.consume(code2);
+      return tagOpen;
+    }
+    if (code2 === codes.slash || code2 === codes.greaterThan || markdownLineEndingOrSpace(code2)) {
+      return tagOpenBetween(code2);
+    }
+    return nok(code2);
+  }
+  function tagOpenBetween(code2) {
+    if (code2 === codes.slash) {
+      effects.consume(code2);
+      return end;
+    }
+    if (code2 === codes.colon || code2 === codes.underscore || asciiAlpha(code2)) {
+      effects.consume(code2);
+      return tagOpenAttributeName;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = tagOpenBetween;
+      return lineEndingBefore(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return tagOpenBetween;
+    }
+    return end(code2);
+  }
+  function tagOpenAttributeName(code2) {
+    if (code2 === codes.dash || code2 === codes.dot || code2 === codes.colon || code2 === codes.underscore || asciiAlphanumeric(code2)) {
+      effects.consume(code2);
+      return tagOpenAttributeName;
+    }
+    return tagOpenAttributeNameAfter(code2);
+  }
+  function tagOpenAttributeNameAfter(code2) {
+    if (code2 === codes.equalsTo) {
+      effects.consume(code2);
+      return tagOpenAttributeValueBefore;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = tagOpenAttributeNameAfter;
+      return lineEndingBefore(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return tagOpenAttributeNameAfter;
+    }
+    return tagOpenBetween(code2);
+  }
+  function tagOpenAttributeValueBefore(code2) {
+    if (code2 === codes.eof || code2 === codes.lessThan || code2 === codes.equalsTo || code2 === codes.greaterThan || code2 === codes.graveAccent) {
+      return nok(code2);
+    }
+    if (code2 === codes.quotationMark || code2 === codes.apostrophe) {
+      effects.consume(code2);
+      marker = code2;
+      return tagOpenAttributeValueQuoted;
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = tagOpenAttributeValueBefore;
+      return lineEndingBefore(code2);
+    }
+    if (markdownSpace(code2)) {
+      effects.consume(code2);
+      return tagOpenAttributeValueBefore;
+    }
+    effects.consume(code2);
+    return tagOpenAttributeValueUnquoted;
+  }
+  function tagOpenAttributeValueQuoted(code2) {
+    if (code2 === marker) {
+      effects.consume(code2);
+      marker = undefined;
+      return tagOpenAttributeValueQuotedAfter;
+    }
+    if (code2 === codes.eof) {
+      return nok(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      returnState = tagOpenAttributeValueQuoted;
+      return lineEndingBefore(code2);
+    }
+    effects.consume(code2);
+    return tagOpenAttributeValueQuoted;
+  }
+  function tagOpenAttributeValueUnquoted(code2) {
+    if (code2 === codes.eof || code2 === codes.quotationMark || code2 === codes.apostrophe || code2 === codes.lessThan || code2 === codes.equalsTo || code2 === codes.graveAccent) {
+      return nok(code2);
+    }
+    if (code2 === codes.slash || code2 === codes.greaterThan || markdownLineEndingOrSpace(code2)) {
+      return tagOpenBetween(code2);
+    }
+    effects.consume(code2);
+    return tagOpenAttributeValueUnquoted;
+  }
+  function tagOpenAttributeValueQuotedAfter(code2) {
+    if (code2 === codes.slash || code2 === codes.greaterThan || markdownLineEndingOrSpace(code2)) {
+      return tagOpenBetween(code2);
+    }
+    return nok(code2);
+  }
+  function end(code2) {
+    if (code2 === codes.greaterThan) {
+      effects.consume(code2);
+      effects.exit(types2.htmlTextData);
+      effects.exit(types2.htmlText);
+      return ok2;
+    }
+    return nok(code2);
+  }
+  function lineEndingBefore(code2) {
+    ok(returnState, "expected return state");
+    ok(markdownLineEnding(code2), "expected eol");
+    effects.exit(types2.htmlTextData);
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return lineEndingAfter;
+  }
+  function lineEndingAfter(code2) {
+    ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+    return markdownSpace(code2) ? factorySpace(effects, lineEndingAfterPrefix, types2.linePrefix, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize)(code2) : lineEndingAfterPrefix(code2);
+  }
+  function lineEndingAfterPrefix(code2) {
+    effects.enter(types2.htmlTextData);
+    return returnState(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/label-end.js
+var labelEnd = {
+  name: "labelEnd",
+  resolveAll: resolveAllLabelEnd,
+  resolveTo: resolveToLabelEnd,
+  tokenize: tokenizeLabelEnd
+};
+var resourceConstruct = { tokenize: tokenizeResource };
+var referenceFullConstruct = { tokenize: tokenizeReferenceFull };
+var referenceCollapsedConstruct = { tokenize: tokenizeReferenceCollapsed };
+function resolveAllLabelEnd(events) {
+  let index3 = -1;
+  const newEvents = [];
+  while (++index3 < events.length) {
+    const token = events[index3][1];
+    newEvents.push(events[index3]);
+    if (token.type === types2.labelImage || token.type === types2.labelLink || token.type === types2.labelEnd) {
+      const offset4 = token.type === types2.labelImage ? 4 : 2;
+      token.type = types2.data;
+      index3 += offset4;
+    }
+  }
+  if (events.length !== newEvents.length) {
+    splice(events, 0, events.length, newEvents);
+  }
+  return events;
+}
+function resolveToLabelEnd(events, context) {
+  let index3 = events.length;
+  let offset4 = 0;
+  let token;
+  let open;
+  let close;
+  let media;
+  while (index3--) {
+    token = events[index3][1];
+    if (open) {
+      if (token.type === types2.link || token.type === types2.labelLink && token._inactive) {
+        break;
+      }
+      if (events[index3][0] === "enter" && token.type === types2.labelLink) {
+        token._inactive = true;
+      }
+    } else if (close) {
+      if (events[index3][0] === "enter" && (token.type === types2.labelImage || token.type === types2.labelLink) && !token._balanced) {
+        open = index3;
+        if (token.type !== types2.labelLink) {
+          offset4 = 2;
+          break;
+        }
+      }
+    } else if (token.type === types2.labelEnd) {
+      close = index3;
+    }
+  }
+  ok(open !== undefined, "`open` is supposed to be found");
+  ok(close !== undefined, "`close` is supposed to be found");
+  const group = {
+    type: events[open][1].type === types2.labelLink ? types2.link : types2.image,
+    start: { ...events[open][1].start },
+    end: { ...events[events.length - 1][1].end }
+  };
+  const label = {
+    type: types2.label,
+    start: { ...events[open][1].start },
+    end: { ...events[close][1].end }
+  };
+  const text = {
+    type: types2.labelText,
+    start: { ...events[open + offset4 + 2][1].end },
+    end: { ...events[close - 2][1].start }
+  };
+  media = [
+    ["enter", group, context],
+    ["enter", label, context]
+  ];
+  media = push(media, events.slice(open + 1, open + offset4 + 3));
+  media = push(media, [["enter", text, context]]);
+  ok(context.parser.constructs.insideSpan.null, "expected `insideSpan.null` to be populated");
+  media = push(media, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + offset4 + 4, close - 3), context));
+  media = push(media, [
+    ["exit", text, context],
+    events[close - 2],
+    events[close - 1],
+    ["exit", label, context]
+  ]);
+  media = push(media, events.slice(close + 1));
+  media = push(media, [["exit", group, context]]);
+  splice(events, open, events.length, media);
+  return events;
+}
+function tokenizeLabelEnd(effects, ok2, nok) {
+  const self = this;
+  let index3 = self.events.length;
+  let labelStart2;
+  let defined;
+  while (index3--) {
+    if ((self.events[index3][1].type === types2.labelImage || self.events[index3][1].type === types2.labelLink) && !self.events[index3][1]._balanced) {
+      labelStart2 = self.events[index3][1];
+      break;
+    }
+  }
+  return start;
+  function start(code2) {
+    ok(code2 === codes.rightSquareBracket, "expected `]`");
+    if (!labelStart2) {
+      return nok(code2);
+    }
+    if (labelStart2._inactive) {
+      return labelEndNok(code2);
+    }
+    defined = self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize({ start: labelStart2.end, end: self.now() })));
+    effects.enter(types2.labelEnd);
+    effects.enter(types2.labelMarker);
+    effects.consume(code2);
+    effects.exit(types2.labelMarker);
+    effects.exit(types2.labelEnd);
+    return after;
+  }
+  function after(code2) {
+    if (code2 === codes.leftParenthesis) {
+      return effects.attempt(resourceConstruct, labelEndOk, defined ? labelEndOk : labelEndNok)(code2);
+    }
+    if (code2 === codes.leftSquareBracket) {
+      return effects.attempt(referenceFullConstruct, labelEndOk, defined ? referenceNotFull : labelEndNok)(code2);
+    }
+    return defined ? labelEndOk(code2) : labelEndNok(code2);
+  }
+  function referenceNotFull(code2) {
+    return effects.attempt(referenceCollapsedConstruct, labelEndOk, labelEndNok)(code2);
+  }
+  function labelEndOk(code2) {
+    return ok2(code2);
+  }
+  function labelEndNok(code2) {
+    labelStart2._balanced = true;
+    return nok(code2);
+  }
+}
+function tokenizeResource(effects, ok2, nok) {
+  return resourceStart;
+  function resourceStart(code2) {
+    ok(code2 === codes.leftParenthesis, "expected left paren");
+    effects.enter(types2.resource);
+    effects.enter(types2.resourceMarker);
+    effects.consume(code2);
+    effects.exit(types2.resourceMarker);
+    return resourceBefore;
+  }
+  function resourceBefore(code2) {
+    return markdownLineEndingOrSpace(code2) ? factoryWhitespace(effects, resourceOpen)(code2) : resourceOpen(code2);
+  }
+  function resourceOpen(code2) {
+    if (code2 === codes.rightParenthesis) {
+      return resourceEnd(code2);
+    }
+    return factoryDestination(effects, resourceDestinationAfter, resourceDestinationMissing, types2.resourceDestination, types2.resourceDestinationLiteral, types2.resourceDestinationLiteralMarker, types2.resourceDestinationRaw, types2.resourceDestinationString, constants.linkResourceDestinationBalanceMax)(code2);
+  }
+  function resourceDestinationAfter(code2) {
+    return markdownLineEndingOrSpace(code2) ? factoryWhitespace(effects, resourceBetween)(code2) : resourceEnd(code2);
+  }
+  function resourceDestinationMissing(code2) {
+    return nok(code2);
+  }
+  function resourceBetween(code2) {
+    if (code2 === codes.quotationMark || code2 === codes.apostrophe || code2 === codes.leftParenthesis) {
+      return factoryTitle(effects, resourceTitleAfter, nok, types2.resourceTitle, types2.resourceTitleMarker, types2.resourceTitleString)(code2);
+    }
+    return resourceEnd(code2);
+  }
+  function resourceTitleAfter(code2) {
+    return markdownLineEndingOrSpace(code2) ? factoryWhitespace(effects, resourceEnd)(code2) : resourceEnd(code2);
+  }
+  function resourceEnd(code2) {
+    if (code2 === codes.rightParenthesis) {
+      effects.enter(types2.resourceMarker);
+      effects.consume(code2);
+      effects.exit(types2.resourceMarker);
+      effects.exit(types2.resource);
+      return ok2;
+    }
+    return nok(code2);
+  }
+}
+function tokenizeReferenceFull(effects, ok2, nok) {
+  const self = this;
+  return referenceFull;
+  function referenceFull(code2) {
+    ok(code2 === codes.leftSquareBracket, "expected left bracket");
+    return factoryLabel.call(self, effects, referenceFullAfter, referenceFullMissing, types2.reference, types2.referenceMarker, types2.referenceString)(code2);
+  }
+  function referenceFullAfter(code2) {
+    return self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1))) ? ok2(code2) : nok(code2);
+  }
+  function referenceFullMissing(code2) {
+    return nok(code2);
+  }
+}
+function tokenizeReferenceCollapsed(effects, ok2, nok) {
+  return referenceCollapsedStart;
+  function referenceCollapsedStart(code2) {
+    ok(code2 === codes.leftSquareBracket, "expected left bracket");
+    effects.enter(types2.reference);
+    effects.enter(types2.referenceMarker);
+    effects.consume(code2);
+    effects.exit(types2.referenceMarker);
+    return referenceCollapsedOpen;
+  }
+  function referenceCollapsedOpen(code2) {
+    if (code2 === codes.rightSquareBracket) {
+      effects.enter(types2.referenceMarker);
+      effects.consume(code2);
+      effects.exit(types2.referenceMarker);
+      effects.exit(types2.reference);
+      return ok2;
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/label-start-image.js
+var labelStartImage = {
+  name: "labelStartImage",
+  resolveAll: labelEnd.resolveAll,
+  tokenize: tokenizeLabelStartImage
+};
+function tokenizeLabelStartImage(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.exclamationMark, "expected `!`");
+    effects.enter(types2.labelImage);
+    effects.enter(types2.labelImageMarker);
+    effects.consume(code2);
+    effects.exit(types2.labelImageMarker);
+    return open;
+  }
+  function open(code2) {
+    if (code2 === codes.leftSquareBracket) {
+      effects.enter(types2.labelMarker);
+      effects.consume(code2);
+      effects.exit(types2.labelMarker);
+      effects.exit(types2.labelImage);
+      return after;
+    }
+    return nok(code2);
+  }
+  function after(code2) {
+    return code2 === codes.caret && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code2) : ok2(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/label-start-link.js
+var labelStartLink = {
+  name: "labelStartLink",
+  resolveAll: labelEnd.resolveAll,
+  tokenize: tokenizeLabelStartLink
+};
+function tokenizeLabelStartLink(effects, ok2, nok) {
+  const self = this;
+  return start;
+  function start(code2) {
+    ok(code2 === codes.leftSquareBracket, "expected `[`");
+    effects.enter(types2.labelLink);
+    effects.enter(types2.labelMarker);
+    effects.consume(code2);
+    effects.exit(types2.labelMarker);
+    effects.exit(types2.labelLink);
+    return after;
+  }
+  function after(code2) {
+    return code2 === codes.caret && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code2) : ok2(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/line-ending.js
+var lineEnding = { name: "lineEnding", tokenize: tokenizeLineEnding };
+function tokenizeLineEnding(effects, ok2) {
+  return start;
+  function start(code2) {
+    ok(markdownLineEnding(code2), "expected eol");
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    return factorySpace(effects, ok2, types2.linePrefix);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/thematic-break.js
+var thematicBreak = {
+  name: "thematicBreak",
+  tokenize: tokenizeThematicBreak
+};
+function tokenizeThematicBreak(effects, ok2, nok) {
+  let size4 = 0;
+  let marker;
+  return start;
+  function start(code2) {
+    effects.enter(types2.thematicBreak);
+    return before(code2);
+  }
+  function before(code2) {
+    ok(code2 === codes.asterisk || code2 === codes.dash || code2 === codes.underscore, "expected `*`, `-`, or `_`");
+    marker = code2;
+    return atBreak(code2);
+  }
+  function atBreak(code2) {
+    if (code2 === marker) {
+      effects.enter(types2.thematicBreakSequence);
+      return sequence(code2);
+    }
+    if (size4 >= constants.thematicBreakMarkerCountMin && (code2 === codes.eof || markdownLineEnding(code2))) {
+      effects.exit(types2.thematicBreak);
+      return ok2(code2);
+    }
+    return nok(code2);
+  }
+  function sequence(code2) {
+    if (code2 === marker) {
+      effects.consume(code2);
+      size4++;
+      return sequence;
+    }
+    effects.exit(types2.thematicBreakSequence);
+    return markdownSpace(code2) ? factorySpace(effects, atBreak, types2.whitespace)(code2) : atBreak(code2);
+  }
+}
+
+// node_modules/micromark-core-commonmark/dev/lib/list.js
+var list = {
+  continuation: { tokenize: tokenizeListContinuation },
+  exit: tokenizeListEnd,
+  name: "list",
+  tokenize: tokenizeListStart
+};
+var listItemPrefixWhitespaceConstruct = {
+  partial: true,
+  tokenize: tokenizeListItemPrefixWhitespace
+};
+var indentConstruct = { partial: true, tokenize: tokenizeIndent };
+function tokenizeListStart(effects, ok2, nok) {
+  const self = this;
+  const tail = self.events[self.events.length - 1];
+  let initialSize = tail && tail[1].type === types2.linePrefix ? tail[2].sliceSerialize(tail[1], true).length : 0;
+  let size4 = 0;
+  return start;
+  function start(code2) {
+    ok(self.containerState, "expected state");
+    const kind = self.containerState.type || (code2 === codes.asterisk || code2 === codes.plusSign || code2 === codes.dash ? types2.listUnordered : types2.listOrdered);
+    if (kind === types2.listUnordered ? !self.containerState.marker || code2 === self.containerState.marker : asciiDigit(code2)) {
+      if (!self.containerState.type) {
+        self.containerState.type = kind;
+        effects.enter(kind, { _container: true });
+      }
+      if (kind === types2.listUnordered) {
+        effects.enter(types2.listItemPrefix);
+        return code2 === codes.asterisk || code2 === codes.dash ? effects.check(thematicBreak, nok, atMarker)(code2) : atMarker(code2);
+      }
+      if (!self.interrupt || code2 === codes.digit1) {
+        effects.enter(types2.listItemPrefix);
+        effects.enter(types2.listItemValue);
+        return inside(code2);
+      }
+    }
+    return nok(code2);
+  }
+  function inside(code2) {
+    ok(self.containerState, "expected state");
+    if (asciiDigit(code2) && ++size4 < constants.listItemValueSizeMax) {
+      effects.consume(code2);
+      return inside;
+    }
+    if ((!self.interrupt || size4 < 2) && (self.containerState.marker ? code2 === self.containerState.marker : code2 === codes.rightParenthesis || code2 === codes.dot)) {
+      effects.exit(types2.listItemValue);
+      return atMarker(code2);
+    }
+    return nok(code2);
+  }
+  function atMarker(code2) {
+    ok(self.containerState, "expected state");
+    ok(code2 !== codes.eof, "eof (`null`) is not a marker");
+    effects.enter(types2.listItemMarker);
+    effects.consume(code2);
+    effects.exit(types2.listItemMarker);
+    self.containerState.marker = self.containerState.marker || code2;
+    return effects.check(blankLine, self.interrupt ? nok : onBlank, effects.attempt(listItemPrefixWhitespaceConstruct, endOfPrefix, otherPrefix));
+  }
+  function onBlank(code2) {
+    ok(self.containerState, "expected state");
+    self.containerState.initialBlankLine = true;
+    initialSize++;
+    return endOfPrefix(code2);
+  }
+  function otherPrefix(code2) {
+    if (markdownSpace(code2)) {
+      effects.enter(types2.listItemPrefixWhitespace);
+      effects.consume(code2);
+      effects.exit(types2.listItemPrefixWhitespace);
+      return endOfPrefix;
+    }
+    return nok(code2);
+  }
+  function endOfPrefix(code2) {
+    ok(self.containerState, "expected state");
+    self.containerState.size = initialSize + self.sliceSerialize(effects.exit(types2.listItemPrefix), true).length;
+    return ok2(code2);
+  }
+}
+function tokenizeListContinuation(effects, ok2, nok) {
+  const self = this;
+  ok(self.containerState, "expected state");
+  self.containerState._closeFlow = undefined;
+  return effects.check(blankLine, onBlank, notBlank);
+  function onBlank(code2) {
+    ok(self.containerState, "expected state");
+    ok(typeof self.containerState.size === "number", "expected size");
+    self.containerState.furtherBlankLines = self.containerState.furtherBlankLines || self.containerState.initialBlankLine;
+    return factorySpace(effects, ok2, types2.listItemIndent, self.containerState.size + 1)(code2);
+  }
+  function notBlank(code2) {
+    ok(self.containerState, "expected state");
+    if (self.containerState.furtherBlankLines || !markdownSpace(code2)) {
+      self.containerState.furtherBlankLines = undefined;
+      self.containerState.initialBlankLine = undefined;
+      return notInCurrentItem(code2);
+    }
+    self.containerState.furtherBlankLines = undefined;
+    self.containerState.initialBlankLine = undefined;
+    return effects.attempt(indentConstruct, ok2, notInCurrentItem)(code2);
+  }
+  function notInCurrentItem(code2) {
+    ok(self.containerState, "expected state");
+    self.containerState._closeFlow = true;
+    self.interrupt = undefined;
+    ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+    return factorySpace(effects, effects.attempt(list, ok2, nok), types2.linePrefix, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize)(code2);
+  }
+}
+function tokenizeIndent(effects, ok2, nok) {
+  const self = this;
+  ok(self.containerState, "expected state");
+  ok(typeof self.containerState.size === "number", "expected size");
+  return factorySpace(effects, afterPrefix, types2.listItemIndent, self.containerState.size + 1);
+  function afterPrefix(code2) {
+    ok(self.containerState, "expected state");
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === types2.listItemIndent && tail[2].sliceSerialize(tail[1], true).length === self.containerState.size ? ok2(code2) : nok(code2);
+  }
+}
+function tokenizeListEnd(effects) {
+  ok(this.containerState, "expected state");
+  ok(typeof this.containerState.type === "string", "expected type");
+  effects.exit(this.containerState.type);
+}
+function tokenizeListItemPrefixWhitespace(effects, ok2, nok) {
+  const self = this;
+  ok(self.parser.constructs.disable.null, "expected `disable.null` to be populated");
+  return factorySpace(effects, afterPrefix, types2.listItemPrefixWhitespace, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize + 1);
+  function afterPrefix(code2) {
+    const tail = self.events[self.events.length - 1];
+    return !markdownSpace(code2) && tail && tail[1].type === types2.listItemPrefixWhitespace ? ok2(code2) : nok(code2);
+  }
+}
+// node_modules/micromark-core-commonmark/dev/lib/setext-underline.js
+var setextUnderline = {
+  name: "setextUnderline",
+  resolveTo: resolveToSetextUnderline,
+  tokenize: tokenizeSetextUnderline
+};
+function resolveToSetextUnderline(events, context) {
+  let index3 = events.length;
+  let content3;
+  let text;
+  let definition2;
+  while (index3--) {
+    if (events[index3][0] === "enter") {
+      if (events[index3][1].type === types2.content) {
+        content3 = index3;
+        break;
+      }
+      if (events[index3][1].type === types2.paragraph) {
+        text = index3;
+      }
+    } else {
+      if (events[index3][1].type === types2.content) {
+        events.splice(index3, 1);
+      }
+      if (!definition2 && events[index3][1].type === types2.definition) {
+        definition2 = index3;
+      }
+    }
+  }
+  ok(text !== undefined, "expected a `text` index to be found");
+  ok(content3 !== undefined, "expected a `text` index to be found");
+  ok(events[content3][2] === context, "enter context should be same");
+  ok(events[events.length - 1][2] === context, "enter context should be same");
+  const heading = {
+    type: types2.setextHeading,
+    start: { ...events[content3][1].start },
+    end: { ...events[events.length - 1][1].end }
+  };
+  events[text][1].type = types2.setextHeadingText;
+  if (definition2) {
+    events.splice(text, 0, ["enter", heading, context]);
+    events.splice(definition2 + 1, 0, ["exit", events[content3][1], context]);
+    events[content3][1].end = { ...events[definition2][1].end };
+  } else {
+    events[content3][1] = heading;
+  }
+  events.push(["exit", heading, context]);
+  return events;
+}
+function tokenizeSetextUnderline(effects, ok2, nok) {
+  const self = this;
+  let marker;
+  return start;
+  function start(code2) {
+    let index3 = self.events.length;
+    let paragraph;
+    ok(code2 === codes.dash || code2 === codes.equalsTo, "expected `=` or `-`");
+    while (index3--) {
+      if (self.events[index3][1].type !== types2.lineEnding && self.events[index3][1].type !== types2.linePrefix && self.events[index3][1].type !== types2.content) {
+        paragraph = self.events[index3][1].type === types2.paragraph;
+        break;
+      }
+    }
+    if (!self.parser.lazy[self.now().line] && (self.interrupt || paragraph)) {
+      effects.enter(types2.setextHeadingLine);
+      marker = code2;
+      return before(code2);
+    }
+    return nok(code2);
+  }
+  function before(code2) {
+    effects.enter(types2.setextHeadingLineSequence);
+    return inside(code2);
+  }
+  function inside(code2) {
+    if (code2 === marker) {
+      effects.consume(code2);
+      return inside;
+    }
+    effects.exit(types2.setextHeadingLineSequence);
+    return markdownSpace(code2) ? factorySpace(effects, after, types2.lineSuffix)(code2) : after(code2);
+  }
+  function after(code2) {
+    if (code2 === codes.eof || markdownLineEnding(code2)) {
+      effects.exit(types2.setextHeadingLine);
+      return ok2(code2);
+    }
+    return nok(code2);
+  }
+}
+// node_modules/micromark/dev/lib/initialize/flow.js
+var flow = { tokenize: initializeFlow };
+function initializeFlow(effects) {
+  const self = this;
+  const initial2 = effects.attempt(blankLine, atBlankEnding, effects.attempt(this.parser.constructs.flowInitial, afterConstruct, factorySpace(effects, effects.attempt(this.parser.constructs.flow, afterConstruct, effects.attempt(content2, afterConstruct)), types2.linePrefix)));
+  return initial2;
+  function atBlankEnding(code2) {
+    ok(code2 === codes.eof || markdownLineEnding(code2), "expected eol or eof");
+    if (code2 === codes.eof) {
+      effects.consume(code2);
+      return;
+    }
+    effects.enter(types2.lineEndingBlank);
+    effects.consume(code2);
+    effects.exit(types2.lineEndingBlank);
+    self.currentConstruct = undefined;
+    return initial2;
+  }
+  function afterConstruct(code2) {
+    ok(code2 === codes.eof || markdownLineEnding(code2), "expected eol or eof");
+    if (code2 === codes.eof) {
+      effects.consume(code2);
+      return;
+    }
+    effects.enter(types2.lineEnding);
+    effects.consume(code2);
+    effects.exit(types2.lineEnding);
+    self.currentConstruct = undefined;
+    return initial2;
+  }
+}
+
+// node_modules/micromark/dev/lib/initialize/text.js
+var resolver = { resolveAll: createResolver() };
+var string = initializeFactory("string");
+var text = initializeFactory("text");
+function initializeFactory(field) {
+  return {
+    resolveAll: createResolver(field === "text" ? resolveAllLineSuffixes : undefined),
+    tokenize: initializeText
+  };
+  function initializeText(effects) {
+    const self = this;
+    const constructs2 = this.parser.constructs[field];
+    const text2 = effects.attempt(constructs2, start, notText);
+    return start;
+    function start(code2) {
+      return atBreak(code2) ? text2(code2) : notText(code2);
+    }
+    function notText(code2) {
+      if (code2 === codes.eof) {
+        effects.consume(code2);
+        return;
+      }
+      effects.enter(types2.data);
+      effects.consume(code2);
+      return data;
+    }
+    function data(code2) {
+      if (atBreak(code2)) {
+        effects.exit(types2.data);
+        return text2(code2);
+      }
+      effects.consume(code2);
+      return data;
+    }
+    function atBreak(code2) {
+      if (code2 === codes.eof) {
+        return true;
+      }
+      const list2 = constructs2[code2];
+      let index3 = -1;
+      if (list2) {
+        ok(Array.isArray(list2), "expected `disable.null` to be populated");
+        while (++index3 < list2.length) {
+          const item = list2[index3];
+          if (!item.previous || item.previous.call(self, self.previous)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  }
+}
+function createResolver(extraResolver) {
+  return resolveAllText;
+  function resolveAllText(events, context) {
+    let index3 = -1;
+    let enter;
+    while (++index3 <= events.length) {
+      if (enter === undefined) {
+        if (events[index3] && events[index3][1].type === types2.data) {
+          enter = index3;
+          index3++;
+        }
+      } else if (!events[index3] || events[index3][1].type !== types2.data) {
+        if (index3 !== enter + 2) {
+          events[enter][1].end = events[index3 - 1][1].end;
+          events.splice(enter + 2, index3 - enter - 2);
+          index3 = enter + 2;
+        }
+        enter = undefined;
+      }
+    }
+    return extraResolver ? extraResolver(events, context) : events;
+  }
+}
+function resolveAllLineSuffixes(events, context) {
+  let eventIndex = 0;
+  while (++eventIndex <= events.length) {
+    if ((eventIndex === events.length || events[eventIndex][1].type === types2.lineEnding) && events[eventIndex - 1][1].type === types2.data) {
+      const data = events[eventIndex - 1][1];
+      const chunks = context.sliceStream(data);
+      let index3 = chunks.length;
+      let bufferIndex = -1;
+      let size4 = 0;
+      let tabs;
+      while (index3--) {
+        const chunk = chunks[index3];
+        if (typeof chunk === "string") {
+          bufferIndex = chunk.length;
+          while (chunk.charCodeAt(bufferIndex - 1) === codes.space) {
+            size4++;
+            bufferIndex--;
+          }
+          if (bufferIndex)
+            break;
+          bufferIndex = -1;
+        } else if (chunk === codes.horizontalTab) {
+          tabs = true;
+          size4++;
+        } else if (chunk === codes.virtualSpace) {} else {
+          index3++;
+          break;
+        }
+      }
+      if (context._contentTypeTextTrailing && eventIndex === events.length) {
+        size4 = 0;
+      }
+      if (size4) {
+        const token = {
+          type: eventIndex === events.length || tabs || size4 < constants.hardBreakPrefixSizeMin ? types2.lineSuffix : types2.hardBreakTrailing,
+          start: {
+            _bufferIndex: index3 ? bufferIndex : data.start._bufferIndex + bufferIndex,
+            _index: data.start._index + index3,
+            line: data.end.line,
+            column: data.end.column - size4,
+            offset: data.end.offset - size4
+          },
+          end: { ...data.end }
+        };
+        data.end = { ...token.start };
+        if (data.start.offset === data.end.offset) {
+          Object.assign(data, token);
+        } else {
+          events.splice(eventIndex, 0, ["enter", token, context], ["exit", token, context]);
+          eventIndex += 2;
+        }
+      }
+      eventIndex++;
+    }
+  }
+  return events;
+}
+
+// node_modules/micromark/dev/lib/constructs.js
+var exports_constructs = {};
+__export(exports_constructs, {
+  attentionMarkers: () => attentionMarkers,
+  contentInitial: () => contentInitial,
+  disable: () => disable,
+  document: () => document3,
+  flow: () => flow2,
+  flowInitial: () => flowInitial,
+  insideSpan: () => insideSpan,
+  string: () => string2,
+  text: () => text2
+});
+var document3 = {
+  [codes.asterisk]: list,
+  [codes.plusSign]: list,
+  [codes.dash]: list,
+  [codes.digit0]: list,
+  [codes.digit1]: list,
+  [codes.digit2]: list,
+  [codes.digit3]: list,
+  [codes.digit4]: list,
+  [codes.digit5]: list,
+  [codes.digit6]: list,
+  [codes.digit7]: list,
+  [codes.digit8]: list,
+  [codes.digit9]: list,
+  [codes.greaterThan]: blockQuote
+};
+var contentInitial = {
+  [codes.leftSquareBracket]: definition
+};
+var flowInitial = {
+  [codes.horizontalTab]: codeIndented,
+  [codes.virtualSpace]: codeIndented,
+  [codes.space]: codeIndented
+};
+var flow2 = {
+  [codes.numberSign]: headingAtx,
+  [codes.asterisk]: thematicBreak,
+  [codes.dash]: [setextUnderline, thematicBreak],
+  [codes.lessThan]: htmlFlow,
+  [codes.equalsTo]: setextUnderline,
+  [codes.underscore]: thematicBreak,
+  [codes.graveAccent]: codeFenced,
+  [codes.tilde]: codeFenced
+};
+var string2 = {
+  [codes.ampersand]: characterReference,
+  [codes.backslash]: characterEscape
+};
+var text2 = {
+  [codes.carriageReturn]: lineEnding,
+  [codes.lineFeed]: lineEnding,
+  [codes.carriageReturnLineFeed]: lineEnding,
+  [codes.exclamationMark]: labelStartImage,
+  [codes.ampersand]: characterReference,
+  [codes.asterisk]: attention,
+  [codes.lessThan]: [autolink, htmlText],
+  [codes.leftSquareBracket]: labelStartLink,
+  [codes.backslash]: [hardBreakEscape, characterEscape],
+  [codes.rightSquareBracket]: labelEnd,
+  [codes.underscore]: attention,
+  [codes.graveAccent]: codeText
+};
+var insideSpan = { null: [attention, resolver] };
+var attentionMarkers = { null: [codes.asterisk, codes.underscore] };
+var disable = { null: [] };
+
+// node_modules/micromark/dev/lib/create-tokenizer.js
+var import_debug = __toESM(require_browser(), 1);
+var debug = import_debug.default("micromark");
+function createTokenizer(parser, initialize, from) {
+  let point = {
+    _bufferIndex: -1,
+    _index: 0,
+    line: from && from.line || 1,
+    column: from && from.column || 1,
+    offset: from && from.offset || 0
+  };
+  const columnStart = {};
+  const resolveAllConstructs = [];
+  let chunks = [];
+  let stack = [];
+  let consumed = true;
+  const effects = {
+    attempt: constructFactory(onsuccessfulconstruct),
+    check: constructFactory(onsuccessfulcheck),
+    consume,
+    enter,
+    exit: exit2,
+    interrupt: constructFactory(onsuccessfulcheck, { interrupt: true })
+  };
+  const context = {
+    code: codes.eof,
+    containerState: {},
+    defineSkip,
+    events: [],
+    now,
+    parser,
+    previous: codes.eof,
+    sliceSerialize,
+    sliceStream,
+    write
+  };
+  let state = initialize.tokenize.call(context, effects);
+  let expectedCode;
+  if (initialize.resolveAll) {
+    resolveAllConstructs.push(initialize);
+  }
+  return context;
+  function write(slice) {
+    chunks = push(chunks, slice);
+    main();
+    if (chunks[chunks.length - 1] !== codes.eof) {
+      return [];
+    }
+    addResult(initialize, 0);
+    context.events = resolveAll(resolveAllConstructs, context.events, context);
+    return context.events;
+  }
+  function sliceSerialize(token, expandTabs) {
+    return serializeChunks(sliceStream(token), expandTabs);
+  }
+  function sliceStream(token) {
+    return sliceChunks(chunks, token);
+  }
+  function now() {
+    const { _bufferIndex, _index, line, column, offset: offset4 } = point;
+    return { _bufferIndex, _index, line, column, offset: offset4 };
+  }
+  function defineSkip(value) {
+    columnStart[value.line] = value.column;
+    accountForPotentialSkip();
+    debug("position: define skip: `%j`", point);
+  }
+  function main() {
+    let chunkIndex;
+    while (point._index < chunks.length) {
+      const chunk = chunks[point._index];
+      if (typeof chunk === "string") {
+        chunkIndex = point._index;
+        if (point._bufferIndex < 0) {
+          point._bufferIndex = 0;
+        }
+        while (point._index === chunkIndex && point._bufferIndex < chunk.length) {
+          go(chunk.charCodeAt(point._bufferIndex));
+        }
+      } else {
+        go(chunk);
+      }
+    }
+  }
+  function go(code2) {
+    ok(consumed === true, "expected character to be consumed");
+    consumed = undefined;
+    debug("main: passing `%s` to %s", code2, state && state.name);
+    expectedCode = code2;
+    ok(typeof state === "function", "expected state");
+    state = state(code2);
+  }
+  function consume(code2) {
+    ok(code2 === expectedCode, "expected given code to equal expected code");
+    debug("consume: `%s`", code2);
+    ok(consumed === undefined, "expected code to not have been consumed: this might be because `return x(code)` instead of `return x` was used");
+    ok(code2 === null ? context.events.length === 0 || context.events[context.events.length - 1][0] === "exit" : context.events[context.events.length - 1][0] === "enter", "expected last token to be open");
+    if (markdownLineEnding(code2)) {
+      point.line++;
+      point.column = 1;
+      point.offset += code2 === codes.carriageReturnLineFeed ? 2 : 1;
+      accountForPotentialSkip();
+      debug("position: after eol: `%j`", point);
+    } else if (code2 !== codes.virtualSpace) {
+      point.column++;
+      point.offset++;
+    }
+    if (point._bufferIndex < 0) {
+      point._index++;
+    } else {
+      point._bufferIndex++;
+      if (point._bufferIndex === chunks[point._index].length) {
+        point._bufferIndex = -1;
+        point._index++;
+      }
+    }
+    context.previous = code2;
+    consumed = true;
+  }
+  function enter(type, fields) {
+    const token = fields || {};
+    token.type = type;
+    token.start = now();
+    ok(typeof type === "string", "expected string type");
+    ok(type.length > 0, "expected non-empty string");
+    debug("enter: `%s`", type);
+    context.events.push(["enter", token, context]);
+    stack.push(token);
+    return token;
+  }
+  function exit2(type) {
+    ok(typeof type === "string", "expected string type");
+    ok(type.length > 0, "expected non-empty string");
+    const token = stack.pop();
+    ok(token, "cannot close w/o open tokens");
+    token.end = now();
+    ok(type === token.type, "expected exit token to match current token");
+    ok(!(token.start._index === token.end._index && token.start._bufferIndex === token.end._bufferIndex), "expected non-empty token (`" + type + "`)");
+    debug("exit: `%s`", token.type);
+    context.events.push(["exit", token, context]);
+    return token;
+  }
+  function onsuccessfulconstruct(construct, info) {
+    addResult(construct, info.from);
+  }
+  function onsuccessfulcheck(_, info) {
+    info.restore();
+  }
+  function constructFactory(onreturn, fields) {
+    return hook;
+    function hook(constructs2, returnState, bogusState) {
+      let listOfConstructs;
+      let constructIndex;
+      let currentConstruct;
+      let info;
+      return Array.isArray(constructs2) ? handleListOfConstructs(constructs2) : ("tokenize" in constructs2) ? handleListOfConstructs([constructs2]) : handleMapOfConstructs(constructs2);
+      function handleMapOfConstructs(map) {
+        return start;
+        function start(code2) {
+          const left = code2 !== null && map[code2];
+          const all = code2 !== null && map.null;
+          const list2 = [
+            ...Array.isArray(left) ? left : left ? [left] : [],
+            ...Array.isArray(all) ? all : all ? [all] : []
+          ];
+          return handleListOfConstructs(list2)(code2);
+        }
+      }
+      function handleListOfConstructs(list2) {
+        listOfConstructs = list2;
+        constructIndex = 0;
+        if (list2.length === 0) {
+          ok(bogusState, "expected `bogusState` to be given");
+          return bogusState;
+        }
+        return handleConstruct(list2[constructIndex]);
+      }
+      function handleConstruct(construct) {
+        return start;
+        function start(code2) {
+          info = store();
+          currentConstruct = construct;
+          if (!construct.partial) {
+            context.currentConstruct = construct;
+          }
+          ok(context.parser.constructs.disable.null, "expected `disable.null` to be populated");
+          if (construct.name && context.parser.constructs.disable.null.includes(construct.name)) {
+            return nok(code2);
+          }
+          return construct.tokenize.call(fields ? Object.assign(Object.create(context), fields) : context, effects, ok2, nok)(code2);
+        }
+      }
+      function ok2(code2) {
+        ok(code2 === expectedCode, "expected code");
+        consumed = true;
+        onreturn(currentConstruct, info);
+        return returnState;
+      }
+      function nok(code2) {
+        ok(code2 === expectedCode, "expected code");
+        consumed = true;
+        info.restore();
+        if (++constructIndex < listOfConstructs.length) {
+          return handleConstruct(listOfConstructs[constructIndex]);
+        }
+        return bogusState;
+      }
+    }
+  }
+  function addResult(construct, from2) {
+    if (construct.resolveAll && !resolveAllConstructs.includes(construct)) {
+      resolveAllConstructs.push(construct);
+    }
+    if (construct.resolve) {
+      splice(context.events, from2, context.events.length - from2, construct.resolve(context.events.slice(from2), context));
+    }
+    if (construct.resolveTo) {
+      context.events = construct.resolveTo(context.events, context);
+    }
+    ok(construct.partial || context.events.length === 0 || context.events[context.events.length - 1][0] === "exit", "expected last token to end");
+  }
+  function store() {
+    const startPoint = now();
+    const startPrevious = context.previous;
+    const startCurrentConstruct = context.currentConstruct;
+    const startEventsIndex = context.events.length;
+    const startStack = Array.from(stack);
+    return { from: startEventsIndex, restore };
+    function restore() {
+      point = startPoint;
+      context.previous = startPrevious;
+      context.currentConstruct = startCurrentConstruct;
+      context.events.length = startEventsIndex;
+      stack = startStack;
+      accountForPotentialSkip();
+      debug("position: restore: `%j`", point);
+    }
+  }
+  function accountForPotentialSkip() {
+    if (point.line in columnStart && point.column < 2) {
+      point.column = columnStart[point.line];
+      point.offset += columnStart[point.line] - 1;
+    }
+  }
+}
+function sliceChunks(chunks, token) {
+  const startIndex = token.start._index;
+  const startBufferIndex = token.start._bufferIndex;
+  const endIndex = token.end._index;
+  const endBufferIndex = token.end._bufferIndex;
+  let view;
+  if (startIndex === endIndex) {
+    ok(endBufferIndex > -1, "expected non-negative end buffer index");
+    ok(startBufferIndex > -1, "expected non-negative start buffer index");
+    view = [chunks[startIndex].slice(startBufferIndex, endBufferIndex)];
+  } else {
+    view = chunks.slice(startIndex, endIndex);
+    if (startBufferIndex > -1) {
+      const head = view[0];
+      if (typeof head === "string") {
+        view[0] = head.slice(startBufferIndex);
+      } else {
+        ok(startBufferIndex === 0, "expected `startBufferIndex` to be `0`");
+        view.shift();
+      }
+    }
+    if (endBufferIndex > 0) {
+      view.push(chunks[endIndex].slice(0, endBufferIndex));
+    }
+  }
+  return view;
+}
+function serializeChunks(chunks, expandTabs) {
+  let index3 = -1;
+  const result = [];
+  let atTab;
+  while (++index3 < chunks.length) {
+    const chunk = chunks[index3];
+    let value;
+    if (typeof chunk === "string") {
+      value = chunk;
+    } else
+      switch (chunk) {
+        case codes.carriageReturn: {
+          value = values.cr;
+          break;
+        }
+        case codes.lineFeed: {
+          value = values.lf;
+          break;
+        }
+        case codes.carriageReturnLineFeed: {
+          value = values.cr + values.lf;
+          break;
+        }
+        case codes.horizontalTab: {
+          value = expandTabs ? values.space : values.ht;
+          break;
+        }
+        case codes.virtualSpace: {
+          if (!expandTabs && atTab)
+            continue;
+          value = values.space;
+          break;
+        }
+        default: {
+          ok(typeof chunk === "number", "expected number");
+          value = String.fromCharCode(chunk);
+        }
+      }
+    atTab = chunk === codes.horizontalTab;
+    result.push(value);
+  }
+  return result.join("");
+}
+
+// node_modules/micromark/dev/lib/parse.js
+function parse(options) {
+  const settings = options || {};
+  const constructs2 = combineExtensions([exports_constructs, ...settings.extensions || []]);
+  const parser = {
+    constructs: constructs2,
+    content: create(content),
+    defined: [],
+    document: create(document2),
+    flow: create(flow),
+    lazy: {},
+    string: create(string),
+    text: create(text)
+  };
+  return parser;
+  function create(initial2) {
+    return creator;
+    function creator(from) {
+      return createTokenizer(parser, initial2, from);
+    }
+  }
+}
+
+// node_modules/micromark/dev/lib/postprocess.js
+function postprocess(events) {
+  while (!subtokenize(events)) {}
+  return events;
+}
+
+// node_modules/micromark/dev/lib/preprocess.js
+var search = /[\0\t\n\r]/g;
+function preprocess() {
+  let column = 1;
+  let buffer = "";
+  let start = true;
+  let atCarriageReturn;
+  return preprocessor;
+  function preprocessor(value, encoding, end) {
+    const chunks = [];
+    let match;
+    let next;
+    let startPosition;
+    let endPosition;
+    let code2;
+    value = buffer + (typeof value === "string" ? value.toString() : new TextDecoder(encoding || undefined).decode(value));
+    startPosition = 0;
+    buffer = "";
+    if (start) {
+      if (value.charCodeAt(0) === codes.byteOrderMarker) {
+        startPosition++;
+      }
+      start = undefined;
+    }
+    while (startPosition < value.length) {
+      search.lastIndex = startPosition;
+      match = search.exec(value);
+      endPosition = match && match.index !== undefined ? match.index : value.length;
+      code2 = value.charCodeAt(endPosition);
+      if (!match) {
+        buffer = value.slice(startPosition);
+        break;
+      }
+      if (code2 === codes.lf && startPosition === endPosition && atCarriageReturn) {
+        chunks.push(codes.carriageReturnLineFeed);
+        atCarriageReturn = undefined;
+      } else {
+        if (atCarriageReturn) {
+          chunks.push(codes.carriageReturn);
+          atCarriageReturn = undefined;
+        }
+        if (startPosition < endPosition) {
+          chunks.push(value.slice(startPosition, endPosition));
+          column += endPosition - startPosition;
+        }
+        switch (code2) {
+          case codes.nul: {
+            chunks.push(codes.replacementCharacter);
+            column++;
+            break;
+          }
+          case codes.ht: {
+            next = Math.ceil(column / constants.tabSize) * constants.tabSize;
+            chunks.push(codes.horizontalTab);
+            while (column++ < next)
+              chunks.push(codes.virtualSpace);
+            break;
+          }
+          case codes.lf: {
+            chunks.push(codes.lineFeed);
+            column = 1;
+            break;
+          }
+          default: {
+            atCarriageReturn = true;
+            column = 1;
+          }
+        }
+      }
+      startPosition = endPosition + 1;
+    }
+    if (end) {
+      if (atCarriageReturn)
+        chunks.push(codes.carriageReturn);
+      if (buffer)
+        chunks.push(buffer);
+      chunks.push(codes.eof);
+    }
+    return chunks;
+  }
+}
+
+// node_modules/micromark/dev/index.js
+function micromark(value, encoding, options) {
+  if (typeof encoding !== "string") {
+    options = encoding;
+    encoding = undefined;
+  }
+  return compile(options)(postprocess(parse(options).document().write(preprocess()(value, encoding, true))));
+}
+
+// node_modules/micromark-extension-gfm-autolink-literal/dev/lib/syntax.js
+var wwwPrefix = { tokenize: tokenizeWwwPrefix, partial: true };
+var domain = { tokenize: tokenizeDomain, partial: true };
+var path = { tokenize: tokenizePath, partial: true };
+var trail = { tokenize: tokenizeTrail, partial: true };
+var emailDomainDotTrail = {
+  tokenize: tokenizeEmailDomainDotTrail,
+  partial: true
+};
+var wwwAutolink = {
+  name: "wwwAutolink",
+  tokenize: tokenizeWwwAutolink,
+  previous: previousWww
+};
+var protocolAutolink = {
+  name: "protocolAutolink",
+  tokenize: tokenizeProtocolAutolink,
+  previous: previousProtocol
+};
+var emailAutolink = {
+  name: "emailAutolink",
+  tokenize: tokenizeEmailAutolink,
+  previous: previousEmail
+};
+var text3 = {};
+function gfmAutolinkLiteral() {
+  return { text: text3 };
+}
+var code2 = codes.digit0;
+while (code2 < codes.leftCurlyBrace) {
+  text3[code2] = emailAutolink;
+  code2++;
+  if (code2 === codes.colon)
+    code2 = codes.uppercaseA;
+  else if (code2 === codes.leftSquareBracket)
+    code2 = codes.lowercaseA;
+}
+text3[codes.plusSign] = emailAutolink;
+text3[codes.dash] = emailAutolink;
+text3[codes.dot] = emailAutolink;
+text3[codes.underscore] = emailAutolink;
+text3[codes.uppercaseH] = [emailAutolink, protocolAutolink];
+text3[codes.lowercaseH] = [emailAutolink, protocolAutolink];
+text3[codes.uppercaseW] = [emailAutolink, wwwAutolink];
+text3[codes.lowercaseW] = [emailAutolink, wwwAutolink];
+function tokenizeEmailAutolink(effects, ok2, nok) {
+  const self = this;
+  let dot;
+  let data;
+  return start;
+  function start(code3) {
+    if (!gfmAtext(code3) || !previousEmail.call(self, self.previous) || previousUnbalanced(self.events)) {
+      return nok(code3);
+    }
+    effects.enter("literalAutolink");
+    effects.enter("literalAutolinkEmail");
+    return atext(code3);
+  }
+  function atext(code3) {
+    if (gfmAtext(code3)) {
+      effects.consume(code3);
+      return atext;
+    }
+    if (code3 === codes.atSign) {
+      effects.consume(code3);
+      return emailDomain;
+    }
+    return nok(code3);
+  }
+  function emailDomain(code3) {
+    if (code3 === codes.dot) {
+      return effects.check(emailDomainDotTrail, emailDomainAfter, emailDomainDot)(code3);
+    }
+    if (code3 === codes.dash || code3 === codes.underscore || asciiAlphanumeric(code3)) {
+      data = true;
+      effects.consume(code3);
+      return emailDomain;
+    }
+    return emailDomainAfter(code3);
+  }
+  function emailDomainDot(code3) {
+    effects.consume(code3);
+    dot = true;
+    return emailDomain;
+  }
+  function emailDomainAfter(code3) {
+    if (data && dot && asciiAlpha(self.previous)) {
+      effects.exit("literalAutolinkEmail");
+      effects.exit("literalAutolink");
+      return ok2(code3);
+    }
+    return nok(code3);
+  }
+}
+function tokenizeWwwAutolink(effects, ok2, nok) {
+  const self = this;
+  return wwwStart;
+  function wwwStart(code3) {
+    if (code3 !== codes.uppercaseW && code3 !== codes.lowercaseW || !previousWww.call(self, self.previous) || previousUnbalanced(self.events)) {
+      return nok(code3);
+    }
+    effects.enter("literalAutolink");
+    effects.enter("literalAutolinkWww");
+    return effects.check(wwwPrefix, effects.attempt(domain, effects.attempt(path, wwwAfter), nok), nok)(code3);
+  }
+  function wwwAfter(code3) {
+    effects.exit("literalAutolinkWww");
+    effects.exit("literalAutolink");
+    return ok2(code3);
+  }
+}
+function tokenizeProtocolAutolink(effects, ok2, nok) {
+  const self = this;
+  let buffer = "";
+  let seen = false;
+  return protocolStart;
+  function protocolStart(code3) {
+    if ((code3 === codes.uppercaseH || code3 === codes.lowercaseH) && previousProtocol.call(self, self.previous) && !previousUnbalanced(self.events)) {
+      effects.enter("literalAutolink");
+      effects.enter("literalAutolinkHttp");
+      buffer += String.fromCodePoint(code3);
+      effects.consume(code3);
+      return protocolPrefixInside;
+    }
+    return nok(code3);
+  }
+  function protocolPrefixInside(code3) {
+    if (asciiAlpha(code3) && buffer.length < 5) {
+      buffer += String.fromCodePoint(code3);
+      effects.consume(code3);
+      return protocolPrefixInside;
+    }
+    if (code3 === codes.colon) {
+      const protocol = buffer.toLowerCase();
+      if (protocol === "http" || protocol === "https") {
+        effects.consume(code3);
+        return protocolSlashesInside;
+      }
+    }
+    return nok(code3);
+  }
+  function protocolSlashesInside(code3) {
+    if (code3 === codes.slash) {
+      effects.consume(code3);
+      if (seen) {
+        return afterProtocol;
+      }
+      seen = true;
+      return protocolSlashesInside;
+    }
+    return nok(code3);
+  }
+  function afterProtocol(code3) {
+    return code3 === codes.eof || asciiControl(code3) || markdownLineEndingOrSpace(code3) || unicodeWhitespace(code3) || unicodePunctuation(code3) ? nok(code3) : effects.attempt(domain, effects.attempt(path, protocolAfter), nok)(code3);
+  }
+  function protocolAfter(code3) {
+    effects.exit("literalAutolinkHttp");
+    effects.exit("literalAutolink");
+    return ok2(code3);
+  }
+}
+function tokenizeWwwPrefix(effects, ok2, nok) {
+  let size4 = 0;
+  return wwwPrefixInside;
+  function wwwPrefixInside(code3) {
+    if ((code3 === codes.uppercaseW || code3 === codes.lowercaseW) && size4 < 3) {
+      size4++;
+      effects.consume(code3);
+      return wwwPrefixInside;
+    }
+    if (code3 === codes.dot && size4 === 3) {
+      effects.consume(code3);
+      return wwwPrefixAfter;
+    }
+    return nok(code3);
+  }
+  function wwwPrefixAfter(code3) {
+    return code3 === codes.eof ? nok(code3) : ok2(code3);
+  }
+}
+function tokenizeDomain(effects, ok2, nok) {
+  let underscoreInLastSegment;
+  let underscoreInLastLastSegment;
+  let seen;
+  return domainInside;
+  function domainInside(code3) {
+    if (code3 === codes.dot || code3 === codes.underscore) {
+      return effects.check(trail, domainAfter, domainAtPunctuation)(code3);
+    }
+    if (code3 === codes.eof || markdownLineEndingOrSpace(code3) || unicodeWhitespace(code3) || code3 !== codes.dash && unicodePunctuation(code3)) {
+      return domainAfter(code3);
+    }
+    seen = true;
+    effects.consume(code3);
+    return domainInside;
+  }
+  function domainAtPunctuation(code3) {
+    if (code3 === codes.underscore) {
+      underscoreInLastSegment = true;
+    } else {
+      underscoreInLastLastSegment = underscoreInLastSegment;
+      underscoreInLastSegment = undefined;
+    }
+    effects.consume(code3);
+    return domainInside;
+  }
+  function domainAfter(code3) {
+    if (underscoreInLastLastSegment || underscoreInLastSegment || !seen) {
+      return nok(code3);
+    }
+    return ok2(code3);
+  }
+}
+function tokenizePath(effects, ok2) {
+  let sizeOpen = 0;
+  let sizeClose = 0;
+  return pathInside;
+  function pathInside(code3) {
+    if (code3 === codes.leftParenthesis) {
+      sizeOpen++;
+      effects.consume(code3);
+      return pathInside;
+    }
+    if (code3 === codes.rightParenthesis && sizeClose < sizeOpen) {
+      return pathAtPunctuation(code3);
+    }
+    if (code3 === codes.exclamationMark || code3 === codes.quotationMark || code3 === codes.ampersand || code3 === codes.apostrophe || code3 === codes.rightParenthesis || code3 === codes.asterisk || code3 === codes.comma || code3 === codes.dot || code3 === codes.colon || code3 === codes.semicolon || code3 === codes.lessThan || code3 === codes.questionMark || code3 === codes.rightSquareBracket || code3 === codes.underscore || code3 === codes.tilde) {
+      return effects.check(trail, ok2, pathAtPunctuation)(code3);
+    }
+    if (code3 === codes.eof || markdownLineEndingOrSpace(code3) || unicodeWhitespace(code3)) {
+      return ok2(code3);
+    }
+    effects.consume(code3);
+    return pathInside;
+  }
+  function pathAtPunctuation(code3) {
+    if (code3 === codes.rightParenthesis) {
+      sizeClose++;
+    }
+    effects.consume(code3);
+    return pathInside;
+  }
+}
+function tokenizeTrail(effects, ok2, nok) {
+  return trail2;
+  function trail2(code3) {
+    if (code3 === codes.exclamationMark || code3 === codes.quotationMark || code3 === codes.apostrophe || code3 === codes.rightParenthesis || code3 === codes.asterisk || code3 === codes.comma || code3 === codes.dot || code3 === codes.colon || code3 === codes.semicolon || code3 === codes.questionMark || code3 === codes.underscore || code3 === codes.tilde) {
+      effects.consume(code3);
+      return trail2;
+    }
+    if (code3 === codes.ampersand) {
+      effects.consume(code3);
+      return trailCharacterReferenceStart;
+    }
+    if (code3 === codes.rightSquareBracket) {
+      effects.consume(code3);
+      return trailBracketAfter;
+    }
+    if (code3 === codes.lessThan || code3 === codes.eof || markdownLineEndingOrSpace(code3) || unicodeWhitespace(code3)) {
+      return ok2(code3);
+    }
+    return nok(code3);
+  }
+  function trailBracketAfter(code3) {
+    if (code3 === codes.eof || code3 === codes.leftParenthesis || code3 === codes.leftSquareBracket || markdownLineEndingOrSpace(code3) || unicodeWhitespace(code3)) {
+      return ok2(code3);
+    }
+    return trail2(code3);
+  }
+  function trailCharacterReferenceStart(code3) {
+    return asciiAlpha(code3) ? trailCharacterReferenceInside(code3) : nok(code3);
+  }
+  function trailCharacterReferenceInside(code3) {
+    if (code3 === codes.semicolon) {
+      effects.consume(code3);
+      return trail2;
+    }
+    if (asciiAlpha(code3)) {
+      effects.consume(code3);
+      return trailCharacterReferenceInside;
+    }
+    return nok(code3);
+  }
+}
+function tokenizeEmailDomainDotTrail(effects, ok2, nok) {
+  return start;
+  function start(code3) {
+    effects.consume(code3);
+    return after;
+  }
+  function after(code3) {
+    return asciiAlphanumeric(code3) ? nok(code3) : ok2(code3);
+  }
+}
+function previousWww(code3) {
+  return code3 === codes.eof || code3 === codes.leftParenthesis || code3 === codes.asterisk || code3 === codes.underscore || code3 === codes.leftSquareBracket || code3 === codes.rightSquareBracket || code3 === codes.tilde || markdownLineEndingOrSpace(code3);
+}
+function previousProtocol(code3) {
+  return !asciiAlpha(code3);
+}
+function previousEmail(code3) {
+  return !(code3 === codes.slash || gfmAtext(code3));
+}
+function gfmAtext(code3) {
+  return code3 === codes.plusSign || code3 === codes.dash || code3 === codes.dot || code3 === codes.underscore || asciiAlphanumeric(code3);
+}
+function previousUnbalanced(events) {
+  let index3 = events.length;
+  let result = false;
+  while (index3--) {
+    const token = events[index3][1];
+    if ((token.type === "labelLink" || token.type === "labelImage") && !token._balanced) {
+      result = true;
+      break;
+    }
+    if (token._gfmAutolinkLiteralWalkedInto) {
+      result = false;
+      break;
+    }
+  }
+  if (events.length > 0 && !result) {
+    events[events.length - 1][1]._gfmAutolinkLiteralWalkedInto = true;
+  }
+  return result;
+}
+// node_modules/micromark-extension-gfm-autolink-literal/dev/lib/html.js
+function gfmAutolinkLiteralHtml() {
+  return {
+    exit: { literalAutolinkEmail, literalAutolinkHttp, literalAutolinkWww }
+  };
+}
+function literalAutolinkWww(token) {
+  anchorFromToken.call(this, token, "http://");
+}
+function literalAutolinkEmail(token) {
+  anchorFromToken.call(this, token, "mailto:");
+}
+function literalAutolinkHttp(token) {
+  anchorFromToken.call(this, token);
+}
+function anchorFromToken(token, protocol) {
+  const url = this.sliceSerialize(token);
+  this.tag('<a href="' + sanitizeUri((protocol || "") + url) + '">');
+  this.raw(this.encode(url));
+  this.tag("</a>");
+}
+// node_modules/micromark-extension-gfm-footnote/dev/lib/syntax.js
+var indent = { tokenize: tokenizeIndent2, partial: true };
+function gfmFootnote() {
+  return {
+    document: {
+      [codes.leftSquareBracket]: {
+        name: "gfmFootnoteDefinition",
+        tokenize: tokenizeDefinitionStart,
+        continuation: { tokenize: tokenizeDefinitionContinuation },
+        exit: gfmFootnoteDefinitionEnd
+      }
+    },
+    text: {
+      [codes.leftSquareBracket]: {
+        name: "gfmFootnoteCall",
+        tokenize: tokenizeGfmFootnoteCall
+      },
+      [codes.rightSquareBracket]: {
+        name: "gfmPotentialFootnoteCall",
+        add: "after",
+        tokenize: tokenizePotentialGfmFootnoteCall,
+        resolveTo: resolveToPotentialGfmFootnoteCall
+      }
+    }
+  };
+}
+function tokenizePotentialGfmFootnoteCall(effects, ok2, nok) {
+  const self = this;
+  let index3 = self.events.length;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let labelStart2;
+  while (index3--) {
+    const token = self.events[index3][1];
+    if (token.type === types2.labelImage) {
+      labelStart2 = token;
+      break;
+    }
+    if (token.type === "gfmFootnoteCall" || token.type === types2.labelLink || token.type === types2.label || token.type === types2.image || token.type === types2.link) {
+      break;
+    }
+  }
+  return start;
+  function start(code3) {
+    ok(code3 === codes.rightSquareBracket, "expected `]`");
+    if (!labelStart2 || !labelStart2._balanced) {
+      return nok(code3);
+    }
+    const id = normalizeIdentifier(self.sliceSerialize({ start: labelStart2.end, end: self.now() }));
+    if (id.codePointAt(0) !== codes.caret || !defined.includes(id.slice(1))) {
+      return nok(code3);
+    }
+    effects.enter("gfmFootnoteCallLabelMarker");
+    effects.consume(code3);
+    effects.exit("gfmFootnoteCallLabelMarker");
+    return ok2(code3);
+  }
+}
+function resolveToPotentialGfmFootnoteCall(events, context) {
+  let index3 = events.length;
+  let labelStart2;
+  while (index3--) {
+    if (events[index3][1].type === types2.labelImage && events[index3][0] === "enter") {
+      labelStart2 = events[index3][1];
+      break;
+    }
+  }
+  ok(labelStart2, "expected `labelStart` to resolve");
+  events[index3 + 1][1].type = types2.data;
+  events[index3 + 3][1].type = "gfmFootnoteCallLabelMarker";
+  const call = {
+    type: "gfmFootnoteCall",
+    start: Object.assign({}, events[index3 + 3][1].start),
+    end: Object.assign({}, events[events.length - 1][1].end)
+  };
+  const marker = {
+    type: "gfmFootnoteCallMarker",
+    start: Object.assign({}, events[index3 + 3][1].end),
+    end: Object.assign({}, events[index3 + 3][1].end)
+  };
+  marker.end.column++;
+  marker.end.offset++;
+  marker.end._bufferIndex++;
+  const string3 = {
+    type: "gfmFootnoteCallString",
+    start: Object.assign({}, marker.end),
+    end: Object.assign({}, events[events.length - 1][1].start)
+  };
+  const chunk = {
+    type: types2.chunkString,
+    contentType: "string",
+    start: Object.assign({}, string3.start),
+    end: Object.assign({}, string3.end)
+  };
+  const replacement = [
+    events[index3 + 1],
+    events[index3 + 2],
+    ["enter", call, context],
+    events[index3 + 3],
+    events[index3 + 4],
+    ["enter", marker, context],
+    ["exit", marker, context],
+    ["enter", string3, context],
+    ["enter", chunk, context],
+    ["exit", chunk, context],
+    ["exit", string3, context],
+    events[events.length - 2],
+    events[events.length - 1],
+    ["exit", call, context]
+  ];
+  events.splice(index3, events.length - index3 + 1, ...replacement);
+  return events;
+}
+function tokenizeGfmFootnoteCall(effects, ok2, nok) {
+  const self = this;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let size4 = 0;
+  let data;
+  return start;
+  function start(code3) {
+    ok(code3 === codes.leftSquareBracket, "expected `[`");
+    effects.enter("gfmFootnoteCall");
+    effects.enter("gfmFootnoteCallLabelMarker");
+    effects.consume(code3);
+    effects.exit("gfmFootnoteCallLabelMarker");
+    return callStart;
+  }
+  function callStart(code3) {
+    if (code3 !== codes.caret)
+      return nok(code3);
+    effects.enter("gfmFootnoteCallMarker");
+    effects.consume(code3);
+    effects.exit("gfmFootnoteCallMarker");
+    effects.enter("gfmFootnoteCallString");
+    effects.enter("chunkString").contentType = "string";
+    return callData;
+  }
+  function callData(code3) {
+    if (size4 > constants.linkReferenceSizeMax || code3 === codes.rightSquareBracket && !data || code3 === codes.eof || code3 === codes.leftSquareBracket || markdownLineEndingOrSpace(code3)) {
+      return nok(code3);
+    }
+    if (code3 === codes.rightSquareBracket) {
+      effects.exit("chunkString");
+      const token = effects.exit("gfmFootnoteCallString");
+      if (!defined.includes(normalizeIdentifier(self.sliceSerialize(token)))) {
+        return nok(code3);
+      }
+      effects.enter("gfmFootnoteCallLabelMarker");
+      effects.consume(code3);
+      effects.exit("gfmFootnoteCallLabelMarker");
+      effects.exit("gfmFootnoteCall");
+      return ok2;
+    }
+    if (!markdownLineEndingOrSpace(code3)) {
+      data = true;
+    }
+    size4++;
+    effects.consume(code3);
+    return code3 === codes.backslash ? callEscape : callData;
+  }
+  function callEscape(code3) {
+    if (code3 === codes.leftSquareBracket || code3 === codes.backslash || code3 === codes.rightSquareBracket) {
+      effects.consume(code3);
+      size4++;
+      return callData;
+    }
+    return callData(code3);
+  }
+}
+function tokenizeDefinitionStart(effects, ok2, nok) {
+  const self = this;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let identifier;
+  let size4 = 0;
+  let data;
+  return start;
+  function start(code3) {
+    ok(code3 === codes.leftSquareBracket, "expected `[`");
+    effects.enter("gfmFootnoteDefinition")._container = true;
+    effects.enter("gfmFootnoteDefinitionLabel");
+    effects.enter("gfmFootnoteDefinitionLabelMarker");
+    effects.consume(code3);
+    effects.exit("gfmFootnoteDefinitionLabelMarker");
+    return labelAtMarker;
+  }
+  function labelAtMarker(code3) {
+    if (code3 === codes.caret) {
+      effects.enter("gfmFootnoteDefinitionMarker");
+      effects.consume(code3);
+      effects.exit("gfmFootnoteDefinitionMarker");
+      effects.enter("gfmFootnoteDefinitionLabelString");
+      effects.enter("chunkString").contentType = "string";
+      return labelInside;
+    }
+    return nok(code3);
+  }
+  function labelInside(code3) {
+    if (size4 > constants.linkReferenceSizeMax || code3 === codes.rightSquareBracket && !data || code3 === codes.eof || code3 === codes.leftSquareBracket || markdownLineEndingOrSpace(code3)) {
+      return nok(code3);
+    }
+    if (code3 === codes.rightSquareBracket) {
+      effects.exit("chunkString");
+      const token = effects.exit("gfmFootnoteDefinitionLabelString");
+      identifier = normalizeIdentifier(self.sliceSerialize(token));
+      effects.enter("gfmFootnoteDefinitionLabelMarker");
+      effects.consume(code3);
+      effects.exit("gfmFootnoteDefinitionLabelMarker");
+      effects.exit("gfmFootnoteDefinitionLabel");
+      return labelAfter;
+    }
+    if (!markdownLineEndingOrSpace(code3)) {
+      data = true;
+    }
+    size4++;
+    effects.consume(code3);
+    return code3 === codes.backslash ? labelEscape : labelInside;
+  }
+  function labelEscape(code3) {
+    if (code3 === codes.leftSquareBracket || code3 === codes.backslash || code3 === codes.rightSquareBracket) {
+      effects.consume(code3);
+      size4++;
+      return labelInside;
+    }
+    return labelInside(code3);
+  }
+  function labelAfter(code3) {
+    if (code3 === codes.colon) {
+      effects.enter("definitionMarker");
+      effects.consume(code3);
+      effects.exit("definitionMarker");
+      if (!defined.includes(identifier)) {
+        defined.push(identifier);
+      }
+      return factorySpace(effects, whitespaceAfter, "gfmFootnoteDefinitionWhitespace");
+    }
+    return nok(code3);
+  }
+  function whitespaceAfter(code3) {
+    return ok2(code3);
+  }
+}
+function tokenizeDefinitionContinuation(effects, ok2, nok) {
+  return effects.check(blankLine, ok2, effects.attempt(indent, ok2, nok));
+}
+function gfmFootnoteDefinitionEnd(effects) {
+  effects.exit("gfmFootnoteDefinition");
+}
+function tokenizeIndent2(effects, ok2, nok) {
+  const self = this;
+  return factorySpace(effects, afterPrefix, "gfmFootnoteDefinitionIndent", constants.tabSize + 1);
+  function afterPrefix(code3) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === "gfmFootnoteDefinitionIndent" && tail[2].sliceSerialize(tail[1], true).length === constants.tabSize ? ok2(code3) : nok(code3);
+  }
+}
+// node_modules/micromark-extension-gfm-footnote/dev/lib/html.js
+var own = {}.hasOwnProperty;
+var emptyOptions = {};
+function defaultBackLabel(referenceIndex, rereferenceIndex) {
+  return "Back to reference " + (referenceIndex + 1) + (rereferenceIndex > 1 ? "-" + rereferenceIndex : "");
+}
+function gfmFootnoteHtml(options) {
+  const config = options || emptyOptions;
+  const label = config.label || "Footnotes";
+  const labelTagName = config.labelTagName || "h2";
+  const labelAttributes = config.labelAttributes === null || config.labelAttributes === undefined ? 'class="sr-only"' : config.labelAttributes;
+  const backLabel = config.backLabel || defaultBackLabel;
+  const clobberPrefix = config.clobberPrefix === null || config.clobberPrefix === undefined ? "user-content-" : config.clobberPrefix;
+  return {
+    enter: {
+      gfmFootnoteDefinition() {
+        const stack = this.getData("tightStack");
+        stack.push(false);
+      },
+      gfmFootnoteDefinitionLabelString() {
+        this.buffer();
+      },
+      gfmFootnoteCallString() {
+        this.buffer();
+      }
+    },
+    exit: {
+      gfmFootnoteDefinition() {
+        let definitions = this.getData("gfmFootnoteDefinitions");
+        const footnoteStack = this.getData("gfmFootnoteDefinitionStack");
+        ok(footnoteStack, "expected `footnoteStack`");
+        const tightStack = this.getData("tightStack");
+        const current = footnoteStack.pop();
+        const value = this.resume();
+        ok(current, "expected to be in a footnote");
+        if (!definitions) {
+          this.setData("gfmFootnoteDefinitions", definitions = {});
+        }
+        if (!own.call(definitions, current))
+          definitions[current] = value;
+        tightStack.pop();
+        this.setData("slurpOneLineEnding", true);
+        this.setData("lastWasTag");
+      },
+      gfmFootnoteDefinitionLabelString(token) {
+        let footnoteStack = this.getData("gfmFootnoteDefinitionStack");
+        if (!footnoteStack) {
+          this.setData("gfmFootnoteDefinitionStack", footnoteStack = []);
+        }
+        footnoteStack.push(normalizeIdentifier(this.sliceSerialize(token)));
+        this.resume();
+        this.buffer();
+      },
+      gfmFootnoteCallString(token) {
+        let calls = this.getData("gfmFootnoteCallOrder");
+        let counts = this.getData("gfmFootnoteCallCounts");
+        const id = normalizeIdentifier(this.sliceSerialize(token));
+        let counter;
+        this.resume();
+        if (!calls)
+          this.setData("gfmFootnoteCallOrder", calls = []);
+        if (!counts)
+          this.setData("gfmFootnoteCallCounts", counts = {});
+        const index3 = calls.indexOf(id);
+        const safeId = sanitizeUri(id.toLowerCase());
+        if (index3 === -1) {
+          calls.push(id);
+          counts[id] = 1;
+          counter = calls.length;
+        } else {
+          counts[id]++;
+          counter = index3 + 1;
+        }
+        const reuseCounter = counts[id];
+        this.tag('<sup><a href="#' + clobberPrefix + "fn-" + safeId + '" id="' + clobberPrefix + "fnref-" + safeId + (reuseCounter > 1 ? "-" + reuseCounter : "") + '" data-footnote-ref="" aria-describedby="footnote-label">' + String(counter) + "</a></sup>");
+      },
+      null() {
+        const calls = this.getData("gfmFootnoteCallOrder") || [];
+        const counts = this.getData("gfmFootnoteCallCounts") || {};
+        const definitions = this.getData("gfmFootnoteDefinitions") || {};
+        let index3 = -1;
+        if (calls.length > 0) {
+          this.lineEndingIfNeeded();
+          this.tag('<section data-footnotes="" class="footnotes"><' + labelTagName + ' id="footnote-label"' + (labelAttributes ? " " + labelAttributes : "") + ">");
+          this.raw(this.encode(label));
+          this.tag("</" + labelTagName + ">");
+          this.lineEndingIfNeeded();
+          this.tag("<ol>");
+        }
+        while (++index3 < calls.length) {
+          const id = calls[index3];
+          const safeId = sanitizeUri(id.toLowerCase());
+          let referenceIndex = 0;
+          const references = [];
+          while (++referenceIndex <= counts[id]) {
+            references.push('<a href="#' + clobberPrefix + "fnref-" + safeId + (referenceIndex > 1 ? "-" + referenceIndex : "") + '" data-footnote-backref="" aria-label="' + this.encode(typeof backLabel === "string" ? backLabel : backLabel(index3, referenceIndex)) + '" class="data-footnote-backref">↩' + (referenceIndex > 1 ? "<sup>" + referenceIndex + "</sup>" : "") + "</a>");
+          }
+          const reference = references.join(" ");
+          let injected = false;
+          this.lineEndingIfNeeded();
+          this.tag('<li id="' + clobberPrefix + "fn-" + safeId + '">');
+          this.lineEndingIfNeeded();
+          this.tag(definitions[id].replace(/<\/p>(?:\r?\n|\r)?$/, function($0) {
+            injected = true;
+            return " " + reference + $0;
+          }));
+          if (!injected) {
+            this.lineEndingIfNeeded();
+            this.tag(reference);
+          }
+          this.lineEndingIfNeeded();
+          this.tag("</li>");
+        }
+        if (calls.length > 0) {
+          this.lineEndingIfNeeded();
+          this.tag("</ol>");
+          this.lineEndingIfNeeded();
+          this.tag("</section>");
+        }
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-strikethrough/dev/lib/html.js
+function gfmStrikethroughHtml() {
+  return {
+    enter: {
+      strikethrough() {
+        this.tag("<del>");
+      }
+    },
+    exit: {
+      strikethrough() {
+        this.tag("</del>");
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-strikethrough/dev/lib/syntax.js
+function gfmStrikethrough(options) {
+  const options_ = options || {};
+  let single = options_.singleTilde;
+  const tokenizer = {
+    name: "strikethrough",
+    tokenize: tokenizeStrikethrough,
+    resolveAll: resolveAllStrikethrough
+  };
+  if (single === null || single === undefined) {
+    single = true;
+  }
+  return {
+    text: { [codes.tilde]: tokenizer },
+    insideSpan: { null: [tokenizer] },
+    attentionMarkers: { null: [codes.tilde] }
+  };
+  function resolveAllStrikethrough(events, context) {
+    let index3 = -1;
+    while (++index3 < events.length) {
+      if (events[index3][0] === "enter" && events[index3][1].type === "strikethroughSequenceTemporary" && events[index3][1]._close) {
+        let open = index3;
+        while (open--) {
+          if (events[open][0] === "exit" && events[open][1].type === "strikethroughSequenceTemporary" && events[open][1]._open && events[index3][1].end.offset - events[index3][1].start.offset === events[open][1].end.offset - events[open][1].start.offset) {
+            events[index3][1].type = "strikethroughSequence";
+            events[open][1].type = "strikethroughSequence";
+            const strikethrough = {
+              type: "strikethrough",
+              start: Object.assign({}, events[open][1].start),
+              end: Object.assign({}, events[index3][1].end)
+            };
+            const text4 = {
+              type: "strikethroughText",
+              start: Object.assign({}, events[open][1].end),
+              end: Object.assign({}, events[index3][1].start)
+            };
+            const nextEvents = [
+              ["enter", strikethrough, context],
+              ["enter", events[open][1], context],
+              ["exit", events[open][1], context],
+              ["enter", text4, context]
+            ];
+            const insideSpan2 = context.parser.constructs.insideSpan.null;
+            if (insideSpan2) {
+              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events.slice(open + 1, index3), context));
+            }
+            splice(nextEvents, nextEvents.length, 0, [
+              ["exit", text4, context],
+              ["enter", events[index3][1], context],
+              ["exit", events[index3][1], context],
+              ["exit", strikethrough, context]
+            ]);
+            splice(events, open - 1, index3 - open + 3, nextEvents);
+            index3 = open + nextEvents.length - 2;
+            break;
+          }
+        }
+      }
+    }
+    index3 = -1;
+    while (++index3 < events.length) {
+      if (events[index3][1].type === "strikethroughSequenceTemporary") {
+        events[index3][1].type = types2.data;
+      }
+    }
+    return events;
+  }
+  function tokenizeStrikethrough(effects, ok2, nok) {
+    const previous2 = this.previous;
+    const events = this.events;
+    let size4 = 0;
+    return start;
+    function start(code3) {
+      ok(code3 === codes.tilde, "expected `~`");
+      if (previous2 === codes.tilde && events[events.length - 1][1].type !== types2.characterEscape) {
+        return nok(code3);
+      }
+      effects.enter("strikethroughSequenceTemporary");
+      return more(code3);
+    }
+    function more(code3) {
+      const before = classifyCharacter(previous2);
+      if (code3 === codes.tilde) {
+        if (size4 > 1)
+          return nok(code3);
+        effects.consume(code3);
+        size4++;
+        return more;
+      }
+      if (size4 < 2 && !single)
+        return nok(code3);
+      const token = effects.exit("strikethroughSequenceTemporary");
+      const after = classifyCharacter(code3);
+      token._open = !after || after === constants.attentionSideAfter && Boolean(before);
+      token._close = !before || before === constants.attentionSideAfter && Boolean(after);
+      return ok2(code3);
+    }
+  }
+}
+// node_modules/micromark-extension-gfm-table/dev/lib/html.js
+var alignment = {
+  none: "",
+  left: ' align="left"',
+  right: ' align="right"',
+  center: ' align="center"'
+};
+function gfmTableHtml() {
+  return {
+    enter: {
+      table(token) {
+        const tableAlign = token._align;
+        ok(tableAlign, "expected `_align`");
+        this.lineEndingIfNeeded();
+        this.tag("<table>");
+        this.setData("tableAlign", tableAlign);
+      },
+      tableBody() {
+        this.tag("<tbody>");
+      },
+      tableData() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        ok(tableAlign, "expected `tableAlign`");
+        ok(typeof tableColumn === "number", "expected `tableColumn`");
+        const align = alignment[tableAlign[tableColumn]];
+        if (align === undefined) {
+          this.buffer();
+        } else {
+          this.lineEndingIfNeeded();
+          this.tag("<td" + align + ">");
+        }
+      },
+      tableHead() {
+        this.lineEndingIfNeeded();
+        this.tag("<thead>");
+      },
+      tableHeader() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        ok(tableAlign, "expected `tableAlign`");
+        ok(typeof tableColumn === "number", "expected `tableColumn`");
+        const align = alignment[tableAlign[tableColumn]];
+        this.lineEndingIfNeeded();
+        this.tag("<th" + align + ">");
+      },
+      tableRow() {
+        this.setData("tableColumn", 0);
+        this.lineEndingIfNeeded();
+        this.tag("<tr>");
+      }
+    },
+    exit: {
+      codeTextData(token) {
+        let value = this.sliceSerialize(token);
+        if (this.getData("tableAlign")) {
+          value = value.replace(/\\([\\|])/g, replace2);
+        }
+        this.raw(this.encode(value));
+      },
+      table() {
+        this.setData("tableAlign");
+        this.setData("slurpAllLineEndings");
+        this.lineEndingIfNeeded();
+        this.tag("</table>");
+      },
+      tableBody() {
+        this.lineEndingIfNeeded();
+        this.tag("</tbody>");
+      },
+      tableData() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        ok(tableAlign, "expected `tableAlign`");
+        ok(typeof tableColumn === "number", "expected `tableColumn`");
+        if (tableColumn in tableAlign) {
+          this.tag("</td>");
+          this.setData("tableColumn", tableColumn + 1);
+        } else {
+          this.resume();
+        }
+      },
+      tableHead() {
+        this.lineEndingIfNeeded();
+        this.tag("</thead>");
+      },
+      tableHeader() {
+        const tableColumn = this.getData("tableColumn");
+        ok(typeof tableColumn === "number", "expected `tableColumn`");
+        this.tag("</th>");
+        this.setData("tableColumn", tableColumn + 1);
+      },
+      tableRow() {
+        const tableAlign = this.getData("tableAlign");
+        let tableColumn = this.getData("tableColumn");
+        ok(tableAlign, "expected `tableAlign`");
+        ok(typeof tableColumn === "number", "expected `tableColumn`");
+        while (tableColumn < tableAlign.length) {
+          this.lineEndingIfNeeded();
+          this.tag("<td" + alignment[tableAlign[tableColumn]] + "></td>");
+          tableColumn++;
+        }
+        this.setData("tableColumn", tableColumn);
+        this.lineEndingIfNeeded();
+        this.tag("</tr>");
+      }
+    }
+  };
+}
+function replace2($0, $1) {
+  return $1 === "|" ? $1 : $0;
+}
+// node_modules/micromark-extension-gfm-table/dev/lib/edit-map.js
+class EditMap {
+  constructor() {
+    this.map = [];
+    this.index = new Map;
+  }
+  add(index3, remove2, add) {
+    addImplementation(this, index3, remove2, add);
+  }
+  consume(events) {
+    this.map.sort(function(a, b) {
+      return a[0] - b[0];
+    });
+    if (this.map.length === 0) {
+      return;
+    }
+    let index3 = this.map.length;
+    const vecs = [];
+    while (index3 > 0) {
+      index3 -= 1;
+      vecs.push(events.slice(this.map[index3][0] + this.map[index3][1]), this.map[index3][2]);
+      events.length = this.map[index3][0];
+    }
+    vecs.push(events.slice());
+    events.length = 0;
+    let slice = vecs.pop();
+    while (slice) {
+      for (const element2 of slice) {
+        events.push(element2);
+      }
+      slice = vecs.pop();
+    }
+    this.map.length = 0;
+    this.index.clear();
+  }
+}
+function addImplementation(editMap, at2, remove2, add) {
+  if (remove2 === 0 && add.length === 0) {
+    return;
+  }
+  const existing = editMap.index.get(at2);
+  if (existing) {
+    existing[1] += remove2;
+    existing[2].push(...add);
+    return;
+  }
+  const change = [at2, remove2, add];
+  editMap.map.push(change);
+  editMap.index.set(at2, change);
+}
+
+// node_modules/micromark-extension-gfm-table/dev/lib/infer.js
+function gfmTableAlign(events, index3) {
+  ok(events[index3][1].type === "table", "expected table");
+  let inDelimiterRow = false;
+  const align = [];
+  while (index3 < events.length) {
+    const event = events[index3];
+    if (inDelimiterRow) {
+      if (event[0] === "enter") {
+        if (event[1].type === "tableContent") {
+          align.push(events[index3 + 1][1].type === "tableDelimiterMarker" ? "left" : "none");
+        }
+      } else if (event[1].type === "tableContent") {
+        if (events[index3 - 1][1].type === "tableDelimiterMarker") {
+          const alignIndex = align.length - 1;
+          align[alignIndex] = align[alignIndex] === "left" ? "center" : "right";
+        }
+      } else if (event[1].type === "tableDelimiterRow") {
+        break;
+      }
+    } else if (event[0] === "enter" && event[1].type === "tableDelimiterRow") {
+      inDelimiterRow = true;
+    }
+    index3 += 1;
+  }
+  return align;
+}
+
+// node_modules/micromark-extension-gfm-table/dev/lib/syntax.js
+function gfmTable() {
+  return {
+    flow: {
+      null: { name: "table", tokenize: tokenizeTable, resolveAll: resolveTable }
+    }
+  };
+}
+function tokenizeTable(effects, ok2, nok) {
+  const self = this;
+  let size4 = 0;
+  let sizeB = 0;
+  let seen;
+  return start;
+  function start(code3) {
+    let index3 = self.events.length - 1;
+    while (index3 > -1) {
+      const { type } = self.events[index3][1];
+      if (type === types2.lineEnding || type === types2.linePrefix) {
+        index3--;
+      } else {
+        break;
+      }
+    }
+    const tail = index3 > -1 ? self.events[index3][1].type : null;
+    const next = tail === "tableHead" || tail === "tableRow" ? bodyRowStart : headRowBefore;
+    if (next === bodyRowStart && self.parser.lazy[self.now().line]) {
+      return nok(code3);
+    }
+    return next(code3);
+  }
+  function headRowBefore(code3) {
+    effects.enter("tableHead");
+    effects.enter("tableRow");
+    return headRowStart(code3);
+  }
+  function headRowStart(code3) {
+    if (code3 === codes.verticalBar) {
+      return headRowBreak(code3);
+    }
+    seen = true;
+    sizeB += 1;
+    return headRowBreak(code3);
+  }
+  function headRowBreak(code3) {
+    if (code3 === codes.eof) {
+      return nok(code3);
+    }
+    if (markdownLineEnding(code3)) {
+      if (sizeB > 1) {
+        sizeB = 0;
+        self.interrupt = true;
+        effects.exit("tableRow");
+        effects.enter(types2.lineEnding);
+        effects.consume(code3);
+        effects.exit(types2.lineEnding);
+        return headDelimiterStart;
+      }
+      return nok(code3);
+    }
+    if (markdownSpace(code3)) {
+      return factorySpace(effects, headRowBreak, types2.whitespace)(code3);
+    }
+    sizeB += 1;
+    if (seen) {
+      seen = false;
+      size4 += 1;
+    }
+    if (code3 === codes.verticalBar) {
+      effects.enter("tableCellDivider");
+      effects.consume(code3);
+      effects.exit("tableCellDivider");
+      seen = true;
+      return headRowBreak;
+    }
+    effects.enter(types2.data);
+    return headRowData(code3);
+  }
+  function headRowData(code3) {
+    if (code3 === codes.eof || code3 === codes.verticalBar || markdownLineEndingOrSpace(code3)) {
+      effects.exit(types2.data);
+      return headRowBreak(code3);
+    }
+    effects.consume(code3);
+    return code3 === codes.backslash ? headRowEscape : headRowData;
+  }
+  function headRowEscape(code3) {
+    if (code3 === codes.backslash || code3 === codes.verticalBar) {
+      effects.consume(code3);
+      return headRowData;
+    }
+    return headRowData(code3);
+  }
+  function headDelimiterStart(code3) {
+    self.interrupt = false;
+    if (self.parser.lazy[self.now().line]) {
+      return nok(code3);
+    }
+    effects.enter("tableDelimiterRow");
+    seen = false;
+    if (markdownSpace(code3)) {
+      ok(self.parser.constructs.disable.null, "expected `disabled.null`");
+      return factorySpace(effects, headDelimiterBefore, types2.linePrefix, self.parser.constructs.disable.null.includes("codeIndented") ? undefined : constants.tabSize)(code3);
+    }
+    return headDelimiterBefore(code3);
+  }
+  function headDelimiterBefore(code3) {
+    if (code3 === codes.dash || code3 === codes.colon) {
+      return headDelimiterValueBefore(code3);
+    }
+    if (code3 === codes.verticalBar) {
+      seen = true;
+      effects.enter("tableCellDivider");
+      effects.consume(code3);
+      effects.exit("tableCellDivider");
+      return headDelimiterCellBefore;
+    }
+    return headDelimiterNok(code3);
+  }
+  function headDelimiterCellBefore(code3) {
+    if (markdownSpace(code3)) {
+      return factorySpace(effects, headDelimiterValueBefore, types2.whitespace)(code3);
+    }
+    return headDelimiterValueBefore(code3);
+  }
+  function headDelimiterValueBefore(code3) {
+    if (code3 === codes.colon) {
+      sizeB += 1;
+      seen = true;
+      effects.enter("tableDelimiterMarker");
+      effects.consume(code3);
+      effects.exit("tableDelimiterMarker");
+      return headDelimiterLeftAlignmentAfter;
+    }
+    if (code3 === codes.dash) {
+      sizeB += 1;
+      return headDelimiterLeftAlignmentAfter(code3);
+    }
+    if (code3 === codes.eof || markdownLineEnding(code3)) {
+      return headDelimiterCellAfter(code3);
+    }
+    return headDelimiterNok(code3);
+  }
+  function headDelimiterLeftAlignmentAfter(code3) {
+    if (code3 === codes.dash) {
+      effects.enter("tableDelimiterFiller");
+      return headDelimiterFiller(code3);
+    }
+    return headDelimiterNok(code3);
+  }
+  function headDelimiterFiller(code3) {
+    if (code3 === codes.dash) {
+      effects.consume(code3);
+      return headDelimiterFiller;
+    }
+    if (code3 === codes.colon) {
+      seen = true;
+      effects.exit("tableDelimiterFiller");
+      effects.enter("tableDelimiterMarker");
+      effects.consume(code3);
+      effects.exit("tableDelimiterMarker");
+      return headDelimiterRightAlignmentAfter;
+    }
+    effects.exit("tableDelimiterFiller");
+    return headDelimiterRightAlignmentAfter(code3);
+  }
+  function headDelimiterRightAlignmentAfter(code3) {
+    if (markdownSpace(code3)) {
+      return factorySpace(effects, headDelimiterCellAfter, types2.whitespace)(code3);
+    }
+    return headDelimiterCellAfter(code3);
+  }
+  function headDelimiterCellAfter(code3) {
+    if (code3 === codes.verticalBar) {
+      return headDelimiterBefore(code3);
+    }
+    if (code3 === codes.eof || markdownLineEnding(code3)) {
+      if (!seen || size4 !== sizeB) {
+        return headDelimiterNok(code3);
+      }
+      effects.exit("tableDelimiterRow");
+      effects.exit("tableHead");
+      return ok2(code3);
+    }
+    return headDelimiterNok(code3);
+  }
+  function headDelimiterNok(code3) {
+    return nok(code3);
+  }
+  function bodyRowStart(code3) {
+    effects.enter("tableRow");
+    return bodyRowBreak(code3);
+  }
+  function bodyRowBreak(code3) {
+    if (code3 === codes.verticalBar) {
+      effects.enter("tableCellDivider");
+      effects.consume(code3);
+      effects.exit("tableCellDivider");
+      return bodyRowBreak;
+    }
+    if (code3 === codes.eof || markdownLineEnding(code3)) {
+      effects.exit("tableRow");
+      return ok2(code3);
+    }
+    if (markdownSpace(code3)) {
+      return factorySpace(effects, bodyRowBreak, types2.whitespace)(code3);
+    }
+    effects.enter(types2.data);
+    return bodyRowData(code3);
+  }
+  function bodyRowData(code3) {
+    if (code3 === codes.eof || code3 === codes.verticalBar || markdownLineEndingOrSpace(code3)) {
+      effects.exit(types2.data);
+      return bodyRowBreak(code3);
+    }
+    effects.consume(code3);
+    return code3 === codes.backslash ? bodyRowEscape : bodyRowData;
+  }
+  function bodyRowEscape(code3) {
+    if (code3 === codes.backslash || code3 === codes.verticalBar) {
+      effects.consume(code3);
+      return bodyRowData;
+    }
+    return bodyRowData(code3);
+  }
+}
+function resolveTable(events, context) {
+  let index3 = -1;
+  let inFirstCellAwaitingPipe = true;
+  let rowKind = 0;
+  let lastCell = [0, 0, 0, 0];
+  let cell = [0, 0, 0, 0];
+  let afterHeadAwaitingFirstBodyRow = false;
+  let lastTableEnd = 0;
+  let currentTable;
+  let currentBody;
+  let currentCell;
+  const map = new EditMap;
+  while (++index3 < events.length) {
+    const event = events[index3];
+    const token = event[1];
+    if (event[0] === "enter") {
+      if (token.type === "tableHead") {
+        afterHeadAwaitingFirstBodyRow = false;
+        if (lastTableEnd !== 0) {
+          ok(currentTable, "there should be a table opening");
+          flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
+          currentBody = undefined;
+          lastTableEnd = 0;
+        }
+        currentTable = {
+          type: "table",
+          start: Object.assign({}, token.start),
+          end: Object.assign({}, token.end)
+        };
+        map.add(index3, 0, [["enter", currentTable, context]]);
+      } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
+        inFirstCellAwaitingPipe = true;
+        currentCell = undefined;
+        lastCell = [0, 0, 0, 0];
+        cell = [0, index3 + 1, 0, 0];
+        if (afterHeadAwaitingFirstBodyRow) {
+          afterHeadAwaitingFirstBodyRow = false;
+          currentBody = {
+            type: "tableBody",
+            start: Object.assign({}, token.start),
+            end: Object.assign({}, token.end)
+          };
+          map.add(index3, 0, [["enter", currentBody, context]]);
+        }
+        rowKind = token.type === "tableDelimiterRow" ? 2 : currentBody ? 3 : 1;
+      } else if (rowKind && (token.type === types2.data || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
+        inFirstCellAwaitingPipe = false;
+        if (cell[2] === 0) {
+          if (lastCell[1] !== 0) {
+            cell[0] = cell[1];
+            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
+            lastCell = [0, 0, 0, 0];
+          }
+          cell[2] = index3;
+        }
+      } else if (token.type === "tableCellDivider") {
+        if (inFirstCellAwaitingPipe) {
+          inFirstCellAwaitingPipe = false;
+        } else {
+          if (lastCell[1] !== 0) {
+            cell[0] = cell[1];
+            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
+          }
+          lastCell = cell;
+          cell = [lastCell[1], index3, 0, 0];
+        }
+      }
+    } else if (token.type === "tableHead") {
+      afterHeadAwaitingFirstBodyRow = true;
+      lastTableEnd = index3;
+    } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
+      lastTableEnd = index3;
+      if (lastCell[1] !== 0) {
+        cell[0] = cell[1];
+        currentCell = flushCell(map, context, lastCell, rowKind, index3, currentCell);
+      } else if (cell[1] !== 0) {
+        currentCell = flushCell(map, context, cell, rowKind, index3, currentCell);
+      }
+      rowKind = 0;
+    } else if (rowKind && (token.type === types2.data || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
+      cell[3] = index3;
+    }
+  }
+  if (lastTableEnd !== 0) {
+    ok(currentTable, "expected table opening");
+    flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
+  }
+  map.consume(context.events);
+  index3 = -1;
+  while (++index3 < context.events.length) {
+    const event = context.events[index3];
+    if (event[0] === "enter" && event[1].type === "table") {
+      event[1]._align = gfmTableAlign(context.events, index3);
+    }
+  }
+  return events;
+}
+function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
+  const groupName = rowKind === 1 ? "tableHeader" : rowKind === 2 ? "tableDelimiter" : "tableData";
+  const valueName = "tableContent";
+  if (range[0] !== 0) {
+    ok(previousCell, "expected previous cell enter");
+    previousCell.end = Object.assign({}, getPoint(context.events, range[0]));
+    map.add(range[0], 0, [["exit", previousCell, context]]);
+  }
+  const now = getPoint(context.events, range[1]);
+  previousCell = {
+    type: groupName,
+    start: Object.assign({}, now),
+    end: Object.assign({}, now)
+  };
+  map.add(range[1], 0, [["enter", previousCell, context]]);
+  if (range[2] !== 0) {
+    const relatedStart = getPoint(context.events, range[2]);
+    const relatedEnd = getPoint(context.events, range[3]);
+    const valueToken = {
+      type: valueName,
+      start: Object.assign({}, relatedStart),
+      end: Object.assign({}, relatedEnd)
+    };
+    map.add(range[2], 0, [["enter", valueToken, context]]);
+    ok(range[3] !== 0);
+    if (rowKind !== 2) {
+      const start = context.events[range[2]];
+      const end = context.events[range[3]];
+      start[1].end = Object.assign({}, end[1].end);
+      start[1].type = types2.chunkText;
+      start[1].contentType = constants.contentTypeText;
+      if (range[3] > range[2] + 1) {
+        const a = range[2] + 1;
+        const b = range[3] - range[2] - 1;
+        map.add(a, b, []);
+      }
+    }
+    map.add(range[3] + 1, 0, [["exit", valueToken, context]]);
+  }
+  if (rowEnd !== undefined) {
+    previousCell.end = Object.assign({}, getPoint(context.events, rowEnd));
+    map.add(rowEnd, 0, [["exit", previousCell, context]]);
+    previousCell = undefined;
+  }
+  return previousCell;
+}
+function flushTableEnd(map, context, index3, table, tableBody) {
+  const exits = [];
+  const related = getPoint(context.events, index3);
+  if (tableBody) {
+    tableBody.end = Object.assign({}, related);
+    exits.push(["exit", tableBody, context]);
+  }
+  table.end = Object.assign({}, related);
+  exits.push(["exit", table, context]);
+  map.add(index3 + 1, 0, exits);
+}
+function getPoint(events, index3) {
+  const event = events[index3];
+  const side = event[0] === "enter" ? "start" : "end";
+  return event[1][side];
+}
+// node_modules/micromark-extension-gfm-tagfilter/lib/index.js
+var reFlow = /<(\/?)(iframe|noembed|noframes|plaintext|script|style|title|textarea|xmp)(?=[\t\n\f\r />])/gi;
+var reText = new RegExp("^" + reFlow.source, "i");
+function gfmTagfilterHtml() {
+  return {
+    exit: {
+      htmlFlowData(token) {
+        exitHtmlData.call(this, token, reFlow);
+      },
+      htmlTextData(token) {
+        exitHtmlData.call(this, token, reText);
+      }
+    }
+  };
+}
+function exitHtmlData(token, filter) {
+  let value = this.sliceSerialize(token);
+  if (this.options.allowDangerousHtml) {
+    value = value.replace(filter, "&lt;$1$2");
+  }
+  this.raw(this.encode(value));
+}
+// node_modules/micromark-extension-gfm-task-list-item/dev/lib/html.js
+function gfmTaskListItemHtml() {
+  return {
+    enter: {
+      taskListCheck() {
+        this.tag('<input type="checkbox" disabled="" ');
+      }
+    },
+    exit: {
+      taskListCheck() {
+        this.tag("/>");
+      },
+      taskListCheckValueChecked() {
+        this.tag('checked="" ');
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-task-list-item/dev/lib/syntax.js
+var tasklistCheck = { name: "tasklistCheck", tokenize: tokenizeTasklistCheck };
+function gfmTaskListItem() {
+  return {
+    text: { [codes.leftSquareBracket]: tasklistCheck }
+  };
+}
+function tokenizeTasklistCheck(effects, ok2, nok) {
+  const self = this;
+  return open;
+  function open(code3) {
+    ok(code3 === codes.leftSquareBracket, "expected `[`");
+    if (self.previous !== codes.eof || !self._gfmTasklistFirstContentOfListItem) {
+      return nok(code3);
+    }
+    effects.enter("taskListCheck");
+    effects.enter("taskListCheckMarker");
+    effects.consume(code3);
+    effects.exit("taskListCheckMarker");
+    return inside;
+  }
+  function inside(code3) {
+    if (markdownLineEndingOrSpace(code3)) {
+      effects.enter("taskListCheckValueUnchecked");
+      effects.consume(code3);
+      effects.exit("taskListCheckValueUnchecked");
+      return close;
+    }
+    if (code3 === codes.uppercaseX || code3 === codes.lowercaseX) {
+      effects.enter("taskListCheckValueChecked");
+      effects.consume(code3);
+      effects.exit("taskListCheckValueChecked");
+      return close;
+    }
+    return nok(code3);
+  }
+  function close(code3) {
+    if (code3 === codes.rightSquareBracket) {
+      effects.enter("taskListCheckMarker");
+      effects.consume(code3);
+      effects.exit("taskListCheckMarker");
+      effects.exit("taskListCheck");
+      return after;
+    }
+    return nok(code3);
+  }
+  function after(code3) {
+    if (markdownLineEnding(code3)) {
+      return ok2(code3);
+    }
+    if (markdownSpace(code3)) {
+      return effects.check({ tokenize: spaceThenNonSpace }, ok2, nok)(code3);
+    }
+    return nok(code3);
+  }
+}
+function spaceThenNonSpace(effects, ok2, nok) {
+  return factorySpace(effects, after, types2.whitespace);
+  function after(code3) {
+    return code3 === codes.eof ? nok(code3) : ok2(code3);
+  }
+}
+// node_modules/micromark-extension-gfm/index.js
+function gfm(options) {
+  return combineExtensions([
+    gfmAutolinkLiteral(),
+    gfmFootnote(),
+    gfmStrikethrough(options),
+    gfmTable(),
+    gfmTaskListItem()
+  ]);
+}
+function gfmHtml(options) {
+  return combineHtmlExtensions([
+    gfmAutolinkLiteralHtml(),
+    gfmFootnoteHtml(options),
+    gfmStrikethroughHtml(),
+    gfmTableHtml(),
+    gfmTagfilterHtml(),
+    gfmTaskListItemHtml()
+  ]);
+}
+
+// src/scriptorium/surface/state/markdown.ts
+var SAFE_SCHEME = /^(https?:|mailto:)/i;
+var HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+function safeHref(raw) {
+  const bare = raw.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(Number(d))).replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCharCode(Number.parseInt(h, 16))).replace(/[\u0000-\u0020]/g, "");
+  if (!HAS_SCHEME.test(bare))
+    return raw;
+  return SAFE_SCHEME.test(bare) ? raw : null;
+}
+var HREF = /<a href="([^"]*)"/g;
+function renderMarkdown(text4) {
+  const html = micromark(text4, {
+    extensions: [gfm()],
+    htmlExtensions: [gfmHtml()]
+  });
+  return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
+}
+
+// src/scriptorium/surface/components/MarkdownView.tsx
 var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var OPENS_OUTWARD = /^(https?:|mailto:)/i;
+function MarkdownView({ text: text4 }) {
+  const html = import_react15.useMemo(() => renderMarkdown(text4), [text4]);
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    className: "min-h-0 flex-1 overflow-auto",
+    "data-slot": "markdown-view",
+    children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      className: "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16",
+      onClick: (e) => {
+        const anchor = e.target.closest("a");
+        if (!anchor)
+          return;
+        e.preventDefault();
+        const href = anchor.getAttribute("href");
+        if (href && OPENS_OUTWARD.test(href))
+          window.open(href, "_blank", "noopener,noreferrer");
+      },
+      dangerouslySetInnerHTML: { __html: html }
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/StatusStrip.tsx
+var import_react16 = __toESM(require_react(), 1);
+// src/scriptorium/surface/ui/separator.tsx
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -49086,27 +56026,27 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(import_react15.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(import_react16.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -49118,30 +56058,59 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
-function useDebouncedStats(text, ms = 300) {
-  const [stats, setStats] = import_react16.useState(() => contentStats(text ?? ""));
-  import_react16.useEffect(() => {
-    const t = setTimeout(() => setStats(contentStats(text ?? "")), ms);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var VIEW_MODES = ["raw", "rendered", "split"];
+var SPLIT_MIN_PX = 720;
+function useWidth() {
+  const ref = import_react17.useRef(null);
+  const [width, setWidth] = import_react17.useState(0);
+  import_react17.useEffect(() => {
+    const el = ref.current;
+    if (!el)
+      return;
+    const ro = new ResizeObserver(([entry]) => setWidth(entry?.contentRect.width ?? 0));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width];
+}
+var MODE_BUTTONS = [
+  { mode: "raw", label: "Raw markdown", icon: FileCode },
+  { mode: "rendered", label: "Rendered", icon: BookOpen },
+  { mode: "split", label: "Raw and rendered side by side", icon: Columns2 }
+];
+function useDebouncedStats(text4, ms = 300) {
+  const [stats, setStats] = import_react17.useState(() => contentStats(text4 ?? ""));
+  import_react17.useEffect(() => {
+    const t = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t);
-  }, [text, ms]);
+  }, [text4, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now, setNow] = import_react16.useState(() => Date.now());
-  import_react16.useEffect(() => {
+  const [now, setNow] = import_react17.useState(() => Date.now());
+  import_react17.useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t);
   }, [everyMs]);
   return now;
 }
-function DocumentPane({ doc: doc2, text }) {
-  const lastShown = import_react16.useRef(null);
-  if (doc2 && text !== undefined)
-    lastShown.current = { slug: doc2.slug, text };
-  const shown = text ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
+function DocumentPane({
+  doc: doc2,
+  text: text4,
+  mode,
+  onMode,
+  splitLayout
+}) {
+  const lastShown = import_react17.useRef(null);
+  if (doc2 && text4 !== undefined)
+    lastShown.current = { slug: doc2.slug, text: text4 };
+  const shown = text4 ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
   const stats = useDebouncedStats(shown);
   const now = useNow();
+  const [paneRef, width] = useWidth();
+  const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
+  const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc2?.versions.find((v) => v.n === doc2.active);
   const segments = doc2 ? [
     { label: "Version", value: `v${doc2.active}${active?.label ? ` · ${active.label}` : ""}` },
@@ -49155,55 +56124,114 @@ function DocumentPane({ doc: doc2, text }) {
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+    ref: paneRef,
+    className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
-              className: "ml-auto shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint",
-              children: "read-only"
-            }, undefined, false, undefined, this)
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+              className: "ml-auto flex shrink-0 items-center gap-1",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+                  className: "rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint",
+                  children: "read-only"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+                  role: "toolbar",
+                  "aria-label": "How to show this document",
+                  className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
+                  children: MODE_BUTTONS.map(({ mode: m, label, icon: Icon2 }) => {
+                    const unavailable = m === "split" && !roomToSplit;
+                    return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+                      type: "button",
+                      onClick: () => onMode(m),
+                      disabled: unavailable,
+                      "aria-pressed": showing === m,
+                      "aria-label": label,
+                      title: unavailable ? `${label} — the pane is too narrow` : label,
+                      className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m && "bg-bg text-ink shadow-sm"),
+                      children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Icon2, {
+                        "aria-hidden": true,
+                        className: "size-3.5"
+                      }, undefined, false, undefined, this)
+                    }, m, false, undefined, this);
+                  })
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown
-      }, undefined, false, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(StatusStrip, {
+      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MarkdownView, {
+        text: shown
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanelGroup, {
+        orientation: "horizontal",
+        className: "min-h-0 flex-1",
+        defaultLayout: splitLayout.defaultLayout,
+        onLayoutChanged: splitLayout.onLayoutChanged,
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+            id: "doc-raw",
+            defaultSize: "50",
+            minSize: "25",
+            className: "flex flex-col",
+            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
+              docKey: doc2.slug,
+              text: shown
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
+            withHandle: true
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+            id: "doc-rendered",
+            defaultSize: "50",
+            minSize: "25",
+            className: "flex flex-col border-l border-edge",
+            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MarkdownView, {
+              text: shown
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      doc2 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this)
     ]
@@ -49237,18 +56265,18 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react17 = __toESM(require_react(), 1);
+var import_react18 = __toESM(require_react(), 1);
 var textKey = (doc2, version2) => `${doc2}@${version2}`;
 function useDaemon() {
-  const [state, setState] = import_react17.useState(null);
-  const [connection, setConnection] = import_react17.useState("connecting");
-  const [lastError, setLastError] = import_react17.useState(null);
-  const [texts, setTexts] = import_react17.useState(() => new Map);
-  const [done, setDone] = import_react17.useState(null);
-  const wsRef = import_react17.useRef(null);
-  const pending = import_react17.useRef(new Map);
-  const plans = import_react17.useRef(new Map);
-  import_react17.useEffect(() => {
+  const [state, setState] = import_react18.useState(null);
+  const [connection, setConnection] = import_react18.useState("connecting");
+  const [lastError, setLastError] = import_react18.useState(null);
+  const [texts, setTexts] = import_react18.useState(() => new Map);
+  const [done, setDone] = import_react18.useState(null);
+  const wsRef = import_react18.useRef(null);
+  const pending = import_react18.useRef(new Map);
+  const plans = import_react18.useRef(new Map);
+  import_react18.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer;
@@ -49320,55 +56348,58 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react17.useCallback((msg) => {
+  const send = import_react18.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react17.useCallback((path) => new Promise((resolve) => {
+  const listDir = import_react18.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
       return;
     }
-    const waiters = pending.current.get(path);
+    const waiters = pending.current.get(path2);
     if (waiters) {
       waiters.push(resolve);
       return;
     }
-    pending.current.set(path, [resolve]);
-    ws.send(JSON.stringify({ type: "fs.list", path }));
+    pending.current.set(path2, [resolve]);
+    ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react17.useCallback((path, into) => new Promise((resolve) => {
+  const planMove = import_react18.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
       return;
     }
-    const key = `${path}\x00${into}`;
+    const key = `${path2}\x00${into}`;
     const waiters = plans.current.get(key);
     if (waiters) {
       waiters.push(resolve);
       return;
     }
     plans.current.set(key, [resolve]);
-    ws.send(JSON.stringify({ type: "move.plan", path, into }));
+    ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const clearError = import_react17.useCallback(() => setLastError(null), []);
+  const clearError = import_react18.useCallback(() => setLastError(null), []);
   return { state, connection, lastError, clearError, texts, done, send, listDir, planMove };
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
+var SPLIT_PANES = ["doc-raw", "doc-rendered"];
+var SPLIT_LAYOUT_ID = "scriptorium:doc-split";
+var VIEW_PREF = "doc:view";
 var CONNECTION_LABEL = {
   connecting: "connecting…",
   open: "connected",
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -49377,9 +56408,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react18.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react19.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -49391,41 +56422,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -49437,56 +56468,63 @@ function Workspace({
   daemon
 }) {
   const { send, texts, listDir, planMove, lastError, clearError, done } = daemon;
-  const prefsRef = import_react18.useRef(state.prefs);
+  const prefsRef = import_react19.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react18.useMemo(() => ({
+  const storage = import_react19.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
   const layout = an({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+  const splitLayout = an({
+    id: SPLIT_LAYOUT_ID,
+    panelIds: [...SPLIT_PANES],
+    storage
+  });
+  const saved = state.prefs[VIEW_PREF];
+  const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
-  const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
-  const asked = import_react18.useRef(new Set);
-  import_react18.useEffect(() => {
-    if (!open || text !== undefined)
+  const text4 = open ? texts.get(textKey(open.slug, open.active)) : undefined;
+  const asked = import_react19.useRef(new Set);
+  import_react19.useEffect(() => {
+    if (!open || text4 !== undefined)
       return;
     const key = textKey(open.slug, open.active);
     if (asked.current.has(key))
       return;
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
-  }, [open, text, send]);
-  const onOpenDoc = import_react18.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  }, [open, text4, send]);
+  const onOpenDoc = import_react19.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanelGroup, {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanelGroup, {
     orientation: "horizontal",
     className: "min-h-0 flex-1",
     defaultLayout: layout.defaultLayout,
     onLayoutChanged: layout.onLayoutChanged,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
         id: "context",
         defaultSize: "22",
         minSize: "12",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(PaneHeading, {
             children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ContextSidebar, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ContextSidebar, {
             entries: state.context,
             activeDoc,
             userHome: state.userHome,
             workspace: state.workspace,
             onOpenDoc,
-            onAddPath: (path) => send({ type: "context.add", path }),
+            onAddPath: (path2) => send({ type: "context.add", path: path2 }),
             onStructure: send,
-            onReveal: (path) => send({ type: "reveal", path }),
+            onReveal: (path2) => send({ type: "reveal", path: path2 }),
             onPick: (want) => send({ type: "pick", want }),
             listDir,
             planMove,
@@ -49496,48 +56534,51 @@ function Workspace({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
         id: "document",
         defaultSize: "50",
         minSize: "25",
         className: "flex flex-col bg-bg",
-        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentPane, {
+        children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DocumentPane, {
           doc: open,
-          text
+          text: text4,
+          mode,
+          onMode: (next) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+          splitLayout
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
         id: "chat",
         defaultSize: "28",
         minSize: "15",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(PaneHeading, {
             children: "Conversation"
           }, undefined, false, undefined, this),
-          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Empty, {
+          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Empty, {
             className: "h-full",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyTitle, {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyTitle, {
                   children: "No messages yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyDescription, {
                   children: "The conversation with the agent lives here."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ActivityLog, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ActivityLog, {
             chat: state.chat
           }, undefined, false, undefined, this)
         ]
@@ -49546,28 +56587,28 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react18.useRef(null);
+  const end = import_react19.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         "data-who": m.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m.text
         ]
       }, m.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -49575,7 +56616,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime16.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime17.jsxDEV(App, {}, undefined, false, undefined, this));

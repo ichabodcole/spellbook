@@ -12,13 +12,18 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resiz
 import type { ChatMessage, ContextEntry, DocView, PublicState } from "../backend/protocol";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
-import { DocumentPane } from "./components/DocumentPane";
+import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
 /** The pane ids are the persisted layout's keys — renaming one forgets a viewer's sizes. */
 export const PANES = ["context", "document", "chat"] as const;
 export const LAYOUT_ID = "scriptorium:panes";
+/** The split inside the document pane keeps its own sizes (E29). */
+export const SPLIT_PANES = ["doc-raw", "doc-rendered"] as const;
+export const SPLIT_LAYOUT_ID = "scriptorium:doc-split";
+/** Raw, rendered or split — a viewer's choice, kept in the home's prefs like the theme. */
+const VIEW_PREF = "doc:view";
 
 const CONNECTION_LABEL: Record<Connection, string> = {
   connecting: "connecting…",
@@ -115,6 +120,16 @@ function Workspace({
     [send],
   );
   const layout = useDefaultLayout({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+  const splitLayout = useDefaultLayout({
+    id: SPLIT_LAYOUT_ID,
+    panelIds: [...SPLIT_PANES],
+    storage,
+  });
+
+  const saved = state.prefs[VIEW_PREF];
+  const mode: ViewMode = (VIEW_MODES as readonly string[]).includes(saved ?? "")
+    ? (saved as ViewMode)
+    : "rendered";
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc =
@@ -177,7 +192,13 @@ function Workspace({
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
-        <DocumentPane doc={open} text={text} />
+        <DocumentPane
+          doc={open}
+          text={text}
+          mode={mode}
+          onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
+          splitLayout={splitLayout}
+        />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel id="chat" defaultSize="28" minSize="15" className="flex flex-col bg-surface">
