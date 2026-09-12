@@ -382,7 +382,7 @@ is passed as an argv, never a shell string. **Both are HUMAN affordances** with
 no CLI verb: the agent has the paths already, and E24's rule is equal
 capabilities with different controls.
 
-## E26 · A folder move is confirmed; a document move is not
+## E26 · A move is confirmed when it takes a FOLDER or LEAVES A REPOSITORY
 
 **Ruled:** Cole, 2026-09-11, after a drag of his own moved this project's docs
 folder out of the repository (the session's log said so; nothing was lost, and
@@ -391,10 +391,16 @@ can carry files out of a git working tree, where the consequence reaches past
 scriptorium — so the surface asks first, in the terms of what would happen: how
 many documents move, from where to where, and — when the daemon can see it — a
 warning naming the git repository being left. **A single document moves without
-a question**: it is one file, the log names it, and a prompt on every drag is
-the kind of friction people learn to click through. The agent's `move` verb is
-NOT gated: E24's rule is equal capabilities with different affordances, and a
-CLI verb is already explicit.
+a question** — it is one file, the log names it, and a prompt on every drag is
+the kind of friction people learn to click through — **unless it leaves a git
+working tree**, which was AMENDED the same day by the same route: the rule
+shipped as "folders ask, documents do not", and Cole's next drag was one FILE,
+this repo's README, out of the repo into his workspace. A move's stakes are set
+by where it LANDS, not by how many files it carries. Every move therefore asks
+the daemon what it would do first (a local round trip), and the dialog appears
+for those two cases only. The agent's `move` verb is NOT gated: E24's rule is
+equal capabilities with different affordances, and a CLI verb is already
+explicit.
 
 **The dialog is `src/kit/ui/ConfirmDialog.tsx`, in the KIT** — Cole: "this is a
 very common UI pattern just across apps … ideally if we can share it". It ships
@@ -404,3 +410,19 @@ caller's, because danger and primary are L1 tokens where one spell's alias is
 another spell's brand slot (the rule Dot already states for its fill). A spell
 importing it must import `kit/theme/base.css`, and a new `kit-styling-ward` cell
 holds that pairing.
+
+## E27 · The workspace reads at the top; the path box stays at the bottom
+
+**Ruled:** Cole, 2026-09-11, after seeing both halves moved up together: "having
+the workspace at the top is nice because it's one of the first things you read
+and it tells you where you are rather than jumping down to look at … it sort of
+orients you", while adding a path is "just not as immediate. Plus, we already
+support drag and drop." So the two SPLIT: the workspace line is orientation and
+sits above the list; the add-by-path box (with its picker buttons) is a
+deliberate act and stays at the bottom. Changing the workspace opens its own
+path box directly under the workspace line, where the thing it edits is. **Not
+taken:** both at the top (three control bars before the first entry), and
+folding New document / New set into the path row (four icon buttons crowded the
+input to about 130px, two of them near-duplicates — built, looked at, dropped).
+`AddPath` therefore carries an `openDown` flag: a box at the top of a panel must
+drop its suggestions downward, and the same component is used in both places.

@@ -92,7 +92,7 @@ export function EntryTree({
   onOpenDoc: (rel: string) => void;
   onStructure: (op: StructureOp) => void;
   /** A move the human asked for — a FOLDER move is confirmed first (E26). */
-  onMove: (path: string, into: string, folder: boolean) => void;
+  onMove: (path: string, into: string) => void;
   /** Files dropped from outside the page, to be COPIED into `intoDir` (E23). */
   onImportFiles: (files: DataTransfer, intoDir: string) => void;
   moveTargetsFor: (path: string) => MoveTarget[];
@@ -140,8 +140,7 @@ export function EntryTree({
       const into = dirFor(target.item.getId());
       for (const i of items) {
         const path = pathOf(i.getId());
-        if (dirOf(path) !== into)
-          onMove(path, into, indexRef.current.byId.get(i.getId())?.kind === "group");
+        if (dirOf(path) !== into) onMove(path, into);
       }
     },
     // Files from Finder: a COPY into the folder they were dropped on (E23).
@@ -202,8 +201,7 @@ export function EntryTree({
     if (carriesFiles(e.dataTransfer)) return onImportFiles(e.dataTransfer, entry.root);
     for (const i of tree.getState().dnd?.draggedItems ?? []) {
       const path = pathOf(i.getId());
-      if (dirOf(path) !== entry.root)
-        onMove(path, entry.root, indexRef.current.byId.get(i.getId())?.kind === "group");
+      if (dirOf(path) !== entry.root) onMove(path, entry.root);
     }
   };
 
@@ -284,7 +282,7 @@ export function EntryTree({
             </ContextMenuItem>
             <MoveToMenu
               targets={moveTargetsFor(menuPath)}
-              onMove={(into) => onMove(menuPath, into, menuFor?.kind === "group")}
+              onMove={(into) => onMove(menuPath, into)}
             />
           </>
         )}

@@ -63,8 +63,6 @@ import {
 
 /** The drag payload of a row dragged within the sidebar: its absolute path. */
 const ROW_MIME = "application/x-scriptorium-path";
-/** "1" when the dragged row is a SET, so the drop knows to ask first (E26). */
-const ROW_FOLDER_MIME = "application/x-scriptorium-folder";
 
 /** Said up front, not ellipsed away at the end of a subtitle (verify pass). */
 function TruncatedBadge() {
@@ -197,22 +195,29 @@ export function ContextSidebar({
   );
 
   /**
-   * E26: moving a FOLDER is asked about first. A folder move takes everything
-   * under it, and — Cole moved this project's own docs folder into his
-   * workspace — it can carry files out of a git working tree, where the
-   * consequence reaches past scriptorium. A single document moves without a
-   * question; it is one file, and the log names it.
+   * E26: a move is asked about when it is a FOLDER (everything under it goes)
+   * or when it LEAVES A GIT WORKING TREE — where the consequence reaches past
+   * scriptorium. A plain document move inside the same repository, or outside
+   * any, still happens at once: one file, and the log names it.
+   *
+   * ⛔ THE GIT HALF COVERS SINGLE DOCUMENTS BECAUSE IT HAD TO. This started as
+   * "folders are confirmed, documents are not" and Cole's next drag was one
+   * FILE — this repo's README — out of the repo and into his workspace, which
+   * is the same surprise the folder rule was written for. A move's stakes are
+   * set by where it lands, not by how many files it carries. Every move now
+   * asks the daemon what it would do first (a local round trip), and the
+   * dialog appears only for those two cases.
    */
   const { confirm, dialog } = useConfirm();
   const requestMove = useCallback(
-    async (path: string, into: string, folder: boolean) => {
-      if (!folder) {
-        onStructure({ type: "move", path, into });
-        return;
-      }
+    async (path: string, into: string) => {
       const { plan, error } = await planMove(path, into);
       if (!plan) {
         setLocalNotice(error ?? "that move could not be checked");
+        return;
+      }
+      if (!plan.folder && !plan.leavesRepo) {
+        onStructure({ type: "move", path, into });
         return;
       }
       const ok = await confirm({
@@ -221,7 +226,8 @@ export function ContextSidebar({
         warning: plan.leavesRepo ? (
           <>
             This takes it <strong className="font-semibold">out of the git repository</strong>{" "}
-            {plan.repo}. Git will see the files as deleted there until the move is committed.
+            {plan.repo}. Git will see {plan.docs === 1 ? "the file" : "the files"} as deleted there
+            until the move is committed.
           </>
         ) : undefined,
         confirmLabel: "Move",
@@ -260,7 +266,7 @@ export function ContextSidebar({
           {editingWorkspace ? <XIcon /> : <SquarePenIcon />}
         </Button>
       </div>
-      {editingWorkspace ? (
+      {editingWorkspace && (
         <AddPath
           key="workspace"
           listDir={listDir}
@@ -276,15 +282,6 @@ export function ContextSidebar({
           onCancel={() => setEditingWorkspace(false)}
           className="border-t-0 border-b border-edge pt-0 pb-2"
           onPick={() => onPick("workspace")}
-          openDown
-        />
-      ) : (
-        <AddPath
-          key="add"
-          listDir={listDir}
-          onAdd={onAddPath}
-          className="border-t-0 border-b border-edge pt-0 pb-2"
-          onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
           openDown
         />
       )}
@@ -336,6 +333,12 @@ export function ContextSidebar({
           </button>
         </div>
       )}
+      <AddPath
+        key="add"
+        listDir={listDir}
+        onAdd={onAddPath}
+        onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
+      />
       {dialog}
     </div>
   );
@@ -424,7 +427,7 @@ function ListView({
   renamePath: string | null;
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
-  onMove: (path: string, into: string, folder: boolean) => void;
+  onMove: (path: string, into: string) => void;
 }) {
   const [menuFor, setMenuFor] = useState<ContextEntry | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -447,8 +450,7 @@ function ListView({
     setDropOn(null);
     if (carriesFiles(e.dataTransfer)) return onImportFiles(e.dataTransfer, into);
     const path = e.dataTransfer.getData(ROW_MIME);
-    const folder = e.dataTransfer.getData(ROW_FOLDER_MIME) === "1";
-    if (path && path !== into && dirOf(path) !== into) onMove(path, into, folder);
+    if (path && path !== into && dirOf(path) !== into) onMove(path, into);
   };
   const acceptsDrag = (e: DragEvent) =>
     carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
@@ -473,7 +475,7 @@ function ListView({
           </ContextMenuItem>
           <MoveToMenu
             targets={moveTargetsFor(entryPath(menuFor))}
-            onMove={(into) => onMove(entryPath(menuFor), into, false)}
+            onMove={(into) => onMove(entryPath(menuFor), into)}
           />
         </>
       ) : menuFor ? (
@@ -492,7 +494,7 @@ function ListView({
           </ContextMenuItem>
           <MoveToMenu
             targets={moveTargetsFor(menuFor.root)}
-            onMove={(into) => onMove(menuFor.root, into, true)}
+            onMove={(into) => onMove(menuFor.root, into)}
           />
           <ContextMenuItem
             onClick={() => onStructure({ type: "workspace.set", path: menuFor.root })}
@@ -641,7 +643,6 @@ function ListView({
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(ROW_MIME, full);
-                      e.dataTransfer.setData(ROW_FOLDER_MIME, only ? "0" : "1");
                       e.dataTransfer.effectAllowed = "move";
                     }}
                     // Only a SET takes a drop; a document row passes it to the list.
@@ -725,7 +726,7 @@ function SetView({
   renamePath: string | null;
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
-  onMove: (path: string, into: string, folder: boolean) => void;
+  onMove: (path: string, into: string) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">

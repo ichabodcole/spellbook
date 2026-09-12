@@ -37403,7 +37403,7 @@ function EntryTree({
       for (const i of items2) {
         const path = pathOf(i.getId());
         if (dirOf(path) !== into)
-          onMove(path, into, indexRef.current.byId.get(i.getId())?.kind === "group");
+          onMove(path, into);
       }
     },
     canDragForeignDragObjectOver: (dt) => carriesFiles(dt),
@@ -37460,7 +37460,7 @@ function EntryTree({
     for (const i of tree.getState().dnd?.draggedItems ?? []) {
       const path = pathOf(i.getId());
       if (dirOf(path) !== entry.root)
-        onMove(path, entry.root, indexRef.current.byId.get(i.getId())?.kind === "group");
+        onMove(path, entry.root);
     }
   };
   const items = tree.getItems();
@@ -37542,7 +37542,7 @@ function EntryTree({
               }, undefined, true, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
                 targets: moveTargetsFor(menuPath),
-                onMove: (into) => onMove(menuPath, into, menuFor?.kind === "group")
+                onMove: (into) => onMove(menuPath, into)
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
@@ -37677,7 +37677,6 @@ function Row({
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
 var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 var ROW_MIME = "application/x-scriptorium-path";
-var ROW_FOLDER_MIME = "application/x-scriptorium-folder";
 function TruncatedBadge() {
   return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
     className: "shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention",
@@ -37756,14 +37755,14 @@ function ContextSidebar({
     setLocalNotice(said.length ? said.join(" ") : null);
   }, [onStructure]);
   const { confirm, dialog } = useConfirm();
-  const requestMove = import_react13.useCallback(async (path, into, folder) => {
-    if (!folder) {
-      onStructure({ type: "move", path, into });
-      return;
-    }
+  const requestMove = import_react13.useCallback(async (path, into) => {
     const { plan, error: error2 } = await planMove(path, into);
     if (!plan) {
       setLocalNotice(error2 ?? "that move could not be checked");
+      return;
+    }
+    if (!plan.folder && !plan.leavesRepo) {
+      onStructure({ type: "move", path, into });
       return;
     }
     const ok = await confirm({
@@ -37778,7 +37777,9 @@ function ContextSidebar({
           }, undefined, false, undefined, this),
           " ",
           plan.repo,
-          ". Git will see the files as deleted there until the move is committed."
+          ". Git will see ",
+          plan.docs === 1 ? "the file" : "the files",
+          " as deleted there until the move is committed."
         ]
       }, undefined, true, undefined, this) : undefined,
       confirmLabel: "Move",
@@ -37823,7 +37824,7 @@ function ContextSidebar({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
+      editingWorkspace && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
         listDir,
         placeholder: "Set the workspace folder…",
         verb: "sets",
@@ -37838,13 +37839,7 @@ function ContextSidebar({
         className: "border-t-0 border-b border-edge pt-0 pb-2",
         onPick: () => onPick("workspace"),
         openDown: true
-      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
-        listDir,
-        onAdd: onAddPath,
-        className: "border-t-0 border-b border-edge pt-0 pb-2",
-        onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder"),
-        openDown: true
-      }, "add", false, undefined, this),
+      }, "workspace", false, undefined, this),
       drilledEntry ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SetView, {
         entry: drilledEntry,
         activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
@@ -37892,6 +37887,11 @@ function ContextSidebar({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
+        listDir,
+        onAdd: onAddPath,
+        onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder")
+      }, "add", false, undefined, this),
       dialog
     ]
   }, undefined, true, undefined, this);
@@ -37976,9 +37976,8 @@ function ListView({
     if (carriesFiles(e.dataTransfer))
       return onImportFiles(e.dataTransfer, into);
     const path = e.dataTransfer.getData(ROW_MIME);
-    const folder = e.dataTransfer.getData(ROW_FOLDER_MIME) === "1";
     if (path && path !== into && dirOf(path) !== into)
-      onMove(path, into, folder);
+      onMove(path, into);
   };
   const acceptsDrag = (e) => carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
   const menu = /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuContent, {
@@ -38008,7 +38007,7 @@ function ListView({
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(MoveToMenu, {
             targets: moveTargetsFor(entryPath(menuFor)),
-            onMove: (into) => onMove(entryPath(menuFor), into, false)
+            onMove: (into) => onMove(entryPath(menuFor), into)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this) : menuFor ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
@@ -38036,7 +38035,7 @@ function ListView({
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(MoveToMenu, {
             targets: moveTargetsFor(menuFor.root),
-            onMove: (into) => onMove(menuFor.root, into, true)
+            onMove: (into) => onMove(menuFor.root, into)
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "workspace.set", path: menuFor.root }),
@@ -38188,7 +38187,6 @@ function ListView({
                   draggable: true,
                   onDragStart: (e) => {
                     e.dataTransfer.setData(ROW_MIME, full);
-                    e.dataTransfer.setData(ROW_FOLDER_MIME, only ? "0" : "1");
                     e.dataTransfer.effectAllowed = "move";
                   },
                   onDragOver: (e) => {
