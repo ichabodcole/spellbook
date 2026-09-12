@@ -19,7 +19,9 @@ import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
+import { NewVersionDialog } from "./NewVersionDialog";
 import { type StatusSegment, StatusStrip } from "./StatusStrip";
+import { VersionMenu } from "./VersionMenu";
 
 /**
  * E29's three modes from Operator's editor — raw, rendered, and both — plus
@@ -90,6 +92,8 @@ export function DocumentPane({
   diff,
   onAgainst,
   onTake,
+  onActivate,
+  onNewVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -106,6 +110,9 @@ export function DocumentPane({
   /** The side the picker changes to; which side is SHOWN comes from the payload. */
   onAgainst: (side: DiffSide) => void;
   onTake: (hunks: number[]) => void;
+  /** E37: the human makes a version, and chooses which one is active. */
+  onActivate: (version: number) => void;
+  onNewVersion: (label: string) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -136,10 +143,26 @@ export function DocumentPane({
   const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
   const showing: ViewMode = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc?.versions.find((v) => v.n === doc.active);
+  const [naming, setNaming] = useState(false);
 
   const segments: StatusSegment[] = doc
     ? [
-        { label: "Version", value: `v${doc.active}${active?.label ? ` · ${active.label}` : ""}` },
+        {
+          label: "Version",
+          value: `v${doc.active}${active?.label ? ` · ${active.label}` : ""}`,
+          node: (
+            <VersionMenu
+              versions={doc.versions}
+              active={doc.active}
+              onActivate={onActivate}
+              onCompare={(n) => {
+                onAgainst(n);
+                onMode("compare");
+              }}
+              onNewVersion={() => setNaming(true)}
+            />
+          ),
+        },
         { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
         {
           label: "Updated",
@@ -317,6 +340,15 @@ export function DocumentPane({
         </ResizablePanelGroup>
       )}
       {doc && <StatusStrip segments={segments} />}
+      {doc && (
+        <NewVersionDialog
+          open={naming}
+          from={doc.active}
+          next={Math.max(...doc.versions.map((v) => v.n)) + 1}
+          onOpenChange={setNaming}
+          onCreate={onNewVersion}
+        />
+      )}
     </div>
   );
 }

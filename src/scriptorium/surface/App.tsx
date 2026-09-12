@@ -258,6 +258,12 @@ function Workspace({
           onTake={(hunks) => {
             if (open) send({ type: "merge", doc: open.slug, against, hunks });
           }}
+          onActivate={(version) => {
+            if (open) send({ type: "activate", doc: open.slug, version });
+          }}
+          onNewVersion={(label) => {
+            if (open) send({ type: "version.new", doc: open.slug, ...(label ? { label } : {}) });
+          }}
           splitLayout={splitLayout}
           onAddFrontmatter={async () => {
             if (!open) return;

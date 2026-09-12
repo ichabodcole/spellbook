@@ -18050,8 +18050,22 @@ var __iconNode3 = [
   ]
 ];
 var House = createLucideIcon("house", __iconNode3);
-// node_modules/lucide-react/dist/esm/icons/square-pen.mjs
+// node_modules/lucide-react/dist/esm/icons/sparkles.mjs
 var __iconNode4 = [
+  [
+    "path",
+    {
+      d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
+      key: "1s2grr"
+    }
+  ],
+  ["path", { d: "M20 2v4", key: "1rf3ol" }],
+  ["path", { d: "M22 4h-4", key: "gwowj6" }],
+  ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
+];
+var Sparkles = createLucideIcon("sparkles", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/square-pen.mjs
+var __iconNode5 = [
   ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
   [
     "path",
@@ -18061,9 +18075,9 @@ var __iconNode4 = [
     }
   ]
 ];
-var SquarePen = createLucideIcon("square-pen", __iconNode4);
+var SquarePen = createLucideIcon("square-pen", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
-var __iconNode5 = [
+var __iconNode6 = [
   [
     "path",
     {
@@ -18074,15 +18088,15 @@ var __iconNode5 = [
   ["path", { d: "M12 9v4", key: "juzpu7" }],
   ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-var TriangleAlert = createLucideIcon("triangle-alert", __iconNode5);
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode6 = [
+var __iconNode7 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode6);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode7 = [
+var __iconNode8 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -18092,27 +18106,40 @@ var __iconNode7 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode7);
+var BookOpen = createLucideIcon("book-open", __iconNode8);
+// node_modules/lucide-react/dist/esm/icons/bookmark-plus.mjs
+var __iconNode9 = [
+  ["path", { d: "M12 7v6", key: "lw1j43" }],
+  ["path", { d: "M15 10H9", key: "o6yqo3" }],
+  [
+    "path",
+    {
+      d: "M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z",
+      key: "oz39mx"
+    }
+  ]
+];
+var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode8 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode8);
+var __iconNode10 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode9 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode9);
+var __iconNode11 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/clock.mjs
-var __iconNode10 = [
+var __iconNode12 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode10);
+var Clock = createLucideIcon("clock", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode11 = [
+var __iconNode13 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode11);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode12 = [
+var __iconNode14 = [
   [
     "path",
     {
@@ -18122,9 +18149,9 @@ var __iconNode12 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode12);
+var Eye = createLucideIcon("eye", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode13 = [
+var __iconNode15 = [
   [
     "path",
     {
@@ -18136,9 +18163,9 @@ var __iconNode13 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode13);
+var FileCode = createLucideIcon("file-code", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode14 = [
+var __iconNode16 = [
   [
     "path",
     {
@@ -18150,9 +18177,9 @@ var __iconNode14 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode14);
+var FilePlus = createLucideIcon("file-plus", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode15 = [
+var __iconNode17 = [
   [
     "path",
     {
@@ -18165,9 +18192,9 @@ var __iconNode15 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode15);
+var FileText = createLucideIcon("file-text", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode16 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -18178,9 +18205,9 @@ var __iconNode16 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode16);
+var FolderInput = createLucideIcon("folder-input", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode17 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -18189,9 +18216,9 @@ var __iconNode17 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode17);
+var FolderOpen = createLucideIcon("folder-open", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode18 = [
+var __iconNode20 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -18202,9 +18229,9 @@ var __iconNode18 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode18);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode19 = [
+var __iconNode21 = [
   [
     "path",
     {
@@ -18215,9 +18242,9 @@ var __iconNode19 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode19);
+var FolderSearch = createLucideIcon("folder-search", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode20 = [
+var __iconNode22 = [
   [
     "path",
     {
@@ -18235,9 +18262,9 @@ var __iconNode20 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode20);
+var FolderTree = createLucideIcon("folder-tree", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode21 = [
+var __iconNode23 = [
   [
     "path",
     {
@@ -18246,17 +18273,17 @@ var __iconNode21 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode21);
+var Folder = createLucideIcon("folder", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode22 = [
+var __iconNode24 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode22);
+var GitCompare = createLucideIcon("git-compare", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode23 = [
+var __iconNode25 = [
   [
     "path",
     {
@@ -18272,9 +18299,9 @@ var __iconNode23 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode23);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode24 = [
+var __iconNode26 = [
   [
     "path",
     {
@@ -18283,18 +18310,18 @@ var __iconNode24 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode24);
+var Moon = createLucideIcon("moon", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode25 = [
+var __iconNode27 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode25);
+var Network = createLucideIcon("network", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode26 = [
+var __iconNode28 = [
   [
     "path",
     {
@@ -18304,9 +18331,9 @@ var __iconNode26 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode26);
+var Pencil = createLucideIcon("pencil", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode27 = [
+var __iconNode29 = [
   [
     "path",
     {
@@ -18317,9 +18344,9 @@ var __iconNode27 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode27);
+var Save = createLucideIcon("save", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode28 = [
+var __iconNode30 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18330,29 +18357,35 @@ var __iconNode28 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode28);
+var Sun = createLucideIcon("sun", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode29 = [
+var __iconNode31 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode29);
+var UndoDot = createLucideIcon("undo-dot", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode30 = [
+var __iconNode32 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode30);
+var UserCheck = createLucideIcon("user-check", __iconNode32);
+// node_modules/lucide-react/dist/esm/icons/user.mjs
+var __iconNode33 = [
+  ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
+  ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
+];
+var User = createLucideIcon("user", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode31 = [
+var __iconNode34 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode31);
+var X = createLucideIcon("x", __iconNode34);
 // src/scriptorium/surface/App.tsx
-var import_react22 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -40457,7 +40490,7 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react20 = __toESM(require_react(), 1);
+var import_react22 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/state/stats.ts
 function contentStats(text) {
@@ -62548,12 +62581,206 @@ function MarkdownView({
   }, undefined, true, undefined, this);
 }
 
-// src/scriptorium/surface/components/StatusStrip.tsx
+// src/scriptorium/surface/components/NewVersionDialog.tsx
 var import_react19 = __toESM(require_react(), 1);
-// src/scriptorium/surface/ui/separator.tsx
+
+// src/scriptorium/surface/ui/dialog.tsx
 var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+"use client";
+function Dialog({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Root, {
+    "data-slot": "dialog",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogPortal3({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Portal, {
+    "data-slot": "dialog-portal",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogOverlay({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Backdrop, {
+    "data-slot": "dialog-overlay",
+    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DialogPortal3, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DialogOverlay, {}, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Popup, {
+        "data-slot": "dialog-content",
+        className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props,
+        children: [
+          children,
+          showCloseButton && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Close, {
+            "data-slot": "dialog-close",
+            render: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
+              variant: "ghost",
+              className: "absolute top-2 right-2",
+              size: "icon-sm"
+            }, undefined, false, undefined, this),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(X, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+                className: "sr-only",
+                children: "Close"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function DialogHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+    "data-slot": "dialog-header",
+    className: cn("flex flex-col gap-2", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogFooter({
+  className,
+  showCloseButton = false,
+  children,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+    "data-slot": "dialog-footer",
+    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
+    ...props,
+    children: [
+      children,
+      showCloseButton && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Close, {
+        render: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
+          variant: "outline"
+        }, undefined, false, undefined, this),
+        children: "Close"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function DialogTitle3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Title, {
+    "data-slot": "dialog-title",
+    className: cn("text-base leading-none font-medium", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogDescription3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(exports_index_parts5.Description, {
+    "data-slot": "dialog-description",
+    className: cn("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/NewVersionDialog.tsx
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
+function NewVersionDialog({
+  open,
+  from,
+  next,
+  onOpenChange,
+  onCreate
+}) {
+  const [label, setLabel] = import_react19.useState("");
+  const field = import_react19.useRef(null);
+  import_react19.useEffect(() => {
+    if (open)
+      setLabel("");
+  }, [open]);
+  const submit = (e) => {
+    e.preventDefault();
+    onCreate(label.trim());
+    onOpenChange(false);
+  };
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Dialog, {
+    open,
+    onOpenChange,
+    children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DialogContent, {
+      className: "sm:max-w-md",
+      children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("form", {
+        onSubmit: submit,
+        className: "flex flex-col gap-6",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DialogHeader, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DialogTitle3, {
+                children: [
+                  "New version from v",
+                  from
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DialogDescription3, {
+                children: [
+                  "A snapshot of v",
+                  from,
+                  " as it is now. You carry on editing v",
+                  from,
+                  "; the copy waits here in case you want it back — useful before handing the document to the agent, or before a rewrite you might not keep."
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+            className: "flex flex-col gap-2",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("label", {
+                htmlFor: "version-label",
+                className: "text-sm font-medium text-ink",
+                children: "Name"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Input3, {
+                id: "version-label",
+                ref: field,
+                value: label,
+                autoComplete: "off",
+                placeholder: `v${next}`,
+                onChange: (e) => setLabel(e.target.value)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
+                className: "text-xs text-ink-faint",
+                children: "Say what it is for — “before the agent's pass”, “shorter draft”. Leave it empty and it is just its number."
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DialogFooter, {
+            className: "gap-2",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button3, {
+                type: "button",
+                variant: "secondary",
+                onClick: () => onOpenChange(false),
+                children: "Cancel"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button3, {
+                type: "submit",
+                children: "Make version"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/StatusStrip.tsx
+var import_react20 = __toESM(require_react(), 1);
+// src/scriptorium/surface/ui/separator.tsx
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -62562,27 +62789,27 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(import_react19.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(import_react20.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+            s.node ?? /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -62593,14 +62820,221 @@ function StatusStrip({ segments }) {
   }, undefined, false, undefined, this);
 }
 
+// src/scriptorium/surface/components/VersionMenu.tsx
+var import_react21 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/ui/dropdown-menu.tsx
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+function DropdownMenu({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Root, {
+    "data-slot": "dropdown-menu",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DropdownMenuTrigger({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Trigger, {
+    "data-slot": "dropdown-menu-trigger",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DropdownMenuContent({
+  align = "start",
+  alignOffset = 0,
+  side = "bottom",
+  sideOffset = 4,
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Positioner, {
+      className: "isolate z-50 outline-none",
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Popup, {
+        "data-slot": "dropdown-menu-content",
+        className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+function DropdownMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Item, {
+    "data-slot": "dropdown-menu-item",
+    "data-inset": inset,
+    "data-variant": variant,
+    className: cn("group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DropdownMenuSeparator({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Separator, {
+    "data-slot": "dropdown-menu-separator",
+    className: cn("-mx-1 my-1 h-px bg-border", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/VersionMenu.tsx
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+function versionLabel(v) {
+  const label = v.label?.trim();
+  return label && label.length > 0 ? label : `v${v.n}`;
+}
+function ordered(versions, active) {
+  return [...versions].sort((a2, b) => {
+    if (a2.n === active)
+      return -1;
+    if (b.n === active)
+      return 1;
+    return b.createdAt - a2.createdAt;
+  });
+}
+var when = (ms) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(ms));
+function VersionMenu({
+  versions,
+  active,
+  onActivate,
+  onCompare,
+  onNewVersion
+}) {
+  const rows = ordered(versions, active);
+  const current = versions.find((v) => v.n === active);
+  const [open, setOpen] = import_react21.useState(false);
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenu, {
+    open,
+    onOpenChange: setOpen,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuTrigger, {
+        className: cn("flex items-baseline gap-1 rounded-sm px-1 text-ink outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60"),
+        "aria-label": `Version ${active}${current?.label ? ` — ${current.label}` : ""}: ${versions.length} version${versions.length === 1 ? "" : "s"}`,
+        children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+          className: "tabular-nums",
+          children: [
+            "v",
+            active,
+            current?.label ? ` · ${current.label}` : ""
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuContent, {
+        align: "start",
+        className: "w-72",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+            className: "border-b border-edge px-2 py-1.5",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+                className: "text-sm font-medium text-ink",
+                children: "Versions"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+                className: "text-xs text-ink-faint",
+                children: "Choosing one makes it the version you edit and Save writes."
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+            className: "max-h-64 overflow-y-auto py-1",
+            children: rows.map((v) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+              onClick: () => onActivate(v.n),
+              disabled: v.n === active,
+              className: "flex-col items-start gap-0.5",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                  className: "flex w-full items-center gap-1.5",
+                  children: [
+                    v.n === active ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BadgeCheck, {
+                      "aria-hidden": true,
+                      className: "size-3.5 shrink-0 text-rubric"
+                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                      "aria-hidden": true,
+                      className: "size-3.5 shrink-0"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                      className: "min-w-0 flex-1 truncate font-medium text-ink",
+                      children: versionLabel(v)
+                    }, undefined, false, undefined, this),
+                    v.label && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                      className: "shrink-0 text-[11px] text-ink-faint",
+                      children: [
+                        "v",
+                        v.n
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                  className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
+                  children: [
+                    v.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Sparkles, {
+                      "aria-hidden": true,
+                      className: "size-3 shrink-0"
+                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(User, {
+                      "aria-hidden": true,
+                      className: "size-3 shrink-0"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                      children: when(v.createdAt)
+                    }, undefined, false, undefined, this),
+                    v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                      type: "button",
+                      onClick: (e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        onCompare(v.n);
+                      },
+                      className: "ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitCompare, {
+                          "aria-hidden": true,
+                          className: "size-3"
+                        }, undefined, false, undefined, this),
+                        "Compare"
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, v.n, true, undefined, this))
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+            onClick: () => {
+              setOpen(false);
+              onNewVersion();
+            },
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BookmarkPlus, {
+                "aria-hidden": true,
+                className: "size-3.5"
+              }, undefined, false, undefined, this),
+              "New version from v",
+              active,
+              "…"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split", "compare"];
 var SPLIT_MIN_PX = 720;
 function useWidth() {
-  const ref = import_react20.useRef(null);
-  const [width, setWidth] = import_react20.useState(0);
-  import_react20.useEffect(() => {
+  const ref = import_react22.useRef(null);
+  const [width, setWidth] = import_react22.useState(0);
+  import_react22.useEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -62617,16 +63051,16 @@ var MODE_BUTTONS = [
   { mode: "compare", label: "Compare with another version", icon: GitCompare }
 ];
 function useDebouncedStats(text4, ms = 300) {
-  const [stats, setStats] = import_react20.useState(() => contentStats(text4 ?? ""));
-  import_react20.useEffect(() => {
+  const [stats, setStats] = import_react22.useState(() => contentStats(text4 ?? ""));
+  import_react22.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now2, setNow] = import_react20.useState(() => Date.now());
-  import_react20.useEffect(() => {
+  const [now2, setNow] = import_react22.useState(() => Date.now());
+  import_react22.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
@@ -62640,6 +63074,8 @@ function DocumentPane({
   diff,
   onAgainst,
   onTake,
+  onActivate,
+  onNewVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -62647,7 +63083,7 @@ function DocumentPane({
   onFollowLink,
   onAddFrontmatter
 }) {
-  const lastShown = import_react20.useRef(null);
+  const lastShown = import_react22.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown = text4 ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
@@ -62657,8 +63093,22 @@ function DocumentPane({
   const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
   const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc2?.versions.find((v) => v.n === doc2.active);
+  const [naming, setNaming] = import_react22.useState(false);
   const segments = doc2 ? [
-    { label: "Version", value: `v${doc2.active}${active?.label ? ` · ${active.label}` : ""}` },
+    {
+      label: "Version",
+      value: `v${doc2.active}${active?.label ? ` · ${active.label}` : ""}`,
+      node: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(VersionMenu, {
+        versions: doc2.versions,
+        active: doc2.active,
+        onActivate,
+        onCompare: (n) => {
+          onAgainst(n);
+          onMode("compare");
+        },
+        onNewVersion: () => setNaming(true)
+      }, undefined, false, undefined, this)
+    },
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
     {
       label: "Updated",
@@ -62669,27 +63119,27 @@ function DocumentPane({
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
     ref: paneRef,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(jsx_dev_runtime18.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(jsx_dev_runtime22.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
               className: "ml-auto flex shrink-0 items-center gap-1",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onRevert,
@@ -62697,13 +63147,13 @@ function DocumentPane({
                   title: "Take the file on disk back over your edits",
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(UndoDot, {
+                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(UndoDot, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Revert"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onSave,
@@ -62711,19 +63161,19 @@ function DocumentPane({
                   title: "Write this version over the file (⌘S)",
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Save, {
+                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Save, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Save"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
                   role: "toolbar",
                   "aria-label": "How to show this document",
                   className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
                   children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
                     const unavailable = m2 === "split" && !roomToSplit;
-                    return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+                    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
                       type: "button",
                       onClick: () => onMode(m2),
                       disabled: unavailable,
@@ -62731,7 +63181,7 @@ function DocumentPane({
                       "aria-label": label,
                       title: unavailable ? `${label} — the pane is too narrow` : label,
                       className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
-                      children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Icon2, {
+                      children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Icon2, {
                         "aria-hidden": true,
                         className: "size-3.5"
                       }, undefined, false, undefined, this)
@@ -62741,18 +63191,18 @@ function DocumentPane({
               ]
             }, undefined, true, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
             children: "This document has no frontmatter."
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
             type: "button",
             onClick: onAddFrontmatter,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -62760,21 +63210,21 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
             className: "min-w-0 flex-1",
             children: "This file changed on disk while you have unsaved edits."
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
             type: "button",
             onClick: onSave,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "Keep mine"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
             type: "button",
             onClick: onRevert,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -62782,55 +63232,55 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(CompareView, {
+      }, undefined, false, undefined, this) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(CompareView, {
         payload: diff,
         versions: doc2.versions,
         onAgainst,
         onTake
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown,
         editable: true,
         onChange: onEdit,
         onSave
-      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(MarkdownView, {
+      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MarkdownView, {
         text: shown,
         meta: doc2.meta,
         onFollowLink
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ResizablePanelGroup, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: splitLayout.defaultLayout,
         onLayoutChanged: splitLayout.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanel, {
             id: "doc-raw",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col",
-            children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(DocumentView, {
+            children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DocumentView, {
               docKey: doc2.slug,
               text: shown,
               editable: true,
@@ -62838,15 +63288,15 @@ function DocumentPane({
               onSave
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanel, {
             id: "doc-rendered",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col border-l border-edge",
-            children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(MarkdownView, {
+            children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MarkdownView, {
               text: shown,
               meta: doc2.meta,
               onFollowLink
@@ -62854,8 +63304,15 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(StatusStrip, {
+      doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(StatusStrip, {
         segments
+      }, undefined, false, undefined, this),
+      doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(NewVersionDialog, {
+        open: naming,
+        from: doc2.active,
+        next: Math.max(...doc2.versions.map((v) => v.n)) + 1,
+        onOpenChange: setNaming,
+        onCreate: onNewVersion
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -62888,21 +63345,21 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react21 = __toESM(require_react(), 1);
+var import_react23 = __toESM(require_react(), 1);
 var textKey = (doc2, version2) => `${doc2}@${version2}`;
 function useDaemon() {
-  const [state, setState] = import_react21.useState(null);
-  const [connection, setConnection] = import_react21.useState("connecting");
-  const [lastError, setLastError] = import_react21.useState(null);
-  const [texts, setTexts] = import_react21.useState(() => new Map);
-  const [done, setDone] = import_react21.useState(null);
-  const [diff, setDiff] = import_react21.useState(null);
-  const wsRef = import_react21.useRef(null);
-  const pending = import_react21.useRef(new Map);
-  const plans = import_react21.useRef(new Map);
-  const maps = import_react21.useRef(new Map);
-  const suggestions = import_react21.useRef(new Map);
-  import_react21.useEffect(() => {
+  const [state, setState] = import_react23.useState(null);
+  const [connection, setConnection] = import_react23.useState("connecting");
+  const [lastError, setLastError] = import_react23.useState(null);
+  const [texts, setTexts] = import_react23.useState(() => new Map);
+  const [done, setDone] = import_react23.useState(null);
+  const [diff, setDiff] = import_react23.useState(null);
+  const wsRef = import_react23.useRef(null);
+  const pending = import_react23.useRef(new Map);
+  const plans = import_react23.useRef(new Map);
+  const maps = import_react23.useRef(new Map);
+  const suggestions = import_react23.useRef(new Map);
+  import_react23.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer2;
@@ -62999,12 +63456,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react21.useCallback((msg) => {
+  const send = import_react23.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react21.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react23.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -63018,7 +63475,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react21.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react23.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -63033,7 +63490,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react21.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react23.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -63047,7 +63504,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const suggestMeta = import_react21.useCallback((path2) => new Promise((resolve) => {
+  const suggestMeta = import_react23.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -63061,7 +63518,7 @@ function useDaemon() {
     suggestions.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
   }), []);
-  const noteText = import_react21.useCallback((doc2, version2, text4) => {
+  const noteText = import_react23.useCallback((doc2, version2, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version2);
       if (prev.get(key) === text4)
@@ -63071,7 +63528,7 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react21.useCallback(() => setLastError(null), []);
+  const clearError = import_react23.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
@@ -63090,7 +63547,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -63102,7 +63559,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -63111,9 +63568,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react22.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react24.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react22.useEffect(() => {
+  import_react24.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -63125,41 +63582,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -63183,9 +63640,9 @@ function Workspace({
     clearError,
     done
   } = daemon;
-  const prefsRef = import_react22.useRef(state.prefs);
+  const prefsRef = import_react24.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react22.useMemo(() => ({
+  const storage = import_react24.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -63197,12 +63654,12 @@ function Workspace({
   });
   const saved = state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const [against, setAgainst] = import_react22.useState("original");
+  const [against, setAgainst] = import_react24.useState("original");
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text4 = open ? texts.get(textKey(open.slug, open.active)) : undefined;
-  const asked = import_react22.useRef(new Set);
-  import_react22.useEffect(() => {
+  const asked = import_react24.useRef(new Set);
+  import_react24.useEffect(() => {
     if (!open || text4 !== undefined)
       return;
     const key = textKey(open.slug, open.active);
@@ -63211,7 +63668,7 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text4, send]);
-  import_react22.useEffect(() => {
+  import_react24.useEffect(() => {
     if (mode !== "compare" || !open)
       return;
     if (against === open.active) {
@@ -63220,9 +63677,9 @@ function Workspace({
     }
     send({ type: "diff", doc: open.slug, against });
   }, [mode, open, against, text4, send]);
-  const openRef = import_react22.useRef(open);
+  const openRef = import_react24.useRef(open);
   openRef.current = open;
-  import_react22.useEffect(() => {
+  import_react24.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -63234,28 +63691,28 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react22.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react24.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react22.useEffect(() => {
+  import_react24.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizablePanelGroup, {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanelGroup, {
     orientation: "horizontal",
     className: "min-h-0 flex-1",
     defaultLayout: layout2.defaultLayout,
     onLayoutChanged: layout2.onLayoutChanged,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanel, {
         id: "context",
         defaultSize: "22",
         minSize: "12",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(PaneHeading, {
             children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ContextSidebar, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ContextSidebar, {
             entries: state.context,
             activeDoc,
             userHome: state.userHome,
@@ -63276,15 +63733,15 @@ function Workspace({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanel, {
         id: "document",
         defaultSize: "50",
         minSize: "25",
         className: "flex flex-col bg-bg",
-        children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(DocumentPane, {
+        children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(DocumentPane, {
           doc: open,
           text: text4,
           mode,
@@ -63294,6 +63751,14 @@ function Workspace({
           onTake: (hunks) => {
             if (open)
               send({ type: "merge", doc: open.slug, against, hunks });
+          },
+          onActivate: (version2) => {
+            if (open)
+              send({ type: "activate", doc: open.slug, version: version2 });
+          },
+          onNewVersion: (label) => {
+            if (open)
+              send({ type: "version.new", doc: open.slug, ...label ? { label } : {} });
           },
           splitLayout,
           onAddFrontmatter: async () => {
@@ -63320,35 +63785,35 @@ function Workspace({
           onRevert: () => open && send({ type: "revert", doc: open.slug })
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanel, {
         id: "chat",
         defaultSize: "28",
         minSize: "15",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(PaneHeading, {
             children: "Conversation"
           }, undefined, false, undefined, this),
-          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Empty, {
+          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Empty, {
             className: "h-full",
-            children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyTitle, {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyTitle, {
                   children: "No messages yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyDescription, {
                   children: "The conversation with the agent lives here."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActivityLog, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ActivityLog, {
             chat: state.chat
           }, undefined, false, undefined, this)
         ]
@@ -63357,28 +63822,28 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react22.useRef(null);
+  const end = import_react24.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react22.useEffect(() => {
+  import_react24.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m2.text
         ]
       }, m2.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -63386,7 +63851,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime20.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime24.jsxDEV(App, {}, undefined, false, undefined, this));

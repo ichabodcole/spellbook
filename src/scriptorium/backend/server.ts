@@ -482,6 +482,28 @@ export async function startDaemon(opts: StartOpts) {
       case "activate":
         activate(msg.doc, msg.version, "human");
         return;
+      case "version.new": {
+        const r = session.newVersion({
+          doc: msg.doc,
+          ...(msg.from === undefined ? {} : { from: msg.from }),
+          ...(msg.label ? { label: msg.label } : {}),
+          author: "human",
+        });
+        const m = session.addMessage(
+          "system",
+          `Made v${r.version.n} of ${r.slug} from v${r.version.from}${msg.label ? ` — ${msg.label}` : ""}.`,
+        );
+        log.emit({
+          type: "version.created",
+          doc: r.slug,
+          version: r.version.n,
+          from: r.version.from,
+          by: "human",
+          ts: m.ts,
+        });
+        broadcastState();
+        return;
+      }
       case "save": {
         const r = session.save(msg.doc);
         const m = session.addMessage("system", `Saved v${r.version} to ${r.original}.`);

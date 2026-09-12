@@ -806,3 +806,52 @@ are both reds, so additions and deletions looked the same. Measured in the
 browser, not predicted. `--color-added` / `--color-removed` join the spell's
 semantic tokens; they mean added and removed, and nothing else may borrow them
 to mean good and bad.
+
+## E37 · The human makes a version, and chooses which one they are in
+
+**Built:** 2026-09-12, immediately after E36 and because of it. Compare gave a
+human a reason to want versions, and then offered them no way to make one:
+`version.new` had been on the agent's command union since E1 and never on the
+surface's, so versions were an agent-only concept with a human-facing reader
+bolted on. Cole found it by asking "how do I create a new version of a file?" —
+which is the shape of gap a build finds and a plan does not.
+
+**Read against Operator's `VersionDropdown.vue` first, at Cole's suggestion.**
+Taken: the active version pinned to the top with a check, the AUTHOR shown per
+row (its Sparkles/User pair — worth more here, where the other author is the
+agent), and the LABEL as the identity with `vN` only as the fallback when nobody
+named it. Not taken: `maxVersionsPerDocument` with its "approaching limit"
+warnings and forced deletion, which solve a database quota; ours are files in a
+session folder.
+
+**Where we diverge, and why.** Operator spends two toolbar buttons (History,
+Save-version) plus a "Manage versions…" item. Our document toolbar already
+carries Revert, Save and four mode buttons. The list hangs off the STATUS
+STRIP's version segment instead — the strip already answers "where am I", so the
+versions belong behind the thing that names the current one, and no new toolbar
+control is added at all.
+
+**And the thing Operator's menu cannot do: COMPARE.** Switching to look is its
+only offer. A row here offers both, and comparing deliberately does NOT activate
+— reading a version before deciding is the whole point, and a menu that switched
+you to whatever you wanted to look at would make that impossible. (The Compare
+button lives inside the row, so it must stop the click reaching the row; that
+also stops the menu closing, which is why the menu is controlled.)
+
+**A new version is a SNAPSHOT, not a branch.** You keep editing the version you
+were on and the copy waits in the list — Operator's model ("preserve the current
+document state so you can refer back to it later"), and the one that matches
+when a human reaches for this: before doing something risky, wanting to carry on
+where they are. Switching to the copy is one click away, so the other reading is
+not lost. _The dialog's prose described a branch while the code made a snapshot;
+driving it in the browser is what showed the mismatch, and the words moved
+rather than the behaviour._
+
+**An empty name is allowed**, where Operator requires one. `v3` is a fine name
+for a snapshot taken in a hurry, and a forced field collects "asdf". The hint
+asks for INTENT rather than chronology — "before the agent's pass" — because the
+number is already known and the only thing a human can add is why.
+
+**`StatusSegment` grew a `node`**, rendered instead of the value. `value` stays
+required as the segment's plain-text truth, so a node is a richer rendering of
+the same fact and never a different one.

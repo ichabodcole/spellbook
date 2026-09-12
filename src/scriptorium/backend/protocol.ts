@@ -330,6 +330,12 @@ export type ClientMsg =
   | { type: "select"; selection: Selection | null }
   | { type: "say"; text: string; withSelection: boolean }
   | { type: "activate"; doc: string; version: number }
+  /**
+   * E37: the HUMAN makes a version. The agent has had `version.new` since E1;
+   * the surface had no way to make one at all, which made the versions the
+   * compare view reads an agent-only concept.
+   */
+  | { type: "version.new"; doc: string; from?: number; label?: string }
   | { type: "save"; doc: string }
   | { type: "revert"; doc: string }
   | { type: "context.add"; path: string }
