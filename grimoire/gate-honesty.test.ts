@@ -331,9 +331,11 @@ const DECLARED_BLIND: Record<string, number> = {
   // no definition, so context menus rendered transparent).
   // 88 -> 212 (E29): the rendered view's `.md-prose` rules — ELEMENT styling
   // for micromark's classless output, which no utility can express.
+  // 212 -> 254 (E30): scrollbars in the spell's colours, which are pseudo-element
+  // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 2,
   "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 212,
+  "src/scriptorium/surface/styles.css": 254,
 };
 
 type BlindReport = {

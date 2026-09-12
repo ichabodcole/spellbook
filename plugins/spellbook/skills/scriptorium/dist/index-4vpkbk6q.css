@@ -2392,6 +2392,57 @@
   }
 }
 
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: none;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #6f685873;
+    background-clip: content-box;
+    border: 3px solid #0000;
+    border-radius: 9999px;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    ::-webkit-scrollbar-thumb {
+      background-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent);
+    }
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #6f6858bf;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: color-mix(in srgb, var(--color-ink-faint) 75%, transparent);
+    }
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: none;
+  }
+
+  @supports  not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #6f685873 transparent;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      * {
+        scrollbar-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent) transparent;
+      }
+    }
+  }
+}
+
 @property --tw-translate-x {
   syntax: "*";
   inherits: false;

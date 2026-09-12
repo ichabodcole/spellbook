@@ -509,3 +509,27 @@ has no route to a file beside the document. A daemon asset route restricted to
 the entry's own folder is the fix, and it is the next chapter's, not this one's.
 Scroll is not synced between the two halves of a split; Operator syncs, and it
 matters more once editing lands.
+
+## E30 · Scrollbars are CSS, not `ScrollArea`
+
+**Ruled:** Cole asked for shadcn's styled scrollbar rather than the OS one ("it
+allows you to use a scroll bar that is more stylized to look like your general
+app style"). Done as pseudo-element rules in the spell's own tokens, NOT with
+shadcn's `ScrollArea`, and the reason decides it: `ScrollArea` replaces a native
+scroller with its own viewport, and **CodeMirror owns its scroller**
+(`.cm-scroller`) — wrapping the editor would take its scrolling and its
+virtualisation away. A `ScrollArea` surface would therefore carry a styled bar
+in the sidebar and the rendered view and a NATIVE one in the raw editor, which
+is the opposite of the ask. CSS reaches every scroller in the page, including
+CodeMirror's, and costs no dependency.
+
+**One mechanism, not two:** Chromium honours `scrollbar-color` and then ignores
+`::-webkit-scrollbar` entirely, so declaring both would silently drop the
+detailed rules. The pseudo-elements are the Chromium/WebKit path (Brave is
+Cole's browser, E23); the standard properties sit behind an `@supports` only
+Firefox takes.
+
+**Repeal when** a pane wants a scrollbar that is not the OS's SHAPE — overlay
+bars that fade when idle, a custom track, or scroll buttons. That is what
+`ScrollArea` is for, and it can be adopted per pane, leaving the editor on these
+rules.

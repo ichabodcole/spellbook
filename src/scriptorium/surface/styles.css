@@ -210,3 +210,45 @@
     color: var(--color-ink-dim);
   }
 }
+
+/* ─── Scrollbars, in the spell's own colours ──────────────────────────────────
+   Cole asked for shadcn's look rather than the OS bar. Done in CSS, NOT with
+   `ScrollArea`, for one reason that decides it: `ScrollArea` replaces a native
+   scroller with its own viewport, and CodeMirror OWNS its scroller
+   (`.cm-scroller`) — it cannot be wrapped without taking its scrolling away.
+   These rules reach every scroller in the surface, the editor's included, so
+   the raw view and the rendered view carry the same bar.
+
+   ⚠ ONE MECHANISM, NOT TWO. Chromium honours `scrollbar-color` and then
+   IGNORES `::-webkit-scrollbar` entirely, so declaring both would silently
+   drop the detailed rules. The pseudo-elements are the Chromium/WebKit path
+   (Brave is Cole's browser); the standard properties are behind an @supports
+   that only Firefox takes. */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent);
+    border-radius: 9999px;
+    /* The border is the inset: a thumb that fills 10px looks like a gutter. */
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 75%, transparent);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent) transparent;
+    }
+  }
+}
