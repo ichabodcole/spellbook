@@ -54,9 +54,27 @@ Types in use: `report` (45), `rule` (23), `plan` (16), `research` (15), `guide`,
 `concept`, `decision`, `tutorial`, `index`, `archetype`. So **the type
 vocabulary is per-project and open**, exactly as the spec intends.
 
-`operator-mono` is a different picture — partial adoption, and its own
-extensions (`hivemind_source_id`, `last_verified`, `applied_to`, `stack`). Two
-projects, two vocabularies, both legal.
+`operator-mono`'s repo docs are a different picture — partial adoption with its
+own extensions (`hivemind_source_id`, `last_verified`, `applied_to`, `stack`).
+Two projects, two vocabularies, both legal.
+
+⚠ **CORRECTION (Cole, 2026-09-11):** the operator-mono reference was to the
+frontmatter **the app itself uses** — operations, pipelines and triggers — not
+the repo's docs, which is what this seat sampled first. Read properly, the app
+is the most useful prior art in the whole survey, because it has already solved
+two of the four slices below:
+
+- `useMetadataEditor.ts` edits frontmatter fields from a panel and carries
+  **`preservedFields` — "unknown fields from frontmatter (preserved during
+  edits)"**. That is the spec's round-trip rule, implemented, and it shows a
+  structured editor IS viable if preservation is explicit rather than hoped for.
+- `useLinkNavigation.ts` resolves an `op:doc/<id>` link, switches project when
+  the target lives elsewhere, and surfaces a **graceful not-found** instead of a
+  silent no-op — shared deliberately between the metadata panel's "Linked
+  Resources / Backlinks" and in-content link clicks, "so behaviour is identical
+  wherever a link is clicked". Scriptorium's links are paths rather than ids,
+  but the UX rules transfer whole: one resolver behind every click, and a
+  missing target SAYS so.
 
 **Three conventions from that project's `docs/wiki/SCHEMA.md` are the ones
 scriptorium must respect**, because they are where Cole's practice is sharper
@@ -70,6 +88,38 @@ than the spec:
 - **Take the spec's vocabularies rather than inventing parallel ones** — the
   reason `status` is never `superseded`, and why a new distinction gets a NEW
   field instead of a widened one.
+
+## 2b · The tooling that already exists: `pdocs`
+
+Cole: "I plan to use the project docs frontmatter format in a lot of my
+projects." That format ships with a CLI (`scripts/pdocs/cli.ts`, from the
+project-docs plugin), and it already implements most of what §3 was about to
+propose:
+
+| verb        | what it gives                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `graph`     | `nodes[] {path, tier, type, title, tags[], related[], linksOut[], linksIn[]}`, `hubs`, `tags` |
+| `find`      | `--type --lifecycle --status --tag --since`, ANDed; an empty result exits 0                   |
+| `backlinks` | `related[]` and `links[]` **kept apart** — frontmatter edges vs body-link edges               |
+| `orphans`   | library pages the catalog cannot reach                                                        |
+| `check`     | the gate; `report` names what is missing, by field                                            |
+| `new`       | templates, filename grammar, `--from` wiring a link into the source document                  |
+
+**Two consequences, and the second corrects this plan's own earlier proposal.**
+
+1. **Scriptorium matches this vocabulary rather than inventing one.** Same
+   filter names, same `type/slug` keys, same JSON shapes where they fit. Not by
+   shelling out to another project's script — a spell that executes a file it
+   found in a repo is a different security story — but by speaking the same
+   words, so what Cole learns in one holds in the other. Where a corpus has no
+   pdocs (a folder of notes, the Hollowbrook documents), scriptorium's own
+   reader is the fallback that gives the same answers.
+2. **`related` and body links stay APART.** §5's "support the shape" idea
+   collapsed every resolving frontmatter value into one edge kind; pdocs keeps
+   the frontmatter edge and the body-link edge separate on purpose, and the
+   distinction is real — `related` is authored intent, a body link is a citation
+   in context. The shape rule still decides WHICH values resolve; it no longer
+   decides how they are displayed.
 
 ## 3 · What scriptorium should do with it
 
@@ -96,6 +146,20 @@ In the surface:
   different statuses in the UI".
 - **The agent gets the same parse**: a `meta` verb printing the context's
   documents with their frontmatter as JSON, so it never re-parses by hand.
+
+**Known fields get explicit support; unknown fields still get shown and kept**
+(Cole, 2026-09-11: "it's ok if we provide more explicit support for some front
+matter properties … while never discarding unknown fields"). The four worth
+knowing by name, because they are the ones the corpora actually carry:
+
+| field       | explicit support                                                                                                                              |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tags`      | `find --tag`, and tags shown as chips that filter the sidebar                                                                                 |
+| `status`    | OKF's three values as a badge; `find --status`                                                                                                |
+| `type`      | grouping and an icon in the sidebar; `find --type`                                                                                            |
+| `lifecycle` | shown and filterable (`find --lifecycle`), NEVER validated — pdocs checks it against the type's own vocabulary, which only that project knows |
+
+Everything else renders as a labelled value and round-trips untouched.
 
 ### Slice 2 · Links, resolved
 
@@ -163,55 +227,36 @@ value written behind their back.
 - **Not Spellbook's own docs, yet.** This repo uses no frontmatter; adopting OKF
   here is a separate decision, worth taking only after the reader exists.
 
-## 5 · The calls — one ruled, three open
-
-**RULED: where the map lives** — an overlay from a set's menu (§3, slice 3).
-
-The three still open, each sharpened by a second pass through the spec:
+## 5 · The calls — all four ruled
 
 1. **Link resolution scope.** The spec's bundle-relative form (`/concepts/x.md`)
-   means the BUNDLE root, not the filesystem root — so a resolver cannot work
-   until it decides what the bundle is. **A set's entry root is the bundle**:
-   `./x.md` resolves against the document, `/x.md` against the entry root. That
-   makes the open question narrower than it looked: what happens to a link that
-   ESCAPES the bundle, which is common in Cole's wiki (`decisions/x.md` →
-   `../concepts/exit-codes.md`). Context-only reads as broken; silently reaching
-   into the workspace grows the context behind the human's back and punches
-   through the admission rule that keeps a page from getting an arbitrary file
-   opened. **Proposed: in-bundle resolves silently; an out-of-bundle target that
-   exists on disk renders live and offers "Add and open" on click** — one click,
-   nothing silent, admission intact.
-2. **`related: [type/slug]` — no commitment needed after all.** Support the
-   SHAPE rather than the name: any frontmatter value that resolves to a document
-   in the bundle becomes an edge, LABELLED with the key it came from. `related`,
-   `supersedes`, `sources[].resource` and operator-mono's `applied_to` all work
-   without being named in the code, and a changed convention loses edges rather
-   than inventing wrong ones. The trap is false edges — `tags: [exit-codes]`
-   would match `exit-codes.md` — so a value counts as a reference only if it
-   CONTAINS A SLASH or ENDS IN `.md`. Cole's tags are bare words, excluded by
-   shape rather than by a blocklist.
-3. **A frontmatter write verb for the agent.** Three things argue for one: the
-   ANNOUNCEMENT (E24's `mv`-versus-`move` argument — a hand-edited frontmatter
-   changes the file with no line in the conversation), ROUND-TRIP SAFETY (the
-   right implementation is a targeted text edit to one key; an agent rewriting
-   the block tends to reserialise the YAML, reordering keys and losing comments,
-   which is what the spec's "preserve unknown keys" forbids), and SCOPE
-   (stamping `status: stable` is a verb's job; editing a nested `sources` list
-   is text work and stays text work). **Proposed:** `meta-set <path> key=value`
-   and `meta-init`, both announced.
-
-   **The case that needs a ruling:** the agent stamps frontmatter on a document
-   the human has open with unsaved edits. The verb writes the ORIGINAL (never
-   the active version — E2), so the conflict bar appears and the human chooses;
-   keeping theirs discards the stamp. The alternative is for the verb to refuse
-   while the document is dirty. **Proposed: let the conflict bar handle it** —
-   that machinery exists for exactly this, and refusing lets an open buffer
-   block the agent indefinitely.
+   means the BUNDLE root, so the resolver needs a bundle first: **a set's entry
+   root is the bundle** — `./x.md` against the document, `/x.md` against the
+   entry root. **In-bundle resolves silently; an out-of-bundle target that
+   exists on disk renders live and offers "Add and open" on click.** Nothing is
+   pulled in behind the human's back, and the admission rule (a document must be
+   in the context before it can be opened) stays intact.
+2. **Where the map lives — RULED (Cole):** an overlay from a set's menu.
+3. **`related`** needs no commitment: the SHAPE decides which values resolve (a
+   reference contains a slash or ends in `.md`, which excludes bare `tags`), and
+   §2b decides how they are shown — frontmatter edges and body links kept apart,
+   as pdocs keeps them.
+4. **A frontmatter write verb** — `meta-set <path> key=value` and `meta-init`,
+   both announced, both a targeted text edit to one key rather than a
+   reserialisation. **RULED (Cole): when the agent stamps frontmatter on a
+   document the human has open and dirty, the CONFLICT BAR handles it** — "we
+   can adjust if needed after getting actual usage behind us". So the verb
+   writes the original, the bar appears, and the human chooses; it does not
+   refuse, because an open buffer would then block the agent indefinitely.
 
 ## 6 · Sequencing
 
-Slice 1 is worth building on its own — it is the parse, the wire, the header and
-the agent's `meta`, and every later piece needs it. Slices 2 and 3 are one build
-in practice (the resolver IS the graph). Slice 4 is small once 1 exists. None of
-it blocks the chat slice; all of it makes chat more useful, because the agent
-can then be asked about a corpus rather than a file.
+Slice 1 is worth building on its own — the parse, the wire, the rendered header,
+the sidebar's status marks and the agent's `meta` and `find`; every later piece
+needs it. Slices 2 and 3 are one build in practice, because the resolver IS the
+graph. Slice 4 is small once 1 exists. None of it blocks the chat slice, and all
+of it makes chat more useful: the agent can then be asked about a CORPUS rather
+than a file.
+
+**All four questions are ruled, so this is buildable as it stands.** The
+sequence, when Cole wants it: slice 1 · slices 2+3 · slice 4.
