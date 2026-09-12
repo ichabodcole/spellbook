@@ -35443,7 +35443,8 @@ function AddPath({
   autoFocus = false,
   onCancel,
   className,
-  onPick
+  onPick,
+  openDown = false
 }) {
   const [value, setValue] = import_react8.useState(initialValue);
   const [listed, setListed] = import_react8.useState({
@@ -35551,7 +35552,7 @@ function AddPath({
         children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderOpen, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
       (suggestions.length > 0 || error2) && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
-        className: "absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg",
+        className: cn("absolute right-2 left-2 z-10 rounded-md border border-edge bg-surface-raised p-1 shadow-lg", openDown ? "top-full mt-1" : "bottom-full mb-1"),
         children: [
           error2 && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
             className: "px-2 py-1 text-xs text-attention",
@@ -37796,6 +37797,54 @@ function ContextSidebar({
   return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+        className: "flex items-center gap-2 border-b border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(House, {
+            "aria-hidden": true,
+            className: "size-3.5 shrink-0 text-ink-faint"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+            className: "shrink-0",
+            children: "Workspace"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+            className: "min-w-0 flex-1 truncate font-mono",
+            title: workspace,
+            children: shortPath(workspace, userHome, 3)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
+            variant: "ghost",
+            size: "icon-sm",
+            onClick: () => setEditingWorkspace((v) => !v),
+            "aria-label": editingWorkspace ? "Cancel changing the workspace" : "Change the workspace",
+            title: editingWorkspace ? "Cancel" : "Change the workspace — where dropped files are copied and new top-level documents are made",
+            children: editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SquarePen, {}, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
+        listDir,
+        placeholder: "Set the workspace folder…",
+        verb: "sets",
+        foldersOnly: true,
+        autoFocus: true,
+        initialValue: `${tildify(workspace, userHome)}/`,
+        onAdd: (path) => {
+          onStructure({ type: "workspace.set", path: expand(path, userHome) });
+          setEditingWorkspace(false);
+        },
+        onCancel: () => setEditingWorkspace(false),
+        className: "border-t-0 border-b border-edge pt-0 pb-2",
+        onPick: () => onPick("workspace"),
+        openDown: true
+      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
+        listDir,
+        onAdd: onAddPath,
+        className: "border-t-0 border-b border-edge pt-0 pb-2",
+        onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder"),
+        openDown: true
+      }, "add", false, undefined, this),
       drilledEntry ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SetView, {
         entry: drilledEntry,
         activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
@@ -37843,52 +37892,6 @@ function ContextSidebar({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-        className: "flex items-center gap-2 border-t border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(House, {
-            "aria-hidden": true,
-            className: "size-3.5 shrink-0 text-ink-faint"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-            className: "shrink-0",
-            children: "Workspace"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-            className: "min-w-0 flex-1 truncate font-mono",
-            title: workspace,
-            children: shortPath(workspace, userHome, 3)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
-            variant: "ghost",
-            size: "icon-sm",
-            onClick: () => setEditingWorkspace((v) => !v),
-            "aria-label": editingWorkspace ? "Cancel changing the workspace" : "Change the workspace",
-            title: editingWorkspace ? "Cancel" : "Change the workspace — where dropped files are copied and new top-level documents are made",
-            children: editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SquarePen, {}, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
-        listDir,
-        placeholder: "Set the workspace folder…",
-        verb: "sets",
-        foldersOnly: true,
-        autoFocus: true,
-        initialValue: `${tildify(workspace, userHome)}/`,
-        onAdd: (path) => {
-          onStructure({ type: "workspace.set", path: expand(path, userHome) });
-          setEditingWorkspace(false);
-        },
-        onCancel: () => setEditingWorkspace(false),
-        className: "border-t-0 pt-0",
-        onPick: () => onPick("workspace")
-      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
-        listDir,
-        onAdd: onAddPath,
-        className: "border-t-0 pt-0",
-        onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder")
-      }, "add", false, undefined, this),
       dialog
     ]
   }, undefined, true, undefined, this);
@@ -37978,25 +37981,6 @@ function ListView({
       onMove(path, into, folder);
   };
   const acceptsDrag = (e) => carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
-  const toolbar = /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-    className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-        className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
-        children: "Drop files here to copy them in"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
-        label: "New document in the workspace",
-        onClick: () => onStructure({ type: "doc.create", dir: workspace }),
-        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
-        label: "New set (a folder in the workspace)",
-        onClick: () => onStructure({ type: "folder.create", dir: workspace }),
-        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
   const menu = /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuContent, {
     children: [
       menuFor && singleDoc(menuFor) ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
@@ -38129,7 +38113,25 @@ function ListView({
           className: cn("flex min-h-0 flex-1 flex-col", dropOn === "" && "bg-rubric/8 ring-1 ring-rubric/40 ring-inset")
         }, undefined, false, undefined, this),
         children: [
-          toolbar,
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+                className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
+                children: "Drop files here to copy them in"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
+                label: "New document in the workspace",
+                onClick: () => onStructure({ type: "doc.create", dir: workspace }),
+                children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
+                label: "New set (a folder in the workspace)",
+                onClick: () => onStructure({ type: "folder.create", dir: workspace }),
+                children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
           entries.length === 0 ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Empty, {
             className: "flex-1",
             children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EmptyHeader, {

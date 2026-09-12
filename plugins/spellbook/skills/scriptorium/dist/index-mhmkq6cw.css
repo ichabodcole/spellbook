@@ -404,6 +404,10 @@
     top: 50%;
   }
 
+  .top-full {
+    top: 100%;
+  }
+
   .right-2 {
     right: calc(var(--spacing) * 2);
   }
@@ -1078,6 +1082,10 @@
 
   .pr-8 {
     padding-right: calc(var(--spacing) * 8);
+  }
+
+  .pb-2 {
+    padding-bottom: calc(var(--spacing) * 2);
   }
 
   .pl-1\.5 {

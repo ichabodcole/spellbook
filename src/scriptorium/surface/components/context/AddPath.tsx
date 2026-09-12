@@ -41,6 +41,7 @@ export function AddPath({
   onCancel,
   className,
   onPick,
+  openDown = false,
 }: {
   listDir: (path: string) => Promise<Listing>;
   onAdd: (path: string) => void;
@@ -59,6 +60,8 @@ export function AddPath({
    * content and a name, never a path). Absent: no button.
    */
   onPick?: (kind: "file" | "folder") => void;
+  /** Open the suggestion list DOWNWARD — for a box at the top of its panel. */
+  openDown?: boolean;
 }) {
   const [value, setValue] = useState(initialValue);
   // The suggestions carry the value they were computed FOR: a Tab or Enter
@@ -180,7 +183,12 @@ export function AddPath({
         </Button>
       )}
       {(suggestions.length > 0 || error) && (
-        <div className="absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg">
+        <div
+          className={cn(
+            "absolute right-2 left-2 z-10 rounded-md border border-edge bg-surface-raised p-1 shadow-lg",
+            openDown ? "top-full mt-1" : "bottom-full mb-1",
+          )}
+        >
           {error && <p className="px-2 py-1 text-xs text-attention">{error}</p>}
           <div
             id={listId}

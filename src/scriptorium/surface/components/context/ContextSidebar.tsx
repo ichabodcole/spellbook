@@ -240,6 +240,54 @@ export function ContextSidebar({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-2 border-b border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim">
+        <HomeIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
+        <span className="shrink-0">Workspace</span>
+        <span className="min-w-0 flex-1 truncate font-mono" title={workspace}>
+          {shortPath(workspace, userHome, 3)}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setEditingWorkspace((v) => !v)}
+          aria-label={editingWorkspace ? "Cancel changing the workspace" : "Change the workspace"}
+          title={
+            editingWorkspace
+              ? "Cancel"
+              : "Change the workspace — where dropped files are copied and new top-level documents are made"
+          }
+        >
+          {editingWorkspace ? <XIcon /> : <SquarePenIcon />}
+        </Button>
+      </div>
+      {editingWorkspace ? (
+        <AddPath
+          key="workspace"
+          listDir={listDir}
+          placeholder="Set the workspace folder…"
+          verb="sets"
+          foldersOnly
+          autoFocus
+          initialValue={`${tildify(workspace, userHome)}/`}
+          onAdd={(path) => {
+            onStructure({ type: "workspace.set", path: expand(path, userHome) });
+            setEditingWorkspace(false);
+          }}
+          onCancel={() => setEditingWorkspace(false)}
+          className="border-t-0 border-b border-edge pt-0 pb-2"
+          onPick={() => onPick("workspace")}
+          openDown
+        />
+      ) : (
+        <AddPath
+          key="add"
+          listDir={listDir}
+          onAdd={onAddPath}
+          className="border-t-0 border-b border-edge pt-0 pb-2"
+          onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
+          openDown
+        />
+      )}
       {drilledEntry ? (
         <SetView
           entry={drilledEntry}
@@ -287,52 +335,6 @@ export function ContextSidebar({
             <XIcon className="size-3.5" />
           </button>
         </div>
-      )}
-      <div className="flex items-center gap-2 border-t border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim">
-        <HomeIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
-        <span className="shrink-0">Workspace</span>
-        <span className="min-w-0 flex-1 truncate font-mono" title={workspace}>
-          {shortPath(workspace, userHome, 3)}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setEditingWorkspace((v) => !v)}
-          aria-label={editingWorkspace ? "Cancel changing the workspace" : "Change the workspace"}
-          title={
-            editingWorkspace
-              ? "Cancel"
-              : "Change the workspace — where dropped files are copied and new top-level documents are made"
-          }
-        >
-          {editingWorkspace ? <XIcon /> : <SquarePenIcon />}
-        </Button>
-      </div>
-      {editingWorkspace ? (
-        <AddPath
-          key="workspace"
-          listDir={listDir}
-          placeholder="Set the workspace folder…"
-          verb="sets"
-          foldersOnly
-          autoFocus
-          initialValue={`${tildify(workspace, userHome)}/`}
-          onAdd={(path) => {
-            onStructure({ type: "workspace.set", path: expand(path, userHome) });
-            setEditingWorkspace(false);
-          }}
-          onCancel={() => setEditingWorkspace(false)}
-          className="border-t-0 pt-0"
-          onPick={() => onPick("workspace")}
-        />
-      ) : (
-        <AddPath
-          key="add"
-          listDir={listDir}
-          onAdd={onAddPath}
-          className="border-t-0 pt-0"
-          onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
-        />
       )}
       {dialog}
     </div>
@@ -451,26 +453,6 @@ function ListView({
   const acceptsDrag = (e: DragEvent) =>
     carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
 
-  const toolbar = (
-    <div className="flex shrink-0 items-center gap-0.5 px-1.5 pt-1">
-      <span className="flex-1 truncate px-1 text-[11px] text-ink-faint">
-        Drop files here to copy them in
-      </span>
-      <ToolButton
-        label="New document in the workspace"
-        onClick={() => onStructure({ type: "doc.create", dir: workspace })}
-      >
-        <FilePlusIcon />
-      </ToolButton>
-      <ToolButton
-        label="New set (a folder in the workspace)"
-        onClick={() => onStructure({ type: "folder.create", dir: workspace })}
-      >
-        <FolderPlusIcon />
-      </ToolButton>
-    </div>
-  );
-
   const menu = (
     <ContextMenuContent>
       {menuFor && singleDoc(menuFor) ? (
@@ -579,7 +561,23 @@ function ListView({
           />
         }
       >
-        {toolbar}
+        <div className="flex shrink-0 items-center gap-0.5 px-1.5 pt-1">
+          <span className="flex-1 truncate px-1 text-[11px] text-ink-faint">
+            Drop files here to copy them in
+          </span>
+          <ToolButton
+            label="New document in the workspace"
+            onClick={() => onStructure({ type: "doc.create", dir: workspace })}
+          >
+            <FilePlusIcon />
+          </ToolButton>
+          <ToolButton
+            label="New set (a folder in the workspace)"
+            onClick={() => onStructure({ type: "folder.create", dir: workspace })}
+          >
+            <FolderPlusIcon />
+          </ToolButton>
+        </div>
         {entries.length === 0 ? (
           <Empty className="flex-1">
             <EmptyHeader>
