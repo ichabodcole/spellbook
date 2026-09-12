@@ -426,3 +426,44 @@ folding New document / New set into the path row (four icon buttons crowded the
 input to about 130px, two of them near-duplicates — built, looked at, dropped).
 `AddPath` therefore carries an `openDown` flag: a box at the top of a panel must
 drop its suggestions downward, and the same component is used in both places.
+
+## E28 · Undo and redo: ONE shared timeline of committed acts — DEFERRED, shape decided
+
+**Ruled:** Cole, 2026-09-11, after his own accidental moves ("if you
+accidentally move something and you're like, oh, actually, I want to move that
+back where it was"), and DEFERRED in the same breath — "once we get into
+editing, that's also going to need undo-redo. So the question is like, is there
+like a global undo-redo? Is it context specific? I'm not honestly sure." Nothing
+is built. The shape is decided here so the editing slice starts from a decision
+rather than reopening it, and this seat's first recommendation — two stacks, one
+per domain, chosen by focus (VS Code's explorer-vs-editor model) — was
+OVERRULED: Cole, "I would also say ultimately probably one shared timeline".
+
+**The timeline records COMMITTED ACTS, not keystrokes.** A move, rename, create,
+import, hide/unhide, set.make, workspace change, a Save, a version made active:
+one ordered list, persisted beside the manifest, each entry naming who did it
+and carrying its own inverse. Keystrokes stay in the editor, in CodeMirror's own
+per-document history — a shared timeline of keystrokes would bury every
+organizing act under typing, and an agent scanning the history would learn
+nothing from it. **The join is Save (E7)**, which is already the line where a
+buffer becomes real for everyone else: fine grain inside a version, timeline
+between them.
+
+**The timeline is shared by both parties**, because both move the same real
+files (E24). The human's undo may therefore reverse the AGENT's last act — a
+stack that skipped it would revert the wrong thing — so undo names the actor
+when it crosses ("Undo the agent's move of plan.md?"). Still open, and flagged
+rather than assumed.
+
+**What keeps a global undo from being dangerous** is E26's rule again: undo SAYS
+what it is about to do whenever the next entry is not a text edit in front of
+the human, through the same ConfirmDialog. And ⌘Z in the editor does NOT fall
+through: at the start of a buffer's history it stops there rather than reaching
+into the filesystem. The timeline's undo is its own affordance — a visible one
+on the change's line in the conversation, not only a keystroke.
+
+**Undoing a CREATE or an IMPORT is the case that meets E24's "nothing is
+deleted"**: the inverse of making a file is removing it. Ruled for the build:
+remove it only while it is still empty (a new document) or unchanged since the
+import, and otherwise refuse in words. An inverse whose ground has shifted (the
+file moved again since) refuses too, rather than guessing.
