@@ -24,6 +24,7 @@ import {
   ChevronDownIcon,
   GitCompareIcon,
   SparklesIcon,
+  Trash2Icon,
   UserIcon,
 } from "lucide-react";
 import { Fragment, useState } from "react";
@@ -75,12 +76,15 @@ export function VersionMenu({
   onActivate,
   onCompare,
   onNewVersion,
+  onDelete,
 }: {
   versions: Version[];
   active: number;
   onActivate: (n: number) => void;
   onCompare: (n: number) => void;
   onNewVersion: () => void;
+  /** E41: remove a version and its file — never the active one, so never offered on it. */
+  onDelete: (n: number) => void;
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -114,7 +118,7 @@ export function VersionMenu({
         <span className="font-medium tabular-nums">v{active}</span>
         <ChevronDownIcon aria-hidden className="size-3 shrink-0 text-ink-faint" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent align="start" className="w-80">
         <div className="border-b border-edge px-2 py-1.5">
           <p className="text-sm font-medium text-ink">Versions</p>
           <p className="text-xs text-ink-faint">
@@ -158,7 +162,7 @@ export function VersionMenu({
                   ) : (
                     <UserIcon aria-hidden className="size-3 shrink-0" />
                   )}
-                  <span>{when(v.createdAt)}</span>
+                  <span className="whitespace-nowrap">{when(v.createdAt)}</span>
                   {v.n !== active && (
                     // ⛔ Comparing must NOT activate. The whole point of reading
                     // a version first is to decide, and a menu that switched you
@@ -175,6 +179,24 @@ export function VersionMenu({
                     >
                       <GitCompareIcon aria-hidden className="size-3" />
                       Compare
+                    </button>
+                  )}
+                  {v.n !== active && (
+                    // Offered ONLY on a version that is not active, which is
+                    // the same rule the daemon enforces (E41) — the UI does
+                    // not show an action the wire would refuse.
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        onDelete(v.n);
+                      }}
+                      aria-label={`Delete ${versionLabel(v)}`}
+                      title={`Delete ${versionLabel(v)}`}
+                      className="flex items-center rounded-sm px-1 py-0.5 text-ink-faint hover:bg-bg hover:text-danger"
+                    >
+                      <Trash2Icon aria-hidden className="size-3" />
                     </button>
                   )}
                 </span>

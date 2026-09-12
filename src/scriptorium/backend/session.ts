@@ -36,6 +36,7 @@ import {
   readSync,
   realpathSync,
   renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -115,6 +116,16 @@ type DocRecord = {
   ext: string;
   versions: Omit<Version, "path">[];
   active: number;
+  /**
+   * The next version number to hand out — MONOTONIC, and never derived from
+   * the versions still present (E41). Numbering as `max(existing) + 1` was
+   * correct while nothing could be deleted; the moment a version can be
+   * removed, deleting the highest makes the next one REUSE its number, and a
+   * `v3` named in a chat message, a log line or an agent's notes would then
+   * point at a different document. Absent on a manifest written before E41 —
+   * `takeVersion` derives it once, from the highest that ever was.
+   */
+  nextVersion?: number;
   /** Hash of the original as we last read or wrote it — at open, save, revert
    *  and reload — so a restore can tell that it changed while no daemon was
    *  watching (verify-pass fix 2). */
@@ -347,7 +358,7 @@ export class Session {
 
   /** Keep an outside write to the active version as a NEW agent version. */
   private preserveOutside(d: DocRecord, text: string): Version {
-    const n = Math.max(...d.versions.map((v) => v.n)) + 1;
+    const n = this.takeVersion(d);
     const rec: Omit<Version, "path"> = {
       n,
       author: "agent",
@@ -462,6 +473,13 @@ export class Session {
     }
     const byName = this.m.docs.filter((d) => basename(d.original) === key || d.rel === key);
     return byName.length === 1 ? byName[0] : undefined;
+  }
+
+  /** The next version number, consumed. Numbers are never reused (E41). */
+  private takeVersion(d: DocRecord): number {
+    const n = d.nextVersion ?? Math.max(...d.versions.map((v) => v.n)) + 1;
+    d.nextVersion = n + 1;
+    return n;
   }
 
   private versionOrDie(d: DocRecord, n: number): Omit<Version, "path"> {
@@ -631,7 +649,7 @@ export class Session {
     const from = opts.from ?? d.active;
     this.versionOrDie(d, from);
     const text = readFileSync(this.versionPath(d, from), "utf8");
-    const n = Math.max(...d.versions.map((v) => v.n)) + 1;
+    const n = this.takeVersion(d);
     const rec: Omit<Version, "path"> = {
       n,
       author: opts.author,
@@ -643,6 +661,59 @@ export class Session {
     this.writeOwned(this.versionPath(d, n), text);
     this.persist();
     return { slug: d.slug, version: { ...rec, path: this.versionPath(d, n) } };
+  }
+
+  /**
+   * Remove a version and its file (E41).
+   *
+   * ⛔ THE ACTIVE VERSION CANNOT BE DELETED, and refusing is better than
+   * picking a replacement: choosing one for the human would silently move
+   * where their edits and Save are pointed, which is the one thing E2 and E7
+   * exist to keep explicit. Because exactly one version is always active, this
+   * also means the last version can never be deleted — a document always has
+   * something to edit, without that being a second rule.
+   *
+   * `from` pointers on OTHER versions are left as they are. "Made from v2"
+   * stays true after v2 is gone; deleting a version is not rewriting the
+   * history of the ones that remain.
+   */
+  deleteVersion(opts: { doc?: string; version: number }): {
+    slug: string;
+    version: number;
+    label?: string;
+    remaining: number;
+  } {
+    const d = this.docOrDie(opts.doc);
+    const v = this.versionOrDie(d, opts.version);
+    if (opts.version === d.active)
+      throw new SessionError(
+        `v${opts.version} is the active version of ${d.slug} — activate another one first, ` +
+          `then delete this`,
+        409,
+      );
+    // ⛔ MATERIALISE THE COUNTER BEFORE REMOVING THE RECORD. `takeVersion`
+    // derives it lazily from the versions PRESENT, so on a doc that has never
+    // allocated one (a manifest written before E41, restored) deleting the
+    // highest would let the next allocation derive the same number again. Found
+    // by driving it, not by the unit test above — which allocated first and so
+    // never had a cold counter.
+    d.nextVersion ??= Math.max(...d.versions.map((x) => x.n)) + 1;
+    const path = this.versionPath(d, opts.version);
+    d.versions = d.versions.filter((x) => x.n !== opts.version);
+    try {
+      rmSync(path);
+    } catch {
+      // The record is what the session believes; a file already gone (a hand
+      // tidy, a crash between write and record) must not block removing it.
+    }
+    this.owned.delete(path);
+    this.persist();
+    return {
+      slug: d.slug,
+      version: opts.version,
+      ...(v.label ? { label: v.label } : {}),
+      remaining: d.versions.length,
+    };
   }
 
   activate(opts: { doc?: string; version: number }): { slug: string; previous: number } {

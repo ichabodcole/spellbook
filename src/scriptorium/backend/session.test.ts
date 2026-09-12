@@ -4,6 +4,7 @@
 // spawns a process or opens a socket.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -395,4 +396,115 @@ describe("the manifest survives a restart (--restore)", () => {
 test("contentHash is stable and distinguishes content", () => {
   expect(contentHash("a")).toBe(contentHash("a"));
   expect(contentHash("a")).not.toBe(contentHash("b"));
+});
+
+describe("deleting a version (E41)", () => {
+  test("removes the record AND the file", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const v2 = s.newVersion({ doc: slug, author: "agent" }).version;
+    expect(existsSync(v2.path)).toBe(true);
+    const r = s.deleteVersion({ doc: slug, version: 2 });
+    expect(r.remaining).toBe(1);
+    expect(s.doc(slug).versions.map((v) => v.n)).toEqual([1]);
+    expect(existsSync(v2.path)).toBe(false);
+  });
+
+  test("REFUSES the active version, naming what to do instead", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, author: "agent" });
+    const e = refusal(() => s.deleteVersion({ doc: slug, version: 1 }));
+    expect(e.status).toBe(409);
+    expect(e.message).toContain("activate another one first");
+  });
+
+  test("so the LAST version can never be deleted — one is always active", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    expect(refusal(() => s.deleteVersion({ doc: slug, version: 1 })).status).toBe(409);
+    expect(s.doc(slug).versions).toHaveLength(1);
+  });
+
+  test("a version that does not exist is a 404 listing the ones that do", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const e = refusal(() => s.deleteVersion({ doc: slug, version: 9 }));
+    expect(e.status).toBe(404);
+    expect(e.choices).toEqual(["v1"]);
+  });
+
+  test("the number is NOT reused by the next version", () => {
+    // ⛔ The cell E41 exists for. Numbering was `max(existing) + 1`, so
+    // deleting the highest handed its number to the next one — and a "v2"
+    // named in a chat message or an agent's notes would then point at a
+    // different document.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, author: "agent" });
+    s.deleteVersion({ doc: slug, version: 2 });
+    const next = s.newVersion({ doc: slug, author: "human" }).version;
+    expect(next.n).toBe(3);
+  });
+
+  test("a version made BEFORE the counter existed still does not have its number reused", () => {
+    // ⛔ The case the browser found and the cell above missed. A session
+    // restored from a manifest written before E41 has no counter; deleting its
+    // HIGHEST version must still not free that number for the next one.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, author: "agent" });
+    // Strip the counter from the persisted manifest: a pre-E41 session exactly.
+    const file = join(s.dir, "manifest.json");
+    const raw = JSON.parse(readFileSync(file, "utf8")) as {
+      docs: { nextVersion?: number }[];
+    };
+    for (const doc of raw.docs) doc.nextVersion = undefined;
+    writeFileSync(file, JSON.stringify(raw));
+
+    const cold = Session.restore(home, s.id);
+    cold.deleteVersion({ doc: slug, version: 2 });
+    expect(cold.newVersion({ doc: slug, author: "human" }).version.n).toBe(3);
+  });
+
+  test("numbers keep climbing across several deletions", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    for (const n of [2, 3, 4]) {
+      s.newVersion({ doc: slug, author: "agent" });
+      s.deleteVersion({ doc: slug, version: n });
+    }
+    expect(s.newVersion({ doc: slug, author: "human" }).version.n).toBe(5);
+  });
+
+  test("`from` on the survivors is left alone — it stays true", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: 2 });
+    const v3 = s.newVersion({ doc: slug, from: 2, author: "agent" }).version;
+    expect(v3.from).toBe(2);
+    s.activate({ doc: slug, version: 1 });
+    s.deleteVersion({ doc: slug, version: 2 });
+    expect(s.doc(slug).versions.find((v) => v.n === 3)?.from).toBe(2);
+  });
+
+  test("a file already gone does not block removing the record", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const v2 = s.newVersion({ doc: slug, author: "agent" }).version;
+    rmSync(v2.path);
+    expect(() => s.deleteVersion({ doc: slug, version: 2 })).not.toThrow();
+    expect(s.doc(slug).versions.map((v) => v.n)).toEqual([1]);
+  });
+
+  test("the deletion survives a restore", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, author: "agent" });
+    s.deleteVersion({ doc: slug, version: 2 });
+    const again = Session.restore(home, s.id);
+    expect(again.doc(slug).versions.map((v) => v.n)).toEqual([1]);
+    expect(again.newVersion({ doc: slug, author: "human" }).version.n).toBe(3);
+  });
 });

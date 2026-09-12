@@ -482,6 +482,22 @@ export async function startDaemon(opts: StartOpts) {
       case "activate":
         activate(msg.doc, msg.version, "human");
         return;
+      case "version.delete": {
+        const r = session.deleteVersion({ doc: msg.doc, version: msg.version });
+        const m = session.addMessage(
+          "system",
+          `Deleted v${r.version} of ${r.slug}${r.label ? ` — ${r.label}` : ""}.`,
+        );
+        log.emit({
+          type: "version.deleted",
+          doc: r.slug,
+          version: r.version,
+          by: "human",
+          ts: m.ts,
+        });
+        broadcastState();
+        return;
+      }
       case "version.new": {
         const r = session.newVersion({
           doc: msg.doc,
@@ -815,6 +831,16 @@ export async function startDaemon(opts: StartOpts) {
           { fact: "meta.set", by: "agent", ...r },
         );
         return r;
+      }
+      case "version.delete": {
+        const r = session.deleteVersion({ doc: cmd.doc, version: cmd.version });
+        announce(`Agent deleted v${r.version} of ${r.slug}${r.label ? ` — ${r.label}` : ""}.`, {
+          fact: "version.deleted",
+          doc: r.slug,
+          version: r.version,
+          by: "agent",
+        });
+        return { doc: r.slug, version: r.version, remaining: r.remaining };
       }
       case "diff": {
         const p = session.compare({ doc: cmd.doc, against: cmd.against });

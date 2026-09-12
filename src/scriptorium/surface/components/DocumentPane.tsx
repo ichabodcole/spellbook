@@ -15,6 +15,7 @@ import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
 import { Separator } from "@/ui/separator";
+import { useConfirm } from "../../../kit/ui/ConfirmDialog";
 import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
 import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
@@ -95,6 +96,7 @@ export function DocumentPane({
   onTake,
   onActivate,
   onNewVersion,
+  onDeleteVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -114,6 +116,7 @@ export function DocumentPane({
   /** E37: the human makes a version, and chooses which one is active. */
   onActivate: (version: number) => void;
   onNewVersion: (label: string) => void;
+  onDeleteVersion: (version: number) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -145,6 +148,7 @@ export function DocumentPane({
   const showing: ViewMode = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc?.versions.find((v) => v.n === doc.active);
   const [naming, setNaming] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
   const segments: StatusSegment[] = doc
     ? [
@@ -184,6 +188,21 @@ export function DocumentPane({
                 onMode("compare");
               }}
               onNewVersion={() => setNaming(true)}
+              onDelete={async (n) => {
+                const v = doc.versions.find((x) => x.n === n);
+                // ⛔ ASKED, because this removes a FILE. The version's own text
+                // is the only copy of whatever was tried in it — the original
+                // on disk and the active version both survive, but what was
+                // written here does not.
+                const ok = await confirm({
+                  title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
+                  message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
+                  warning: "Anything written only in this version is lost.",
+                  confirmLabel: "Delete",
+                  confirmClassName: "bg-danger text-bg hover:bg-danger/90",
+                });
+                if (ok) onDeleteVersion(n);
+              }}
             />
             <Separator orientation="vertical" className="my-2 shrink-0" />
             <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
@@ -346,6 +365,7 @@ export function DocumentPane({
         </ResizablePanelGroup>
       )}
       {doc && <StatusStrip segments={segments} />}
+      {dialog}
       {doc && (
         <NewVersionDialog
           open={naming}

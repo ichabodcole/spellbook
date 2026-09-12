@@ -978,3 +978,53 @@ drop target is a transient call for attention during a drag — "this is where i
 lands, act now" — which is what an accent is for. Selection is a persistent
 statement of fact. Different jobs, so different colours, and during a drag the
 two are now legible at once instead of being the same wash.
+
+## E41 · A version can be deleted, and its number never comes back
+
+**Asked by Cole, 2026-09-12:** _"I think we need the ability to delete a
+version… not sure if that is a completely missing verb or just a UI gap."_
+
+**Completely missing.** No session method, no wire message, no CLI verb —
+neither party could remove a version. E37 gave the human a way to MAKE them and
+nothing to clean up with.
+
+**The active version cannot be deleted, and refusing beats choosing.** Picking a
+replacement would silently move where the human's edits and Save are pointed,
+which is the one thing E2 and E7 exist to keep explicit. Because exactly one
+version is always active, this also means the LAST version can never be deleted
+— a document always has something to edit, and that falls out rather than being
+a second rule.
+
+**`from` on the survivors is left alone.** "Made from v2" stays true after v2 is
+gone; deleting a version is not rewriting the history of the ones that remain.
+
+**⛔ VERSION NUMBERS ARE NOW MONOTONIC, and this is the real cost of the
+feature.** Numbering was `max(existing) + 1`, which is correct only while
+nothing can be deleted: the moment it can, removing the highest hands its number
+to the next one, and a `v3` named in a chat message, a log line or an agent's
+notes points at a different document. So the number comes from a persisted
+counter that only ever climbs.
+
+**And the first implementation of that was wrong, in a way the unit test could
+not see.** The counter is derived lazily from the versions PRESENT, so a
+document that had never allocated one — a manifest written before E41, restored
+— would derive the same number again after its highest version was deleted. The
+test passed because it allocated first and so never had a cold counter; the
+BROWSER found it, on a session that predated the feature. `deleteVersion` now
+materialises the counter before it removes anything, and the regression cell
+constructs a pre-E41 manifest on purpose (verified red without the fix).
+
+_Worth keeping: a test built from the same mental model as the code inherits its
+blind spot. This one only failed against state the code's author had not
+imagined — an old session — which is what driving the real thing supplies and a
+fresh fixture does not._
+
+**The UI asks before deleting**, through the kit's `ConfirmDialog` (E27),
+because this removes a FILE: the original on disk and the active version both
+survive, but whatever was written only in that version does not. The trash
+action is offered only on non-active rows — the same rule the daemon enforces,
+so the surface never shows an action the wire would refuse.
+
+**The compare view falls back to the original** when the side it was showing is
+deleted or becomes active. The side can vanish under it; the original always
+exists.

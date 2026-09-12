@@ -18361,32 +18361,41 @@ var __iconNode31 = [
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
 var Sun = createLucideIcon("sun", __iconNode31);
-// node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
+// node_modules/lucide-react/dist/esm/icons/trash-2.mjs
 var __iconNode32 = [
+  ["path", { d: "M10 11v6", key: "nco0om" }],
+  ["path", { d: "M14 11v6", key: "outv1u" }],
+  ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
+];
+var Trash2 = createLucideIcon("trash-2", __iconNode32);
+// node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
+var __iconNode33 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode32);
+var UndoDot = createLucideIcon("undo-dot", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode33);
+var UserCheck = createLucideIcon("user-check", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode34);
+var User = createLucideIcon("user", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode35);
+var X = createLucideIcon("x", __iconNode36);
 // src/scriptorium/surface/App.tsx
 var import_react24 = __toESM(require_react(), 1);
 
@@ -62910,7 +62919,8 @@ function VersionMenu({
   active,
   onActivate,
   onCompare,
-  onNewVersion
+  onNewVersion,
+  onDelete
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -62938,7 +62948,7 @@ function VersionMenu({
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuContent, {
         align: "start",
-        className: "w-72",
+        className: "w-80",
         children: [
           /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
             className: "border-b border-edge px-2 py-1.5",
@@ -62997,6 +63007,7 @@ function VersionMenu({
                           className: "size-3 shrink-0"
                         }, undefined, false, undefined, this),
                         /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                          className: "whitespace-nowrap",
                           children: when(v.createdAt)
                         }, undefined, false, undefined, this),
                         v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
@@ -63014,7 +63025,22 @@ function VersionMenu({
                             }, undefined, false, undefined, this),
                             "Compare"
                           ]
-                        }, undefined, true, undefined, this)
+                        }, undefined, true, undefined, this),
+                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                          type: "button",
+                          onClick: (e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            onDelete(v.n);
+                          },
+                          "aria-label": `Delete ${versionLabel(v)}`,
+                          title: `Delete ${versionLabel(v)}`,
+                          className: "flex items-center rounded-sm px-1 py-0.5 text-ink-faint hover:bg-bg hover:text-danger",
+                          children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Trash2, {
+                            "aria-hidden": true,
+                            className: "size-3"
+                          }, undefined, false, undefined, this)
+                        }, undefined, false, undefined, this)
                       ]
                     }, undefined, true, undefined, this)
                   ]
@@ -63093,6 +63119,7 @@ function DocumentPane({
   onTake,
   onActivate,
   onNewVersion,
+  onDeleteVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -63111,6 +63138,7 @@ function DocumentPane({
   const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc2?.versions.find((v) => v.n === doc2.active);
   const [naming, setNaming] = import_react22.useState(false);
+  const { confirm, dialog } = useConfirm();
   const segments = doc2 ? [
     { label: "Version", value: versionSummary(active, doc2.active) },
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
@@ -63139,7 +63167,19 @@ function DocumentPane({
                 onAgainst(n);
                 onMode("compare");
               },
-              onNewVersion: () => setNaming(true)
+              onNewVersion: () => setNaming(true),
+              onDelete: async (n) => {
+                const v = doc2.versions.find((x3) => x3.n === n);
+                const ok2 = await confirm({
+                  title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
+                  message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
+                  warning: "Anything written only in this version is lost.",
+                  confirmLabel: "Delete",
+                  confirmClassName: "bg-danger text-bg hover:bg-danger/90"
+                });
+                if (ok2)
+                  onDeleteVersion(n);
+              }
             }, undefined, false, undefined, this),
             /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Separator2, {
               orientation: "vertical",
@@ -63325,6 +63365,7 @@ function DocumentPane({
       doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this),
+      dialog,
       doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(NewVersionDialog, {
         open: naming,
         from: doc2.active,
@@ -63689,7 +63730,7 @@ function Workspace({
   import_react24.useEffect(() => {
     if (mode !== "compare" || !open)
       return;
-    if (against === open.active) {
+    if (against === open.active || typeof against === "number" && !open.versions.some((v) => v.n === against)) {
       setAgainst("original");
       return;
     }
@@ -63777,6 +63818,10 @@ function Workspace({
           onNewVersion: (label) => {
             if (open)
               send({ type: "version.new", doc: open.slug, ...label ? { label } : {} });
+          },
+          onDeleteVersion: (version2) => {
+            if (open)
+              send({ type: "version.delete", doc: open.slug, version: version2 });
           },
           splitLayout,
           onAddFrontmatter: async () => {

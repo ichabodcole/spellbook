@@ -707,6 +707,21 @@ const COMMANDS: CommandSpec[] = [
     },
   },
   {
+    name: "version-delete",
+    flags: [...SESSION, "doc"],
+    positionals: [{ name: "vN", required: true }],
+    describe: "remove a version and its file (never the active one — activate another first)",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "version.delete",
+          version: parseVersion(pos[0] ?? "", "version-delete"),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
     name: "diff",
     flags: [...SESSION, "doc", "context", "patch"],
     positionals: [{ name: "against", required: true }],

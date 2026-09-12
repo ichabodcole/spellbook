@@ -336,6 +336,8 @@ export type ClientMsg =
    * compare view reads an agent-only concept.
    */
   | { type: "version.new"; doc: string; from?: number; label?: string }
+  /** E41: remove a version and its file. Never the active one. */
+  | { type: "version.delete"; doc: string; version: number }
   | { type: "save"; doc: string }
   | { type: "revert"; doc: string }
   | { type: "context.add"; path: string }
@@ -404,6 +406,7 @@ export type AgentCmd =
   | { type: "version.new"; doc?: string; from?: number; label?: string }
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
+  | { type: "version.delete"; doc?: string; version: number }
   | { type: "diff"; doc?: string; against: DiffSide; context?: number }
   | { type: "merge"; doc?: string; against: DiffSide; hunks: number[] }
   | { type: "close" }

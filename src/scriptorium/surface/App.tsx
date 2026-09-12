@@ -176,7 +176,13 @@ function Workspace({
   // the hunks the human sees are always the hunks the daemon would apply.
   useEffect(() => {
     if (mode !== "compare" || !open) return;
-    if (against === open.active) {
+    // The side can vanish under us — it is a version, and a version can be
+    // deleted (E41) or become the active one. Either way the original is the
+    // side that always exists.
+    if (
+      against === open.active ||
+      (typeof against === "number" && !open.versions.some((v) => v.n === against))
+    ) {
       setAgainst("original");
       return;
     }
@@ -263,6 +269,9 @@ function Workspace({
           }}
           onNewVersion={(label) => {
             if (open) send({ type: "version.new", doc: open.slug, ...(label ? { label } : {}) });
+          }}
+          onDeleteVersion={(version) => {
+            if (open) send({ type: "version.delete", doc: open.slug, version });
           }}
           splitLayout={splitLayout}
           onAddFrontmatter={async () => {

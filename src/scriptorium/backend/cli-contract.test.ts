@@ -122,6 +122,7 @@ test("the brief's verb roster is exactly the table's", () => {
       "state",
       "tail",
       "version-new",
+      "version-delete",
       "new-doc",
       "new-folder",
       "move",

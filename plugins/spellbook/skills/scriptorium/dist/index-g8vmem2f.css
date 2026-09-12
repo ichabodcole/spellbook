@@ -714,8 +714,8 @@
     width: calc(var(--spacing) * 10);
   }
 
-  .w-72 {
-    width: calc(var(--spacing) * 72);
+  .w-80 {
+    width: calc(var(--spacing) * 80);
   }
 
   .w-\[calc\(100vw-2rem\)\] {
@@ -1146,6 +1146,10 @@
 
   .bg-border {
     background-color: var(--color-border);
+  }
+
+  .bg-danger {
+    background-color: var(--color-danger);
   }
 
   .bg-danger\/10 {
@@ -2003,6 +2007,18 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-danger\/90:hover {
+      background-color: #e5675ae6;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:bg-danger\/90:hover {
+        background-color: color-mix(in oklab, var(--color-danger) 90%, transparent);
+      }
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-destructive\/20:hover {
       background-color: #e5675a33;
     }
@@ -2059,6 +2075,12 @@
   @media (hover: hover) {
     .hover\:bg-surface-raised:hover {
       background-color: var(--color-surface-raised);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-danger:hover {
+      color: var(--color-danger);
     }
   }
 
