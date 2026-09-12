@@ -630,3 +630,52 @@ pages; the header showed type, status, trust, date, tags and the unknown
 `related`/`generated` fields; the frontmatter left the rendered body; a
 deliberately broken block rendered its document with the parse error stated; and
 a plain document showed no header at all.
+
+## E33 · Links resolved, and the map — the bundle is a set's root
+
+**Built:** 2026-09-11, slices 2 and 3 of the OKF plan, in one build because the
+resolver IS the graph.
+
+**Four sources of edges, kept as two kinds.** Body links (markdown and wiki) and
+frontmatter references (`related`, `supersedes`, `sources[].resource`, anything
+whose SHAPE resolves) are collected separately and stay separate on the wire, in
+`backlinks`, and in the map's drawing — solid for a citation in prose, dashed
+for a claim about the document. pdocs keeps them apart; so does this.
+
+**Typed links, copied exactly from Operator** (Cole's ask): a relation rides the
+link as a query — `[label](./other.md?rel=extends)`,
+`[[other?rel=supersedes| label]]`. Rels are lowercased, trimmed, deduped and
+kept in authored order, their spelling is NOT canonicalised, and **a bare link
+is `[]` — the absence of an assertion, not an implicit `references`**, which is
+Operator's own rule and matters because a map must not draw a claim nobody made.
+
+**A set's entry root is the bundle**, so `/concepts/x.md` means the bundle root
+and `./x.md` the document's folder. Resolution then tries, in order: the
+document, the bundle root, and the git working tree — the third because pdocs
+writes repo-relative paths and the wiki's rule pages carry repo-relative
+`checker:` values, and neither resolves from the other two. **Measured on the
+real corpus** (agent-cli-conformance's wiki, 46 documents): 508 edges resolve
+inside the bundle, 140 leave it, and **1 is dangling — a checker the wiki itself
+marks `planned`**. Before the third candidate, 22 were "missing" while the files
+sat in the repo.
+
+**Two resolver bugs the real corpus found**, neither visible in a fixture: a
+target with an extension but no `./` (`[the linter](lint.ts)`) was read as a
+NAME and reported missing while the file sat beside the document; and an
+unanchored path was only ever tried against the document.
+
+**Following a link is the daemon's**, not the page's: only it knows the bundle
+and only it may open a file. In-bundle opens the document; `outside` says where
+the file is and leaves adding it to the human (the admission rule holds);
+`missing` says so. The rendered view's links were inert until now (E29) because
+nothing could resolve them.
+
+**The map is an overlay** (Cole's ruling), and it is drawn rather than
+simulated: COLUMNS BY TYPE, ordered by inbound citations, tall types wrapping
+into sub-columns. No graph library and no physics — a force layout moves while
+you read it and draws differently every time; this draws the same corpus the
+same way twice, and costs no dependency. **A dense map hides its own
+documents**, which the real wiki proved at 508 edges, so past 150 the edges wait
+for a hover — the node is what you read, the links are what you ask for — with a
+toggle for the whole shape at once. Every node is keyboard-reachable, because a
+map is a way INTO a corpus.

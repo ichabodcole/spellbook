@@ -82,6 +82,7 @@ export function DocumentPane({
   onEdit,
   onSave,
   onRevert,
+  onFollowLink,
 }: {
   doc: DocView | null;
   text: string | undefined;
@@ -93,6 +94,8 @@ export function DocumentPane({
   onSave: () => void;
   /** Take the file on disk back over the active version. */
   onRevert: () => void;
+  /** A link inside the rendered document — the daemon resolves it (E33). */
+  onFollowLink: (target: string) => void;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -236,7 +239,7 @@ export function DocumentPane({
       ) : showing === "raw" ? (
         <DocumentView docKey={doc.slug} text={shown} editable onChange={onEdit} onSave={onSave} />
       ) : showing === "rendered" ? (
-        <MarkdownView text={shown} meta={doc.meta} />
+        <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
       ) : (
         <ResizablePanelGroup
           orientation="horizontal"
@@ -260,7 +263,7 @@ export function DocumentPane({
             minSize="25"
             className="flex flex-col border-l border-edge"
           >
-            <MarkdownView text={shown} meta={doc.meta} />
+            <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
           </ResizablePanel>
         </ResizablePanelGroup>
       )}

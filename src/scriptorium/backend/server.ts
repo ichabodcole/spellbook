@@ -565,6 +565,42 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "graph": {
+        try {
+          reply(ws, { type: "graph", entry: msg.entry, graph: session.graphFor(msg.entry) });
+        } catch (e) {
+          reply(ws, {
+            type: "graph",
+            entry: msg.entry,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+        return;
+      }
+      case "link.open": {
+        // E33: a link inside the bundle is FOLLOWED; one that escapes it is
+        // reported so the surface can offer to add it, never added silently.
+        const r = session.resolveLink(msg.from, msg.target);
+        if (r.state === "in-bundle") {
+          session.openPath(r.path);
+          broadcastState();
+          const d = session.doc(session.openDocSlug ?? "");
+          reply(ws, {
+            type: "version.text",
+            doc: d.slug,
+            version: d.active,
+            text: session.readVersion(d.slug, d.active).text,
+            origin: "load",
+          });
+        }
+        reply(ws, {
+          type: "link.target",
+          target: msg.target,
+          state: r.state,
+          ...(r.state === "missing" ? {} : { path: r.path }),
+        });
+        return;
+      }
       case "move.plan": {
         try {
           reply(ws, {
@@ -684,6 +720,10 @@ export async function startDaemon(opts: StartOpts) {
     switch (cmd.type) {
       case "meta":
         return session.metaFor(cmd.path);
+      case "graph":
+        return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
+      case "backlinks":
+        return session.backlinks(cmd.path);
       case "find":
         return session.find(cmd.filter);
       case "context.add": {
@@ -740,6 +780,8 @@ export async function startDaemon(opts: StartOpts) {
             "close",
             "meta",
             "find",
+            "graph",
+            "backlinks",
             ...STRUCTURE_OPS,
           ],
         );

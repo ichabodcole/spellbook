@@ -42,7 +42,8 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
-import { matchesFilter, readMeta, summarize } from "./frontmatter";
+import { matchesFilter, readMeta, splitFrontmatter, summarize } from "./frontmatter";
+import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./links";
 import type {
   ChatMessage,
   ChatWho,
@@ -50,6 +51,7 @@ import type {
   DocMeta,
   DocSummary,
   DocView,
+  GraphPayload,
   MetaFilter,
   MovePlan,
   PublicState,
@@ -1319,6 +1321,81 @@ export class Session {
         });
       }
     return { matches, count: matches.length };
+  }
+
+  /**
+   * One set's map (E33): its documents as nodes, and the four sources of edges
+   * — body links, wiki links, typed links and frontmatter references.
+   */
+  graphFor(entryId?: string): GraphPayload {
+    const e = entryId
+      ? this.m.context.find((x) => x.id === entryId)
+      : this.m.context.find((x) => x.membership === "mirrored");
+    if (!e)
+      throw new SessionError(
+        entryId ? `no context entry ${entryId}` : "this session has no set to map",
+        404,
+        this.m.context.map((x) => x.id),
+      );
+    const paths = docPaths(e);
+    const index: BundleIndex = {
+      root: e.root,
+      paths,
+      metaOf: (p) => readMeta(readHead(p)),
+      exists: (p) => existsSync(p),
+      repoRoot: gitRootOf(e.root),
+    };
+    const g = buildGraph(index, (p) => {
+      try {
+        return splitFrontmatter(readFileSync(p, "utf8")).body;
+      } catch {
+        return "";
+      }
+    });
+    return { entry: e.id, ...g };
+  }
+
+  /**
+   * What cites a document. `related` (frontmatter) and `links` (body) are kept
+   * APART, which is how pdocs reports it and the distinction is real: one is a
+   * claim about the document, the other a citation in prose.
+   */
+  backlinks(rawPath: string): Record<string, unknown> {
+    const abs = this.shownPath(rawPath);
+    const entry = this.m.context.find(
+      (e) => e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep)),
+    );
+    if (!entry) throw new SessionError(`${abs} is not inside a set, so nothing maps it`, 400);
+    const g = this.graphFor(entry.id);
+    const inbound = g.edges.filter((x) => x.to === abs);
+    const title = (p: string) => g.nodes.find((n) => n.path === p)?.title ?? basename(p);
+    return {
+      target: { path: abs, title: title(abs) },
+      related: inbound
+        .filter((x) => x.source === "frontmatter")
+        .map((x) => ({ path: x.from, title: title(x.from), key: x.key })),
+      links: inbound
+        .filter((x) => x.source === "link")
+        .map((x) => ({ path: x.from, title: title(x.from), rel: x.rel })),
+      count: inbound.length,
+    };
+  }
+
+  /** Where does this link go? The surface asks before following one (E33). */
+  resolveLink(from: string, target: string): Resolution {
+    const src = this.shownPath(from);
+    const entry = this.m.context.find(
+      (e) => e.membership === "mirrored" && src.startsWith(e.root + sep),
+    );
+    const root = entry?.root ?? dirname(src);
+    const paths = entry ? docPaths(entry) : [src];
+    return resolveTarget(target, src, {
+      root,
+      paths,
+      metaOf: (p) => readMeta(readHead(p)),
+      exists: (p) => existsSync(p),
+      repoRoot: gitRootOf(root),
+    });
   }
 
   /** The session's half of `PublicState`; the daemon adds the home-level `prefs` and `userHome`. */

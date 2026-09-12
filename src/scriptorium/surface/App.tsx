@@ -108,7 +108,7 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, noteText, listDir, planMove, lastError, clearError, done } = daemon;
+  const { send, texts, noteText, listDir, planMove, mapOf, lastError, clearError, done } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -203,6 +203,8 @@ function Workspace({
           metaFor={(path) => state.docMeta[path]}
           listDir={listDir}
           planMove={planMove}
+          mapOf={mapOf}
+          onOpenPath={(path) => send({ type: "open", path })}
           created={created}
           notice={lastError}
           onDismissNotice={clearError}
@@ -216,6 +218,9 @@ function Workspace({
           mode={mode}
           onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
           splitLayout={splitLayout}
+          onFollowLink={(target) => {
+            if (open) send({ type: "link.open", from: open.original, target });
+          }}
           onEdit={(next) => {
             if (!open) return;
             // The daemon does not echo an edit back, so this viewer keeps its

@@ -189,6 +189,7 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
 const CLI_OPTIONS = {
   "body-file": { type: "string" },
   doc: { type: "string" },
+  entry: { type: "string" },
   from: { type: "string" },
   full: { type: "boolean" },
   into: { type: "string" },
@@ -813,6 +814,30 @@ const COMMANDS: CommandSpec[] = [
         if (typeof flags[k] === "string") filter[k] = flags[k];
       if (typeof flags.since === "string") filter.since = parseSinceDate(flags.since);
       printJson(await postCmd(session, { type: "find", filter }));
+    },
+  },
+  {
+    name: "graph",
+    flags: [...SESSION, "entry"],
+    positionals: [],
+    describe:
+      "a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
+    run: async (_pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "graph",
+          ...(typeof flags.entry === "string" ? { entry: flags.entry } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "backlinks",
+    flags: SESSION,
+    positionals: [{ name: "path", required: true }],
+    describe: "what cites a document — `related` (frontmatter) and `links` (body), kept apart",
+    run: async (pos, _flags, session) => {
+      printJson(await postCmd(session, { type: "backlinks", path: resolve(pos[0] as string) }));
     },
   },
   {

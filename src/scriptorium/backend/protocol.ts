@@ -210,6 +210,32 @@ export type StructureOpType = StructureOp["type"];
 
 export type FsListEntry = { name: string; path: string; dir: boolean };
 
+/** The map of one set (E33). Shapes follow pdocs' `graph` where they overlap. */
+export type GraphPayload = {
+  entry: string;
+  root: string;
+  nodes: {
+    path: string;
+    rel: string;
+    title: string;
+    type?: string;
+    status: string;
+    stale: boolean;
+    tags: string[];
+    linksOut: number;
+    linksIn: number;
+  }[];
+  edges: {
+    from: string;
+    to: string;
+    source: "link" | "frontmatter";
+    key?: string;
+    rel: string[];
+    state: "in-bundle" | "outside" | "missing";
+  }[];
+  dangling: number;
+};
+
 /**
  * What a move WOULD do, asked before a folder is moved (E26). The surface
  * confirms a folder move in these terms; the git facts are the daemon's,
@@ -246,6 +272,10 @@ export type ClientMsg =
   | { type: "read"; doc: string; version: number }
   /** What would a move do? Answered with `move.plan`; changes nothing (E26). */
   | { type: "move.plan"; path: string; into: string }
+  /** A set's map (E33) — answered with `graph`. */
+  | { type: "graph"; entry: string }
+  /** Follow a link from a rendered document (E33) — answered with `link.target`. */
+  | { type: "link.open"; from: string; target: string }
   | { type: "prefs.set"; key: string; value: string }
   /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
   | { type: "reveal"; path: string }
@@ -263,6 +293,18 @@ export type ServerMsg =
   | { type: "version.text"; doc: string; version: number; text: string; origin: "load" | "remote" }
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   | { type: "move.plan"; path: string; into: string; plan?: MovePlan; error?: string }
+  | { type: "graph"; entry: string; graph?: GraphPayload; error?: string }
+  /**
+   * Where a link went. `in-bundle` means the daemon opened it; `outside` names
+   * a real file the human may add; `missing` is a dangling link, said and
+   * tolerated (OKF §11).
+   */
+  | {
+      type: "link.target";
+      target: string;
+      state: "in-bundle" | "outside" | "missing";
+      path?: string;
+    }
   /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
   | { type: "structure.done"; op: StructureOpType; path: string }
   | { type: "error"; message: string };
@@ -276,6 +318,10 @@ export type AgentCmd =
   | { type: "close" }
   /** A document's frontmatter as read, or every context document's (E32). */
   | { type: "meta"; path?: string }
+  /** A set's map as JSON, in pdocs' shape (E33). */
+  | { type: "graph"; entry?: string }
+  /** What cites a document — `related` and body `links` kept apart, as pdocs keeps them. */
+  | { type: "backlinks"; path: string }
   /** pdocs's filter vocabulary over the context — ANDed, all optional. */
   | { type: "find"; filter: MetaFilter }
   | StructureOp;

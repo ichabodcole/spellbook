@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ClientMsg,
   FsListEntry,
+  GraphPayload,
   MovePlan,
   PublicState,
   ServerMsg,
@@ -22,6 +23,8 @@ export const textKey = (doc: string, version: number) => `${doc}@${version}`;
 export type Listing = { entries: FsListEntry[]; error?: string };
 
 export type Planning = { plan?: MovePlan; error?: string };
+
+export type Mapping = { graph?: GraphPayload; error?: string };
 
 /** The last structure op THIS viewer sent that landed — `seq` makes a repeat a new value. */
 export type Done = { op: StructureOpType; path: string; seq: number };
@@ -38,6 +41,7 @@ export function useDaemon(): {
   send: (msg: ClientMsg) => void;
   listDir: (path: string) => Promise<Listing>;
   planMove: (path: string, into: string) => Promise<Planning>;
+  mapOf: (entry: string) => Promise<Mapping>;
 } {
   const [state, setState] = useState<PublicState | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
@@ -49,6 +53,8 @@ export function useDaemon(): {
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
   // One pending move plan per from→into pair (E26's confirmation).
   const plans = useRef(new Map<string, ((p: Planning) => void)[]>());
+  // One pending map per entry (E33).
+  const maps = useRef(new Map<string, ((m: Mapping) => void)[]>());
 
   useEffect(() => {
     let stopped = false;
@@ -87,6 +93,19 @@ export function useDaemon(): {
           const waiters = plans.current.get(key);
           plans.current.delete(key);
           for (const w of waiters ?? []) w({ plan: msg.plan, error: msg.error });
+        } else if (msg.type === "graph") {
+          const waiters = maps.current.get(msg.entry);
+          maps.current.delete(msg.entry);
+          for (const w of waiters ?? []) w({ graph: msg.graph, error: msg.error });
+        } else if (msg.type === "link.target") {
+          // A link that left the bundle, or answered nothing: say so. Following
+          // one INSIDE the bundle needs no notice — the document just opens.
+          if (msg.state === "missing")
+            setLastError(`That link points at ${msg.target}, which is not in this set.`);
+          else if (msg.state === "outside")
+            setLastError(
+              `${msg.target} is outside this set. Add its folder to open it here — the file is at ${msg.path}.`,
+            );
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
@@ -102,6 +121,9 @@ export function useDaemon(): {
         for (const waiters of plans.current.values())
           for (const w of waiters) w({ error: "disconnected" });
         plans.current.clear();
+        for (const waiters of maps.current.values())
+          for (const w of waiters) w({ error: "disconnected" });
+        maps.current.clear();
         if (stopped) return;
         timer = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
@@ -159,6 +181,25 @@ export function useDaemon(): {
     [],
   );
 
+  const mapOf = useCallback(
+    (entry: string) =>
+      new Promise<Mapping>((resolve) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          resolve({ error: "disconnected" });
+          return;
+        }
+        const waiters = maps.current.get(entry);
+        if (waiters) {
+          waiters.push(resolve);
+          return;
+        }
+        maps.current.set(entry, [resolve]);
+        ws.send(JSON.stringify({ type: "graph", entry } satisfies ClientMsg));
+      }),
+    [],
+  );
+
   const noteText = useCallback((doc: string, version: number, text: string) => {
     setTexts((prev) => {
       const key = textKey(doc, version);
@@ -182,5 +223,6 @@ export function useDaemon(): {
     send,
     listDir,
     planMove,
+    mapOf,
   };
 }

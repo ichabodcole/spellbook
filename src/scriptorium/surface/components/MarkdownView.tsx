@@ -7,9 +7,9 @@
 // Clicks are the one piece of behaviour here. A rendered document is full of
 // links, and this page is not a browser: following one in place would replace
 // the surface with a web page and take the human's session with it. An external
-// link opens in a new tab; anything else does nothing yet (a relative link
-// names a file beside the document — opening THAT document is the editing
-// slice's, once a rel can be resolved to a context doc).
+// link opens in a new tab; an INTERNAL one goes to the daemon (E33), which
+// knows what the bundle is and is the only side allowed to open a file. A link
+// the renderer refused (`data-blocked-link`) does nothing at all.
 import { useMemo } from "react";
 import type { DocMeta } from "../../backend/protocol";
 import { renderMarkdown, splitFrontmatter } from "../state/markdown";
@@ -18,7 +18,16 @@ import { MetaHeader } from "./MetaHeader";
 /** http(s) and mailto open outward; everything else is inert for now. */
 const OPENS_OUTWARD = /^(https?:|mailto:)/i;
 
-export function MarkdownView({ text, meta }: { text: string; meta?: DocMeta | null }) {
+export function MarkdownView({
+  text,
+  meta,
+  onFollowLink,
+}: {
+  text: string;
+  meta?: DocMeta | null;
+  /** A link to another document: the daemon resolves it against the set (E33). */
+  onFollowLink?: (target: string) => void;
+}) {
   // The frontmatter is METADATA, so it leaves the rendered body and becomes the
   // header above it (E32). The raw view still shows it: there, it IS the file.
   const html = useMemo(() => renderMarkdown(splitFrontmatter(text).body), [text]);
@@ -34,7 +43,14 @@ export function MarkdownView({ text, meta }: { text: string; meta?: DocMeta | nu
           if (!anchor) return;
           e.preventDefault();
           const href = anchor.getAttribute("href");
-          if (href && OPENS_OUTWARD.test(href)) window.open(href, "_blank", "noopener,noreferrer");
+          if (!href || anchor.hasAttribute("data-blocked-link")) return;
+          if (OPENS_OUTWARD.test(href)) {
+            window.open(href, "_blank", "noopener,noreferrer");
+            return;
+          }
+          // E33: an internal link is a document reference. The DAEMON resolves
+          // it — only it knows the bundle, and only it may open a file.
+          onFollowLink?.(href);
         }}
         // THE ONE HTML SINK IN THIS SURFACE, and what makes it safe is upstream:
         // micromark output only, so raw HTML in the document is encoded and

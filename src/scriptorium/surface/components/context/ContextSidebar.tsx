@@ -21,6 +21,7 @@ import {
   FolderPlusIcon,
   FolderTreeIcon,
   HomeIcon,
+  NetworkIcon,
   PencilIcon,
   SquarePenIcon,
   XIcon,
@@ -45,9 +46,10 @@ import {
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { useConfirm } from "../../../../kit/ui/ConfirmDialog";
 import type { ContextEntry, DocSummary, StructureOp } from "../../../backend/protocol";
-import type { Listing, Planning } from "../../state/useDaemon";
+import type { Listing, Mapping, Planning } from "../../state/useDaemon";
 import { AddPath } from "./AddPath";
 import { EntryTree } from "./EntryTree";
+import { MapOverlay } from "./MapOverlay";
 import { carriesFiles, droppedFiles, MoveToMenu, RevealItem } from "./menus";
 import {
   baseName,
@@ -98,6 +100,10 @@ export type ContextSidebarProps = {
   listDir: (path: string) => Promise<Listing>;
   /** What a move would do — asked before a FOLDER is moved (E26). */
   planMove: (path: string, into: string) => Promise<Planning>;
+  /** A set's map (E33), for the overlay. */
+  mapOf: (entry: string) => Promise<Mapping>;
+  /** Open a document by absolute path — the map's click, and a followed link. */
+  onOpenPath: (path: string) => void;
   /** A new document or folder this viewer just made: shown in rename mode. `seq` makes a repeat new. */
   created?: { path: string; seq: number } | null;
   /** A refusal to show the human (a path that could not be added, …), or null. */
@@ -139,6 +145,8 @@ export function ContextSidebar({
   metaFor,
   listDir,
   planMove,
+  mapOf,
+  onOpenPath,
   created,
   notice,
   onDismissNotice,
@@ -212,6 +220,23 @@ export function ContextSidebar({
    * asks the daemon what it would do first (a local round trip), and the
    * dialog appears only for those two cases.
    */
+  // E33: the map is an OVERLAY from a set's menu — Cole's ruling — so the
+  // sidebar owns it, asks for the graph when it opens, and drops it on close.
+  const [mapping, setMapping] = useState<{ entry: ContextEntry; graph: Mapping | null } | null>(
+    null,
+  );
+  const showMap = useCallback(
+    async (entry: ContextEntry) => {
+      setMapping({ entry, graph: null });
+      const result = await mapOf(entry.id);
+      setMapping((current) =>
+        current?.entry.id === entry.id ? { entry, graph: result } : current,
+      );
+      if (result.error) setLocalNotice(result.error);
+    },
+    [mapOf],
+  );
+
   const { confirm, dialog } = useConfirm();
   const requestMove = useCallback(
     async (path: string, into: string) => {
@@ -304,6 +329,7 @@ export function ContextSidebar({
           onReveal={onReveal}
           onMove={requestMove}
           metaFor={metaFor}
+          onShowMap={showMap}
         />
       ) : (
         <ListView
@@ -321,6 +347,7 @@ export function ContextSidebar({
           onReveal={onReveal}
           onMove={requestMove}
           metaFor={metaFor}
+          onShowMap={showMap}
         />
       )}
       {shown && (
@@ -346,6 +373,15 @@ export function ContextSidebar({
         onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
       />
       {dialog}
+      <MapOverlay
+        open={mapping !== null}
+        onOpenChange={(next) => {
+          if (!next) setMapping(null);
+        }}
+        label={mapping?.entry.label ?? ""}
+        graph={mapping?.graph?.graph ?? null}
+        onOpenDoc={onOpenPath}
+      />
     </div>
   );
 }
@@ -421,6 +457,7 @@ function ListView({
   onReveal,
   onMove,
   metaFor,
+  onShowMap,
 }: {
   entries: readonly ContextEntry[];
   activeDoc: ContextSidebarProps["activeDoc"];
@@ -436,6 +473,7 @@ function ListView({
   onReveal: (path: string) => void;
   onMove: (path: string, into: string) => void;
   metaFor: (path: string) => DocSummary | undefined;
+  onShowMap: (entry: ContextEntry) => void;
 }) {
   const [menuFor, setMenuFor] = useState<ContextEntry | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -504,6 +542,10 @@ function ListView({
             targets={moveTargetsFor(menuFor.root)}
             onMove={(into) => onMove(menuFor.root, into)}
           />
+          <ContextMenuItem onClick={() => onShowMap(menuFor)}>
+            <NetworkIcon />
+            Show the map of this set
+          </ContextMenuItem>
           <ContextMenuItem
             onClick={() => onStructure({ type: "workspace.set", path: menuFor.root })}
           >
@@ -735,6 +777,7 @@ function SetView({
   onReveal,
   onMove,
   metaFor,
+  onShowMap,
 }: {
   entry: ContextEntry;
   activeRel: string | null;
@@ -749,6 +792,7 @@ function SetView({
   onReveal: (path: string) => void;
   onMove: (path: string, into: string) => void;
   metaFor: (path: string) => DocSummary | undefined;
+  onShowMap: (entry: ContextEntry) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -782,6 +826,9 @@ function SetView({
           onClick={() => onStructure({ type: "folder.create", dir: entry.root })}
         >
           <FolderPlusIcon />
+        </ToolButton>
+        <ToolButton label="Show the map of this set" onClick={() => onShowMap(entry)}>
+          <NetworkIcon />
         </ToolButton>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-auto px-1">
