@@ -125,11 +125,11 @@ same derivation — `agent-cli-conformance` already computes exactly this with
 `lint.ts --json`, so scriptorium is catching up to a thing Cole already trusts,
 not inventing it.
 
-**Where it lives is a Cole call** (§5). The options, with my read: a **full-pane
-mode beside raw/rendered/split** (natural, but the mode strip is getting long),
-an **overlay from a set's menu** ("Show the map of this set" — my preference,
-because a map is a thing you consult, not a thing you sit in), or a **sidebar
-tab**, which is too small for a graph.
+**RULED (Cole, 2026-09-11): an OVERLAY from a set's menu** — "Show the map of
+this set". A map is a thing you consult, not a thing you sit in, and it keeps
+the document pane's mode strip from growing a fourth entry. **Not taken:** a
+full-pane mode beside raw/rendered/split, and a sidebar tab, which is too small
+for a graph.
 
 ### Slice 4 · Adding frontmatter to a document that has none
 
@@ -163,21 +163,50 @@ value written behind their back.
 - **Not Spellbook's own docs, yet.** This repo uses no frontmatter; adopting OKF
   here is a separate decision, worth taking only after the reader exists.
 
-## 5 · The calls I need from Cole
+## 5 · The calls — one ruled, three open
 
-1. **Link resolution scope** — context-first-then-workspace (my proposal), or
-   context only? The difference shows when a document links to something the
-   human has not added: a dangling link, or a live one that pulls a new document
-   in.
-2. **Where the map lives** — overlay (my preference), pane mode, or sidebar.
-3. **Is `related: [type/slug]` general enough to build on?** It is
-   `agent-cli-conformance`'s convention; `operator-mono` does not use it. I
-   would support it as a KNOWN extension, with plain markdown links as the
-   portable floor — but if the convention is still moving, say so and I will
-   keep the floor only.
-4. **Does the agent get a write verb for frontmatter**, or does it edit the text
-   like any other content? Equal capabilities says a verb; simplicity says the
-   agent already has file tools and the daemon already has `edit`.
+**RULED: where the map lives** — an overlay from a set's menu (§3, slice 3).
+
+The three still open, each sharpened by a second pass through the spec:
+
+1. **Link resolution scope.** The spec's bundle-relative form (`/concepts/x.md`)
+   means the BUNDLE root, not the filesystem root — so a resolver cannot work
+   until it decides what the bundle is. **A set's entry root is the bundle**:
+   `./x.md` resolves against the document, `/x.md` against the entry root. That
+   makes the open question narrower than it looked: what happens to a link that
+   ESCAPES the bundle, which is common in Cole's wiki (`decisions/x.md` →
+   `../concepts/exit-codes.md`). Context-only reads as broken; silently reaching
+   into the workspace grows the context behind the human's back and punches
+   through the admission rule that keeps a page from getting an arbitrary file
+   opened. **Proposed: in-bundle resolves silently; an out-of-bundle target that
+   exists on disk renders live and offers "Add and open" on click** — one click,
+   nothing silent, admission intact.
+2. **`related: [type/slug]` — no commitment needed after all.** Support the
+   SHAPE rather than the name: any frontmatter value that resolves to a document
+   in the bundle becomes an edge, LABELLED with the key it came from. `related`,
+   `supersedes`, `sources[].resource` and operator-mono's `applied_to` all work
+   without being named in the code, and a changed convention loses edges rather
+   than inventing wrong ones. The trap is false edges — `tags: [exit-codes]`
+   would match `exit-codes.md` — so a value counts as a reference only if it
+   CONTAINS A SLASH or ENDS IN `.md`. Cole's tags are bare words, excluded by
+   shape rather than by a blocklist.
+3. **A frontmatter write verb for the agent.** Three things argue for one: the
+   ANNOUNCEMENT (E24's `mv`-versus-`move` argument — a hand-edited frontmatter
+   changes the file with no line in the conversation), ROUND-TRIP SAFETY (the
+   right implementation is a targeted text edit to one key; an agent rewriting
+   the block tends to reserialise the YAML, reordering keys and losing comments,
+   which is what the spec's "preserve unknown keys" forbids), and SCOPE
+   (stamping `status: stable` is a verb's job; editing a nested `sources` list
+   is text work and stays text work). **Proposed:** `meta-set <path> key=value`
+   and `meta-init`, both announced.
+
+   **The case that needs a ruling:** the agent stamps frontmatter on a document
+   the human has open with unsaved edits. The verb writes the ORIGINAL (never
+   the active version — E2), so the conflict bar appears and the human chooses;
+   keeping theirs discards the stamp. The alternative is for the verb to refuse
+   while the document is dirty. **Proposed: let the conflict bar handle it** —
+   that machinery exists for exactly this, and refusing lets an open buffer
+   block the agent indefinitely.
 
 ## 6 · Sequencing
 
