@@ -78,6 +78,7 @@ export function EntryTree({
   activeRel,
   onOpenDoc,
   onStructure,
+  onMove,
   onImportFiles,
   moveTargetsFor,
   renamePath,
@@ -90,6 +91,8 @@ export function EntryTree({
   activeRel: string | null;
   onOpenDoc: (rel: string) => void;
   onStructure: (op: StructureOp) => void;
+  /** A move the human asked for — a FOLDER move is confirmed first (E26). */
+  onMove: (path: string, into: string, folder: boolean) => void;
   /** Files dropped from outside the page, to be COPIED into `intoDir` (E23). */
   onImportFiles: (files: DataTransfer, intoDir: string) => void;
   moveTargetsFor: (path: string) => MoveTarget[];
@@ -137,7 +140,8 @@ export function EntryTree({
       const into = dirFor(target.item.getId());
       for (const i of items) {
         const path = pathOf(i.getId());
-        if (dirOf(path) !== into) onStructure({ type: "move", path, into });
+        if (dirOf(path) !== into)
+          onMove(path, into, indexRef.current.byId.get(i.getId())?.kind === "group");
       }
     },
     // Files from Finder: a COPY into the folder they were dropped on (E23).
@@ -198,7 +202,8 @@ export function EntryTree({
     if (carriesFiles(e.dataTransfer)) return onImportFiles(e.dataTransfer, entry.root);
     for (const i of tree.getState().dnd?.draggedItems ?? []) {
       const path = pathOf(i.getId());
-      if (dirOf(path) !== entry.root) onStructure({ type: "move", path, into: entry.root });
+      if (dirOf(path) !== entry.root)
+        onMove(path, entry.root, indexRef.current.byId.get(i.getId())?.kind === "group");
     }
   };
 
@@ -279,7 +284,7 @@ export function EntryTree({
             </ContextMenuItem>
             <MoveToMenu
               targets={moveTargetsFor(menuPath)}
-              onMove={(into) => onStructure({ type: "move", path: menuPath, into })}
+              onMove={(into) => onMove(menuPath, into, menuFor?.kind === "group")}
             />
           </>
         )}

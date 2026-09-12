@@ -7,8 +7,10 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --color-black: #000;
     --spacing: .25rem;
     --container-xs: 20rem;
+    --container-sm: 24rem;
     --container-md: 28rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
@@ -18,6 +20,7 @@
     --text-lg--line-height: calc(1.75 / 1.125);
     --text-xl: 1.25rem;
     --text-xl--line-height: calc(1.75 / 1.25);
+    --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --tracking-tighter: -.05em;
     --tracking-normal: 0em;
@@ -29,6 +32,7 @@
     --radius-sm: .25rem;
     --radius-md: .375rem;
     --radius-lg: .5rem;
+    --radius-xl: .75rem;
     --ease-in-out: cubic-bezier(.4, 0, .2, 1);
     --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
     --blur-sm: 8px;
@@ -483,6 +487,10 @@
     left: calc(var(--spacing) * 4);
   }
 
+  .isolate {
+    isolation: isolate;
+  }
+
   .z-1 {
     z-index: 1;
   }
@@ -639,6 +647,10 @@
     height: calc(var(--spacing) * 7);
   }
 
+  .h-8 {
+    height: calc(var(--spacing) * 8);
+  }
+
   .h-full {
     height: 100%;
   }
@@ -735,6 +747,10 @@
     width: calc(100% + .5rem);
   }
 
+  .w-\[calc\(100vw-2rem\)\] {
+    width: calc(100vw - 2rem);
+  }
+
   .w-full {
     width: 100%;
   }
@@ -753,6 +769,10 @@
 
   .max-w-md {
     max-width: var(--container-md);
+  }
+
+  .max-w-sm {
+    max-width: var(--container-sm);
   }
 
   .max-w-xs {
@@ -951,6 +971,10 @@
 
   .rounded-sm {
     border-radius: var(--radius-sm);
+  }
+
+  .rounded-xl {
+    border-radius: var(--radius-xl);
   }
 
   .\!border-0 {
@@ -1188,6 +1212,16 @@
     background-color: var(--color-bg);
   }
 
+  .bg-black\/30 {
+    background-color: #0000004d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-black\/30 {
+      background-color: color-mix(in oklab, var(--color-black) 30%, transparent);
+    }
+  }
+
   .bg-border {
     background-color: var(--color-border);
   }
@@ -1220,6 +1254,10 @@
     .bg-canon\/20 {
       background-color: color-mix(in oklab, var(--color-canon) 20%, transparent);
     }
+  }
+
+  .bg-ink {
+    background-color: var(--color-ink);
   }
 
   .bg-ink-faint {
@@ -1500,6 +1538,11 @@
     line-height: var(--leading-tight);
   }
 
+  .font-medium {
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
@@ -1539,6 +1582,10 @@
 
   .text-background-tier {
     color: var(--color-background-tier);
+  }
+
+  .text-bg {
+    color: var(--color-bg);
   }
 
   .text-canon {
@@ -1738,6 +1785,11 @@
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
 
+  .duration-100 {
+    --tw-duration: .1s;
+    transition-duration: .1s;
+  }
+
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
@@ -1788,6 +1840,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-bg:hover {
+      background-color: var(--color-bg);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-secondary:hover {
       background-color: var(--color-secondary);
     }
@@ -1817,6 +1875,12 @@
     }
   }
 
+  @media (hover: hover) {
+    .hover\:opacity-90:hover {
+      opacity: .9;
+    }
+  }
+
   .focus\:border-ring:focus {
     border-color: var(--color-ring);
   }
@@ -1833,6 +1897,15 @@
   .focus-visible\:ring-1:focus-visible {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .focus-visible\:ring-2:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .focus-visible\:ring-ink-faint:focus-visible {
+    --tw-ring-color: var(--color-ink-faint);
   }
 
   .focus-visible\:ring-ring:focus-visible {
@@ -1854,6 +1927,10 @@
 
   .disabled\:opacity-40:disabled {
     opacity: .4;
+  }
+
+  .disabled\:opacity-50:disabled {
+    opacity: .5;
   }
 
   .data-\[highlighted\]\:bg-accent[data-highlighted] {
@@ -2392,6 +2469,11 @@
   inherits: false
 }
 
+@property --tw-duration {
+  syntax: "*";
+  inherits: false
+}
+
 @property --tw-ease {
   syntax: "*";
   inherits: false
@@ -2456,6 +2538,7 @@
       --tw-backdrop-opacity: initial;
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
+      --tw-duration: initial;
       --tw-ease: initial;
     }
 
@@ -2510,6 +2593,7 @@
       --tw-backdrop-opacity: initial;
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
+      --tw-duration: initial;
       --tw-ease: initial;
     }
   }

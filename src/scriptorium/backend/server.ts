@@ -565,6 +565,24 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "move.plan": {
+        try {
+          reply(ws, {
+            type: "move.plan",
+            path: msg.path,
+            into: msg.into,
+            plan: session.movePlan(surfacePath(msg.path), surfacePath(msg.into)),
+          });
+        } catch (e) {
+          reply(ws, {
+            type: "move.plan",
+            path: msg.path,
+            into: msg.into,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+        return;
+      }
       case "fs.list": {
         const path = expandHome(msg.path);
         try {

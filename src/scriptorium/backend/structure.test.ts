@@ -15,7 +15,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ContextNode } from "./protocol";
-import { Session, SessionError } from "./session";
+import { gitRootOf, Session, SessionError } from "./session";
 
 let root: string;
 let home: string;
@@ -228,6 +228,50 @@ describe("import — E23's drop is a copy", () => {
     const e = refusal(() => s.importText("pic.png", "x"));
     expect(e.status).toBe(400);
     expect(e.choices).toContain(".md");
+  });
+});
+
+describe("movePlan (E26) — what a folder move would do, before it does it", () => {
+  test("a folder move counts what moves; a document move is one", () => {
+    const s = session();
+    const plan = s.movePlan(join(set, "part"), ws);
+    expect(plan).toMatchObject({
+      from: join(set, "part"),
+      into: ws,
+      name: "part",
+      folder: true,
+      docs: 1,
+      leavesRepo: false,
+      repo: null,
+    });
+    writeFileSync(join(set, "part", "c.md"), "c");
+    expect(s.movePlan(join(set, "part"), ws).docs).toBe(2);
+    expect(s.movePlan(join(set, "a.md"), ws)).toMatchObject({ folder: false, docs: 1 });
+  });
+
+  test("a move OUT of a git working tree says so, and one inside it does not", () => {
+    // The case that started this: a folder dragged out of a repository, where
+    // git then reports every file deleted (Cole, 2026-09-11).
+    mkdirSync(join(set, ".git"));
+    const s = session();
+    expect(s.movePlan(join(set, "part"), ws)).toMatchObject({ leavesRepo: true, repo: "set" });
+    const inside = s.createFolder(set, "keep");
+    expect(s.movePlan(join(set, "part"), inside.path)).toMatchObject({
+      leavesRepo: false,
+      repo: "set",
+    });
+  });
+
+  test("it refuses exactly what a move refuses, so a confirmed move cannot fail on admission", () => {
+    const s = session();
+    expect(refusal(() => s.movePlan(join(root, "solo.md"), set)).status).toBe(404);
+    expect(refusal(() => s.movePlan(join(set, "a.md"), join(root, "nowhere"))).status).toBe(400);
+  });
+
+  test("gitRootOf finds a .git FILE too — a worktree and a submodule have one", () => {
+    writeFileSync(join(ws, ".git"), "gitdir: /elsewhere/.git/worktrees/x\n");
+    expect(gitRootOf(ws)).toBe(ws);
+    expect(gitRootOf(join(root, "set"))).toBeNull();
   });
 });
 

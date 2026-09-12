@@ -44,6 +44,7 @@ import type {
   ChatWho,
   ContextEntry,
   DocView,
+  MovePlan,
   PublicState,
   Selection,
   Version,
@@ -996,6 +997,32 @@ export class Session {
     return { path: abs };
   }
 
+  /**
+   * E26: what a move WOULD do, for the confirmation the surface shows before
+   * moving a FOLDER. Reads nothing but the disk and refuses exactly what
+   * `move` would refuse, so a confirmed move cannot then fail on admission.
+   *
+   * The git half is here because only the daemon can see a `.git`: a folder
+   * dragged out of a repository is the case where the consequence reaches past
+   * scriptorium (Cole moved this project's own docs folder into his workspace,
+   * and git saw six deleted files).
+   */
+  movePlan(rawPath: string, rawInto: string): MovePlan {
+    const item = this.itemOrDie(rawPath);
+    const into = this.destinationOrDie(rawInto);
+    const fromRepo = gitRootOf(dirname(item.abs));
+    const intoRepo = gitRootOf(into);
+    return {
+      from: item.abs,
+      into,
+      name: basename(item.abs),
+      folder: item.dir,
+      docs: item.dir ? countDocs(item.abs) : 1,
+      repo: fromRepo ? basename(fromRepo) : null,
+      leavesRepo: fromRepo !== null && fromRepo !== intoRepo,
+    };
+  }
+
   move(rawPath: string, rawInto: string): { path: string; from: string } {
     const item = this.itemOrDie(rawPath);
     const into = this.destinationOrDie(rawInto);
@@ -1189,4 +1216,45 @@ export class Session {
       chat: this.m.chat,
     };
   }
+}
+
+/**
+ * The git working tree `dir` is in, or null. A `.git` ENTRY, not a directory
+ * test: a worktree and a submodule both have `.git` as a FILE.
+ */
+export function gitRootOf(dir: string): string | null {
+  let at = dir;
+  for (;;) {
+    if (existsSync(join(at, ".git"))) return at;
+    const up = dirname(at);
+    if (up === at) return null;
+    at = up;
+  }
+}
+
+/** Documents under a folder, for saying how much a move moves. */
+function countDocs(dir: string): number {
+  let n = 0;
+  const walk = (at: string) => {
+    let names: string[];
+    try {
+      names = readdirSync(at);
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      if (name.startsWith(".")) continue;
+      const abs = join(at, name);
+      let st: ReturnType<typeof statSync>;
+      try {
+        st = statSync(abs);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) walk(abs);
+      else if (isDocName(name)) n++;
+    }
+  };
+  walk(dir);
+  return n;
 }

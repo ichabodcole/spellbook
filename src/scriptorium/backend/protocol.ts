@@ -159,6 +159,25 @@ export type StructureOpType = StructureOp["type"];
 
 export type FsListEntry = { name: string; path: string; dir: boolean };
 
+/**
+ * What a move WOULD do, asked before a folder is moved (E26). The surface
+ * confirms a folder move in these terms; the git facts are the daemon's,
+ * because only it can look at the disk.
+ */
+export type MovePlan = {
+  from: string;
+  into: string;
+  /** The moved thing's own name. */
+  name: string;
+  folder: boolean;
+  /** Documents that would move with it (1 for a document). */
+  docs: number;
+  /** The git working tree the source is in, by its folder name — null if none. */
+  repo: string | null;
+  /** The source is in a git working tree and the destination is not in the same one. */
+  leavesRepo: boolean;
+};
+
 /** Surface → daemon, over the WebSocket. */
 export type ClientMsg =
   | { type: "open"; path: string }
@@ -174,6 +193,8 @@ export type ClientMsg =
   | { type: "fs.list"; path: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { type: "read"; doc: string; version: number }
+  /** What would a move do? Answered with `move.plan`; changes nothing (E26). */
+  | { type: "move.plan"; path: string; into: string }
   | { type: "prefs.set"; key: string; value: string }
   /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
   | { type: "reveal"; path: string }
@@ -190,6 +211,7 @@ export type ServerMsg =
   | { type: "state"; state: PublicState }
   | { type: "version.text"; doc: string; version: number; text: string; origin: "load" | "remote" }
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
+  | { type: "move.plan"; path: string; into: string; plan?: MovePlan; error?: string }
   /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
   | { type: "structure.done"; op: StructureOpType; path: string }
   | { type: "error"; message: string };

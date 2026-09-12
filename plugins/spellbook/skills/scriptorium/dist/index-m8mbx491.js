@@ -17797,7 +17797,7 @@ var __iconNode19 = [
 ];
 var X = createLucideIcon("x", __iconNode19);
 // src/scriptorium/surface/App.tsx
-var import_react17 = __toESM(require_react(), 1);
+var import_react18 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -22146,7 +22146,7 @@ function ResizableHandle({
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
-var import_react12 = __toESM(require_react(), 1);
+var import_react13 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/context-menu/index.parts.mjs
 var exports_index_parts2 = {};
@@ -27618,6 +27618,30 @@ var FOCUSABLE_POPUP_PROPS = {
   tabIndex: -1,
   [FOCUSABLE_ATTRIBUTE]: ""
 };
+function createDefaultInitialFocus(popupRef) {
+  return (interactionType) => interactionType === "touch" ? popupRef.current : true;
+}
+function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
+  const floatingId = useId();
+  const nested = useFloatingParentNodeId() != null;
+  const internalStoreRef = React45.useRef(null);
+  if (externalStore === undefined && internalStoreRef.current === null) {
+    internalStoreRef.current = createStore(floatingId, nested);
+  }
+  const store = externalStore ?? internalStoreRef.current;
+  useSyncedFloatingRootContext({
+    popupStore: store,
+    treatPopupAsFloatingElement,
+    floatingRootContext: store.state.floatingRootContext,
+    floatingId,
+    nested,
+    onOpenChange: store.setOpen
+  });
+  return {
+    store,
+    internalStore: internalStoreRef.current
+  };
+}
 function useTriggerRegistration(id, store) {
   const registeredElementIdRef = React45.useRef(null);
   const registeredElementRef = React45.useRef(null);
@@ -27826,6 +27850,18 @@ function usePopupInteractionProps(store, statePart) {
     });
   }, [store]);
 }
+function usePopupRootSync(store, open) {
+  useIsoLayoutEffect(() => {
+    if (!open && store.state.openMethod !== null) {
+      store.set("openMethod", null);
+    }
+  }, [open, store]);
+  useIsoLayoutEffect(() => () => {
+    if (store.state.openMethod !== null) {
+      store.set("openMethod", null);
+    }
+  }, [store]);
+}
 
 // node_modules/@base-ui/react/utils/popups/popupTriggerMap.mjs
 class PopupTriggerMap {
@@ -27917,6 +27953,19 @@ function createInitialPopupStoreState() {
     inactiveTriggerProps: EMPTY_OBJECT,
     popupProps: EMPTY_OBJECT
   };
+}
+function createPopupFloatingRootContext(triggerElements, floatingId, nested = false) {
+  return new FloatingRootStore({
+    open: false,
+    transitionStatus: undefined,
+    floatingElement: null,
+    referenceElement: null,
+    triggerElements,
+    floatingId,
+    syncOnly: true,
+    nested,
+    onOpenChange: undefined
+  });
 }
 var activeTriggerIdSelector = createSelector((state) => state.triggerIdProp ?? state.activeTriggerId);
 var openSelector = createSelector((state) => state.openProp ?? state.open);
@@ -33107,15 +33156,891 @@ function ContextMenuShortcut({ className, ...props }) {
   }, undefined, false, undefined, this);
 }
 
-// src/scriptorium/surface/components/context/AddPath.tsx
-var import_react7 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/input/Input.mjs
-var React105 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/field/index.parts.mjs
+// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
 var exports_index_parts3 = {};
 __export(exports_index_parts3, {
+  Backdrop: () => DialogBackdrop,
+  Close: () => DialogClose,
+  Description: () => DialogDescription,
+  Handle: () => AlertDialogHandle,
+  Popup: () => DialogPopup,
+  Portal: () => DialogPortal,
+  Root: () => AlertDialogRoot,
+  Title: () => DialogTitle,
+  Trigger: () => AlertDialogTrigger,
+  Viewport: () => DialogViewport,
+  createHandle: () => createAlertDialogHandle
+});
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var React90 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+var React87 = __toESM(require_react(), 1);
+"use client";
+function useDialogRoot(params) {
+  const {
+    store,
+    actionsRef
+  } = params;
+  const open = store.useState("open");
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store);
+  const handleImperativeClose = React87.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React87.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+}
+function DialogInteractions({
+  store,
+  parentContext,
+  isDrawer
+}) {
+  const open = store.useState("open");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const modal = store.useState("modal");
+  const popupElement = store.useState("popupElement");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React87.useState(0);
+  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React87.useState(0);
+  const isTopmost = ownNestedOpenDialogs === 0;
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent() {
+      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
+        return "intentional";
+      }
+      return {
+        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+        touch: "sloppy"
+      };
+    },
+    outsidePress(event) {
+      if (!store.context.outsidePressEnabledRef.current) {
+        return false;
+      }
+      if ("button" in event && event.button !== 0) {
+        return false;
+      }
+      if ("touches" in event && event.touches.length !== 1) {
+        return false;
+      }
+      const target = getTarget(event);
+      if (isTopmost && !disablePointerDismissal) {
+        if (modal) {
+          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
+        }
+        return true;
+      }
+      return false;
+    },
+    escapeKey: isTopmost
+  });
+  useScrollLock(open && modal === true, popupElement);
+  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
+    setOwnNestedOpenDialogs(dialogCount);
+    setOwnNestedOpenDrawers(drawerCount);
+  });
+  store.useContextCallback("onNestedDialogClose", () => {
+    setOwnNestedOpenDialogs(0);
+    setOwnNestedOpenDrawers(0);
+  });
+  React87.useEffect(() => {
+    if (parentContext?.onNestedDialogOpen && open) {
+      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
+    }
+    if (parentContext?.onNestedDialogClose && !open) {
+      parentContext.onNestedDialogClose();
+    }
+    return () => {
+      if (parentContext?.onNestedDialogClose && open) {
+        parentContext.onNestedDialogClose();
+      }
+    };
+  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    nestedOpenDialogCount: ownNestedOpenDialogs,
+    nestedOpenDrawerCount: ownNestedOpenDrawers
+  });
+  return null;
+}
+
+// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
+var React88 = __toESM(require_react(), 1);
+"use client";
+var IsDrawerContext = /* @__PURE__ */ React88.createContext(false);
+if (true)
+  IsDrawerContext.displayName = "IsDrawerContext";
+var DialogRootContext = /* @__PURE__ */ React88.createContext(undefined);
+if (true)
+  DialogRootContext.displayName = "DialogRootContext";
+function useDialogRootContext(optional) {
+  const dialogRootContext = React88.useContext(DialogRootContext);
+  if (optional === false && dialogRootContext === undefined) {
+    throw new Error("Base UI: DialogRootContext is missing. Dialog parts must be placed within <Dialog.Root>.");
+  }
+  return dialogRootContext;
+}
+
+// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
+var React89 = __toESM(require_react(), 1);
+var selectors3 = {
+  ...popupStoreSelectors,
+  modal: createSelector((state) => state.modal),
+  nested: createSelector((state) => state.nested),
+  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
+  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
+  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
+  openMethod: createSelector((state) => state.openMethod),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  titleElementId: createSelector((state) => state.titleElementId),
+  viewportElement: createSelector((state) => state.viewportElement),
+  role: createSelector((state) => state.role)
+};
+
+class DialogStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = createInitialState2(initialState);
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React89.createRef(),
+      backdropRef: /* @__PURE__ */ React89.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React89.createRef(),
+      outsidePressEnabledRef: {
+        current: true
+      },
+      triggerElements,
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined
+    }, selectors3);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    eventDetails.preventUnmountOnClose = () => {
+      this.set("preventUnmountingOnClose", true);
+    };
+    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
+      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const updatedState = {
+      open: nextOpen
+    };
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
+    this.update(updatedState);
+  };
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
+    return store;
+  }
+}
+function createInitialState2(initialState = {}) {
+  return {
+    ...createInitialPopupStoreState(),
+    modal: true,
+    disablePointerDismissal: false,
+    popupElement: null,
+    viewportElement: null,
+    descriptionElementId: undefined,
+    titleElementId: undefined,
+    openMethod: null,
+    nested: false,
+    nestedOpenDialogCount: 0,
+    nestedOpenDrawerCount: 0,
+    role: "dialog",
+    ...initialState
+  };
+}
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function useRenderDialogRoot(props, mode = "dialog") {
+  const {
+    children,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    disablePointerDismissal: disablePointerDismissalProp = false,
+    modal: modalProp = true,
+    actionsRef,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const isDrawer = mode === "drawer";
+  const isAlertDialog = mode === "alert-dialog";
+  const modal = isAlertDialog ? true : modalProp;
+  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
+  const role = isAlertDialog ? "alertdialog" : "dialog";
+  const parentDialogRootContext = useDialogRootContext(true);
+  const nested = Boolean(parentDialogRootContext);
+  const rootState = {
+    modal,
+    disablePointerDismissal,
+    nested,
+    role
+  };
+  const store = DialogStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    ...rootState
+  });
+  useOnFirstRender(() => {
+    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
+      open: true,
+      activeTriggerId: defaultTriggerIdProp
+    } : null;
+    if (isAlertDialog) {
+      store.update(nextState ? {
+        ...rootState,
+        ...nextState
+      } : rootState);
+    } else if (nextState) {
+      store.update(nextState);
+    }
+  });
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useSyncedValues(rootState);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  useDialogRoot({
+    store,
+    actionsRef
+  });
+  const shouldRenderInteractions = open || mounted;
+  const contextValue = React90.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(IsDrawerContext.Provider, {
+    value: false,
+    children: /* @__PURE__ */ import_jsx_runtime20.jsxs(DialogRootContext.Provider, {
+      value: contextValue,
+      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(DialogInteractions, {
+        store,
+        parentContext: parentDialogRootContext?.store.context,
+        isDrawer
+      }), typeof children === "function" ? children({
+        payload
+      }) : children]
+    })
+  });
+}
+
+// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
+"use client";
+function AlertDialogRoot(props) {
+  return useRenderDialogRoot(props, "alert-dialog");
+}
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+var React91 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var DialogBackdrop = /* @__PURE__ */ React91.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    forceRender = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    stateAttributesMapping: stateAttributesMapping4,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    enabled: forceRender || !nested
+  });
+});
+if (true)
+  DialogBackdrop.displayName = "DialogBackdrop";
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+var React92 = __toESM(require_react(), 1);
+"use client";
+var DialogClose = /* @__PURE__ */ React92.forwardRef(function DialogClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  function handleClick(event) {
+    if (open) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+    }
+  }
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick: handleClick
+    }, elementProps, getButtonProps]
+  });
+});
+if (true)
+  DialogClose.displayName = "DialogClose";
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+var React93 = __toESM(require_react(), 1);
+"use client";
+var DialogDescription = /* @__PURE__ */ React93.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("descriptionElementId", id);
+  return useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (true)
+  DialogDescription.displayName = "DialogDescription";
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var React95 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
+var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
+  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
+  return DialogPopupCssVars2;
+}({});
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
+var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogPopupDataAttributes2["nested"] = "data-nested";
+  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogPopupDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
+var React94 = __toESM(require_react(), 1);
+"use client";
+var DialogPortalContext = /* @__PURE__ */ React94.createContext(undefined);
+if (true)
+  DialogPortalContext.displayName = "DialogPortalContext";
+function useDialogPortalContext() {
+  const value = React94.useContext(DialogPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Dialog.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping5 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogPopupDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogPopup = /* @__PURE__ */ React95.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    finalFocus,
+    initialFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const descriptionElementId = store.useState("descriptionElementId");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const rootPopupProps = store.useState("popupProps");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const nested = store.useState("nested");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const titleElementId = store.useState("titleElementId");
+  const transitionStatus = store.useState("transitionStatus");
+  const role = store.useState("role");
+  const floatingId = floatingRootContext.useState("floatingId");
+  const popupId = elementProps.id ?? floatingId;
+  useDialogPortalContext();
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const setPopupElement = store.useStateSetter("popupElement");
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    props: [rootPopupProps, {
+      id: popupId,
+      "aria-labelledby": titleElementId ?? undefined,
+      "aria-describedby": descriptionElementId ?? undefined,
+      role,
+      ...FOCUSABLE_POPUP_PROPS,
+      hidden: !mounted,
+      onKeyDown(event) {
+        if (COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      },
+      style: {
+        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
+      }
+    }, elementProps],
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping5
+  });
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingFocusManager, {
+    context: floatingRootContext,
+    openInteractionType: openMethod,
+    disabled: !mounted,
+    closeOnFocusOut: !disablePointerDismissal,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    modal: modal !== false,
+    restoreFocus: "popup",
+    children: element
+  });
+});
+if (true)
+  DialogPopup.displayName = "DialogPopup";
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var React96 = __toESM(require_react(), 1);
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var DialogPortal = /* @__PURE__ */ React96.forwardRef(function DialogPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useDialogRootContext();
+  const mounted = store.useState("mounted");
+  const modal = store.useState("modal");
+  const open = store.useState("open");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime22.jsx(DialogPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime22.jsxs(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps,
+      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime22.jsx(InternalBackdrop, {
+        ref: store.context.internalBackdropRef,
+        inert: inertValue(!open)
+      }), props.children]
+    })
+  });
+});
+if (true)
+  DialogPortal.displayName = "DialogPortal";
+// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+var React97 = __toESM(require_react(), 1);
+"use client";
+var DialogTitle = /* @__PURE__ */ React97.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("titleElementId", id);
+  return useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (true)
+  DialogTitle.displayName = "DialogTitle";
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+var React98 = __toESM(require_react(), 1);
+"use client";
+var DialogTrigger = /* @__PURE__ */ React98.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    id: idProp,
+    payload,
+    handle,
+    ...elementProps
+  } = componentProps;
+  const dialogRootContext = useDialogRootContext(true);
+  const store = handle?.store ?? dialogRootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Dialog.Trigger> must be used within <Dialog.Root> or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React98.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+});
+if (true)
+  DialogTrigger.displayName = "DialogTrigger";
+
+// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
+"use client";
+var AlertDialogTrigger = DialogTrigger;
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+var React99 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
+var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogViewportDataAttributes2["nested"] = "data-nested";
+  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogViewportDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+"use client";
+var stateAttributesMapping6 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nested(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nested]: ""
+    } : null;
+  },
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogViewport = /* @__PURE__ */ React99.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    children,
+    ...elementProps
+  } = componentProps;
+  const keepMounted = useDialogPortalContext();
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const transitionStatus = store.useState("transitionStatus");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const mounted = store.useState("mounted");
+  const setViewportElement = store.useStateSetter("viewportElement");
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const shouldRender = keepMounted || mounted;
+  return useRenderElement("div", componentProps, {
+    enabled: shouldRender,
+    state,
+    ref: [forwardedRef, setViewportElement],
+    stateAttributesMapping: stateAttributesMapping6,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: !open ? "none" : undefined
+      },
+      children
+    }, elementProps]
+  });
+});
+if (true)
+  DialogViewport.displayName = "DialogViewport";
+// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
+class DialogHandle {
+  constructor(store) {
+    this.store = store ?? new DialogStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (true) {
+      if (triggerId && !triggerElement) {
+        console.warn(`Base UI: DialogHandle.open: No trigger found with id "${triggerId}". The dialog will open, but the trigger will not be associated with the dialog.`);
+      }
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  openWithPayload(payload) {
+    this.store.set("payload", payload);
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+
+// node_modules/@base-ui/react/alert-dialog/handle.mjs
+var alertDialogState = {
+  modal: true,
+  disablePointerDismissal: true,
+  role: "alertdialog"
+};
+
+class AlertDialogHandle extends DialogHandle {
+  constructor(store) {
+    const alertDialogStore = store ?? new DialogStore(alertDialogState);
+    super(alertDialogStore);
+    if (store) {
+      this.store.update(alertDialogState);
+    }
+  }
+}
+function createAlertDialogHandle() {
+  return new AlertDialogHandle;
+}
+// src/kit/ui/ConfirmDialog.tsx
+var import_react7 = __toESM(require_react(), 1);
+
+// src/kit/lib/cn.ts
+function cn2(...inputs) {
+  return inputs.filter(Boolean).join(" ");
+}
+
+// src/kit/ui/ConfirmDialog.tsx
+var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
+function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  message,
+  warning,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  confirmClassName,
+  onConfirm,
+  onCancel
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Root, {
+    open,
+    onOpenChange: (next) => {
+      onOpenChange(next);
+      if (!next)
+        onCancel?.();
+    },
+    children: /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Portal, {
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Backdrop, {
+          className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Popup, {
+          "data-slot": "confirm-dialog",
+          className: "fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Title, {
+              className: "text-sm font-semibold text-ink",
+              children: title
+            }, undefined, false, undefined, this),
+            message && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Description, {
+              className: "text-sm leading-relaxed text-ink-faint",
+              children: message
+            }, undefined, false, undefined, this),
+            warning && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("p", {
+              className: "rounded-md border border-edge bg-bg px-2.5 py-2 text-xs leading-relaxed text-ink",
+              children: warning
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+              className: "mt-1 flex justify-end gap-2",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(exports_index_parts3.Close, {
+                  className: cn2(BUTTON, "border border-edge bg-surface text-ink hover:bg-bg"),
+                  children: cancelLabel
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("button", {
+                  type: "button",
+                  onClick: onConfirm,
+                  className: cn2(BUTTON, confirmClassName ?? "border border-edge bg-ink text-bg hover:opacity-90"),
+                  children: confirmLabel
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
+}
+function useConfirm() {
+  const [pending, setPending] = import_react7.useState(null);
+  const answer = import_react7.useRef(null);
+  const settle = import_react7.useCallback((ok) => {
+    const reply = answer.current;
+    answer.current = null;
+    setPending(null);
+    reply?.(ok);
+  }, []);
+  const confirm = import_react7.useCallback((request) => new Promise((resolve) => {
+    answer.current?.(false);
+    answer.current = resolve;
+    setPending(request);
+  }), []);
+  const dialog = pending ? /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(ConfirmDialog, {
+    ...pending,
+    open: true,
+    onOpenChange: (next) => {
+      if (!next)
+        settle(false);
+    },
+    onConfirm: () => settle(true)
+  }, undefined, false, undefined, this) : null;
+  return { confirm, dialog };
+}
+
+// src/scriptorium/surface/components/context/AddPath.tsx
+var import_react8 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/input/Input.mjs
+var React118 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/index.parts.mjs
+var exports_index_parts4 = {};
+__export(exports_index_parts4, {
   Control: () => FieldControl,
   Description: () => FieldDescription,
   Error: () => FieldError,
@@ -33126,10 +34051,10 @@ __export(exports_index_parts3, {
 });
 
 // node_modules/@base-ui/react/field/root/FieldRoot.mjs
-var React94 = __toESM(require_react(), 1);
+var React107 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
-var React87 = __toESM(require_react(), 1);
+var React100 = __toESM(require_react(), 1);
 // node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
 var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
   FieldControlDataAttributes2["disabled"] = "data-disabled";
@@ -33224,11 +34149,11 @@ var DEFAULT_FIELD_ROOT_CONTEXT = {
     change: NOOP
   }
 };
-var FieldRootContext = /* @__PURE__ */ React87.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
+var FieldRootContext = /* @__PURE__ */ React100.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
 if (true)
   FieldRootContext.displayName = "FieldRootContext";
 function useFieldRootContext(optional = true) {
-  const context = React87.useContext(FieldRootContext);
+  const context = React100.useContext(FieldRootContext);
   if (context.setValidityData === NOOP && !optional) {
     throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
   }
@@ -33236,13 +34161,13 @@ function useFieldRootContext(optional = true) {
 }
 
 // node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
-var React88 = __toESM(require_react(), 1);
+var React101 = __toESM(require_react(), 1);
 "use client";
-var FieldsetRootContext = /* @__PURE__ */ React88.createContext(undefined);
+var FieldsetRootContext = /* @__PURE__ */ React101.createContext(undefined);
 if (true)
   FieldsetRootContext.displayName = "FieldsetRootContext";
 function useFieldsetRootContext(optional = false) {
-  const context = React88.useContext(FieldsetRootContext);
+  const context = React101.useContext(FieldsetRootContext);
   if (!context && !optional) {
     throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
   }
@@ -33250,9 +34175,9 @@ function useFieldsetRootContext(optional = false) {
 }
 
 // node_modules/@base-ui/react/internals/form-context/FormContext.mjs
-var React89 = __toESM(require_react(), 1);
+var React102 = __toESM(require_react(), 1);
 "use client";
-var FormContext = /* @__PURE__ */ React89.createContext({
+var FormContext = /* @__PURE__ */ React102.createContext({
   formRef: {
     current: {
       fields: new Map
@@ -33268,16 +34193,16 @@ var FormContext = /* @__PURE__ */ React89.createContext({
 if (true)
   FormContext.displayName = "FormContext";
 function useFormContext() {
-  return React89.useContext(FormContext);
+  return React102.useContext(FormContext);
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
-var React91 = __toESM(require_react(), 1);
+var React104 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
-var React90 = __toESM(require_react(), 1);
+var React103 = __toESM(require_react(), 1);
 "use client";
-var LabelableContext = /* @__PURE__ */ React90.createContext({
+var LabelableContext = /* @__PURE__ */ React103.createContext({
   controlId: undefined,
   registerControlId: NOOP,
   labelId: undefined,
@@ -33289,18 +34214,18 @@ var LabelableContext = /* @__PURE__ */ React90.createContext({
 if (true)
   LabelableContext.displayName = "LabelableContext";
 function useLabelableContext() {
-  return React90.useContext(LabelableContext);
+  return React103.useContext(LabelableContext);
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
-var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var LabelableProvider = function LabelableProvider2(props) {
   const defaultId = useBaseUiId();
   const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
-  const [controlId, setControlIdState] = React91.useState(initialControlId);
-  const [labelId, setLabelId] = React91.useState(props.labelId);
-  const [messageIds, setMessageIds] = React91.useState([]);
+  const [controlId, setControlIdState] = React104.useState(initialControlId);
+  const [labelId, setLabelId] = React104.useState(props.labelId);
+  const [messageIds, setMessageIds] = React104.useState([]);
   const registrationsRef = useRefWithInit(() => new Map);
   const {
     messageIds: parentMessageIds
@@ -33328,7 +34253,7 @@ var LabelableProvider = function LabelableProvider2(props) {
       return nextControlId;
     });
   });
-  const getDescriptionProps = React91.useCallback((externalProps) => {
+  const getDescriptionProps = React104.useCallback((externalProps) => {
     const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
     ids.push(...parentMessageIds, ...messageIds);
     return {
@@ -33336,7 +34261,7 @@ var LabelableProvider = function LabelableProvider2(props) {
       "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
     };
   }, [parentMessageIds, messageIds]);
-  const contextValue = React91.useMemo(() => ({
+  const contextValue = React104.useMemo(() => ({
     controlId,
     registerControlId,
     labelId,
@@ -33345,7 +34270,7 @@ var LabelableProvider = function LabelableProvider2(props) {
     setMessageIds,
     getDescriptionProps
   }), [controlId, registerControlId, labelId, setLabelId, messageIds, setMessageIds, getDescriptionProps]);
-  return /* @__PURE__ */ import_jsx_runtime20.jsx(LabelableContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime23.jsx(LabelableContext.Provider, {
     value: contextValue,
     children: props.children
   });
@@ -33354,7 +34279,7 @@ if (true)
   LabelableProvider.displayName = "LabelableProvider";
 
 // node_modules/@base-ui/react/field/root/useFieldValidation.mjs
-var React92 = __toESM(require_react(), 1);
+var React105 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
 function getCombinedFieldValidityData(validityData, invalid) {
@@ -33430,10 +34355,10 @@ function useFieldValidation(params) {
     getDescriptionProps
   } = useLabelableContext();
   const timeout = useTimeout();
-  const inputRef = React92.useRef(null);
+  const inputRef = React105.useRef(null);
   const registeredInputs = useRefWithInit(() => new Set).current;
-  const validationCommitIdRef = React92.useRef(0);
-  const registerInput = React92.useCallback((element) => {
+  const validationCommitIdRef = React105.useRef(0);
+  const registerInput = React105.useCallback((element) => {
     if (!element) {
       return;
     }
@@ -33584,10 +34509,10 @@ function useFieldValidation(params) {
       commit(value, !validateOnChange);
     }
   });
-  const getValidationProps = React92.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
+  const getValidationProps = React105.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
     "aria-invalid": true
   } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
-  return React92.useMemo(() => ({
+  return React105.useMemo(() => ({
     getValidationProps,
     inputRef,
     registerInput,
@@ -33597,7 +34522,7 @@ function useFieldValidation(params) {
 }
 
 // node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
-var React93 = __toESM(require_react(), 1);
+var React106 = __toESM(require_react(), 1);
 "use client";
 function useFieldControlRegistration(params) {
   const {
@@ -33613,9 +34538,9 @@ function useFieldControlRegistration(params) {
   const {
     formRef
   } = useFormContext();
-  const activeFieldControlSourceRef = React93.useRef(null);
-  const registrationRef = React93.useRef(null);
-  const fallbackControlRef = React93.useRef(null);
+  const activeFieldControlSourceRef = React106.useRef(null);
+  const registrationRef = React106.useRef(null);
+  const fallbackControlRef = React106.useRef(null);
   const getValueForForm = useStableCallback(() => {
     const registration = registrationRef.current;
     if (!registration) {
@@ -33720,9 +34645,9 @@ function useFieldControlRegistration(params) {
 }
 
 // node_modules/@base-ui/react/field/root/FieldRoot.mjs
-var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
+var FieldRootInner = /* @__PURE__ */ React107.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
   const {
     errors,
     validationMode: formValidationMode,
@@ -33746,23 +34671,23 @@ var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2
   const disabledFieldset = useFieldsetRootContext(true)?.disabled;
   const validate = useStableCallback(validateProp || (() => null));
   const disabled2 = disabledFieldset || disabledProp;
-  const [touchedState, setTouchedUnwrapped] = React94.useState(false);
-  const [dirtyState, setDirtyUnwrapped] = React94.useState(false);
-  const [filled, setFilled] = React94.useState(false);
-  const [focused, setFocused] = React94.useState(false);
+  const [touchedState, setTouchedUnwrapped] = React107.useState(false);
+  const [dirtyState, setDirtyUnwrapped] = React107.useState(false);
+  const [filled, setFilled] = React107.useState(false);
+  const [focused, setFocused] = React107.useState(false);
   const dirty = dirtyProp ?? dirtyState;
   const touched = touchedProp ?? touchedState;
-  const markedDirtyRef = React94.useRef(dirty);
-  const registeredFieldIdRef = React94.useRef(undefined);
-  const [registeredFieldName, setRegisteredFieldName] = React94.useState();
+  const markedDirtyRef = React107.useRef(dirty);
+  const registeredFieldIdRef = React107.useRef(undefined);
+  const [registeredFieldName, setRegisteredFieldName] = React107.useState();
   const effectiveName = name ?? registeredFieldName;
   useIsoLayoutEffect(() => {
     if (dirtyProp !== undefined) {
       markedDirtyRef.current = dirtyProp;
     }
   }, [dirtyProp]);
-  const getRegisteredFieldId = React94.useCallback(() => registeredFieldIdRef.current, []);
-  const setRegisteredFieldId = React94.useCallback((id) => {
+  const getRegisteredFieldId = React107.useCallback(() => registeredFieldIdRef.current, []);
+  const setRegisteredFieldId = React107.useCallback((id) => {
     registeredFieldIdRef.current = id;
   }, []);
   const setDirty = useStableCallback((value) => {
@@ -33784,7 +34709,7 @@ var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2
   const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
   const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
   const invalid = invalidProp === true || hasFormError;
-  const [validityData, setValidityData] = React94.useState({
+  const [validityData, setValidityData] = React107.useState({
     state: DEFAULT_VALIDITY_STATE,
     error: "",
     errors: [],
@@ -33792,7 +34717,7 @@ var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2
     initialValue: null
   });
   const valid = disabled2 ? null : !invalid && validityData.state.valid;
-  const state = React94.useMemo(() => ({
+  const state = React107.useMemo(() => ({
     disabled: disabled2,
     touched,
     dirty,
@@ -33821,10 +34746,10 @@ var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2
     setValidityData,
     validityData
   });
-  React94.useImperativeHandle(actionsRef, () => ({
+  React107.useImperativeHandle(actionsRef, () => ({
     validate: validateFieldControl
   }), [validateFieldControl]);
-  const contextValue = React94.useMemo(() => ({
+  const contextValue = React107.useMemo(() => ({
     invalid,
     name: effectiveName,
     validityData,
@@ -33853,16 +34778,16 @@ var FieldRootInner = /* @__PURE__ */ React94.forwardRef(function FieldRootInner2
     props: elementProps,
     stateAttributesMapping: fieldValidityMapping
   });
-  return /* @__PURE__ */ import_jsx_runtime21.jsx(FieldRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(FieldRootContext.Provider, {
     value: contextValue,
     children: element
   });
 });
 if (true)
   FieldRootInner.displayName = "FieldRootInner";
-var FieldRoot = /* @__PURE__ */ React94.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
-  return /* @__PURE__ */ import_jsx_runtime21.jsx(LabelableProvider, {
-    children: /* @__PURE__ */ import_jsx_runtime21.jsx(FieldRootInner, {
+var FieldRoot = /* @__PURE__ */ React107.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(LabelableProvider, {
+    children: /* @__PURE__ */ import_jsx_runtime24.jsx(FieldRootInner, {
       ...componentProps,
       ref: forwardedRef
     })
@@ -33871,7 +34796,7 @@ var FieldRoot = /* @__PURE__ */ React94.forwardRef(function FieldRoot2(component
 if (true)
   FieldRoot.displayName = "FieldRoot";
 // node_modules/@base-ui/react/field/label/FieldLabel.mjs
-var React96 = __toESM(require_react(), 1);
+var React109 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
 "use client";
@@ -33951,21 +34876,21 @@ function focusElementWithVisible(element) {
 }
 
 // node_modules/@base-ui/react/field/item/FieldItemContext.mjs
-var React95 = __toESM(require_react(), 1);
+var React108 = __toESM(require_react(), 1);
 "use client";
-var FieldItemContext = /* @__PURE__ */ React95.createContext({
+var FieldItemContext = /* @__PURE__ */ React108.createContext({
   disabled: false
 });
 if (true)
   FieldItemContext.displayName = "FieldItemContext";
 function useFieldItemContext() {
-  const context = React95.useContext(FieldItemContext);
+  const context = React108.useContext(FieldItemContext);
   return context;
 }
 
 // node_modules/@base-ui/react/field/label/FieldLabel.mjs
 "use client";
-var FieldLabel = /* @__PURE__ */ React96.forwardRef(function FieldLabel2(componentProps, forwardedRef) {
+var FieldLabel = /* @__PURE__ */ React109.forwardRef(function FieldLabel2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -33983,13 +34908,13 @@ var FieldLabel = /* @__PURE__ */ React96.forwardRef(function FieldLabel2(compone
     ...fieldRootContext.state,
     disabled: fieldRootContext.disabled || fieldItemContext.disabled
   };
-  const labelRef = React96.useRef(null);
+  const labelRef = React109.useRef(null);
   const labelProps = useLabel({
     id: labelId ?? idProp,
     native: nativeLabel
   });
   if (true) {
-    React96.useEffect(() => {
+    React109.useEffect(() => {
       if (!labelRef.current) {
         return;
       }
@@ -34018,14 +34943,14 @@ var FieldLabel = /* @__PURE__ */ React96.forwardRef(function FieldLabel2(compone
 if (true)
   FieldLabel.displayName = "FieldLabel";
 // node_modules/@base-ui/react/field/error/FieldError.mjs
-var React97 = __toESM(require_react(), 1);
-var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+var React110 = __toESM(require_react(), 1);
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var stateAttributesMapping4 = {
+var stateAttributesMapping7 = {
   ...fieldValidityMapping,
   ...transitionStatusMapping
 };
-var FieldError = /* @__PURE__ */ React97.forwardRef(function FieldError2(componentProps, forwardedRef) {
+var FieldError = /* @__PURE__ */ React110.forwardRef(function FieldError2(componentProps, forwardedRef) {
   const {
     render,
     id: idProp,
@@ -34073,9 +34998,9 @@ var FieldError = /* @__PURE__ */ React97.forwardRef(function FieldError2(compone
       setMessageIds((v) => v.filter((item) => item !== id));
     };
   }, [rendered, id, setMessageIds]);
-  const errorRef = React97.useRef(null);
-  const [lastRenderedMessage, setLastRenderedMessage] = React97.useState(null);
-  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React97.useState(null);
+  const errorRef = React110.useRef(null);
+  const [lastRenderedMessage, setLastRenderedMessage] = React110.useState(null);
+  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React110.useState(null);
   let error2 = validityData.error;
   if (!hasSpecificMatch && hasFormError) {
     error2 = formError;
@@ -34084,8 +35009,8 @@ var FieldError = /* @__PURE__ */ React97.forwardRef(function FieldError2(compone
   }
   let errorMessage = error2 ?? "";
   if (Array.isArray(error2)) {
-    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime22.jsx("ul", {
-      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime22.jsx("li", {
+    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime25.jsx("ul", {
+      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime25.jsx("li", {
         children: message
       }, message))
     }) : error2[0] ?? "";
@@ -34115,7 +35040,7 @@ var FieldError = /* @__PURE__ */ React97.forwardRef(function FieldError2(compone
       id,
       children: rendered ? errorMessage : lastRenderedMessage
     }, elementProps],
-    stateAttributesMapping: stateAttributesMapping4,
+    stateAttributesMapping: stateAttributesMapping7,
     enabled: mounted
   });
   if (!mounted) {
@@ -34126,9 +35051,9 @@ var FieldError = /* @__PURE__ */ React97.forwardRef(function FieldError2(compone
 if (true)
   FieldError.displayName = "FieldError";
 // node_modules/@base-ui/react/field/description/FieldDescription.mjs
-var React98 = __toESM(require_react(), 1);
+var React111 = __toESM(require_react(), 1);
 "use client";
-var FieldDescription = /* @__PURE__ */ React98.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
+var FieldDescription = /* @__PURE__ */ React111.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
   const {
     render,
     id: idProp,
@@ -34168,16 +35093,16 @@ var FieldDescription = /* @__PURE__ */ React98.forwardRef(function FieldDescript
 if (true)
   FieldDescription.displayName = "FieldDescription";
 // node_modules/@base-ui/react/field/control/FieldControl.mjs
-var React101 = __toESM(require_react(), 1);
+var React114 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
-var React99 = __toESM(require_react(), 1);
+var React112 = __toESM(require_react(), 1);
 "use client";
 function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
   const {
     registerFieldControl
   } = useFieldRootContext();
-  const sourceRef = React99.useRef(null);
+  const sourceRef = React112.useRef(null);
   if (!sourceRef.current) {
     sourceRef.current = Symbol();
   }
@@ -34201,7 +35126,7 @@ function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, en
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
-var React100 = __toESM(require_react(), 1);
+var React113 = __toESM(require_react(), 1);
 "use client";
 function useLabelableId(params = {}) {
   const {
@@ -34216,8 +35141,8 @@ function useLabelableId(params = {}) {
   const defaultId = useBaseUiId(id);
   const controlIdForEffect = implicit ? controlId : undefined;
   const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
-  const hasRegisteredRef = React100.useRef(false);
-  const hadExplicitIdRef = React100.useRef(id != null);
+  const hasRegisteredRef = React113.useRef(false);
+  const hadExplicitIdRef = React113.useRef(id != null);
   const unregisterControlId = useStableCallback(() => {
     if (!hasRegisteredRef.current || registerControlId === NOOP) {
       return;
@@ -34254,7 +35179,7 @@ function useLabelableId(params = {}) {
     registerControlId(controlSourceRef.current, nextId);
     return;
   }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
-  React100.useEffect(() => {
+  React113.useEffect(() => {
     return unregisterControlId;
   }, [unregisterControlId]);
   return controlId ?? defaultId;
@@ -34262,7 +35187,7 @@ function useLabelableId(params = {}) {
 
 // node_modules/@base-ui/react/field/control/FieldControl.mjs
 "use client";
-var FieldControl = /* @__PURE__ */ React101.forwardRef(function FieldControl2(componentProps, forwardedRef) {
+var FieldControl = /* @__PURE__ */ React114.forwardRef(function FieldControl2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -34311,7 +35236,7 @@ var FieldControl = /* @__PURE__ */ React101.forwardRef(function FieldControl2(co
       setFilled(false);
     }
   }, [validation.inputRef, setFilled, valueProp]);
-  const inputRef = React101.useRef(null);
+  const inputRef = React114.useRef(null);
   useIsoLayoutEffect(() => {
     if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
       setFocused(true);
@@ -34376,8 +35301,8 @@ var FieldControl = /* @__PURE__ */ React101.forwardRef(function FieldControl2(co
 if (true)
   FieldControl.displayName = "FieldControl";
 // node_modules/@base-ui/react/field/validity/FieldValidity.mjs
-var React102 = __toESM(require_react(), 1);
-var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+var React115 = __toESM(require_react(), 1);
+var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var FieldValidity = function FieldValidity2(props) {
   const {
@@ -34387,35 +35312,35 @@ var FieldValidity = function FieldValidity2(props) {
     validityData,
     invalid
   } = useFieldRootContext(false);
-  const combinedFieldValidityData = React102.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
+  const combinedFieldValidityData = React115.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
   const isInvalid = combinedFieldValidityData.state.valid === false;
   const {
     transitionStatus
   } = useTransitionStatus(isInvalid);
-  const fieldValidityState = React102.useMemo(() => {
+  const fieldValidityState = React115.useMemo(() => {
     return {
       ...combinedFieldValidityData,
       validity: combinedFieldValidityData.state,
       transitionStatus
     };
   }, [combinedFieldValidityData, transitionStatus]);
-  return /* @__PURE__ */ import_jsx_runtime23.jsx(React102.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime26.jsx(React115.Fragment, {
     children: children(fieldValidityState)
   });
 };
 if (true)
   FieldValidity.displayName = "FieldValidity";
 // node_modules/@base-ui/react/field/item/FieldItem.mjs
-var React104 = __toESM(require_react(), 1);
+var React117 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
-var React103 = __toESM(require_react(), 1);
+var React116 = __toESM(require_react(), 1);
 "use client";
-var CheckboxGroupContext = /* @__PURE__ */ React103.createContext(undefined);
+var CheckboxGroupContext = /* @__PURE__ */ React116.createContext(undefined);
 if (true)
   CheckboxGroupContext.displayName = "CheckboxGroupContext";
 function useCheckboxGroupContext(optional = true) {
-  const context = React103.useContext(CheckboxGroupContext);
+  const context = React116.useContext(CheckboxGroupContext);
   if (context === undefined && !optional) {
     throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
   }
@@ -34423,9 +35348,9 @@ function useCheckboxGroupContext(optional = true) {
 }
 
 // node_modules/@base-ui/react/field/item/FieldItem.mjs
-var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FieldItem = /* @__PURE__ */ React104.forwardRef(function FieldItem2(componentProps, forwardedRef) {
+var FieldItem = /* @__PURE__ */ React117.forwardRef(function FieldItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -34445,7 +35370,7 @@ var FieldItem = /* @__PURE__ */ React104.forwardRef(function FieldItem2(componen
   const checkboxGroupContext = useCheckboxGroupContext();
   const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
   const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
-  const fieldItemContext = React104.useMemo(() => ({
+  const fieldItemContext = React117.useMemo(() => ({
     disabled: disabled2
   }), [disabled2]);
   const element = useRenderElement("div", componentProps, {
@@ -34454,9 +35379,9 @@ var FieldItem = /* @__PURE__ */ React104.forwardRef(function FieldItem2(componen
     props: elementProps,
     stateAttributesMapping: fieldValidityMapping
   });
-  return /* @__PURE__ */ import_jsx_runtime24.jsx(LabelableProvider, {
+  return /* @__PURE__ */ import_jsx_runtime27.jsx(LabelableProvider, {
     controlId,
-    children: /* @__PURE__ */ import_jsx_runtime24.jsx(FieldItemContext.Provider, {
+    children: /* @__PURE__ */ import_jsx_runtime27.jsx(FieldItemContext.Provider, {
       value: fieldItemContext,
       children: element
     })
@@ -34465,10 +35390,10 @@ var FieldItem = /* @__PURE__ */ React104.forwardRef(function FieldItem2(componen
 if (true)
   FieldItem.displayName = "FieldItem";
 // node_modules/@base-ui/react/input/Input.mjs
-var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var Input = /* @__PURE__ */ React105.forwardRef(function Input2(props, forwardedRef) {
-  return /* @__PURE__ */ import_jsx_runtime25.jsx(exports_index_parts3.Control, {
+var Input = /* @__PURE__ */ React118.forwardRef(function Input2(props, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime28.jsx(exports_index_parts4.Control, {
     ref: forwardedRef,
     ...props
   });
@@ -34476,9 +35401,9 @@ var Input = /* @__PURE__ */ React105.forwardRef(function Input2(props, forwarded
 if (true)
   Input.displayName = "Input";
 // src/scriptorium/surface/ui/input.tsx
-var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
 function Input3({ className, type, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Input, {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
     type,
     "data-slot": "input",
     className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
@@ -34487,7 +35412,7 @@ function Input3({ className, type, ...props }) {
 }
 
 // src/scriptorium/surface/components/context/AddPath.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
 var MAX_SUGGESTIONS = 8;
 function friendlyListError(raw, dir) {
   if (/ENOENT/.test(raw))
@@ -34520,17 +35445,17 @@ function AddPath({
   className,
   onPick
 }) {
-  const [value, setValue] = import_react7.useState(initialValue);
-  const [listed, setListed] = import_react7.useState({
+  const [value, setValue] = import_react8.useState(initialValue);
+  const [listed, setListed] = import_react8.useState({
     forValue: "",
     entries: []
   });
   const suggestions = listed.forValue === value ? listed.entries : [];
-  const [error2, setError] = import_react7.useState(null);
-  const [highlight, setHighlight] = import_react7.useState(-1);
-  const listId = import_react7.useId();
-  const seq = import_react7.useRef(0);
-  import_react7.useEffect(() => {
+  const [error2, setError] = import_react8.useState(null);
+  const [highlight, setHighlight] = import_react8.useState(-1);
+  const listId = import_react8.useId();
+  const seq = import_react8.useRef(0);
+  import_react8.useEffect(() => {
     const split = splitForCompletion(value);
     if (!split) {
       setListed({ forValue: value, entries: [] });
@@ -34563,10 +35488,10 @@ function AddPath({
     onAdd(p);
     setValue("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
     className: cn("relative flex items-center gap-1 border-t border-edge p-2", className),
     children: [
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input3, {
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Input3, {
         value,
         onChange: (e) => setValue(e.target.value),
         placeholder,
@@ -34609,35 +35534,35 @@ function AddPath({
           }
         }
       }, undefined, false, undefined, this),
-      onPick && !foldersOnly && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
+      onPick && !foldersOnly && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button3, {
         variant: "ghost",
         size: "icon-sm",
         onClick: () => onPick("file"),
         "aria-label": "Choose documents in Finder",
         title: "Choose documents in Finder",
-        children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FileText, {}, undefined, false, undefined, this)
+        children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FileText, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      onPick && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button3, {
+      onPick && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button3, {
         variant: "ghost",
         size: "icon-sm",
         onClick: () => onPick("folder"),
         "aria-label": "Choose a folder in Finder",
         title: "Choose a folder in Finder",
-        children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FolderOpen, {}, undefined, false, undefined, this)
+        children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderOpen, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      (suggestions.length > 0 || error2) && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+      (suggestions.length > 0 || error2) && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
         className: "absolute right-2 bottom-full left-2 z-10 mb-1 rounded-md border border-edge bg-surface-raised p-1 shadow-lg",
         children: [
-          error2 && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("p", {
+          error2 && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
             className: "px-2 py-1 text-xs text-attention",
             children: error2
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
             id: listId,
             role: "listbox",
             "aria-label": "Matching files and folders",
             className: "max-h-64 overflow-auto",
-            children: suggestions.map((s, i) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+            children: suggestions.map((s, i) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
               id: `${listId}-${i}`,
               role: "option",
               tabIndex: -1,
@@ -34651,28 +35576,28 @@ function AddPath({
                   submit(s.path);
               },
               children: [
-                s.dir ? /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Folder, {
+                s.dir ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Folder, {
                   "aria-hidden": true,
                   className: "size-3.5 shrink-0"
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(FileText, {
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FileText, {
                   "aria-hidden": true,
                   className: "size-3.5 shrink-0"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
                   className: "truncate",
                   children: s.name
                 }, undefined, false, undefined, this),
-                s.dir && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+                s.dir && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
                   className: "ml-auto text-ink-faint",
                   children: "/"
                 }, undefined, false, undefined, this)
               ]
             }, s.path, true, undefined, this))
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("p", {
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
             className: "flex items-center gap-1 px-2 pt-1 text-[10px] text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(CornerDownLeft, {
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CornerDownLeft, {
                 "aria-hidden": true,
                 className: "size-3"
               }, undefined, false, undefined, this),
@@ -36239,12 +37164,12 @@ var __spreadValues2 = (a, b) => {
 var __spreadProps2 = (a, b) => __defProps2(a, __getOwnPropDescs2(b));
 
 // node_modules/@headless-tree/react/dist/index.mjs
-var import_react8 = __toESM(require_react(), 1);
 var import_react9 = __toESM(require_react(), 1);
+var import_react10 = __toESM(require_react(), 1);
 var useTree = (config) => {
-  const [tree] = import_react9.useState(() => ({ current: createTree(config) }));
-  const [state, setState] = import_react9.useState(() => tree.current.getState());
-  import_react9.useEffect(() => {
+  const [tree] = import_react10.useState(() => ({ current: createTree(config) }));
+  const [state, setState] = import_react10.useState(() => tree.current.getState());
+  import_react10.useEffect(() => {
     tree.current.setMounted(true);
     tree.current.rebuildTree();
     return () => {
@@ -36263,29 +37188,29 @@ var useTree = (config) => {
 };
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
-var import_react11 = __toESM(require_react(), 1);
+var import_react12 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/components/context/menus.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
 function MoveToMenu({
   targets,
   onMove
 }) {
   if (targets.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSub, {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSub, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSubTrigger, {
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSubTrigger, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderInput, {}, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderInput, {}, undefined, false, undefined, this),
           "Move to"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuSubContent, {
-        children: targets.map((t) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuItem, {
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSubContent, {
+        children: targets.map((t) => /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
           onClick: () => onMove(t.path),
           title: t.path,
-          children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+          children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "max-w-64 truncate",
             children: t.label
           }, undefined, false, undefined, this)
@@ -36310,10 +37235,10 @@ function droppedFiles(dt) {
 }
 var revealLabel = () => /Mac/i.test(navigator.userAgent) ? "Reveal in Finder" : "Show in file manager";
 function RevealItem({ onReveal }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
     onClick: onReveal,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FolderSearch, {}, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderSearch, {}, undefined, false, undefined, this),
       revealLabel()
     ]
   }, undefined, true, undefined, this);
@@ -36426,7 +37351,7 @@ function splitDropped(files) {
 }
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
 var INDENT_PX = 14;
 var ROOT_NODE = { kind: "group", rel: ROOT_ID, children: [] };
 var staleNode = (id) => ({ kind: "doc", rel: id });
@@ -36439,6 +37364,7 @@ function EntryTree({
   activeRel,
   onOpenDoc,
   onStructure,
+  onMove,
   onImportFiles,
   moveTargetsFor,
   renamePath,
@@ -36446,8 +37372,8 @@ function EntryTree({
   onMenuKey,
   onReveal
 }) {
-  const index3 = import_react11.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
-  const indexRef = import_react11.useRef(index3);
+  const index3 = import_react12.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
+  const indexRef = import_react12.useRef(index3);
   indexRef.current = index3;
   const pathOf = (id) => id === ROOT_ID ? entry.root : joinPath(entry.root, id);
   const dirFor = (id) => {
@@ -36476,7 +37402,7 @@ function EntryTree({
       for (const i of items2) {
         const path = pathOf(i.getId());
         if (dirOf(path) !== into)
-          onStructure({ type: "move", path, into });
+          onMove(path, into, indexRef.current.byId.get(i.getId())?.kind === "group");
       }
     },
     canDragForeignDragObjectOver: (dt) => carriesFiles(dt),
@@ -36497,10 +37423,10 @@ function EntryTree({
       renamingFeature
     ]
   });
-  import_react11.useEffect(() => {
+  import_react12.useEffect(() => {
     tree.rebuildTree();
   }, [index3, tree]);
-  import_react11.useEffect(() => {
+  import_react12.useEffect(() => {
     if (!renamePath?.startsWith(`${entry.root}/`))
       return;
     const rel = renamePath.slice(entry.root.length + 1);
@@ -36511,8 +37437,8 @@ function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index3, entry.root, tree, onRenameStarted]);
-  const [menuFor, setMenuFor] = import_react11.useState(null);
-  const [bgDrop, setBgDrop] = import_react11.useState(false);
+  const [menuFor, setMenuFor] = import_react12.useState(null);
+  const [bgDrop, setBgDrop] = import_react12.useState(false);
   const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
   const hiddenCount = entry.hidden?.length ?? 0;
   const onBgDragOver = (e) => {
@@ -36533,33 +37459,33 @@ function EntryTree({
     for (const i of tree.getState().dnd?.draggedItems ?? []) {
       const path = pathOf(i.getId());
       if (dirOf(path) !== entry.root)
-        onStructure({ type: "move", path, into: entry.root });
+        onMove(path, entry.root, indexRef.current.byId.get(i.getId())?.kind === "group");
     }
   };
   const items = tree.getItems();
   const menuPath = menuFor ? pathOf(menuFor.rel) : entry.root;
   const menuDir = menuFor?.kind === "group" ? menuPath : menuFor ? dirOf(menuPath) : entry.root;
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenu, {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenu, {
     onOpenChange: (open) => {
       if (!open)
         setMenuFor(null);
     },
     children: [
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuTrigger3, {
-        render: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
           onDragOver: onBgDragOver,
           onDragLeave: () => setBgDrop(false),
           onDrop: onBgDrop,
           className: cn("flex min-h-full flex-col rounded-md", bgDrop && "bg-rubric/8 ring-1 ring-rubric/40 ring-inset")
         }, undefined, false, undefined, this),
         children: [
-          items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("p", {
+          items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
             className: "px-3 py-4 text-xs text-ink-dim",
             children: "This folder has no documents yet — right-click to make one, or drop files here."
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
             ...tree.getContainerProps(`${entry.label} documents`),
             className: "flex flex-col py-1 outline-none",
-            children: items.map((item) => /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Row, {
+            children: items.map((item) => /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Row, {
               item,
               stale: !index3.byId.has(item.getId()),
               activeRel,
@@ -36568,85 +37494,85 @@ function EntryTree({
               onMenuKey
             }, item.getId(), false, undefined, this))
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
             className: "min-h-8 flex-1"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuContent, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuContent, {
         children: [
-          menuFor?.kind === "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+          menuFor?.kind === "doc" && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
             onClick: () => onOpenDoc(menuFor.rel),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {}, undefined, false, undefined, this),
               "Open"
             ]
           }, undefined, true, undefined, this),
-          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
                 onClick: () => onStructure({ type: "doc.create", dir: menuDir }),
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
                   "New document"
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
                 onClick: () => onStructure({ type: "folder.create", dir: menuDir }),
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
                   "New folder"
                 ]
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          menuFor && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+          menuFor && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
                 onClick: () => renameItem(menuFor.rel),
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Pencil, {}, undefined, false, undefined, this),
                   "Rename",
-                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuShortcut, {
+                  /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuShortcut, {
                     children: "F2"
                   }, undefined, false, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(MoveToMenu, {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
                 targets: moveTargetsFor(menuPath),
-                onMove: (into) => onStructure({ type: "move", path: menuPath, into })
+                onMove: (into) => onMove(menuPath, into, menuFor?.kind === "group")
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+          menuFor?.kind !== "doc" && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "workspace.set", path: menuDir }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(House, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {}, undefined, false, undefined, this),
               "Use as workspace"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(RevealItem, {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(RevealItem, {
             onReveal: () => onReveal(menuPath)
           }, undefined, false, undefined, this),
-          !menuFor && hiddenCount > 0 && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+          !menuFor && hiddenCount > 0 && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "unhide", entry: entry.id }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Eye, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Eye, {}, undefined, false, undefined, this),
               "Show ",
               hiddenCount,
               " hidden ",
               hiddenCount === 1 ? "item" : "items"
             ]
           }, undefined, true, undefined, this),
-          menuFor && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+          menuFor && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
                 variant: "destructive",
                 onClick: () => onStructure({ type: "hide", path: menuPath }),
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(X, {}, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this),
                   "Remove from Scriptorium"
                 ]
               }, undefined, true, undefined, this)
@@ -36673,27 +37599,27 @@ function Row({
   const isActive = !isGroup && node.rel === activeRel;
   const props = item.getProps();
   const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-rubric/12 font-medium text-ink", item.isDragTarget() && "bg-rubric/15 text-ink ring-1 ring-rubric/50 ring-inset");
-  const icon = isGroup ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+  const icon = isGroup ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(ChevronRight, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ChevronRight, {
         "aria-hidden": true,
         className: cn("size-3.5 shrink-0 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
       }, undefined, false, undefined, this),
-      item.isExpanded() ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FolderOpen, {
+      item.isExpanded() ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderOpen, {
         "aria-hidden": true,
         className: "size-4 shrink-0 text-ink-faint"
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Folder, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Folder, {
         "aria-hidden": true,
         className: "size-4 shrink-0 text-ink-faint"
       }, undefined, false, undefined, this)
     ]
-  }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(jsx_dev_runtime8.Fragment, {
+  }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
         "aria-hidden": true,
         className: "size-3.5 shrink-0"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FileText, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {
         "aria-hidden": true,
         className: cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")
       }, undefined, false, undefined, this)
@@ -36702,12 +37628,12 @@ function Row({
   const style = { paddingLeft: `${8 + level * INDENT_PX}px` };
   if (item.isRenaming()) {
     const input = item.getRenameInputProps();
-    return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+    return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
       style,
       className: rowClass,
       children: [
         icon,
-        /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("input", {
+        /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("input", {
           ...input,
           autoFocus: true,
           onFocus: (e) => selectStem(e.currentTarget),
@@ -36718,7 +37644,7 @@ function Row({
       ]
     }, undefined, true, undefined, this);
   }
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("button", {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
     ...props,
     type: "button",
     onClick: (e) => {
@@ -36739,7 +37665,7 @@ function Row({
     className: rowClass,
     children: [
       icon,
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
         className: "truncate",
         children: item.getItemName()
       }, undefined, false, undefined, this)
@@ -36748,10 +37674,11 @@ function Row({
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 var ROW_MIME = "application/x-scriptorium-path";
+var ROW_FOLDER_MIME = "application/x-scriptorium-folder";
 function TruncatedBadge() {
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
     className: "shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention",
     title: "This folder has more files than the sidebar lists — the scan stopped at its cap.",
     children: "partial"
@@ -36784,22 +37711,23 @@ function ContextSidebar({
   onReveal,
   onPick,
   listDir,
+  planMove,
   created,
   notice,
   onDismissNotice
 }) {
-  const [drilled, setDrilled] = import_react12.useState(null);
+  const [drilled, setDrilled] = import_react13.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
-  const [renamePath, setRenamePath] = import_react12.useState(null);
-  const [localNotice, setLocalNotice] = import_react12.useState(null);
-  const [editingWorkspace, setEditingWorkspace] = import_react12.useState(false);
-  import_react12.useEffect(() => {
+  const [renamePath, setRenamePath] = import_react13.useState(null);
+  const [localNotice, setLocalNotice] = import_react13.useState(null);
+  const [editingWorkspace, setEditingWorkspace] = import_react13.useState(false);
+  import_react13.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  const entriesRef = import_react12.useRef(entries);
+  const entriesRef = import_react13.useRef(entries);
   entriesRef.current = entries;
-  import_react12.useEffect(() => {
+  import_react13.useEffect(() => {
     if (!created)
       return;
     const all = entriesRef.current;
@@ -36810,9 +37738,9 @@ function ContextSidebar({
       setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
-  const renameStarted = import_react12.useCallback(() => setRenamePath(null), []);
-  const moveTargetsFor = import_react12.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
-  const importFiles = import_react12.useCallback((dt, into) => {
+  const renameStarted = import_react13.useCallback(() => setRenamePath(null), []);
+  const moveTargetsFor = import_react13.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
+  const importFiles = import_react13.useCallback((dt, into) => {
     const { files, folders } = droppedFiles(dt);
     const { docs, skipped } = splitDropped(files);
     for (const i of docs) {
@@ -36826,6 +37754,38 @@ function ContextSidebar({
       said.push(`Folders are not copied (${folders.join(", ")}) — add a folder by path below to link it.`);
     setLocalNotice(said.length ? said.join(" ") : null);
   }, [onStructure]);
+  const { confirm, dialog } = useConfirm();
+  const requestMove = import_react13.useCallback(async (path, into, folder) => {
+    if (!folder) {
+      onStructure({ type: "move", path, into });
+      return;
+    }
+    const { plan, error: error2 } = await planMove(path, into);
+    if (!plan) {
+      setLocalNotice(error2 ?? "that move could not be checked");
+      return;
+    }
+    const ok = await confirm({
+      title: `Move “${plan.name}” into “${baseName(plan.into)}”?`,
+      message: `${plan.docs === 1 ? "1 document" : `${plan.docs} documents`} moved on disk, from ${shortPath(plan.from, userHome, 2)} to ${shortPath(plan.into, userHome, 2)}.`,
+      warning: plan.leavesRepo ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
+        children: [
+          "This takes it ",
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("strong", {
+            className: "font-semibold",
+            children: "out of the git repository"
+          }, undefined, false, undefined, this),
+          " ",
+          plan.repo,
+          ". Git will see the files as deleted there until the move is committed."
+        ]
+      }, undefined, true, undefined, this) : undefined,
+      confirmLabel: "Move",
+      confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90"
+    });
+    if (ok)
+      onStructure({ type: "move", path, into });
+  }, [confirm, onStructure, planMove, userHome]);
   const shown = localNotice ?? notice ?? null;
   const dismiss = () => {
     if (localNotice)
@@ -36833,10 +37793,10 @@ function ContextSidebar({
     else
       onDismissNotice?.();
   };
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      drilledEntry ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SetView, {
+      drilledEntry ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SetView, {
         entry: drilledEntry,
         activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
         userHome,
@@ -36847,8 +37807,9 @@ function ContextSidebar({
         moveTargetsFor,
         renamePath,
         onRenameStarted: renameStarted,
-        onReveal
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ListView, {
+        onReveal,
+        onMove: requestMove
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ListView, {
         entries,
         activeDoc,
         userHome,
@@ -36860,54 +37821,55 @@ function ContextSidebar({
         moveTargetsFor,
         renamePath,
         onRenameStarted: renameStarted,
-        onReveal
+        onReveal,
+        onMove: requestMove
       }, undefined, false, undefined, this),
-      shown && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+      shown && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
         role: "alert",
         className: "mx-2 mb-1 flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
             className: "min-w-0 flex-1 break-words",
             children: shown
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
             type: "button",
             onClick: dismiss,
             "aria-label": "Dismiss",
             className: "shrink-0 text-ink-dim hover:text-ink",
-            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {
               className: "size-3.5"
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
         className: "flex items-center gap-2 border-t border-edge py-1.5 pr-1.5 pl-3 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(House, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0 text-ink-faint"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
             className: "shrink-0",
             children: "Workspace"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
             className: "min-w-0 flex-1 truncate font-mono",
             title: workspace,
             children: shortPath(workspace, userHome, 3)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: () => setEditingWorkspace((v) => !v),
             "aria-label": editingWorkspace ? "Cancel changing the workspace" : "Change the workspace",
             title: editingWorkspace ? "Cancel" : "Change the workspace — where dropped files are copied and new top-level documents are made",
-            children: editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SquarePen, {}, undefined, false, undefined, this)
+            children: editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SquarePen, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
+      editingWorkspace ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
         listDir,
         placeholder: "Set the workspace folder…",
         verb: "sets",
@@ -36921,12 +37883,13 @@ function ContextSidebar({
         onCancel: () => setEditingWorkspace(false),
         className: "border-t-0 pt-0",
         onPick: () => onPick("workspace")
-      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AddPath, {
+      }, "workspace", false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AddPath, {
         listDir,
         onAdd: onAddPath,
         className: "border-t-0 pt-0",
         onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder")
-      }, "add", false, undefined, this)
+      }, "add", false, undefined, this),
+      dialog
     ]
   }, undefined, true, undefined, this);
 }
@@ -36942,7 +37905,7 @@ function ToolButton({
   onClick,
   children
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
     variant: "ghost",
     size: "icon-sm",
     onClick,
@@ -36955,8 +37918,8 @@ function RenameBox({
   initial: initial2,
   onDone
 }) {
-  const [value, setValue] = import_react12.useState(initial2);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("input", {
+  const [value, setValue] = import_react13.useState(initial2);
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("input", {
     value,
     onChange: (e) => setValue(e.target.value),
     autoFocus: true,
@@ -36989,12 +37952,13 @@ function ListView({
   moveTargetsFor,
   renamePath,
   onRenameStarted,
-  onReveal
+  onReveal,
+  onMove
 }) {
-  const [menuFor, setMenuFor] = import_react12.useState(null);
-  const [renaming, setRenaming] = import_react12.useState(null);
-  const [dropOn, setDropOn] = import_react12.useState(null);
-  import_react12.useEffect(() => {
+  const [menuFor, setMenuFor] = import_react13.useState(null);
+  const [renaming, setRenaming] = import_react13.useState(null);
+  const [dropOn, setDropOn] = import_react13.useState(null);
+  import_react13.useEffect(() => {
     if (!renamePath)
       return;
     if (entries.some((e) => entryPath(e) === renamePath)) {
@@ -37009,132 +37973,133 @@ function ListView({
     if (carriesFiles(e.dataTransfer))
       return onImportFiles(e.dataTransfer, into);
     const path = e.dataTransfer.getData(ROW_MIME);
+    const folder = e.dataTransfer.getData(ROW_FOLDER_MIME) === "1";
     if (path && path !== into && dirOf(path) !== into)
-      onStructure({ type: "move", path, into });
+      onMove(path, into, folder);
   };
   const acceptsDrag = (e) => carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
-  const toolbar = /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  const toolbar = /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
         className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
         children: "Drop files here to copy them in"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
         label: "New document in the workspace",
         onClick: () => onStructure({ type: "doc.create", dir: workspace }),
-        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
+        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
         label: "New set (a folder in the workspace)",
         onClick: () => onStructure({ type: "folder.create", dir: workspace }),
-        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
+        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
-  const menu = /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuContent, {
+  const menu = /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuContent, {
     children: [
-      menuFor && singleDoc(menuFor) ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+      menuFor && singleDoc(menuFor) ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onOpenDoc(menuFor, singleDoc(menuFor)?.rel),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FileText, {}, undefined, false, undefined, this),
               "Open"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => setRenaming(entryPath(menuFor)),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Pencil, {}, undefined, false, undefined, this),
               "Rename"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "set.make", path: entryPath(menuFor) }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
               "Turn into a set"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(MoveToMenu, {
             targets: moveTargetsFor(entryPath(menuFor)),
-            onMove: (into) => onStructure({ type: "move", path: entryPath(menuFor), into })
+            onMove: (into) => onMove(entryPath(menuFor), into, false)
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this) : menuFor ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+      }, undefined, true, undefined, this) : menuFor ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onDrill(menuFor),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
               "Open set"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "doc.create", dir: menuFor.root }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
               "New document in set"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => setRenaming(menuFor.root),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Pencil, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Pencil, {}, undefined, false, undefined, this),
               "Rename"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(MoveToMenu, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(MoveToMenu, {
             targets: moveTargetsFor(menuFor.root),
-            onMove: (into) => onStructure({ type: "move", path: menuFor.root, into })
+            onMove: (into) => onMove(menuFor.root, into, true)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "workspace.set", path: menuFor.root }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(House, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(House, {}, undefined, false, undefined, this),
               "Use as workspace"
             ]
           }, undefined, true, undefined, this),
-          (menuFor.hidden?.length ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          (menuFor.hidden?.length ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "unhide", entry: menuFor.id }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Eye, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Eye, {}, undefined, false, undefined, this),
               "Show ",
               menuFor.hidden?.length,
               " hidden"
             ]
           }, undefined, true, undefined, this)
         ]
-      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "doc.create", dir: workspace }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this),
               "New document"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             onClick: () => onStructure({ type: "folder.create", dir: workspace }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderPlus, {}, undefined, false, undefined, this),
               "New set"
             ]
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(RevealItem, {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(RevealItem, {
         onReveal: () => onReveal(menuFor ? entryPath(menuFor) : workspace)
       }, undefined, false, undefined, this),
-      menuFor && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
+      menuFor && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuItem, {
             variant: "destructive",
             onClick: () => onStructure({ type: "hide", path: entryPath(menuFor) }),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(X, {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {}, undefined, false, undefined, this),
               "Remove from Scriptorium"
             ]
           }, undefined, true, undefined, this)
@@ -37142,14 +38107,14 @@ function ListView({
       }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenu, {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenu, {
     onOpenChange: (open) => {
       if (!open)
         setMenuFor(null);
     },
     children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ContextMenuTrigger3, {
-        render: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
           onDragOver: (e) => {
             if (!acceptsDrag(e))
               return;
@@ -37165,23 +38130,23 @@ function ListView({
         }, undefined, false, undefined, this),
         children: [
           toolbar,
-          entries.length === 0 ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Empty, {
+          entries.length === 0 ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Empty, {
             className: "flex-1",
-            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderTree, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyTitle, {
+                /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EmptyTitle, {
                   children: "No context yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EmptyDescription, {
                   children: "Add a markdown file or a folder by path below, drop files here to copy them into the workspace — or ask the agent to add one."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("ul", {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("ul", {
             className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1.5",
             "aria-label": "Context",
             children: entries.map((entry) => {
@@ -37192,19 +38157,19 @@ function ListView({
               const full = entryPath(entry);
               const where = shortPath(entry.root, userHome);
               const name = only ? only.rel.split("/").pop() : entry.label;
-              const icon = only ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {
+              const icon = only ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FileText, {
                 "aria-hidden": true,
                 className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderTree, {
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderTree, {
                 "aria-hidden": true,
                 className: cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")
               }, undefined, false, undefined, this);
               if (renaming === full) {
-                return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("li", {
+                return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("li", {
                   className: "flex items-center gap-2 rounded-md bg-surface-raised px-2 py-1.5",
                   children: [
                     icon,
-                    /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(RenameBox, {
+                    /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(RenameBox, {
                       initial: name,
                       onDone: (next) => {
                         setRenaming(null);
@@ -37215,12 +38180,13 @@ function ListView({
                   ]
                 }, entry.id, true, undefined, this);
               }
-              return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("li", {
-                children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("button", {
+              return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("li", {
+                children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
                   type: "button",
                   draggable: true,
                   onDragStart: (e) => {
                     e.dataTransfer.setData(ROW_MIME, full);
+                    e.dataTransfer.setData(ROW_FOLDER_MIME, only ? "0" : "1");
                     e.dataTransfer.effectAllowed = "move";
                   },
                   onDragOver: (e) => {
@@ -37244,18 +38210,18 @@ function ListView({
                   className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-rubric/12", dropOn === entry.id && "bg-rubric/15 ring-1 ring-rubric/50 ring-inset"),
                   children: [
                     icon,
-                    /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                       className: "flex min-w-0 flex-1 flex-col",
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                           className: cn("truncate text-sm", isActiveDoc ? "font-medium text-ink" : "text-ink"),
                           children: name
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                           className: "flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim",
                           children: [
-                            entry.truncated && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+                            entry.truncated && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
+                            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                               className: "truncate",
                               children: only ? where : `${count} ${count === 1 ? "document" : "documents"} · ${where}`
                             }, undefined, false, undefined, this)
@@ -37285,53 +38251,54 @@ function SetView({
   moveTargetsFor,
   renamePath,
   onRenameStarted,
-  onReveal
+  onReveal,
+  onMove
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
         className: "flex shrink-0 items-center gap-1 border-b border-edge px-1.5 py-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: onBack,
             "aria-label": "Back to the context list",
-            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ArrowLeft, {}, undefined, false, undefined, this)
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ArrowLeft, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
             className: "flex min-w-0 flex-1 flex-col",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                 className: "truncate text-sm font-medium text-ink",
                 children: entry.label
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                 className: "flex min-w-0 items-center gap-1.5 truncate font-mono text-[11px] text-ink-dim",
                 title: entry.root,
                 children: [
-                  entry.truncated && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
+                  entry.truncated && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
                   shortPath(entry.root, userHome)
                 ]
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
             label: "New document in this set",
             onClick: () => onStructure({ type: "doc.create", dir: entry.root }),
-            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FilePlus, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ToolButton, {
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ToolButton, {
             label: "New folder in this set",
             onClick: () => onStructure({ type: "folder.create", dir: entry.root }),
-            children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FolderPlus, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
         className: "flex min-h-0 flex-1 flex-col overflow-auto px-1",
-        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(EntryTree, {
+        children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(EntryTree, {
           entry,
           activeRel,
           onOpenDoc,
@@ -37341,7 +38308,8 @@ function SetView({
           renamePath,
           onRenameStarted,
           onMenuKey: openMenuOnShiftF10,
-          onReveal
+          onReveal,
+          onMove
         }, entry.id, false, undefined, this)
       }, undefined, false, undefined, this)
     ]
@@ -37349,7 +38317,7 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react15 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/state/stats.ts
 function contentStats(text) {
@@ -40170,14 +41138,14 @@ class StyleModule {
     function splitSelector(selector) {
       return /^@/.test(selector) ? [selector] : selector.split(/,\s*/);
     }
-    function render(selectors3, spec2, target, isKeyframes) {
-      let local = [], isAt = /^@(\w+)\b/.exec(selectors3[0]), keyframes = isAt && isAt[1] == "keyframes";
+    function render(selectors4, spec2, target, isKeyframes) {
+      let local = [], isAt = /^@(\w+)\b/.exec(selectors4[0]), keyframes = isAt && isAt[1] == "keyframes";
       if (isAt && spec2 == null)
-        return target.push(selectors3[0] + ";");
+        return target.push(selectors4[0] + ";");
       for (let prop in spec2) {
         let value = spec2[prop];
         if (/&/.test(prop)) {
-          render(prop.split(/,\s*/).map((part) => selectors3.map((sel) => part.replace(/&/, sel))).reduce((a, b) => a.concat(b)), value, target);
+          render(prop.split(/,\s*/).map((part) => selectors4.map((sel) => part.replace(/&/, sel))).reduce((a, b) => a.concat(b)), value, target);
         } else if (value && typeof value == "object") {
           if (!isAt)
             throw new RangeError("The value of a property (" + prop + ") should be a primitive value.");
@@ -40187,7 +41155,7 @@ class StyleModule {
         }
       }
       if (local.length || keyframes) {
-        target.push((finish && !isAt && !isKeyframes ? selectors3.map(finish) : selectors3).join(", ") + " {" + local.join(" ") + "}");
+        target.push((finish && !isAt && !isKeyframes ? selectors4.map(finish) : selectors4).join(", ") + " {" + local.join(" ") + "}");
       }
     }
     for (let prop in spec)
@@ -48015,8 +48983,8 @@ GutterMarker.prototype.startSide = GutterMarker.prototype.endSide = -1;
 GutterMarker.prototype.point = true;
 
 // src/scriptorium/surface/components/DocumentView.tsx
-var import_react13 = __toESM(require_react(), 1);
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react14 = __toESM(require_react(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 var scriptoriumTheme = EditorView.theme({
   "&": {
     height: "100%",
@@ -48056,11 +49024,11 @@ function minimalChange(a, b) {
   return { from: start, to: endA, insert: b.slice(start, endB) };
 }
 function DocumentView({ docKey, text }) {
-  const host = import_react13.useRef(null);
-  const view = import_react13.useRef(null);
-  const initial2 = import_react13.useRef(text);
+  const host = import_react14.useRef(null);
+  const view = import_react14.useRef(null);
+  const initial2 = import_react14.useRef(text);
   initial2.current = text;
-  import_react13.useEffect(() => {
+  import_react14.useEffect(() => {
     if (!host.current)
       return;
     const v = new EditorView({
@@ -48081,7 +49049,7 @@ function DocumentView({ docKey, text }) {
       view.current = null;
     };
   }, [docKey]);
-  import_react13.useEffect(() => {
+  import_react14.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
@@ -48097,7 +49065,7 @@ function DocumentView({ docKey, text }) {
       }
     });
   }, [text]);
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
     ref: host,
     className: "min-h-0 flex-1 overflow-hidden",
     "data-slot": "document-view"
@@ -48105,11 +49073,11 @@ function DocumentView({ docKey, text }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var import_react14 = __toESM(require_react(), 1);
+var import_react15 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -48118,27 +49086,27 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(import_react14.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(import_react15.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -48150,25 +49118,25 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function useDebouncedStats(text, ms = 300) {
-  const [stats, setStats] = import_react15.useState(() => contentStats(text ?? ""));
-  import_react15.useEffect(() => {
+  const [stats, setStats] = import_react16.useState(() => contentStats(text ?? ""));
+  import_react16.useEffect(() => {
     const t = setTimeout(() => setStats(contentStats(text ?? "")), ms);
     return () => clearTimeout(t);
   }, [text, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now, setNow] = import_react15.useState(() => Date.now());
-  import_react15.useEffect(() => {
+  const [now, setNow] = import_react16.useState(() => Date.now());
+  import_react16.useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t);
   }, [everyMs]);
   return now;
 }
 function DocumentPane({ doc: doc2, text }) {
-  const lastShown = import_react15.useRef(null);
+  const lastShown = import_react16.useRef(null);
   if (doc2 && text !== undefined)
     lastShown.current = { slug: doc2.slug, text };
   const shown = text ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
@@ -48187,55 +49155,55 @@ function DocumentPane({ doc: doc2, text }) {
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
               className: "ml-auto shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint",
               children: "read-only"
             }, undefined, false, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown
       }, undefined, false, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(StatusStrip, {
+      doc2 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this)
     ]
@@ -48269,17 +49237,18 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react16 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 var textKey = (doc2, version2) => `${doc2}@${version2}`;
 function useDaemon() {
-  const [state, setState] = import_react16.useState(null);
-  const [connection, setConnection] = import_react16.useState("connecting");
-  const [lastError, setLastError] = import_react16.useState(null);
-  const [texts, setTexts] = import_react16.useState(() => new Map);
-  const [done, setDone] = import_react16.useState(null);
-  const wsRef = import_react16.useRef(null);
-  const pending = import_react16.useRef(new Map);
-  import_react16.useEffect(() => {
+  const [state, setState] = import_react17.useState(null);
+  const [connection, setConnection] = import_react17.useState("connecting");
+  const [lastError, setLastError] = import_react17.useState(null);
+  const [texts, setTexts] = import_react17.useState(() => new Map);
+  const [done, setDone] = import_react17.useState(null);
+  const wsRef = import_react17.useRef(null);
+  const pending = import_react17.useRef(new Map);
+  const plans = import_react17.useRef(new Map);
+  import_react17.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer;
@@ -48314,6 +49283,12 @@ function useDaemon() {
           });
         } else if (msg.type === "structure.done") {
           setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
+        } else if (msg.type === "move.plan") {
+          const key = `${msg.path}\x00${msg.into}`;
+          const waiters = plans.current.get(key);
+          plans.current.delete(key);
+          for (const w of waiters ?? [])
+            w({ plan: msg.plan, error: msg.error });
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
@@ -48327,6 +49302,10 @@ function useDaemon() {
           for (const w of waiters)
             w({ entries: [], error: "disconnected" });
         pending.current.clear();
+        for (const waiters of plans.current.values())
+          for (const w of waiters)
+            w({ error: "disconnected" });
+        plans.current.clear();
         if (stopped)
           return;
         timer = setTimeout(connect, delay);
@@ -48341,12 +49320,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react16.useCallback((msg) => {
+  const send = import_react17.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react16.useCallback((path) => new Promise((resolve) => {
+  const listDir = import_react17.useCallback((path) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -48360,12 +49339,27 @@ function useDaemon() {
     pending.current.set(path, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path }));
   }), []);
-  const clearError = import_react16.useCallback(() => setLastError(null), []);
-  return { state, connection, lastError, clearError, texts, done, send, listDir };
+  const planMove = import_react17.useCallback((path, into) => new Promise((resolve) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      resolve({ error: "disconnected" });
+      return;
+    }
+    const key = `${path}\x00${into}`;
+    const waiters = plans.current.get(key);
+    if (waiters) {
+      waiters.push(resolve);
+      return;
+    }
+    plans.current.set(key, [resolve]);
+    ws.send(JSON.stringify({ type: "move.plan", path, into }));
+  }), []);
+  const clearError = import_react17.useCallback(() => setLastError(null), []);
+  return { state, connection, lastError, clearError, texts, done, send, listDir, planMove };
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var CONNECTION_LABEL = {
@@ -48374,7 +49368,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -48383,9 +49377,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react17.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react18.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react17.useEffect(() => {
+  import_react18.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -48397,41 +49391,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -48442,10 +49436,10 @@ function Workspace({
   state,
   daemon
 }) {
-  const { send, texts, listDir, lastError, clearError, done } = daemon;
-  const prefsRef = import_react17.useRef(state.prefs);
+  const { send, texts, listDir, planMove, lastError, clearError, done } = daemon;
+  const prefsRef = import_react18.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react17.useMemo(() => ({
+  const storage = import_react18.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -48453,8 +49447,8 @@ function Workspace({
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
-  const asked = import_react17.useRef(new Set);
-  import_react17.useEffect(() => {
+  const asked = import_react18.useRef(new Set);
+  import_react18.useEffect(() => {
     if (!open || text !== undefined)
       return;
     const key = textKey(open.slug, open.active);
@@ -48463,28 +49457,28 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text, send]);
-  const onOpenDoc = import_react17.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react18.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react17.useEffect(() => {
+  import_react18.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanelGroup, {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanelGroup, {
     orientation: "horizontal",
     className: "min-h-0 flex-1",
     defaultLayout: layout.defaultLayout,
     onLayoutChanged: layout.onLayoutChanged,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
         id: "context",
         defaultSize: "22",
         minSize: "12",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PaneHeading, {
             children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ContextSidebar, {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ContextSidebar, {
             entries: state.context,
             activeDoc,
             userHome: state.userHome,
@@ -48495,54 +49489,55 @@ function Workspace({
             onReveal: (path) => send({ type: "reveal", path }),
             onPick: (want) => send({ type: "pick", want }),
             listDir,
+            planMove,
             created,
             notice: lastError,
             onDismissNotice: clearError
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
         id: "document",
         defaultSize: "50",
         minSize: "25",
         className: "flex flex-col bg-bg",
-        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(DocumentPane, {
+        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentPane, {
           doc: open,
           text
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
         id: "chat",
         defaultSize: "28",
         minSize: "15",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PaneHeading, {
             children: "Conversation"
           }, undefined, false, undefined, this),
-          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
+          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Empty, {
             className: "h-full",
-            children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyTitle, {
+                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyTitle, {
                   children: "No messages yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyDescription, {
                   children: "The conversation with the agent lives here."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ActivityLog, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ActivityLog, {
             chat: state.chat
           }, undefined, false, undefined, this)
         ]
@@ -48551,28 +49546,28 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react17.useRef(null);
+  const end = import_react18.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react17.useEffect(() => {
+  import_react18.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         "data-who": m.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m.text
         ]
       }, m.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -48580,7 +49575,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime15.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime16.jsxDEV(App, {}, undefined, false, undefined, this));

@@ -195,6 +195,42 @@ describe("kit styling ward", () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * ⛔ THE CELL THIS WARD'S HEADER ASKED FOR, NOW THAT IT IS NOT VACUOUS. A
+   * spell that imports a kit COMPONENT without importing the kit STYLESHEET
+   * renders that component unstyled — silently, at HTTP 200, with a green
+   * build: `source(none)` means the kit reaches Tailwind ONLY through the
+   * `@source` inside src/kit/theme/base.css. Written when scriptorium adopted
+   * ConfirmDialog (the second kit component, 2026-09-11); until then the
+   * population was empty and the cell would have passed on nothing.
+   *
+   * Calibrated by deleting scriptorium's `@import "../../kit/theme/base.css"`:
+   * this cell reds, naming the spell and the component it imports.
+   */
+  test("a spell importing a kit COMPONENT imports the kit stylesheet too", async () => {
+    const offenders: { spell: string; imports: string[] }[] = [];
+    for (const dir of readdirSync(join(REPO_ROOT, "src"), { withFileTypes: true })) {
+      if (!dir.isDirectory() || dir.name === "kit") continue;
+      const surface = join(REPO_ROOT, "src", dir.name, "surface");
+      if (!existsSync(surface)) continue;
+      const imports: string[] = [];
+      for (const f of new Bun.Glob("**/*.{ts,tsx}").scanSync({ cwd: surface })) {
+        const text = await Bun.file(join(surface, f)).text();
+        // The import PATH, not prose: a mention in a comment is not an import.
+        for (const m of text.matchAll(/from\s+"[^"]*kit\/ui\/([A-Za-z0-9_-]+)"/g))
+          imports.push(String(m[1]));
+      }
+      if (imports.length === 0) continue;
+      const styles = join(surface, "styles.css");
+      const declared = existsSync(styles)
+        ? (await Bun.file(styles).text()).replace(/\/\*[\s\S]*?\*\//g, "")
+        : "";
+      if (!declared.includes("kit/theme/base.css"))
+        offenders.push({ spell: dir.name, imports: [...new Set(imports)].sort() });
+    }
+    expect(offenders).toEqual([]);
+  });
+
   test("every spell importing the kit base is governed here", async () => {
     const importing: string[] = [];
     for (const dir of readdirSync(join(REPO_ROOT, "src"), { withFileTypes: true })) {

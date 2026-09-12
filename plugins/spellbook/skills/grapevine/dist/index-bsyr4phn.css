@@ -501,6 +501,10 @@
     margin-block-end: 60px;
   }
 
+  .mt-1 {
+    margin-top: calc(var(--spacing) * 1);
+  }
+
   .mt-5 {
     margin-top: calc(var(--spacing) * 5);
   }
@@ -681,6 +685,10 @@
     width: calc(var(--spacing) * 2);
   }
 
+  .w-\[calc\(100vw-2rem\)\] {
+    width: calc(100vw - 2rem);
+  }
+
   .w-fit {
     width: -moz-fit-content;
     width: fit-content;
@@ -837,6 +845,10 @@
     justify-content: center;
   }
 
+  .justify-end {
+    justify-content: flex-end;
+  }
+
   .gap-0\.5 {
     gap: calc(var(--spacing) * .5);
   }
@@ -855,6 +867,10 @@
 
   .gap-2\.5 {
     gap: calc(var(--spacing) * 2.5);
+  }
+
+  .gap-3 {
+    gap: calc(var(--spacing) * 3);
   }
 
   .gap-4 {
@@ -1044,6 +1060,16 @@
     }
   }
 
+  .bg-black\/30 {
+    background-color: #0000004d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-black\/30 {
+      background-color: color-mix(in oklab, var(--color-black) 30%, transparent);
+    }
+  }
+
   .bg-border {
     background-color: var(--color-border);
   }
@@ -1064,6 +1090,10 @@
 
   .bg-foreground {
     background-color: var(--color-foreground);
+  }
+
+  .bg-ink {
+    background-color: var(--color-ink);
   }
 
   .bg-ink-faint {
@@ -1342,6 +1372,11 @@
     line-height: var(--leading-normal);
   }
 
+  .leading-relaxed {
+    --tw-leading: var(--leading-relaxed);
+    line-height: var(--leading-relaxed);
+  }
+
   .leading-snug {
     --tw-leading: var(--leading-snug);
     line-height: var(--leading-snug);
@@ -1406,6 +1441,10 @@
     color: var(--color-background);
   }
 
+  .text-bg {
+    color: var(--color-bg);
+  }
+
   .text-destructive {
     color: var(--color-destructive);
   }
@@ -1424,6 +1463,10 @@
 
   .text-ink-dim {
     color: var(--color-ink-dim);
+  }
+
+  .text-ink-faint {
+    color: var(--color-ink-faint);
   }
 
   .text-leaf-soft {
@@ -1734,6 +1777,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-bg:hover {
+      background-color: var(--color-bg);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-destructive\/10:hover {
       background-color: #ff6b6b1a;
     }
@@ -1835,6 +1884,12 @@
     }
   }
 
+  @media (hover: hover) {
+    .hover\:opacity-90:hover {
+      opacity: .9;
+    }
+  }
+
   .focus\:bg-accent:focus {
     background-color: var(--color-accent);
   }
@@ -1857,6 +1912,11 @@
     border-color: var(--color-ring);
   }
 
+  .focus-visible\:ring-2:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
   .focus-visible\:ring-3:focus-visible {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1875,6 +1935,10 @@
     .focus-visible\:ring-destructive\/20:focus-visible {
       --tw-ring-color: color-mix(in oklab, var(--color-destructive) 20%, transparent);
     }
+  }
+
+  .focus-visible\:ring-ink-faint:focus-visible {
+    --tw-ring-color: var(--color-ink-faint);
   }
 
   .focus-visible\:ring-ring\/50:focus-visible {

@@ -103,7 +103,7 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, listDir, lastError, clearError, done } = daemon;
+  const { send, texts, listDir, planMove, lastError, clearError, done } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -169,6 +169,7 @@ function Workspace({
           onReveal={(path) => send({ type: "reveal", path })}
           onPick={(want) => send({ type: "pick", want })}
           listDir={listDir}
+          planMove={planMove}
           created={created}
           notice={lastError}
           onDismissNotice={clearError}

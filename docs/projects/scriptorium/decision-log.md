@@ -381,3 +381,26 @@ typed one, `reveal` only accepts a path the context already shows, and the path
 is passed as an argv, never a shell string. **Both are HUMAN affordances** with
 no CLI verb: the agent has the paths already, and E24's rule is equal
 capabilities with different controls.
+
+## E26 · A folder move is confirmed; a document move is not
+
+**Ruled:** Cole, 2026-09-11, after a drag of his own moved this project's docs
+folder out of the repository (the session's log said so; nothing was lost, and
+the repo copy came back from git). A folder move takes everything under it and
+can carry files out of a git working tree, where the consequence reaches past
+scriptorium — so the surface asks first, in the terms of what would happen: how
+many documents move, from where to where, and — when the daemon can see it — a
+warning naming the git repository being left. **A single document moves without
+a question**: it is one file, the log names it, and a prompt on every drag is
+the kind of friction people learn to click through. The agent's `move` verb is
+NOT gated: E24's rule is equal capabilities with different affordances, and a
+CLI verb is already explicit.
+
+**The dialog is `src/kit/ui/ConfirmDialog.tsx`, in the KIT** — Cole: "this is a
+very common UI pattern just across apps … ideally if we can share it". It ships
+with a `useConfirm()` hook (`if (await confirm({title, message})) …`). The kit
+owns structure, behaviour and the L0 neutrals; the confirm button's TONE is the
+caller's, because danger and primary are L1 tokens where one spell's alias is
+another spell's brand slot (the rule Dot already states for its fill). A spell
+importing it must import `kit/theme/base.css`, and a new `kit-styling-ward` cell
+holds that pairing.

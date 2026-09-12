@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ClientMsg,
   FsListEntry,
+  MovePlan,
   PublicState,
   ServerMsg,
   StructureOpType,
@@ -19,6 +20,8 @@ export type Connection = "connecting" | "open" | "closed";
 export const textKey = (doc: string, version: number) => `${doc}@${version}`;
 
 export type Listing = { entries: FsListEntry[]; error?: string };
+
+export type Planning = { plan?: MovePlan; error?: string };
 
 /** The last structure op THIS viewer sent that landed — `seq` makes a repeat a new value. */
 export type Done = { op: StructureOpType; path: string; seq: number };
@@ -32,6 +35,7 @@ export function useDaemon(): {
   done: Done | null;
   send: (msg: ClientMsg) => void;
   listDir: (path: string) => Promise<Listing>;
+  planMove: (path: string, into: string) => Promise<Planning>;
 } {
   const [state, setState] = useState<PublicState | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
@@ -41,6 +45,8 @@ export function useDaemon(): {
   const wsRef = useRef<WebSocket | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
+  // One pending move plan per from→into pair (E26's confirmation).
+  const plans = useRef(new Map<string, ((p: Planning) => void)[]>());
 
   useEffect(() => {
     let stopped = false;
@@ -74,6 +80,11 @@ export function useDaemon(): {
           });
         } else if (msg.type === "structure.done") {
           setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
+        } else if (msg.type === "move.plan") {
+          const key = `${msg.path}\u0000${msg.into}`;
+          const waiters = plans.current.get(key);
+          plans.current.delete(key);
+          for (const w of waiters ?? []) w({ plan: msg.plan, error: msg.error });
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
@@ -86,6 +97,9 @@ export function useDaemon(): {
         for (const waiters of pending.current.values())
           for (const w of waiters) w({ entries: [], error: "disconnected" });
         pending.current.clear();
+        for (const waiters of plans.current.values())
+          for (const w of waiters) w({ error: "disconnected" });
+        plans.current.clear();
         if (stopped) return;
         timer = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
@@ -123,7 +137,27 @@ export function useDaemon(): {
     [],
   );
 
+  const planMove = useCallback(
+    (path: string, into: string) =>
+      new Promise<Planning>((resolve) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          resolve({ error: "disconnected" });
+          return;
+        }
+        const key = `${path}\u0000${into}`;
+        const waiters = plans.current.get(key);
+        if (waiters) {
+          waiters.push(resolve);
+          return;
+        }
+        plans.current.set(key, [resolve]);
+        ws.send(JSON.stringify({ type: "move.plan", path, into } satisfies ClientMsg));
+      }),
+    [],
+  );
+
   const clearError = useCallback(() => setLastError(null), []);
 
-  return { state, connection, lastError, clearError, texts, done, send, listDir };
+  return { state, connection, lastError, clearError, texts, done, send, listDir, planMove };
 }

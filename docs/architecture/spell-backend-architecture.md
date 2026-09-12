@@ -398,7 +398,15 @@ it did not have). Two verdicts exist for the cases that do not fit:
 are shared, but they are not part of the observable wire (D7).
 **`src/kit/theme/base.css` and `src/kit/ui/`** are the surface side. A spell
 adopts the kit's styling by importing the stylesheet; importing a component
-alone does not count (Contract 21, enforced by `kit-adoption-ward`).
+alone does not count (Contract 21, enforced by `kit-adoption-ward`) — and since
+every surface opens `@import "tailwindcss" source(none)`, a spell that imports a
+component WITHOUT the stylesheet renders it unstyled at HTTP 200 with a green
+build, which `kit-styling-ward` now holds as its own cell. `src/kit/ui/` holds
+`Dot` and `ConfirmDialog` (the confirm-or-cancel dialog, with a `useConfirm`
+hook; scriptorium confirms a folder move with it). Both follow one rule: the kit
+owns structure, behaviour and the five L0 neutrals, and the CALLER owns any
+colour that carries meaning — a dot's fill, a confirm button's tone — because
+those live in L1, where one spell's alias is another spell's brand.
 
 ## 5 · Two discovery conventions, deliberately
 

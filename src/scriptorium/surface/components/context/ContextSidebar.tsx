@@ -43,12 +43,14 @@ import {
   ContextMenuTrigger,
 } from "@/ui/context-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
+import { useConfirm } from "../../../../kit/ui/ConfirmDialog";
 import type { ContextEntry, StructureOp } from "../../../backend/protocol";
-import type { Listing } from "../../state/useDaemon";
+import type { Listing, Planning } from "../../state/useDaemon";
 import { AddPath } from "./AddPath";
 import { EntryTree } from "./EntryTree";
 import { carriesFiles, droppedFiles, MoveToMenu, RevealItem } from "./menus";
 import {
+  baseName,
   dirOf,
   docsIn,
   joinPath,
@@ -61,6 +63,8 @@ import {
 
 /** The drag payload of a row dragged within the sidebar: its absolute path. */
 const ROW_MIME = "application/x-scriptorium-path";
+/** "1" when the dragged row is a SET, so the drop knows to ask first (E26). */
+const ROW_FOLDER_MIME = "application/x-scriptorium-folder";
 
 /** Said up front, not ellipsed away at the end of a subtitle (verify pass). */
 function TruncatedBadge() {
@@ -91,6 +95,8 @@ export type ContextSidebarProps = {
   /** Open the OS's own picker and add (or set as the workspace) what comes back. */
   onPick: (want: "context-file" | "context-folder" | "workspace") => void;
   listDir: (path: string) => Promise<Listing>;
+  /** What a move would do — asked before a FOLDER is moved (E26). */
+  planMove: (path: string, into: string) => Promise<Planning>;
   /** A new document or folder this viewer just made: shown in rename mode. `seq` makes a repeat new. */
   created?: { path: string; seq: number } | null;
   /** A refusal to show the human (a path that could not be added, …), or null. */
@@ -130,6 +136,7 @@ export function ContextSidebar({
   onReveal,
   onPick,
   listDir,
+  planMove,
   created,
   notice,
   onDismissNotice,
@@ -189,6 +196,42 @@ export function ContextSidebar({
     [onStructure],
   );
 
+  /**
+   * E26: moving a FOLDER is asked about first. A folder move takes everything
+   * under it, and — Cole moved this project's own docs folder into his
+   * workspace — it can carry files out of a git working tree, where the
+   * consequence reaches past scriptorium. A single document moves without a
+   * question; it is one file, and the log names it.
+   */
+  const { confirm, dialog } = useConfirm();
+  const requestMove = useCallback(
+    async (path: string, into: string, folder: boolean) => {
+      if (!folder) {
+        onStructure({ type: "move", path, into });
+        return;
+      }
+      const { plan, error } = await planMove(path, into);
+      if (!plan) {
+        setLocalNotice(error ?? "that move could not be checked");
+        return;
+      }
+      const ok = await confirm({
+        title: `Move “${plan.name}” into “${baseName(plan.into)}”?`,
+        message: `${plan.docs === 1 ? "1 document" : `${plan.docs} documents`} moved on disk, from ${shortPath(plan.from, userHome, 2)} to ${shortPath(plan.into, userHome, 2)}.`,
+        warning: plan.leavesRepo ? (
+          <>
+            This takes it <strong className="font-semibold">out of the git repository</strong>{" "}
+            {plan.repo}. Git will see the files as deleted there until the move is committed.
+          </>
+        ) : undefined,
+        confirmLabel: "Move",
+        confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90",
+      });
+      if (ok) onStructure({ type: "move", path, into });
+    },
+    [confirm, onStructure, planMove, userHome],
+  );
+
   const shown = localNotice ?? notice ?? null;
   const dismiss = () => {
     if (localNotice) setLocalNotice(null);
@@ -210,6 +253,7 @@ export function ContextSidebar({
           renamePath={renamePath}
           onRenameStarted={renameStarted}
           onReveal={onReveal}
+          onMove={requestMove}
         />
       ) : (
         <ListView
@@ -225,6 +269,7 @@ export function ContextSidebar({
           renamePath={renamePath}
           onRenameStarted={renameStarted}
           onReveal={onReveal}
+          onMove={requestMove}
         />
       )}
       {shown && (
@@ -289,6 +334,7 @@ export function ContextSidebar({
           onPick={(kind) => onPick(kind === "file" ? "context-file" : "context-folder")}
         />
       )}
+      {dialog}
     </div>
   );
 }
@@ -362,6 +408,7 @@ function ListView({
   renamePath,
   onRenameStarted,
   onReveal,
+  onMove,
 }: {
   entries: readonly ContextEntry[];
   activeDoc: ContextSidebarProps["activeDoc"];
@@ -375,6 +422,7 @@ function ListView({
   renamePath: string | null;
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
+  onMove: (path: string, into: string, folder: boolean) => void;
 }) {
   const [menuFor, setMenuFor] = useState<ContextEntry | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -397,7 +445,8 @@ function ListView({
     setDropOn(null);
     if (carriesFiles(e.dataTransfer)) return onImportFiles(e.dataTransfer, into);
     const path = e.dataTransfer.getData(ROW_MIME);
-    if (path && path !== into && dirOf(path) !== into) onStructure({ type: "move", path, into });
+    const folder = e.dataTransfer.getData(ROW_FOLDER_MIME) === "1";
+    if (path && path !== into && dirOf(path) !== into) onMove(path, into, folder);
   };
   const acceptsDrag = (e: DragEvent) =>
     carriesFiles(e.dataTransfer) || Array.from(e.dataTransfer.types).includes(ROW_MIME);
@@ -442,7 +491,7 @@ function ListView({
           </ContextMenuItem>
           <MoveToMenu
             targets={moveTargetsFor(entryPath(menuFor))}
-            onMove={(into) => onStructure({ type: "move", path: entryPath(menuFor), into })}
+            onMove={(into) => onMove(entryPath(menuFor), into, false)}
           />
         </>
       ) : menuFor ? (
@@ -461,7 +510,7 @@ function ListView({
           </ContextMenuItem>
           <MoveToMenu
             targets={moveTargetsFor(menuFor.root)}
-            onMove={(into) => onStructure({ type: "move", path: menuFor.root, into })}
+            onMove={(into) => onMove(menuFor.root, into, true)}
           />
           <ContextMenuItem
             onClick={() => onStructure({ type: "workspace.set", path: menuFor.root })}
@@ -594,6 +643,7 @@ function ListView({
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(ROW_MIME, full);
+                      e.dataTransfer.setData(ROW_FOLDER_MIME, only ? "0" : "1");
                       e.dataTransfer.effectAllowed = "move";
                     }}
                     // Only a SET takes a drop; a document row passes it to the list.
@@ -664,6 +714,7 @@ function SetView({
   renamePath,
   onRenameStarted,
   onReveal,
+  onMove,
 }: {
   entry: ContextEntry;
   activeRel: string | null;
@@ -676,6 +727,7 @@ function SetView({
   renamePath: string | null;
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
+  onMove: (path: string, into: string, folder: boolean) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -724,6 +776,7 @@ function SetView({
           onRenameStarted={onRenameStarted}
           onMenuKey={openMenuOnShiftF10}
           onReveal={onReveal}
+          onMove={onMove}
         />
       </div>
     </div>
