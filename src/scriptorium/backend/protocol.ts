@@ -52,6 +52,47 @@ export type ContextEntry = {
   hidden?: string[];
 };
 
+/** OKF 0.2 §6's tiers, DERIVED from `verified` on read and never stored. */
+export type TrustTier = "unverified" | "machine-confirmed" | "human-reviewed";
+
+/**
+ * A document's frontmatter, read (E32). `fields` carries EVERY key, known or
+ * not — the spec requires a consumer to preserve what it does not understand,
+ * and the surface shows the rest as labelled values.
+ */
+export type DocMeta = {
+  /** The block as written, so a writer can round-trip what it did not parse. */
+  raw: string;
+  fields: Record<string, unknown>;
+  /** OKF's one REQUIRED field — absent is a fact to show, not an error. */
+  type?: string;
+  title?: string;
+  description?: string;
+  /** `draft | stable | deprecated` in practice; any string in principle. Defaults to `stable`. */
+  status: string;
+  tags: string[];
+  /** A house extension (pdocs), shown and filterable, never validated. */
+  lifecycle?: string;
+  trust: TrustTier;
+  stale: boolean;
+  /** `generated.at` as an ISO date, for `find --since`. */
+  date: string | null;
+  /** The frontmatter would not parse. The document is still a document. */
+  error?: string;
+};
+
+/** What the sidebar needs for every context document — small, because it rides every snapshot. */
+export type DocSummary = {
+  type?: string;
+  title?: string;
+  status: string;
+  tags: string[];
+  lifecycle?: string;
+  trust: TrustTier;
+  stale: boolean;
+  error?: string;
+};
+
 export type VersionAuthor = "human" | "agent";
 
 export type Version = {
@@ -75,6 +116,8 @@ export type DocView = {
   rel: string | null;
   versions: Version[];
   active: number;
+  /** The open document's frontmatter, read from the ACTIVE version's text (E32). */
+  meta: DocMeta | null;
   /** The active version differs from the original on disk. */
   dirty: boolean;
   /** The original changed on disk while the buffer was dirty — asked, not merged. */
@@ -129,6 +172,14 @@ export type PublicState = {
    * in; either party can change it.
    */
   workspace: string;
+  /**
+   * Frontmatter for every document in the context, by absolute path (E32) —
+   * the small shape, because this rides every snapshot. A document with no
+   * frontmatter is absent from the map rather than present as null.
+   */
+  docMeta: Record<string, DocSummary>;
+  /** Set when the frontmatter scan stopped at its cap — said, not silent. */
+  docMetaTruncated?: boolean;
 };
 
 /**
@@ -223,4 +274,18 @@ export type AgentCmd =
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
   | { type: "close" }
+  /** A document's frontmatter as read, or every context document's (E32). */
+  | { type: "meta"; path?: string }
+  /** pdocs's filter vocabulary over the context — ANDed, all optional. */
+  | { type: "find"; filter: MetaFilter }
   | StructureOp;
+
+/** The filters `find` accepts, named as pdocs names them. */
+export type MetaFilter = {
+  type?: string;
+  status?: string;
+  lifecycle?: string;
+  tag?: string;
+  /** ISO date; matches documents whose `generated.at` is on or after it. */
+  since?: string;
+};

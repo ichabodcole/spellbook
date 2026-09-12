@@ -682,6 +682,10 @@ export async function startDaemon(opts: StartOpts) {
   const handleAgentCmd = (cmd: AgentCmd): Record<string, unknown> => {
     if (isStructureOp(cmd)) return structure(cmd, "agent");
     switch (cmd.type) {
+      case "meta":
+        return session.metaFor(cmd.path);
+      case "find":
+        return session.find(cmd.filter);
       case "context.add": {
         const added = addPaths(cmd.paths);
         return { entries: added.map((a) => ({ ...a.entry, added: a.added })) };
@@ -728,7 +732,16 @@ export async function startDaemon(opts: StartOpts) {
         throw new SessionError(
           `unrecognised command type ${JSON.stringify((cmd as { type?: unknown }).type)} — nothing was applied`,
           400,
-          ["context.add", "version.new", "say", "activate", "close", ...STRUCTURE_OPS],
+          [
+            "context.add",
+            "version.new",
+            "say",
+            "activate",
+            "close",
+            "meta",
+            "find",
+            ...STRUCTURE_OPS,
+          ],
         );
     }
   };

@@ -180,6 +180,34 @@ opens that document.** Today the rendered view deliberately makes every internal
 link inert (E29), because nothing could resolve it yet. This is what makes the
 rendered view a way to move through a corpus rather than a preview.
 
+#### Typed links, and wiki links — Cole, 2026-09-11
+
+"Operator supports the ability to add a relationship to links … it would be nice
+to support both standard wiki links and the additional relational property style
+from Operator. This is mostly useful in understanding how different files relate
+to each other for an agent and for a human looking at a graph."
+
+Operator's shape, read from `packages/shared/src/links/`: a relation rides the
+link as a QUERY — `op:doc/<id>?rel=extends,governs` — one occurrence carries all
+of a link's rels, and the vocabulary
+(`references extends grounded-in sourced-from governs summarizes applies see-also supersedes sister-of contrasts-with`)
+is "a CONTROLLED FOLKSONOMY, not a constraint": a non-canonical rel yields a
+HINT, never a block. Two details worth copying exactly:
+
+- **A bare link is `[]` — the ABSENCE of an assertion, not a neutral
+  `references`.** Operator says so in the type's own comment, and it matters for
+  a graph: an unlabelled edge must not be drawn as a claim nobody made.
+- **Rels are normalised (lowercased, trimmed, deduped, order kept) but their
+  SPELLING is not canonicalised** — closing `see-also` onto `see_also` is the
+  suggester's job at write time, not the parser's.
+
+Scriptorium's links are paths rather than ids, so the same query rides a path:
+`[label](./other.md?rel=extends)` — strip the query to resolve the file, keep it
+as the edge's label. **Wiki links** (`[[other-doc]]`, `[[other-doc|label]]`)
+resolve by basename within the bundle, and carry a rel the same way
+(`[[other-doc?rel=supersedes|label]]`). Both are slice 2, and neither changes
+slice 1.
+
 ### Slice 3 · The map
 
 A graph over the context: nodes are documents, edges are §2's four kinds,

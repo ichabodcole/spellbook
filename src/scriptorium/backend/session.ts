@@ -27,10 +27,13 @@
  */
 
 import {
+  closeSync,
   existsSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
+  readSync,
   realpathSync,
   renameSync,
   statSync,
@@ -39,11 +42,15 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { matchesFilter, readMeta, summarize } from "./frontmatter";
 import type {
   ChatMessage,
   ChatWho,
   ContextEntry,
+  DocMeta,
+  DocSummary,
   DocView,
+  MetaFilter,
   MovePlan,
   PublicState,
   Selection,
@@ -52,6 +59,7 @@ import type {
 } from "./protocol";
 import {
   DOC_EXTENSIONS,
+  docPaths,
   entryForPath,
   findNode,
   isDocName,
@@ -62,6 +70,26 @@ import {
 } from "./tree";
 
 export const MANIFEST_FORMAT = 1;
+
+/** The most documents one frontmatter scan reads. */
+export const META_SCAN_CAP = 500;
+/** A frontmatter block lives at the top of a file; this is how much we read to find it. */
+const META_HEAD_BYTES = 8192;
+
+/** The first 8 KB of a file, as text — enough for any frontmatter block. */
+function readHead(path: string): string {
+  let fd: number | undefined;
+  try {
+    fd = openSync(path, "r");
+    const buf = Buffer.alloc(META_HEAD_BYTES);
+    const read = readSync(fd, buf, 0, META_HEAD_BYTES, 0);
+    return buf.subarray(0, read).toString("utf8");
+  } catch {
+    return "";
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+  }
+}
 
 type DocRecord = {
   slug: string;
@@ -1181,8 +1209,19 @@ export class Session {
 
   // ── views ──────────────────────────────────────────────────────────────
 
+  /** A document's frontmatter, from the ACTIVE version's text — what the human
+   *  is reading, which is not always what is on disk (E32). */
+  private metaOf(d: DocRecord): DocView["meta"] {
+    try {
+      return readMeta(readFileSync(this.versionPath(d, d.active), "utf8"));
+    } catch {
+      return null;
+    }
+  }
+
   docView(d: DocRecord): DocView {
     return {
+      meta: this.metaOf(d),
       slug: d.slug,
       name: d.name,
       original: d.original,
@@ -1199,15 +1238,101 @@ export class Session {
     return this.docView(this.docOrDie(slug));
   }
 
+  /**
+   * Frontmatter for every document in the context, by path (E32).
+   *
+   * Cached by path and mtime, and read HEAD-FIRST: a frontmatter block sits at
+   * the top of a file, so a 300 KB document costs 8 KB of read. The cap keeps a
+   * 2,000-node mirror from meaning 2,000 reads per snapshot, and hitting it is
+   * SAID on the wire rather than left to look like documents without any.
+   */
+  private metaCache = new Map<string, { mtimeMs: number; summary: DocSummary | null }>();
+
+  contextMeta(cap = META_SCAN_CAP): { map: Record<string, DocSummary>; truncated: boolean } {
+    const map: Record<string, DocSummary> = {};
+    let seen = 0;
+    let truncated = false;
+    for (const e of this.m.context) {
+      for (const abs of docPaths(e)) {
+        if (seen >= cap) {
+          truncated = true;
+          break;
+        }
+        seen++;
+        let mtimeMs: number;
+        try {
+          mtimeMs = statSync(abs).mtimeMs;
+        } catch {
+          continue;
+        }
+        const hit = this.metaCache.get(abs);
+        let summary: DocSummary | null;
+        if (hit && hit.mtimeMs === mtimeMs) summary = hit.summary;
+        else {
+          summary = summarize(readMeta(readHead(abs)));
+          this.metaCache.set(abs, { mtimeMs, summary });
+        }
+        if (summary) map[abs] = summary;
+      }
+      if (truncated) break;
+    }
+    return { map, truncated };
+  }
+
+  /**
+   * One document's frontmatter as read, or every context document's (E32). The
+   * agent gets the daemon's parse rather than re-reading the YAML itself.
+   */
+  metaFor(rawPath?: string): Record<string, unknown> {
+    if (rawPath !== undefined) {
+      const abs = this.shownPath(rawPath);
+      const meta = readMeta(readHead(abs));
+      return { path: abs, meta, ...(meta ? {} : { note: "no frontmatter block" }) };
+    }
+    const out: { path: string; meta: DocMeta | null }[] = [];
+    for (const e of this.m.context)
+      for (const abs of docPaths(e)) out.push({ path: abs, meta: readMeta(readHead(abs)) });
+    return { documents: out, count: out.length };
+  }
+
+  /**
+   * pdocs's `find`, over this session's context. Same filter names, same
+   * ANDing, and the same rule that an empty result is an ANSWER: `count` says
+   * how many matched, and the caller reads that rather than the exit code.
+   */
+  find(filter: MetaFilter): Record<string, unknown> {
+    const matches: Record<string, unknown>[] = [];
+    for (const e of this.m.context)
+      for (const abs of docPaths(e)) {
+        const meta = readMeta(readHead(abs));
+        if (!matchesFilter(meta, filter)) continue;
+        matches.push({
+          path: abs,
+          entry: e.id,
+          ...(meta?.type ? { type: meta.type } : {}),
+          ...(meta?.title ? { title: meta.title } : {}),
+          ...(meta?.description ? { description: meta.description } : {}),
+          status: meta?.status ?? null,
+          ...(meta?.lifecycle ? { lifecycle: meta.lifecycle } : {}),
+          tags: meta?.tags ?? [],
+          date: meta?.date ?? null,
+        });
+      }
+    return { matches, count: matches.length };
+  }
+
   /** The session's half of `PublicState`; the daemon adds the home-level `prefs` and `userHome`. */
   view(
     mode: "dev" | "release",
     selection: Selection | null,
   ): Omit<PublicState, "prefs" | "userHome"> {
+    const meta = this.contextMeta();
     return {
       sessionId: this.m.sessionId,
       home: this.home,
       workspace: this.workspace,
+      docMeta: meta.map,
+      ...(meta.truncated ? { docMetaTruncated: true } : {}),
       mode,
       context: this.m.context,
       docs: this.m.docs.map((d) => this.docView(d)),

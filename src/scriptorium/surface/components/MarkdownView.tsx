@@ -11,19 +11,24 @@
 // names a file beside the document — opening THAT document is the editing
 // slice's, once a rel can be resolved to a context doc).
 import { useMemo } from "react";
-import { renderMarkdown } from "../state/markdown";
+import type { DocMeta } from "../../backend/protocol";
+import { renderMarkdown, splitFrontmatter } from "../state/markdown";
+import { MetaHeader } from "./MetaHeader";
 
 /** http(s) and mailto open outward; everything else is inert for now. */
 const OPENS_OUTWARD = /^(https?:|mailto:)/i;
 
-export function MarkdownView({ text }: { text: string }) {
-  const html = useMemo(() => renderMarkdown(text), [text]);
+export function MarkdownView({ text, meta }: { text: string; meta?: DocMeta | null }) {
+  // The frontmatter is METADATA, so it leaves the rendered body and becomes the
+  // header above it (E32). The raw view still shows it: there, it IS the file.
+  const html = useMemo(() => renderMarkdown(splitFrontmatter(text).body), [text]);
   return (
     <div className="min-h-0 flex-1 overflow-auto" data-slot="markdown-view">
+      <div className="mx-auto max-w-[76ch] px-8 pt-7">{meta && <MetaHeader meta={meta} />}</div>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the handler exists to intercept clicks on ANCHORS inside rendered markdown, and an anchor already fires click on Enter — a keyboard handler here would double-handle it. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: same reason — the interactive elements are the anchors the renderer minted inside this container, each already focusable. */}
       <div
-        className="md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16"
+        className="md-prose mx-auto max-w-[76ch] px-8 pb-16"
         onClick={(e) => {
           const anchor = (e.target as HTMLElement).closest("a");
           if (!anchor) return;

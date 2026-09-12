@@ -41,7 +41,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/ui/context-menu";
-import type { ContextEntry, ContextNode, StructureOp } from "../../../backend/protocol";
+import type { ContextEntry, ContextNode, DocSummary, StructureOp } from "../../../backend/protocol";
 import { carriesFiles, MoveToMenu, RevealItem } from "./menus";
 import {
   ancestorsOf,
@@ -51,6 +51,8 @@ import {
   joinPath,
   type MoveTarget,
   ROOT_ID,
+  type StatusMark,
+  statusMark,
   type TreeIndex,
 } from "./model";
 
@@ -85,6 +87,7 @@ export function EntryTree({
   onRenameStarted,
   onMenuKey,
   onReveal,
+  metaFor,
 }: {
   entry: ContextEntry;
   /** The open document's rel within THIS entry, or null. */
@@ -101,6 +104,8 @@ export function EntryTree({
   onRenameStarted: () => void;
   onMenuKey: (e: KeyboardEvent<HTMLElement>) => void;
   onReveal: (path: string) => void;
+  /** A document's frontmatter summary, by absolute path (E32). */
+  metaFor: (path: string) => DocSummary | undefined;
 }) {
   const index = useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = useRef<TreeIndex>(index);
@@ -243,6 +248,7 @@ export function EntryTree({
                 key={item.getId()}
                 item={item}
                 stale={!index.byId.has(item.getId())}
+                mark={statusMark(metaFor(pathOf(item.getId())))}
                 activeRel={activeRel}
                 onOpenDoc={onOpenDoc}
                 onMenu={setMenuFor}
@@ -319,6 +325,7 @@ export function EntryTree({
 function Row({
   item,
   stale,
+  mark,
   activeRel,
   onOpenDoc,
   onMenu,
@@ -327,6 +334,8 @@ function Row({
   item: ItemInstance<Node>;
   /** Gone from the index (renamed, moved) — the next rebuild drops it. */
   stale: boolean;
+  /** The document's status at row scale, or null when it says nothing. */
+  mark: StatusMark | null;
   activeRel: string | null;
   onOpenDoc: (rel: string) => void;
   onMenu: (node: ContextNode) => void;
@@ -416,6 +425,22 @@ function Row({
     >
       {icon}
       <span className="truncate">{item.getItemName()}</span>
+      {mark && <StatusDot mark={mark} />}
     </button>
+  );
+}
+
+/** The mark itself: a dot in the row's trailing edge, with the reason on hover. */
+function StatusDot({ mark }: { mark: StatusMark }) {
+  return (
+    <span
+      title={mark.title}
+      data-tone={mark.tone}
+      className={cn(
+        "ml-auto size-1.5 shrink-0 rounded-full",
+        "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70",
+        "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint",
+      )}
+    />
   );
 }

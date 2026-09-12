@@ -579,3 +579,54 @@ still unbuilt, and now the next thing editing needs.
 
 **The raw measure went 76ch → 104ch** on Cole's note that it read too narrow:
 76ch is a prose measure and monospace is not prose.
+
+## E32 · OKF frontmatter, read: the daemon parses, the surface shows, the agent queries
+
+**Built:** 2026-09-11, slice 1 of the OKF plan
+([okf-and-links-plan.md](./okf-and-links-plan.md)), after Cole ruled its four
+open questions.
+
+**The daemon parses and the surface renders what it is given.** `Bun.YAML.parse`
+exists, so no YAML parser reaches the browser and the agent gets the daemon's
+own parse rather than re-reading the block by hand. Frontmatter rides the wire
+twice, at two weights: the OPEN document carries its full `DocMeta` (every key,
+plus the raw block for round-tripping), and every context document carries a
+`DocSummary` — type, status, tags, trust, stale — because that one rides every
+snapshot. The scan is head-first (8 KB, which is where a block lives) and cached
+by path and mtime, capped at 500 documents with the cap SAID on the wire.
+
+**The spec's temper is the design.** A consumer "MUST NOT reject documents" and
+"SHOULD preserve unknown keys", so: a document with no block reads as null and
+that is not an error; a block that will not parse keeps its document and reports
+the reason in the header; a missing `type` — OKF's only required field — is a
+fact shown, never a refusal; and every key survives in `fields`, so
+`hivemind_source_id` and a field invented tomorrow both render as labelled
+values. **Derived values are derived**: trust tiers from `verified`
+(`human:<id>` → human-reviewed) and staleness from `stale_after` as an INSTANT,
+computed on read, never stored.
+
+**One judgement the spec does not make, made here:** a document with NO
+frontmatter matches only the empty filter, including `--status stable`. Absent
+`status` defaults to `stable` for an OKF document, but a file with no block is
+not making the claim — reading the default the other way would put every
+untouched note in the result.
+
+**The agent's verbs speak pdocs' vocabulary** (Cole: "I plan to use the project
+docs frontmatter format in a lot of my projects"):
+`find --type --status --lifecycle --tag --since`, ANDed, all optional, an empty
+result exiting 0 with `count` — plus `meta [path]`. Same words in both tools, no
+shelling out to a script found in a repo. `--since` is a DATE here and an event
+id on `tail`; the flag is shared, the meaning is the verb's, and a non-date is a
+usage error so a typo cannot silently widen a search.
+
+**Known fields get explicit support, unknown fields still get shown** (Cole's
+ruling): `type`, `status`, `tags` and `lifecycle` have chips, filters and
+sidebar marks; `lifecycle` is never VALIDATED, because pdocs checks it against
+each type's own vocabulary and only that project knows it.
+
+Driven against the real corpus — `agent-cli-conformance/docs/wiki`, 48
+documents: `find --type rule --tag exit-codes` returned exactly the five rule
+pages; the header showed type, status, trust, date, tags and the unknown
+`related`/`generated` fields; the frontmatter left the rendered body; a
+deliberately broken block rendered its document with the parse error stated; and
+a plain document showed no header at all.

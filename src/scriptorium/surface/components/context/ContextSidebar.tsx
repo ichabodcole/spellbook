@@ -44,7 +44,7 @@ import {
 } from "@/ui/context-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { useConfirm } from "../../../../kit/ui/ConfirmDialog";
-import type { ContextEntry, StructureOp } from "../../../backend/protocol";
+import type { ContextEntry, DocSummary, StructureOp } from "../../../backend/protocol";
 import type { Listing, Planning } from "../../state/useDaemon";
 import { AddPath } from "./AddPath";
 import { EntryTree } from "./EntryTree";
@@ -58,6 +58,7 @@ import {
   shortPath,
   singleDoc,
   splitDropped,
+  statusMark,
   tildify,
 } from "./model";
 
@@ -92,6 +93,8 @@ export type ContextSidebarProps = {
   onReveal: (path: string) => void;
   /** Open the OS's own picker and add (or set as the workspace) what comes back. */
   onPick: (want: "context-file" | "context-folder" | "workspace") => void;
+  /** A document's frontmatter summary, by absolute path (E32). */
+  metaFor: (path: string) => DocSummary | undefined;
   listDir: (path: string) => Promise<Listing>;
   /** What a move would do — asked before a FOLDER is moved (E26). */
   planMove: (path: string, into: string) => Promise<Planning>;
@@ -133,6 +136,7 @@ export function ContextSidebar({
   onStructure,
   onReveal,
   onPick,
+  metaFor,
   listDir,
   planMove,
   created,
@@ -299,6 +303,7 @@ export function ContextSidebar({
           onRenameStarted={renameStarted}
           onReveal={onReveal}
           onMove={requestMove}
+          metaFor={metaFor}
         />
       ) : (
         <ListView
@@ -315,6 +320,7 @@ export function ContextSidebar({
           onRenameStarted={renameStarted}
           onReveal={onReveal}
           onMove={requestMove}
+          metaFor={metaFor}
         />
       )}
       {shown && (
@@ -414,6 +420,7 @@ function ListView({
   onRenameStarted,
   onReveal,
   onMove,
+  metaFor,
 }: {
   entries: readonly ContextEntry[];
   activeDoc: ContextSidebarProps["activeDoc"];
@@ -428,6 +435,7 @@ function ListView({
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
   onMove: (path: string, into: string) => void;
+  metaFor: (path: string) => DocSummary | undefined;
 }) {
   const [menuFor, setMenuFor] = useState<ContextEntry | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -608,6 +616,7 @@ function ListView({
               // a set's row names its root. Cut from the front; the tooltip is whole.
               const where = shortPath(entry.root, userHome);
               const name = only ? (only.rel.split("/").pop() as string) : entry.label;
+              const mark = only ? statusMark(metaFor(full)) : null;
               const icon = only ? (
                 <FileTextIcon
                   aria-hidden
@@ -681,6 +690,17 @@ function ListView({
                         {name}
                       </span>
                       <span className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim">
+                        {mark && (
+                          <span
+                            title={mark.title}
+                            data-tone={mark.tone}
+                            className={cn(
+                              "size-1.5 shrink-0 rounded-full",
+                              "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70",
+                              "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint",
+                            )}
+                          />
+                        )}
                         {entry.truncated && <TruncatedBadge />}
                         <span className="truncate">
                           {only
@@ -714,6 +734,7 @@ function SetView({
   onRenameStarted,
   onReveal,
   onMove,
+  metaFor,
 }: {
   entry: ContextEntry;
   activeRel: string | null;
@@ -727,6 +748,7 @@ function SetView({
   onRenameStarted: () => void;
   onReveal: (path: string) => void;
   onMove: (path: string, into: string) => void;
+  metaFor: (path: string) => DocSummary | undefined;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -776,6 +798,7 @@ function SetView({
           onMenuKey={openMenuOnShiftF10}
           onReveal={onReveal}
           onMove={onMove}
+          metaFor={metaFor}
         />
       </div>
     </div>

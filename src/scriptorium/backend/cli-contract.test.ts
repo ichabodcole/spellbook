@@ -130,6 +130,8 @@ test("the brief's verb roster is exactly the table's", () => {
       "make-set",
       "import",
       "workspace",
+      "meta",
+      "find",
     ].sort(),
   );
 });

@@ -73,7 +73,10 @@ describe("the surface's HTML sinks", () => {
 
   test("that sink is fed by renderMarkdown, in the same file, and by nothing else", () => {
     const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
-    expect(view).toContain("renderMarkdown(text)");
+    // E32 changed the ARGUMENT (the frontmatter block is split off before
+    // rendering) and this cell red on it, which is the cell working: what is
+    // asserted is that the sink's input still comes THROUGH the renderer.
+    expect(view).toMatch(/renderMarkdown\(\s*splitFrontmatter\(text\)\.body\s*\)/);
     // The failure this catches: someone "simplifying" to the raw document text.
     expect(view).not.toContain("__html: text");
   });

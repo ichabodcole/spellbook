@@ -192,14 +192,18 @@ const CLI_OPTIONS = {
   from: { type: "string" },
   full: { type: "boolean" },
   into: { type: "string" },
+  lifecycle: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
   restore: { type: "string" },
   session: { type: "string" },
   since: { type: "string" },
   "start-timeout": { type: "string" },
+  status: { type: "string" },
   stdin: { type: "boolean" },
+  tag: { type: "string" },
   timeout: { type: "string" },
+  type: { type: "string" },
 } as const;
 
 export const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS).map((k) => `--${k}`);
@@ -247,6 +251,18 @@ export function parseSince(token: string): number {
       "usage",
     );
   return Number.parseInt(token, 10);
+}
+
+/**
+ * `find --since` is a DATE, where `tail --since` is an event id — the flag is
+ * shared, the meaning is the verb's, and pdocs spells this one `--since` too.
+ * A typo must not silently widen the search, so a non-date is a usage error.
+ */
+export function parseSinceDate(token: string): string {
+  const t = token.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t)))
+    die(`find --since: "${token}" is not a date — write it as YYYY-MM-DD`, "usage");
+  return t;
 }
 
 /** `v2` or `2` → 2. A version number is an open set, so the rejection carries a hint, not choices. */
@@ -770,6 +786,34 @@ const COMMANDS: CommandSpec[] = [
     positionals: [{ name: "dir", required: false }],
     describe: "print the workspace (where drops and new top-level documents land), or set it",
     run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
+  },
+  {
+    name: "meta",
+    flags: SESSION,
+    positionals: [{ name: "path", required: false }],
+    describe: "a document's frontmatter as the daemon read it (no path: every context document)",
+    run: async (pos, _flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "meta",
+          ...(pos[0] !== undefined ? { path: resolve(pos[0]) } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "find",
+    flags: [...SESSION, "type", "status", "lifecycle", "tag", "since"],
+    positionals: [],
+    describe:
+      "documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+    run: async (_pos, flags, session) => {
+      const filter: Record<string, string> = {};
+      for (const k of ["type", "status", "lifecycle", "tag"] as const)
+        if (typeof flags[k] === "string") filter[k] = flags[k];
+      if (typeof flags.since === "string") filter.since = parseSinceDate(flags.since);
+      printJson(await postCmd(session, { type: "find", filter }));
+    },
   },
   {
     name: "info",

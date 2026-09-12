@@ -200,6 +200,7 @@ function Workspace({
           onStructure={send}
           onReveal={(path) => send({ type: "reveal", path })}
           onPick={(want) => send({ type: "pick", want })}
+          metaFor={(path) => state.docMeta[path]}
           listDir={listDir}
           planMove={planMove}
           created={created}

@@ -132,7 +132,9 @@ const EXPECTED: Record<
   // 27/9 -> 30/10 (organizing slice, E24): `import <file>` refuses a missing
   // file (not_found) and a non-document (usage, the extensions as `choices`),
   // and `workspace` reports a daemon refusal on its `/state` read.
-  scriptorium: { sites: 30, choices: 10, verbRoster: true, flagMap: true },
+  // 30/10 -> 31/10 (E32): `find --since` refuses a non-date, so a typo cannot
+  // silently widen a search — the same shape as `tail --since`'s refusal.
+  scriptorium: { sites: 31, choices: 10, verbRoster: true, flagMap: true },
 };
 
 /**

@@ -236,7 +236,7 @@ export function DocumentPane({
       ) : showing === "raw" ? (
         <DocumentView docKey={doc.slug} text={shown} editable onChange={onEdit} onSave={onSave} />
       ) : showing === "rendered" ? (
-        <MarkdownView text={shown} />
+        <MarkdownView text={shown} meta={doc.meta} />
       ) : (
         <ResizablePanelGroup
           orientation="horizontal"
@@ -260,7 +260,7 @@ export function DocumentPane({
             minSize="25"
             className="flex flex-col border-l border-edge"
           >
-            <MarkdownView text={shown} />
+            <MarkdownView text={shown} meta={doc.meta} />
           </ResizablePanel>
         </ResizablePanelGroup>
       )}

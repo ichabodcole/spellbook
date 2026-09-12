@@ -26,6 +26,21 @@
 import { micromark } from "micromark";
 import { gfm, gfmHtml } from "micromark-extension-gfm";
 
+/**
+ * A frontmatter block: `---` on its own first line, to the next `---` line.
+ * The SAME rule the daemon's reader uses — `backend/frontmatter.test.ts` holds
+ * the two splitters equal over one set of fixtures, because a disagreement
+ * would show as frontmatter leaking into the rendered body.
+ */
+const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+/** Split a document into its raw frontmatter block and the body beneath it. */
+export function splitFrontmatter(text: string): { raw: string | null; body: string } {
+  const m = FRONTMATTER_BLOCK.exec(text);
+  if (!m) return { raw: null, body: text };
+  return { raw: m[1] ?? "", body: text.slice(m[0].length) };
+}
+
 /** Schemes a rendered link may carry. Everything else becomes an inert anchor. */
 const SAFE_SCHEME = /^(https?:|mailto:)/i;
 /** A target with any scheme at all — `foo:bar`, and the encoded spellings of it. */

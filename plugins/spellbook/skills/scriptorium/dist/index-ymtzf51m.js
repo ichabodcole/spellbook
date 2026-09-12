@@ -18020,14 +18020,26 @@ var createLucideIcon = (iconName, iconNode) => {
   return Component;
 };
 
-// node_modules/lucide-react/dist/esm/icons/columns-2.mjs
+// node_modules/lucide-react/dist/esm/icons/badge-check.mjs
 var __iconNode = [
+  [
+    "path",
+    {
+      d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z",
+      key: "3c2336"
+    }
+  ],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+var BadgeCheck = createLucideIcon("badge-check", __iconNode);
+// node_modules/lucide-react/dist/esm/icons/columns-2.mjs
+var __iconNode2 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M12 3v18", key: "108xh3" }]
 ];
-var Columns2 = createLucideIcon("columns-2", __iconNode);
+var Columns2 = createLucideIcon("columns-2", __iconNode2);
 // node_modules/lucide-react/dist/esm/icons/house.mjs
-var __iconNode2 = [
+var __iconNode3 = [
   ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
   [
     "path",
@@ -18037,9 +18049,9 @@ var __iconNode2 = [
     }
   ]
 ];
-var House = createLucideIcon("house", __iconNode2);
+var House = createLucideIcon("house", __iconNode3);
 // node_modules/lucide-react/dist/esm/icons/square-pen.mjs
-var __iconNode3 = [
+var __iconNode4 = [
   ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
   [
     "path",
@@ -18049,15 +18061,28 @@ var __iconNode3 = [
     }
   ]
 ];
-var SquarePen = createLucideIcon("square-pen", __iconNode3);
+var SquarePen = createLucideIcon("square-pen", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
+var __iconNode5 = [
+  [
+    "path",
+    {
+      d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
+      key: "wmoenq"
+    }
+  ],
+  ["path", { d: "M12 9v4", key: "juzpu7" }],
+  ["path", { d: "M12 17h.01", key: "p32p05" }]
+];
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode4 = [
+var __iconNode6 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode4);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode5 = [
+var __iconNode7 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -18067,18 +18092,24 @@ var __iconNode5 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode5);
+var BookOpen = createLucideIcon("book-open", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode6 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode6);
+var __iconNode8 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode8);
+// node_modules/lucide-react/dist/esm/icons/clock.mjs
+var __iconNode9 = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
+];
+var Clock = createLucideIcon("clock", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode7 = [
+var __iconNode10 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode7);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode8 = [
+var __iconNode11 = [
   [
     "path",
     {
@@ -18088,9 +18119,9 @@ var __iconNode8 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode8);
+var Eye = createLucideIcon("eye", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode9 = [
+var __iconNode12 = [
   [
     "path",
     {
@@ -18102,9 +18133,9 @@ var __iconNode9 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode9);
+var FileCode = createLucideIcon("file-code", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode10 = [
+var __iconNode13 = [
   [
     "path",
     {
@@ -18116,9 +18147,9 @@ var __iconNode10 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode10);
+var FilePlus = createLucideIcon("file-plus", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode11 = [
+var __iconNode14 = [
   [
     "path",
     {
@@ -18131,9 +18162,9 @@ var __iconNode11 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode11);
+var FileText = createLucideIcon("file-text", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode12 = [
+var __iconNode15 = [
   [
     "path",
     {
@@ -18144,9 +18175,9 @@ var __iconNode12 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode12);
+var FolderInput = createLucideIcon("folder-input", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode13 = [
+var __iconNode16 = [
   [
     "path",
     {
@@ -18155,9 +18186,9 @@ var __iconNode13 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode13);
+var FolderOpen = createLucideIcon("folder-open", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode14 = [
+var __iconNode17 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -18168,9 +18199,9 @@ var __iconNode14 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode14);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode15 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -18181,9 +18212,9 @@ var __iconNode15 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode15);
+var FolderSearch = createLucideIcon("folder-search", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode16 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -18201,9 +18232,9 @@ var __iconNode16 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode16);
+var FolderTree = createLucideIcon("folder-tree", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode17 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -18212,9 +18243,9 @@ var __iconNode17 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode17);
+var Folder = createLucideIcon("folder", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode18 = [
+var __iconNode21 = [
   [
     "path",
     {
@@ -18230,9 +18261,9 @@ var __iconNode18 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode18);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode19 = [
+var __iconNode22 = [
   [
     "path",
     {
@@ -18241,9 +18272,9 @@ var __iconNode19 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode19);
+var Moon = createLucideIcon("moon", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode20 = [
+var __iconNode23 = [
   [
     "path",
     {
@@ -18253,9 +18284,9 @@ var __iconNode20 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode20);
+var Pencil = createLucideIcon("pencil", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode21 = [
+var __iconNode24 = [
   [
     "path",
     {
@@ -18266,9 +18297,9 @@ var __iconNode21 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode21);
+var Save = createLucideIcon("save", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode22 = [
+var __iconNode25 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18279,20 +18310,27 @@ var __iconNode22 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode22);
+var Sun = createLucideIcon("sun", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode23 = [
+var __iconNode26 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode23);
+var UndoDot = createLucideIcon("undo-dot", __iconNode26);
+// node_modules/lucide-react/dist/esm/icons/user-check.mjs
+var __iconNode27 = [
+  ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
+  ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
+  ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
+];
+var UserCheck = createLucideIcon("user-check", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode24 = [
+var __iconNode28 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode24);
+var X = createLucideIcon("x", __iconNode28);
 // src/scriptorium/surface/App.tsx
 var import_react19 = __toESM(require_react(), 1);
 
@@ -37847,6 +37885,19 @@ function splitDropped(files) {
   });
   return { docs, skipped };
 }
+function statusMark(summary) {
+  if (!summary)
+    return null;
+  if (summary.error)
+    return { tone: "unreadable", title: `Frontmatter unreadable: ${summary.error}` };
+  if (summary.stale)
+    return { tone: "stale", title: "Past its stale_after date" };
+  if (summary.status === "draft")
+    return { tone: "draft", title: "status: draft" };
+  if (summary.status === "deprecated")
+    return { tone: "deprecated", title: "status: deprecated" };
+  return null;
+}
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
 var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
@@ -37868,7 +37919,8 @@ function EntryTree({
   renamePath,
   onRenameStarted,
   onMenuKey,
-  onReveal
+  onReveal,
+  metaFor
 }) {
   const index3 = import_react12.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const indexRef = import_react12.useRef(index3);
@@ -37986,6 +38038,7 @@ function EntryTree({
             children: items.map((item) => /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Row, {
               item,
               stale: !index3.byId.has(item.getId()),
+              mark: statusMark(metaFor(pathOf(item.getId()))),
               activeRel,
               onOpenDoc,
               onMenu: setMenuFor,
@@ -38084,6 +38137,7 @@ function EntryTree({
 function Row({
   item,
   stale,
+  mark,
   activeRel,
   onOpenDoc,
   onMenu,
@@ -38166,9 +38220,19 @@ function Row({
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
         className: "truncate",
         children: item.getItemName()
+      }, undefined, false, undefined, this),
+      mark && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(StatusDot, {
+        mark
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
+}
+function StatusDot({ mark }) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
+    title: mark.title,
+    "data-tone": mark.tone,
+    className: cn("ml-auto size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
+  }, undefined, false, undefined, this);
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
@@ -38207,6 +38271,7 @@ function ContextSidebar({
   onStructure,
   onReveal,
   onPick,
+  metaFor,
   listDir,
   planMove,
   created,
@@ -38349,7 +38414,8 @@ function ContextSidebar({
         renamePath,
         onRenameStarted: renameStarted,
         onReveal,
-        onMove: requestMove
+        onMove: requestMove,
+        metaFor
       }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ListView, {
         entries,
         activeDoc,
@@ -38363,7 +38429,8 @@ function ContextSidebar({
         renamePath,
         onRenameStarted: renameStarted,
         onReveal,
-        onMove: requestMove
+        onMove: requestMove,
+        metaFor
       }, undefined, false, undefined, this),
       shown && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
         role: "alert",
@@ -38453,7 +38520,8 @@ function ListView({
   renamePath,
   onRenameStarted,
   onReveal,
-  onMove
+  onMove,
+  metaFor
 }) {
   const [menuFor, setMenuFor] = import_react13.useState(null);
   const [renaming, setRenaming] = import_react13.useState(null);
@@ -38655,6 +38723,7 @@ function ListView({
               const full = entryPath(entry);
               const where = shortPath(entry.root, userHome);
               const name = only ? only.rel.split("/").pop() : entry.label;
+              const mark = only ? statusMark(metaFor(full)) : null;
               const icon = only ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FileText, {
                 "aria-hidden": true,
                 className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
@@ -38717,6 +38786,11 @@ function ListView({
                         /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                           className: "flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim",
                           children: [
+                            mark && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+                              title: mark.title,
+                              "data-tone": mark.tone,
+                              className: cn("size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
+                            }, undefined, false, undefined, this),
                             entry.truncated && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(TruncatedBadge, {}, undefined, false, undefined, this),
                             /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
                               className: "truncate",
@@ -38749,7 +38823,8 @@ function SetView({
   renamePath,
   onRenameStarted,
   onReveal,
-  onMove
+  onMove,
+  metaFor
 }) {
   return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
@@ -38806,7 +38881,8 @@ function SetView({
           onRenameStarted,
           onMenuKey: openMenuOnShiftF10,
           onReveal,
-          onMove
+          onMove,
+          metaFor
         }, entry.id, false, undefined, this)
       }, undefined, false, undefined, this)
     ]
@@ -60500,6 +60576,13 @@ function gfmHtml(options) {
 }
 
 // src/scriptorium/surface/state/markdown.ts
+var FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+function splitFrontmatter(text4) {
+  const m = FRONTMATTER_BLOCK.exec(text4);
+  if (!m)
+    return { raw: null, body: text4 };
+  return { raw: m[1] ?? "", body: text4.slice(m[0].length) };
+}
 var SAFE_SCHEME = /^(https?:|mailto:)/i;
 var HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 function safeHref(raw) {
@@ -60517,36 +60600,177 @@ function renderMarkdown(text4) {
   return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
 }
 
-// src/scriptorium/surface/components/MarkdownView.tsx
+// src/scriptorium/surface/components/MetaHeader.tsx
 var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var STATUS_TONE = {
+  draft: "bg-attention/15 text-attention",
+  stable: "bg-rubric/12 text-rubric",
+  deprecated: "bg-danger/15 text-danger"
+};
+var TRUST_LABEL = {
+  unverified: "unverified",
+  "machine-confirmed": "machine-confirmed",
+  "human-reviewed": "human-reviewed"
+};
+var NAMED = new Set(["type", "title", "description", "status", "tags", "lifecycle", "verified"]);
+function showValue(value) {
+  if (value === null || value === undefined)
+    return "—";
+  if (Array.isArray(value))
+    return value.map(showValue).join(", ");
+  if (value instanceof Date)
+    return value.toISOString().slice(0, 10);
+  if (typeof value === "object")
+    return Object.entries(value).map(([k, v]) => `${k}: ${showValue(v)}`).join(" · ");
+  return String(value);
+}
+function Chip({ children, className }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+    className: cn("inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[11px] font-medium", className),
+    children
+  }, undefined, false, undefined, this);
+}
+function MetaHeader({ meta: meta2 }) {
+  const others = Object.entries(meta2.fields).filter(([k]) => !NAMED.has(k));
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("header", {
+    "data-slot": "meta-header",
+    className: "mb-6 flex flex-col gap-2 border-b border-edge pb-4 text-sm",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: "flex flex-wrap items-center gap-1.5",
+        children: [
+          meta2.type ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: "bg-surface-raised text-ink",
+            children: meta2.type
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: "bg-surface-raised text-ink-faint",
+            children: "no type"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: STATUS_TONE[meta2.status] ?? "bg-surface-raised text-ink-dim",
+            children: meta2.status
+          }, undefined, false, undefined, this),
+          meta2.lifecycle && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: "bg-surface-raised text-ink-dim",
+            children: meta2.lifecycle
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: "bg-surface-raised text-ink-dim",
+            children: [
+              meta2.trust === "human-reviewed" ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(UserCheck, {
+                "aria-hidden": true,
+                className: "size-3"
+              }, undefined, false, undefined, this) : meta2.trust === "machine-confirmed" ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(BadgeCheck, {
+                "aria-hidden": true,
+                className: "size-3"
+              }, undefined, false, undefined, this) : null,
+              TRUST_LABEL[meta2.trust]
+            ]
+          }, undefined, true, undefined, this),
+          meta2.stale && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+            className: "bg-attention/15 text-attention",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Clock, {
+                "aria-hidden": true,
+                className: "size-3"
+              }, undefined, false, undefined, this),
+              "stale"
+            ]
+          }, undefined, true, undefined, this),
+          meta2.date && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            className: "text-[11px] text-ink-faint",
+            children: meta2.date
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      meta2.description && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+        className: "text-ink-dim",
+        children: meta2.description
+      }, undefined, false, undefined, this),
+      meta2.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: "flex flex-wrap items-center gap-1",
+        children: meta2.tags.map((t2) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Chip, {
+          className: "bg-bg text-ink-dim ring-1 ring-edge",
+          children: [
+            "#",
+            t2
+          ]
+        }, t2, true, undefined, this))
+      }, undefined, false, undefined, this),
+      others.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("dl", {
+        className: "mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs",
+        children: others.map(([k, v]) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          className: "contents",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("dt", {
+              className: "font-mono text-ink-faint",
+              children: k
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("dd", {
+              className: "min-w-0 break-words text-ink-dim",
+              children: showValue(v)
+            }, undefined, false, undefined, this)
+          ]
+        }, k, true, undefined, this))
+      }, undefined, false, undefined, this),
+      meta2.error && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+        className: "flex items-start gap-1.5 rounded-md border border-attention/40 bg-attention/10 px-2 py-1 text-xs text-ink",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TriangleAlert, {
+            "aria-hidden": true,
+            className: "mt-0.5 size-3.5 shrink-0 text-attention"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            children: [
+              "This document's frontmatter could not be read, so only its text is shown here:",
+              " ",
+              meta2.error
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/scriptorium/surface/components/MarkdownView.tsx
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var OPENS_OUTWARD = /^(https?:|mailto:)/i;
-function MarkdownView({ text: text4 }) {
-  const html = import_react15.useMemo(() => renderMarkdown(text4), [text4]);
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+function MarkdownView({ text: text4, meta: meta2 }) {
+  const html = import_react15.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "min-h-0 flex-1 overflow-auto",
     "data-slot": "markdown-view",
-    children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
-      className: "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16",
-      onClick: (e) => {
-        const anchor = e.target.closest("a");
-        if (!anchor)
-          return;
-        e.preventDefault();
-        const href = anchor.getAttribute("href");
-        if (href && OPENS_OUTWARD.test(href))
-          window.open(href, "_blank", "noopener,noreferrer");
-      },
-      dangerouslySetInnerHTML: { __html: html }
-    }, undefined, false, undefined, this)
-  }, undefined, false, undefined, this);
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "mx-auto max-w-[76ch] px-8 pt-7",
+        children: meta2 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(MetaHeader, {
+          meta: meta2
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "md-prose mx-auto max-w-[76ch] px-8 pb-16",
+        onClick: (e) => {
+          const anchor = e.target.closest("a");
+          if (!anchor)
+            return;
+          e.preventDefault();
+          const href = anchor.getAttribute("href");
+          if (href && OPENS_OUTWARD.test(href))
+            window.open(href, "_blank", "noopener,noreferrer");
+        },
+        dangerouslySetInnerHTML: { __html: html }
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
 var import_react16 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -60555,27 +60779,27 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusStrip({ segments }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(import_react16.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(import_react16.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -60587,7 +60811,7 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split"];
 var SPLIT_MIN_PX = 720;
 function useWidth() {
@@ -60656,27 +60880,27 @@ function DocumentPane({
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     ref: paneRef,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(jsx_dev_runtime16.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
               className: "ml-auto flex shrink-0 items-center gap-1",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onRevert,
@@ -60684,13 +60908,13 @@ function DocumentPane({
                   title: "Take the file on disk back over your edits",
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(UndoDot, {
+                    /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(UndoDot, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Revert"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onSave,
@@ -60698,19 +60922,19 @@ function DocumentPane({
                   title: "Write this version over the file (⌘S)",
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Save, {
+                    /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Save, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Save"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
                   role: "toolbar",
                   "aria-label": "How to show this document",
                   className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
                   children: MODE_BUTTONS.map(({ mode: m, label, icon: Icon2 }) => {
                     const unavailable = m === "split" && !roomToSplit;
-                    return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+                    return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
                       type: "button",
                       onClick: () => onMode(m),
                       disabled: unavailable,
@@ -60718,7 +60942,7 @@ function DocumentPane({
                       "aria-label": label,
                       title: unavailable ? `${label} — the pane is too narrow` : label,
                       className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m && "bg-bg text-ink shadow-sm"),
-                      children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Icon2, {
+                      children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Icon2, {
                         "aria-hidden": true,
                         className: "size-3.5"
                       }, undefined, false, undefined, this)
@@ -60728,26 +60952,26 @@ function DocumentPane({
               ]
             }, undefined, true, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
             className: "min-w-0 flex-1",
             children: "This file changed on disk while you have unsaved edits."
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
             type: "button",
             onClick: onSave,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "Keep mine"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("button", {
             type: "button",
             onClick: onRevert,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -60755,45 +60979,46 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown,
         editable: true,
         onChange: onEdit,
         onSave
-      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MarkdownView, {
-        text: shown
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanelGroup, {
+      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(MarkdownView, {
+        text: shown,
+        meta: doc2.meta
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: splitLayout.defaultLayout,
         onLayoutChanged: splitLayout.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
             id: "doc-raw",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DocumentView, {
               docKey: doc2.slug,
               text: shown,
               editable: true,
@@ -60801,21 +61026,22 @@ function DocumentPane({
               onSave
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
             id: "doc-rendered",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col border-l border-edge",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MarkdownView, {
-              text: shown
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(MarkdownView, {
+              text: shown,
+              meta: doc2.meta
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(StatusStrip, {
+      doc2 && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this)
     ]
@@ -60992,7 +61218,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -61004,7 +61230,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -61027,41 +61253,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -61120,22 +61346,22 @@ function Workspace({
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanelGroup, {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizablePanelGroup, {
     orientation: "horizontal",
     className: "min-h-0 flex-1",
     defaultLayout: layout.defaultLayout,
     onLayoutChanged: layout.onLayoutChanged,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizablePanel, {
         id: "context",
         defaultSize: "22",
         minSize: "12",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(PaneHeading, {
             children: "Context"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ContextSidebar, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ContextSidebar, {
             entries: state.context,
             activeDoc,
             userHome: state.userHome,
@@ -61145,6 +61371,7 @@ function Workspace({
             onStructure: send,
             onReveal: (path2) => send({ type: "reveal", path: path2 }),
             onPick: (want) => send({ type: "pick", want }),
+            metaFor: (path2) => state.docMeta[path2],
             listDir,
             planMove,
             created,
@@ -61153,15 +61380,15 @@ function Workspace({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizablePanel, {
         id: "document",
         defaultSize: "50",
         minSize: "25",
         className: "flex flex-col bg-bg",
-        children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(DocumentPane, {
+        children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(DocumentPane, {
           doc: open,
           text: text4,
           mode,
@@ -61177,35 +61404,35 @@ function Workspace({
           onRevert: () => open && send({ type: "revert", doc: open.slug })
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizableHandle, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizableHandle, {
         withHandle: true
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ResizablePanel, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ResizablePanel, {
         id: "chat",
         defaultSize: "28",
         minSize: "15",
         className: "flex flex-col bg-surface",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(PaneHeading, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(PaneHeading, {
             children: "Conversation"
           }, undefined, false, undefined, this),
-          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Empty, {
+          state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Empty, {
             className: "h-full",
-            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyMedia, {
+                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                  children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyTitle, {
+                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyTitle, {
                   children: "No messages yet"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(EmptyDescription, {
+                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(EmptyDescription, {
                   children: "The conversation with the agent lives here."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(ActivityLog, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ActivityLog, {
             chat: state.chat
           }, undefined, false, undefined, this)
         ]
@@ -61219,23 +61446,23 @@ function ActivityLog({ chat }) {
   import_react19.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         "data-who": m.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m.text
         ]
       }, m.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -61243,7 +61470,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime17.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime18.jsxDEV(App, {}, undefined, false, undefined, this));
