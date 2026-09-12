@@ -48,6 +48,7 @@
     --color-danger: #e5675a;
     --color-added: #7f9c6a;
     --color-removed: #c2705f;
+    --color-selected: #8098c0;
     --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
     --color-background: var(--color-bg);
     --color-foreground: var(--color-ink);
@@ -1249,16 +1250,6 @@
     }
   }
 
-  .bg-rubric\/10 {
-    background-color: #d0704f1a;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-rubric\/10 {
-      background-color: color-mix(in oklab, var(--color-rubric) 10%, transparent);
-    }
-  }
-
   .bg-rubric\/12 {
     background-color: #d0704f1f;
   }
@@ -1281,6 +1272,26 @@
 
   .bg-secondary {
     background-color: var(--color-secondary);
+  }
+
+  .bg-selected\/14 {
+    background-color: #8098c024;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-selected\/14 {
+      background-color: color-mix(in oklab, var(--color-selected) 14%, transparent);
+    }
+  }
+
+  .bg-selected\/15 {
+    background-color: #8098c026;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-selected\/15 {
+      background-color: color-mix(in oklab, var(--color-selected) 15%, transparent);
+    }
   }
 
   .bg-surface {
@@ -1689,6 +1700,10 @@
     color: var(--color-secondary-foreground);
   }
 
+  .text-selected {
+    color: var(--color-selected);
+  }
+
   .uppercase {
     text-transform: uppercase;
   }
@@ -1766,16 +1781,6 @@
     }
   }
 
-  .ring-rubric\/20 {
-    --tw-ring-color: #d0704f33;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .ring-rubric\/20 {
-      --tw-ring-color: color-mix(in oklab, var(--color-rubric) 20%, transparent);
-    }
-  }
-
   .ring-rubric\/40 {
     --tw-ring-color: #d0704f66;
   }
@@ -1793,6 +1798,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .ring-rubric\/50 {
       --tw-ring-color: color-mix(in oklab, var(--color-rubric) 50%, transparent);
+    }
+  }
+
+  .ring-selected\/30 {
+    --tw-ring-color: #8098c04d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-selected\/30 {
+      --tw-ring-color: color-mix(in oklab, var(--color-selected) 30%, transparent);
     }
   }
 
@@ -2794,6 +2809,7 @@
   --color-danger: #b33a2e;
   --color-added: #4e7040;
   --color-removed: #a8432a;
+  --color-selected: #3f5f8f;
 }
 
 :root {

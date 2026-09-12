@@ -32,6 +32,15 @@
      palette, so nothing else may reach for them to mean "good" and "bad". */
   --color-added: #7f9c6a;
   --color-removed: #c2705f;
+  /* ⛔ E40 — SELECTION IS NOT THE BRAND COLOUR. `--color-rubric` is the
+     scribe's red and it was doing five jobs, one of which was "this row is
+     selected" — a few degrees from `--color-danger`, so the open document read
+     as a warning (Cole). Selection needs a hue that asserts nothing: not red
+     (caution), not green (success). This is iron-gall ink — the blue-black a
+     scribe actually wrote in — which is conventional for selection, sits
+     against parchment rather than fighting it, and means only "this one".
+     HOVER stays warm-neutral (surface-raised), so the two never collide. */
+  --color-selected: #8098c0;
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -78,6 +87,7 @@
   --color-danger: #b33a2e;
   --color-added: #4e7040;
   --color-removed: #a8432a;
+  --color-selected: #3f5f8f;
 }
 
 /* Two recipes reach past the utility layer with a raw var() (the secondary

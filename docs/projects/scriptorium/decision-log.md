@@ -938,3 +938,43 @@ meaning but its styling contradicts it, split them — take the behaviour, refus
 the appearance. Reaching instead for a different state (not-disabled plus a
 no-op handler) would have bought the same look and lost the keyboard and screen
 reader semantics._
+
+## E40 · Selection gets its own colour, and it is not the brand's
+
+**Ruled by Cole, 2026-09-12.** The selected row in the context sidebar — and the
+active row in E39's version menu — were tinted with `--color-rubric`:
+
+> "Because it's sort of red… it sort of reads as more warning than selection.
+> What we're trying to just say is like a neutral highlight."
+
+**First question asked and answered: WHERE does it come from.** Not the kit.
+`rubric` is scriptorium's own token and appears nowhere in `src/kit` — the kit's
+L0 layer is deliberately `bg`/`surface`/`ink`/`edge` with no accent at all, and
+L1 shadcn aliases are banned there by house rule. So there was nothing upstream
+to fix and the change is local. Worth recording because the opposite answer
+would have made this a repo-wide job.
+
+**The real collision is inside the palette:** `--color-rubric` is `#a8432a` and
+`--color-danger` is `#b33a2e`. Selection was drawn a few degrees of hue from the
+colour that means danger, so of course it read as caution. (E36 hit the same
+wall from the other side and had to invent `added`/`removed` because every
+existing token was warm.)
+
+**`rubric` was doing five jobs** — brand accent, primary button fill, caret and
+link colour, drop target, and selection. The last is the one that does not
+belong: a brand colour asserts identity, and selection needs to assert nothing
+at all. Not red (caution), not green (success).
+
+**`--color-selected` is iron-gall ink** — the blue-black a scribe actually wrote
+in. Conventional for selection, sits against parchment instead of fighting it,
+and means only "this one". `#8098c0` dark, `#3f5f8f` light.
+
+**HOVER deliberately stays warm-neutral** (`surface-raised`), so hover and
+selected never collide: one is warm, one is cool, and no row can be mistaken for
+the other.
+
+**Drop targets KEEP `rubric`, and that is a distinction not an oversight.** A
+drop target is a transient call for attention during a drag — "this is where it
+lands, act now" — which is what an accent is for. Selection is a persistent
+statement of fact. Different jobs, so different colours, and during a drag the
+two are now legible at once instead of being the same wash.

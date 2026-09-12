@@ -352,7 +352,7 @@ function Row({
     "hover:bg-surface-raised hover:text-ink",
     "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset",
     item.isFocused() && "bg-surface-raised/60",
-    isActive && "bg-rubric/12 font-medium text-ink",
+    isActive && "bg-selected/15 font-medium text-ink",
     item.isDragTarget() && "bg-rubric/15 text-ink ring-1 ring-rubric/50 ring-inset",
   );
   const icon = isGroup ? (
@@ -375,7 +375,7 @@ function Row({
       <span aria-hidden className="size-3.5 shrink-0" />
       <FileTextIcon
         aria-hidden
-        className={cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")}
+        className={cn("size-4 shrink-0", isActive ? "text-selected" : "text-ink-faint")}
       />
     </>
   );

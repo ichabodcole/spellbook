@@ -137,12 +137,13 @@ export function VersionMenu({
                   // to say is "you are here". The pointer-events-none half of
                   // `disabled` is kept; the dimming is overridden, and the row
                   // gains the accent instead.
-                  v.n === active && "bg-rubric/10 ring-1 ring-rubric/20 data-disabled:opacity-100",
+                  v.n === active &&
+                    "bg-selected/14 ring-1 ring-selected/30 data-disabled:opacity-100",
                 )}
               >
                 <span className="flex w-full items-center gap-1.5">
                   {v.n === active ? (
-                    <BadgeCheckIcon aria-hidden className="size-3.5 shrink-0 text-rubric" />
+                    <BadgeCheckIcon aria-hidden className="size-3.5 shrink-0 text-selected" />
                   ) : (
                     <span aria-hidden className="size-3.5 shrink-0" />
                   )}

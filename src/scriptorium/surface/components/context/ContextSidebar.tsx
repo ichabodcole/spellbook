@@ -662,12 +662,18 @@ function ListView({
               const icon = only ? (
                 <FileTextIcon
                   aria-hidden
-                  className={cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")}
+                  className={cn(
+                    "size-4 shrink-0",
+                    isActiveDoc ? "text-selected" : "text-ink-faint",
+                  )}
                 />
               ) : (
                 <FolderTreeIcon
                   aria-hidden
-                  className={cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")}
+                  className={cn(
+                    "size-4 shrink-0",
+                    holdsActive ? "text-selected" : "text-ink-faint",
+                  )}
                 />
               );
               if (renaming === full) {
@@ -717,7 +723,7 @@ function ListView({
                     className={cn(
                       "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none",
                       "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
-                      (isActiveDoc || (holdsActive && !only)) && "bg-rubric/12",
+                      (isActiveDoc || (holdsActive && !only)) && "bg-selected/15",
                       dropOn === entry.id && "bg-rubric/15 ring-1 ring-rubric/50 ring-inset",
                     )}
                   >

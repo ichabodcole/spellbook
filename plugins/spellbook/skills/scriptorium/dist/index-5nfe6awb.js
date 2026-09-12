@@ -38209,7 +38209,7 @@ function Row({
   const isGroup = node.kind === "group";
   const isActive = !isGroup && node.rel === activeRel;
   const props = item.getProps();
-  const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-rubric/12 font-medium text-ink", item.isDragTarget() && "bg-rubric/15 text-ink ring-1 ring-rubric/50 ring-inset");
+  const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", item.isFocused() && "bg-surface-raised/60", isActive && "bg-selected/15 font-medium text-ink", item.isDragTarget() && "bg-rubric/15 text-ink ring-1 ring-rubric/50 ring-inset");
   const icon = isGroup ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(jsx_dev_runtime9.Fragment, {
     children: [
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(ChevronRight, {
@@ -38232,7 +38232,7 @@ function Row({
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FileText, {
         "aria-hidden": true,
-        className: cn("size-4 shrink-0", isActive ? "text-rubric" : "text-ink-faint")
+        className: cn("size-4 shrink-0", isActive ? "text-selected" : "text-ink-faint")
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -40323,10 +40323,10 @@ function ListView({
               const mark = only ? statusMark(metaFor(full)) : null;
               const icon = only ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FileText, {
                 "aria-hidden": true,
-                className: cn("size-4 shrink-0", isActiveDoc ? "text-rubric" : "text-ink-faint")
+                className: cn("size-4 shrink-0", isActiveDoc ? "text-selected" : "text-ink-faint")
               }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FolderTree, {
                 "aria-hidden": true,
-                className: cn("size-4 shrink-0", holdsActive ? "text-rubric" : "text-ink-faint")
+                className: cn("size-4 shrink-0", holdsActive ? "text-selected" : "text-ink-faint")
               }, undefined, false, undefined, this);
               if (renaming === full) {
                 return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("li", {
@@ -40370,7 +40370,7 @@ function ListView({
                     }
                   },
                   title: tildify(full, userHome),
-                  className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-rubric/12", dropOn === entry.id && "bg-rubric/15 ring-1 ring-rubric/50 ring-inset"),
+                  className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-selected/15", dropOn === entry.id && "bg-rubric/15 ring-1 ring-rubric/50 ring-inset"),
                   children: [
                     icon,
                     /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
@@ -62961,14 +62961,14 @@ function VersionMenu({
                 /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
                   onClick: () => onActivate(v.n),
                   disabled: v.n === active,
-                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-rubric/10 ring-1 ring-rubric/20 data-disabled:opacity-100"),
+                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30 data-disabled:opacity-100"),
                   children: [
                     /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
                       className: "flex w-full items-center gap-1.5",
                       children: [
                         v.n === active ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BadgeCheck, {
                           "aria-hidden": true,
-                          className: "size-3.5 shrink-0 text-rubric"
+                          className: "size-3.5 shrink-0 text-selected"
                         }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0"
