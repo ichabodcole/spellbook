@@ -2,12 +2,15 @@
 // consult, not a thing you sit in", so it opens from a set's menu and closes
 // again rather than taking a pane.
 //
-// ⛔ NO GRAPH LIBRARY, AND NO PHYSICS. A force layout is a lovely thing that
-// moves while you read it; this is a document corpus, where the useful question
-// is "what kind of page is this and what cites it", not "what clusters". So:
-// COLUMNS BY TYPE, ordered by inbound citations, edges drawn as curves between
-// them. It is deterministic — the same corpus draws the same map twice — which
-// a force layout is not, and it costs no dependency.
+// TWO MODES, because Cole asked for both and they answer different questions
+// (E34): COLUMNS BY TYPE — deterministic, the same corpus drawn the same way
+// twice — answers "what KIND of page is this, and what cites it"; PHYSICS
+// (`d3-force`, Obsidian's shape) answers "what clusters, and what sits alone",
+// which a column layout cannot show because it puts that answer in the column
+// order rather than in the distance between nodes.
+//
+// In BOTH modes, hovering a document mutes everything it is not connected to —
+// the same dim idiom mind-mapper's canvas uses for its spotlight.
 //
 // Body links and frontmatter references are drawn DIFFERENTLY (solid against
 // dashed) because they are different claims: a body link is a citation in
@@ -16,8 +19,9 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import { XIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from "react";
 import type { GraphPayload } from "../../../backend/protocol";
+import { bodyRadius, useForceLayout } from "./forceLayout";
 
 const NODE_W = 168;
 const NODE_H = 34;
@@ -103,6 +107,7 @@ export function MapOverlay({
    * the toggle is there for when you want the whole shape at once.
    */
   const [alwaysEdges, setAlwaysEdges] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<"columns" | "force">("columns");
   const { placed, width, height } = useMemo(
     () => (graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0 }),
     [graph],
@@ -116,6 +121,31 @@ export function MapOverlay({
   const leaving = (graph?.edges ?? []).filter((e) => e.state === "outside").length;
   const dense = drawn.length > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
+
+  /**
+   * What the hovered document is connected to — itself included. Everything
+   * outside this set is muted rather than hidden: a map that removes nodes
+   * while you read it loses the shape you were reading (Cole, E34).
+   */
+  const connected = useMemo(() => {
+    if (!hover) return null;
+    const set = new Set<string>([hover]);
+    for (const e of drawn) {
+      if (e.from === hover) set.add(e.to);
+      if (e.to === hover) set.add(e.from);
+    }
+    return set;
+  }, [hover, drawn]);
+  const lit = (path: string) => connected === null || connected.has(path);
+
+  // The physics mode's canvas is fixed and scrolls; the columns' is measured.
+  const forceSize = { width: 1500, height: 1000 };
+  const force = useForceLayout(
+    useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]),
+    useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]),
+    forceSize,
+    mode === "force" && open,
+  );
   /** Opening from the map closes it: the map is a way IN, not a place to stay. */
   const openAndClose = (path: string) => {
     onOpenDoc(path);
@@ -137,7 +167,28 @@ export function MapOverlay({
                 {graph.nodes.length > DRAW_CAP && ` · drawing the first ${DRAW_CAP}`}
               </span>
             )}
-            <Dialog.Close className="ml-auto rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink">
+            <div
+              role="toolbar"
+              aria-label="How to lay the map out"
+              className="ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5"
+            >
+              {(["columns", "force"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  aria-pressed={mode === m}
+                  className={cn(
+                    "rounded-sm px-2 py-0.5 text-[11px] text-ink-faint outline-none",
+                    "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+                    mode === m && "bg-bg text-ink shadow-sm",
+                  )}
+                >
+                  {m === "columns" ? "columns" : "physics"}
+                </button>
+              ))}
+            </div>
+            <Dialog.Close className="rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink">
               <XIcon className="size-4" />
             </Dialog.Close>
           </div>
@@ -147,6 +198,18 @@ export function MapOverlay({
               <p className="p-6 text-sm text-ink-dim">Reading the set…</p>
             ) : graph.nodes.length === 0 ? (
               <p className="p-6 text-sm text-ink-dim">This set has no documents to map.</p>
+            ) : mode === "force" ? (
+              <ForceCanvas
+                graph={graph}
+                edges={drawn}
+                size={forceSize}
+                force={force}
+                hover={hover}
+                onHover={setHover}
+                lit={lit}
+                showAll={showAll}
+                onOpen={openAndClose}
+              />
             ) : (
               <svg
                 width={width}
@@ -214,7 +277,11 @@ export function MapOverlay({
                     role="button"
                     tabIndex={0}
                     aria-label={`${n.title} — ${n.status}, ${n.linksIn} citations`}
-                    className="cursor-pointer outline-none focus-visible:[&>rect]:stroke-rubric"
+                    // Everything the hovered document does not touch is MUTED,
+                    // never removed: a map that drops nodes while you read it
+                    // loses the shape you were reading.
+                    opacity={lit(n.path) ? 1 : 0.22}
+                    className="cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-rubric"
                   >
                     <title>
                       {n.rel} · {n.status}
@@ -302,5 +369,140 @@ export function MapOverlay({
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+/**
+ * The physics canvas. Nodes are circles sized by inbound citations — the hubs
+ * grow — and they can be DRAGGED: pinning one and letting the rest settle
+ * around it is how a force map is actually read (Obsidian's affordance).
+ */
+function ForceCanvas({
+  graph,
+  edges,
+  size,
+  force,
+  hover,
+  onHover,
+  lit,
+  showAll,
+  onOpen,
+}: {
+  graph: GraphPayload;
+  edges: GraphPayload["edges"];
+  size: { width: number; height: number };
+  force: ReturnType<typeof useForceLayout>;
+  hover: string | null;
+  onHover: (path: string | null) => void;
+  lit: (path: string) => boolean;
+  showAll: boolean;
+  onOpen: (path: string) => void;
+}) {
+  const svg = useRef<SVGSVGElement>(null);
+  const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
+  /** Pointer coordinates in the canvas's own space. */
+  const at = (e: ReactPointerEvent): { x: number; y: number } => {
+    const box = svg.current?.getBoundingClientRect();
+    return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
+  };
+
+  return (
+    // The pointer handlers carry a node DRAG; every node inside is a focusable
+    // control with its own keyboard path, so the svg itself needs no role.
+    <svg
+      ref={svg}
+      width={size.width}
+      height={size.height}
+      role="img"
+      aria-label={`${graph.nodes.length} documents, arranged by their links`}
+      onPointerMove={(e) => dragging && onDragMove(at(e))}
+      onPointerUp={onDragEnd}
+      onPointerLeave={onDragEnd}
+      className={dragging ? "cursor-grabbing" : undefined}
+    >
+      <title>{graph.nodes.length} documents, arranged by their links</title>
+      {edges.map((e, i) => {
+        const a = positions.get(e.from);
+        const b = positions.get(e.to);
+        if (!a || !b) return null;
+        const touching = hover === e.from || hover === e.to;
+        if (!touching && !showAll) return null;
+        return (
+          <line
+            key={`${e.from}->${e.to}:${i}`}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            stroke={e.source === "frontmatter" ? "var(--color-rubric)" : "var(--color-ink-faint)"}
+            strokeWidth={touching ? 1.6 : 1}
+            strokeDasharray={e.source === "frontmatter" ? "4 3" : undefined}
+            opacity={touching ? 0.95 : 0.14}
+          />
+        );
+      })}
+      {[...graph.nodes]
+        // The hovered node is drawn LAST so its label sits above its
+        // neighbours' — in a cluster, the one you are pointing at is the one
+        // whose name you need.
+        .sort((a, b) => (a.path === hover ? 1 : 0) - (b.path === hover ? 1 : 0))
+        .map((n) => {
+          const p = positions.get(n.path);
+          if (!p) return null;
+          const r = bodyRadius(n.linksIn);
+          return (
+            // biome-ignore lint/a11y/useSemanticElements: SVG has no <button>; the role, tabIndex and key handler carry the same behaviour.
+            <g
+              key={n.path}
+              transform={`translate(${p.x}, ${p.y})`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${n.title} — ${n.status}, ${n.linksIn} citations`}
+              opacity={lit(n.path) ? 1 : 0.18}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+                onDragStart(n.path, at(e));
+              }}
+              onPointerEnter={() => onHover(n.path)}
+              onPointerLeave={() => onHover(null)}
+              onFocus={() => onHover(n.path)}
+              onBlur={() => onHover(null)}
+              onDoubleClick={() => onOpen(n.path)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                onOpen(n.path);
+              }}
+              className="cursor-grab outline-none transition-opacity"
+            >
+              <title>
+                {n.rel} · {n.status}
+                {n.stale ? " · stale" : ""} · {n.linksIn} in, {n.linksOut} out
+              </title>
+              <circle
+                r={r}
+                className={cn(
+                  "stroke-edge",
+                  n.stale || n.status === "draft"
+                    ? "fill-attention"
+                    : n.status === "deprecated"
+                      ? "fill-danger"
+                      : hover === n.path
+                        ? "fill-rubric"
+                        : "fill-ink-faint",
+                )}
+                strokeWidth={hover === n.path ? 2 : 1}
+              />
+              <text
+                x={r + 5}
+                y={4}
+                className={cn("text-[11px]", hover === n.path ? "fill-ink" : "fill-ink-dim")}
+              >
+                {n.title.length > 28 ? `${n.title.slice(0, 27)}…` : n.title}
+              </text>
+            </g>
+          );
+        })}
+    </svg>
   );
 }

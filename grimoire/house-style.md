@@ -517,22 +517,30 @@ registry uses the registry's `cn` throughout, one semantics per spell.
   `bun add`.
 - **Ruled exceptions:**
   - **scriptorium** (Cole, 2026-09-11 — "I'm fine with adding whatever we need
-    for this spell"): `react-resizable-panels` (shadcn `resizable`),
-    `@headless-tree/core` + `@headless-tree/react` (the context tree),
-    `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`,
-    `@codemirror/language`, `@codemirror/commands` and `@lezer/highlight` (E31's
-    editing slice), and later `@codemirror/merge` (the diff view), plus
-    `micromark-extension-gfm` (E29's rendered view — tables, task lists and
-    strikethrough over the `micromark` the root already carries for mind-mapper;
-    NOT a second renderer, and no sanitiser, because micromark encodes raw HTML
-    and refuses a scheme it does not allow). ⚠ `@codemirror/lang-markdown` is
-    listed above but was NOT adopted: it imports the HTML language at module
-    scope, and E31 highlights with a hand-written stream tokenizer instead — the
-    entry stays so the next reader does not re-add it without reading why.
-    Declared in `src/scriptorium/package.json` only. ⚠ `react-resizable-panels`
-    was added before this ruling was recorded — the rule's "before `bun add`"
-    was missed and is recorded here as such. The ruling is scoped to
-    scriptorium: another spell wanting one of these still needs its own.
+    for this spell"), declared in `src/scriptorium/package.json` unless noted:
+    - `react-resizable-panels` (shadcn `resizable`) — ⚠ added BEFORE this ruling
+      was recorded; the rule's "before `bun add`" was missed, and it is written
+      here rather than tidied away.
+    - `@headless-tree/core` + `@headless-tree/react` — the context tree.
+    - `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`,
+      `@codemirror/language`, `@lezer/highlight` — the editor (E31), and later
+      `@codemirror/merge` for the diff view.
+    - `micromark-extension-gfm` — E29's rendered view (tables, task lists,
+      strikethrough) over the `micromark` the ROOT already carries for
+      mind-mapper. Not a second renderer, and no sanitiser: micromark encodes
+      raw HTML and refuses a scheme it does not allow.
+    - `d3-force` — E34's physics map. Already at the ROOT for mind-mapper's
+      canvas, so no new package enters the tree.
+    - ⚠ TWO THAT ARE NOT DEPENDENCIES, and are listed so the next reader does
+      not re-add them: `@codemirror/lang-markdown` imports the HTML language at
+      module scope (which drags the JavaScript language's snippet strings into
+      the bundle, tripping import-boundary ward 1b), so E31 highlights with a
+      hand-written stream tokenizer; and `@codemirror/legacy-modes` was
+      installed for that tokenizer and REMOVED again on finding it carries 310
+      modes and no markdown.
+
+    The ruling is scoped to scriptorium: another spell wanting one of these
+    still needs its own.
 
 ### Honor the exit-code contract.
 

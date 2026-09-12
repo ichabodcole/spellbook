@@ -17485,11 +17485,11 @@ var require_with_selector = __commonJS(function(exports, module) {
 // node_modules/ms/index.js
 var require_ms = __commonJS(function(exports, module) {
   var s = 1000;
-  var m = s * 60;
-  var h = m * 60;
+  var m2 = s * 60;
+  var h = m2 * 60;
   var d = h * 24;
   var w = d * 7;
-  var y = d * 365.25;
+  var y3 = d * 365.25;
   module.exports = function(val, options) {
     options = options || {};
     var type = typeof val;
@@ -17517,7 +17517,7 @@ var require_ms = __commonJS(function(exports, module) {
       case "yrs":
       case "yr":
       case "y":
-        return n * y;
+        return n * y3;
       case "weeks":
       case "week":
       case "w":
@@ -17537,7 +17537,7 @@ var require_ms = __commonJS(function(exports, module) {
       case "mins":
       case "min":
       case "m":
-        return n * m;
+        return n * m2;
       case "seconds":
       case "second":
       case "secs":
@@ -17562,8 +17562,8 @@ var require_ms = __commonJS(function(exports, module) {
     if (msAbs >= h) {
       return Math.round(ms / h) + "h";
     }
-    if (msAbs >= m) {
-      return Math.round(ms / m) + "m";
+    if (msAbs >= m2) {
+      return Math.round(ms / m2) + "m";
     }
     if (msAbs >= s) {
       return Math.round(ms / s) + "s";
@@ -17578,8 +17578,8 @@ var require_ms = __commonJS(function(exports, module) {
     if (msAbs >= h) {
       return plural(ms, msAbs, h, "hour");
     }
-    if (msAbs >= m) {
-      return plural(ms, msAbs, m, "minute");
+    if (msAbs >= m2) {
+      return plural(ms, msAbs, m2, "minute");
     }
     if (msAbs >= s) {
       return plural(ms, msAbs, s, "second");
@@ -17638,18 +17638,18 @@ var require_common = __commonJS(function(exports, module) {
         if (typeof args[0] !== "string") {
           args.unshift("%O");
         }
-        let index3 = 0;
+        let index4 = 0;
         args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
           if (match === "%%") {
             return "%";
           }
-          index3++;
+          index4++;
           const formatter = createDebug.formatters[format];
           if (typeof formatter === "function") {
-            const val = args[index3];
+            const val = args[index4];
             match = formatter.call(self, val);
-            args.splice(index3, 1);
-            index3--;
+            args.splice(index4, 1);
+            index4--;
           }
           return match;
         });
@@ -17868,28 +17868,28 @@ var require_browser = __commonJS(function(exports, module) {
     if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
       return false;
     }
-    let m;
-    return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+    let m2;
+    return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && (m2 = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m2[1], 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
   }
   function formatArgs(args) {
     args[0] = (this.useColors ? "%c" : "") + this.namespace + (this.useColors ? " %c" : " ") + args[0] + (this.useColors ? "%c " : " ") + "+" + module.exports.humanize(this.diff);
     if (!this.useColors) {
       return;
     }
-    const c = "color: " + this.color;
-    args.splice(1, 0, c, "color: inherit");
-    let index3 = 0;
+    const c2 = "color: " + this.color;
+    args.splice(1, 0, c2, "color: inherit");
+    let index4 = 0;
     let lastC = 0;
     args[0].replace(/%[a-zA-Z%]/g, (match) => {
       if (match === "%%") {
         return;
       }
-      index3++;
+      index4++;
       if (match === "%c") {
-        lastC = index3;
+        lastC = index4;
       }
     });
-    args.splice(lastC, 0, c);
+    args.splice(lastC, 0, c2);
   }
   exports.log = console.debug || console.log || (() => {});
   function save(namespaces) {
@@ -18341,7 +18341,7 @@ var __iconNode29 = [
 ];
 var X = createLucideIcon("x", __iconNode29);
 // src/scriptorium/surface/App.tsx
-var import_react20 = __toESM(require_react(), 1);
+var import_react21 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -22690,7 +22690,7 @@ function ResizableHandle({
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
-var import_react14 = __toESM(require_react(), 1);
+var import_react15 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/context-menu/index.parts.mjs
 var exports_index_parts2 = {};
@@ -38271,7 +38271,1043 @@ function DialogRoot(props) {
   return useRenderDialogRoot(props, mode);
 }
 // src/scriptorium/surface/components/context/MapOverlay.tsx
+var import_react14 = __toESM(require_react(), 1);
+
+// node_modules/d3-force/src/center.js
+function center_default(x, y) {
+  var nodes, strength = 1;
+  if (x == null)
+    x = 0;
+  if (y == null)
+    y = 0;
+  function force() {
+    var i, n = nodes.length, node, sx = 0, sy = 0;
+    for (i = 0;i < n; ++i) {
+      node = nodes[i], sx += node.x, sy += node.y;
+    }
+    for (sx = (sx / n - x) * strength, sy = (sy / n - y) * strength, i = 0;i < n; ++i) {
+      node = nodes[i], node.x -= sx, node.y -= sy;
+    }
+  }
+  force.initialize = function(_) {
+    nodes = _;
+  };
+  force.x = function(_) {
+    return arguments.length ? (x = +_, force) : x;
+  };
+  force.y = function(_) {
+    return arguments.length ? (y = +_, force) : y;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = +_, force) : strength;
+  };
+  return force;
+}
+// node_modules/d3-quadtree/src/add.js
+function add_default(d) {
+  const x = +this._x.call(null, d), y = +this._y.call(null, d);
+  return add(this.cover(x, y), x, y, d);
+}
+function add(tree, x, y, d) {
+  if (isNaN(x) || isNaN(y))
+    return tree;
+  var parent, node = tree._root, leaf = { data: d }, x0 = tree._x0, y0 = tree._y0, x1 = tree._x1, y1 = tree._y1, xm, ym, xp, yp, right, bottom, i, j2;
+  if (!node)
+    return tree._root = leaf, tree;
+  while (node.length) {
+    if (right = x >= (xm = (x0 + x1) / 2))
+      x0 = xm;
+    else
+      x1 = xm;
+    if (bottom = y >= (ym = (y0 + y1) / 2))
+      y0 = ym;
+    else
+      y1 = ym;
+    if (parent = node, !(node = node[i = bottom << 1 | right]))
+      return parent[i] = leaf, tree;
+  }
+  xp = +tree._x.call(null, node.data);
+  yp = +tree._y.call(null, node.data);
+  if (x === xp && y === yp)
+    return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree;
+  do {
+    parent = parent ? parent[i] = new Array(4) : tree._root = new Array(4);
+    if (right = x >= (xm = (x0 + x1) / 2))
+      x0 = xm;
+    else
+      x1 = xm;
+    if (bottom = y >= (ym = (y0 + y1) / 2))
+      y0 = ym;
+    else
+      y1 = ym;
+  } while ((i = bottom << 1 | right) === (j2 = (yp >= ym) << 1 | xp >= xm));
+  return parent[j2] = node, parent[i] = leaf, tree;
+}
+function addAll(data) {
+  var d, i, n = data.length, x, y, xz = new Array(n), yz = new Array(n), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (i = 0;i < n; ++i) {
+    if (isNaN(x = +this._x.call(null, d = data[i])) || isNaN(y = +this._y.call(null, d)))
+      continue;
+    xz[i] = x;
+    yz[i] = y;
+    if (x < x0)
+      x0 = x;
+    if (x > x1)
+      x1 = x;
+    if (y < y0)
+      y0 = y;
+    if (y > y1)
+      y1 = y;
+  }
+  if (x0 > x1 || y0 > y1)
+    return this;
+  this.cover(x0, y0).cover(x1, y1);
+  for (i = 0;i < n; ++i) {
+    add(this, xz[i], yz[i], data[i]);
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/cover.js
+function cover_default(x, y) {
+  if (isNaN(x = +x) || isNaN(y = +y))
+    return this;
+  var x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1;
+  if (isNaN(x0)) {
+    x1 = (x0 = Math.floor(x)) + 1;
+    y1 = (y0 = Math.floor(y)) + 1;
+  } else {
+    var z = x1 - x0 || 1, node = this._root, parent, i;
+    while (x0 > x || x >= x1 || y0 > y || y >= y1) {
+      i = (y < y0) << 1 | x < x0;
+      parent = new Array(4), parent[i] = node, node = parent, z *= 2;
+      switch (i) {
+        case 0:
+          x1 = x0 + z, y1 = y0 + z;
+          break;
+        case 1:
+          x0 = x1 - z, y1 = y0 + z;
+          break;
+        case 2:
+          x1 = x0 + z, y0 = y1 - z;
+          break;
+        case 3:
+          x0 = x1 - z, y0 = y1 - z;
+          break;
+      }
+    }
+    if (this._root && this._root.length)
+      this._root = node;
+  }
+  this._x0 = x0;
+  this._y0 = y0;
+  this._x1 = x1;
+  this._y1 = y1;
+  return this;
+}
+
+// node_modules/d3-quadtree/src/data.js
+function data_default() {
+  var data = [];
+  this.visit(function(node) {
+    if (!node.length)
+      do
+        data.push(node.data);
+      while (node = node.next);
+  });
+  return data;
+}
+
+// node_modules/d3-quadtree/src/extent.js
+function extent_default(_) {
+  return arguments.length ? this.cover(+_[0][0], +_[0][1]).cover(+_[1][0], +_[1][1]) : isNaN(this._x0) ? undefined : [[this._x0, this._y0], [this._x1, this._y1]];
+}
+
+// node_modules/d3-quadtree/src/quad.js
+function quad_default(node, x0, y0, x1, y1) {
+  this.node = node;
+  this.x0 = x0;
+  this.y0 = y0;
+  this.x1 = x1;
+  this.y1 = y1;
+}
+
+// node_modules/d3-quadtree/src/find.js
+function find_default(x, y, radius) {
+  var data, x0 = this._x0, y0 = this._y0, x1, y1, x2, y2, x3 = this._x1, y3 = this._y1, quads = [], node = this._root, q2, i;
+  if (node)
+    quads.push(new quad_default(node, x0, y0, x3, y3));
+  if (radius == null)
+    radius = Infinity;
+  else {
+    x0 = x - radius, y0 = y - radius;
+    x3 = x + radius, y3 = y + radius;
+    radius *= radius;
+  }
+  while (q2 = quads.pop()) {
+    if (!(node = q2.node) || (x1 = q2.x0) > x3 || (y1 = q2.y0) > y3 || (x2 = q2.x1) < x0 || (y2 = q2.y1) < y0)
+      continue;
+    if (node.length) {
+      var xm = (x1 + x2) / 2, ym = (y1 + y2) / 2;
+      quads.push(new quad_default(node[3], xm, ym, x2, y2), new quad_default(node[2], x1, ym, xm, y2), new quad_default(node[1], xm, y1, x2, ym), new quad_default(node[0], x1, y1, xm, ym));
+      if (i = (y >= ym) << 1 | x >= xm) {
+        q2 = quads[quads.length - 1];
+        quads[quads.length - 1] = quads[quads.length - 1 - i];
+        quads[quads.length - 1 - i] = q2;
+      }
+    } else {
+      var dx = x - +this._x.call(null, node.data), dy = y - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
+      if (d2 < radius) {
+        var d = Math.sqrt(radius = d2);
+        x0 = x - d, y0 = y - d;
+        x3 = x + d, y3 = y + d;
+        data = node.data;
+      }
+    }
+  }
+  return data;
+}
+
+// node_modules/d3-quadtree/src/remove.js
+function remove_default(d) {
+  if (isNaN(x = +this._x.call(null, d)) || isNaN(y = +this._y.call(null, d)))
+    return this;
+  var parent, node = this._root, retainer, previous, next, x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1, x, y, xm, ym, right, bottom, i, j2;
+  if (!node)
+    return this;
+  if (node.length)
+    while (true) {
+      if (right = x >= (xm = (x0 + x1) / 2))
+        x0 = xm;
+      else
+        x1 = xm;
+      if (bottom = y >= (ym = (y0 + y1) / 2))
+        y0 = ym;
+      else
+        y1 = ym;
+      if (!(parent = node, node = node[i = bottom << 1 | right]))
+        return this;
+      if (!node.length)
+        break;
+      if (parent[i + 1 & 3] || parent[i + 2 & 3] || parent[i + 3 & 3])
+        retainer = parent, j2 = i;
+    }
+  while (node.data !== d)
+    if (!(previous = node, node = node.next))
+      return this;
+  if (next = node.next)
+    delete node.next;
+  if (previous)
+    return next ? previous.next = next : delete previous.next, this;
+  if (!parent)
+    return this._root = next, this;
+  next ? parent[i] = next : delete parent[i];
+  if ((node = parent[0] || parent[1] || parent[2] || parent[3]) && node === (parent[3] || parent[2] || parent[1] || parent[0]) && !node.length) {
+    if (retainer)
+      retainer[j2] = node;
+    else
+      this._root = node;
+  }
+  return this;
+}
+function removeAll(data) {
+  for (var i = 0, n = data.length;i < n; ++i)
+    this.remove(data[i]);
+  return this;
+}
+
+// node_modules/d3-quadtree/src/root.js
+function root_default() {
+  return this._root;
+}
+
+// node_modules/d3-quadtree/src/size.js
+function size_default() {
+  var size4 = 0;
+  this.visit(function(node) {
+    if (!node.length)
+      do
+        ++size4;
+      while (node = node.next);
+  });
+  return size4;
+}
+
+// node_modules/d3-quadtree/src/visit.js
+function visit_default(callback) {
+  var quads = [], q2, node = this._root, child, x0, y0, x1, y1;
+  if (node)
+    quads.push(new quad_default(node, this._x0, this._y0, this._x1, this._y1));
+  while (q2 = quads.pop()) {
+    if (!callback(node = q2.node, x0 = q2.x0, y0 = q2.y0, x1 = q2.x1, y1 = q2.y1) && node.length) {
+      var xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+      if (child = node[3])
+        quads.push(new quad_default(child, xm, ym, x1, y1));
+      if (child = node[2])
+        quads.push(new quad_default(child, x0, ym, xm, y1));
+      if (child = node[1])
+        quads.push(new quad_default(child, xm, y0, x1, ym));
+      if (child = node[0])
+        quads.push(new quad_default(child, x0, y0, xm, ym));
+    }
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/visitAfter.js
+function visitAfter_default(callback) {
+  var quads = [], next = [], q2;
+  if (this._root)
+    quads.push(new quad_default(this._root, this._x0, this._y0, this._x1, this._y1));
+  while (q2 = quads.pop()) {
+    var node = q2.node;
+    if (node.length) {
+      var child, x0 = q2.x0, y0 = q2.y0, x1 = q2.x1, y1 = q2.y1, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+      if (child = node[0])
+        quads.push(new quad_default(child, x0, y0, xm, ym));
+      if (child = node[1])
+        quads.push(new quad_default(child, xm, y0, x1, ym));
+      if (child = node[2])
+        quads.push(new quad_default(child, x0, ym, xm, y1));
+      if (child = node[3])
+        quads.push(new quad_default(child, xm, ym, x1, y1));
+    }
+    next.push(q2);
+  }
+  while (q2 = next.pop()) {
+    callback(q2.node, q2.x0, q2.y0, q2.x1, q2.y1);
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/x.js
+function defaultX(d) {
+  return d[0];
+}
+function x_default(_) {
+  return arguments.length ? (this._x = _, this) : this._x;
+}
+
+// node_modules/d3-quadtree/src/y.js
+function defaultY(d) {
+  return d[1];
+}
+function y_default(_) {
+  return arguments.length ? (this._y = _, this) : this._y;
+}
+
+// node_modules/d3-quadtree/src/quadtree.js
+function quadtree(nodes, x, y) {
+  var tree = new Quadtree(x == null ? defaultX : x, y == null ? defaultY : y, NaN, NaN, NaN, NaN);
+  return nodes == null ? tree : tree.addAll(nodes);
+}
+function Quadtree(x, y, x0, y0, x1, y1) {
+  this._x = x;
+  this._y = y;
+  this._x0 = x0;
+  this._y0 = y0;
+  this._x1 = x1;
+  this._y1 = y1;
+  this._root = undefined;
+}
+function leaf_copy(leaf) {
+  var copy = { data: leaf.data }, next = copy;
+  while (leaf = leaf.next)
+    next = next.next = { data: leaf.data };
+  return copy;
+}
+var treeProto = quadtree.prototype = Quadtree.prototype;
+treeProto.copy = function() {
+  var copy = new Quadtree(this._x, this._y, this._x0, this._y0, this._x1, this._y1), node = this._root, nodes, child;
+  if (!node)
+    return copy;
+  if (!node.length)
+    return copy._root = leaf_copy(node), copy;
+  nodes = [{ source: node, target: copy._root = new Array(4) }];
+  while (node = nodes.pop()) {
+    for (var i = 0;i < 4; ++i) {
+      if (child = node.source[i]) {
+        if (child.length)
+          nodes.push({ source: child, target: node.target[i] = new Array(4) });
+        else
+          node.target[i] = leaf_copy(child);
+      }
+    }
+  }
+  return copy;
+};
+treeProto.add = add_default;
+treeProto.addAll = addAll;
+treeProto.cover = cover_default;
+treeProto.data = data_default;
+treeProto.extent = extent_default;
+treeProto.find = find_default;
+treeProto.remove = remove_default;
+treeProto.removeAll = removeAll;
+treeProto.root = root_default;
+treeProto.size = size_default;
+treeProto.visit = visit_default;
+treeProto.visitAfter = visitAfter_default;
+treeProto.x = x_default;
+treeProto.y = y_default;
+// node_modules/d3-force/src/constant.js
+function constant_default(x) {
+  return function() {
+    return x;
+  };
+}
+
+// node_modules/d3-force/src/jiggle.js
+function jiggle_default(random) {
+  return (random() - 0.5) * 0.000001;
+}
+
+// node_modules/d3-force/src/collide.js
+function x(d) {
+  return d.x + d.vx;
+}
+function y(d) {
+  return d.y + d.vy;
+}
+function collide_default(radius) {
+  var nodes, radii, random, strength = 1, iterations = 1;
+  if (typeof radius !== "function")
+    radius = constant_default(radius == null ? 1 : +radius);
+  function force() {
+    var i, n = nodes.length, tree, node, xi, yi, ri, ri2;
+    for (var k = 0;k < iterations; ++k) {
+      tree = quadtree(nodes, x, y).visitAfter(prepare);
+      for (i = 0;i < n; ++i) {
+        node = nodes[i];
+        ri = radii[node.index], ri2 = ri * ri;
+        xi = node.x + node.vx;
+        yi = node.y + node.vy;
+        tree.visit(apply);
+      }
+    }
+    function apply(quad, x0, y0, x1, y1) {
+      var { data, r: rj } = quad, r2 = ri + rj;
+      if (data) {
+        if (data.index > node.index) {
+          var x2 = xi - data.x - data.vx, y2 = yi - data.y - data.vy, l = x2 * x2 + y2 * y2;
+          if (l < r2 * r2) {
+            if (x2 === 0)
+              x2 = jiggle_default(random), l += x2 * x2;
+            if (y2 === 0)
+              y2 = jiggle_default(random), l += y2 * y2;
+            l = (r2 - (l = Math.sqrt(l))) / l * strength;
+            node.vx += (x2 *= l) * (r2 = (rj *= rj) / (ri2 + rj));
+            node.vy += (y2 *= l) * r2;
+            data.vx -= x2 * (r2 = 1 - r2);
+            data.vy -= y2 * r2;
+          }
+        }
+        return;
+      }
+      return x0 > xi + r2 || x1 < xi - r2 || y0 > yi + r2 || y1 < yi - r2;
+    }
+  }
+  function prepare(quad) {
+    if (quad.data)
+      return quad.r = radii[quad.data.index];
+    for (var i = quad.r = 0;i < 4; ++i) {
+      if (quad[i] && quad[i].r > quad.r) {
+        quad.r = quad[i].r;
+      }
+    }
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i, n = nodes.length, node;
+    radii = new Array(n);
+    for (i = 0;i < n; ++i)
+      node = nodes[i], radii[node.index] = +radius(node, i, nodes);
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.iterations = function(_) {
+    return arguments.length ? (iterations = +_, force) : iterations;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = +_, force) : strength;
+  };
+  force.radius = function(_) {
+    return arguments.length ? (radius = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius;
+  };
+  return force;
+}
+// node_modules/d3-force/src/link.js
+function index3(d) {
+  return d.index;
+}
+function find(nodeById, nodeId) {
+  var node = nodeById.get(nodeId);
+  if (!node)
+    throw new Error("node not found: " + nodeId);
+  return node;
+}
+function link_default(links) {
+  var id = index3, strength = defaultStrength, strengths, distance = constant_default(30), distances, nodes, count, bias, random, iterations = 1;
+  if (links == null)
+    links = [];
+  function defaultStrength(link) {
+    return 1 / Math.min(count[link.source.index], count[link.target.index]);
+  }
+  function force(alpha) {
+    for (var k = 0, n = links.length;k < iterations; ++k) {
+      for (var i = 0, link, source, target, x2, y2, l, b;i < n; ++i) {
+        link = links[i], source = link.source, target = link.target;
+        x2 = target.x + target.vx - source.x - source.vx || jiggle_default(random);
+        y2 = target.y + target.vy - source.y - source.vy || jiggle_default(random);
+        l = Math.sqrt(x2 * x2 + y2 * y2);
+        l = (l - distances[i]) / l * alpha * strengths[i];
+        x2 *= l, y2 *= l;
+        target.vx -= x2 * (b = bias[i]);
+        target.vy -= y2 * b;
+        source.vx += x2 * (b = 1 - b);
+        source.vy += y2 * b;
+      }
+    }
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i, n = nodes.length, m = links.length, nodeById = new Map(nodes.map((d, i2) => [id(d, i2, nodes), d])), link;
+    for (i = 0, count = new Array(n);i < m; ++i) {
+      link = links[i], link.index = i;
+      if (typeof link.source !== "object")
+        link.source = find(nodeById, link.source);
+      if (typeof link.target !== "object")
+        link.target = find(nodeById, link.target);
+      count[link.source.index] = (count[link.source.index] || 0) + 1;
+      count[link.target.index] = (count[link.target.index] || 0) + 1;
+    }
+    for (i = 0, bias = new Array(m);i < m; ++i) {
+      link = links[i], bias[i] = count[link.source.index] / (count[link.source.index] + count[link.target.index]);
+    }
+    strengths = new Array(m), initializeStrength();
+    distances = new Array(m), initializeDistance();
+  }
+  function initializeStrength() {
+    if (!nodes)
+      return;
+    for (var i = 0, n = links.length;i < n; ++i) {
+      strengths[i] = +strength(links[i], i, links);
+    }
+  }
+  function initializeDistance() {
+    if (!nodes)
+      return;
+    for (var i = 0, n = links.length;i < n; ++i) {
+      distances[i] = +distance(links[i], i, links);
+    }
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.links = function(_) {
+    return arguments.length ? (links = _, initialize(), force) : links;
+  };
+  force.id = function(_) {
+    return arguments.length ? (id = _, force) : id;
+  };
+  force.iterations = function(_) {
+    return arguments.length ? (iterations = +_, force) : iterations;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initializeStrength(), force) : strength;
+  };
+  force.distance = function(_) {
+    return arguments.length ? (distance = typeof _ === "function" ? _ : constant_default(+_), initializeDistance(), force) : distance;
+  };
+  return force;
+}
+// node_modules/d3-dispatch/src/dispatch.js
+var noop4 = { value: () => {} };
+function dispatch() {
+  for (var i = 0, n = arguments.length, _ = {}, t;i < n; ++i) {
+    if (!(t = arguments[i] + "") || t in _ || /[\s.]/.test(t))
+      throw new Error("illegal type: " + t);
+    _[t] = [];
+  }
+  return new Dispatch(_);
+}
+function Dispatch(_) {
+  this._ = _;
+}
+function parseTypenames(typenames, types) {
+  return typenames.trim().split(/^|\s+/).map(function(t) {
+    var name = "", i = t.indexOf(".");
+    if (i >= 0)
+      name = t.slice(i + 1), t = t.slice(0, i);
+    if (t && !types.hasOwnProperty(t))
+      throw new Error("unknown type: " + t);
+    return { type: t, name };
+  });
+}
+Dispatch.prototype = dispatch.prototype = {
+  constructor: Dispatch,
+  on: function(typename, callback) {
+    var _ = this._, T2 = parseTypenames(typename + "", _), t, i = -1, n = T2.length;
+    if (arguments.length < 2) {
+      while (++i < n)
+        if ((t = (typename = T2[i]).type) && (t = get(_[t], typename.name)))
+          return t;
+      return;
+    }
+    if (callback != null && typeof callback !== "function")
+      throw new Error("invalid callback: " + callback);
+    while (++i < n) {
+      if (t = (typename = T2[i]).type)
+        _[t] = set3(_[t], typename.name, callback);
+      else if (callback == null)
+        for (t in _)
+          _[t] = set3(_[t], typename.name, null);
+    }
+    return this;
+  },
+  copy: function() {
+    var copy = {}, _ = this._;
+    for (var t in _)
+      copy[t] = _[t].slice();
+    return new Dispatch(copy);
+  },
+  call: function(type, that) {
+    if ((n = arguments.length - 2) > 0)
+      for (var args = new Array(n), i = 0, n, t;i < n; ++i)
+        args[i] = arguments[i + 2];
+    if (!this._.hasOwnProperty(type))
+      throw new Error("unknown type: " + type);
+    for (t = this._[type], i = 0, n = t.length;i < n; ++i)
+      t[i].value.apply(that, args);
+  },
+  apply: function(type, that, args) {
+    if (!this._.hasOwnProperty(type))
+      throw new Error("unknown type: " + type);
+    for (var t = this._[type], i = 0, n = t.length;i < n; ++i)
+      t[i].value.apply(that, args);
+  }
+};
+function get(type, name) {
+  for (var i = 0, n = type.length, c;i < n; ++i) {
+    if ((c = type[i]).name === name) {
+      return c.value;
+    }
+  }
+}
+function set3(type, name, callback) {
+  for (var i = 0, n = type.length;i < n; ++i) {
+    if (type[i].name === name) {
+      type[i] = noop4, type = type.slice(0, i).concat(type.slice(i + 1));
+      break;
+    }
+  }
+  if (callback != null)
+    type.push({ name, value: callback });
+  return type;
+}
+var dispatch_default = dispatch;
+// node_modules/d3-timer/src/timer.js
+var frame = 0;
+var timeout = 0;
+var interval = 0;
+var pokeDelay = 1000;
+var taskHead;
+var taskTail;
+var clockLast = 0;
+var clockNow = 0;
+var clockSkew = 0;
+var clock = typeof performance === "object" && performance.now ? performance : Date;
+var setFrame = typeof window === "object" && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function(f) {
+  setTimeout(f, 17);
+};
+function now() {
+  return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
+}
+function clearNow() {
+  clockNow = 0;
+}
+function Timer() {
+  this._call = this._time = this._next = null;
+}
+Timer.prototype = timer.prototype = {
+  constructor: Timer,
+  restart: function(callback, delay, time) {
+    if (typeof callback !== "function")
+      throw new TypeError("callback is not a function");
+    time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
+    if (!this._next && taskTail !== this) {
+      if (taskTail)
+        taskTail._next = this;
+      else
+        taskHead = this;
+      taskTail = this;
+    }
+    this._call = callback;
+    this._time = time;
+    sleep();
+  },
+  stop: function() {
+    if (this._call) {
+      this._call = null;
+      this._time = Infinity;
+      sleep();
+    }
+  }
+};
+function timer(callback, delay, time) {
+  var t = new Timer;
+  t.restart(callback, delay, time);
+  return t;
+}
+function timerFlush() {
+  now();
+  ++frame;
+  var t = taskHead, e;
+  while (t) {
+    if ((e = clockNow - t._time) >= 0)
+      t._call.call(undefined, e);
+    t = t._next;
+  }
+  --frame;
+}
+function wake() {
+  clockNow = (clockLast = clock.now()) + clockSkew;
+  frame = timeout = 0;
+  try {
+    timerFlush();
+  } finally {
+    frame = 0;
+    nap();
+    clockNow = 0;
+  }
+}
+function poke() {
+  var now2 = clock.now(), delay = now2 - clockLast;
+  if (delay > pokeDelay)
+    clockSkew -= delay, clockLast = now2;
+}
+function nap() {
+  var t0, t1 = taskHead, t2, time = Infinity;
+  while (t1) {
+    if (t1._call) {
+      if (time > t1._time)
+        time = t1._time;
+      t0 = t1, t1 = t1._next;
+    } else {
+      t2 = t1._next, t1._next = null;
+      t1 = t0 ? t0._next = t2 : taskHead = t2;
+    }
+  }
+  taskTail = t0;
+  sleep(time);
+}
+function sleep(time) {
+  if (frame)
+    return;
+  if (timeout)
+    timeout = clearTimeout(timeout);
+  var delay = time - clockNow;
+  if (delay > 24) {
+    if (time < Infinity)
+      timeout = setTimeout(wake, time - clock.now() - clockSkew);
+    if (interval)
+      interval = clearInterval(interval);
+  } else {
+    if (!interval)
+      clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
+    frame = 1, setFrame(wake);
+  }
+}
+// node_modules/d3-force/src/lcg.js
+var a = 1664525;
+var c = 1013904223;
+var m = 4294967296;
+function lcg_default() {
+  let s = 1;
+  return () => (s = (a * s + c) % m) / m;
+}
+
+// node_modules/d3-force/src/simulation.js
+function x2(d) {
+  return d.x;
+}
+function y2(d) {
+  return d.y;
+}
+var initialRadius = 10;
+var initialAngle = Math.PI * (3 - Math.sqrt(5));
+function simulation_default(nodes) {
+  var simulation, alpha = 1, alphaMin = 0.001, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = new Map, stepper = timer(step), event = dispatch_default("tick", "end"), random = lcg_default();
+  if (nodes == null)
+    nodes = [];
+  function step() {
+    tick();
+    event.call("tick", simulation);
+    if (alpha < alphaMin) {
+      stepper.stop();
+      event.call("end", simulation);
+    }
+  }
+  function tick(iterations) {
+    var i, n = nodes.length, node;
+    if (iterations === undefined)
+      iterations = 1;
+    for (var k = 0;k < iterations; ++k) {
+      alpha += (alphaTarget - alpha) * alphaDecay;
+      forces.forEach(function(force) {
+        force(alpha);
+      });
+      for (i = 0;i < n; ++i) {
+        node = nodes[i];
+        if (node.fx == null)
+          node.x += node.vx *= velocityDecay;
+        else
+          node.x = node.fx, node.vx = 0;
+        if (node.fy == null)
+          node.y += node.vy *= velocityDecay;
+        else
+          node.y = node.fy, node.vy = 0;
+      }
+    }
+    return simulation;
+  }
+  function initializeNodes() {
+    for (var i = 0, n = nodes.length, node;i < n; ++i) {
+      node = nodes[i], node.index = i;
+      if (node.fx != null)
+        node.x = node.fx;
+      if (node.fy != null)
+        node.y = node.fy;
+      if (isNaN(node.x) || isNaN(node.y)) {
+        var radius = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
+        node.x = radius * Math.cos(angle);
+        node.y = radius * Math.sin(angle);
+      }
+      if (isNaN(node.vx) || isNaN(node.vy)) {
+        node.vx = node.vy = 0;
+      }
+    }
+  }
+  function initializeForce(force) {
+    if (force.initialize)
+      force.initialize(nodes, random);
+    return force;
+  }
+  initializeNodes();
+  return simulation = {
+    tick,
+    restart: function() {
+      return stepper.restart(step), simulation;
+    },
+    stop: function() {
+      return stepper.stop(), simulation;
+    },
+    nodes: function(_) {
+      return arguments.length ? (nodes = _, initializeNodes(), forces.forEach(initializeForce), simulation) : nodes;
+    },
+    alpha: function(_) {
+      return arguments.length ? (alpha = +_, simulation) : alpha;
+    },
+    alphaMin: function(_) {
+      return arguments.length ? (alphaMin = +_, simulation) : alphaMin;
+    },
+    alphaDecay: function(_) {
+      return arguments.length ? (alphaDecay = +_, simulation) : +alphaDecay;
+    },
+    alphaTarget: function(_) {
+      return arguments.length ? (alphaTarget = +_, simulation) : alphaTarget;
+    },
+    velocityDecay: function(_) {
+      return arguments.length ? (velocityDecay = 1 - _, simulation) : 1 - velocityDecay;
+    },
+    randomSource: function(_) {
+      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation) : random;
+    },
+    force: function(name, _) {
+      return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
+    },
+    find: function(x3, y3, radius) {
+      var i = 0, n = nodes.length, dx, dy, d2, node, closest;
+      if (radius == null)
+        radius = Infinity;
+      else
+        radius *= radius;
+      for (i = 0;i < n; ++i) {
+        node = nodes[i];
+        dx = x3 - node.x;
+        dy = y3 - node.y;
+        d2 = dx * dx + dy * dy;
+        if (d2 < radius)
+          closest = node, radius = d2;
+      }
+      return closest;
+    },
+    on: function(name, _) {
+      return arguments.length > 1 ? (event.on(name, _), simulation) : event.on(name);
+    }
+  };
+}
+
+// node_modules/d3-force/src/manyBody.js
+function manyBody_default() {
+  var nodes, node, random, alpha, strength = constant_default(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
+  function force(_) {
+    var i, n = nodes.length, tree = quadtree(nodes, x2, y2).visitAfter(accumulate);
+    for (alpha = _, i = 0;i < n; ++i)
+      node = nodes[i], tree.visit(apply);
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i, n = nodes.length, node2;
+    strengths = new Array(n);
+    for (i = 0;i < n; ++i)
+      node2 = nodes[i], strengths[node2.index] = +strength(node2, i, nodes);
+  }
+  function accumulate(quad) {
+    var strength2 = 0, q2, c2, weight = 0, x3, y3, i;
+    if (quad.length) {
+      for (x3 = y3 = i = 0;i < 4; ++i) {
+        if ((q2 = quad[i]) && (c2 = Math.abs(q2.value))) {
+          strength2 += q2.value, weight += c2, x3 += c2 * q2.x, y3 += c2 * q2.y;
+        }
+      }
+      quad.x = x3 / weight;
+      quad.y = y3 / weight;
+    } else {
+      q2 = quad;
+      q2.x = q2.data.x;
+      q2.y = q2.data.y;
+      do
+        strength2 += strengths[q2.data.index];
+      while (q2 = q2.next);
+    }
+    quad.value = strength2;
+  }
+  function apply(quad, x1, _, x22) {
+    if (!quad.value)
+      return true;
+    var x3 = quad.x - node.x, y3 = quad.y - node.y, w = x22 - x1, l = x3 * x3 + y3 * y3;
+    if (w * w / theta2 < l) {
+      if (l < distanceMax2) {
+        if (x3 === 0)
+          x3 = jiggle_default(random), l += x3 * x3;
+        if (y3 === 0)
+          y3 = jiggle_default(random), l += y3 * y3;
+        if (l < distanceMin2)
+          l = Math.sqrt(distanceMin2 * l);
+        node.vx += x3 * quad.value * alpha / l;
+        node.vy += y3 * quad.value * alpha / l;
+      }
+      return true;
+    } else if (quad.length || l >= distanceMax2)
+      return;
+    if (quad.data !== node || quad.next) {
+      if (x3 === 0)
+        x3 = jiggle_default(random), l += x3 * x3;
+      if (y3 === 0)
+        y3 = jiggle_default(random), l += y3 * y3;
+      if (l < distanceMin2)
+        l = Math.sqrt(distanceMin2 * l);
+    }
+    do
+      if (quad.data !== node) {
+        w = strengths[quad.data.index] * alpha / l;
+        node.vx += x3 * w;
+        node.vy += y3 * w;
+      }
+    while (quad = quad.next);
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
+  };
+  force.distanceMin = function(_) {
+    return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
+  };
+  force.distanceMax = function(_) {
+    return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
+  };
+  force.theta = function(_) {
+    return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
+  };
+  return force;
+}
+// src/scriptorium/surface/components/context/forceLayout.ts
 var import_react13 = __toESM(require_react(), 1);
+var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
+function useForceLayout(nodes, edges, size4, enabled) {
+  const [positions, setPositions] = import_react13.useState(new Map);
+  const sim = import_react13.useRef(null);
+  const bodies = import_react13.useRef(new Map);
+  const [dragging, setDragging] = import_react13.useState(null);
+  import_react13.useEffect(() => {
+    if (!enabled || nodes.length === 0) {
+      sim.current?.stop();
+      sim.current = null;
+      return;
+    }
+    const previous = bodies.current;
+    const list = nodes.map((n) => ({ id: n.path, ...previous.get(n.path) ?? {} }));
+    bodies.current = new Map(list.map((b) => [b.id, b]));
+    const ids = new Set(list.map((b) => b.id));
+    const springs = edges.filter((e) => ids.has(e.from) && ids.has(e.to)).map((e) => ({ source: e.from, target: e.to }));
+    const simulation = simulation_default(list).force("charge", manyBody_default().strength(-520)).force("link", link_default(springs).id((d) => d.id).distance(150).strength(0.14)).force("center", center_default(size4.width / 2, size4.height / 2)).force("collide", collide_default().radius((d) => {
+      const n = nodes.find((x3) => x3.path === d.id);
+      return bodyRadius(n?.linksIn ?? 0) + 34;
+    }));
+    simulation.on("tick", () => {
+      setPositions(new Map(list.map((b) => [b.id, { x: b.x ?? 0, y: b.y ?? 0 }])));
+    });
+    sim.current = simulation;
+    return () => {
+      simulation.stop();
+    };
+  }, [nodes, edges, size4.width, size4.height, enabled]);
+  const onDragStart = import_react13.useCallback((path, at2) => {
+    const body = bodies.current.get(path);
+    if (!body)
+      return;
+    setDragging(path);
+    body.fx = at2.x;
+    body.fy = at2.y;
+    sim.current?.alphaTarget(0.3).restart();
+  }, []);
+  const onDragMove = import_react13.useCallback((at2) => {
+    if (!dragging)
+      return;
+    const body = bodies.current.get(dragging);
+    if (!body)
+      return;
+    body.fx = at2.x;
+    body.fy = at2.y;
+  }, [dragging]);
+  const onDragEnd = import_react13.useCallback(() => {
+    if (!dragging)
+      return;
+    const body = bodies.current.get(dragging);
+    if (body) {
+      body.fx = null;
+      body.fy = null;
+    }
+    sim.current?.alphaTarget(0);
+    setDragging(null);
+  }, [dragging]);
+  return { positions, onDragStart, onDragMove, onDragEnd, dragging };
+}
+
+// src/scriptorium/surface/components/context/MapOverlay.tsx
 var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 var NODE_W = 168;
 var NODE_H = 34;
@@ -38290,35 +39326,35 @@ function layout(nodes) {
     list.push(n);
     byType.set(key, list);
   }
-  const columns = [...byType.entries()].sort((a, b) => b[1].length - a[1].length);
+  const columns = [...byType.entries()].sort((a2, b) => b[1].length - a2[1].length);
   const placed = [];
-  let x = PAD;
+  let x3 = PAD;
   let height = 0;
   for (const [type, list] of columns) {
-    const sorted = [...list].sort((a, b) => b.linksIn - a.linksIn || a.title.localeCompare(b.title));
+    const sorted = [...list].sort((a2, b) => b.linksIn - a2.linksIn || a2.title.localeCompare(b.title));
     const rows = Math.min(sorted.length, COLUMN_ROWS);
     sorted.forEach((n, i) => {
       const sub = Math.floor(i / COLUMN_ROWS);
       placed.push({
         ...n,
-        x: x + sub * (NODE_W + SUB_GAP),
+        x: x3 + sub * (NODE_W + SUB_GAP),
         y: PAD + 28 + i % COLUMN_ROWS * (NODE_H + ROW_GAP),
         column: type
       });
     });
     height = Math.max(height, PAD + 28 + rows * (NODE_H + ROW_GAP));
     const subs = Math.ceil(sorted.length / COLUMN_ROWS);
-    x += subs * NODE_W + (subs - 1) * SUB_GAP + COL_GAP;
+    x3 += subs * NODE_W + (subs - 1) * SUB_GAP + COL_GAP;
   }
-  return { placed, width: x - COL_GAP + PAD, height: height + PAD };
+  return { placed, width: x3 - COL_GAP + PAD, height: height + PAD };
 }
-function edgePath(a, b) {
-  const x1 = a.x + NODE_W;
-  const y1 = a.y + NODE_H / 2;
-  const x2 = b.x;
-  const y2 = b.y + NODE_H / 2;
-  const dx = Math.max(40, Math.abs(x2 - x1) / 2);
-  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+function edgePath(a2, b) {
+  const x1 = a2.x + NODE_W;
+  const y1 = a2.y + NODE_H / 2;
+  const x22 = b.x;
+  const y22 = b.y + NODE_H / 2;
+  const dx = Math.max(40, Math.abs(x22 - x1) / 2);
+  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x22 - dx} ${y22}, ${x22} ${y22}`;
 }
 function MapOverlay({
   graph,
@@ -38327,14 +39363,30 @@ function MapOverlay({
   onOpenChange,
   onOpenDoc
 }) {
-  const [hover, setHover] = import_react13.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react13.useState(null);
-  const { placed, width, height } = import_react13.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0 }, [graph]);
-  const at2 = import_react13.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react13.useMemo(() => (graph?.edges ?? []).filter((e) => e.state === "in-bundle" && at2.has(e.from) && at2.has(e.to)), [graph, at2]);
+  const [hover, setHover] = import_react14.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react14.useState(null);
+  const [mode, setMode] = import_react14.useState("columns");
+  const { placed, width, height } = import_react14.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0 }, [graph]);
+  const at2 = import_react14.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react14.useMemo(() => (graph?.edges ?? []).filter((e) => e.state === "in-bundle" && at2.has(e.from) && at2.has(e.to)), [graph, at2]);
   const leaving = (graph?.edges ?? []).filter((e) => e.state === "outside").length;
   const dense = drawn.length > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
+  const connected = import_react14.useMemo(() => {
+    if (!hover)
+      return null;
+    const set4 = new Set([hover]);
+    for (const e of drawn) {
+      if (e.from === hover)
+        set4.add(e.to);
+      if (e.to === hover)
+        set4.add(e.from);
+    }
+    return set4;
+  }, [hover, drawn]);
+  const lit = (path) => connected === null || connected.has(path);
+  const forceSize = { width: 1500, height: 1000 };
+  const force = useForceLayout(import_react14.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react14.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force" && open);
   const openAndClose = (path) => {
     onOpenDoc(path);
     onOpenChange(false);
@@ -38372,8 +39424,20 @@ function MapOverlay({
                     graph.nodes.length > DRAW_CAP && ` · drawing the first ${DRAW_CAP}`
                   ]
                 }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+                  role: "toolbar",
+                  "aria-label": "How to lay the map out",
+                  className: "ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
+                  children: ["columns", "force"].map((m2) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
+                    type: "button",
+                    onClick: () => setMode(m2),
+                    "aria-pressed": mode === m2,
+                    className: cn("rounded-sm px-2 py-0.5 text-[11px] text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", mode === m2 && "bg-bg text-ink shadow-sm"),
+                    children: m2 === "columns" ? "columns" : "physics"
+                  }, m2, false, undefined, this))
+                }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(exports_index_parts5.Close, {
-                  className: "ml-auto rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
+                  className: "rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
                   children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {
                     className: "size-4"
                   }, undefined, false, undefined, this)
@@ -38388,6 +39452,16 @@ function MapOverlay({
               }, undefined, false, undefined, this) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("p", {
                 className: "p-6 text-sm text-ink-dim",
                 children: "This set has no documents to map."
+              }, undefined, false, undefined, this) : mode === "force" ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(ForceCanvas, {
+                graph,
+                edges: drawn,
+                size: forceSize,
+                force,
+                hover,
+                onHover: setHover,
+                lit,
+                showAll,
+                onOpen: openAndClose
               }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("svg", {
                 width,
                 height,
@@ -38403,16 +39477,16 @@ function MapOverlay({
                     ]
                   }, undefined, true, undefined, this),
                   drawn.map((e, i) => {
-                    const a = at2.get(e.from);
+                    const a2 = at2.get(e.from);
                     const b = at2.get(e.to);
-                    if (!a || !b)
+                    if (!a2 || !b)
                       return null;
                     const touching = hover === e.from || hover === e.to;
-                    const lit = touching || showAll && hover === null;
-                    if (!lit && !showAll)
+                    const lit2 = touching || showAll && hover === null;
+                    if (!lit2 && !showAll)
                       return null;
                     return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("path", {
-                      d: edgePath(a, b),
+                      d: edgePath(a2, b),
                       fill: "none",
                       stroke: e.source === "frontmatter" ? "var(--color-rubric)" : "var(--color-ink-faint)",
                       strokeWidth: touching ? 1.6 : 1,
@@ -38447,7 +39521,8 @@ function MapOverlay({
                     role: "button",
                     tabIndex: 0,
                     "aria-label": `${n.title} — ${n.status}, ${n.linksIn} citations`,
-                    className: "cursor-pointer outline-none focus-visible:[&>rect]:stroke-rubric",
+                    opacity: lit(n.path) ? 1 : 0.22,
+                    className: "cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-rubric",
                     children: [
                       /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("title", {
                         children: [
@@ -38568,6 +39643,117 @@ function MapOverlay({
     }, undefined, true, undefined, this)
   }, undefined, false, undefined, this);
 }
+function ForceCanvas({
+  graph,
+  edges,
+  size: size4,
+  force,
+  hover,
+  onHover,
+  lit,
+  showAll,
+  onOpen
+}) {
+  const svg = import_react14.useRef(null);
+  const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
+  const at2 = (e) => {
+    const box = svg.current?.getBoundingClientRect();
+    return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
+  };
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("svg", {
+    ref: svg,
+    width: size4.width,
+    height: size4.height,
+    role: "img",
+    "aria-label": `${graph.nodes.length} documents, arranged by their links`,
+    onPointerMove: (e) => dragging && onDragMove(at2(e)),
+    onPointerUp: onDragEnd,
+    onPointerLeave: onDragEnd,
+    className: dragging ? "cursor-grabbing" : undefined,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("title", {
+        children: [
+          graph.nodes.length,
+          " documents, arranged by their links"
+        ]
+      }, undefined, true, undefined, this),
+      edges.map((e, i) => {
+        const a2 = positions.get(e.from);
+        const b = positions.get(e.to);
+        if (!a2 || !b)
+          return null;
+        const touching = hover === e.from || hover === e.to;
+        if (!touching && !showAll)
+          return null;
+        return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("line", {
+          x1: a2.x,
+          y1: a2.y,
+          x2: b.x,
+          y2: b.y,
+          stroke: e.source === "frontmatter" ? "var(--color-rubric)" : "var(--color-ink-faint)",
+          strokeWidth: touching ? 1.6 : 1,
+          strokeDasharray: e.source === "frontmatter" ? "4 3" : undefined,
+          opacity: touching ? 0.95 : 0.14
+        }, `${e.from}->${e.to}:${i}`, false, undefined, this);
+      }),
+      [...graph.nodes].sort((a2, b) => (a2.path === hover ? 1 : 0) - (b.path === hover ? 1 : 0)).map((n) => {
+        const p = positions.get(n.path);
+        if (!p)
+          return null;
+        const r2 = bodyRadius(n.linksIn);
+        return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("g", {
+          transform: `translate(${p.x}, ${p.y})`,
+          role: "button",
+          tabIndex: 0,
+          "aria-label": `${n.title} — ${n.status}, ${n.linksIn} citations`,
+          opacity: lit(n.path) ? 1 : 0.18,
+          onPointerDown: (e) => {
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+            onDragStart(n.path, at2(e));
+          },
+          onPointerEnter: () => onHover(n.path),
+          onPointerLeave: () => onHover(null),
+          onFocus: () => onHover(n.path),
+          onBlur: () => onHover(null),
+          onDoubleClick: () => onOpen(n.path),
+          onKeyDown: (e) => {
+            if (e.key !== "Enter" && e.key !== " ")
+              return;
+            e.preventDefault();
+            onOpen(n.path);
+          },
+          className: "cursor-grab outline-none transition-opacity",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("title", {
+              children: [
+                n.rel,
+                " · ",
+                n.status,
+                n.stale ? " · stale" : "",
+                " · ",
+                n.linksIn,
+                " in, ",
+                n.linksOut,
+                " out"
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("circle", {
+              r: r2,
+              className: cn("stroke-edge", n.stale || n.status === "draft" ? "fill-attention" : n.status === "deprecated" ? "fill-danger" : hover === n.path ? "fill-rubric" : "fill-ink-faint"),
+              strokeWidth: hover === n.path ? 2 : 1
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("text", {
+              x: r2 + 5,
+              y: 4,
+              className: cn("text-[11px]", hover === n.path ? "fill-ink" : "fill-ink-dim"),
+              children: n.title.length > 28 ? `${n.title.slice(0, 27)}…` : n.title
+            }, undefined, false, undefined, this)
+          ]
+        }, n.path, true, undefined, this);
+      })
+    ]
+  }, undefined, true, undefined, this);
+}
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
 var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
@@ -38614,18 +39800,18 @@ function ContextSidebar({
   notice,
   onDismissNotice
 }) {
-  const [drilled, setDrilled] = import_react14.useState(null);
+  const [drilled, setDrilled] = import_react15.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
-  const [renamePath, setRenamePath] = import_react14.useState(null);
-  const [localNotice, setLocalNotice] = import_react14.useState(null);
-  const [editingWorkspace, setEditingWorkspace] = import_react14.useState(false);
-  import_react14.useEffect(() => {
+  const [renamePath, setRenamePath] = import_react15.useState(null);
+  const [localNotice, setLocalNotice] = import_react15.useState(null);
+  const [editingWorkspace, setEditingWorkspace] = import_react15.useState(false);
+  import_react15.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  const entriesRef = import_react14.useRef(entries);
+  const entriesRef = import_react15.useRef(entries);
   entriesRef.current = entries;
-  import_react14.useEffect(() => {
+  import_react15.useEffect(() => {
     if (!created)
       return;
     const all = entriesRef.current;
@@ -38636,9 +39822,9 @@ function ContextSidebar({
       setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
-  const renameStarted = import_react14.useCallback(() => setRenamePath(null), []);
-  const moveTargetsFor = import_react14.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
-  const importFiles = import_react14.useCallback((dt, into) => {
+  const renameStarted = import_react15.useCallback(() => setRenamePath(null), []);
+  const moveTargetsFor = import_react15.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
+  const importFiles = import_react15.useCallback((dt, into) => {
     const { files, folders } = droppedFiles(dt);
     const { docs, skipped } = splitDropped(files);
     for (const i of docs) {
@@ -38652,8 +39838,8 @@ function ContextSidebar({
       said.push(`Folders are not copied (${folders.join(", ")}) — add a folder by path below to link it.`);
     setLocalNotice(said.length ? said.join(" ") : null);
   }, [onStructure]);
-  const [mapping, setMapping] = import_react14.useState(null);
-  const showMap = import_react14.useCallback(async (entry) => {
+  const [mapping, setMapping] = import_react15.useState(null);
+  const showMap = import_react15.useCallback(async (entry) => {
     setMapping({ entry, graph: null });
     const result = await mapOf(entry.id);
     setMapping((current) => current?.entry.id === entry.id ? { entry, graph: result } : current);
@@ -38661,7 +39847,7 @@ function ContextSidebar({
       setLocalNotice(result.error);
   }, [mapOf]);
   const { confirm, dialog } = useConfirm();
-  const requestMove = import_react14.useCallback(async (path, into) => {
+  const requestMove = import_react15.useCallback(async (path, into) => {
     const { plan, error: error2 } = await planMove(path, into);
     if (!plan) {
       setLocalNotice(error2 ?? "that move could not be checked");
@@ -38841,7 +40027,7 @@ function RenameBox({
   initial: initial2,
   onDone
 }) {
-  const [value, setValue] = import_react14.useState(initial2);
+  const [value, setValue] = import_react15.useState(initial2);
   return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("input", {
     value,
     onChange: (e) => setValue(e.target.value),
@@ -38880,10 +40066,10 @@ function ListView({
   metaFor,
   onShowMap
 }) {
-  const [menuFor, setMenuFor] = import_react14.useState(null);
-  const [renaming, setRenaming] = import_react14.useState(null);
-  const [dropOn, setDropOn] = import_react14.useState(null);
-  import_react14.useEffect(() => {
+  const [menuFor, setMenuFor] = import_react15.useState(null);
+  const [renaming, setRenaming] = import_react15.useState(null);
+  const [dropOn, setDropOn] = import_react15.useState(null);
+  import_react15.useEffect(() => {
     if (!renamePath)
       return;
     if (entries.some((e) => entryPath(e) === renamePath)) {
@@ -39260,21 +40446,21 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react18 = __toESM(require_react(), 1);
+var import_react19 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/state/stats.ts
 function contentStats(text) {
   const trimmed = text.trim();
   return { words: trimmed === "" ? 0 : trimmed.split(/\s+/).length, characters: text.length };
 }
-function relativeTime(ts, now) {
-  const s = Math.max(0, Math.round((now - ts) / 1000));
+function relativeTime(ts, now2) {
+  const s = Math.max(0, Math.round((now2 - ts) / 1000));
   if (s < 45)
     return "just now";
-  const m = Math.round(s / 60);
-  if (m < 60)
-    return `${m} min ago`;
-  const h = Math.round(m / 60);
+  const m2 = Math.round(s / 60);
+  if (m2 < 60)
+    return `${m2} min ago`;
+  const h = Math.round(m2 / 60);
   if (h < 24)
     return `${h} h ago`;
   return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -39402,15 +40588,15 @@ class Text {
     if (other.length != this.length || other.lines != this.lines)
       return false;
     let start = this.scanIdentical(other, 1), end = this.length - this.scanIdentical(other, -1);
-    let a = new RawTextCursor(this), b = new RawTextCursor(other);
+    let a2 = new RawTextCursor(this), b = new RawTextCursor(other);
     for (let skip = start, pos = start;; ) {
-      a.next(skip);
+      a2.next(skip);
       b.next(skip);
       skip = 0;
-      if (a.lineBreak != b.lineBreak || a.done != b.done || a.value != b.value)
+      if (a2.lineBreak != b.lineBreak || a2.done != b.done || a2.value != b.value)
         return false;
-      pos += a.value.length;
-      if (a.done || pos >= end)
+      pos += a2.value.length;
+      if (a2.done || pos >= end)
         return true;
     }
   }
@@ -39628,11 +40814,11 @@ class TextNode extends Text {
     }
     let chunk = Math.max(32, lines >> 5), maxChunk = chunk << 1, minChunk = chunk >> 1;
     let chunked = [], currentLines = 0, currentLen = -1, currentChunk = [];
-    function add(child) {
+    function add2(child) {
       let last;
       if (child.lines > maxChunk && child instanceof TextNode) {
         for (let node of child.children)
-          add(node);
+          add2(node);
       } else if (child.lines > minChunk && (currentLines > minChunk || !currentLines)) {
         flush();
         chunked.push(child);
@@ -39656,7 +40842,7 @@ class TextNode extends Text {
       currentLines = currentChunk.length = 0;
     }
     for (let child of children)
-      add(child);
+      add2(child);
     flush();
     return chunked.length == 1 ? chunked[0] : new TextNode(chunked, length);
   }
@@ -39974,7 +41160,7 @@ class ChangeDesc {
     return this.sections;
   }
   static fromJSON(json) {
-    if (!Array.isArray(json) || json.length % 2 || json.some((a) => typeof a != "number"))
+    if (!Array.isArray(json) || json.length % 2 || json.some((a2) => typeof a2 != "number"))
       throw new RangeError("Invalid JSON representation of ChangeDesc");
     return new ChangeDesc(json);
   }
@@ -40004,8 +41190,8 @@ class ChangeSet extends ChangeDesc {
       if (ins >= 0) {
         sections[i] = ins;
         sections[i + 1] = len;
-        let index3 = i >> 1;
-        while (inserted.length < index3)
+        let index4 = i >> 1;
+        while (inserted.length < index4)
           inserted.push(Text.empty);
         inserted.push(len ? doc.slice(pos, pos + len) : Text.empty);
       }
@@ -40080,8 +41266,8 @@ class ChangeSet extends ChangeDesc {
         return;
       if (pos < length)
         addSection(sections, length - pos, -1);
-      let set3 = new ChangeSet(sections, inserted);
-      total = total ? total.compose(set3.map(total)) : set3;
+      let set4 = new ChangeSet(sections, inserted);
+      total = total ? total.compose(set4.map(total)) : set4;
       sections = [];
       inserted = [];
       pos = 0;
@@ -40161,11 +41347,11 @@ function addSection(sections, len, ins, forceJoin = false) {
 function addInsert(values, sections, value) {
   if (value.length == 0)
     return;
-  let index3 = sections.length - 2 >> 1;
-  if (index3 < values.length) {
+  let index4 = sections.length - 2 >> 1;
+  if (index4 < values.length) {
     values[values.length - 1] = values[values.length - 1].append(value);
   } else {
-    while (values.length < index3)
+    while (values.length < index4)
       values.push(Text.empty);
     values.push(value);
   }
@@ -40197,32 +41383,32 @@ function iterChanges(desc, f, individual) {
 }
 function mapSet(setA, setB, before, mkSet = false) {
   let sections = [], insert = mkSet ? [] : null;
-  let a = new SectionIter(setA), b = new SectionIter(setB);
+  let a2 = new SectionIter(setA), b = new SectionIter(setB);
   for (let inserted = -1;; ) {
-    if (a.done && b.len || b.done && a.len) {
+    if (a2.done && b.len || b.done && a2.len) {
       throw new Error("Mismatched change set lengths");
-    } else if (a.ins == -1 && b.ins == -1) {
-      let len = Math.min(a.len, b.len);
+    } else if (a2.ins == -1 && b.ins == -1) {
+      let len = Math.min(a2.len, b.len);
       addSection(sections, len, -1);
-      a.forward(len);
+      a2.forward(len);
       b.forward(len);
-    } else if (b.ins >= 0 && (a.ins < 0 || inserted == a.i || a.off == 0 && (b.len < a.len || b.len == a.len && !before))) {
+    } else if (b.ins >= 0 && (a2.ins < 0 || inserted == a2.i || a2.off == 0 && (b.len < a2.len || b.len == a2.len && !before))) {
       let len = b.len;
       addSection(sections, b.ins, -1);
       while (len) {
-        let piece = Math.min(a.len, len);
-        if (a.ins >= 0 && inserted < a.i && a.len <= piece) {
-          addSection(sections, 0, a.ins);
+        let piece = Math.min(a2.len, len);
+        if (a2.ins >= 0 && inserted < a2.i && a2.len <= piece) {
+          addSection(sections, 0, a2.ins);
           if (insert)
-            addInsert(insert, sections, a.text);
-          inserted = a.i;
+            addInsert(insert, sections, a2.text);
+          inserted = a2.i;
         }
-        a.forward(piece);
+        a2.forward(piece);
         len -= piece;
       }
       b.next();
-    } else if (a.ins >= 0) {
-      let len = 0, left = a.len;
+    } else if (a2.ins >= 0) {
+      let len = 0, left = a2.len;
       while (left) {
         if (b.ins == -1) {
           let piece = Math.min(left, b.len);
@@ -40236,12 +41422,12 @@ function mapSet(setA, setB, before, mkSet = false) {
           break;
         }
       }
-      addSection(sections, len, inserted < a.i ? a.ins : 0);
-      if (insert && inserted < a.i)
-        addInsert(insert, sections, a.text);
-      inserted = a.i;
-      a.forward(a.len - left);
-    } else if (a.done && b.done) {
+      addSection(sections, len, inserted < a2.i ? a2.ins : 0);
+      if (insert && inserted < a2.i)
+        addInsert(insert, sections, a2.text);
+      inserted = a2.i;
+      a2.forward(a2.len - left);
+    } else if (a2.done && b.done) {
       return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
     } else {
       throw new Error("Mismatched change set lengths");
@@ -40251,46 +41437,46 @@ function mapSet(setA, setB, before, mkSet = false) {
 function composeSets(setA, setB, mkSet = false) {
   let sections = [];
   let insert = mkSet ? [] : null;
-  let a = new SectionIter(setA), b = new SectionIter(setB);
+  let a2 = new SectionIter(setA), b = new SectionIter(setB);
   for (let open = false;; ) {
-    if (a.done && b.done) {
+    if (a2.done && b.done) {
       return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
-    } else if (a.ins == 0) {
-      addSection(sections, a.len, 0, open);
-      a.next();
+    } else if (a2.ins == 0) {
+      addSection(sections, a2.len, 0, open);
+      a2.next();
     } else if (b.len == 0 && !b.done) {
       addSection(sections, 0, b.ins, open);
       if (insert)
         addInsert(insert, sections, b.text);
       b.next();
-    } else if (a.done || b.done) {
+    } else if (a2.done || b.done) {
       throw new Error("Mismatched change set lengths");
     } else {
-      let len = Math.min(a.len2, b.len), sectionLen = sections.length;
-      if (a.ins == -1) {
+      let len = Math.min(a2.len2, b.len), sectionLen = sections.length;
+      if (a2.ins == -1) {
         let insB = b.ins == -1 ? -1 : b.off ? 0 : b.ins;
         addSection(sections, len, insB, open);
         if (insert && insB)
           addInsert(insert, sections, b.text);
       } else if (b.ins == -1) {
-        addSection(sections, a.off ? 0 : a.len, len, open);
+        addSection(sections, a2.off ? 0 : a2.len, len, open);
         if (insert)
-          addInsert(insert, sections, a.textBit(len));
+          addInsert(insert, sections, a2.textBit(len));
       } else {
-        addSection(sections, a.off ? 0 : a.len, b.off ? 0 : b.ins, open);
+        addSection(sections, a2.off ? 0 : a2.len, b.off ? 0 : b.ins, open);
         if (insert && !b.off)
           addInsert(insert, sections, b.text);
       }
-      open = (a.ins > len || b.ins >= 0 && b.len > len) && (open || sections.length > sectionLen);
-      a.forward2(len);
+      open = (a2.ins > len || b.ins >= 0 && b.len > len) && (open || sections.length > sectionLen);
+      a2.forward2(len);
       b.forward(len);
     }
   }
 }
 
 class SectionIter {
-  constructor(set3) {
-    this.set = set3;
+  constructor(set4) {
+    this.set = set4;
     this.i = 0;
     this.next();
   }
@@ -40312,12 +41498,12 @@ class SectionIter {
     return this.ins < 0 ? this.len : this.ins;
   }
   get text() {
-    let { inserted } = this.set, index3 = this.i - 2 >> 1;
-    return index3 >= inserted.length ? Text.empty : inserted[index3];
+    let { inserted } = this.set, index4 = this.i - 2 >> 1;
+    return index4 >= inserted.length ? Text.empty : inserted[index4];
   }
   textBit(len) {
-    let { inserted } = this.set, index3 = this.i - 2 >> 1;
-    return index3 >= inserted.length && !len ? Text.empty : inserted[index3].slice(this.off, len == null ? undefined : this.off + len);
+    let { inserted } = this.set, index4 = this.i - 2 >> 1;
+    return index4 >= inserted.length && !len ? Text.empty : inserted[index4].slice(this.off, len == null ? undefined : this.off + len);
   }
   forward(len) {
     if (len == this.len)
@@ -40467,7 +41653,7 @@ class EditorSelection {
   }
   static normalized(ranges, mainIndex = 0) {
     let main = ranges[mainIndex];
-    ranges.sort((a, b) => a.from - b.from);
+    ranges.sort((a2, b) => a2.from - b.from);
     mainIndex = ranges.indexOf(main);
     for (let i = 1;i < ranges.length; i++) {
       let range = ranges[i], prev = ranges[i - 1];
@@ -40502,29 +41688,29 @@ class Facet {
     return this;
   }
   static define(config = {}) {
-    return new Facet(config.combine || ((a) => a), config.compareInput || ((a, b) => a === b), config.compare || (!config.combine ? sameArray : (a, b) => a === b), !!config.static, config.enables);
+    return new Facet(config.combine || ((a2) => a2), config.compareInput || ((a2, b) => a2 === b), config.compare || (!config.combine ? sameArray : (a2, b) => a2 === b), !!config.static, config.enables);
   }
   of(value) {
     return new FacetProvider([], this, 0, value);
   }
-  compute(deps, get) {
+  compute(deps, get2) {
     if (this.isStatic)
       throw new Error("Can't compute a static facet");
-    return new FacetProvider(deps, this, 1, get);
+    return new FacetProvider(deps, this, 1, get2);
   }
-  computeN(deps, get) {
+  computeN(deps, get2) {
     if (this.isStatic)
       throw new Error("Can't compute a static facet");
-    return new FacetProvider(deps, this, 2, get);
+    return new FacetProvider(deps, this, 2, get2);
   }
-  from(field, get) {
-    if (!get)
-      get = (x) => x;
-    return this.compute([field], (state) => get(state.field(field)));
+  from(field, get2) {
+    if (!get2)
+      get2 = (x3) => x3;
+    return this.compute([field], (state) => get2(state.field(field)));
   }
 }
-function sameArray(a, b) {
-  return a == b || a.length == b.length && a.every((e, i) => e === b[i]);
+function sameArray(a2, b) {
+  return a2 == b || a2.length == b.length && a2.every((e, i) => e === b[i]);
 }
 
 class FacetProvider {
@@ -40586,11 +41772,11 @@ class FacetProvider {
     return this;
   }
 }
-function compareArray(a, b, compare) {
-  if (a.length != b.length)
+function compareArray(a2, b, compare) {
+  if (a2.length != b.length)
     return false;
-  for (let i = 0;i < a.length; i++)
-    if (!compare(a[i], b[i]))
+  for (let i = 0;i < a2.length; i++)
+    if (!compare(a2[i], b[i]))
       return false;
   return true;
 }
@@ -40606,7 +41792,7 @@ function dynamicFacetSlot(addresses, facet, providers) {
   let providerTypes = providers.map((p) => p.type);
   let dynamic = providerAddrs.filter((p) => !(p & 1));
   let idx = addresses[facet.id] >> 1;
-  function get(state) {
+  function get2(state) {
     let values = [];
     for (let i = 0;i < providerAddrs.length; i++) {
       let value = getAddr(state, providerAddrs[i]);
@@ -40622,13 +41808,13 @@ function dynamicFacetSlot(addresses, facet, providers) {
     create(state) {
       for (let addr of providerAddrs)
         ensureAddr(state, addr);
-      state.values[idx] = get(state);
+      state.values[idx] = get2(state);
       return 1;
     },
     update(state, tr) {
       if (!ensureAll(state, dynamic))
         return 0;
-      let value = get(state);
+      let value = get2(state);
       if (facet.compare(value, state.values[idx]))
         return 0;
       state.values[idx] = value;
@@ -40641,7 +41827,7 @@ function dynamicFacetSlot(addresses, facet, providers) {
         state.values[idx] = oldValue;
         return 0;
       }
-      let value = get(state);
+      let value = get2(state);
       if (facet.compare(value, oldValue)) {
         state.values[idx] = oldValue;
         return 0;
@@ -40663,7 +41849,7 @@ class StateField {
     this.provides = undefined;
   }
   static define(config) {
-    let field = new StateField(nextID++, config.create, config.update, config.compare || ((a, b) => a === b), config);
+    let field = new StateField(nextID++, config.create, config.update, config.compare || ((a2, b) => a2 === b), config);
     if (config.provide)
       field.provides = config.provide(field);
     return field;
@@ -40784,7 +41970,7 @@ class Configuration {
     let dynamicSlots = [];
     for (let field of fields) {
       address[field.id] = dynamicSlots.length << 1;
-      dynamicSlots.push((a) => field.slot(a));
+      dynamicSlots.push((a2) => field.slot(a2));
     }
     let oldFacets = oldState === null || oldState === undefined ? undefined : oldState.config.facets;
     for (let id in facets) {
@@ -40805,11 +41991,11 @@ class Configuration {
             staticValues.push(p.value);
           } else {
             address[p.id] = dynamicSlots.length << 1;
-            dynamicSlots.push((a) => p.dynamicSlot(a));
+            dynamicSlots.push((a2) => p.dynamicSlot(a2));
           }
         }
         address[facet.id] = dynamicSlots.length << 1;
-        dynamicSlots.push((a) => dynamicFacetSlot(a, facet, providers));
+        dynamicSlots.push((a2) => dynamicFacetSlot(a2, facet, providers));
       }
     }
     let dynamic = dynamicSlots.map((f) => f(address));
@@ -40860,7 +42046,7 @@ function flatten(extension, compartments, newCompartments) {
     }
   }
   inner(extension, Prec_.default);
-  return result.reduce((a, b) => a.concat(b));
+  return result.reduce((a2, b) => a2.concat(b));
 }
 function ensureAddr(state, addr) {
   if (addr & 1)
@@ -40961,7 +42147,7 @@ class Transaction {
     this._state = null;
     if (selection)
       checkSelection(selection, changes.newLength);
-    if (!annotations.some((a) => a.type == Transaction.time))
+    if (!annotations.some((a2) => a2.type == Transaction.time))
       this.annotations = annotations.concat(Transaction.time.of(Date.now()));
   }
   static create(startState, changes, selection, effects, annotations, scrollIntoView) {
@@ -40999,13 +42185,13 @@ Transaction.time = /* @__PURE__ */ Annotation.define();
 Transaction.userEvent = /* @__PURE__ */ Annotation.define();
 Transaction.addToHistory = /* @__PURE__ */ Annotation.define();
 Transaction.remote = /* @__PURE__ */ Annotation.define();
-function joinRanges(a, b) {
+function joinRanges(a2, b) {
   let result = [];
   for (let iA = 0, iB = 0;; ) {
     let from, to;
-    if (iA < a.length && (iB == b.length || b[iB] >= a[iA])) {
-      from = a[iA++];
-      to = a[iA++];
+    if (iA < a2.length && (iB == b.length || b[iB] >= a2[iA])) {
+      from = a2[iA++];
+      to = a2[iA++];
     } else if (iB < b.length) {
       from = b[iB++];
       to = b[iB++];
@@ -41017,24 +42203,24 @@ function joinRanges(a, b) {
       result[result.length - 1] = to;
   }
 }
-function mergeTransaction(a, b, sequential) {
+function mergeTransaction(a2, b, sequential) {
   var _a;
   let mapForA, mapForB, changes;
   if (sequential) {
     mapForA = b.changes;
     mapForB = ChangeSet.empty(b.changes.length);
-    changes = a.changes.compose(b.changes);
+    changes = a2.changes.compose(b.changes);
   } else {
-    mapForA = b.changes.map(a.changes);
-    mapForB = a.changes.mapDesc(b.changes, true);
-    changes = a.changes.compose(mapForA);
+    mapForA = b.changes.map(a2.changes);
+    mapForB = a2.changes.mapDesc(b.changes, true);
+    changes = a2.changes.compose(mapForA);
   }
   return {
     changes,
-    selection: b.selection ? b.selection.map(mapForB) : (_a = a.selection) === null || _a === undefined ? undefined : _a.map(mapForA),
-    effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
-    annotations: a.annotations.length ? a.annotations.concat(b.annotations) : b.annotations,
-    scrollIntoView: a.scrollIntoView || b.scrollIntoView
+    selection: b.selection ? b.selection.map(mapForB) : (_a = a2.selection) === null || _a === undefined ? undefined : _a.map(mapForA),
+    effects: StateEffect.mapEffects(a2.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
+    annotations: a2.annotations.length ? a2.annotations.concat(b.annotations) : b.annotations,
+    scrollIntoView: a2.scrollIntoView || b.scrollIntoView
   };
 }
 function resolveTransactionInner(state, spec, docSize) {
@@ -41304,11 +42490,11 @@ class EditorState {
         break;
       }
     if (insert.length)
-      phrase = phrase.replace(/\$(\$|\d*)/g, (m, i) => {
+      phrase = phrase.replace(/\$(\$|\d*)/g, (m2, i) => {
         if (i == "$")
           return "$";
         let n = +(i || 1);
-        return !n || n > insert.length ? m : insert[n - 1];
+        return !n || n > insert.length ? m2 : insert[n - 1];
       });
     return phrase;
   }
@@ -41352,9 +42538,9 @@ EditorState.tabSize = /* @__PURE__ */ Facet.define({
 EditorState.lineSeparator = lineSeparator;
 EditorState.readOnly = readOnly;
 EditorState.phrases = /* @__PURE__ */ Facet.define({
-  compare(a, b) {
-    let kA = Object.keys(a), kB = Object.keys(b);
-    return kA.length == kB.length && kA.every((k) => a[k] == b[k]);
+  compare(a2, b) {
+    let kA = Object.keys(a2), kB = Object.keys(b);
+    return kA.length == kB.length && kA.every((k) => a2[k] == b[k]);
   }
 });
 EditorState.languageData = languageData;
@@ -41393,8 +42579,8 @@ class RangeValue {
 RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0;
 RangeValue.prototype.point = false;
 RangeValue.prototype.mapMode = MapMode.TrackDel;
-function cmpVal(a, b) {
-  return a == b || a.constructor == b.constructor && a.eq(b);
+function cmpVal(a2, b) {
+  return a2 == b || a2.constructor == b.constructor && a2.eq(b);
 }
 
 class Range {
@@ -41407,8 +42593,8 @@ class Range {
     return new Range(from, to, value);
   }
 }
-function cmpRange(a, b) {
-  return a.from - b.from || a.value.startSide - b.value.startSide;
+function cmpRange(a2, b) {
+  return a2.from - b.from || a2.value.startSide - b.value.startSide;
 }
 
 class Chunk {
@@ -41516,26 +42702,26 @@ class RangeSet {
       size4 += chunk.value.length;
     return size4;
   }
-  chunkEnd(index3) {
-    return this.chunkPos[index3] + this.chunk[index3].length;
+  chunkEnd(index4) {
+    return this.chunkPos[index4] + this.chunk[index4].length;
   }
   update(updateSpec) {
-    let { add = [], sort = false, filterFrom = 0, filterTo = this.length } = updateSpec;
+    let { add: add2 = [], sort = false, filterFrom = 0, filterTo = this.length } = updateSpec;
     let filter = updateSpec.filter;
-    if (add.length == 0 && !filter)
+    if (add2.length == 0 && !filter)
       return this;
     if (sort)
-      add = add.slice().sort(cmpRange);
+      add2 = add2.slice().sort(cmpRange);
     if (this.isEmpty)
-      return add.length ? RangeSet.of(add) : this;
+      return add2.length ? RangeSet.of(add2) : this;
     let cur = new LayerCursor(this, null, -1).goto(0), i = 0, spill = [];
     let builder = new RangeSetBuilder;
-    while (cur.value || i < add.length) {
-      if (i < add.length && (cur.from - add[i].from || cur.startSide - add[i].value.startSide) >= 0) {
-        let range = add[i++];
+    while (cur.value || i < add2.length) {
+      if (i < add2.length && (cur.from - add2[i].from || cur.startSide - add2[i].value.startSide) >= 0) {
+        let range = add2[i++];
         if (!builder.addInner(range.from, range.to, range.value, false))
           spill.push(range);
-      } else if (cur.rangeIndex == 1 && cur.chunkIndex < this.chunk.length && (i == add.length || this.chunkEnd(cur.chunkIndex) < add[i].from) && (!filter || filterFrom > this.chunkEnd(cur.chunkIndex) || filterTo < this.chunkPos[cur.chunkIndex]) && builder.addChunk(this.chunkPos[cur.chunkIndex], this.chunk[cur.chunkIndex])) {
+      } else if (cur.rangeIndex == 1 && cur.chunkIndex < this.chunk.length && (i == add2.length || this.chunkEnd(cur.chunkIndex) < add2[i].from) && (!filter || filterFrom > this.chunkEnd(cur.chunkIndex) || filterTo < this.chunkPos[cur.chunkIndex]) && builder.addChunk(this.chunkPos[cur.chunkIndex], this.chunk[cur.chunkIndex])) {
         cur.nextChunk();
       } else {
         if (!filter || filterFrom > cur.to || filterTo < cur.from || filter(cur.from, cur.to, cur.value)) {
@@ -41599,10 +42785,10 @@ class RangeSet {
     return HeapCursor.from(sets).goto(from);
   }
   static compare(oldSets, newSets, textDiff, comparator, minPointSize = -1) {
-    let a = oldSets.filter((set3) => set3.maxPoint > 0 || !set3.isEmpty && set3.maxPoint >= minPointSize);
-    let b = newSets.filter((set3) => set3.maxPoint > 0 || !set3.isEmpty && set3.maxPoint >= minPointSize);
-    let sharedChunks = findSharedChunks(a, b, textDiff);
-    let sideA = new SpanCursor(a, sharedChunks, minPointSize);
+    let a2 = oldSets.filter((set4) => set4.maxPoint > 0 || !set4.isEmpty && set4.maxPoint >= minPointSize);
+    let b = newSets.filter((set4) => set4.maxPoint > 0 || !set4.isEmpty && set4.maxPoint >= minPointSize);
+    let sharedChunks = findSharedChunks(a2, b, textDiff);
+    let sideA = new SpanCursor(a2, sharedChunks, minPointSize);
     let sideB = new SpanCursor(b, sharedChunks, minPointSize);
     textDiff.iterGaps((fromA, fromB, length) => compare(sideA, fromA, sideB, fromB, length, comparator));
     if (textDiff.empty && textDiff.length == 0)
@@ -41611,14 +42797,14 @@ class RangeSet {
   static eq(oldSets, newSets, from = 0, to) {
     if (to == null)
       to = 1e9 - 1;
-    let a = oldSets.filter((set3) => !set3.isEmpty && newSets.indexOf(set3) < 0);
-    let b = newSets.filter((set3) => !set3.isEmpty && oldSets.indexOf(set3) < 0);
-    if (a.length != b.length)
+    let a2 = oldSets.filter((set4) => !set4.isEmpty && newSets.indexOf(set4) < 0);
+    let b = newSets.filter((set4) => !set4.isEmpty && oldSets.indexOf(set4) < 0);
+    if (a2.length != b.length)
       return false;
-    if (!a.length)
+    if (!a2.length)
       return true;
-    let sharedChunks = findSharedChunks(a, b);
-    let sideA = new SpanCursor(a, sharedChunks, 0).goto(from), sideB = new SpanCursor(b, sharedChunks, 0).goto(from);
+    let sharedChunks = findSharedChunks(a2, b);
+    let sideA = new SpanCursor(a2, sharedChunks, 0).goto(from), sideB = new SpanCursor(b, sharedChunks, 0).goto(from);
     for (;; ) {
       if (sideA.to != sideB.to || !sameValues(sideA.active, sideB.active) || sideA.point && (!sideB.point || !cmpVal(sideA.point, sideB.point)))
         return false;
@@ -41762,18 +42948,18 @@ class RangeSetBuilder {
     return result;
   }
 }
-function findSharedChunks(a, b, textDiff) {
+function findSharedChunks(a2, b, textDiff) {
   let inA = new Map;
-  for (let set3 of a)
-    for (let i = 0;i < set3.chunk.length; i++)
-      if (set3.chunk[i].maxPoint <= 0)
-        inA.set(set3.chunk[i], set3.chunkPos[i]);
+  for (let set4 of a2)
+    for (let i = 0;i < set4.chunk.length; i++)
+      if (set4.chunk[i].maxPoint <= 0)
+        inA.set(set4.chunk[i], set4.chunkPos[i]);
   let shared = new Set;
-  for (let set3 of b)
-    for (let i = 0;i < set3.chunk.length; i++) {
-      let known = inA.get(set3.chunk[i]);
-      if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set3.chunkPos[i] && !(textDiff === null || textDiff === undefined ? undefined : textDiff.touchesRange(known, known + set3.chunk[i].length)))
-        shared.add(set3.chunk[i]);
+  for (let set4 of b)
+    for (let i = 0;i < set4.chunk.length; i++) {
+      let known = inA.get(set4.chunk[i]);
+      if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set4.chunkPos[i] && !(textDiff === null || textDiff === undefined ? undefined : textDiff.touchesRange(known, known + set4.chunk[i].length)))
+        shared.add(set4.chunk[i]);
     }
   return shared;
 }
@@ -41833,8 +43019,8 @@ class LayerCursor {
       }
     }
   }
-  setRangeIndex(index3) {
-    if (index3 == this.layer.chunk[this.chunkIndex].value.length) {
+  setRangeIndex(index4) {
+    if (index4 == this.layer.chunk[this.chunkIndex].value.length) {
       this.chunkIndex++;
       if (this.skip) {
         while (this.chunkIndex < this.layer.chunk.length && this.skip.has(this.layer.chunk[this.chunkIndex]))
@@ -41842,7 +43028,7 @@ class LayerCursor {
       }
       this.rangeIndex = 0;
     } else {
-      this.rangeIndex = index3;
+      this.rangeIndex = index4;
     }
   }
   nextChunk() {
@@ -41905,9 +43091,9 @@ class HeapCursor {
     }
   }
 }
-function heapBubble(heap, index3) {
-  for (let cur = heap[index3];; ) {
-    let childIndex = (index3 << 1) + 1;
+function heapBubble(heap, index4) {
+  for (let cur = heap[index4];; ) {
+    let childIndex = (index4 << 1) + 1;
     if (childIndex >= heap.length)
       break;
     let child = heap[childIndex];
@@ -41918,8 +43104,8 @@ function heapBubble(heap, index3) {
     if (cur.compare(child) < 0)
       break;
     heap[childIndex] = cur;
-    heap[index3] = child;
-    index3 = childIndex;
+    heap[index4] = child;
+    index4 = childIndex;
   }
 }
 
@@ -41953,10 +43139,10 @@ class SpanCursor {
       this.removeActive(this.minActive);
     this.cursor.forward(pos, side);
   }
-  removeActive(index3) {
-    remove(this.active, index3);
-    remove(this.activeTo, index3);
-    remove(this.activeRank, index3);
+  removeActive(index4) {
+    remove(this.active, index4);
+    remove(this.activeTo, index4);
+    remove(this.activeRank, index4);
     this.minActive = findMinIndex(this.active, this.activeTo);
   }
   addActive(trackOpen) {
@@ -41975,16 +43161,16 @@ class SpanCursor {
     this.point = null;
     let trackOpen = this.openStart < 0 ? [] : null;
     for (;; ) {
-      let a = this.minActive;
-      if (a > -1 && (this.activeTo[a] - this.cursor.from || this.active[a].endSide - this.cursor.startSide) < 0) {
-        if (this.activeTo[a] > from) {
-          this.to = this.activeTo[a];
-          this.endSide = this.active[a].endSide;
+      let a2 = this.minActive;
+      if (a2 > -1 && (this.activeTo[a2] - this.cursor.from || this.active[a2].endSide - this.cursor.startSide) < 0) {
+        if (this.activeTo[a2] > from) {
+          this.to = this.activeTo[a2];
+          this.endSide = this.active[a2].endSide;
           break;
         }
-        this.removeActive(a);
+        this.removeActive(a2);
         if (trackOpen)
-          remove(trackOpen, a);
+          remove(trackOpen, a2);
       } else if (!this.cursor.value) {
         this.to = this.endSide = 1e9;
         break;
@@ -42036,54 +43222,54 @@ class SpanCursor {
     return open;
   }
 }
-function compare(a, startA, b, startB, length, comparator) {
-  a.goto(startA);
+function compare(a2, startA, b, startB, length, comparator) {
+  a2.goto(startA);
   b.goto(startB);
   let endB = startB + length;
   let pos = startB, dPos = startB - startA;
   let bounds = !!comparator.boundChange;
   for (let boundChange = false;; ) {
-    let dEnd = a.to + dPos - b.to, diff = dEnd || a.endSide - b.endSide;
-    let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB);
-    let point = a.point || b.point;
+    let dEnd = a2.to + dPos - b.to, diff = dEnd || a2.endSide - b.endSide;
+    let end = diff < 0 ? a2.to + dPos : b.to, clipEnd = Math.min(end, endB);
+    let point = a2.point || b.point;
     if (point) {
-      if (!(a.point && b.point && cmpVal(a.point, b.point) && sameValues(a.activeForPoint(a.to), b.activeForPoint(b.to))))
-        comparator.comparePoint(pos, clipEnd, a.point, b.point);
+      if (!(a2.point && b.point && cmpVal(a2.point, b.point) && sameValues(a2.activeForPoint(a2.to), b.activeForPoint(b.to))))
+        comparator.comparePoint(pos, clipEnd, a2.point, b.point);
       boundChange = false;
     } else {
       if (boundChange)
         comparator.boundChange(pos);
-      if (clipEnd > pos && !sameValues(a.active, b.active))
-        comparator.compareRange(pos, clipEnd, a.active, b.active);
-      if (bounds && clipEnd < endB && (dEnd || a.openEnd(end) != b.openEnd(end)))
+      if (clipEnd > pos && !sameValues(a2.active, b.active))
+        comparator.compareRange(pos, clipEnd, a2.active, b.active);
+      if (bounds && clipEnd < endB && (dEnd || a2.openEnd(end) != b.openEnd(end)))
         boundChange = true;
     }
     if (end > endB)
       break;
     pos = end;
     if (diff <= 0)
-      a.next();
+      a2.next();
     if (diff >= 0)
       b.next();
   }
 }
-function sameValues(a, b) {
-  if (a.length != b.length)
+function sameValues(a2, b) {
+  if (a2.length != b.length)
     return false;
-  for (let i = 0;i < a.length; i++)
-    if (a[i] != b[i] && !cmpVal(a[i], b[i]))
+  for (let i = 0;i < a2.length; i++)
+    if (a2[i] != b[i] && !cmpVal(a2[i], b[i]))
       return false;
   return true;
 }
-function remove(array, index3) {
-  for (let i = index3, e = array.length - 1;i < e; i++)
+function remove(array, index4) {
+  for (let i = index4, e = array.length - 1;i < e; i++)
     array[i] = array[i + 1];
   array.pop();
 }
-function insert(array, index3, value) {
-  for (let i = array.length - 1;i >= index3; i--)
+function insert(array, index4, value) {
+  for (let i = array.length - 1;i >= index4; i--)
     array[i + 1] = array[i];
-  array[index3] = value;
+  array[index4] = value;
 }
 function findMinIndex(value, array) {
   let found = -1, foundPos = 1e9;
@@ -42139,7 +43325,7 @@ class StyleModule {
       for (let prop in spec2) {
         let value = spec2[prop];
         if (/&/.test(prop)) {
-          render(prop.split(/,\s*/).map((part) => selectors4.map((sel) => part.replace(/&/, sel))).reduce((a, b) => a.concat(b)), value, target);
+          render(prop.split(/,\s*/).map((part) => selectors4.map((sel) => part.replace(/&/, sel))).reduce((a2, b) => a2.concat(b)), value, target);
         } else if (value && typeof value == "object") {
           if (!isAt)
             throw new RangeError("The value of a property (" + prop + ") should be a primitive value.");
@@ -42165,12 +43351,12 @@ class StyleModule {
     return C2 + id.toString(36);
   }
   static mount(root, modules, options) {
-    let set3 = root[SET], nonce = options && options.nonce;
-    if (!set3)
-      set3 = new StyleSet(root, nonce);
+    let set4 = root[SET], nonce = options && options.nonce;
+    if (!set4)
+      set4 = new StyleSet(root, nonce);
     else if (nonce)
-      set3.setNonce(nonce);
-    set3.mount(Array.isArray(modules) ? modules : [modules], root);
+      set4.setNonce(nonce);
+    set4.mount(Array.isArray(modules) ? modules : [modules], root);
   }
 }
 var adoptedSet = new Map;
@@ -42196,19 +43382,19 @@ class StyleSet {
     let sheet = this.sheet;
     let pos = 0, j2 = 0;
     for (let i = 0;i < modules.length; i++) {
-      let mod = modules[i], index3 = this.modules.indexOf(mod);
-      if (index3 < j2 && index3 > -1) {
-        this.modules.splice(index3, 1);
+      let mod = modules[i], index4 = this.modules.indexOf(mod);
+      if (index4 < j2 && index4 > -1) {
+        this.modules.splice(index4, 1);
         j2--;
-        index3 = -1;
+        index4 = -1;
       }
-      if (index3 == -1) {
+      if (index4 == -1) {
         this.modules.splice(j2++, 0, mod);
         if (sheet)
           for (let k = 0;k < mod.rules.length; k++)
             sheet.insertRule(mod.rules[k], pos++);
       } else {
-        while (j2 < index3)
+        while (j2 < index4)
           pos += this.modules[j2++].rules.length;
         pos += mod.rules.length;
         j2++;
@@ -42392,18 +43578,18 @@ function combineAttrs(source, target) {
   return target;
 }
 var noAttrs = /* @__PURE__ */ Object.create(null);
-function attrsEq(a, b, ignore) {
-  if (a == b)
+function attrsEq(a2, b, ignore) {
+  if (a2 == b)
     return true;
-  if (!a)
-    a = noAttrs;
+  if (!a2)
+    a2 = noAttrs;
   if (!b)
     b = noAttrs;
-  let keysA = Object.keys(a), keysB = Object.keys(b);
+  let keysA = Object.keys(a2), keysB = Object.keys(b);
   if (keysA.length - (ignore && keysA.indexOf(ignore) > -1 ? 1 : 0) != keysB.length - (ignore && keysB.indexOf(ignore) > -1 ? 1 : 0))
     return false;
   for (let key of keysA) {
-    if (key != ignore && (keysB.indexOf(key) == -1 || a[key] !== b[key]))
+    if (key != ignore && (keysB.indexOf(key) == -1 || a2[key] !== b[key]))
       return false;
   }
   return true;
@@ -42603,8 +43789,8 @@ function getInclusive(spec, block = false) {
     end = spec.inclusive;
   return { start: start !== null && start !== undefined ? start : block, end: end !== null && end !== undefined ? end : block };
 }
-function widgetsEq(a, b) {
-  return a == b || !!(a && b && a.compare(b));
+function widgetsEq(a2, b) {
+  return a2 == b || !!(a2 && b && a2.compare(b));
 }
 function addRange(from, to, ranges, margin = 0) {
   let last2 = ranges.length - 1;
@@ -42665,10 +43851,10 @@ function isEquivalentPosition(node, off, targetNode, targetOff) {
   return targetNode ? scanFor(node, off, targetNode, targetOff, -1) || scanFor(node, off, targetNode, targetOff, 1) : false;
 }
 function domIndex(node) {
-  for (var index3 = 0;; index3++) {
+  for (var index4 = 0;; index4++) {
     node = node.previousSibling;
     if (!node)
-      return index3;
+      return index4;
   }
 }
 function isBlockElement(node) {
@@ -42703,8 +43889,8 @@ function flattenRect(rect, toLeft) {
   let { left, right } = rect;
   if (left == right)
     return rect;
-  let x = toLeft ? left : right;
-  return { left: x, right: x, top: rect.top, bottom: rect.bottom };
+  let x3 = toLeft ? left : right;
+  return { left: x3, right: x3, top: rect.top, bottom: rect.bottom };
 }
 function windowRect(win) {
   let vp = win.visualViewport;
@@ -42731,7 +43917,7 @@ function getScale2(elt, rect) {
     scaleY = 1;
   return { scaleX, scaleY };
 }
-function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
+function scrollRectIntoView(dom, rect, side, x3, y3, xMargin, yMargin, ltr) {
   let doc2 = dom.ownerDocument, win = doc2.defaultView || window;
   for (let cur = dom, stop = false;cur && !stop; ) {
     if (cur.nodeType == 1) {
@@ -42756,7 +43942,7 @@ function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
         };
       }
       let moveX = 0, moveY = 0;
-      if (y == "nearest") {
+      if (y3 == "nearest") {
         if (rect.top < bounding.top + yMargin) {
           moveY = rect.top - (bounding.top + yMargin);
           if (side > 0 && rect.bottom > bounding.bottom + moveY)
@@ -42768,10 +43954,10 @@ function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
         }
       } else {
         let rectHeight = rect.bottom - rect.top, boundingHeight = bounding.bottom - bounding.top;
-        let targetTop = y == "center" && rectHeight <= boundingHeight ? rect.top + rectHeight / 2 - boundingHeight / 2 : y == "start" || y == "center" && side < 0 ? rect.top - yMargin : rect.bottom - boundingHeight + yMargin;
+        let targetTop = y3 == "center" && rectHeight <= boundingHeight ? rect.top + rectHeight / 2 - boundingHeight / 2 : y3 == "start" || y3 == "center" && side < 0 ? rect.top - yMargin : rect.bottom - boundingHeight + yMargin;
         moveY = targetTop - bounding.top;
       }
-      if (x == "nearest") {
+      if (x3 == "nearest") {
         if (rect.left < bounding.left + xMargin) {
           moveX = rect.left - (bounding.left + xMargin);
           if (side > 0 && rect.right > bounding.right + moveX)
@@ -42782,7 +43968,7 @@ function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
             moveX = rect.left - (bounding.left + xMargin);
         }
       } else {
-        let targetLeft = x == "center" ? rect.left + (rect.right - rect.left) / 2 - (bounding.right - bounding.left) / 2 : x == "start" == ltr ? rect.left - xMargin : rect.right - (bounding.right - bounding.left) + xMargin;
+        let targetLeft = x3 == "center" ? rect.left + (rect.right - rect.left) / 2 - (bounding.right - bounding.left) / 2 : x3 == "start" == ltr ? rect.left - xMargin : rect.right - (bounding.right - bounding.left) + xMargin;
         moveX = targetLeft - bounding.left;
       }
       if (moveX || moveY) {
@@ -42807,9 +43993,9 @@ function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
             bottom: rect.bottom - movedY
           };
           if (movedX && Math.abs(movedX - moveX) < 1)
-            x = "nearest";
+            x3 = "nearest";
           if (movedY && Math.abs(movedY - moveY) < 1)
-            y = "nearest";
+            y3 = "nearest";
         }
       }
       if (top2)
@@ -42830,15 +44016,15 @@ function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
   }
 }
 function scrollableParents(dom, getX = true) {
-  let doc2 = dom.ownerDocument, x = null, y = null;
+  let doc2 = dom.ownerDocument, x3 = null, y3 = null;
   for (let cur = dom.parentNode;cur; ) {
-    if (cur == doc2.body || (!getX || x) && y) {
+    if (cur == doc2.body || (!getX || x3) && y3) {
       break;
     } else if (cur.nodeType == 1) {
-      if (!y && cur.scrollHeight > cur.clientHeight)
-        y = cur;
-      if (getX && !x && cur.scrollWidth > cur.clientWidth)
-        x = cur;
+      if (!y3 && cur.scrollHeight > cur.clientHeight)
+        y3 = cur;
+      if (getX && !x3 && cur.scrollWidth > cur.clientWidth)
+        x3 = cur;
       cur = cur.assignedSlot || cur.parentNode;
     } else if (cur.nodeType == 11) {
       cur = cur.host;
@@ -42846,7 +44032,7 @@ function scrollableParents(dom, getX = true) {
       break;
     }
   }
-  return { x, y };
+  return { x: x3, y: y3 };
 }
 
 class DOMSelectionState {
@@ -43052,14 +44238,14 @@ class BidiSpan {
   forward(forward, dir) {
     return forward == (this.dir == dir);
   }
-  static find(order, index3, level, assoc) {
+  static find(order, index4, level, assoc) {
     let maybe = -1;
     for (let i2 = 0;i2 < order.length; i2++) {
       let span = order[i2];
-      if (span.from <= index3 && span.to >= index3) {
+      if (span.from <= index4 && span.to >= index4) {
         if (span.level == level)
           return i2;
-        if (maybe < 0 || (assoc != 0 ? assoc < 0 ? span.from < index3 : span.to > index3 : order[maybe].level > span.level))
+        if (maybe < 0 || (assoc != 0 ? assoc < 0 ? span.from < index4 : span.to > index4 : order[maybe].level > span.level))
           maybe = i2;
       }
     }
@@ -43068,11 +44254,11 @@ class BidiSpan {
     return maybe;
   }
 }
-function isolatesEq(a, b) {
-  if (a.length != b.length)
+function isolatesEq(a2, b) {
+  if (a2.length != b.length)
     return false;
-  for (let i2 = 0;i2 < a.length; i2++) {
-    let iA = a[i2], iB = b[i2];
+  for (let i2 = 0;i2 < a2.length; i2++) {
+    let iA = a2[i2], iB = b[i2];
     if (iA.from != iB.from || iA.to != iB.to || iA.direction != iB.direction || !isolatesEq(iA.inner, iB.inner))
       return false;
   }
@@ -43372,18 +44558,18 @@ var focusChangeEffect = /* @__PURE__ */ Facet.define();
 var clipboardInputFilter = /* @__PURE__ */ Facet.define();
 var clipboardOutputFilter = /* @__PURE__ */ Facet.define();
 var perLineTextDirection = /* @__PURE__ */ Facet.define({
-  combine: (values) => values.some((x) => x)
+  combine: (values) => values.some((x3) => x3)
 });
 var nativeSelectionHidden = /* @__PURE__ */ Facet.define({
-  combine: (values) => values.some((x) => x)
+  combine: (values) => values.some((x3) => x3)
 });
 var scrollHandler = /* @__PURE__ */ Facet.define();
 
 class ScrollTarget {
-  constructor(range, y, x, yMargin, xMargin, isSnapshot = false) {
+  constructor(range, y3, x3, yMargin, xMargin, isSnapshot = false) {
     this.range = range;
-    this.y = y;
-    this.x = x;
+    this.y = y3;
+    this.x = x3;
     this.yMargin = yMargin;
     this.xMargin = xMargin;
     this.isSnapshot = isSnapshot;
@@ -43529,9 +44715,9 @@ function getIsolatedRanges(view, line) {
           update2.to = to;
           level = update2.inner;
         } else {
-          let add = { from, to, direction, inner: [] };
-          level.push(add);
-          level = add.inner;
+          let add2 = { from, to, direction, inner: [] };
+          level.push(add2);
+          level = add2.inner;
         }
       }
     }
@@ -43542,16 +44728,16 @@ var scrollMargins = /* @__PURE__ */ Facet.define();
 function getScrollMargins(view) {
   let left = 0, right = 0, top2 = 0, bottom = 0;
   for (let source of view.state.facet(scrollMargins)) {
-    let m = source(view);
-    if (m) {
-      if (m.left != null)
-        left = Math.max(left, m.left);
-      if (m.right != null)
-        right = Math.max(right, m.right);
-      if (m.top != null)
-        top2 = Math.max(top2, m.top);
-      if (m.bottom != null)
-        bottom = Math.max(bottom, m.bottom);
+    let m2 = source(view);
+    if (m2) {
+      if (m2.left != null)
+        left = Math.max(left, m2.left);
+      if (m2.right != null)
+        right = Math.max(right, m2.right);
+      if (m2.top != null)
+        top2 = Math.max(top2, m2.top);
+      if (m2.bottom != null)
+        bottom = Math.max(bottom, m2.bottom);
     }
   }
   return { left, right, top: top2, bottom };
@@ -43568,19 +44754,19 @@ class ChangedRange {
   join(other) {
     return new ChangedRange(Math.min(this.fromA, other.fromA), Math.max(this.toA, other.toA), Math.min(this.fromB, other.fromB), Math.max(this.toB, other.toB));
   }
-  addToSet(set3) {
-    let i2 = set3.length, me2 = this;
+  addToSet(set4) {
+    let i2 = set4.length, me2 = this;
     for (;i2 > 0; i2--) {
-      let range = set3[i2 - 1];
+      let range = set4[i2 - 1];
       if (range.fromA > me2.toA)
         continue;
       if (range.toA < me2.fromA)
         break;
       me2 = me2.join(range);
-      set3.splice(i2 - 1, 1);
+      set4.splice(i2 - 1, 1);
     }
-    set3.splice(i2, 0, me2);
-    return set3;
+    set4.splice(i2, 0, me2);
+    return set4;
   }
   static extendWithRanges(diff, ranges) {
     if (ranges.length == 0)
@@ -43739,9 +44925,9 @@ class Tile {
     return null;
   }
   domPosFor(off, side) {
-    let index3 = domIndex(this.dom);
+    let index4 = domIndex(this.dom);
     let after = this.length ? off > 0 : side > 0;
-    return new DOMPos(this.parent.dom, index3 + (after ? 1 : 0), off == 0 || off == this.length);
+    return new DOMPos(this.parent.dom, index4 + (after ? 1 : 0), off == 0 || off == this.length);
   }
   markDirty(attrs) {
     this.flags &= ~2;
@@ -43991,8 +45177,8 @@ function fallbackRect(tile) {
   let rects = clientRectsFor(last2);
   return rects[rects.length - 1] || null;
 }
-function onSameLine(a, b) {
-  let posA = a.coordsIn(0, 1), posB = b.coordsIn(0, 1);
+function onSameLine(a2, b) {
+  let posA = a2.coordsIn(0, 1), posB = b.coordsIn(0, 1);
   return posA && posB && posB.top < posA.bottom;
 }
 
@@ -44158,21 +45344,21 @@ class TilePointer {
     this.tile = top2;
   }
   advance(dist, side, walker) {
-    let { tile, index: index3, beforeBreak, parents } = this;
+    let { tile, index: index4, beforeBreak, parents } = this;
     while (dist || side > 0) {
       if (!tile.isComposite()) {
         let len = tile.length;
-        if (index3 < len && dist) {
-          let take = Math.min(dist, len - index3);
+        if (index4 < len && dist) {
+          let take = Math.min(dist, len - index4);
           if (walker)
-            walker.skip(tile, index3, index3 + take);
+            walker.skip(tile, index4, index4 + take);
           dist -= take;
-          index3 += take;
+          index4 += take;
         }
-        if (index3 == len) {
+        if (index4 == len) {
           beforeBreak = !!tile.breakAfter;
-          ({ tile, index: index3 } = parents.pop());
-          index3++;
+          ({ tile, index: index4 } = parents.pop());
+          index4++;
         } else if (!dist) {
           break;
         }
@@ -44183,31 +45369,31 @@ class TilePointer {
           walker.break();
         dist--;
         beforeBreak = false;
-      } else if (index3 == tile.children.length) {
+      } else if (index4 == tile.children.length) {
         if (!dist && !parents.length)
           break;
         if (walker)
           walker.leave(tile);
         beforeBreak = !!tile.breakAfter;
-        ({ tile, index: index3 } = parents.pop());
-        index3++;
+        ({ tile, index: index4 } = parents.pop());
+        index4++;
       } else {
-        let next = tile.children[index3], brk = next.breakAfter;
+        let next = tile.children[index4], brk = next.breakAfter;
         if ((side > 0 ? next.length <= dist : next.length < dist) && (!walker || walker.skip(next, 0, next.length) !== false || !next.isComposite)) {
           beforeBreak = !!brk;
-          index3++;
+          index4++;
           dist -= next.length;
         } else {
-          parents.push({ tile, index: index3 });
+          parents.push({ tile, index: index4 });
           tile = next;
-          index3 = 0;
+          index4 = 0;
           if (walker && next.isComposite())
             walker.enter(next);
         }
       }
     }
     this.tile = tile;
-    this.index = index3;
+    this.index = index4;
     this.beforeBreak = beforeBreak;
     return this;
   }
@@ -44350,7 +45536,7 @@ class TileBuilder {
         parent = last2;
         openStart--;
       } else {
-        let tile = MarkTile.of(mark, (_a = this.cache.find(MarkTile, (m) => m.mark.eq(mark))) === null || _a === undefined ? undefined : _a.dom);
+        let tile = MarkTile.of(mark, (_a = this.cache.find(MarkTile, (m2) => m2.mark.eq(mark))) === null || _a === undefined ? undefined : _a.dom);
         parent.append(tile);
         parent = tile;
         openStart = 0;
@@ -44474,10 +45660,10 @@ class TileCache {
     let i2 = cls.bucket;
     let bucket = this.buckets[i2], off = this.index[i2];
     for (let j2 = 0;j2 < bucket.length; j2++) {
-      let index3 = (j2 + off) % bucket.length, tile = bucket[index3];
+      let index4 = (j2 + off) % bucket.length, tile = bucket[index4];
       if ((!test || test(tile)) && !this.reused.has(tile)) {
-        bucket.splice(index3, 1);
-        if (index3 < off)
+        bucket.splice(index4, 1);
+        if (index4 < off)
           this.index[i2]--;
         this.reused.set(tile, type);
         return tile;
@@ -44655,9 +45841,9 @@ class TileUpdate {
     let pendingLineAttrs = null;
     let b = this.builder, markCount = -1;
     let openEnd = RangeSet.spans(this.decorations, from, to, {
-      point: (from2, to2, deco, active, openStart, index3) => {
+      point: (from2, to2, deco, active, openStart, index4) => {
         if (deco instanceof PointDecoration) {
-          if (this.disallowBlockEffectsFor[index3]) {
+          if (this.disallowBlockEffectsFor[index4]) {
             if (deco.block)
               throw new RangeError("Block decorations may not be specified via plugins");
             if (to2 > this.view.state.doc.lineAt(from2).to)
@@ -45396,9 +46582,9 @@ var DecorationComparator$1 = class DecorationComparator {
     addRange(pos, pos, this.changes);
   }
 };
-function findChangedDeco(a, b, diff) {
+function findChangedDeco(a2, b, diff) {
   let comp = new DecorationComparator$1;
-  RangeSet.compare(a, b, diff, comp);
+  RangeSet.compare(a2, b, diff, comp);
   return comp.changes;
 }
 
@@ -45414,9 +46600,9 @@ class WrapperComparator {
     addRange(pos, pos, this.changes);
   }
 }
-function findChangedWrappers(a, b, diff) {
+function findChangedWrappers(a2, b, diff) {
   let comp = new WrapperComparator;
-  RangeSet.compare(a, b, diff, comp);
+  RangeSet.compare(a2, b, diff, comp);
   return comp.changes;
 }
 function inUneditable(node, inside) {
@@ -45494,11 +46680,11 @@ function groupAt(state, pos, bias = 1) {
   }
   return EditorSelection.undirectionalRange(from + line.from, to + line.from);
 }
-function posAtCoordsImprecise(view, contentRect, block, x, y) {
-  let into = Math.round((x - contentRect.left) * view.defaultCharacterWidth);
+function posAtCoordsImprecise(view, contentRect, block, x3, y3) {
+  let into = Math.round((x3 - contentRect.left) * view.defaultCharacterWidth);
   if (view.lineWrapping && block.height > view.defaultLineHeight * 1.5) {
     let textHeight = view.viewState.heightOracle.textHeight;
-    let line = Math.floor((y - block.top - (view.defaultLineHeight - textHeight) * 0.5) / textHeight);
+    let line = Math.floor((y3 - block.top - (view.defaultLineHeight - textHeight) * 0.5) / textHeight);
     into += line * view.viewState.heightOracle.lineLength;
   }
   let content = view.state.sliceDoc(block.from, block.to);
@@ -45592,9 +46778,9 @@ function moveVertically(view, start, forward, distance) {
   let resolvedGoal = rect.left + goal;
   let halfText = view.viewState.heightOracle.textHeight >> 1, dist = distance !== null && distance !== undefined ? distance : halfText;
   for (let scan = 0;; scan += halfText) {
-    let y = startY + (dist + scan) * dir;
-    let pos = posAtCoords(view, { x: resolvedGoal, y }, false, dir);
-    if (forward ? y > rect.bottom : y < rect.top)
+    let y3 = startY + (dist + scan) * dir;
+    let pos = posAtCoords(view, { x: resolvedGoal, y: y3 }, false, dir);
+    if (forward ? y3 > rect.bottom : y3 < rect.top)
       return EditorSelection.cursor(pos.pos, pos.assoc);
     let posCoords = view.coordsAtPos(pos.pos, pos.assoc), mid = posCoords ? (posCoords.top + posCoords.bottom) / 2 : 0;
     if (!posCoords || (forward ? mid > startY : mid < startY))
@@ -45604,8 +46790,8 @@ function moveVertically(view, start, forward, distance) {
 function skipAtomicRanges(atoms, pos, bias) {
   for (;; ) {
     let moved = 0;
-    for (let set3 of atoms) {
-      set3.between(pos - 1, pos + 1, (from, to, value) => {
+    for (let set4 of atoms) {
+      set4.between(pos - 1, pos + 1, (from, to, value) => {
         if (pos > from && pos < to) {
           let side = moved || bias || (pos - from < to - pos ? -1 : 1);
           pos = side < 0 ? from : to;
@@ -45656,7 +46842,7 @@ class PosAssoc {
 }
 function posAtCoords(view, coords, precise, scanY) {
   let content = view.contentDOM.getBoundingClientRect(), docTop = content.top + view.viewState.paddingTop;
-  let { x, y } = coords, yOffset = y - docTop, block;
+  let { x: x3, y: y3 } = coords, yOffset = y3 - docTop, block;
   for (;; ) {
     if (yOffset < 0)
       return new PosAssoc(0, 1);
@@ -45679,7 +46865,7 @@ function posAtCoords(view, coords, precise, scanY) {
     if (precise)
       return null;
     if (block.type == BlockType.Text) {
-      let pos = posAtCoordsImprecise(view, content, block, x, y);
+      let pos = posAtCoordsImprecise(view, content, block, x3, y3);
       return new PosAssoc(pos, pos == block.from ? 1 : -1);
     }
   }
@@ -45688,14 +46874,14 @@ function posAtCoords(view, coords, precise, scanY) {
   let line = view.docView.lineAt(block.from, 2);
   if (!line || line.length != block.length)
     line = view.docView.lineAt(block.from, -2);
-  return new InlineCoordsScan(view, x, y, view.textDirectionAt(block.from)).scanTile(line, block.from);
+  return new InlineCoordsScan(view, x3, y3, view.textDirectionAt(block.from)).scanTile(line, block.from);
 }
 
 class InlineCoordsScan {
-  constructor(view, x, y, baseDir) {
+  constructor(view, x3, y3, baseDir) {
     this.view = view;
-    this.x = x;
-    this.y = y;
+    this.x = x3;
+    this.y = y3;
     this.baseDir = baseDir;
     this.line = null;
     this.spans = null;
@@ -45878,13 +47064,13 @@ class DOMReader {
       if (point.node == node)
         point.pos = this.text.length + Math.min(point.offset, text.length);
     for (let off = 0, re2 = this.lineSeparator ? null : /\r\n?|\n/g;; ) {
-      let nextBreak = -1, breakSize = 1, m;
+      let nextBreak = -1, breakSize = 1, m2;
       if (this.lineSeparator) {
         nextBreak = text.indexOf(this.lineSeparator, off);
         breakSize = this.lineSeparator.length;
-      } else if (m = re2.exec(text)) {
-        nextBreak = m.index;
-        breakSize = m[0].length;
+      } else if (m2 = re2.exec(text)) {
+        nextBreak = m2.index;
+        breakSize = m2[0].length;
       }
       this.append(text.slice(off, nextBreak < 0 ? text.length : nextBreak));
       if (nextBreak < 0)
@@ -46179,15 +47365,15 @@ function applyDefaultInsert(view, change, newSel) {
   }
   return startState.update(tr, { userEvent, scrollIntoView: true });
 }
-function findDiff(a, b, preferredPos, preferredSide) {
-  let minLen = Math.min(a.length, b.length);
+function findDiff(a2, b, preferredPos, preferredSide) {
+  let minLen = Math.min(a2.length, b.length);
   let from = 0;
-  while (from < minLen && a.charCodeAt(from) == b.charCodeAt(from))
+  while (from < minLen && a2.charCodeAt(from) == b.charCodeAt(from))
     from++;
-  if (from == minLen && a.length == b.length)
+  if (from == minLen && a2.length == b.length)
     return null;
-  let toA = a.length, toB = b.length;
-  while (toA > 0 && toB > 0 && a.charCodeAt(toA - 1) == b.charCodeAt(toB - 1)) {
+  let toA = a2.length, toB = b.length;
+  while (toA > 0 && toB > 0 && a2.charCodeAt(toA - 1) == b.charCodeAt(toB - 1)) {
     toA--;
     toB--;
   }
@@ -46195,7 +47381,7 @@ function findDiff(a, b, preferredPos, preferredSide) {
     let adjust = Math.max(0, from - Math.min(toA, toB));
     preferredPos -= toA + adjust - from;
   }
-  if (toA < from && a.length < b.length) {
+  if (toA < from && a2.length < b.length) {
     let move = preferredPos <= from && preferredPos >= toA ? from - preferredPos : 0;
     from -= move;
     toB = from + (toB - toA);
@@ -46428,8 +47614,8 @@ var dragScrollMargin = 6;
 function dragScrollSpeed(dist) {
   return Math.max(0, dist) * 0.7 + 8;
 }
-function dist(a, b) {
-  return Math.max(Math.abs(a.clientX - b.clientX), Math.abs(a.clientY - b.clientY));
+function dist(a2, b) {
+  return Math.max(Math.abs(a2.clientX - b.clientX), Math.abs(a2.clientY - b.clientY));
 }
 
 class MouseSelection {
@@ -46502,17 +47688,17 @@ class MouseSelection {
     }
   }
   scroll() {
-    let { x, y } = this.scrollSpeed;
-    if (x && this.scrollParents.x) {
-      this.scrollParents.x.scrollLeft += x;
-      x = 0;
+    let { x: x3, y: y3 } = this.scrollSpeed;
+    if (x3 && this.scrollParents.x) {
+      this.scrollParents.x.scrollLeft += x3;
+      x3 = 0;
     }
-    if (y && this.scrollParents.y) {
-      this.scrollParents.y.scrollTop += y;
-      y = 0;
+    if (y3 && this.scrollParents.y) {
+      this.scrollParents.y.scrollTop += y3;
+      y3 = 0;
     }
-    if (x || y)
-      this.view.win.scrollBy(x, y);
+    if (x3 || y3)
+      this.view.win.scrollBy(x3, y3);
     if (this.dragging === false)
       this.select(this.lastEvent);
   }
@@ -47674,9 +48860,9 @@ class NodeBuilder {
     return builder.finish(from);
   }
 }
-function heightRelevantDecoChanges(a, b, diff) {
+function heightRelevantDecoChanges(a2, b, diff) {
   let comp = new DecorationComparator2;
-  RangeSet.compare(a, b, diff, comp, 0);
+  RangeSet.compare(a2, b, diff, comp, 0);
   return comp.changes;
 }
 
@@ -47685,8 +48871,8 @@ class DecorationComparator2 {
     this.changes = [];
   }
   compareRange() {}
-  comparePoint(from, to, a, b) {
-    if (from < to || a && a.heightRelevant || b && b.heightRelevant)
+  comparePoint(from, to, a2, b) {
+    if (from < to || a2 && a2.heightRelevant || b && b.heightRelevant)
       addRange(from, to, this.changes, 5);
   }
 }
@@ -47741,11 +48927,11 @@ class LineGap {
     this.size = size4;
     this.displaySize = displaySize;
   }
-  static same(a, b) {
-    if (a.length != b.length)
+  static same(a2, b) {
+    if (a2.length != b.length)
       return false;
-    for (let i2 = 0;i2 < a.length; i2++) {
-      let gA = a[i2], gB = b[i2];
+    for (let i2 = 0;i2 < a2.length; i2++) {
+      let gA = a2[i2], gB = b[i2];
       if (gA.from != gB.from || gA.to != gB.to || gA.size != gB.size)
         return false;
     }
@@ -47832,7 +49018,7 @@ class ViewState {
         viewports.push(new Viewport(from, to));
       }
     }
-    this.viewports = viewports.sort((a, b) => a.from - b.from);
+    this.viewports = viewports.sort((a2, b) => a2.from - b.from);
     return this.updateScaler();
   }
   updateScaler() {
@@ -48052,7 +49238,7 @@ class ViewState {
           return;
         }
       }
-      let gap = find(current, (gap2) => gap2.from >= line.from && gap2.to <= line.to && Math.abs(gap2.from - from) < halfMargin && Math.abs(gap2.to - to) < halfMargin && !avoid.some((pos) => gap2.from < pos && gap2.to > pos));
+      let gap = find2(current, (gap2) => gap2.from >= line.from && gap2.to <= line.to && Math.abs(gap2.from - from) < halfMargin && Math.abs(gap2.to - to) < halfMargin && !avoid.some((pos) => gap2.from < pos && gap2.to > pos));
       if (!gap) {
         if (to < line.to && mayMeasure && wrapping && mayMeasure.visibleRanges.some((r2) => r2.from <= to && r2.to >= to)) {
           let lineStart = mayMeasure.moveToLineBoundary(EditorSelection.cursor(to), false, true).head;
@@ -48236,7 +49422,7 @@ function findFraction(structure, pos) {
   }
   return counted / structure.total;
 }
-function find(array, f) {
+function find2(array, f) {
   for (let val of array)
     if (f(val))
       return val;
@@ -48321,12 +49507,12 @@ var lightDarkIDs = { "&light": "." + baseLightID, "&dark": "." + baseDarkID };
 function buildTheme(main, spec, scopes) {
   return new StyleModule(spec, {
     finish(sel) {
-      return /&/.test(sel) ? sel.replace(/&\w*/, (m) => {
-        if (m == "&")
+      return /&/.test(sel) ? sel.replace(/&\w*/, (m2) => {
+        if (m2 == "&")
           return main;
-        if (!scopes || !scopes[m])
-          throw new RangeError(`Unsupported selector: ${m}`);
-        return scopes[m];
+        if (!scopes || !scopes[m2])
+          throw new RangeError(`Unsupported selector: ${m2}`);
+        return scopes[m2];
       }) : main + " " + sel;
     }
   });
@@ -48638,7 +49824,7 @@ class DOMObserver {
     this.observer = new MutationObserver((mutations) => {
       for (let mut of mutations)
         this.queue.push(mut);
-      if ((browser.ie && browser.ie_version <= 11 || browser.ios && view.composing) && mutations.some((m) => m.type == "childList" && m.removedNodes.length || m.type == "characterData" && m.oldValue.length > m.target.nodeValue.length))
+      if ((browser.ie && browser.ie_version <= 11 || browser.ios && view.composing) && mutations.some((m2) => m2.type == "childList" && m2.removedNodes.length || m2.type == "characterData" && m2.oldValue.length > m2.target.nodeValue.length))
         this.flushSoon();
       else
         this.flush();
@@ -49215,12 +50401,12 @@ class EditContextManager {
   }
   toEditorPos(contextPos, clipLen = this.to - this.from) {
     contextPos = Math.min(contextPos, clipLen);
-    let c = this.composing;
-    return c && c.drifted ? c.editorBase + (contextPos - c.contextBase) : contextPos + this.from;
+    let c2 = this.composing;
+    return c2 && c2.drifted ? c2.editorBase + (contextPos - c2.contextBase) : contextPos + this.from;
   }
   toContextPos(editorPos) {
-    let c = this.composing;
-    return c && c.drifted ? c.contextBase + (editorPos - c.editorBase) : editorPos - this.from;
+    let c2 = this.composing;
+    return c2 && c2.drifted ? c2.contextBase + (editorPos - c2.editorBase) : editorPos - this.from;
   }
   destroy() {
     for (let event in this.handlers)
@@ -49277,8 +50463,8 @@ class EditorView {
     this.dom.appendChild(this.scrollDOM);
     if (config.parent)
       config.parent.appendChild(this.dom);
-    let { dispatch } = config;
-    this.dispatchTransactions = config.dispatchTransactions || dispatch && ((trs) => trs.forEach((tr) => dispatch(tr, this))) || ((trs) => this.update(trs));
+    let { dispatch: dispatch2 } = config;
+    this.dispatchTransactions = config.dispatchTransactions || dispatch2 && ((trs) => trs.forEach((tr) => dispatch2(tr, this))) || ((trs) => this.update(trs));
     this.dispatch = this.dispatch.bind(this);
     this._root = config.root || getRoot(config.parent) || document;
     this.viewState = new ViewState(this, config.state || EditorState.create(config));
@@ -49350,8 +50536,8 @@ class EditorView {
           scrollTarget = scrollTarget.map(tr.changes);
         if (tr.scrollIntoView) {
           let { main } = tr.state.selection;
-          let { x, y } = this.state.facet(EditorView.cursorScrollMargin);
-          scrollTarget = new ScrollTarget(main.empty ? main : EditorSelection.cursor(main.head, main.head > main.anchor ? -1 : 1), "nearest", "nearest", y, x);
+          let { x: x3, y: y3 } = this.state.facet(EditorView.cursorScrollMargin);
+          scrollTarget = new ScrollTarget(main.empty ? main : EditorSelection.cursor(main.head, main.head > main.anchor ? -1 : 1), "nearest", "nearest", y3, x3);
         }
         for (let e of tr.effects)
           if (e.is(scrollIntoView))
@@ -49509,9 +50695,9 @@ class EditorView {
         let measuring = [];
         if (!(changed & 4))
           [this.measureRequests, measuring] = [measuring, this.measureRequests];
-        let measured = measuring.map((m) => {
+        let measured = measuring.map((m2) => {
           try {
-            return m.read(this);
+            return m2.read(this);
           } catch (e) {
             logException(this.state, e);
             return BadMeasure;
@@ -49535,9 +50721,9 @@ class EditorView {
         for (let i3 = 0;i3 < measuring.length; i3++)
           if (measured[i3] != BadMeasure) {
             try {
-              let m = measuring[i3];
-              if (m.write)
-                m.write(measured[i3], this);
+              let m2 = measuring[i3];
+              if (m2.write)
+                m2.write(measured[i3], this);
             } catch (e) {
               logException(this.state, e);
             }
@@ -49849,14 +51035,14 @@ EditorView.atomicRanges = atomicRanges;
 EditorView.bidiIsolatedRanges = bidiIsolatedRanges;
 EditorView.cursorScrollMargin = /* @__PURE__ */ Facet.define({
   combine: (inputs) => {
-    let x = 5, y = 5;
+    let x3 = 5, y3 = 5;
     for (let i2 of inputs) {
       if (typeof i2 == "number")
-        x = y = i2;
+        x3 = y3 = i2;
       else
-        ({ x, y } = i2);
+        ({ x: x3, y: y3 } = i2);
     }
-    return { x, y };
+    return { x: x3, y: y3 };
   }
 });
 EditorView.scrollMargins = scrollMargins;
@@ -49879,7 +51065,7 @@ class CachedOrder {
     this.order = order;
   }
   static update(cache, changes) {
-    if (changes.empty && !cache.some((c) => c.fresh))
+    if (changes.empty && !cache.some((c2) => c2.fresh))
       return cache;
     let result = [], lastDir = cache.length ? cache[cache.length - 1].dir : Direction.LTR;
     for (let i2 = Math.max(0, cache.length - 10);i2 < cache.length; i2++) {
@@ -49955,7 +51141,7 @@ function getKeymap(state) {
   let bindings = state.facet(keymap);
   let map = Keymaps.get(bindings);
   if (!map)
-    Keymaps.set(bindings, map = buildKeymap(bindings.reduce((a, b) => a.concat(b), [])));
+    Keymaps.set(bindings, map = buildKeymap(bindings.reduce((a2, b) => a2.concat(b), [])));
   return map;
 }
 var storedPrefix = null;
@@ -49970,7 +51156,7 @@ function buildKeymap(bindings, platform3 = currentPlatform) {
     else if (current != is)
       throw new Error("Key binding " + name + " is used both as a regular binding and as a multi-stroke prefix");
   };
-  let add = (scope, key, command, preventDefault, stopPropagation) => {
+  let add2 = (scope, key, command, preventDefault, stopPropagation) => {
     var _a, _b;
     let scopeObj = bound[scope] || (bound[scope] = Object.create(null));
     let parts = key.split(/ (?!$)/).map((k) => normalizeKeyName(k, platform3));
@@ -50020,9 +51206,9 @@ function buildKeymap(bindings, platform3 = currentPlatform) {
     if (!name)
       continue;
     for (let scope of scopes) {
-      add(scope, name, b.run, b.preventDefault, b.stopPropagation);
+      add2(scope, name, b.run, b.preventDefault, b.stopPropagation);
       if (b.shift)
-        add(scope, "Shift-" + name, b.shift, b.preventDefault, b.stopPropagation);
+        add2(scope, "Shift-" + name, b.shift, b.preventDefault, b.stopPropagation);
     }
   }
   return bound;
@@ -50308,11 +51494,11 @@ class NodeSet {
     for (let type of this.types) {
       let newProps = null;
       for (let source of props) {
-        let add = source(type);
-        if (add) {
+        let add2 = source(type);
+        if (add2) {
           if (!newProps)
             newProps = Object.assign({}, type.props);
-          let value = add[1], prop = add[0];
+          let value = add2[1], prop = add2[0];
           if (prop.combine && prop.id in newProps)
             value = prop.combine(newProps[prop.id], value);
           newProps[prop.id] = value;
@@ -50391,19 +51577,19 @@ class Tree {
   iterate(spec) {
     let { enter, leave, from = 0, to = this.length } = spec;
     let mode = spec.mode || 0, anon = (mode & IterMode.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode.IncludeAnonymous);; ) {
+    for (let c2 = this.cursor(mode | IterMode.IncludeAnonymous);; ) {
       let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
+      if (c2.from <= to && c2.to >= from && (!anon && c2.type.isAnonymous || enter(c2) !== false)) {
+        if (c2.firstChild())
           continue;
         entered = true;
       }
       for (;; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
+        if (entered && leave && (anon || !c2.type.isAnonymous))
+          leave(c2);
+        if (c2.nextSibling())
           break;
-        if (!c.parent())
+        if (!c2.parent())
           return;
         entered = true;
       }
@@ -50429,9 +51615,9 @@ class Tree {
 Tree.empty = new Tree(NodeType.none, [], [], 0);
 
 class FlatBufferCursor {
-  constructor(buffer, index3) {
+  constructor(buffer, index4) {
     this.buffer = buffer;
-    this.index = index3;
+    this.index = index4;
   }
   get id() {
     return this.buffer[this.index - 4];
@@ -50457,34 +51643,34 @@ class FlatBufferCursor {
 }
 
 class TreeBuffer {
-  constructor(buffer, length, set3) {
+  constructor(buffer, length, set4) {
     this.buffer = buffer;
     this.length = length;
-    this.set = set3;
+    this.set = set4;
   }
   get type() {
     return NodeType.none;
   }
   toString() {
     let result = [];
-    for (let index3 = 0;index3 < this.buffer.length; ) {
-      result.push(this.childString(index3));
-      index3 = this.buffer[index3 + 3];
+    for (let index4 = 0;index4 < this.buffer.length; ) {
+      result.push(this.childString(index4));
+      index4 = this.buffer[index4 + 3];
     }
     return result.join(",");
   }
-  childString(index3) {
-    let id = this.buffer[index3], endIndex = this.buffer[index3 + 3];
+  childString(index4) {
+    let id = this.buffer[index4], endIndex = this.buffer[index4 + 3];
     let type = this.set.types[id], result = type.name;
     if (/\W/.test(result) && !type.isError)
       result = JSON.stringify(result);
-    index3 += 4;
-    if (endIndex == index3)
+    index4 += 4;
+    if (endIndex == index4)
       return result;
     let children = [];
-    while (index3 < endIndex) {
-      children.push(this.childString(index3));
-      index3 = this.buffer[index3 + 3];
+    while (index4 < endIndex) {
+      children.push(this.childString(index4));
+      index4 = this.buffer[index4 + 3];
     }
     return result + "(" + children.join(",") + ")";
   }
@@ -50594,11 +51780,11 @@ class BaseNode {
 }
 
 class TreeNode extends BaseNode {
-  constructor(_tree, from, index3, _parent) {
+  constructor(_tree, from, index4, _parent) {
     super();
     this._tree = _tree;
     this.from = from;
-    this.index = index3;
+    this.index = index4;
     this._parent = _parent;
   }
   get type() {
@@ -50619,9 +51805,9 @@ class TreeNode extends BaseNode {
         if (next instanceof TreeBuffer) {
           if (mode & IterMode.ExcludeBuffers)
             continue;
-          let index3 = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index3 > -1)
-            return new BufferNode(new BufferContext(parent, next, i2, start), null, index3);
+          let index4 = next.findChild(0, next.buffer.length, dir, pos - start, side);
+          if (index4 > -1)
+            return new BufferNode(new BufferContext(parent, next, i2, start), null, index4);
         } else if (mode & IterMode.IncludeAnonymous || (!next.type.isAnonymous || hasChild(next))) {
           let mounted2;
           if (!(mode & IterMode.IgnoreMounts) && (mounted2 = MountedTree.get(next)) && !mounted2.overlay)
@@ -50725,10 +51911,10 @@ function matchNodeContext(node, context, i2 = context.length - 1) {
 }
 
 class BufferContext {
-  constructor(parent, buffer, index3, start) {
+  constructor(parent, buffer, index4, start) {
     this.parent = parent;
     this.buffer = buffer;
-    this.index = index3;
+    this.index = index4;
     this.start = start;
   }
 }
@@ -50743,17 +51929,17 @@ class BufferNode extends BaseNode {
   get to() {
     return this.context.start + this.context.buffer.buffer[this.index + 2];
   }
-  constructor(context, _parent, index3) {
+  constructor(context, _parent, index4) {
     super();
     this.context = context;
     this._parent = _parent;
-    this.index = index3;
-    this.type = context.buffer.set.types[context.buffer.buffer[index3]];
+    this.index = index4;
+    this.type = context.buffer.set.types[context.buffer.buffer[index4]];
   }
   child(dir, pos, side) {
     let { buffer } = this.context;
-    let index3 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index3 < 0 ? null : new BufferNode(this.context, this, index3);
+    let index4 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
+    return index4 < 0 ? null : new BufferNode(this.context, this, index4);
   }
   get firstChild() {
     return this.child(1, 0, 4);
@@ -50774,8 +51960,8 @@ class BufferNode extends BaseNode {
     if (mode & IterMode.ExcludeBuffers)
       return null;
     let { buffer } = this.context;
-    let index3 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index3 < 0 ? null : new BufferNode(this.context, this, index3);
+    let index4 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
+    return index4 < 0 ? null : new BufferNode(this.context, this, index4);
   }
   get parent() {
     return this._parent || this.context.parent.nextSignificantParent();
@@ -50892,12 +52078,12 @@ class TreeCursor {
     this.to = node.to;
     return true;
   }
-  yieldBuf(index3, type) {
-    this.index = index3;
+  yieldBuf(index4, type) {
+    this.index = index4;
     let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index3]];
-    this.from = start + buffer.buffer[index3 + 1];
-    this.to = start + buffer.buffer[index3 + 2];
+    this.type = type || buffer.set.types[buffer.buffer[index4]];
+    this.from = start + buffer.buffer[index4 + 1];
+    this.to = start + buffer.buffer[index4 + 2];
     return true;
   }
   yield(node) {
@@ -50917,11 +52103,11 @@ class TreeCursor {
     if (!this.buffer)
       return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
     let { buffer } = this.buffer;
-    let index3 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index3 < 0)
+    let index4 = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
+    if (index4 < 0)
       return false;
     this.stack.push(this.index);
-    return this.yieldBuf(index3);
+    return this.yieldBuf(index4);
   }
   firstChild() {
     return this.enterChild(1, 0, 4);
@@ -50971,7 +52157,7 @@ class TreeCursor {
     return this.sibling(-1);
   }
   atLastNode(dir) {
-    let index3, parent, { buffer } = this;
+    let index4, parent, { buffer } = this;
     if (buffer) {
       if (dir > 0) {
         if (this.index < buffer.buffer.buffer.length)
@@ -50981,13 +52167,13 @@ class TreeCursor {
           if (buffer.buffer.buffer[i2 + 3] < this.index)
             return false;
       }
-      ({ index: index3, parent } = buffer);
+      ({ index: index4, parent } = buffer);
     } else {
-      ({ index: index3, _parent: parent } = this._tree);
+      ({ index: index4, _parent: parent } = this._tree);
     }
-    for (;parent; { index: index3, _parent: parent } = parent) {
-      if (index3 > -1)
-        for (let i2 = index3 + dir, e = dir < 0 ? -1 : parent._tree.children.length;i2 != e; i2 += dir) {
+    for (;parent; { index: index4, _parent: parent } = parent) {
+      if (index4 > -1)
+        for (let i2 = index4 + dir, e = dir < 0 ? -1 : parent._tree.children.length;i2 != e; i2 += dir) {
           let child = parent._tree.children[i2];
           if (this.mode & IterMode.IncludeAnonymous || child instanceof TreeBuffer || !child.type.isAnonymous || hasChild(child))
             return false;
@@ -51024,16 +52210,16 @@ class TreeCursor {
     let cache = this.bufferNode, result = null, depth = 0;
     if (cache && cache.context == this.buffer) {
       scan:
-        for (let index3 = this.index, d = this.stack.length;d >= 0; ) {
-          for (let c = cache;c; c = c._parent)
-            if (c.index == index3) {
-              if (index3 == this.index)
-                return c;
-              result = c;
+        for (let index4 = this.index, d = this.stack.length;d >= 0; ) {
+          for (let c2 = cache;c2; c2 = c2._parent)
+            if (c2.index == index4) {
+              if (index4 == this.index)
+                return c2;
+              result = c2;
               depth = d + 1;
               break scan;
             }
-          index3 = this.stack[--d];
+          index4 = this.stack[--d];
         }
     }
     for (let i2 = depth;i2 < this.stack.length; i2++)
@@ -51118,9 +52304,9 @@ function buildTree(data) {
     let startPos = start - parentStart;
     if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor.pos - minPos, inRepeat))) {
       let data2 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor.pos - buffer2.size, index3 = data2.length;
+      let endPos = cursor.pos - buffer2.size, index4 = data2.length;
       while (cursor.pos > endPos)
-        index3 = copyToBuffer(buffer2.start, data2, index3);
+        index4 = copyToBuffer(buffer2.start, data2, index4);
       node = new TreeBuffer(data2, end - buffer2.start, nodeSet);
       startPos = buffer2.start - parentStart;
     } else {
@@ -51263,26 +52449,26 @@ function buildTree(data) {
     }
     return result.size > 4 ? result : undefined;
   }
-  function copyToBuffer(bufferStart, buffer2, index3) {
+  function copyToBuffer(bufferStart, buffer2, index4) {
     let { id, start, end, size: size4 } = cursor;
     cursor.next();
     if (size4 >= 0 && id < minRepeatType) {
-      let startIndex = index3;
+      let startIndex = index4;
       if (size4 > 4) {
         let endPos = cursor.pos - (size4 - 4);
         while (cursor.pos > endPos)
-          index3 = copyToBuffer(bufferStart, buffer2, index3);
+          index4 = copyToBuffer(bufferStart, buffer2, index4);
       }
-      buffer2[--index3] = startIndex;
-      buffer2[--index3] = end - bufferStart;
-      buffer2[--index3] = start - bufferStart;
-      buffer2[--index3] = id;
+      buffer2[--index4] = startIndex;
+      buffer2[--index4] = end - bufferStart;
+      buffer2[--index4] = start - bufferStart;
+      buffer2[--index4] = id;
     } else if (size4 == -3) {
       contextHash = id;
     } else if (size4 == -4) {
       lookAhead = id;
     }
-    return index3;
+    return index4;
   }
   let children = [], positions = [];
   while (cursor.pos > 0)
@@ -51432,9 +52618,9 @@ var stoppedInner = new NodeProp({ perNode: true });
 var nextTagID = 0;
 
 class Tag {
-  constructor(name, set3, base2, modified) {
+  constructor(name, set4, base2, modified) {
     this.name = name;
-    this.set = set3;
+    this.set = set4;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID++;
@@ -51464,7 +52650,7 @@ class Tag {
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a2, b) => a2.id - b.id));
     };
   }
 }
@@ -51482,19 +52668,19 @@ class Modifier {
     let exists = mods[0].instances.find((t) => t.base == base2 && sameArray2(mods, t.modified));
     if (exists)
       return exists;
-    let set3 = [], tag = new Tag(base2.name, set3, base2, mods);
-    for (let m of mods)
-      m.instances.push(tag);
+    let set4 = [], tag = new Tag(base2.name, set4, base2, mods);
+    for (let m2 of mods)
+      m2.instances.push(tag);
     let configs = powerSet(mods);
     for (let parent of base2.set)
       if (!parent.modified.length)
         for (let config of configs)
-          set3.push(Modifier.get(parent, config));
+          set4.push(Modifier.get(parent, config));
     return tag;
   }
 }
-function sameArray2(a, b) {
-  return a.length == b.length && a.every((x, i2) => x == b[i2]);
+function sameArray2(a2, b) {
+  return a2.length == b.length && a2.every((x3, i2) => x3 == b[i2]);
 }
 function powerSet(array) {
   let sets = [[]];
@@ -51503,7 +52689,7 @@ function powerSet(array) {
       sets.push(sets[j2].concat(array[i2]));
     }
   }
-  return sets.sort((a, b) => b.length - a.length);
+  return sets.sort((a2, b) => b.length - a2.length);
 }
 function styleTags(spec) {
   let byName = Object.create(null);
@@ -51519,11 +52705,11 @@ function styleTags(spec) {
             mode = 1;
             break;
           }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
+          let m2 = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
+          if (!m2)
             throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
+          pieces.push(m2[0] == "*" ? "" : m2[0][0] == '"' ? JSON.parse(m2[0]) : m2[0]);
+          pos += m2[0].length;
           if (pos == part.length)
             break;
           let next = part[pos++];
@@ -51545,15 +52731,15 @@ function styleTags(spec) {
   return ruleNodeProp.add(byName);
 }
 var ruleNodeProp = new NodeProp({
-  combine(a, b) {
+  combine(a2, b) {
     let cur, root, take;
-    while (a || b) {
-      if (!a || b && a.depth >= b.depth) {
+    while (a2 || b) {
+      if (!a2 || b && a2.depth >= b.depth) {
         take = b;
         b = b.next;
       } else {
-        take = a;
-        a = a.next;
+        take = a2;
+        a2 = a2.next;
       }
       if (cur && cur.mode == take.mode && !take.context && !cur.context)
         continue;
@@ -52187,15 +53373,15 @@ Language.state = /* @__PURE__ */ StateField.define({
   }
 });
 var requestIdle = (callback) => {
-  let timeout = setTimeout(() => callback(), 500);
-  return () => clearTimeout(timeout);
+  let timeout2 = setTimeout(() => callback(), 500);
+  return () => clearTimeout(timeout2);
 };
 if (typeof requestIdleCallback != "undefined")
   requestIdle = (callback) => {
-    let idle = -1, timeout = setTimeout(() => {
+    let idle = -1, timeout2 = setTimeout(() => {
       idle = requestIdleCallback(callback, { timeout: 500 - 100 });
     }, 100);
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
+    return () => idle < 0 ? clearTimeout(timeout2) : cancelIdleCallback(idle);
   };
 var isInputPending = typeof navigator != "undefined" && ((_a = navigator.scheduling) === null || _a === undefined ? undefined : _a.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
 var parseWorker = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker {
@@ -52228,9 +53414,9 @@ var parseWorker = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker {
   }
   work(deadline) {
     this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 30000;
+    let now2 = Date.now();
+    if (this.chunkEnd < now2 && (this.chunkEnd < 0 || this.view.hasFocus)) {
+      this.chunkEnd = now2 + 30000;
       this.chunkBudget = 3000;
     }
     if (this.chunkBudget <= 0)
@@ -52243,7 +53429,7 @@ var parseWorker = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker {
     let done = field.context.work(() => {
       return isInputPending && isInputPending() || Date.now() > endTime;
     }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
+    this.chunkBudget -= Date.now() - now2;
     if (done || this.chunkBudget <= 0) {
       field.context.takeTree();
       this.view.dispatch({ effects: Language.setState.of(new LanguageState(field.context)) });
@@ -52378,11 +53564,11 @@ function syntaxIndentation(cx2, ast, pos) {
   let stack = ast.resolveStack(pos);
   let inner = ast.resolveInner(pos, -1).resolve(pos, 0).enterUnfinishedNodesBefore(pos);
   if (inner != stack.node) {
-    let add = [];
+    let add2 = [];
     for (let cur = inner;cur && !(cur.from < stack.node.from || cur.to > stack.node.to || cur.from == stack.node.from && cur.type == stack.node.type); cur = cur.parent)
-      add.push(cur);
-    for (let i2 = add.length - 1;i2 >= 0; i2--)
-      stack = { node: add[i2], next: stack };
+      add2.push(cur);
+    for (let i2 = add2.length - 1;i2 >= 0; i2--)
+      stack = { node: add2[i2], next: stack };
   }
   return indentFor(stack, cx2, pos);
 }
@@ -52656,9 +53842,9 @@ function matchingNodes(node, dir, brackets) {
   if (byProp)
     return byProp;
   if (node.name.length == 1) {
-    let index3 = brackets.indexOf(node.name);
-    if (index3 > -1 && index3 % 2 == (dir < 0 ? 1 : 0))
-      return [brackets[index3 + dir]];
+    let index4 = brackets.indexOf(node.name);
+    if (index4 > -1 && index4 % 2 == (dir < 0 ? 1 : 0))
+      return [brackets[index4 + dir]];
   }
   return null;
 }
@@ -53032,15 +54218,15 @@ class Parse {
   }
   nextLine() {
     let from = this.parsedPos, line = this.lineAfter(from), end = from + line.length;
-    for (let index3 = this.rangeIndex;; ) {
-      let rangeEnd = this.ranges[index3].to;
+    for (let index4 = this.rangeIndex;; ) {
+      let rangeEnd = this.ranges[index4].to;
       if (rangeEnd >= end)
         break;
       line = line.slice(0, rangeEnd - (end - line.length));
-      index3++;
-      if (index3 == this.ranges.length)
+      index4++;
+      if (index4 == this.ranges.length)
         break;
-      let rangeStart = this.ranges[index3].from;
+      let rangeStart = this.ranges[index4].from;
       let after = this.lineAfter(rangeStart);
       line += after;
       end = rangeStart + after.length;
@@ -53222,13 +54408,13 @@ var toggleComment = (target) => {
   return config.line ? toggleLineComment(target) : config.block ? toggleBlockCommentByLine(target) : false;
 };
 function command(f, option) {
-  return ({ state, dispatch }) => {
+  return ({ state, dispatch: dispatch2 }) => {
     if (state.readOnly)
       return false;
     let tr = f(option, state);
     if (!tr)
       return false;
-    dispatch(state.update(tr));
+    dispatch2(state.update(tr));
     return true;
   };
 }
@@ -53291,16 +54477,16 @@ function selectedLineRanges(state) {
 }
 function changeBlockComment(option, state, ranges = state.selection.ranges) {
   let tokens = ranges.map((r2) => getConfig(state, r2.from).block);
-  if (!tokens.every((c) => c))
+  if (!tokens.every((c2) => c2))
     return null;
   let comments = ranges.map((r2, i2) => findBlockComment(state, tokens[i2], r2.from, r2.to));
-  if (option != 2 && !comments.every((c) => c)) {
+  if (option != 2 && !comments.every((c2) => c2)) {
     return { changes: state.changes(ranges.map((range, i2) => {
       if (comments[i2])
         return [];
       return [{ from: range.from, insert: tokens[i2].open + " " }, { from: range.to, insert: " " + tokens[i2].close }];
     })) };
-  } else if (option != 1 && comments.some((c) => c)) {
+  } else if (option != 1 && comments.some((c2) => c2)) {
     let changes = [];
     for (let i2 = 0, comment2;i2 < comments.length; i2++)
       if (comment2 = comments[i2]) {
@@ -53375,7 +54561,7 @@ var historyConfig = /* @__PURE__ */ Facet.define({
     }, {
       minDepth: Math.max,
       newGroupDelay: Math.min,
-      joinToEvent: (a, b) => (tr, adj) => a(tr, adj) || b(tr, adj)
+      joinToEvent: (a2, b) => (tr, adj) => a2(tr, adj) || b(tr, adj)
     });
   }
 });
@@ -53433,7 +54619,7 @@ function history(config = {}) {
   ];
 }
 function cmd(side, selection) {
-  return function({ state, dispatch }) {
+  return function({ state, dispatch: dispatch2 }) {
     if (!selection && state.readOnly)
       return false;
     let historyState = state.field(historyField_, false);
@@ -53442,7 +54628,7 @@ function cmd(side, selection) {
     let tr = historyState.pop(side, state, selection);
     if (!tr)
       return false;
-    dispatch(tr);
+    dispatch2(tr);
     return true;
   };
 }
@@ -53494,9 +54680,9 @@ function updateBranch(branch, to, maxLen, newEvent) {
   newBranch.push(newEvent);
   return newBranch;
 }
-function isAdjacent(a, b) {
+function isAdjacent(a2, b) {
   let ranges = [], isAdjacent2 = false;
-  a.iterChangedRanges((f, t2) => ranges.push(f, t2));
+  a2.iterChangedRanges((f, t2) => ranges.push(f, t2));
   b.iterChangedRanges((_f, _t2, f, t2) => {
     for (let i2 = 0;i2 < ranges.length; ) {
       let from = ranges[i2++], to = ranges[i2++];
@@ -53506,11 +54692,11 @@ function isAdjacent(a, b) {
   });
   return isAdjacent2;
 }
-function eqSelectionShape(a, b) {
-  return a.ranges.length == b.ranges.length && a.ranges.filter((r2, i2) => r2.empty != b.ranges[i2].empty).length === 0;
+function eqSelectionShape(a2, b) {
+  return a2.ranges.length == b.ranges.length && a2.ranges.filter((r2, i2) => r2.empty != b.ranges[i2].empty).length === 0;
 }
-function conc(a, b) {
-  return !a.length ? b : !b.length ? a : a.concat(b);
+function conc(a2, b) {
+  return !a2.length ? b : !b.length ? a2 : a2.concat(b);
 }
 var none3 = [];
 var MaxSelectionsPerEvent = 200;
@@ -53632,11 +54818,11 @@ function updateSel(sel, by) {
 function setSel(state, selection) {
   return state.update({ selection, scrollIntoView: true, userEvent: "select" });
 }
-function moveSel({ state, dispatch }, how) {
+function moveSel({ state, dispatch: dispatch2 }, how) {
   let selection = updateSel(state.selection, how);
   if (selection.eq(state.selection, true))
     return false;
-  dispatch(setSel(state, selection));
+  dispatch2(setSel(state, selection));
   return true;
 }
 function rangeEnd(range, forward) {
@@ -53752,7 +54938,7 @@ var cursorLineBoundaryLeft = (view) => moveSel(view, (range) => moveByLineBounda
 var cursorLineBoundaryRight = (view) => moveSel(view, (range) => moveByLineBoundary(view, range, ltrAtCursor(view)));
 var cursorLineStart = (view) => moveSel(view, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).from, 1));
 var cursorLineEnd = (view) => moveSel(view, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).to, -1));
-function toMatchingBracket(state, dispatch, extend) {
+function toMatchingBracket(state, dispatch2, extend) {
   let found = false, selection = updateSel(state.selection, (range) => {
     let matching = matchBrackets(state, range.head, -1) || matchBrackets(state, range.head, 1) || range.head > 0 && matchBrackets(state, range.head - 1, 1) || range.head < state.doc.length && matchBrackets(state, range.head + 1, -1);
     if (!matching || !matching.end)
@@ -53763,10 +54949,10 @@ function toMatchingBracket(state, dispatch, extend) {
   });
   if (!found)
     return false;
-  dispatch(setSel(state, selection));
+  dispatch2(setSel(state, selection));
   return true;
 }
-var cursorMatchingBracket = ({ state, dispatch }) => toMatchingBracket(state, dispatch, false);
+var cursorMatchingBracket = ({ state, dispatch: dispatch2 }) => toMatchingBracket(state, dispatch2, false);
 function extendSel(target, forward, how) {
   let selection = updateSel(target.state.selection, (range) => {
     if (range.undirectional && range.head >= range.anchor != forward)
@@ -53819,32 +55005,32 @@ var selectLineBoundaryRight = (view) => {
 };
 var selectLineStart = (view) => extendSel(view, false, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).from));
 var selectLineEnd = (view) => extendSel(view, true, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).to));
-var cursorDocStart = ({ state, dispatch }) => {
-  dispatch(setSel(state, { anchor: 0 }));
+var cursorDocStart = ({ state, dispatch: dispatch2 }) => {
+  dispatch2(setSel(state, { anchor: 0 }));
   return true;
 };
-var cursorDocEnd = ({ state, dispatch }) => {
-  dispatch(setSel(state, { anchor: state.doc.length }));
+var cursorDocEnd = ({ state, dispatch: dispatch2 }) => {
+  dispatch2(setSel(state, { anchor: state.doc.length }));
   return true;
 };
-var selectDocStart = ({ state, dispatch }) => {
-  dispatch(setSel(state, { anchor: state.selection.main.anchor, head: 0 }));
+var selectDocStart = ({ state, dispatch: dispatch2 }) => {
+  dispatch2(setSel(state, { anchor: state.selection.main.anchor, head: 0 }));
   return true;
 };
-var selectDocEnd = ({ state, dispatch }) => {
-  dispatch(setSel(state, { anchor: state.selection.main.anchor, head: state.doc.length }));
+var selectDocEnd = ({ state, dispatch: dispatch2 }) => {
+  dispatch2(setSel(state, { anchor: state.selection.main.anchor, head: state.doc.length }));
   return true;
 };
-var selectAll = ({ state, dispatch }) => {
-  dispatch(state.update({ selection: { anchor: 0, head: state.doc.length }, userEvent: "select" }));
+var selectAll = ({ state, dispatch: dispatch2 }) => {
+  dispatch2(state.update({ selection: { anchor: 0, head: state.doc.length }, userEvent: "select" }));
   return true;
 };
-var selectLine = ({ state, dispatch }) => {
+var selectLine = ({ state, dispatch: dispatch2 }) => {
   let ranges = selectedLineBlocks(state).map(({ from, to }) => EditorSelection.undirectionalRange(from, Math.min(to + 1, state.doc.length)));
-  dispatch(state.update({ selection: EditorSelection.create(ranges), userEvent: "select" }));
+  dispatch2(state.update({ selection: EditorSelection.create(ranges), userEvent: "select" }));
   return true;
 };
-var selectParentSyntax = ({ state, dispatch }) => {
+var selectParentSyntax = ({ state, dispatch: dispatch2 }) => {
   let selection = updateSel(state.selection, (range) => {
     let tree = syntaxTree(state), stack = tree.resolveStack(range.from, 1);
     if (range.empty) {
@@ -53861,7 +55047,7 @@ var selectParentSyntax = ({ state, dispatch }) => {
   });
   if (selection.eq(state.selection))
     return false;
-  dispatch(setSel(state, selection));
+  dispatch2(setSel(state, selection));
   return true;
 };
 function addCursorVertically(view, forward) {
@@ -53889,7 +55075,7 @@ function addCursorVertically(view, forward) {
 }
 var addCursorAbove = (view) => addCursorVertically(view, false);
 var addCursorBelow = (view) => addCursorVertically(view, true);
-var simplifySelection = ({ state, dispatch }) => {
+var simplifySelection = ({ state, dispatch: dispatch2 }) => {
   let cur = state.selection, selection = null;
   if (cur.ranges.length > 1)
     selection = EditorSelection.create([cur.main]);
@@ -53897,7 +55083,7 @@ var simplifySelection = ({ state, dispatch }) => {
     selection = EditorSelection.create([EditorSelection.cursor(cur.main.head)]);
   if (!selection)
     return false;
-  dispatch(setSel(state, selection));
+  dispatch2(setSel(state, selection));
   return true;
 };
 function deleteBy(target, by) {
@@ -53995,7 +55181,7 @@ var deleteLineBoundaryForward = (view) => deleteBy(view, (range) => {
   let lineStart = view.moveToLineBoundary(range, true).head;
   return range.head < lineStart ? lineStart : Math.min(view.state.doc.length, range.head + 1);
 });
-var splitLine = ({ state, dispatch }) => {
+var splitLine = ({ state, dispatch: dispatch2 }) => {
   if (state.readOnly)
     return false;
   let changes = state.changeByRange((range) => {
@@ -54004,10 +55190,10 @@ var splitLine = ({ state, dispatch }) => {
       range: EditorSelection.cursor(range.from)
     };
   });
-  dispatch(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
+  dispatch2(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
   return true;
 };
-var transposeChars = ({ state, dispatch }) => {
+var transposeChars = ({ state, dispatch: dispatch2 }) => {
   if (state.readOnly)
     return false;
   let changes = state.changeByRange((range) => {
@@ -54023,7 +55209,7 @@ var transposeChars = ({ state, dispatch }) => {
   });
   if (changes.changes.empty)
     return false;
-  dispatch(state.update(changes, { scrollIntoView: true, userEvent: "move.character" }));
+  dispatch2(state.update(changes, { scrollIntoView: true, userEvent: "move.character" }));
   return true;
 };
 function selectedLineBlocks(state) {
@@ -54043,7 +55229,7 @@ function selectedLineBlocks(state) {
   }
   return blocks;
 }
-function moveLine(state, dispatch, forward) {
+function moveLine(state, dispatch2, forward) {
   if (state.readOnly)
     return false;
   let changes = [], ranges = [];
@@ -54064,7 +55250,7 @@ function moveLine(state, dispatch, forward) {
   }
   if (!changes.length)
     return false;
-  dispatch(state.update({
+  dispatch2(state.update({
     changes,
     scrollIntoView: true,
     selection: EditorSelection.create(ranges, state.selection.mainIndex),
@@ -54072,9 +55258,9 @@ function moveLine(state, dispatch, forward) {
   }));
   return true;
 }
-var moveLineUp = ({ state, dispatch }) => moveLine(state, dispatch, false);
-var moveLineDown = ({ state, dispatch }) => moveLine(state, dispatch, true);
-function copyLine(state, dispatch, forward) {
+var moveLineUp = ({ state, dispatch: dispatch2 }) => moveLine(state, dispatch2, false);
+var moveLineDown = ({ state, dispatch: dispatch2 }) => moveLine(state, dispatch2, true);
+function copyLine(state, dispatch2, forward) {
   if (state.readOnly)
     return false;
   let changes = [];
@@ -54085,7 +55271,7 @@ function copyLine(state, dispatch, forward) {
       changes.push({ from: block.to, insert: state.lineBreak + state.doc.slice(block.from, block.to) });
   }
   let changeSet = state.changes(changes);
-  dispatch(state.update({
+  dispatch2(state.update({
     changes: changeSet,
     selection: state.selection.map(changeSet, forward ? 1 : -1),
     scrollIntoView: true,
@@ -54093,8 +55279,8 @@ function copyLine(state, dispatch, forward) {
   }));
   return true;
 }
-var copyLineUp = ({ state, dispatch }) => copyLine(state, dispatch, false);
-var copyLineDown = ({ state, dispatch }) => copyLine(state, dispatch, true);
+var copyLineUp = ({ state, dispatch: dispatch2 }) => copyLine(state, dispatch2, false);
+var copyLineDown = ({ state, dispatch: dispatch2 }) => copyLine(state, dispatch2, true);
 var deleteLine = (view) => {
   if (view.state.readOnly)
     return false;
@@ -54129,7 +55315,7 @@ function isBetweenBrackets(state, pos) {
 var insertNewlineAndIndent = /* @__PURE__ */ newlineAndIndent(false);
 var insertBlankLine = /* @__PURE__ */ newlineAndIndent(true);
 function newlineAndIndent(atEof) {
-  return ({ state, dispatch }) => {
+  return ({ state, dispatch: dispatch2 }) => {
     if (state.readOnly)
       return false;
     let changes = state.changeByRange((range) => {
@@ -54155,7 +55341,7 @@ function newlineAndIndent(atEof) {
         range: EditorSelection.cursor(from + 1 + insert2[1].length)
       };
     });
-    dispatch(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
+    dispatch2(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
     return true;
   };
 }
@@ -54178,7 +55364,7 @@ function changeBySelectedLine(state, f) {
     };
   });
 }
-var indentSelection = ({ state, dispatch }) => {
+var indentSelection = ({ state, dispatch: dispatch2 }) => {
   if (state.readOnly)
     return false;
   let updated = Object.create(null);
@@ -54200,21 +55386,21 @@ var indentSelection = ({ state, dispatch }) => {
     }
   });
   if (!changes.changes.empty)
-    dispatch(state.update(changes, { userEvent: "indent" }));
+    dispatch2(state.update(changes, { userEvent: "indent" }));
   return true;
 };
-var indentMore = ({ state, dispatch }) => {
+var indentMore = ({ state, dispatch: dispatch2 }) => {
   if (state.readOnly)
     return false;
-  dispatch(state.update(changeBySelectedLine(state, (line, changes) => {
+  dispatch2(state.update(changeBySelectedLine(state, (line, changes) => {
     changes.push({ from: line.from, insert: state.facet(indentUnit) });
   }), { userEvent: "input.indent" }));
   return true;
 };
-var indentLess = ({ state, dispatch }) => {
+var indentLess = ({ state, dispatch: dispatch2 }) => {
   if (state.readOnly)
     return false;
-  dispatch(state.update(changeBySelectedLine(state, (line, changes) => {
+  dispatch2(state.update(changeBySelectedLine(state, (line, changes) => {
     let space = /^\s*/.exec(line.text)[0];
     if (!space)
       return;
@@ -54297,7 +55483,7 @@ var defaultKeymap = /* @__PURE__ */ [
 ].concat(standardKeymap);
 
 // src/scriptorium/surface/components/DocumentView.tsx
-var import_react15 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/components/markdownMode.ts
 var TOKEN_TAGS = {
@@ -54405,16 +55591,16 @@ var scriptoriumTheme = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "transparent" },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" }
 });
-function minimalChange(a, b) {
-  if (a === b)
+function minimalChange(a2, b) {
+  if (a2 === b)
     return null;
   let start = 0;
-  const max2 = Math.min(a.length, b.length);
-  while (start < max2 && a.charCodeAt(start) === b.charCodeAt(start))
+  const max2 = Math.min(a2.length, b.length);
+  while (start < max2 && a2.charCodeAt(start) === b.charCodeAt(start))
     start++;
-  let endA = a.length;
+  let endA = a2.length;
   let endB = b.length;
-  while (endA > start && endB > start && a.charCodeAt(endA - 1) === b.charCodeAt(endB - 1)) {
+  while (endA > start && endB > start && a2.charCodeAt(endA - 1) === b.charCodeAt(endB - 1)) {
     endA--;
     endB--;
   }
@@ -54427,15 +55613,15 @@ function DocumentView({
   onChange,
   onSave
 }) {
-  const host = import_react15.useRef(null);
-  const view = import_react15.useRef(null);
-  const initial2 = import_react15.useRef(text);
+  const host = import_react16.useRef(null);
+  const view = import_react16.useRef(null);
+  const initial2 = import_react16.useRef(text);
   initial2.current = text;
-  const handlers2 = import_react15.useRef({ onChange, onSave });
+  const handlers2 = import_react16.useRef({ onChange, onSave });
   handlers2.current = { onChange, onSave };
-  const pending = import_react15.useRef(null);
-  const lastRemote = import_react15.useRef(text);
-  import_react15.useEffect(() => {
+  const pending = import_react16.useRef(null);
+  const lastRemote = import_react16.useRef(text);
+  import_react16.useEffect(() => {
     if (!host.current)
       return;
     const send = (value) => {
@@ -54498,7 +55684,7 @@ function DocumentView({
       view.current = null;
     };
   }, [docKey, editable2]);
-  import_react15.useEffect(() => {
+  import_react16.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
@@ -54525,7 +55711,7 @@ function DocumentView({
 }
 
 // src/scriptorium/surface/components/MarkdownView.tsx
-var import_react16 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 
 // node_modules/decode-named-character-reference/index.dom.js
 var element = document.createElement("i");
@@ -54989,9 +56175,9 @@ function push(list, items) {
 var hasOwnProperty = {}.hasOwnProperty;
 function combineExtensions(extensions) {
   const all = {};
-  let index3 = -1;
-  while (++index3 < extensions.length) {
-    syntaxExtension(all, extensions[index3]);
+  let index4 = -1;
+  while (++index4 < extensions.length) {
+    syntaxExtension(all, extensions[index4]);
   }
   return all;
 }
@@ -55013,18 +56199,18 @@ function syntaxExtension(all, extension) {
   }
 }
 function constructs(existing, list) {
-  let index3 = -1;
+  let index4 = -1;
   const before = [];
-  while (++index3 < list.length) {
-    (list[index3].add === "after" ? existing : before).push(list[index3]);
+  while (++index4 < list.length) {
+    (list[index4].add === "after" ? existing : before).push(list[index4]);
   }
   splice(existing, 0, 0, before);
 }
 function combineHtmlExtensions(htmlExtensions) {
   const handlers2 = {};
-  let index3 = -1;
-  while (++index3 < htmlExtensions.length) {
-    htmlExtension(handlers2, htmlExtensions[index3]);
+  let index4 = -1;
+  while (++index4 < htmlExtensions.length) {
+    htmlExtension(handlers2, htmlExtensions[index4]);
   }
   return handlers2;
 }
@@ -55111,20 +56297,20 @@ function sanitizeUri(url, protocol) {
 }
 function normalizeUri(value) {
   const result = [];
-  let index3 = -1;
+  let index4 = -1;
   let start = 0;
   let skip = 0;
-  while (++index3 < value.length) {
-    const code2 = value.charCodeAt(index3);
+  while (++index4 < value.length) {
+    const code2 = value.charCodeAt(index4);
     let replace2 = "";
-    if (code2 === codes.percentSign && asciiAlphanumeric(value.charCodeAt(index3 + 1)) && asciiAlphanumeric(value.charCodeAt(index3 + 2))) {
+    if (code2 === codes.percentSign && asciiAlphanumeric(value.charCodeAt(index4 + 1)) && asciiAlphanumeric(value.charCodeAt(index4 + 2))) {
       skip = 2;
     } else if (code2 < 128) {
       if (!/[!#$&-;=?-Z_a-z~]/.test(String.fromCharCode(code2))) {
         replace2 = String.fromCharCode(code2);
       }
     } else if (code2 > 55295 && code2 < 57344) {
-      const next = value.charCodeAt(index3 + 1);
+      const next = value.charCodeAt(index4 + 1);
       if (code2 < 56320 && next > 56319 && next < 57344) {
         replace2 = String.fromCharCode(code2, next);
         skip = 1;
@@ -55135,12 +56321,12 @@ function normalizeUri(value) {
       replace2 = String.fromCharCode(code2);
     }
     if (replace2) {
-      result.push(value.slice(start, index3), encodeURIComponent(replace2));
-      start = index3 + skip + 1;
+      result.push(value.slice(start, index4), encodeURIComponent(replace2));
+      start = index4 + skip + 1;
       replace2 = "";
     }
     if (skip) {
-      index3 += skip;
+      index4 += skip;
       skip = 0;
     }
   }
@@ -55258,45 +56444,45 @@ function compile(options) {
   let lineEndingStyle = settings.defaultLineEnding;
   return compile2;
   function compile2(events) {
-    let index3 = -1;
+    let index4 = -1;
     let start = 0;
     const listStack = [];
     let head = [];
     let body = [];
-    while (++index3 < events.length) {
-      if (!lineEndingStyle && (events[index3][1].type === types2.lineEnding || events[index3][1].type === types2.lineEndingBlank)) {
-        lineEndingStyle = events[index3][2].sliceSerialize(events[index3][1]);
+    while (++index4 < events.length) {
+      if (!lineEndingStyle && (events[index4][1].type === types2.lineEnding || events[index4][1].type === types2.lineEndingBlank)) {
+        lineEndingStyle = events[index4][2].sliceSerialize(events[index4][1]);
       }
-      if (events[index3][1].type === types2.listOrdered || events[index3][1].type === types2.listUnordered) {
-        if (events[index3][0] === "enter") {
-          listStack.push(index3);
+      if (events[index4][1].type === types2.listOrdered || events[index4][1].type === types2.listUnordered) {
+        if (events[index4][0] === "enter") {
+          listStack.push(index4);
         } else {
-          prepareList(events.slice(listStack.pop(), index3));
+          prepareList(events.slice(listStack.pop(), index4));
         }
       }
-      if (events[index3][1].type === types2.definition) {
-        if (events[index3][0] === "enter") {
-          body = push(body, events.slice(start, index3));
-          start = index3;
+      if (events[index4][1].type === types2.definition) {
+        if (events[index4][0] === "enter") {
+          body = push(body, events.slice(start, index4));
+          start = index4;
         } else {
-          head = push(head, events.slice(start, index3 + 1));
-          start = index3 + 1;
+          head = push(head, events.slice(start, index4 + 1));
+          start = index4 + 1;
         }
       }
     }
     head = push(head, body);
     head = push(head, events.slice(start));
-    index3 = -1;
+    index4 = -1;
     const result = head;
     if (handlers2.enter.null) {
       handlers2.enter.null.call(context);
     }
-    while (++index3 < events.length) {
-      const handles = handlers2[result[index3][0]];
-      const kind = result[index3][1].type;
+    while (++index4 < events.length) {
+      const handles = handlers2[result[index4][0]];
+      const kind = result[index4][1].type;
       const handle = handles[kind];
       if (hasOwnProperty2.call(handles, kind) && handle) {
-        handle.call({ sliceSerialize: result[index3][2].sliceSerialize, ...context }, result[index3][1]);
+        handle.call({ sliceSerialize: result[index4][2].sliceSerialize, ...context }, result[index4][1]);
       }
     }
     if (handlers2.exit.null) {
@@ -55306,12 +56492,12 @@ function compile(options) {
   }
   function prepareList(slice) {
     const length = slice.length;
-    let index3 = 0;
+    let index4 = 0;
     let containerBalance = 0;
     let loose = false;
     let atMarker;
-    while (++index3 < length) {
-      const event = slice[index3];
+    while (++index4 < length) {
+      const event = slice[index4];
       if (event[1]._container) {
         atMarker = undefined;
         if (event[0] === "enter") {
@@ -55533,15 +56719,15 @@ function compile(options) {
     mediaStack[mediaStack.length - 1].title = resume();
   }
   function onexitmedia() {
-    let index3 = mediaStack.length - 1;
-    const media = mediaStack[index3];
+    let index4 = mediaStack.length - 1;
+    const media = mediaStack[index4];
     const id = media.referenceId || media.labelId;
     ok(id !== undefined, "media should have `referenceId` or `labelId`");
     ok(media.label !== undefined, "media should have `label`");
     const context2 = media.destination === undefined ? definitions[normalizeIdentifier(id)] : media;
     tags2 = true;
-    while (index3--) {
-      if (mediaStack[index3].image) {
+    while (index4--) {
+      if (mediaStack[index4].image) {
         tags2 = undefined;
         break;
       }
@@ -55819,13 +57005,13 @@ function initializeDocument(effects) {
       }
       ok(point, "could not find previous flow chunk");
       exitContainers(continued);
-      let index3 = indexBeforeExits;
-      while (index3 < self.events.length) {
-        self.events[index3][1].end = { ...point };
-        index3++;
+      let index4 = indexBeforeExits;
+      while (index4 < self.events.length) {
+        self.events[index4][1].end = { ...point };
+        index4++;
       }
       splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
-      self.events.length = index3;
+      self.events.length = index4;
       return checkNewContainers(code2);
     }
     return start(code2);
@@ -55910,9 +57096,9 @@ function initializeDocument(effects) {
     childFlow.defineSkip(token.start);
     childFlow.write(stream);
     if (self.parser.lazy[token.start.line]) {
-      let index3 = childFlow.events.length;
-      while (index3--) {
-        if (childFlow.events[index3][1].start.offset < lineStartOffset && (!childFlow.events[index3][1].end || childFlow.events[index3][1].end.offset > lineStartOffset)) {
+      let index4 = childFlow.events.length;
+      while (index4--) {
+        if (childFlow.events[index4][1].start.offset < lineStartOffset && (!childFlow.events[index4][1].end || childFlow.events[index4][1].end.offset > lineStartOffset)) {
           return;
         }
       }
@@ -55931,19 +57117,19 @@ function initializeDocument(effects) {
       }
       ok(point, "could not find previous flow chunk");
       exitContainers(continued);
-      index3 = indexBeforeExits;
-      while (index3 < self.events.length) {
-        self.events[index3][1].end = { ...point };
-        index3++;
+      index4 = indexBeforeExits;
+      while (index4 < self.events.length) {
+        self.events[index4][1].end = { ...point };
+        index4++;
       }
       splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
-      self.events.length = index3;
+      self.events.length = index4;
     }
   }
   function exitContainers(size4) {
-    let index3 = stack.length;
-    while (index3-- > size4) {
-      const entry = stack[index3];
+    let index4 = stack.length;
+    while (index4-- > size4) {
+      const entry = stack[index4];
       self.containerState = entry[1];
       ok(entry[0].exit, "expected `exit` to be defined on container construct");
       entry[0].exit.call(self, effects);
@@ -55977,9 +57163,9 @@ function classifyCharacter(code2) {
 // node_modules/micromark-util-resolve-all/index.js
 function resolveAll(constructs2, events, context) {
   const called = [];
-  let index3 = -1;
-  while (++index3 < constructs2.length) {
-    const resolve = constructs2[index3].resolveAll;
+  let index4 = -1;
+  while (++index4 < constructs2.length) {
+    const resolve = constructs2[index4].resolveAll;
     if (resolve && !called.includes(resolve)) {
       events = resolve(events, context);
       called.push(resolve);
@@ -55995,7 +57181,7 @@ var attention = {
   tokenize: tokenizeAttention
 };
 function resolveAllAttention(events, context) {
-  let index3 = -1;
+  let index4 = -1;
   let open;
   let group;
   let text;
@@ -56004,17 +57190,17 @@ function resolveAllAttention(events, context) {
   let use;
   let nextEvents;
   let offset4;
-  while (++index3 < events.length) {
-    if (events[index3][0] === "enter" && events[index3][1].type === "attentionSequence" && events[index3][1]._close) {
-      open = index3;
+  while (++index4 < events.length) {
+    if (events[index4][0] === "enter" && events[index4][1].type === "attentionSequence" && events[index4][1]._close) {
+      open = index4;
       while (open--) {
-        if (events[open][0] === "exit" && events[open][1].type === "attentionSequence" && events[open][1]._open && context.sliceSerialize(events[open][1]).charCodeAt(0) === context.sliceSerialize(events[index3][1]).charCodeAt(0)) {
-          if ((events[open][1]._close || events[index3][1]._open) && (events[index3][1].end.offset - events[index3][1].start.offset) % 3 && !((events[open][1].end.offset - events[open][1].start.offset + events[index3][1].end.offset - events[index3][1].start.offset) % 3)) {
+        if (events[open][0] === "exit" && events[open][1].type === "attentionSequence" && events[open][1]._open && context.sliceSerialize(events[open][1]).charCodeAt(0) === context.sliceSerialize(events[index4][1]).charCodeAt(0)) {
+          if ((events[open][1]._close || events[index4][1]._open) && (events[index4][1].end.offset - events[index4][1].start.offset) % 3 && !((events[open][1].end.offset - events[open][1].start.offset + events[index4][1].end.offset - events[index4][1].start.offset) % 3)) {
             continue;
           }
-          use = events[open][1].end.offset - events[open][1].start.offset > 1 && events[index3][1].end.offset - events[index3][1].start.offset > 1 ? 2 : 1;
+          use = events[open][1].end.offset - events[open][1].start.offset > 1 && events[index4][1].end.offset - events[index4][1].start.offset > 1 ? 2 : 1;
           const start = { ...events[open][1].end };
-          const end = { ...events[index3][1].start };
+          const end = { ...events[index4][1].start };
           movePoint(start, -use);
           movePoint(end, use);
           openingSequence = {
@@ -56024,13 +57210,13 @@ function resolveAllAttention(events, context) {
           };
           closingSequence = {
             type: use > 1 ? types2.strongSequence : types2.emphasisSequence,
-            start: { ...events[index3][1].start },
+            start: { ...events[index4][1].start },
             end
           };
           text = {
             type: use > 1 ? types2.strongText : types2.emphasisText,
             start: { ...events[open][1].end },
-            end: { ...events[index3][1].start }
+            end: { ...events[index4][1].start }
           };
           group = {
             type: use > 1 ? types2.strong : types2.emphasis,
@@ -56038,7 +57224,7 @@ function resolveAllAttention(events, context) {
             end: { ...closingSequence.end }
           };
           events[open][1].end = { ...openingSequence.start };
-          events[index3][1].start = { ...closingSequence.end };
+          events[index4][1].start = { ...closingSequence.end };
           nextEvents = [];
           if (events[open][1].end.offset - events[open][1].start.offset) {
             nextEvents = push(nextEvents, [
@@ -56053,33 +57239,33 @@ function resolveAllAttention(events, context) {
             ["enter", text, context]
           ]);
           ok(context.parser.constructs.insideSpan.null, "expected `insideSpan` to be populated");
-          nextEvents = push(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index3), context));
+          nextEvents = push(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index4), context));
           nextEvents = push(nextEvents, [
             ["exit", text, context],
             ["enter", closingSequence, context],
             ["exit", closingSequence, context],
             ["exit", group, context]
           ]);
-          if (events[index3][1].end.offset - events[index3][1].start.offset) {
+          if (events[index4][1].end.offset - events[index4][1].start.offset) {
             offset4 = 2;
             nextEvents = push(nextEvents, [
-              ["enter", events[index3][1], context],
-              ["exit", events[index3][1], context]
+              ["enter", events[index4][1], context],
+              ["exit", events[index4][1], context]
             ]);
           } else {
             offset4 = 0;
           }
-          splice(events, open - 1, index3 - open + 3, nextEvents);
-          index3 = open + nextEvents.length - offset4 - 2;
+          splice(events, open - 1, index4 - open + 3, nextEvents);
+          index4 = open + nextEvents.length - offset4 - 2;
           break;
         }
       }
     }
   }
-  index3 = -1;
-  while (++index3 < events.length) {
-    if (events[index3][1].type === "attentionSequence") {
-      events[index3][1].type = "data";
+  index4 = -1;
+  while (++index4 < events.length) {
+    if (events[index4][1].type === "attentionSequence") {
+      events[index4][1].type = "data";
     }
   }
   return events;
@@ -56623,12 +57809,12 @@ var codeText = {
 function resolveCodeText(events) {
   let tailExitIndex = events.length - 4;
   let headEnterIndex = 3;
-  let index3;
+  let index4;
   let enter;
   if ((events[headEnterIndex][1].type === types2.lineEnding || events[headEnterIndex][1].type === "space") && (events[tailExitIndex][1].type === types2.lineEnding || events[tailExitIndex][1].type === "space")) {
-    index3 = headEnterIndex;
-    while (++index3 < tailExitIndex) {
-      if (events[index3][1].type === types2.codeTextData) {
+    index4 = headEnterIndex;
+    while (++index4 < tailExitIndex) {
+      if (events[index4][1].type === types2.codeTextData) {
         events[headEnterIndex][1].type = types2.codeTextPadding;
         events[tailExitIndex][1].type = types2.codeTextPadding;
         headEnterIndex += 2;
@@ -56637,20 +57823,20 @@ function resolveCodeText(events) {
       }
     }
   }
-  index3 = headEnterIndex - 1;
+  index4 = headEnterIndex - 1;
   tailExitIndex++;
-  while (++index3 <= tailExitIndex) {
+  while (++index4 <= tailExitIndex) {
     if (enter === undefined) {
-      if (index3 !== tailExitIndex && events[index3][1].type !== types2.lineEnding) {
-        enter = index3;
+      if (index4 !== tailExitIndex && events[index4][1].type !== types2.lineEnding) {
+        enter = index4;
       }
-    } else if (index3 === tailExitIndex || events[index3][1].type === types2.lineEnding) {
+    } else if (index4 === tailExitIndex || events[index4][1].type === types2.lineEnding) {
       events[enter][1].type = types2.codeTextData;
-      if (index3 !== enter + 2) {
-        events[enter][1].end = events[index3 - 1][1].end;
-        events.splice(enter + 2, index3 - enter - 2);
-        tailExitIndex -= index3 - enter - 2;
-        index3 = enter + 2;
+      if (index4 !== enter + 2) {
+        events[enter][1].end = events[index4 - 1][1].end;
+        events.splice(enter + 2, index4 - enter - 2);
+        tailExitIndex -= index4 - enter - 2;
+        index4 = enter + 2;
       }
       enter = undefined;
     }
@@ -56735,13 +57921,13 @@ class SpliceBuffer {
     this.left = initial2 ? [...initial2] : [];
     this.right = [];
   }
-  get(index3) {
-    if (index3 < 0 || index3 >= this.left.length + this.right.length) {
-      throw new RangeError("Cannot access index `" + index3 + "` in a splice buffer of size `" + (this.left.length + this.right.length) + "`");
+  get(index4) {
+    if (index4 < 0 || index4 >= this.left.length + this.right.length) {
+      throw new RangeError("Cannot access index `" + index4 + "` in a splice buffer of size `" + (this.left.length + this.right.length) + "`");
     }
-    if (index3 < this.left.length)
-      return this.left[index3];
-    return this.right[this.right.length - index3 + this.left.length - 1];
+    if (index4 < this.left.length)
+      return this.left[index4];
+    return this.right[this.right.length - index4 + this.left.length - 1];
   }
   get length() {
     return this.left.length + this.right.length;
@@ -56815,7 +58001,7 @@ function chunkedPush(list, right) {
 // node_modules/micromark-util-subtokenize/dev/index.js
 function subtokenize(eventsArray) {
   const jumps = {};
-  let index3 = -1;
+  let index4 = -1;
   let event;
   let lineIndex;
   let otherIndex;
@@ -56824,12 +58010,12 @@ function subtokenize(eventsArray) {
   let subevents;
   let more;
   const events = new SpliceBuffer(eventsArray);
-  while (++index3 < events.length) {
-    while (index3 in jumps) {
-      index3 = jumps[index3];
+  while (++index4 < events.length) {
+    while (index4 in jumps) {
+      index4 = jumps[index4];
     }
-    event = events.get(index3);
-    if (index3 && event[1].type === types2.chunkFlow && events.get(index3 - 1)[1].type === types2.listItemPrefix) {
+    event = events.get(index4);
+    if (index4 && event[1].type === types2.chunkFlow && events.get(index4 - 1)[1].type === types2.listItemPrefix) {
       ok(event[1]._tokenizer, "expected `_tokenizer` on subtokens");
       subevents = event[1]._tokenizer.events;
       otherIndex = 0;
@@ -56850,12 +58036,12 @@ function subtokenize(eventsArray) {
     }
     if (event[0] === "enter") {
       if (event[1].contentType) {
-        Object.assign(jumps, subcontent(events, index3));
-        index3 = jumps[index3];
+        Object.assign(jumps, subcontent(events, index4));
+        index4 = jumps[index4];
         more = true;
       }
     } else if (event[1]._container) {
-      otherIndex = index3;
+      otherIndex = index4;
       lineIndex = undefined;
       while (otherIndex--) {
         otherEvent = events.get(otherIndex);
@@ -56873,9 +58059,9 @@ function subtokenize(eventsArray) {
       }
       if (lineIndex) {
         event[1].end = { ...events.get(lineIndex)[1].start };
-        parameters = events.slice(lineIndex, index3);
+        parameters = events.slice(lineIndex, index4);
         parameters.unshift(event);
-        events.splice(lineIndex, index3 - lineIndex + 1, parameters);
+        events.splice(lineIndex, index4 - lineIndex + 1, parameters);
       }
     }
   }
@@ -56900,7 +58086,7 @@ function subcontent(events, eventIndex) {
   const gaps = {};
   let stream;
   let previous2;
-  let index3 = -1;
+  let index4 = -1;
   let current = token;
   let adjust = 0;
   let start = 0;
@@ -56930,10 +58116,10 @@ function subcontent(events, eventIndex) {
     current = current.next;
   }
   current = token;
-  while (++index3 < childEvents.length) {
-    if (childEvents[index3][0] === "exit" && childEvents[index3 - 1][0] === "enter" && childEvents[index3][1].type === childEvents[index3 - 1][1].type && childEvents[index3][1].start.line !== childEvents[index3][1].end.line) {
+  while (++index4 < childEvents.length) {
+    if (childEvents[index4][0] === "exit" && childEvents[index4 - 1][0] === "enter" && childEvents[index4][1].type === childEvents[index4 - 1][1].type && childEvents[index4][1].start.line !== childEvents[index4][1].end.line) {
       ok(current, "expected a current token");
-      start = index3 + 1;
+      start = index4 + 1;
       breaks.push(start);
       current._tokenizer = undefined;
       current.previous = undefined;
@@ -56948,19 +58134,19 @@ function subcontent(events, eventIndex) {
   } else {
     breaks.pop();
   }
-  index3 = breaks.length;
-  while (index3--) {
-    const slice = childEvents.slice(breaks[index3], breaks[index3 + 1]);
+  index4 = breaks.length;
+  while (index4--) {
+    const slice = childEvents.slice(breaks[index4], breaks[index4 + 1]);
     const start2 = startPositions.pop();
     ok(start2 !== undefined, "expected a start position when splicing");
     jumps.push([start2, start2 + slice.length - 1]);
     events.splice(start2, 2, slice);
   }
   jumps.reverse();
-  index3 = -1;
-  while (++index3 < jumps.length) {
-    gaps[adjust + jumps[index3][0]] = adjust + jumps[index3][1];
-    adjust += jumps[index3][1] - jumps[index3][0] - 1;
+  index4 = -1;
+  while (++index4 < jumps.length) {
+    gaps[adjust + jumps[index4][0]] = adjust + jumps[index4][1];
+    adjust += jumps[index4][1] - jumps[index4][0] - 1;
   }
   return gaps;
 }
@@ -57515,16 +58701,16 @@ var nonLazyContinuationStart = {
   tokenize: tokenizeNonLazyContinuationStart
 };
 function resolveToHtmlFlow(events) {
-  let index3 = events.length;
-  while (index3--) {
-    if (events[index3][0] === "enter" && events[index3][1].type === types2.htmlFlow) {
+  let index4 = events.length;
+  while (index4--) {
+    if (events[index4][0] === "enter" && events[index4][1].type === types2.htmlFlow) {
       break;
     }
   }
-  if (index3 > 1 && events[index3 - 2][1].type === types2.linePrefix) {
-    events[index3][1].start = events[index3 - 2][1].start;
-    events[index3 + 1][1].start = events[index3 - 2][1].start;
-    events.splice(index3 - 2, 2);
+  if (index4 > 1 && events[index4 - 2][1].type === types2.linePrefix) {
+    events[index4][1].start = events[index4 - 2][1].start;
+    events[index4 + 1][1].start = events[index4 - 2][1].start;
+    events.splice(index4 - 2, 2);
   }
   return events;
 }
@@ -57533,7 +58719,7 @@ function tokenizeHtmlFlow(effects, ok2, nok) {
   let marker;
   let closingTag;
   let buffer;
-  let index3;
+  let index4;
   let markerB;
   return start;
   function start(code2) {
@@ -57578,7 +58764,7 @@ function tokenizeHtmlFlow(effects, ok2, nok) {
     if (code2 === codes.leftSquareBracket) {
       effects.consume(code2);
       marker = constants.htmlCdata;
-      index3 = 0;
+      index4 = 0;
       return cdataOpenInside;
     }
     if (asciiAlpha(code2)) {
@@ -57597,9 +58783,9 @@ function tokenizeHtmlFlow(effects, ok2, nok) {
   }
   function cdataOpenInside(code2) {
     const value = constants.cdataOpeningString;
-    if (code2 === value.charCodeAt(index3++)) {
+    if (code2 === value.charCodeAt(index4++)) {
       effects.consume(code2);
-      if (index3 === value.length) {
+      if (index4 === value.length) {
         return self.interrupt ? ok2 : continuation;
       }
       return cdataOpenInside;
@@ -57888,7 +59074,7 @@ var htmlText = { name: "htmlText", tokenize: tokenizeHtmlText };
 function tokenizeHtmlText(effects, ok2, nok) {
   const self = this;
   let marker;
-  let index3;
+  let index4;
   let returnState;
   return start;
   function start(code2) {
@@ -57924,7 +59110,7 @@ function tokenizeHtmlText(effects, ok2, nok) {
     }
     if (code2 === codes.leftSquareBracket) {
       effects.consume(code2);
-      index3 = 0;
+      index4 = 0;
       return cdataOpenInside;
     }
     if (asciiAlpha(code2)) {
@@ -57967,9 +59153,9 @@ function tokenizeHtmlText(effects, ok2, nok) {
   }
   function cdataOpenInside(code2) {
     const value = constants.cdataOpeningString;
-    if (code2 === value.charCodeAt(index3++)) {
+    if (code2 === value.charCodeAt(index4++)) {
       effects.consume(code2);
-      return index3 === value.length ? cdata : cdataOpenInside;
+      return index4 === value.length ? cdata : cdataOpenInside;
     }
     return nok(code2);
   }
@@ -58200,15 +59386,15 @@ var resourceConstruct = { tokenize: tokenizeResource };
 var referenceFullConstruct = { tokenize: tokenizeReferenceFull };
 var referenceCollapsedConstruct = { tokenize: tokenizeReferenceCollapsed };
 function resolveAllLabelEnd(events) {
-  let index3 = -1;
+  let index4 = -1;
   const newEvents = [];
-  while (++index3 < events.length) {
-    const token = events[index3][1];
-    newEvents.push(events[index3]);
+  while (++index4 < events.length) {
+    const token = events[index4][1];
+    newEvents.push(events[index4]);
     if (token.type === types2.labelImage || token.type === types2.labelLink || token.type === types2.labelEnd) {
       const offset4 = token.type === types2.labelImage ? 4 : 2;
       token.type = types2.data;
-      index3 += offset4;
+      index4 += offset4;
     }
   }
   if (events.length !== newEvents.length) {
@@ -58217,31 +59403,31 @@ function resolveAllLabelEnd(events) {
   return events;
 }
 function resolveToLabelEnd(events, context) {
-  let index3 = events.length;
+  let index4 = events.length;
   let offset4 = 0;
   let token;
   let open;
   let close;
   let media;
-  while (index3--) {
-    token = events[index3][1];
+  while (index4--) {
+    token = events[index4][1];
     if (open) {
       if (token.type === types2.link || token.type === types2.labelLink && token._inactive) {
         break;
       }
-      if (events[index3][0] === "enter" && token.type === types2.labelLink) {
+      if (events[index4][0] === "enter" && token.type === types2.labelLink) {
         token._inactive = true;
       }
     } else if (close) {
-      if (events[index3][0] === "enter" && (token.type === types2.labelImage || token.type === types2.labelLink) && !token._balanced) {
-        open = index3;
+      if (events[index4][0] === "enter" && (token.type === types2.labelImage || token.type === types2.labelLink) && !token._balanced) {
+        open = index4;
         if (token.type !== types2.labelLink) {
           offset4 = 2;
           break;
         }
       }
     } else if (token.type === types2.labelEnd) {
-      close = index3;
+      close = index4;
     }
   }
   ok(open !== undefined, "`open` is supposed to be found");
@@ -58282,12 +59468,12 @@ function resolveToLabelEnd(events, context) {
 }
 function tokenizeLabelEnd(effects, ok2, nok) {
   const self = this;
-  let index3 = self.events.length;
+  let index4 = self.events.length;
   let labelStart2;
   let defined;
-  while (index3--) {
-    if ((self.events[index3][1].type === types2.labelImage || self.events[index3][1].type === types2.labelLink) && !self.events[index3][1]._balanced) {
-      labelStart2 = self.events[index3][1];
+  while (index4--) {
+    if ((self.events[index4][1].type === types2.labelImage || self.events[index4][1].type === types2.labelLink) && !self.events[index4][1]._balanced) {
+      labelStart2 = self.events[index4][1];
       break;
     }
   }
@@ -58655,25 +59841,25 @@ var setextUnderline = {
   tokenize: tokenizeSetextUnderline
 };
 function resolveToSetextUnderline(events, context) {
-  let index3 = events.length;
+  let index4 = events.length;
   let content4;
   let text;
   let definition2;
-  while (index3--) {
-    if (events[index3][0] === "enter") {
-      if (events[index3][1].type === types2.content) {
-        content4 = index3;
+  while (index4--) {
+    if (events[index4][0] === "enter") {
+      if (events[index4][1].type === types2.content) {
+        content4 = index4;
         break;
       }
-      if (events[index3][1].type === types2.paragraph) {
-        text = index3;
+      if (events[index4][1].type === types2.paragraph) {
+        text = index4;
       }
     } else {
-      if (events[index3][1].type === types2.content) {
-        events.splice(index3, 1);
+      if (events[index4][1].type === types2.content) {
+        events.splice(index4, 1);
       }
-      if (!definition2 && events[index3][1].type === types2.definition) {
-        definition2 = index3;
+      if (!definition2 && events[index4][1].type === types2.definition) {
+        definition2 = index4;
       }
     }
   }
@@ -58702,12 +59888,12 @@ function tokenizeSetextUnderline(effects, ok2, nok) {
   let marker;
   return start;
   function start(code2) {
-    let index3 = self.events.length;
+    let index4 = self.events.length;
     let paragraph;
     ok(code2 === codes.dash || code2 === codes.equalsTo, "expected `=` or `-`");
-    while (index3--) {
-      if (self.events[index3][1].type !== types2.lineEnding && self.events[index3][1].type !== types2.linePrefix && self.events[index3][1].type !== types2.content) {
-        paragraph = self.events[index3][1].type === types2.paragraph;
+    while (index4--) {
+      if (self.events[index4][1].type !== types2.lineEnding && self.events[index4][1].type !== types2.linePrefix && self.events[index4][1].type !== types2.content) {
+        paragraph = self.events[index4][1].type === types2.paragraph;
         break;
       }
     }
@@ -58809,11 +59995,11 @@ function initializeFactory(field) {
         return true;
       }
       const list2 = constructs2[code2];
-      let index3 = -1;
+      let index4 = -1;
       if (list2) {
         ok(Array.isArray(list2), "expected `disable.null` to be populated");
-        while (++index3 < list2.length) {
-          const item = list2[index3];
+        while (++index4 < list2.length) {
+          const item = list2[index4];
           if (!item.previous || item.previous.call(self, self.previous)) {
             return true;
           }
@@ -58826,19 +60012,19 @@ function initializeFactory(field) {
 function createResolver(extraResolver) {
   return resolveAllText;
   function resolveAllText(events, context) {
-    let index3 = -1;
+    let index4 = -1;
     let enter;
-    while (++index3 <= events.length) {
+    while (++index4 <= events.length) {
       if (enter === undefined) {
-        if (events[index3] && events[index3][1].type === types2.data) {
-          enter = index3;
-          index3++;
+        if (events[index4] && events[index4][1].type === types2.data) {
+          enter = index4;
+          index4++;
         }
-      } else if (!events[index3] || events[index3][1].type !== types2.data) {
-        if (index3 !== enter + 2) {
-          events[enter][1].end = events[index3 - 1][1].end;
-          events.splice(enter + 2, index3 - enter - 2);
-          index3 = enter + 2;
+      } else if (!events[index4] || events[index4][1].type !== types2.data) {
+        if (index4 !== enter + 2) {
+          events[enter][1].end = events[index4 - 1][1].end;
+          events.splice(enter + 2, index4 - enter - 2);
+          index4 = enter + 2;
         }
         enter = undefined;
       }
@@ -58852,12 +60038,12 @@ function resolveAllLineSuffixes(events, context) {
     if ((eventIndex === events.length || events[eventIndex][1].type === types2.lineEnding) && events[eventIndex - 1][1].type === types2.data) {
       const data = events[eventIndex - 1][1];
       const chunks = context.sliceStream(data);
-      let index3 = chunks.length;
+      let index4 = chunks.length;
       let bufferIndex = -1;
       let size4 = 0;
       let tabs;
-      while (index3--) {
-        const chunk = chunks[index3];
+      while (index4--) {
+        const chunk = chunks[index4];
         if (typeof chunk === "string") {
           bufferIndex = chunk.length;
           while (chunk.charCodeAt(bufferIndex - 1) === codes.space) {
@@ -58871,7 +60057,7 @@ function resolveAllLineSuffixes(events, context) {
           tabs = true;
           size4++;
         } else if (chunk === codes.virtualSpace) {} else {
-          index3++;
+          index4++;
           break;
         }
       }
@@ -58882,8 +60068,8 @@ function resolveAllLineSuffixes(events, context) {
         const token = {
           type: eventIndex === events.length || tabs || size4 < constants.hardBreakPrefixSizeMin ? types2.lineSuffix : types2.hardBreakTrailing,
           start: {
-            _bufferIndex: index3 ? bufferIndex : data.start._bufferIndex + bufferIndex,
-            _index: data.start._index + index3,
+            _bufferIndex: index4 ? bufferIndex : data.start._bufferIndex + bufferIndex,
+            _index: data.start._index + index4,
             line: data.end.line,
             column: data.end.column - size4,
             offset: data.end.offset - size4
@@ -59002,7 +60188,7 @@ function createTokenizer(parser, initialize, from) {
     containerState: {},
     defineSkip,
     events: [],
-    now,
+    now: now2,
     parser,
     previous: codes.eof,
     sliceSerialize,
@@ -59031,7 +60217,7 @@ function createTokenizer(parser, initialize, from) {
   function sliceStream(token) {
     return sliceChunks(chunks, token);
   }
-  function now() {
+  function now2() {
     const { _bufferIndex, _index, line, column, offset: offset4 } = point;
     return { _bufferIndex, _index, line, column, offset: offset4 };
   }
@@ -59095,7 +60281,7 @@ function createTokenizer(parser, initialize, from) {
   function enter(type, fields) {
     const token = fields || {};
     token.type = type;
-    token.start = now();
+    token.start = now2();
     ok(typeof type === "string", "expected string type");
     ok(type.length > 0, "expected non-empty string");
     debug("enter: `%s`", type);
@@ -59108,7 +60294,7 @@ function createTokenizer(parser, initialize, from) {
     ok(type.length > 0, "expected non-empty string");
     const token = stack.pop();
     ok(token, "cannot close w/o open tokens");
-    token.end = now();
+    token.end = now2();
     ok(type === token.type, "expected exit token to match current token");
     ok(!(token.start._index === token.end._index && token.start._bufferIndex === token.end._bufferIndex), "expected non-empty token (`" + type + "`)");
     debug("exit: `%s`", token.type);
@@ -59195,7 +60381,7 @@ function createTokenizer(parser, initialize, from) {
     ok(construct.partial || context.events.length === 0 || context.events[context.events.length - 1][0] === "exit", "expected last token to end");
   }
   function store() {
-    const startPoint = now();
+    const startPoint = now2();
     const startPrevious = context.previous;
     const startCurrentConstruct = context.currentConstruct;
     const startEventsIndex = context.events.length;
@@ -59246,11 +60432,11 @@ function sliceChunks(chunks, token) {
   return view;
 }
 function serializeChunks(chunks, expandTabs) {
-  let index3 = -1;
+  let index4 = -1;
   const result = [];
   let atTab;
-  while (++index3 < chunks.length) {
-    const chunk = chunks[index3];
+  while (++index4 < chunks.length) {
+    const chunk = chunks[index4];
     let value;
     if (typeof chunk === "string") {
       value = chunk;
@@ -59716,10 +60902,10 @@ function gfmAtext(code3) {
   return code3 === codes.plusSign || code3 === codes.dash || code3 === codes.dot || code3 === codes.underscore || asciiAlphanumeric(code3);
 }
 function previousUnbalanced(events) {
-  let index3 = events.length;
+  let index4 = events.length;
   let result = false;
-  while (index3--) {
-    const token = events[index3][1];
+  while (index4--) {
+    const token = events[index4][1];
     if ((token.type === "labelLink" || token.type === "labelImage") && !token._balanced) {
       result = true;
       break;
@@ -59783,11 +60969,11 @@ function gfmFootnote() {
 }
 function tokenizePotentialGfmFootnoteCall(effects, ok2, nok) {
   const self = this;
-  let index3 = self.events.length;
+  let index4 = self.events.length;
   const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
   let labelStart2;
-  while (index3--) {
-    const token = self.events[index3][1];
+  while (index4--) {
+    const token = self.events[index4][1];
     if (token.type === types2.labelImage) {
       labelStart2 = token;
       break;
@@ -59813,26 +60999,26 @@ function tokenizePotentialGfmFootnoteCall(effects, ok2, nok) {
   }
 }
 function resolveToPotentialGfmFootnoteCall(events, context) {
-  let index3 = events.length;
+  let index4 = events.length;
   let labelStart2;
-  while (index3--) {
-    if (events[index3][1].type === types2.labelImage && events[index3][0] === "enter") {
-      labelStart2 = events[index3][1];
+  while (index4--) {
+    if (events[index4][1].type === types2.labelImage && events[index4][0] === "enter") {
+      labelStart2 = events[index4][1];
       break;
     }
   }
   ok(labelStart2, "expected `labelStart` to resolve");
-  events[index3 + 1][1].type = types2.data;
-  events[index3 + 3][1].type = "gfmFootnoteCallLabelMarker";
+  events[index4 + 1][1].type = types2.data;
+  events[index4 + 3][1].type = "gfmFootnoteCallLabelMarker";
   const call = {
     type: "gfmFootnoteCall",
-    start: Object.assign({}, events[index3 + 3][1].start),
+    start: Object.assign({}, events[index4 + 3][1].start),
     end: Object.assign({}, events[events.length - 1][1].end)
   };
   const marker = {
     type: "gfmFootnoteCallMarker",
-    start: Object.assign({}, events[index3 + 3][1].end),
-    end: Object.assign({}, events[index3 + 3][1].end)
+    start: Object.assign({}, events[index4 + 3][1].end),
+    end: Object.assign({}, events[index4 + 3][1].end)
   };
   marker.end.column++;
   marker.end.offset++;
@@ -59849,11 +61035,11 @@ function resolveToPotentialGfmFootnoteCall(events, context) {
     end: Object.assign({}, string4.end)
   };
   const replacement = [
-    events[index3 + 1],
-    events[index3 + 2],
+    events[index4 + 1],
+    events[index4 + 2],
     ["enter", call, context],
-    events[index3 + 3],
-    events[index3 + 4],
+    events[index4 + 3],
+    events[index4 + 4],
     ["enter", marker, context],
     ["exit", marker, context],
     ["enter", string4, context],
@@ -59864,7 +61050,7 @@ function resolveToPotentialGfmFootnoteCall(events, context) {
     events[events.length - 1],
     ["exit", call, context]
   ];
-  events.splice(index3, events.length - index3 + 1, ...replacement);
+  events.splice(index4, events.length - index4 + 1, ...replacement);
   return events;
 }
 function tokenizeGfmFootnoteCall(effects, ok2, nok) {
@@ -60072,15 +61258,15 @@ function gfmFootnoteHtml(options) {
           this.setData("gfmFootnoteCallOrder", calls = []);
         if (!counts)
           this.setData("gfmFootnoteCallCounts", counts = {});
-        const index3 = calls.indexOf(id);
+        const index4 = calls.indexOf(id);
         const safeId = sanitizeUri(id.toLowerCase());
-        if (index3 === -1) {
+        if (index4 === -1) {
           calls.push(id);
           counts[id] = 1;
           counter = calls.length;
         } else {
           counts[id]++;
-          counter = index3 + 1;
+          counter = index4 + 1;
         }
         const reuseCounter = counts[id];
         this.tag('<sup><a href="#' + clobberPrefix + "fn-" + safeId + '" id="' + clobberPrefix + "fnref-" + safeId + (reuseCounter > 1 ? "-" + reuseCounter : "") + '" data-footnote-ref="" aria-describedby="footnote-label">' + String(counter) + "</a></sup>");
@@ -60089,7 +61275,7 @@ function gfmFootnoteHtml(options) {
         const calls = this.getData("gfmFootnoteCallOrder") || [];
         const counts = this.getData("gfmFootnoteCallCounts") || {};
         const definitions = this.getData("gfmFootnoteDefinitions") || {};
-        let index3 = -1;
+        let index4 = -1;
         if (calls.length > 0) {
           this.lineEndingIfNeeded();
           this.tag('<section data-footnotes="" class="footnotes"><' + labelTagName + ' id="footnote-label"' + (labelAttributes ? " " + labelAttributes : "") + ">");
@@ -60098,13 +61284,13 @@ function gfmFootnoteHtml(options) {
           this.lineEndingIfNeeded();
           this.tag("<ol>");
         }
-        while (++index3 < calls.length) {
-          const id = calls[index3];
+        while (++index4 < calls.length) {
+          const id = calls[index4];
           const safeId = sanitizeUri(id.toLowerCase());
           let referenceIndex = 0;
           const references = [];
           while (++referenceIndex <= counts[id]) {
-            references.push('<a href="#' + clobberPrefix + "fnref-" + safeId + (referenceIndex > 1 ? "-" + referenceIndex : "") + '" data-footnote-backref="" aria-label="' + this.encode(typeof backLabel === "string" ? backLabel : backLabel(index3, referenceIndex)) + '" class="data-footnote-backref">↩' + (referenceIndex > 1 ? "<sup>" + referenceIndex + "</sup>" : "") + "</a>");
+            references.push('<a href="#' + clobberPrefix + "fnref-" + safeId + (referenceIndex > 1 ? "-" + referenceIndex : "") + '" data-footnote-backref="" aria-label="' + this.encode(typeof backLabel === "string" ? backLabel : backLabel(index4, referenceIndex)) + '" class="data-footnote-backref">↩' + (referenceIndex > 1 ? "<sup>" + referenceIndex + "</sup>" : "") + "</a>");
           }
           const reference = references.join(" ");
           let injected = false;
@@ -60165,23 +61351,23 @@ function gfmStrikethrough(options) {
     attentionMarkers: { null: [codes.tilde] }
   };
   function resolveAllStrikethrough(events, context) {
-    let index3 = -1;
-    while (++index3 < events.length) {
-      if (events[index3][0] === "enter" && events[index3][1].type === "strikethroughSequenceTemporary" && events[index3][1]._close) {
-        let open = index3;
+    let index4 = -1;
+    while (++index4 < events.length) {
+      if (events[index4][0] === "enter" && events[index4][1].type === "strikethroughSequenceTemporary" && events[index4][1]._close) {
+        let open = index4;
         while (open--) {
-          if (events[open][0] === "exit" && events[open][1].type === "strikethroughSequenceTemporary" && events[open][1]._open && events[index3][1].end.offset - events[index3][1].start.offset === events[open][1].end.offset - events[open][1].start.offset) {
-            events[index3][1].type = "strikethroughSequence";
+          if (events[open][0] === "exit" && events[open][1].type === "strikethroughSequenceTemporary" && events[open][1]._open && events[index4][1].end.offset - events[index4][1].start.offset === events[open][1].end.offset - events[open][1].start.offset) {
+            events[index4][1].type = "strikethroughSequence";
             events[open][1].type = "strikethroughSequence";
             const strikethrough = {
               type: "strikethrough",
               start: Object.assign({}, events[open][1].start),
-              end: Object.assign({}, events[index3][1].end)
+              end: Object.assign({}, events[index4][1].end)
             };
             const text4 = {
               type: "strikethroughText",
               start: Object.assign({}, events[open][1].end),
-              end: Object.assign({}, events[index3][1].start)
+              end: Object.assign({}, events[index4][1].start)
             };
             const nextEvents = [
               ["enter", strikethrough, context],
@@ -60191,25 +61377,25 @@ function gfmStrikethrough(options) {
             ];
             const insideSpan2 = context.parser.constructs.insideSpan.null;
             if (insideSpan2) {
-              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events.slice(open + 1, index3), context));
+              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events.slice(open + 1, index4), context));
             }
             splice(nextEvents, nextEvents.length, 0, [
               ["exit", text4, context],
-              ["enter", events[index3][1], context],
-              ["exit", events[index3][1], context],
+              ["enter", events[index4][1], context],
+              ["exit", events[index4][1], context],
               ["exit", strikethrough, context]
             ]);
-            splice(events, open - 1, index3 - open + 3, nextEvents);
-            index3 = open + nextEvents.length - 2;
+            splice(events, open - 1, index4 - open + 3, nextEvents);
+            index4 = open + nextEvents.length - 2;
             break;
           }
         }
       }
     }
-    index3 = -1;
-    while (++index3 < events.length) {
-      if (events[index3][1].type === "strikethroughSequenceTemporary") {
-        events[index3][1].type = types2.data;
+    index4 = -1;
+    while (++index4 < events.length) {
+      if (events[index4][1].type === "strikethroughSequenceTemporary") {
+        events[index4][1].type = types2.data;
       }
     }
     return events;
@@ -60364,22 +61550,22 @@ class EditMap {
     this.map = [];
     this.index = new Map;
   }
-  add(index3, remove2, add) {
-    addImplementation(this, index3, remove2, add);
+  add(index4, remove2, add2) {
+    addImplementation(this, index4, remove2, add2);
   }
   consume(events) {
-    this.map.sort(function(a, b) {
-      return a[0] - b[0];
+    this.map.sort(function(a2, b) {
+      return a2[0] - b[0];
     });
     if (this.map.length === 0) {
       return;
     }
-    let index3 = this.map.length;
+    let index4 = this.map.length;
     const vecs = [];
-    while (index3 > 0) {
-      index3 -= 1;
-      vecs.push(events.slice(this.map[index3][0] + this.map[index3][1]), this.map[index3][2]);
-      events.length = this.map[index3][0];
+    while (index4 > 0) {
+      index4 -= 1;
+      vecs.push(events.slice(this.map[index4][0] + this.map[index4][1]), this.map[index4][2]);
+      events.length = this.map[index4][0];
     }
     vecs.push(events.slice());
     events.length = 0;
@@ -60394,35 +61580,35 @@ class EditMap {
     this.index.clear();
   }
 }
-function addImplementation(editMap, at2, remove2, add) {
-  if (remove2 === 0 && add.length === 0) {
+function addImplementation(editMap, at2, remove2, add2) {
+  if (remove2 === 0 && add2.length === 0) {
     return;
   }
   const existing = editMap.index.get(at2);
   if (existing) {
     existing[1] += remove2;
-    existing[2].push(...add);
+    existing[2].push(...add2);
     return;
   }
-  const change = [at2, remove2, add];
+  const change = [at2, remove2, add2];
   editMap.map.push(change);
   editMap.index.set(at2, change);
 }
 
 // node_modules/micromark-extension-gfm-table/dev/lib/infer.js
-function gfmTableAlign(events, index3) {
-  ok(events[index3][1].type === "table", "expected table");
+function gfmTableAlign(events, index4) {
+  ok(events[index4][1].type === "table", "expected table");
   let inDelimiterRow = false;
   const align = [];
-  while (index3 < events.length) {
-    const event = events[index3];
+  while (index4 < events.length) {
+    const event = events[index4];
     if (inDelimiterRow) {
       if (event[0] === "enter") {
         if (event[1].type === "tableContent") {
-          align.push(events[index3 + 1][1].type === "tableDelimiterMarker" ? "left" : "none");
+          align.push(events[index4 + 1][1].type === "tableDelimiterMarker" ? "left" : "none");
         }
       } else if (event[1].type === "tableContent") {
-        if (events[index3 - 1][1].type === "tableDelimiterMarker") {
+        if (events[index4 - 1][1].type === "tableDelimiterMarker") {
           const alignIndex = align.length - 1;
           align[alignIndex] = align[alignIndex] === "left" ? "center" : "right";
         }
@@ -60432,7 +61618,7 @@ function gfmTableAlign(events, index3) {
     } else if (event[0] === "enter" && event[1].type === "tableDelimiterRow") {
       inDelimiterRow = true;
     }
-    index3 += 1;
+    index4 += 1;
   }
   return align;
 }
@@ -60452,16 +61638,16 @@ function tokenizeTable(effects, ok2, nok) {
   let seen;
   return start;
   function start(code3) {
-    let index3 = self.events.length - 1;
-    while (index3 > -1) {
-      const { type } = self.events[index3][1];
+    let index4 = self.events.length - 1;
+    while (index4 > -1) {
+      const { type } = self.events[index4][1];
       if (type === types2.lineEnding || type === types2.linePrefix) {
-        index3--;
+        index4--;
       } else {
         break;
       }
     }
-    const tail = index3 > -1 ? self.events[index3][1].type : null;
+    const tail = index4 > -1 ? self.events[index4][1].type : null;
     const next = tail === "tableHead" || tail === "tableRow" ? bodyRowStart : headRowBefore;
     if (next === bodyRowStart && self.parser.lazy[self.now().line]) {
       return nok(code3);
@@ -60664,7 +61850,7 @@ function tokenizeTable(effects, ok2, nok) {
   }
 }
 function resolveTable(events, context) {
-  let index3 = -1;
+  let index4 = -1;
   let inFirstCellAwaitingPipe = true;
   let rowKind = 0;
   let lastCell = [0, 0, 0, 0];
@@ -60675,8 +61861,8 @@ function resolveTable(events, context) {
   let currentBody;
   let currentCell;
   const map = new EditMap;
-  while (++index3 < events.length) {
-    const event = events[index3];
+  while (++index4 < events.length) {
+    const event = events[index4];
     const token = event[1];
     if (event[0] === "enter") {
       if (token.type === "tableHead") {
@@ -60692,12 +61878,12 @@ function resolveTable(events, context) {
           start: Object.assign({}, token.start),
           end: Object.assign({}, token.end)
         };
-        map.add(index3, 0, [["enter", currentTable, context]]);
+        map.add(index4, 0, [["enter", currentTable, context]]);
       } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
         inFirstCellAwaitingPipe = true;
         currentCell = undefined;
         lastCell = [0, 0, 0, 0];
-        cell = [0, index3 + 1, 0, 0];
+        cell = [0, index4 + 1, 0, 0];
         if (afterHeadAwaitingFirstBodyRow) {
           afterHeadAwaitingFirstBodyRow = false;
           currentBody = {
@@ -60705,7 +61891,7 @@ function resolveTable(events, context) {
             start: Object.assign({}, token.start),
             end: Object.assign({}, token.end)
           };
-          map.add(index3, 0, [["enter", currentBody, context]]);
+          map.add(index4, 0, [["enter", currentBody, context]]);
         }
         rowKind = token.type === "tableDelimiterRow" ? 2 : currentBody ? 3 : 1;
       } else if (rowKind && (token.type === types2.data || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
@@ -60716,7 +61902,7 @@ function resolveTable(events, context) {
             currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
             lastCell = [0, 0, 0, 0];
           }
-          cell[2] = index3;
+          cell[2] = index4;
         }
       } else if (token.type === "tableCellDivider") {
         if (inFirstCellAwaitingPipe) {
@@ -60727,23 +61913,23 @@ function resolveTable(events, context) {
             currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
           }
           lastCell = cell;
-          cell = [lastCell[1], index3, 0, 0];
+          cell = [lastCell[1], index4, 0, 0];
         }
       }
     } else if (token.type === "tableHead") {
       afterHeadAwaitingFirstBodyRow = true;
-      lastTableEnd = index3;
+      lastTableEnd = index4;
     } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
-      lastTableEnd = index3;
+      lastTableEnd = index4;
       if (lastCell[1] !== 0) {
         cell[0] = cell[1];
-        currentCell = flushCell(map, context, lastCell, rowKind, index3, currentCell);
+        currentCell = flushCell(map, context, lastCell, rowKind, index4, currentCell);
       } else if (cell[1] !== 0) {
-        currentCell = flushCell(map, context, cell, rowKind, index3, currentCell);
+        currentCell = flushCell(map, context, cell, rowKind, index4, currentCell);
       }
       rowKind = 0;
     } else if (rowKind && (token.type === types2.data || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
-      cell[3] = index3;
+      cell[3] = index4;
     }
   }
   if (lastTableEnd !== 0) {
@@ -60751,11 +61937,11 @@ function resolveTable(events, context) {
     flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
   }
   map.consume(context.events);
-  index3 = -1;
-  while (++index3 < context.events.length) {
-    const event = context.events[index3];
+  index4 = -1;
+  while (++index4 < context.events.length) {
+    const event = context.events[index4];
     if (event[0] === "enter" && event[1].type === "table") {
-      event[1]._align = gfmTableAlign(context.events, index3);
+      event[1]._align = gfmTableAlign(context.events, index4);
     }
   }
   return events;
@@ -60768,11 +61954,11 @@ function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
     previousCell.end = Object.assign({}, getPoint(context.events, range[0]));
     map.add(range[0], 0, [["exit", previousCell, context]]);
   }
-  const now = getPoint(context.events, range[1]);
+  const now2 = getPoint(context.events, range[1]);
   previousCell = {
     type: groupName,
-    start: Object.assign({}, now),
-    end: Object.assign({}, now)
+    start: Object.assign({}, now2),
+    end: Object.assign({}, now2)
   };
   map.add(range[1], 0, [["enter", previousCell, context]]);
   if (range[2] !== 0) {
@@ -60792,9 +61978,9 @@ function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
       start[1].type = types2.chunkText;
       start[1].contentType = constants.contentTypeText;
       if (range[3] > range[2] + 1) {
-        const a = range[2] + 1;
+        const a2 = range[2] + 1;
         const b = range[3] - range[2] - 1;
-        map.add(a, b, []);
+        map.add(a2, b, []);
       }
     }
     map.add(range[3] + 1, 0, [["exit", valueToken, context]]);
@@ -60806,19 +61992,19 @@ function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
   }
   return previousCell;
 }
-function flushTableEnd(map, context, index3, table, tableBody) {
+function flushTableEnd(map, context, index4, table, tableBody) {
   const exits = [];
-  const related = getPoint(context.events, index3);
+  const related = getPoint(context.events, index4);
   if (tableBody) {
     tableBody.end = Object.assign({}, related);
     exits.push(["exit", tableBody, context]);
   }
   table.end = Object.assign({}, related);
   exits.push(["exit", table, context]);
-  map.add(index3 + 1, 0, exits);
+  map.add(index4 + 1, 0, exits);
 }
-function getPoint(events, index3) {
-  const event = events[index3];
+function getPoint(events, index4) {
+  const event = events[index4];
   const side = event[0] === "enter" ? "start" : "end";
   return event[1][side];
 }
@@ -60948,10 +62134,10 @@ function gfmHtml(options) {
 // src/scriptorium/surface/state/markdown.ts
 var FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 function splitFrontmatter(text4) {
-  const m = FRONTMATTER_BLOCK.exec(text4);
-  if (!m)
+  const m2 = FRONTMATTER_BLOCK.exec(text4);
+  if (!m2)
     return { raw: null, body: text4 };
-  return { raw: m[1] ?? "", body: text4.slice(m[0].length) };
+  return { raw: m2[1] ?? "", body: text4.slice(m2[0].length) };
 }
 var SAFE_SCHEME = /^(https?:|mailto:)/i;
 var HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
@@ -61111,7 +62297,7 @@ function MarkdownView({
   meta: meta2,
   onFollowLink
 }) {
-  const html = import_react16.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
+  const html = import_react17.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "min-h-0 flex-1 overflow-auto",
     "data-slot": "markdown-view",
@@ -61145,7 +62331,7 @@ function MarkdownView({
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var import_react17 = __toESM(require_react(), 1);
+var import_react18 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
 var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
@@ -61163,7 +62349,7 @@ function StatusStrip({ segments }) {
   return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(import_react17.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(import_react18.Fragment, {
       children: [
         i2 > 0 && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Separator2, {
           orientation: "vertical",
@@ -61194,9 +62380,9 @@ var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split"];
 var SPLIT_MIN_PX = 720;
 function useWidth() {
-  const ref = import_react18.useRef(null);
-  const [width, setWidth] = import_react18.useState(0);
-  import_react18.useEffect(() => {
+  const ref = import_react19.useRef(null);
+  const [width, setWidth] = import_react19.useState(0);
+  import_react19.useEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -61212,20 +62398,20 @@ var MODE_BUTTONS = [
   { mode: "split", label: "Raw and rendered side by side", icon: Columns2 }
 ];
 function useDebouncedStats(text4, ms = 300) {
-  const [stats, setStats] = import_react18.useState(() => contentStats(text4 ?? ""));
-  import_react18.useEffect(() => {
+  const [stats, setStats] = import_react19.useState(() => contentStats(text4 ?? ""));
+  import_react19.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now, setNow] = import_react18.useState(() => Date.now());
-  import_react18.useEffect(() => {
+  const [now2, setNow] = import_react19.useState(() => Date.now());
+  import_react19.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
-  return now;
+  return now2;
 }
 function DocumentPane({
   doc: doc2,
@@ -61238,12 +62424,12 @@ function DocumentPane({
   onRevert,
   onFollowLink
 }) {
-  const lastShown = import_react18.useRef(null);
+  const lastShown = import_react19.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown = text4 ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
   const stats = useDebouncedStats(shown);
-  const now = useNow();
+  const now2 = useNow();
   const [paneRef, width] = useWidth();
   const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
   const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
@@ -61253,7 +62439,7 @@ function DocumentPane({
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
     {
       label: "Updated",
-      value: active ? relativeTime(active.createdAt, now) : "—",
+      value: active ? relativeTime(active.createdAt, now2) : "—",
       priority: "low"
     },
     { value: doc2.outsideChanged ? "Changed on disk" : doc2.dirty ? "Unsaved" : "Saved" },
@@ -61312,21 +62498,21 @@ function DocumentPane({
                   role: "toolbar",
                   "aria-label": "How to show this document",
                   className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
-                  children: MODE_BUTTONS.map(({ mode: m, label, icon: Icon2 }) => {
-                    const unavailable = m === "split" && !roomToSplit;
+                  children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
+                    const unavailable = m2 === "split" && !roomToSplit;
                     return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("button", {
                       type: "button",
-                      onClick: () => onMode(m),
+                      onClick: () => onMode(m2),
                       disabled: unavailable,
-                      "aria-pressed": showing === m,
+                      "aria-pressed": showing === m2,
                       "aria-label": label,
                       title: unavailable ? `${label} — the pane is too narrow` : label,
-                      className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m && "bg-bg text-ink shadow-sm"),
+                      className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
                       children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Icon2, {
                         "aria-hidden": true,
                         className: "size-3.5"
                       }, undefined, false, undefined, this)
-                    }, m, false, undefined, this);
+                    }, m2, false, undefined, this);
                   })
                 }, undefined, false, undefined, this)
               ]
@@ -61457,22 +62643,22 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react19 = __toESM(require_react(), 1);
+var import_react20 = __toESM(require_react(), 1);
 var textKey = (doc2, version2) => `${doc2}@${version2}`;
 function useDaemon() {
-  const [state, setState] = import_react19.useState(null);
-  const [connection, setConnection] = import_react19.useState("connecting");
-  const [lastError, setLastError] = import_react19.useState(null);
-  const [texts, setTexts] = import_react19.useState(() => new Map);
-  const [done, setDone] = import_react19.useState(null);
-  const wsRef = import_react19.useRef(null);
-  const pending = import_react19.useRef(new Map);
-  const plans = import_react19.useRef(new Map);
-  const maps = import_react19.useRef(new Map);
-  import_react19.useEffect(() => {
+  const [state, setState] = import_react20.useState(null);
+  const [connection, setConnection] = import_react20.useState("connecting");
+  const [lastError, setLastError] = import_react20.useState(null);
+  const [texts, setTexts] = import_react20.useState(() => new Map);
+  const [done, setDone] = import_react20.useState(null);
+  const wsRef = import_react20.useRef(null);
+  const pending = import_react20.useRef(new Map);
+  const plans = import_react20.useRef(new Map);
+  const maps = import_react20.useRef(new Map);
+  import_react20.useEffect(() => {
     let stopped = false;
     let delay = 250;
-    let timer;
+    let timer2;
     const connect = () => {
       const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
       const ws = new WebSocket(url);
@@ -61543,24 +62729,24 @@ function useDaemon() {
         maps.current.clear();
         if (stopped)
           return;
-        timer = setTimeout(connect, delay);
+        timer2 = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
       };
     };
     connect();
     return () => {
       stopped = true;
-      if (timer)
-        clearTimeout(timer);
+      if (timer2)
+        clearTimeout(timer2);
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react19.useCallback((msg) => {
+  const send = import_react20.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react19.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react20.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -61574,7 +62760,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react19.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react20.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -61589,7 +62775,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react19.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react20.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -61603,7 +62789,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const noteText = import_react19.useCallback((doc2, version2, text4) => {
+  const noteText = import_react20.useCallback((doc2, version2, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version2);
       if (prev.get(key) === text4)
@@ -61613,7 +62799,7 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react19.useCallback(() => setLastError(null), []);
+  const clearError = import_react20.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
@@ -61651,9 +62837,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react20.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react21.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -61711,9 +62897,9 @@ function Workspace({
   daemon
 }) {
   const { send, texts, noteText, listDir, planMove, mapOf, lastError, clearError, done } = daemon;
-  const prefsRef = import_react20.useRef(state.prefs);
+  const prefsRef = import_react21.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react20.useMemo(() => ({
+  const storage = import_react21.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -61728,8 +62914,8 @@ function Workspace({
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text4 = open ? texts.get(textKey(open.slug, open.active)) : undefined;
-  const asked = import_react20.useRef(new Set);
-  import_react20.useEffect(() => {
+  const asked = import_react21.useRef(new Set);
+  import_react21.useEffect(() => {
     if (!open || text4 !== undefined)
       return;
     const key = textKey(open.slug, open.active);
@@ -61738,9 +62924,9 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text4, send]);
-  const openRef = import_react20.useRef(open);
+  const openRef = import_react21.useRef(open);
   openRef.current = open;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -61752,9 +62938,9 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react20.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react21.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
@@ -61859,9 +63045,9 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react20.useRef(null);
+  const end = import_react21.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
   return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
@@ -61869,17 +63055,17 @@ function ActivityLog({ chat }) {
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        "data-who": m.who,
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+        "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
           /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
-            children: m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"
+            children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
-          m.text
+          m2.text
         ]
-      }, m.id, true, undefined, this)),
+      }, m2.id, true, undefined, this)),
       /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)

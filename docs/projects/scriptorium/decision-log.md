@@ -679,3 +679,39 @@ documents**, which the real wiki proved at 508 edges, so past 150 the edges wait
 for a hover — the node is what you read, the links are what you ask for — with a
 toggle for the whole shape at once. Every node is keyboard-reachable, because a
 map is a way INTO a corpus.
+
+## E34 · Two map modes, and hovering mutes what a document does not touch
+
+**Ruled and built:** Cole, 2026-09-12, on seeing the map: "on hover we should
+make non-connected nodes a bit transparent and muted … I'd like to also have a
+physics based mode, I think Obsidian has something like that. I think the modes
+tend to be useful in different ways."
+
+**They answer different questions, which is why both stay.** The COLUMNS answer
+"what KIND of page is this, and what cites it" — deterministic, so the same
+corpus draws the same way twice and a reader can point at a position. PHYSICS
+answers "what clusters, and what sits alone", which a column layout structurally
+cannot show: it puts that answer in the column ORDER rather than in the distance
+between nodes. Driven on the real wiki, the physics mode put `STYLE`, `SCHEMA`
+and `Delegator` out at the rim on their own — a fact the columns never showed,
+because every column is as tall as its type.
+
+**Hovering MUTES rather than hides**, in both modes: a document the hovered one
+does not touch drops to about a fifth opacity and stays where it is. Removing it
+would change the shape being read. (mind-mapper's canvas dims for its spotlight
+the same way — the house already had the idiom.)
+
+**`d3-force`, not a hand-rolled simulation**: already carried at the ROOT for
+mind-mapper's `GraphCanvas`, so the physics mode enters no new package. Nodes
+can be DRAGGED — pinning one and letting the rest settle around it is how a
+force map is read — and the hovered node draws LAST, so its label is never
+buried under a neighbour's.
+
+**Tuned against the corpus, not guessed:** at a -220 charge and a 110 link
+distance, 46 documents packed tightly enough that every label overlapped, which
+is a pretty and unreadable map. -520 and 150, with a collision radius 34 past
+each node's own, gives the names room.
+
+Also in this chapter: `@codemirror/legacy-modes` left the manifest. It was
+installed for E31's tokenizer and turned out to carry 310 modes and no markdown
+— a dependency that earns nothing should not sit in the file.
