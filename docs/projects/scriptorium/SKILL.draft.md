@@ -147,10 +147,24 @@ and `sessions/<id>/docs/<slug>/v1.md, v2.md, …`; `logs/` for daemon stderr.
 Discovery pointers: `scriptorium-<id>.json` and `scriptorium-latest.json` in the
 system temp directory.
 
-## Not yet (slice A)
+## What the human is doing while you work
 
-The surface is the empty three-pane layout; the context sidebar, the document
-viewer/editor and the chat pane arrive in the next slices (E16). Save and Revert
-are surface acts (the daemon has them; there is no CLI verb for them, because
-saving is the human's decision — E7). Split-screen diff, annotations, saved
-prompts are later slices (E9, E11).
+The surface has the context sidebar, the document pane and the status strip. The
+human READS in three modes (raw markdown, rendered, or both side by side) and
+**EDITS the active version** in the raw view: their keystrokes reach
+`docs/<slug>/vN.md` a quarter-second after they stop typing.
+
+**So the E2 rule has teeth now, and it is the one thing to hold:** never write
+the version that is ACTIVE. `state` names it (`active`); write a new one with
+`version-new` and let the human activate it. A write to the active version is
+detected, kept as a new agent version, and announced as a mistake — nothing is
+lost, but the human is told.
+
+Save and Revert stay the human's (E7): Save writes the active version over the
+original, Revert takes the file back. There is no CLI verb for either, and that
+is deliberate, not an omission.
+
+## Not yet
+
+Split-screen diff between versions, annotations, saved prompts and the chat pane
+(E9, E11, E16). Undo/redo across both parties is decided but unbuilt (E28).

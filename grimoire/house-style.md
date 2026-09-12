@@ -520,16 +520,19 @@ registry uses the registry's `cn` throughout, one semantics per spell.
     for this spell"): `react-resizable-panels` (shadcn `resizable`),
     `@headless-tree/core` + `@headless-tree/react` (the context tree),
     `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`,
-    `@codemirror/language`, `@codemirror/lang-markdown`, and later
-    `@codemirror/merge` (the diff view), plus `micromark-extension-gfm` (E29's
-    rendered view — tables, task lists and strikethrough over the `micromark`
-    the root already carries for mind-mapper; NOT a second renderer, and no
-    sanitiser, because micromark encodes raw HTML and refuses a scheme it does
-    not allow). Declared in `src/scriptorium/package.json` only. ⚠
-    `react-resizable-panels` was added before this ruling was recorded — the
-    rule's "before `bun add`" was missed and is recorded here as such. The
-    ruling is scoped to scriptorium: another spell wanting one of these still
-    needs its own.
+    `@codemirror/language`, `@codemirror/commands` and `@lezer/highlight` (E31's
+    editing slice), and later `@codemirror/merge` (the diff view), plus
+    `micromark-extension-gfm` (E29's rendered view — tables, task lists and
+    strikethrough over the `micromark` the root already carries for mind-mapper;
+    NOT a second renderer, and no sanitiser, because micromark encodes raw HTML
+    and refuses a scheme it does not allow). ⚠ `@codemirror/lang-markdown` is
+    listed above but was NOT adopted: it imports the HTML language at module
+    scope, and E31 highlights with a hand-written stream tokenizer instead — the
+    entry stays so the next reader does not re-add it without reading why.
+    Declared in `src/scriptorium/package.json` only. ⚠ `react-resizable-panels`
+    was added before this ruling was recorded — the rule's "before `bun add`"
+    was missed and is recorded here as such. The ruling is scoped to
+    scriptorium: another spell wanting one of these still needs its own.
 
 ### Honor the exit-code contract.
 

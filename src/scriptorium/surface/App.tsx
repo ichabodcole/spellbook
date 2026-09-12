@@ -108,7 +108,7 @@ function Workspace({
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
 }) {
-  const { send, texts, listDir, planMove, lastError, clearError, done } = daemon;
+  const { send, texts, noteText, listDir, planMove, lastError, clearError, done } = daemon;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -146,6 +146,23 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text, send]);
+
+  // ⌘S belongs to the SESSION, not to the editor's focus: in rendered mode the
+  // editor is not mounted at all, and the browser's own Save-page dialog is
+  // what opens if nothing claims the key. The editor keeps its own binding too
+  // (it flushes the pending buffer first), and both end at the same `save`.
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const doc = openRef.current;
+      e.preventDefault();
+      if (doc?.dirty) send({ type: "save", doc: doc.slug });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [send]);
 
   const onOpenDoc = useCallback(
     (entry: ContextEntry, rel: string) => send({ type: "open", path: joinPath(entry.root, rel) }),
@@ -198,6 +215,16 @@ function Workspace({
           mode={mode}
           onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
           splitLayout={splitLayout}
+          onEdit={(next) => {
+            if (!open) return;
+            // The daemon does not echo an edit back, so this viewer keeps its
+            // own copy in step — otherwise the prop would trail the buffer and
+            // every re-render would look like news from the daemon.
+            noteText(open.slug, open.active, next);
+            send({ type: "edit", doc: open.slug, version: open.active, text: next });
+          }}
+          onSave={() => open && send({ type: "save", doc: open.slug })}
+          onRevert={() => open && send({ type: "revert", doc: open.slug })}
         />
       </ResizablePanel>
       <ResizableHandle withHandle />

@@ -533,3 +533,49 @@ Firefox takes.
 bars that fade when idle, a custom track, or scroll buttons. That is what
 `ScrollArea` is for, and it can be adopted per pane, leaving the editor on these
 rules.
+
+## E31 · Editing: the buffer reaches the ACTIVE VERSION, and only Save reaches the file
+
+**Built:** 2026-09-11, Cole — "let's continue into editing … if we can create a
+really good standard editing experience for a human user, that will naturally
+lead into adding the chat and the same functionality for the agent." So the
+editing slice is single-user first, by his sequencing, and chat comes last.
+
+The raw view is editable. Keystrokes settle for 250 ms and go to the daemon as
+`edit`, which writes the ACTIVE VERSION's file — never the original (E7). Save
+(the button, or ⌘S) writes the original; Revert takes the file back over the
+version. ⌘S is bound TWICE on purpose: in the editor, where it flushes the
+pending buffer first, and on the window, because in rendered mode the editor is
+not mounted at all and the browser's own Save-page dialog is what opens if
+nothing claims the key.
+
+**Two writers, one document, and an ANNOTATION keeps them apart.** A change the
+view applies from the daemon is stamped `remote`, and the update listener
+ignores a stamped transaction — otherwise a reload from disk would be sent
+straight back as if the human had typed it. The mirror of that: the prop trails
+the buffer (the daemon does not echo an edit back), so the view ignores a text
+equal to the last one the daemon gave it, and the viewer keeps its own copy in
+step. Applying a stale prop would have thrown away everything typed since.
+
+**E2 was driven with a live editor, not just asserted:** with the human's
+unsaved text in the buffer, an outside write to the active version was kept as
+v2, the buffer held its text, and the chat said so. A file changed on disk under
+unsaved edits raises a bar above the document — "Keep mine" / "Take the file's"
+— rather than choosing for the human.
+
+**Markdown highlighting is back (E20's open question, answered).** Not
+`@codemirror/lang-markdown`, which imports the HTML language at module scope and
+drags the JavaScript language's snippet strings into the bundle — that ward-1b
+false positive is what removed highlighting in the first place — and not
+`@codemirror/legacy-modes`, which has 310 modes and no markdown. A hand-written
+stream tokenizer of about fifty lines, with the one property the other two do
+not have: it is unit-tested directly over CodeMirror's own `StringStream`,
+including the rule that it must always advance (a tokenizer that returns without
+consuming hangs the highlighter).
+
+**Undo is the editor's own** (CodeMirror `history()`), which is exactly E28's
+split: keystrokes inside the buffer, committed acts on the shared timeline —
+still unbuilt, and now the next thing editing needs.
+
+**The raw measure went 76ch → 104ch** on Cole's note that it read too narrow:
+76ch is a prose measure and monospace is not prose.

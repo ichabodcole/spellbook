@@ -32,6 +32,8 @@ export function useDaemon(): {
   lastError: string | null;
   clearError: () => void;
   texts: ReadonlyMap<string, string>;
+  /** Record what THIS viewer typed, so its own copy matches the buffer. */
+  noteText: (doc: string, version: number, text: string) => void;
   done: Done | null;
   send: (msg: ClientMsg) => void;
   listDir: (path: string) => Promise<Listing>;
@@ -157,7 +159,28 @@ export function useDaemon(): {
     [],
   );
 
+  const noteText = useCallback((doc: string, version: number, text: string) => {
+    setTexts((prev) => {
+      const key = textKey(doc, version);
+      if (prev.get(key) === text) return prev;
+      const next = new Map(prev);
+      next.set(key, text);
+      return next;
+    });
+  }, []);
+
   const clearError = useCallback(() => setLastError(null), []);
 
-  return { state, connection, lastError, clearError, texts, done, send, listDir, planMove };
+  return {
+    state,
+    connection,
+    lastError,
+    clearError,
+    texts,
+    noteText,
+    done,
+    send,
+    listDir,
+    planMove,
+  };
 }

@@ -1,8 +1,16 @@
 // The centre pane: the open document's header, the read-only view, and the
 // status strip under it with real values (E18).
 import { cn } from "cn";
-import { BookOpenIcon, ColumnsIcon, FileCodeIcon, FileTextIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  ColumnsIcon,
+  FileCodeIcon,
+  FileTextIcon,
+  SaveIcon,
+  UndoDotIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
 import type { DocView } from "../../backend/protocol";
@@ -71,11 +79,20 @@ export function DocumentPane({
   mode,
   onMode,
   splitLayout,
+  onEdit,
+  onSave,
+  onRevert,
 }: {
   doc: DocView | null;
   text: string | undefined;
   mode: ViewMode;
   onMode: (mode: ViewMode) => void;
+  /** The buffer, debounced by the editor — written to the active version (E7). */
+  onEdit: (text: string) => void;
+  /** Write the active version over the original. The human's decision, always. */
+  onSave: () => void;
+  /** Take the file on disk back over the active version. */
+  onRevert: () => void;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -122,9 +139,28 @@ export function DocumentPane({
               {doc.name}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-1">
-              <span className="rounded-sm bg-surface-raised px-1.5 py-0.5 text-[11px] text-ink-faint">
-                read-only
-              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRevert}
+                disabled={!doc.dirty && !doc.outsideChanged}
+                title="Take the file on disk back over your edits"
+                className="h-7 gap-1.5 px-2 text-xs"
+              >
+                <UndoDotIcon className="size-3.5" />
+                Revert
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSave}
+                disabled={!doc.dirty}
+                title="Write this version over the file (⌘S)"
+                className="h-7 gap-1.5 px-2 text-xs"
+              >
+                <SaveIcon className="size-3.5" />
+                Save
+              </Button>
               <div
                 role="toolbar"
                 aria-label="How to show this document"
@@ -159,6 +195,30 @@ export function DocumentPane({
           <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">Document</span>
         )}
       </div>
+      {doc?.outsideChanged && (
+        <div
+          role="alert"
+          className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink"
+        >
+          <span className="min-w-0 flex-1">
+            This file changed on disk while you have unsaved edits.
+          </span>
+          <button
+            type="button"
+            onClick={onSave}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+          >
+            Keep mine
+          </button>
+          <button
+            type="button"
+            onClick={onRevert}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+          >
+            Take the file's
+          </button>
+        </div>
+      )}
       {!doc ? (
         <Empty className="flex-1">
           <EmptyHeader>
@@ -174,7 +234,7 @@ export function DocumentPane({
       ) : shown === undefined ? (
         <div className="flex-1" aria-busy="true" />
       ) : showing === "raw" ? (
-        <DocumentView docKey={doc.slug} text={shown} />
+        <DocumentView docKey={doc.slug} text={shown} editable onChange={onEdit} onSave={onSave} />
       ) : showing === "rendered" ? (
         <MarkdownView text={shown} />
       ) : (
@@ -185,7 +245,13 @@ export function DocumentPane({
           onLayoutChanged={splitLayout.onLayoutChanged}
         >
           <ResizablePanel id="doc-raw" defaultSize="50" minSize="25" className="flex flex-col">
-            <DocumentView docKey={doc.slug} text={shown} />
+            <DocumentView
+              docKey={doc.slug}
+              text={shown}
+              editable
+              onChange={onEdit}
+              onSave={onSave}
+            />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel

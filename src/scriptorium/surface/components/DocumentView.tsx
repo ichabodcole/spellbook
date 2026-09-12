@@ -1,24 +1,35 @@
-// The centre pane's document, READ-ONLY for now (E16: view before edit).
-// CodeMirror 6, hand-wrapped (investigation §1: the spell must dispatch its own
-// transactions — remote changes, later the human's edits — so the view's
-// lifecycle is ours, not a wrapper library's). ONE view per document — not per
-// version — so a new text (the agent's version made active, the original
-// reloaded from disk) is applied as the SMALLEST change that turns the old text
-// into the new, and the reader keeps their place. (It first remounted per
-// version and replaced the whole text, which put a reader 300,000px down back at
-// the top — the verify pass drove it.)
+// The centre pane's document. EDITABLE as of E31 — the human types here, and
+// what they type reaches the ACTIVE VERSION's file, never the original (E7:
+// Save is the only thing that writes that).
 //
-// ⚠ NO MARKDOWN LANGUAGE YET, deliberately. `@codemirror/lang-markdown` imports
-// `@codemirror/lang-html` at module scope (for inline HTML), which drags the
-// HTML, CSS and JavaScript languages into the bundle — and the JavaScript
-// language's snippet strings (`import … from "${module}"`) trip the
-// import-boundary ward's text scan (ward 1b), a false positive on a string
-// literal. A read-only view with no highlight style gets nothing from the
-// language anyway. The editing slice adds it back and must settle both: the
-// ward reading string literals as imports, and the bundle weight.
-import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+// CodeMirror 6, hand-wrapped (investigation §1: the spell must dispatch its own
+// transactions — the human's edits, remote changes, later a merge — so the
+// view's lifecycle is ours, not a wrapper library's). ONE view per document —
+// not per version — so a new text (the agent's version made active, the
+// original reloaded from disk) is applied as the SMALLEST change that turns the
+// old text into the new, and the reader keeps their place. (It first remounted
+// per version and replaced the whole text, which put a reader 300,000px down
+// back at the top — the verify pass drove it.)
+//
+// ⛔ TWO WRITERS, ONE DOCUMENT, AND AN ANNOTATION IS WHAT KEEPS THEM APART. A
+// change this view applies FROM the daemon is stamped `remote`, and the update
+// listener ignores a stamped transaction — otherwise a reload from disk would
+// be sent straight back as if the human had typed it, and the two would chase
+// each other.
+//
+// Markdown highlighting is in `markdownMode.ts`, which also records why it is
+// hand-written rather than `@codemirror/lang-markdown` (E20's open question).
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { Annotation, EditorState, type Extension } from "@codemirror/state";
+import { EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
+import { markdownHighlighting } from "./markdownMode";
+
+/** A change that came FROM the daemon, so the listener does not send it back. */
+const remote = Annotation.define<boolean>();
+
+/** How long typing settles before the buffer is sent (one daemon write per message). */
+export const EDIT_DEBOUNCE_MS = 250;
 
 /** The editor's look, from the spell's semantic tokens — so both themes follow. */
 const scriptoriumTheme = EditorView.theme({
@@ -33,9 +44,13 @@ const scriptoriumTheme = EditorView.theme({
     lineHeight: "1.65",
   },
   ".cm-content": {
-    maxWidth: "76ch",
+    // 76ch is a PROSE measure and monospace is not prose: at 14px JetBrains
+    // Mono that came out around 640px, which reads cramped on a wide screen
+    // (Cole). 104ch is the code measure most editors wrap at, and the pane's
+    // own width still wins when it is narrower.
+    maxWidth: "104ch",
     margin: "0 auto",
-    padding: "28px 32px 64px",
+    padding: "28px 40px 64px",
     caretColor: "var(--color-rubric)",
   },
   "&.cm-focused": { outline: "none" },
@@ -43,6 +58,7 @@ const scriptoriumTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-rubric) 28%, transparent)",
   },
   ".cm-activeLine": { backgroundColor: "transparent" },
+  ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" },
 });
 
 /** The smallest single replacement turning `a` into `b`: common prefix and suffix kept. */
@@ -63,44 +79,114 @@ export function minimalChange(
   return { from: start, to: endA, insert: b.slice(start, endB) };
 }
 
-export function DocumentView({ docKey, text }: { docKey: string; text: string }) {
+export function DocumentView({
+  docKey,
+  text,
+  editable = false,
+  onChange,
+  onSave,
+}: {
+  docKey: string;
+  text: string;
+  /** Only the ACTIVE version is editable (E2); anything else is read. */
+  editable?: boolean;
+  /** The buffer, debounced — the daemon writes it to the active version's file. */
+  onChange?: (text: string) => void;
+  /** ⌘S / Ctrl-S: the one act that writes the original (E7). */
+  onSave?: () => void;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initial = useRef(text);
   initial.current = text;
+  // The handlers change identity every render; the extensions must not.
+  const handlers = useRef({ onChange, onSave });
+  handlers.current = { onChange, onSave };
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The last text the DAEMON gave us — see the remote effect below. */
+  const lastRemote = useRef(text);
 
-  // One view per document: remount only when the document itself changes.
+  // One view per document, rebuilt when the document or its editability changes.
   useEffect(() => {
     if (!host.current) return;
+    const send = (value: string) => {
+      if (pending.current) clearTimeout(pending.current);
+      pending.current = setTimeout(() => {
+        pending.current = null;
+        handlers.current.onChange?.(value);
+      }, EDIT_DEBOUNCE_MS);
+    };
+    /** Send what is pending NOW — before a save, a blur, or unmounting. */
+    const flush = () => {
+      if (!pending.current) return;
+      clearTimeout(pending.current);
+      pending.current = null;
+      const v = view.current;
+      if (v) handlers.current.onChange?.(v.state.doc.toString());
+    };
+    const extensions: Extension[] = [
+      EditorView.lineWrapping,
+      markdownHighlighting,
+      scriptoriumTheme,
+      EditorState.readOnly.of(!editable),
+      EditorView.editable.of(editable),
+    ];
+    if (editable)
+      extensions.push(
+        history(),
+        // ⌘S is bound FIRST so it wins, and `preventDefault` is what stops the
+        // browser's own Save-page dialog from opening over the surface.
+        keymap.of([
+          {
+            key: "Mod-s",
+            preventDefault: true,
+            run: () => {
+              flush();
+              handlers.current.onSave?.();
+              return true;
+            },
+          },
+          ...historyKeymap,
+          ...defaultKeymap,
+        ]),
+        EditorView.updateListener.of((update) => {
+          if (!update.docChanged) return;
+          if (update.transactions.some((t) => t.annotation(remote))) return;
+          send(update.state.doc.toString());
+        }),
+        // Typing and then clicking away must not leave the last keystrokes unsent.
+        EditorView.domEventHandlers({
+          blur: () => {
+            flush();
+            return false;
+          },
+        }),
+      );
     const v = new EditorView({
       parent: host.current,
-      state: EditorState.create({
-        doc: initial.current,
-        extensions: [
-          EditorView.lineWrapping,
-          EditorState.readOnly.of(true),
-          EditorView.editable.of(false),
-          scriptoriumTheme,
-        ],
-      }),
+      state: EditorState.create({ doc: initial.current, extensions }),
     });
     view.current = v;
     return () => {
+      flush();
       v.destroy();
       view.current = null;
     };
-  }, [docKey]);
+  }, [docKey, editable]);
 
-  // The document's text changed: apply the minimal change, then put the scroll
-  // back where it was — a change above the viewport would otherwise push the
-  // reader's place down the page.
+  // The text changed UNDER us (a version made active, the original reloaded).
   useEffect(() => {
     const v = view.current;
     if (!v) return;
+    // ⛔ A re-render carrying the SAME text the daemon last gave us is not news.
+    // Applying it would throw away everything typed since — the prop trails the
+    // buffer by design, because the daemon does not echo an edit back.
+    if (text === lastRemote.current) return;
+    lastRemote.current = text;
     const change = minimalChange(v.state.doc.toString(), text);
     if (!change) return;
     const top = v.scrollDOM.scrollTop;
-    v.dispatch({ changes: change });
+    v.dispatch({ changes: change, annotations: remote.of(true) });
     v.requestMeasure({
       read: () => null,
       write: () => {
