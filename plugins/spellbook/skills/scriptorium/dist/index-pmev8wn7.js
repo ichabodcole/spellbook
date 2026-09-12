@@ -62955,61 +62955,66 @@ function VersionMenu({
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
-              onClick: () => onActivate(v.n),
-              disabled: v.n === active,
-              className: "flex-col items-start gap-0.5",
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(import_react21.Fragment, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                  className: "flex w-full items-center gap-1.5",
+                i2 > 0 && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+                  onClick: () => onActivate(v.n),
+                  disabled: v.n === active,
+                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-rubric/10 ring-1 ring-rubric/20 data-disabled:opacity-100"),
                   children: [
-                    v.n === active ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BadgeCheck, {
-                      "aria-hidden": true,
-                      className: "size-3.5 shrink-0 text-rubric"
-                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                      "aria-hidden": true,
-                      className: "size-3.5 shrink-0"
-                    }, undefined, false, undefined, this),
                     /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                      className: "min-w-0 flex-1 truncate font-medium text-ink",
-                      children: versionLabel(v)
-                    }, undefined, false, undefined, this),
-                    v.label && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                      className: "shrink-0 text-[11px] text-ink-faint",
+                      className: "flex w-full items-center gap-1.5",
                       children: [
-                        "v",
-                        v.n
-                      ]
-                    }, undefined, true, undefined, this)
-                  ]
-                }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                  className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
-                  children: [
-                    v.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Sparkles, {
-                      "aria-hidden": true,
-                      className: "size-3 shrink-0"
-                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(User, {
-                      "aria-hidden": true,
-                      className: "size-3 shrink-0"
-                    }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
-                      children: when(v.createdAt)
-                    }, undefined, false, undefined, this),
-                    v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
-                      type: "button",
-                      onClick: (e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        onCompare(v.n);
-                      },
-                      className: "ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
-                      children: [
-                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitCompare, {
+                        v.n === active ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BadgeCheck, {
                           "aria-hidden": true,
-                          className: "size-3"
+                          className: "size-3.5 shrink-0 text-rubric"
+                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                          "aria-hidden": true,
+                          className: "size-3.5 shrink-0"
                         }, undefined, false, undefined, this),
-                        "Compare"
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                          className: "min-w-0 flex-1 truncate font-medium text-ink",
+                          children: versionLabel(v)
+                        }, undefined, false, undefined, this),
+                        v.label && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                          className: "shrink-0 text-[11px] text-ink-faint",
+                          children: [
+                            "v",
+                            v.n
+                          ]
+                        }, undefined, true, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                      className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
+                      children: [
+                        v.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Sparkles, {
+                          "aria-hidden": true,
+                          className: "size-3 shrink-0"
+                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(User, {
+                          "aria-hidden": true,
+                          className: "size-3 shrink-0"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                          children: when(v.createdAt)
+                        }, undefined, false, undefined, this),
+                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                          type: "button",
+                          onClick: (e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            onCompare(v.n);
+                          },
+                          className: "ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
+                          children: [
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitCompare, {
+                              "aria-hidden": true,
+                              className: "size-3"
+                            }, undefined, false, undefined, this),
+                            "Compare"
+                          ]
+                        }, undefined, true, undefined, this)
                       ]
                     }, undefined, true, undefined, this)
                   ]

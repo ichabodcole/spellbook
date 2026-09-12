@@ -1249,6 +1249,16 @@
     }
   }
 
+  .bg-rubric\/10 {
+    background-color: #d0704f1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-rubric\/10 {
+      background-color: color-mix(in oklab, var(--color-rubric) 10%, transparent);
+    }
+  }
+
   .bg-rubric\/12 {
     background-color: #d0704f1f;
   }
@@ -1753,6 +1763,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .ring-foreground\/10 {
       --tw-ring-color: color-mix(in oklab, var(--color-foreground) 10%, transparent);
+    }
+  }
+
+  .ring-rubric\/20 {
+    --tw-ring-color: #d0704f33;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-rubric\/20 {
+      --tw-ring-color: color-mix(in oklab, var(--color-rubric) 20%, transparent);
     }
   }
 
@@ -2295,6 +2315,10 @@
 
   .data-disabled\:opacity-50[data-disabled] {
     opacity: .5;
+  }
+
+  .data-disabled\:opacity-100[data-disabled] {
+    opacity: 1;
   }
 
   .data-horizontal\:h-px[data-horizontal] {

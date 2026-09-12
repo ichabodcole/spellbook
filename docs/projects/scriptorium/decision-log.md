@@ -907,3 +907,34 @@ instead of clipping itself.
 
 `StatusSegment.node` — added in E37 so one segment could be a control — is gone
 again. A field with no consumer is a surface waiting to be misused.
+
+## E39 · The active version is highlighted, not dimmed
+
+**Ruled by Cole, 2026-09-12.** The active row in the version menu was rendered
+`disabled`, and shadcn draws a disabled item at 50% opacity. The semantics were
+right and the signal was backwards:
+
+> "It's kind of indicating that it's not selectable, which makes sense, but it's
+> also meant to indicate that it's the active version… I feel like that's more
+> of something you want to highlight than mute."
+
+**Two facts share one row and they pull opposite ways.** "You cannot click this"
+and "this is the one you are in" are both true of the active version, and a
+component library only offers the first. Dimming answers the question nobody
+asked — the row's unavailability is uninteresting; WHICH row it is, is the thing
+the menu exists to say.
+
+**So `disabled` is kept for what it does and overridden for what it says:**
+`pointer-events-none` stays, `opacity-50` is replaced with a rubric tint and a
+faint ring, and the check icon takes the accent. The row is now the most visible
+thing in the list rather than the least.
+
+**Dividers between rows** in the same pass — each row carries two lines (name,
+then author and date), and without a rule between them the pairs ran together
+into a wall.
+
+_General shape worth remembering: when a library's state name matches your
+meaning but its styling contradicts it, split them — take the behaviour, refuse
+the appearance. Reaching instead for a different state (not-disabled plus a
+no-op handler) would have bought the same look and lost the keyboard and screen
+reader semantics._

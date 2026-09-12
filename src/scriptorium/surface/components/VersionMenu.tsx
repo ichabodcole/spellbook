@@ -26,7 +26,7 @@ import {
   SparklesIcon,
   UserIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,50 +122,63 @@ export function VersionMenu({
           </p>
         </div>
         <div className="max-h-64 overflow-y-auto py-1">
-          {rows.map((v) => (
-            <DropdownMenuItem
-              key={v.n}
-              onClick={() => onActivate(v.n)}
-              disabled={v.n === active}
-              className="flex-col items-start gap-0.5"
-            >
-              <span className="flex w-full items-center gap-1.5">
-                {v.n === active ? (
-                  <BadgeCheckIcon aria-hidden className="size-3.5 shrink-0 text-rubric" />
-                ) : (
-                  <span aria-hidden className="size-3.5 shrink-0" />
+          {rows.map((v, i) => (
+            <Fragment key={v.n}>
+              {i > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                onClick={() => onActivate(v.n)}
+                disabled={v.n === active}
+                className={cn(
+                  "flex-col items-start gap-0.5 py-1.5",
+                  // ⛔ THE ACTIVE ROW IS HIGHLIGHTED, NOT MUTED (Cole, E39).
+                  // `disabled` is the right SEMANTICS — you cannot switch to
+                  // where you already are — but shadcn renders it at 50%
+                  // opacity, which says "unavailable" when the thing it needs
+                  // to say is "you are here". The pointer-events-none half of
+                  // `disabled` is kept; the dimming is overridden, and the row
+                  // gains the accent instead.
+                  v.n === active && "bg-rubric/10 ring-1 ring-rubric/20 data-disabled:opacity-100",
                 )}
-                <span className="min-w-0 flex-1 truncate font-medium text-ink">
-                  {versionLabel(v)}
+              >
+                <span className="flex w-full items-center gap-1.5">
+                  {v.n === active ? (
+                    <BadgeCheckIcon aria-hidden className="size-3.5 shrink-0 text-rubric" />
+                  ) : (
+                    <span aria-hidden className="size-3.5 shrink-0" />
+                  )}
+                  <span className="min-w-0 flex-1 truncate font-medium text-ink">
+                    {versionLabel(v)}
+                  </span>
+                  {v.label && <span className="shrink-0 text-[11px] text-ink-faint">v{v.n}</span>}
                 </span>
-                {v.label && <span className="shrink-0 text-[11px] text-ink-faint">v{v.n}</span>}
-              </span>
-              <span className="flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint">
-                {v.author === "agent" ? (
-                  <SparklesIcon aria-hidden className="size-3 shrink-0" />
-                ) : (
-                  <UserIcon aria-hidden className="size-3 shrink-0" />
-                )}
-                <span>{when(v.createdAt)}</span>
-                {v.n !== active && (
-                  // ⛔ Comparing must NOT activate. The whole point of reading a
-                  // version first is to decide, and a menu that switched you to
-                  // whatever you wanted to look at would make that impossible.
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpen(false);
-                      onCompare(v.n);
-                    }}
-                    className="ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink"
-                  >
-                    <GitCompareIcon aria-hidden className="size-3" />
-                    Compare
-                  </button>
-                )}
-              </span>
-            </DropdownMenuItem>
+                <span className="flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint">
+                  {v.author === "agent" ? (
+                    <SparklesIcon aria-hidden className="size-3 shrink-0" />
+                  ) : (
+                    <UserIcon aria-hidden className="size-3 shrink-0" />
+                  )}
+                  <span>{when(v.createdAt)}</span>
+                  {v.n !== active && (
+                    // ⛔ Comparing must NOT activate. The whole point of reading
+                    // a version first is to decide, and a menu that switched you
+                    // to whatever you wanted to look at would make that
+                    // impossible.
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        onCompare(v.n);
+                      }}
+                      className="ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink"
+                    >
+                      <GitCompareIcon aria-hidden className="size-3" />
+                      Compare
+                    </button>
+                  )}
+                </span>
+              </DropdownMenuItem>
+            </Fragment>
           ))}
         </div>
         <DropdownMenuSeparator />
