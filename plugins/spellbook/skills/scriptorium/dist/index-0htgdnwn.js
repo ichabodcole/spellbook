@@ -68168,7 +68168,8 @@ function VersionMenu({
   onActivate,
   onCompare,
   onNewVersion,
-  onDelete
+  onDelete,
+  onReveal
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -68217,9 +68218,9 @@ function VersionMenu({
               children: [
                 i2 > 0 && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
-                  onClick: () => onActivate(v.n),
-                  disabled: v.n === active,
-                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30 data-disabled:opacity-100"),
+                  onClick: () => v.n !== active && onActivate(v.n),
+                  "aria-current": v.n === active ? "true" : undefined,
+                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
                   children: [
                     /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
                       className: "flex w-full items-center gap-1.5",
@@ -68258,6 +68259,21 @@ function VersionMenu({
                           className: "whitespace-nowrap",
                           children: when(v.createdAt)
                         }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                          type: "button",
+                          onClick: (e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            onReveal(v.n);
+                          },
+                          "aria-label": `Show ${versionLabel(v)} in the file manager`,
+                          title: `Show v${v.n}.md in the file manager`,
+                          className: cn("flex items-center rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink", v.n === active && "ml-auto"),
+                          children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(FolderOpen, {
+                            "aria-hidden": true,
+                            className: "size-3"
+                          }, undefined, false, undefined, this)
+                        }, undefined, false, undefined, this),
                         v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
                           type: "button",
                           onClick: (e) => {
@@ -68265,7 +68281,7 @@ function VersionMenu({
                             setOpen(false);
                             onCompare(v.n);
                           },
-                          className: "ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
+                          className: "flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
                           children: [
                             /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitCompare, {
                               "aria-hidden": true,
@@ -68383,6 +68399,7 @@ function DocumentPane({
   onActivate,
   onNewVersion,
   onDeleteVersion,
+  onRevealVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -68431,6 +68448,7 @@ function DocumentPane({
                 onMode("compare");
               },
               onNewVersion: setNaming,
+              onReveal: onRevealVersion,
               onDelete: async (n) => {
                 const v = doc2.versions.find((x3) => x3.n === n);
                 const ok2 = await confirm({
@@ -69177,6 +69195,10 @@ function Workspace({
               onDeleteVersion: (version3) => {
                 if (open3)
                   send({ type: "version.delete", doc: open3.slug, version: version3 });
+              },
+              onRevealVersion: (version3) => {
+                if (open3)
+                  send({ type: "reveal.version", doc: open3.slug, version: version3 });
               },
               splitLayout,
               onAddFrontmatter: async () => {

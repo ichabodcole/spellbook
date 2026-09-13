@@ -97,6 +97,7 @@ export function DocumentPane({
   onActivate,
   onNewVersion,
   onDeleteVersion,
+  onRevealVersion,
   splitLayout,
   onEdit,
   onSave,
@@ -117,6 +118,7 @@ export function DocumentPane({
   onActivate: (version: number) => void;
   onNewVersion: (label: string, intent: VersionIntent) => void;
   onDeleteVersion: (version: number) => void;
+  onRevealVersion: (version: number) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -188,6 +190,7 @@ export function DocumentPane({
                 onMode("compare");
               }}
               onNewVersion={setNaming}
+              onReveal={onRevealVersion}
               onDelete={async (n) => {
                 const v = doc.versions.find((x) => x.n === n);
                 // ⛔ ASKED, because this removes a FILE. The version's own text

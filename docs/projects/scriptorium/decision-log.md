@@ -1119,3 +1119,37 @@ keep working because earlier sessions, notes and agent transcripts use them.
 _Small, but the shape recurs: a name that is exactly right inside the code can
 be exactly wrong in the sentence a human reads, and the two do not have to
 match._
+
+## E44 · Reveal on every version row — and `disabled` gives way to `aria-current`
+
+**Asked by Cole, 2026-09-12**, as the practical answer to E43's real question:
+_"where are these other files on disk?"_ No wording fixes a spatial question;
+opening the folder does.
+
+**A new message rather than a wider one.** `reveal` takes a PATH and refuses any
+path the session does not already show, so pointing it at a version file would
+have meant widening it to accept the session folder — and then the surface could
+ask to reveal anything. `reveal.version` names the doc and the number; the
+daemon resolves the file itself. The spawn is one shared helper, still an argv
+and never a shell string.
+
+**Offered on EVERY row, the active one included** — the version being edited is
+the one people ask about most.
+
+**⛔ AND THAT IS WHAT BROKE E39's `disabled`.** The active row was rendered
+`disabled` to say "you cannot switch to where you are", with the dimming
+overridden so it read as highlighted. Putting a control INSIDE that row exposed
+the rest of the bargain: a disabled menu item makes its children inert too, so
+Reveal was dead on exactly the row it mattered most on. Caught by driving it —
+Playwright refused the click with "element is not enabled".
+
+**`aria-current="true"` replaces it, and is the better answer anyway.** The row
+means _you are here_, which is a state; `disabled` means _this act is
+unavailable_, which is a prohibition. Selecting the row you are already in is
+now simply nothing, and E39's tint and ring survive untouched — the highlight no
+longer depends on fighting a disabled style.
+
+_The general shape, twice in one day: E39 took a library's state name because it
+matched the meaning and overrode the styling. That works until something needs
+the behaviour the state also implies. A state that must be visually contradicted
+is a hint it was the wrong state._

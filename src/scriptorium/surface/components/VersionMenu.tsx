@@ -22,6 +22,7 @@ import {
   BadgeCheckIcon,
   BookmarkPlusIcon,
   ChevronDownIcon,
+  FolderOpenIcon,
   GitBranchIcon,
   GitCompareIcon,
   SparklesIcon,
@@ -78,6 +79,7 @@ export function VersionMenu({
   onCompare,
   onNewVersion,
   onDelete,
+  onReveal,
 }: {
   versions: Version[];
   active: number;
@@ -86,6 +88,8 @@ export function VersionMenu({
   onNewVersion: (intent: "branch" | "snapshot") => void;
   /** E41: remove a version and its file — never the active one, so never offered on it. */
   onDelete: (n: number) => void;
+  /** E44: show this version's file in the file manager — offered on EVERY row. */
+  onReveal: (n: number) => void;
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -131,8 +135,14 @@ export function VersionMenu({
             <Fragment key={v.n}>
               {i > 0 && <DropdownMenuSeparator />}
               <DropdownMenuItem
-                onClick={() => onActivate(v.n)}
-                disabled={v.n === active}
+                // ⛔ NOT `disabled`, and E39's reasoning is why (E44). Disabling
+                // said "unavailable" when the row means "you are here" — and it
+                // also made every control INSIDE the row inert, which killed
+                // Reveal on the one version people ask about most. `aria-current`
+                // states the fact instead of forbidding the act, and selecting
+                // the row you are already in is simply nothing.
+                onClick={() => v.n !== active && onActivate(v.n)}
+                aria-current={v.n === active ? "true" : undefined}
                 className={cn(
                   "flex-col items-start gap-0.5 py-1.5",
                   // ⛔ THE ACTIVE ROW IS HIGHLIGHTED, NOT MUTED (Cole, E39).
@@ -142,8 +152,7 @@ export function VersionMenu({
                   // to say is "you are here". The pointer-events-none half of
                   // `disabled` is kept; the dimming is overridden, and the row
                   // gains the accent instead.
-                  v.n === active &&
-                    "bg-selected/14 ring-1 ring-selected/30 data-disabled:opacity-100",
+                  v.n === active && "bg-selected/14 ring-1 ring-selected/30",
                 )}
               >
                 <span className="flex w-full items-center gap-1.5">
@@ -164,6 +173,25 @@ export function VersionMenu({
                     <UserIcon aria-hidden className="size-3 shrink-0" />
                   )}
                   <span className="whitespace-nowrap">{when(v.createdAt)}</span>
+                  {/* ⛔ ON EVERY ROW, THE ACTIVE ONE INCLUDED. "Where is this
+                      thing?" is the question this answers (Cole), and it is
+                      asked most often about the version being edited. */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpen(false);
+                      onReveal(v.n);
+                    }}
+                    aria-label={`Show ${versionLabel(v)} in the file manager`}
+                    title={`Show v${v.n}.md in the file manager`}
+                    className={cn(
+                      "flex items-center rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
+                      v.n === active && "ml-auto",
+                    )}
+                  >
+                    <FolderOpenIcon aria-hidden className="size-3" />
+                  </button>
                   {v.n !== active && (
                     // ⛔ Comparing must NOT activate. The whole point of reading
                     // a version first is to decide, and a menu that switched you
@@ -176,7 +204,7 @@ export function VersionMenu({
                         setOpen(false);
                         onCompare(v.n);
                       }}
-                      className="ml-auto flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink"
+                      className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink"
                     >
                       <GitCompareIcon aria-hidden className="size-3" />
                       Compare

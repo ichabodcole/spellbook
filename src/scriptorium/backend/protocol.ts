@@ -367,6 +367,13 @@ export type ClientMsg =
   /** Show a context item in the OS file manager (Finder's "Reveal"). The human's affordance; changes nothing. */
   | { type: "reveal"; path: string }
   /**
+   * E44: show a VERSION's file in the file manager. Deliberately not `reveal`
+   * with a path — that one only accepts a path the session already shows, and
+   * widening it so the surface could name the session folder would let it ask
+   * to reveal anything. The daemon resolves the version itself.
+   */
+  | { type: "reveal.version"; doc: string; version: number }
+  /**
    * Open the OS's own file picker and act on what comes back: add it to the
    * context, or make a folder the workspace. The daemon is a local process, so
    * it gets a real PATH — which a browser picker never gives (E23's note).

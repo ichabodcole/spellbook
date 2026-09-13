@@ -285,6 +285,9 @@ function Workspace({
             onDeleteVersion={(version) => {
               if (open) send({ type: "version.delete", doc: open.slug, version });
             }}
+            onRevealVersion={(version) => {
+              if (open) send({ type: "reveal.version", doc: open.slug, version });
+            }}
             splitLayout={splitLayout}
             onAddFrontmatter={async () => {
               if (!open) return;

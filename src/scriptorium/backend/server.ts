@@ -562,18 +562,14 @@ export async function startDaemon(opts: StartOpts) {
       case "context.add":
         addPaths([surfacePath(msg.path)]);
         return;
-      case "reveal": {
-        const path = session.shownPath(surfacePath(msg.path));
-        // An argv, never a shell string: the path is data, whatever it holds.
-        const [cmd, ...args] =
-          process.platform === "darwin"
-            ? ["open", "-R", path]
-            : process.platform === "win32"
-              ? ["explorer", `/select,${path}`]
-              : ["xdg-open", dirname(path)];
-        Bun.spawn([cmd as string, ...args], { stdio: ["ignore", "ignore", "ignore"] }).unref();
+      case "reveal":
+        revealPath(session.shownPath(surfacePath(msg.path)));
         return;
-      }
+      case "reveal.version":
+        // The daemon resolves it, so the surface never names a path outside
+        // what the session already owns.
+        revealPath(session.readVersion(msg.doc, msg.version).path);
+        return;
       case "pick": {
         void openPicker(ws, msg.want);
         return;
@@ -811,6 +807,18 @@ export async function startDaemon(opts: StartOpts) {
   const done = new Promise<{ code: number; reason: string }>((r) => {
     resolveDone = r;
   });
+
+  /** Show a file in the platform's file manager. An argv, never a shell string:
+   *  the path is data, whatever it holds. */
+  const revealPath = (path: string): void => {
+    const [cmd, ...args] =
+      process.platform === "darwin"
+        ? ["open", "-R", path]
+        : process.platform === "win32"
+          ? ["explorer", `/select,${path}`]
+          : ["xdg-open", dirname(path)];
+    Bun.spawn([cmd as string, ...args], { stdio: ["ignore", "ignore", "ignore"] }).unref();
+  };
 
   const handleAgentCmd = (cmd: AgentCmd): Record<string, unknown> => {
     if (isStructureOp(cmd)) return structure(cmd, "agent");
