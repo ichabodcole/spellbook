@@ -180,8 +180,17 @@ export function DocumentView({
   reveal?: { from: number; to: number; seq: number } | null;
   /** The passage a note is being written about — painted while the composer is open. */
   pendingNote?: { from: number; to: number } | null;
-  /** Right-click over a SELECTION: where, and what is selected. */
-  onContextMenu?: (at: { x: number; y: number; from: number; to: number }) => void;
+  /**
+   * Right-click in the text: where, what is selected (from === to when
+   * nothing is), and which existing notes sit under the pointer.
+   */
+  onContextMenu?: (at: {
+    x: number;
+    y: number;
+    from: number;
+    to: number;
+    noteIds: string[];
+  }) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -261,11 +270,28 @@ export function DocumentView({
           // ⛔ ONLY OVER A SELECTION. With nothing selected there is nothing to
           // note, so the browser's own menu (spelling, copy, look up) is left
           // alone rather than replaced with something useless.
+          // ⛔ OVER A SELECTION **OR** OVER A NOTE. With neither there is
+          // nothing of ours to offer, so the browser's own menu (spelling,
+          // copy, look up) is left alone rather than replaced with an empty one.
           contextmenu: (event, view) => {
+            if (!handlers.current.onContextMenu) return false;
             const { from, to } = view.state.selection.main;
-            if (from === to || !handlers.current.onContextMenu) return false;
+            const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+            const noteIds =
+              pos === null
+                ? []
+                : (notesRef.current ?? [])
+                    .filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to)
+                    .map((n) => n.id);
+            if (from === to && noteIds.length === 0) return false;
             event.preventDefault();
-            handlers.current.onContextMenu({ x: event.clientX, y: event.clientY, from, to });
+            handlers.current.onContextMenu({
+              x: event.clientX,
+              y: event.clientY,
+              from,
+              to,
+              noteIds,
+            });
             return true;
           },
         }),

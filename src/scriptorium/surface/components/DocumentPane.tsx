@@ -102,6 +102,7 @@ export function DocumentPane({
   onSelect,
   reveal,
   onAddNote,
+  onShowNote,
   splitLayout,
   onEdit,
   onSave,
@@ -127,6 +128,8 @@ export function DocumentPane({
   onSelect: (from: number, to: number) => void;
   reveal: { from: number; to: number; seq: number } | null;
   onAddNote: (from: number, to: number, body: string) => void;
+  /** E47: the document pointing at a note — the panel borders it. */
+  onShowNote: (id: string) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -357,7 +360,7 @@ export function DocumentPane({
           onSave={onSave}
           onSelect={onSelect}
           reveal={reveal}
-          pendingNote={noteAt}
+          pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onContextMenu={setNoteAt}
         />
       ) : showing === "rendered" ? (
@@ -379,7 +382,7 @@ export function DocumentPane({
               onSave={onSave}
               onSelect={onSelect}
               reveal={reveal}
-              pendingNote={noteAt}
+              pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onContextMenu={setNoteAt}
             />
           </ResizablePanel>
@@ -399,8 +402,13 @@ export function DocumentPane({
       <NoteAtSelection
         at={noteAt}
         quote={noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : ""}
+        existing={(noteAt?.noteIds ?? []).flatMap((id) => {
+          const n = doc?.notes.find((x) => x.id === id);
+          return n ? [{ id, label: n.body }] : [];
+        })}
         onClose={() => setNoteAt(null)}
         onAdd={onAddNote}
+        onShowNote={onShowNote}
       />
       {doc && (
         <NewVersionDialog

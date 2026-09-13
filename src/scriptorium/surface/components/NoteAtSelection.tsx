@@ -11,11 +11,11 @@
 // when you right-click near the bottom edge is worse than a centred dialog, so
 // the position is measured against the viewport rather than trusted.
 import { cn } from "cn";
-import { MessageSquarePlusIcon } from "lucide-react";
+import { MessageSquarePlusIcon, MessagesSquareIcon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 
-export type At = { x: number; y: number; from: number; to: number };
+export type At = { x: number; y: number; from: number; to: number; noteIds: string[] };
 
 const CARD_W = 320;
 const MARGIN = 12;
@@ -31,14 +31,19 @@ function place(at: At, height: number): { left: number; top: number } {
 export function NoteAtSelection({
   at,
   quote,
+  existing,
   onClose,
   onAdd,
+  onShowNote,
 }: {
   at: At | null;
   /** The selected text, shown so the note is never written about the wrong passage. */
   quote: string;
+  /** The notes under the pointer, labelled — usually none or one (E47). */
+  existing: { id: string; label: string }[];
   onClose: () => void;
   onAdd: (from: number, to: number, body: string) => void;
+  onShowNote: (id: string) => void;
 }) {
   // Two steps on purpose: the MENU is where other acts on a passage will go
   // (ask the agent, copy the quote), so it does not collapse into the composer.
@@ -131,18 +136,43 @@ export function NoteAtSelection({
           </div>
         </form>
       ) : (
-        <div className="p-1">
-          <button
-            type="button"
-            onClick={() => setWriting(true)}
-            className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink",
-              "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
-            )}
-          >
-            <MessageSquarePlusIcon aria-hidden className="size-3.5 text-ink-faint" />
-            Add note
-          </button>
+        <div className="flex flex-col p-1">
+          {/* ⛔ EXISTING NOTES FIRST. Right-clicking a passage that is ALREADY
+              noted is far more often "what did I say about this?" than "let me
+              say something else", so the reading act leads. */}
+          {existing.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => {
+                onShowNote(n.id);
+                onClose();
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink",
+                "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
+              )}
+            >
+              <MessagesSquareIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
+              <span className="min-w-0 flex-1 truncate">{n.label}</span>
+            </button>
+          ))}
+          {existing.length > 0 && at.from < at.to && (
+            <div className="my-1 h-px bg-edge" aria-hidden />
+          )}
+          {at.from < at.to && (
+            <button
+              type="button"
+              onClick={() => setWriting(true)}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink",
+                "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
+              )}
+            >
+              <MessageSquarePlusIcon aria-hidden className="size-3.5 text-ink-faint" />
+              Add note
+            </button>
+          )}
         </div>
       )}
     </div>

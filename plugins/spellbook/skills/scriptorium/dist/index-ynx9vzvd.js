@@ -61223,11 +61223,21 @@ function DocumentView({
           return false;
         },
         contextmenu: (event, view2) => {
+          if (!handlers2.current.onContextMenu)
+            return false;
           const { from, to } = view2.state.selection.main;
-          if (from === to || !handlers2.current.onContextMenu)
+          const pos = view2.posAtCoords({ x: event.clientX, y: event.clientY });
+          const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
+          if (from === to && noteIds.length === 0)
             return false;
           event.preventDefault();
-          handlers2.current.onContextMenu({ x: event.clientX, y: event.clientY, from, to });
+          handlers2.current.onContextMenu({
+            x: event.clientX,
+            y: event.clientY,
+            from,
+            to,
+            noteIds
+          });
           return true;
         }
       }));
@@ -68153,8 +68163,10 @@ function place(at2, height) {
 function NoteAtSelection({
   at: at2,
   quote,
+  existing,
   onClose,
-  onAdd
+  onAdd,
+  onShowNote
 }) {
   const [writing, setWriting] = import_react22.useState(false);
   const [body, setBody] = import_react22.useState("");
@@ -68242,20 +68254,44 @@ function NoteAtSelection({
         }, undefined, true, undefined, this)
       ]
     }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
-      className: "p-1",
-      children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
-        type: "button",
-        onClick: () => setWriting(true),
-        className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessageSquarePlus, {
-            "aria-hidden": true,
-            className: "size-3.5 text-ink-faint"
-          }, undefined, false, undefined, this),
-          "Add note"
-        ]
-      }, undefined, true, undefined, this)
-    }, undefined, false, undefined, this)
+      className: "flex flex-col p-1",
+      children: [
+        existing.map((n) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+          type: "button",
+          onClick: () => {
+            onShowNote(n.id);
+            onClose();
+          },
+          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessagesSquare, {
+              "aria-hidden": true,
+              className: "size-3.5 shrink-0 text-ink-faint"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              className: "min-w-0 flex-1 truncate",
+              children: n.label
+            }, undefined, false, undefined, this)
+          ]
+        }, n.id, true, undefined, this)),
+        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          className: "my-1 h-px bg-edge",
+          "aria-hidden": true
+        }, undefined, false, undefined, this),
+        at2.from < at2.to && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+          type: "button",
+          onClick: () => setWriting(true),
+          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessageSquarePlus, {
+              "aria-hidden": true,
+              className: "size-3.5 text-ink-faint"
+            }, undefined, false, undefined, this),
+            "Add note"
+          ]
+        }, undefined, true, undefined, this)
+      ]
+    }, undefined, true, undefined, this)
   }, undefined, false, undefined, this);
 }
 
@@ -68617,6 +68653,7 @@ function DocumentPane({
   onSelect,
   reveal,
   onAddNote,
+  onShowNote,
   splitLayout,
   onEdit,
   onSave,
@@ -68826,7 +68863,7 @@ function DocumentPane({
         onSave,
         onSelect,
         reveal,
-        pendingNote: noteAt,
+        pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onContextMenu: setNoteAt
       }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MarkdownView, {
         text: shown,
@@ -68852,7 +68889,7 @@ function DocumentPane({
               onSave,
               onSelect,
               reveal,
-              pendingNote: noteAt,
+              pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
               onContextMenu: setNoteAt
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
@@ -68879,8 +68916,13 @@ function DocumentPane({
       /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(NoteAtSelection, {
         at: noteAt,
         quote: noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : "",
+        existing: (noteAt?.noteIds ?? []).flatMap((id) => {
+          const n = doc2?.notes.find((x3) => x3.id === id);
+          return n ? [{ id, label: n.body }] : [];
+        }),
         onClose: () => setNoteAt(null),
-        onAdd: onAddNote
+        onAdd: onAddNote,
+        onShowNote
       }, undefined, false, undefined, this),
       doc2 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(NewVersionDialog, {
         open: naming !== null,
@@ -68912,6 +68954,7 @@ var UNCERTAIN = {
 };
 function Note({
   note,
+  focused,
   onGoTo,
   onEdit,
   onResolve,
@@ -68920,8 +68963,14 @@ function Note({
   const uncertain = UNCERTAIN[note.how];
   const anchored = note.from !== null;
   const [draft, setDraft] = import_react26.useState(null);
+  const row = import_react26.useRef(null);
+  import_react26.useEffect(() => {
+    if (focused)
+      row.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [focused]);
   return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
-    className: cn("group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs", note.resolved && "opacity-60"),
+    ref: row,
+    className: cn("group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs transition-colors", note.resolved && "opacity-60", focused && "border-selected bg-selected/10 ring-1 ring-selected/40"),
     children: [
       /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
         className: "flex items-start gap-1.5",
@@ -69059,6 +69108,7 @@ function Note({
 }
 function NotesPanel({
   notes,
+  focusedId,
   selection,
   onAdd,
   onGoTo,
@@ -69068,9 +69118,8 @@ function NotesPanel({
 }) {
   const [body, setBody] = import_react26.useState("");
   const [showResolved, setShowResolved] = import_react26.useState(false);
-  const open3 = notes.filter((n) => !n.resolved);
   const resolved = notes.filter((n) => n.resolved);
-  const shown = showResolved ? notes : open3;
+  const shown = showResolved ? notes : notes.filter((n) => !n.resolved || n.id === focusedId);
   const submit = (e) => {
     e.preventDefault();
     if (!selection || !body.trim())
@@ -69091,6 +69140,7 @@ function NotesPanel({
             className: "flex flex-col gap-2",
             children: shown.map((n) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Note, {
               note: n,
+              focused: n.id === focusedId,
               onGoTo,
               onEdit,
               onResolve,
@@ -69570,6 +69620,7 @@ function Workspace({
   const [selection, setSelection] = import_react29.useState(null);
   const [rightPane, setRightPane] = import_react29.useState("conversation");
   const [reveal, setReveal] = import_react29.useState(null);
+  const [focusedNote, setFocusedNote] = import_react29.useState(null);
   const open3 = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open3?.notes ?? []).filter((n) => !n.resolved);
   const activeDoc = open3?.entryId && open3.rel !== null ? { entryId: open3.entryId, rel: open3.rel } : null;
@@ -69705,6 +69756,10 @@ function Workspace({
                 if (open3)
                   send({ type: "note.add", doc: open3.slug, from, to, body });
               },
+              onShowNote: (id) => {
+                setRightPane("notes");
+                setFocusedNote(id);
+              },
               splitLayout,
               onAddFrontmatter: async () => {
                 if (!open3)
@@ -69751,6 +69806,7 @@ function Workspace({
               }, undefined, false, undefined, this),
               rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(NotesPanel, {
                 notes: open3?.notes ?? [],
+                focusedId: focusedNote,
                 selection: open3 && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
                 onAdd: (from, to, body) => {
                   if (open3)

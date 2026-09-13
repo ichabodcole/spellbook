@@ -18,7 +18,7 @@ import {
   Trash2Icon,
   UndoDotIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import type { PlacedNote } from "../../backend/protocol";
 
@@ -37,12 +37,15 @@ const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: strin
 
 function Note({
   note,
+  focused,
   onGoTo,
   onEdit,
   onResolve,
   onRemove,
 }: {
   note: PlacedNote;
+  /** Pointed at from the document (E47) — bordered, and scrolled to. */
+  focused: boolean;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
   onResolve: (id: string, resolved: boolean) => void;
@@ -54,11 +57,19 @@ function Note({
   // stays put: a note you rewrote is still about the passage you made it on, and
   // re-quoting on edit would silently move it to wherever the caret happened to be.
   const [draft, setDraft] = useState<string | null>(null);
+  const row = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focused) row.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [focused]);
   return (
     <div
+      ref={row}
       className={cn(
-        "group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs",
+        "group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs transition-colors",
         note.resolved && "opacity-60",
+        // The border is the pointer: it says "this one" without moving anything
+        // or changing what the note says.
+        focused && "border-selected bg-selected/10 ring-1 ring-selected/40",
       )}
     >
       <div className="flex items-start gap-1.5">
@@ -178,6 +189,7 @@ function Note({
 
 export function NotesPanel({
   notes,
+  focusedId,
   selection,
   onAdd,
   onGoTo,
@@ -186,6 +198,8 @@ export function NotesPanel({
   onRemove,
 }: {
   notes: PlacedNote[];
+  /** The note the document pointed at, if any (E47). */
+  focusedId: string | null;
   /** The editor's current selection, or null — what a new note would be about. */
   selection: { from: number; to: number; text: string } | null;
   onAdd: (from: number, to: number, body: string) => void;
@@ -196,9 +210,11 @@ export function NotesPanel({
 }) {
   const [body, setBody] = useState("");
   const [showResolved, setShowResolved] = useState(false);
-  const open = notes.filter((n) => !n.resolved);
   const resolved = notes.filter((n) => n.resolved);
-  const shown = showResolved ? notes : open;
+  // ⛔ A FOCUSED NOTE IS ALWAYS SHOWN, even when it is resolved and the resolved
+  // ones are hidden — otherwise pointing at it from the document scrolls to
+  // nothing and the menu looks broken.
+  const shown = showResolved ? notes : notes.filter((n) => !n.resolved || n.id === focusedId);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +236,7 @@ export function NotesPanel({
               <Note
                 key={n.id}
                 note={n}
+                focused={n.id === focusedId}
                 onGoTo={onGoTo}
                 onEdit={onEdit}
                 onResolve={onResolve}

@@ -1272,3 +1272,34 @@ the editor would otherwise move the caret first and drop the selection.
 **The menu is two steps rather than one on purpose:** it is where the other acts
 on a passage will go — ask the agent about this, copy the quote — so it does not
 collapse into the composer just because there is one item today.
+
+## E47 · The document points at a note, as well as the other way round
+
+**Asked by Cole, 2026-09-12.** E45 gave the panel a way to point INTO the text
+(click a note, its passage is selected). This is the return trip: right-click a
+passage that is already noted and the menu offers the note itself; choosing it
+opens the Notes panel and borders that note.
+
+**The right-click menu now opens over a SELECTION or over a NOTE** — with
+neither there is still nothing of ours to offer, so the browser's own menu is
+left alone. The two cases compose: a selection that overlaps a note shows both
+the note and "Add note".
+
+**Existing notes are listed FIRST, and labelled with what they SAY.** Right-
+clicking a passage that is already noted is far more often "what did I say about
+this?" than "let me say something else", so the reading act leads; and a menu
+entry reading _"Still true — merge writes the version…"_ answers the question
+without the panel being opened at all.
+
+**A border, not a scroll-and-select.** The pointed-at note gets the `selected`
+token's border and tint (E40's colour, doing exactly the job it was introduced
+for) and is scrolled into view. Nothing about the note changes — pointing at
+something must not edit it.
+
+**Two cases that would otherwise point at nothing:**
+
+- **The panel may be showing the CONVERSATION.** Choosing a note switches the
+  pane; a border nobody can see is not an answer.
+- **The note may be RESOLVED while resolved notes are hidden.** A focused note
+  is shown regardless of that filter, or the menu would scroll to an empty list
+  and read as broken.

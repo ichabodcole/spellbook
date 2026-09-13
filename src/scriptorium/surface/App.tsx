@@ -166,6 +166,8 @@ function Workspace({
   const [rightPane, setRightPane] = useState<"conversation" | "notes">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
   const [reveal, setReveal] = useState<{ from: number; to: number; seq: number } | null>(null);
+  /** The note the document is pointing at (E47). */
+  const [focusedNote, setFocusedNote] = useState<string | null>(null);
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
@@ -304,6 +306,13 @@ function Workspace({
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
             }}
+            onShowNote={(id) => {
+              // Pointing at a note has to OPEN the notes — the panel may be
+              // showing the conversation, in which case a border nobody can
+              // see is not an answer.
+              setRightPane("notes");
+              setFocusedNote(id);
+            }}
             splitLayout={splitLayout}
             onAddFrontmatter={async () => {
               if (!open) return;
@@ -362,6 +371,7 @@ function Workspace({
           {rightPane === "notes" ? (
             <NotesPanel
               notes={open?.notes ?? []}
+              focusedId={focusedNote}
               selection={
                 open && selection && text !== undefined
                   ? { ...selection, text: text.slice(selection.from, selection.to) }
