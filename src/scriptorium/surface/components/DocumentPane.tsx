@@ -125,8 +125,8 @@ export function DocumentPane({
   onNewVersion: (label: string, intent: VersionIntent) => void;
   onDeleteVersion: (version: number) => void;
   onRevealVersion: (version: number) => void;
-  /** E45: the editor's selection, so the notes panel can offer to note it. */
-  onSelect: (from: number, to: number) => void;
+  /** E45/E48: the editor's selection — offsets for notes, lines for the wire. */
+  onSelect: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   reveal: { from: number; to: number; seq: number } | null;
   onAddNote: (from: number, to: number, body: string) => void;
   /** E47: the document pointing at a note — the panel borders it. */

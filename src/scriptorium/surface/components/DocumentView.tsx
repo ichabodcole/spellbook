@@ -174,8 +174,12 @@ export function DocumentView({
   onSave?: () => void;
   /** Notes, already PLACED by the daemon (E45). */
   notes?: PlacedNote[];
-  /** The selection, so something outside can offer to note it. */
-  onSelect?: (from: number, to: number) => void;
+  /**
+   * The selection. Offsets for notes (E45) and LINE NUMBERS for the wire's
+   * `Selection`, which is what the agent reads — lines are what a human and an
+   * agent can both talk about; a character offset is neither's language.
+   */
+  onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
   /** The passage a note is being written about — painted while the composer is open. */
@@ -232,7 +236,13 @@ export function DocumentView({
       EditorView.updateListener.of((update) => {
         if (!update.selectionSet) return;
         const { from, to } = update.state.selection.main;
-        handlers.current.onSelect?.(from, to);
+        handlers.current.onSelect?.(
+          from,
+          to,
+          update.state.doc.lineAt(from).number,
+          update.state.doc.lineAt(to).number,
+          update.state.sliceDoc(from, to),
+        );
       }),
       scriptoriumTheme,
       EditorState.readOnly.of(!editable),

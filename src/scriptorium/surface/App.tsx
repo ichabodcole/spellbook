@@ -19,6 +19,7 @@ import type {
   PublicState,
 } from "../backend/protocol";
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
+import { ChatComposer } from "./components/ChatComposer";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
@@ -121,6 +122,7 @@ function Workspace({
 }) {
   const {
     send,
+    connection,
     texts,
     noteText,
     diff,
@@ -161,7 +163,13 @@ function Workspace({
   const { toasts, announce, dismiss } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
-  const [selection, setSelection] = useState<{ from: number; to: number } | null>(null);
+  const [selection, setSelection] = useState<{
+    from: number;
+    to: number;
+    fromLine: number;
+    toLine: number;
+    text: string;
+  } | null>(null);
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
@@ -185,6 +193,38 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open.slug, version: open.active });
   }, [open, text, send]);
+
+  // ⛔ THE DAEMON MUST BE TOLD. `say` attaches the selection the DAEMON holds,
+  // not one the surface sends with the message — so the selection has to reach
+  // it as it changes. Sent only when the RANGE changes, not on every cursor
+  // move, because a caret drifting through a document is not news.
+  const openSlug = open?.slug ?? null;
+  const activeVersion = open?.active ?? null;
+  const original = open?.original ?? null;
+  useEffect(() => {
+    if (!openSlug || activeVersion === null || original === null) return;
+    send({
+      type: "select",
+      selection: selection
+        ? {
+            doc: openSlug,
+            version: activeVersion,
+            path: original,
+            fromLine: selection.fromLine,
+            toLine: selection.toLine,
+            text: selection.text,
+          }
+        : null,
+    });
+  }, [
+    openSlug,
+    activeVersion,
+    original,
+    selection?.fromLine,
+    selection?.toLine,
+    selection?.text,
+    send,
+  ]);
 
   // Ask for the comparison whenever anything it depends on moves — the
   // document, the active version, the chosen side, or the text itself. A merge
@@ -301,7 +341,9 @@ function Workspace({
             onRevealVersion={(version) => {
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
-            onSelect={(from, to) => setSelection(from === to ? null : { from, to })}
+            onSelect={(from, to, fromLine, toLine, sel) =>
+              setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel })
+            }
             reveal={reveal}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
@@ -404,18 +446,40 @@ function Workspace({
                 if (open) send({ type: "note.remove", doc: open.slug, id });
               }}
             />
-          ) : state.chat.length === 0 ? (
-            <Empty className="h-full">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <MessagesSquareIcon />
-                </EmptyMedia>
-                <EmptyTitle>No messages yet</EmptyTitle>
-                <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
           ) : (
-            <ActivityLog chat={state.chat} />
+            <>
+              {state.chat.length === 0 ? (
+                <Empty className="flex-1">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <MessagesSquareIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>No messages yet</EmptyTitle>
+                    <EmptyDescription>
+                      Ask the agent something. If you have text selected, it comes too.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <ActivityLog chat={state.chat} />
+              )}
+              <ChatComposer
+                connected={connection === "open"}
+                attachable={
+                  open && selection
+                    ? {
+                        doc: open.slug,
+                        name: open.name,
+                        version: open.active,
+                        fromLine: selection.fromLine,
+                        toLine: selection.toLine,
+                        text: selection.text,
+                      }
+                    : null
+                }
+                onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
+              />
+            </>
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -451,6 +515,22 @@ function ActivityLog({ chat }: { chat: readonly ChatMessage[] }) {
             {m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"}
           </span>
           {m.text}
+          {/* ⛔ THE RECORD SHOWS WHAT WAS SENT (E48). The passage travelled with
+              the message, so the log has to show it — otherwise the human reads
+              "can you answer this one?" a week later with no idea what "this"
+              was, while the agent had it all along. */}
+          {m.selection && (
+            <p className="mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim">
+              <span className="text-ink-faint">
+                {m.selection.doc} · v{m.selection.version} ·{" "}
+                {m.selection.fromLine === m.selection.toLine
+                  ? `line ${m.selection.fromLine}`
+                  : `lines ${m.selection.fromLine}–${m.selection.toLine}`}
+              </span>
+              <br />
+              {m.selection.text.replace(/\s+/gu, " ").trim()}
+            </p>
+          )}
         </div>
       ))}
       <div ref={end} />

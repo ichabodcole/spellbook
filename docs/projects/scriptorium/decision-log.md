@@ -1317,3 +1317,46 @@ revealed on hover: a panel row is a thing being READ and its actions stay out of
 the way until wanted; a menu is a list of ACTS, and an act hidden until hover is
 one most people never find. _(Built hover-gated first, and the screenshot showed
 an empty-looking menu — which was the argument.)_
+
+## E48 · The human can finally speak — and the selection goes with them
+
+**Built 2026-09-12, last of the big slices, in the order Cole set:** _"chat can
+be like the last thing… if we can create a really good standard editing
+experience for a human user, that will naturally lead into adding the chat."_ It
+did: the agent already had versions, diffs, merges, frontmatter, links,
+structure and notes as verbs, so chat arrived at a surface where there is
+something to point AT.
+
+**Almost none of this was new wire.** `select` and `say` have been on
+`ClientMsg` since E1, `say` has always carried `withSelection`, the agent's
+`tail` has always delivered the selection and the active path, and the
+integration cells have covered it since the foundation. For eight slices
+**nothing in the surface ever sent one.** The slice is a composer and the effect
+that tells the daemon what is selected.
+
+**⛔ THE DAEMON HOLDS THE SELECTION, NOT THE MESSAGE.** `say` attaches whatever
+the DAEMON last heard, so the surface must report a selection as it changes —
+and only when the RANGE changes, because a caret drifting through a document is
+not news.
+
+**What is sent is a POINTER, not a copy:** doc, version, line range, the
+original's path, and the active version's path. The agent reads the file rather
+than trusting a quotation that was true a moment ago. The quoted text travels
+too, but as what the HUMAN SAW, not as the source of truth.
+
+**Lines, not offsets.** A line range is what a human and an agent can both talk
+about; a character offset is neither's language. (Notes keep offsets, because
+they are painted rather than discussed.)
+
+**The chip is shown BEFORE sending, and can be dropped** — dropping is
+per-message, because carrying the passage is the common case and remembering a
+refusal would silently stop doing the useful thing.
+
+**And the log shows what was sent.** A message that carried a passage displays
+it, quoted, with its source — otherwise the human reads "can you answer this
+one?" a week later with no idea what "this" was, while the agent had it all
+along.
+
+Driven end to end against a real `tail`: selection → message → the agent's tail
+carrying doc, version, lines, quote and both paths → `say` back → both turns in
+the conversation.
