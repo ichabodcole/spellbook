@@ -98,6 +98,8 @@ export function DocumentPane({
   onNewVersion,
   onDeleteVersion,
   onRevealVersion,
+  onSelect,
+  reveal,
   splitLayout,
   onEdit,
   onSave,
@@ -119,6 +121,9 @@ export function DocumentPane({
   onNewVersion: (label: string, intent: VersionIntent) => void;
   onDeleteVersion: (version: number) => void;
   onRevealVersion: (version: number) => void;
+  /** E45: the editor's selection, so the notes panel can offer to note it. */
+  onSelect: (from: number, to: number) => void;
+  reveal: { from: number; to: number; seq: number } | null;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -338,7 +343,16 @@ export function DocumentPane({
           <div className="flex-1" aria-busy="true" />
         )
       ) : showing === "raw" ? (
-        <DocumentView docKey={doc.slug} text={shown} editable onChange={onEdit} onSave={onSave} />
+        <DocumentView
+          docKey={doc.slug}
+          text={shown}
+          editable
+          notes={doc.notes}
+          onChange={onEdit}
+          onSave={onSave}
+          onSelect={onSelect}
+          reveal={reveal}
+        />
       ) : showing === "rendered" ? (
         <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
       ) : (
@@ -353,8 +367,11 @@ export function DocumentPane({
               docKey={doc.slug}
               text={shown}
               editable
+              notes={doc.notes}
               onChange={onEdit}
               onSave={onSave}
+              onSelect={onSelect}
+              reveal={reveal}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />

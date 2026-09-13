@@ -3,6 +3,8 @@
 // to the kit), the open document read-only in the centre with the status strip
 // under it (E18), and the conversation placeholder on the right (chat is a later
 // piece, E16).
+
+import { cn } from "cn";
 import { MessagesSquareIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
@@ -20,6 +22,7 @@ import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
+import { NotesPanel } from "./components/NotesPanel";
 import { Toasts, useToasts } from "./components/Toasts";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
@@ -156,8 +159,16 @@ function Workspace({
   // and the original is the side that always exists.
   const [against, setAgainst] = useState<DiffSide>("original");
   const { toasts, announce, dismiss } = useToasts();
+  // The editor's selection, kept here because the NOTES PANEL is the thing that
+  // acts on it and it lives in the other pane (E45).
+  const [selection, setSelection] = useState<{ from: number; to: number } | null>(null);
+  // Which of the right pane's two things is showing.
+  const [rightPane, setRightPane] = useState<"conversation" | "notes">("conversation");
+  /** Asking the editor to scroll a note's range into view — bumped per request. */
+  const [reveal, setReveal] = useState<{ from: number; to: number; seq: number } | null>(null);
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
+  const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
@@ -288,6 +299,8 @@ function Workspace({
             onRevealVersion={(version) => {
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
+            onSelect={(from, to) => setSelection(from === to ? null : { from, to })}
+            reveal={reveal}
             splitLayout={splitLayout}
             onAddFrontmatter={async () => {
               if (!open) return;
@@ -321,8 +334,51 @@ function Workspace({
           minSize="15"
           className="flex flex-col bg-surface"
         >
-          <PaneHeading>Conversation</PaneHeading>
-          {state.chat.length === 0 ? (
+          {/* ⛔ TWO THINGS, ONE PANE (E45). A fourth resizable pane would make
+              every pane too narrow to read; notes and the conversation are both
+              "what is being said about this document", so they share, and when
+              chat lands it joins as the same kind of tab rather than needing
+              somewhere new to live. */}
+          <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2">
+            {(["conversation", "notes"] as const).map((which) => (
+              <button
+                key={which}
+                type="button"
+                onClick={() => setRightPane(which)}
+                aria-pressed={rightPane === which}
+                className={cn(
+                  "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
+                  "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+                  rightPane === which && "bg-surface-raised text-ink",
+                )}
+              >
+                {which === "notes" && openNotes.length > 0 ? `Notes ${openNotes.length}` : which}
+              </button>
+            ))}
+          </div>
+          {rightPane === "notes" ? (
+            <NotesPanel
+              notes={open?.notes ?? []}
+              selection={
+                open && selection && text !== undefined
+                  ? { ...selection, text: text.slice(selection.from, selection.to) }
+                  : null
+              }
+              onAdd={(from, to, body) => {
+                if (open) send({ type: "note.add", doc: open.slug, from, to, body });
+              }}
+              onGoTo={(n) => {
+                if (n.from !== null)
+                  setReveal({ from: n.from, to: n.to as number, seq: Date.now() });
+              }}
+              onResolve={(id, resolved) => {
+                if (open) send({ type: "note.resolve", doc: open.slug, id, resolved });
+              }}
+              onRemove={(id) => {
+                if (open) send({ type: "note.remove", doc: open.slug, id });
+              }}
+            />
+          ) : state.chat.length === 0 ? (
             <Empty className="h-full">
               <EmptyHeader>
                 <EmptyMedia variant="icon">

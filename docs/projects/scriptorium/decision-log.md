@@ -1185,3 +1185,53 @@ _The general shape, twice in one day: E39 took a library's state name because it
 matched the meaning and overrode the styling. That works until something needs
 the behaviour the state also implies. A state that must be visually contradicted
 is a hint it was the wrong state._
+
+## E45 · Notes that survive an edit, or say they did not
+
+**Built 2026-09-12**, chosen over chat for the reason E36 gave: chat needs
+objects to carry, and a note is one. Cole ruled the anchoring in advance — _"I
+don't have a strong lean… I'd probably just go with your lean, we test it out
+and see if it works and adjust as needed"_ — and the storage: the manifest.
+
+**Quoted-text anchoring, and the alternative is why.** An offset goes stale on
+the next keystroke: fix a typo three lines up and every note below points at the
+wrong words. Pinning a note to the VERSION it was made on would be exact forever
+and useless, because the stated use is making notes WHILE reading and editing.
+So a note remembers the TEXT it was made on plus a little of what surrounded it,
+and is re-found on every snapshot.
+
+**Four outcomes, each named**, so the surface can show a confident note
+differently from a guessed one: `context` (quote WITH its surroundings, once —
+this is what tells two identical sentences apart), `unique` (the quote alone,
+once), `nearest` (the quote repeats and its context is gone; the closest
+occurrence wins, and is labelled a guess), and **`orphaned`** — the quote is
+gone, and the note is shown detached rather than pinned somewhere plausible.
+
+**⛔ THE ORPHAN IS THE POINT, NOT THE EDGE CASE.** A note silently re-anchored
+onto unrelated words is the failure this whole design exists to avoid;
+visible-and-wrong beats invisible-and-wrong. It is also the reason the notes
+LIST exists beside the highlights: an orphan has no line to sit next to, so a
+margin-only design would make it vanish — the one outcome that must not happen.
+_(Demonstrated by accident: a test method replaced the buffer instead of
+inserting into it, the note went "text gone" with its quote struck through, and
+Revert brought both back.)_
+
+**The human notes a SELECTION; the agent notes a QUOTE.** The agent has no
+offsets, and asking it to count characters would be asking it to be wrong. A
+quote the active version does not contain is REFUSED rather than stored as an
+instant orphan — that would read as "the text changed" when the truth is "you
+quoted something else". Both paths store the same shape.
+
+**Two things in one pane.** Notes share the right pane with the conversation
+behind a tab rather than taking a fourth resizable pane, which would leave every
+pane too narrow to read. Both answer "what is being said about this document",
+so when chat lands it joins as the same kind of tab instead of needing somewhere
+new to live.
+
+**The composer shows the quote BEFORE the note is written** — writing a note
+without seeing which passage it is about is how you get a note on the wrong
+sentence.
+
+Driven end to end: a note followed a 68-character shift at full confidence,
+orphaned when its line was deleted, came back when the text did, and clicking it
+in the list selects its passage in the editor.

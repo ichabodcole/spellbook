@@ -17929,6 +17929,1245 @@ var require_browser = __commonJS(function(exports, module) {
 
 // src/scriptorium/surface/main.tsx
 var import_client = __toESM(require_client(), 1);
+
+// node_modules/cn/dist/tables.js
+var P = 48;
+var U = (s, o = 0) => {
+  const out = new Int32Array(s.length);
+  for (let i = 0;i < s.length; i++)
+    out[i] = s.charCodeAt(i) - P - o;
+  return out;
+};
+var PS = (counts) => {
+  const out = new Int32Array(counts.length + 1);
+  for (let i = 0;i < counts.length; i++)
+    out[i + 1] = out[i] + counts[i];
+  return out;
+};
+var DZ = (s) => {
+  const out = new Int32Array(s.length);
+  let a = 0;
+  for (let i = 0;i < s.length; i++) {
+    const z = s.charCodeAt(i) - P;
+    a += z >>> 1 ^ -(z & 1);
+    out[i] = a;
+  }
+  return out;
+};
+var GROUP_COUNT = 379;
+var customValidatorNames = [];
+var edgeStart = PS(U("E050000200528200000000200015000002002182000001120000000302220200020004200120000200420001200021200301200010400162000010000220021010:2192001200220012000220012000200200200400010200040000000000400200108200110100000022010313000162002000020020012020080213000228200000000082000000000120002000120020020040101020300130001001010"));
+var labelStart = PS(U(":11111111211111119311546544411119731869:67139741568643244111111111116111415121431343415:78311132233313187211117221449443411141111151152226611131111112212518142224214215421421542142424242516171151615616347111111111197911327451111111111111111111113134714133513411111311111111111111111111112444411111342312715245411117:3"));
+var labelText = "@containerabcdefghinlmoprstunderlineviawzccentlignnimatespectuto-colsrowsaglorightnessckdrop-sisbcontrastfiltergrayscalehue-rotateinvertopacityslurrightnessaturateepia-coniclinearpositionradialsizeockurrderttom-belrstxyespacing-xyaretoursorlnt-umnsendspantartentrasteividerop-shadowurationcorationlay-xyasendillexontromlter-featuresstretchapr-xyayscaleidow-colsrowsue-rotatedentlinesetvert-beringsxyeshadoweiadingftnest-clamp-imageabein-lrstxyskx--b-coniclpositionrsizet-x-y-fromto-fromto-inearfromto-fromto-adialfromto-fromtofromtofromtofromtoblockhinlinew-screenesblockhinlinewbjectpacityrutlinederigin-offsetbelrstxyesrspective-originaceholderioghtng-offsettateundedw-xyz-belrstlreseslr-endspantartaturatecepiahizekewpace-taleroll-xyz-barmpbelrstxyesbelrstxyes-thumbrackadowrink-xyxyartrokeabextora-shadowpckingnsformitionlate-xyz-offsetill-changeoom";
+var edgeTarget = (() => {
+  const N = edgeStart.length - 1;
+  const sizes = new Int32Array(N);
+  for (let i = N - 1;i >= 0; i--) {
+    let s = 1;
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      s += sizes[c];
+      c += sizes[c];
+    }
+    sizes[i] = s;
+  }
+  const out = new Int32Array(edgeStart[N]);
+  let e = 0;
+  for (let i = 0;i < N; i++) {
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      out[e++] = c;
+      c += sizes[c];
+    }
+  }
+  return out;
+})();
+var nodeGroup = U("02000000000000900<=0?000B000000F00ŎI0J0LNPRTVX0000]_a0000000000000000000000qrs0000000yŎ00000000000Ŏ0000000Ŏ00000000000000000000000000000000000000000000000000000000000000Ê000000000000000000000Ý000000000000000000ï0000000÷0øùúûüýþÿĀāĂăĄą000000000000000000000000000000000000000000Ħ0ħĩ00000000000000000000Ļļ00000ū000000", 1);
+var vlistPat = PS(U("123333593463463635126367151576"));
+var vlistOps = U("93203242383253248325D>E?F@03263243255B:032325523853:0325B:8GA032542H<C=12727B:03253;D>E?3257D>03258432585:0325B:;0328B:032");
+var vlistRef = U("01211311455155555567811194::::::::;;;:::952888<151=52>>?51921@ABCD;;;588595;9999:9?995;9E11;FGGHGGGGHGG1GG1GG1GGGGGG999IJ;;;;999I;;;;;;1581:5;;;;;11;2;;;;;9:K555544444444444444488855555;;;;;;;;;;;;;;;;;;;;;;225?59555;;L8M?D911199995DI188");
+var vlistGroup = DZ("0202002020200202020020020020200200200200200200200002020202001003040106000200200200200200200200200200200200200200200200200200200200200200200200200200200200020020020020020020002020020200200200200200200200200200202000200202002020022020020020020020020020020020020002002002000200020002000200200200020020020002000200200200020020202002020202000200200020022000200200020020002002000200220002002000200W0Z00020020002002020002002000200g0j00020020002002000200200020020002002000200200020002000200000200200200200200020002000200002002002002002002002020020020200200200200200200200200202020020020020020020020020002002002020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020002002002002002002000200200200200200200200200200020202020002000200020002002002002000020200200");
+var nodeVlist = (() => {
+  const out = (/* @__PURE__ */ new Int32Array(318)).fill(-1);
+  const A = DZ("02422242:22222224222422224244222222242222224444224226224222426222422442462222422622222222626222462242622422622422424242422222222422222222242422222222222222222622442224222222222222224424442262222222222222222222226224222424242422224422422422222");
+  const V = DZ("0222222222222222222220222222222222222222222222142222222222222222222222222222222222Y\\222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222221422222222222222222222222222222222222222Ŀł222222222222222222");
+  for (let i = 0;i < A.length; i++)
+    out[A[i]] = V[i];
+  return out;
+})();
+var SETS = "container|break-after-all break-after-auto break-after-avoid break-after-avoid-page break-after-column break-after-left break-after-page break-after-right|break-before-all break-before-auto break-before-avoid break-before-avoid-page break-before-column break-before-left break-before-page break-before-right|break-inside-auto break-inside-avoid break-inside-avoid-column break-inside-avoid-page|box-decoration-clone box-decoration-slice|box-border box-content|contents flow-root hidden table table-caption table-cell table-column table-column-group table-footer-group table-header-group table-row table-row-group|not-sr-only sr-only|float-end float-left float-none float-right float-start|clear-both clear-end clear-left clear-none clear-right clear-start|isolate isolation-auto|overflow-auto overflow-clip overflow-hidden overflow-scroll overflow-visible|overflow-x-auto overflow-x-clip overflow-x-hidden overflow-x-scroll overflow-x-visible|overflow-y-auto overflow-y-clip overflow-y-hidden overflow-y-scroll overflow-y-visible|overscroll-auto overscroll-contain overscroll-none|overscroll-x-auto overscroll-x-contain overscroll-x-none|overscroll-y-auto overscroll-y-contain overscroll-y-none|absolute fixed relative static sticky|collapse invisible visible|justify-around justify-baseline justify-between justify-center justify-center-safe justify-end justify-end-safe justify-evenly justify-normal justify-start justify-stretch|justify-items-center justify-items-center-safe justify-items-end justify-items-end-safe justify-items-normal justify-items-start justify-items-stretch|justify-self-auto justify-self-center justify-self-center-safe justify-self-end justify-self-end-safe justify-self-start justify-self-stretch|items-baseline items-baseline-last items-center items-center-safe items-end items-end-safe items-start items-stretch|self-auto self-baseline self-baseline-last self-center self-center-safe self-end self-end-safe self-start self-stretch|place-content-around place-content-baseline place-content-between place-content-center place-content-center-safe place-content-end place-content-end-safe place-content-evenly place-content-start place-content-stretch|place-items-baseline place-items-center place-items-center-safe place-items-end place-items-end-safe place-items-start place-items-stretch|place-self-auto place-self-center place-self-center-safe place-self-end place-self-end-safe place-self-start place-self-stretch|antialiased subpixel-antialiased|italic not-italic|normal-nums|ordinal|slashed-zero|lining-nums oldstyle-nums|proportional-nums tabular-nums|diagonal-fractions stacked-fractions|no-underline overline|capitalize lowercase normal-case uppercase|truncate|whitespace-break-spaces whitespace-normal whitespace-nowrap whitespace-pre whitespace-pre-line whitespace-pre-wrap|break-all break-keep break-normal break-words|wrap-anywhere wrap-break-word wrap-normal|hyphens-auto hyphens-manual hyphens-none|mix-blend-color mix-blend-color-burn mix-blend-color-dodge mix-blend-darken mix-blend-difference mix-blend-exclusion mix-blend-hard-light mix-blend-hue mix-blend-lighten mix-blend-luminosity mix-blend-multiply mix-blend-normal mix-blend-overlay mix-blend-plus-darker mix-blend-plus-lighter mix-blend-saturation mix-blend-screen mix-blend-soft-light|table-auto table-fixed|caption-bottom caption-top|backface-hidden backface-visible|appearance-auto appearance-none|scheme-dark scheme-light scheme-light-dark scheme-normal scheme-only-dark scheme-only-light|field-sizing-content field-sizing-fixed|pointer-events-auto pointer-events-none|resize resize-none resize-x resize-y|snap-align-none snap-center snap-end snap-start|snap-always snap-normal|snap-both snap-none snap-x snap-y|snap-mandatory snap-proximity|touch-auto touch-manipulation touch-none|touch-pan-left touch-pan-right touch-pan-x|touch-pan-down touch-pan-up touch-pan-y|touch-pinch-zoom|select-all select-auto select-none select-text|forced-color-adjust-auto forced-color-adjust-none|normal size|baseline bottom middle sub super text-bottom text-top top|bounce none ping pulse spin|auto square video|auto fr max min|none|auto full px|fixed local scroll|clip-border clip-content clip-padding clip-text|origin-border origin-content origin-padding|bottom bottom-left bottom-right center left left-bottom left-top right right-bottom right-top top top-left top-right|no-repeat repeat repeat-round repeat-space repeat-x repeat-y|auto contain cover|blend-color blend-color-burn blend-color-dodge blend-darken blend-difference blend-exclusion blend-hard-light blend-hue blend-lighten blend-luminosity blend-multiply blend-normal blend-overlay blend-saturation blend-screen blend-soft-light|to-b to-bl to-br to-l to-r to-t to-tl to-tr|auto dvh fit full lh lvh max min px screen svh|dashed dotted double hidden none solid|collapse separate|px|auto|full|around baseline between center center-safe end end-safe evenly normal start stretch|alias all-scroll auto cell col-resize context-menu copy crosshair default e-resize ew-resize grab grabbing help move n-resize ne-resize nesw-resize no-drop none not-allowed ns-resize nw-resize nwse-resize pointer progress row-resize s-resize se-resize sw-resize text vertical-text w-resize wait zoom-in zoom-out|dashed dotted double solid wavy|auto from-font|reverse|initial|in in-out initial linear out|col col-reverse row row-reverse|nowrap wrap wrap-reverse|auto initial none|black bold extrabold extralight light medium normal semibold thin|condensed expanded extra-condensed extra-expanded normal semi-condensed semi-expanded ultra-condensed ultra-expanded|flow-col flow-col-dense flow-dense flow-row flow-row-dense|none subgrid|auto dvh dvw fit full lh lvh lvw max min px screen svh svw|block flex grid table|auto dvw fit full lvw max min px screen svw|loose none normal px relaxed snug tight|through|item|inside outside|decimal disc none|auto px|clip-border clip-content clip-fill clip-padding clip-stroke clip-view no-clip|add exclude intersect subtract|alpha luminance match|origin-border origin-content origin-fill origin-padding origin-stroke origin-view|type-alpha type-luminance|circle ellipse|closest-corner closest-side farthest-corner farthest-side|at-bottom at-bottom-left at-bottom-right at-center at-left at-left-bottom at-left-top at-right at-right-bottom at-right-top at-top at-top-left at-top-right|dvh fit full lh lvh max min none px screen svh|dvw fit full lvw max min none px screen svw|auto dvh dvw fit full lvh lvw max min none prose px svh svw|auto dvh dvw fit full lh lvh lvw max min none px screen svh svw|auto dvh dvw fit full lvh lvw max min none px screen svh svw|contain cover fill none scale-down|first last none|distant dramatic midrange near none normal|inset|full none|3d|auto smooth|gutter-auto gutter-both gutter-stable|auto none thin|auto dvh dvw fit full lvh lvw max min px svh svw|base|center end justify left right start|clip ellipsis|balance nowrap pretty wrap|normal tight tighter wide wider widest|cpu gpu none|3d flat|all colors none opacity shadow transform|discrete normal|full px|auto dvh dvw fit full lvh lvw max min px screen svh svw|auto contents scroll transform".split("|").map((s) => s.split(" "));
+var AA = DZ("0000000000000000000000000000000000000000000000000000000000000262242:6@200000006:240B428:4426046044222426220026642642462026224222824220022400000000\\00N222422242222222224062242222222422226264222422222222222222442804222422222222222222222222220<4<0204260002444020204224422");
+var AG = DZ("ɞ222222222222222222222222222222222222222222222222222222222222˓4222226>6ʮ22ʵʸʵʸʵ42ʲ2ʑ22>62144ɴɯɲɯɲ22ɩ42222ɠ2ɟ26622ɐɋ244ƸƵ222]d24242ǖǓƚ¼ȣ2263ȠȝȠ2222222Ǜ222222222222222222ƺƵ2ƶƭ2222222422222ƔƉ22222222222222222222144Şś22Śŗ222222222222222222222İ2ĩ68ĞěĞəŰ4Ę£¦ĕ822ČĉČ2ċ2222622");
+var AS = DZ("02222222222222222222222222222222222222222222222222222222222222222202021422222222CF2200GJ021KP222?B0WZ2Y10^2222K00N202QT2m0000120porsv22y|{:22p22222222QT2E000gSVI00000q2<40000@00000G000 00000000000000021K¢¡00¤0000000000000000000002§ª>=>U1¬222±2²2222»¾000¡¤2¥");
+var litAnchor = /* @__PURE__ */ new Int32Array(974);
+var litGroup = /* @__PURE__ */ new Int32Array(974);
+var litPool = /* @__PURE__ */ new Int32Array(974);
+var poolText = "";
+var poolOffsets = /* @__PURE__ */ new Int32Array(1008);
+{
+  const tailRef = /* @__PURE__ */ new Map;
+  let nextRef = 0;
+  let e = 0;
+  for (let i = 0;i < AA.length; i++)
+    for (const tail of SETS[AS[i]]) {
+      let r = tailRef.get(tail);
+      if (r === undefined) {
+        r = nextRef++;
+        tailRef.set(tail, r);
+        poolOffsets[r * 2] = poolText.length;
+        poolOffsets[r * 2 + 1] = tail.length;
+        poolText += tail;
+      }
+      litAnchor[e] = AA[i];
+      litGroup[e] = AG[i];
+      litPool[e] = r;
+      e++;
+    }
+}
+var adjGid = DZ("0b2N:222`>F@286¦2@H2D266226FB22B2>BD\\6N22222Z222");
+var adjStart = PS(U("1::2222232:222:22:22>222222:22:222132251111131114"));
+var adjTgt = DZ("24A;33N=C@H4A;33N=C@<2;363@QTQC¸ŴŽ2R2=18cƴÅŅÜÛŲǛȆ:ħ25=11D3A@216Er25;11B3?<438Cn9@7=<8192>2E121@9@EHE@9>2T25511<398216=V25511<398216=ƧNž2ĈÝ242L222290000f22500³222");
+var patGid = U("Ĳ");
+var patTgt = U("");
+var postfixLookupGroups = U("1");
+var orderSensitiveModifiers = "* ** after backdrop before details-content file first-letter first-line marker placeholder selection";
+var tables_generated_default = {
+  GROUP_COUNT,
+  customValidatorNames,
+  edgeStart,
+  labelStart,
+  labelText,
+  edgeTarget,
+  nodeGroup,
+  nodeVlist,
+  vlistPat,
+  vlistOps,
+  vlistRef,
+  vlistGroup,
+  litAnchor,
+  litGroup,
+  litPool,
+  poolOffsets,
+  poolText,
+  adjGid,
+  adjStart,
+  adjTgt,
+  patGid,
+  patTgt,
+  postfixLookupGroups,
+  orderSensitiveModifiers
+};
+
+// node_modules/cn/dist/engine.js
+var IS_JSC = "line" in /* @__PURE__ */ new Error;
+var EXTERNAL = -1;
+var DEAD = -1;
+var fnv = (str, s, e) => {
+  let h = 2166136261;
+  for (let p = s;p < e; p++)
+    h = Math.imul(h ^ str.charCodeAt(p), 16777619);
+  return h;
+};
+var spanHash = (str, s, e) => {
+  const len = e - s;
+  let h = Math.imul(len, 2654435761) ^ str.charCodeAt(s);
+  if (len > 3) {
+    const q = len >> 2;
+    const m = len >> 1;
+    h = Math.imul(h ^ str.charCodeAt(s + 1) << 8 ^ str.charCodeAt(s + 2) << 16 ^ str.charCodeAt(s + q), 2246822507);
+    h = Math.imul(h ^ str.charCodeAt(s + m) << 8 ^ str.charCodeAt(s + m + q) << 16 ^ str.charCodeAt(e - 3), 3266489909);
+    h ^= str.charCodeAt(e - 2) << 8 ^ str.charCodeAt(e - 1) << 16;
+    for (let p = s + 3, q2 = e - 4;p < s + 8 && p < q2; p++, q2--)
+      h = Math.imul(h ^ str.charCodeAt(p) ^ str.charCodeAt(q2) << 8, 16777619);
+  }
+  return h ^ h >>> 15 | 0;
+};
+var createEngine = (T, validatorImpls, options = {}) => {
+  const { GROUP_COUNT: GROUP_COUNT2, edgeStart: edgeStart2, labelStart: labelStart2, labelText: labelText2, edgeTarget: edgeTarget2, nodeGroup: nodeGroup2, nodeVlist: nodeVlist2, vlistPat: vlistPat2, vlistOps: vlistOps2, vlistRef: vlistRef2, vlistGroup: vlistGroup2, litAnchor: litAnchor2, litGroup: litGroup2, litPool: litPool2, poolOffsets: poolOffsets2, poolText: poolText2, adjGid: adjGid2, adjStart: adjStart2, adjTgt: adjTgt2, patGid: patGid2, patTgt: patTgt2, postfixLookupGroups: postfixLookupGroups2, customValidatorNames: customValidatorNames2, orderSensitiveModifiers: orderSensitiveModifiers2 } = T;
+  const adjRow = new Int32Array(GROUP_COUNT2).fill(-1);
+  for (let i = 0;i < adjGid2.length; i++)
+    adjRow[adjGid2[i]] = i;
+  let maxAdj = 0;
+  for (let r = 0;r + 1 < adjStart2.length; r++) {
+    const n = adjStart2[r + 1] - adjStart2[r];
+    if (n > maxAdj)
+      maxAdj = n;
+  }
+  let CLAIM_PER_TOKEN = 32;
+  while (CLAIM_PER_TOKEN < 2 * (1 + maxAdj + patGid2.length))
+    CLAIM_PER_TOKEN <<= 1;
+  const vgStart = new Int32Array(vlistRef2.length + 1);
+  for (let l = 0;l < vlistRef2.length; l++)
+    vgStart[l + 1] = vgStart[l] + vlistPat2[vlistRef2[l] + 1] - vlistPat2[vlistRef2[l]];
+  const postfixLookupSet = new Uint8Array(GROUP_COUNT2);
+  for (let i = 0;i < postfixLookupGroups2.length; i++)
+    postfixLookupSet[postfixLookupGroups2[i]] = 1;
+  const nodeCount = edgeStart2.length - 1;
+  const nodeHasLit = new Uint8Array(nodeCount);
+  let litMaxLen = 0;
+  let litNoArb = true;
+  for (let i = 0;i < litAnchor2.length; i++) {
+    nodeHasLit[litAnchor2[i]] = 1;
+    const len = poolOffsets2[litPool2[i] * 2 + 1];
+    if (len > litMaxLen)
+      litMaxLen = len;
+    const c0 = poolText2.charCodeAt(poolOffsets2[litPool2[i] * 2]);
+    if (c0 === 91 || c0 === 40)
+      litNoArb = false;
+  }
+  let LIT_SIZE = 1;
+  while (LIT_SIZE < litAnchor2.length * 2)
+    LIT_SIZE <<= 1;
+  const litTable = new Int32Array(LIT_SIZE).fill(-1);
+  for (let i = 0;i < litAnchor2.length; i++) {
+    const off = poolOffsets2[litPool2[i] * 2];
+    let idx = (fnv(poolText2, off, off + poolOffsets2[litPool2[i] * 2 + 1]) ^ Math.imul(litAnchor2[i], 2654435761) | 0) & LIT_SIZE - 1;
+    while (litTable[idx] !== -1)
+      idx = idx + 1 & LIT_SIZE - 1;
+    litTable[idx] = i;
+  }
+  const litProbe = (anchor, input, s, e) => {
+    let idx = (fnv(input, s, e) ^ Math.imul(anchor, 2654435761) | 0) & LIT_SIZE - 1;
+    const len = e - s;
+    for (;; ) {
+      const entry = litTable[idx];
+      if (entry === -1)
+        return -1;
+      if (litAnchor2[entry] === anchor && poolOffsets2[litPool2[entry] * 2 + 1] === len) {
+        const off = poolOffsets2[litPool2[entry] * 2];
+        let ok = true;
+        for (let k = 0;k < len; k++)
+          if (poolText2.charCodeAt(off + k) !== input.charCodeAt(s + k)) {
+            ok = false;
+            break;
+          }
+        if (ok)
+          return litGroup2[entry];
+      }
+      idx = idx + 1 & LIT_SIZE - 1;
+    }
+  };
+  const cacheSize = options.cacheSize ?? 8192;
+  const RAW_PREFIX = options.prefix ?? T.prefix ?? "";
+  const FULL_PREFIX = RAW_PREFIX === "" ? "" : RAW_PREFIX + ":";
+  const FPL = FULL_PREFIX.length;
+  const vCustom = (customValidatorNames2 ?? []).map((name) => {
+    const fn = validatorImpls && validatorImpls[name];
+    if (!fn)
+      throw new Error("cn: missing validator " + name);
+    return fn;
+  });
+  const lengthUnitRegex = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/;
+  const colorFunctionRegex = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/;
+  const shadowRegex = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/;
+  const imageRegex = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/;
+  let aKind = 0;
+  let aLabelS = -1;
+  let aLabelE = -1;
+  let aValS = -1;
+  let aValE = -1;
+  const isWordCode = (c) => c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c === 95;
+  const isUniWS = (c) => /\s/.test(String.fromCharCode(c));
+  const analyzeArb = (input, s, e) => {
+    aKind = 0;
+    aLabelS = -1;
+    if (e - s < 3)
+      return;
+    const c0 = input.charCodeAt(s);
+    const cl = input.charCodeAt(e - 1);
+    if (c0 === 91 && cl === 93)
+      aKind = 1;
+    else if (c0 === 40 && cl === 41)
+      aKind = 2;
+    else
+      return;
+    aValS = s + 1;
+    aValE = e - 1;
+    let p = s + 1;
+    if (isWordCode(input.charCodeAt(p))) {
+      p++;
+      while (p < e - 1) {
+        const c = input.charCodeAt(p);
+        if (!isWordCode(c) && c !== 45)
+          break;
+        p++;
+      }
+      if (p < e - 2 && input.charCodeAt(p) === 58) {
+        aLabelS = s + 1;
+        aLabelE = p;
+        aValS = p + 1;
+      }
+    }
+  };
+  const spanEq = (input, s, e, str) => {
+    if (e - s !== str.length)
+      return false;
+    for (let i = 0;i < str.length; i++)
+      if (input.charCodeAt(s + i) !== str.charCodeAt(i))
+        return false;
+    return true;
+  };
+  const fractionRegex = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/;
+  const tshirtRegex = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/;
+  const isNumStr = (v) => !!v && !Number.isNaN(Number(v));
+  const spanIsNamedContainerQuery = (input, s, e) => {
+    if (e - s < 11 || !spanEq(input, s, s + 10, "@container"))
+      return false;
+    if (input.charCodeAt(s + 10) === 47)
+      return e - s >= 12;
+    const c11 = input.charCodeAt(s + 11);
+    return c11 === 115 && e - s >= 17 && spanEq(input, s + 10, s + 16, "-size/") || c11 === 110 && e - s >= 19 && spanEq(input, s + 10, s + 18, "-normal/");
+  };
+  const VKIND = [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ];
+  const VLABELS = "length|number|number weight|family-name|position percentage|length size bg-size|image url|shadow|length|family-name|position percentage|length size bg-size|image url|shadow|number weight".split("|").map((s) => s.split(" "));
+  const VFALL = [
+    2,
+    3,
+    1,
+    0,
+    0,
+    0,
+    4,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+  ];
+  const runValidator = (op, input, s, e) => {
+    if (op >= 10) {
+      if (op >= 25)
+        return vCustom[op - 25](input.slice(s, e));
+      const i = op - 10;
+      if (aKind !== VKIND[i])
+        return false;
+      if (aLabelS >= 0) {
+        for (const L of VLABELS[i])
+          if (spanEq(input, aLabelS, aLabelE, L))
+            return true;
+        return false;
+      }
+      switch (VFALL[i]) {
+        case 0:
+          return false;
+        case 1:
+          return true;
+        case 2: {
+          const v = input.slice(aValS, aValE);
+          return lengthUnitRegex.test(v) && !colorFunctionRegex.test(v);
+        }
+        case 3:
+          return isNumStr(input.slice(aValS, aValE));
+        case 4:
+          return imageRegex.test(input.slice(aValS, aValE));
+        default:
+          return shadowRegex.test(input.slice(aValS, aValE));
+      }
+    }
+    switch (op) {
+      case 0:
+        return true;
+      case 1:
+        return aKind === 0;
+      case 2:
+        return aKind === 1;
+      case 3:
+        return aKind === 2;
+      case 4:
+        return fractionRegex.test(input.slice(s, e));
+      case 5:
+        return isNumStr(input.slice(s, e));
+      case 6: {
+        const v = input.slice(s, e);
+        return !!v && Number.isInteger(Number(v));
+      }
+      case 7:
+        return e > s && input.charCodeAt(e - 1) === 37 && isNumStr(input.slice(s, e - 1));
+      case 8:
+        return tshirtRegex.test(input.slice(s, e));
+      default:
+        return spanIsNamedContainerQuery(input, s, e);
+    }
+  };
+  const orderSensitive = new Set(typeof orderSensitiveModifiers2 === "string" ? orderSensitiveModifiers2.split(" ") : orderSensitiveModifiers2);
+  const internSpan = (map, input, s, e, imp, make) => {
+    const h = fnv(input, s, e) ^ (imp ? 2654435769 : 0) | 0;
+    let bucket = map.get(h);
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const en = bucket[b];
+          if (en.imp !== imp || en.k.length !== e - s)
+            continue;
+          for (let i = 0;i < en.k.length; i++)
+            if (en.k.charCodeAt(i) !== input.charCodeAt(s + i))
+              continue outer;
+          return en.id;
+        }
+    else
+      map.set(h, bucket = []);
+    const k = input.slice(s, e);
+    const id = make(k);
+    bucket.push({
+      k,
+      imp,
+      id
+    });
+    return id;
+  };
+  let ctxByHash = /* @__PURE__ */ new Map;
+  let ctxByCanon = /* @__PURE__ */ new Map;
+  let nextCtxId = 2;
+  const MAX_CTX = 4096;
+  const canonicalizeContext = (raw, important) => {
+    const mods = [];
+    let dB = 0, dP = 0, start = 0;
+    for (let i = 0;i < raw.length; i++) {
+      const c = raw.charCodeAt(i);
+      if (dB === 0 && dP === 0 && c === 58) {
+        mods.push(raw.slice(start, i));
+        start = i + 1;
+      } else if (c === 91)
+        dB++;
+      else if (c === 93)
+        dB--;
+      else if (c === 40)
+        dP++;
+      else if (c === 41)
+        dP--;
+    }
+    mods.push(raw.slice(start));
+    let canonical = mods[0];
+    if (mods.length > 1) {
+      const result = [];
+      let segment = [];
+      for (const mod of mods)
+        if (mod.charCodeAt(0) === 91 || orderSensitive.has(mod)) {
+          if (segment.length) {
+            result.push(...segment.sort());
+            segment = [];
+          }
+          result.push(mod);
+        } else
+          segment.push(mod);
+      if (segment.length)
+        result.push(...segment.sort());
+      canonical = result.join(":");
+    }
+    const key = important ? canonical + " !" : canonical;
+    let id = ctxByCanon.get(key);
+    if (id === undefined)
+      ctxByCanon.set(key, id = nextCtxId++);
+    return id;
+  };
+  let dynByHash = /* @__PURE__ */ new Map;
+  let nextDynId = GROUP_COUNT2;
+  const MAX_DYN = GROUP_COUNT2 + 4096;
+  const newDynId = () => nextDynId++;
+  const ID_LIMIT = 2097152;
+  const TOKEN_TABLE = 8192;
+  const memoHash = new Int32Array(TOKEN_TABLE);
+  const memoStr = new Array(TOKEN_TABLE).fill(null);
+  const memoGid = new Int32Array(TOKEN_TABLE);
+  const memoCtx = new Int32Array(TOKEN_TABLE);
+  const memoFlags = new Uint8Array(TOKEN_TABLE);
+  let memoTick = 0;
+  const memoPut = (way0, input, ts, te, h, gid, ctxId, flags) => {
+    let slot = way0;
+    if (memoStr[way0] !== null) {
+      if (memoStr[way0 | 1] === null)
+        slot = way0 | 1;
+      else if ((memoTick++ & 3) === 0)
+        slot = way0 | memoTick >> 2 & 1;
+      else
+        return;
+    }
+    memoStr[slot] = input.slice(ts, te);
+    memoHash[slot] = h;
+    memoGid[slot] = gid;
+    memoCtx[slot] = ctxId;
+    memoFlags[slot] = flags;
+  };
+  const memoReset = () => memoStr.fill(null);
+  let cap = 256;
+  let tokI32 = [
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap)
+  ];
+  let [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+  let tokFlags = new Uint8Array(cap);
+  let keep = new Uint8Array(cap);
+  const growTokens = () => {
+    cap *= 2;
+    tokI32 = tokI32.map((a) => {
+      const n = new Int32Array(cap);
+      n.set(a);
+      return n;
+    });
+    [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+    const nf = new Uint8Array(cap);
+    nf.set(tokFlags);
+    tokFlags = nf;
+    keep = new Uint8Array(cap);
+  };
+  let ckptCap = 64;
+  let ckptNode = new Int32Array(ckptCap);
+  let ckptTail = new Int32Array(ckptCap);
+  const claim0 = new Int32Array(GROUP_COUNT2);
+  let CLAIM_TABLE = 2048;
+  let claimShift = 21;
+  let claimKeys = new Float64Array(CLAIM_TABLE);
+  let claimEpochs = new Int32Array(CLAIM_TABLE);
+  let epoch = 0;
+  const claimTest = (ctx, gid) => {
+    if (ctx === 0 && gid < GROUP_COUNT2) {
+      if (claim0[gid] === epoch)
+        return 1;
+      claim0[gid] = epoch;
+      return 0;
+    }
+    const key = ctx * 2097152 + gid + 1;
+    let idx = Math.imul(key, 2654435761) >>> claimShift;
+    for (;; ) {
+      if (claimEpochs[idx] !== epoch)
+        break;
+      if (claimKeys[idx] === key)
+        return 1;
+      idx = idx + 1 & CLAIM_TABLE - 1;
+    }
+    claimKeys[idx] = key;
+    claimEpochs[idx] = epoch;
+    return 0;
+  };
+  const resolveAt = (input, bs, endPos, nodeAt, ckptAt) => {
+    if (endPos - bs >= 2 && input.charCodeAt(bs) === 91 && input.charCodeAt(endPos - 1) === 93) {
+      let colon = -1;
+      for (let p = bs + 1;p < endPos - 1; p++)
+        if (input.charCodeAt(p) === 58) {
+          colon = p;
+          break;
+        }
+      if (colon === -1 || colon === bs + 1)
+        return EXTERNAL;
+      return internSpan(dynByHash, input, bs + 1, colon, 0, newDynId);
+    }
+    if (nodeAt >= 0 && nodeGroup2[nodeAt] >= 0)
+      return nodeGroup2[nodeAt];
+    for (let k = ckptAt - 1;k >= 0; k--) {
+      const tailStart = ckptTail[k];
+      if (tailStart > endPos)
+        continue;
+      const nodeId = ckptNode[k];
+      const tlen = endPos - tailStart;
+      if (nodeHasLit[nodeId] === 1 && tlen > 0 && tlen <= litMaxLen) {
+        const c0 = input.charCodeAt(tailStart);
+        if (litNoArb === false || c0 !== 91 && c0 !== 40) {
+          const g = litProbe(nodeId, input, tailStart, endPos);
+          if (g >= 0)
+            return g;
+        }
+      }
+      const vl = nodeVlist2[nodeId];
+      if (vl < 0)
+        continue;
+      const pat = vlistRef2[vl];
+      const vs = vlistPat2[pat];
+      const ve = vlistPat2[pat + 1];
+      if (vs === ve)
+        continue;
+      analyzeArb(input, tailStart, endPos);
+      const g0 = vgStart[vl] - vs;
+      for (let v = vs;v < ve; v++)
+        if (runValidator(vlistOps2[v], input, tailStart, endPos))
+          return vlistGroup2[g0 + v];
+    }
+    return EXTERNAL;
+  };
+  const mergeClassList = (input) => {
+    const n = input.length;
+    let tokenCount = 0;
+    let totalTokenChars = 0;
+    let sawNonSpaceWS = false;
+    if (nextCtxId > MAX_CTX || ctxByHash.size > MAX_CTX) {
+      ctxByHash = /* @__PURE__ */ new Map;
+      ctxByCanon = /* @__PURE__ */ new Map;
+      nextCtxId = 2;
+      memoReset();
+    }
+    if (nextDynId > MAX_DYN) {
+      dynByHash = /* @__PURE__ */ new Map;
+      nextDynId = GROUP_COUNT2;
+      memoReset();
+    }
+    let i = 0;
+    while (i < n) {
+      let c = input.charCodeAt(i);
+      if (c === 32 || c >= 9 && c <= 13 || c >= 160 && isUniWS(c)) {
+        if (c !== 32)
+          sawNonSpaceWS = true;
+        i++;
+        continue;
+      }
+      const ts = i;
+      let th = 0;
+      while (i < n) {
+        c = input.charCodeAt(i);
+        if (c <= 32) {
+          if (c === 32)
+            break;
+          if (c >= 9 && c <= 13) {
+            sawNonSpaceWS = true;
+            break;
+          }
+        } else if (c >= 160 && isUniWS(c)) {
+          sawNonSpaceWS = true;
+          break;
+        }
+        th = Math.imul(th ^ c, 16777619);
+        i++;
+      }
+      const te = i;
+      const len = te - ts;
+      if (tokenCount === cap)
+        growTokens();
+      const t2 = tokenCount++;
+      tokStart[t2] = ts;
+      tokEnd[t2] = te;
+      totalTokenChars += len;
+      th ^= Math.imul(len, 2654435761);
+      const h = th ^ th >>> 15 | 0;
+      const way0 = h & 8190;
+      {
+        let hitAt = -1;
+        if (memoHash[way0] === h && memoStr[way0] !== null && memoStr[way0].length === len)
+          hitAt = way0;
+        else if (memoHash[way0 | 1] === h && memoStr[way0 | 1] !== null && memoStr[way0 | 1].length === len)
+          hitAt = way0 | 1;
+        if (hitAt >= 0) {
+          const s = memoStr[hitAt];
+          let ok = true;
+          for (let k = 0;k < len; k++)
+            if (s.charCodeAt(k) !== input.charCodeAt(ts + k)) {
+              ok = false;
+              break;
+            }
+          if (ok) {
+            tokGid[t2] = memoGid[hitAt];
+            tokCtx[t2] = memoCtx[hitAt];
+            tokFlags[t2] = memoFlags[hitAt];
+            continue;
+          }
+        }
+      }
+      let pts = ts;
+      if (FPL !== 0) {
+        if (te - ts <= FPL || !input.startsWith(FULL_PREFIX, ts)) {
+          tokGid[t2] = EXTERNAL;
+          memoPut(way0, input, ts, te, h, EXTERNAL, 0, 0);
+          continue;
+        }
+        pts = ts + FPL;
+      }
+      let depthB = 0, depthP = 0;
+      let lastColon = -1, lastSlash = -1;
+      for (let p = pts;p < te; p++) {
+        const pc = input.charCodeAt(p);
+        if (depthB === 0 && depthP === 0) {
+          if (pc === 58) {
+            lastColon = p;
+            continue;
+          }
+          if (pc === 47) {
+            lastSlash = p;
+            continue;
+          }
+        }
+        if (pc === 91)
+          depthB++;
+        else if (pc === 93)
+          depthB--;
+        else if (pc === 40)
+          depthP++;
+        else if (pc === 41)
+          depthP--;
+      }
+      const modStart = lastColon >= pts ? lastColon + 1 : pts;
+      let bs = modStart;
+      let be = te;
+      let important = false;
+      let prefixShift = 0;
+      if (be > bs && input.charCodeAt(be - 1) === 33) {
+        important = true;
+        be--;
+      } else if (be > bs && input.charCodeAt(bs) === 33) {
+        important = true;
+        bs++;
+        prefixShift = 1;
+      }
+      let postfixEnd = -1;
+      if (lastSlash > modStart) {
+        postfixEnd = lastSlash + prefixShift;
+        if (postfixEnd >= be)
+          postfixEnd = -1;
+      }
+      let feedStart = bs;
+      if (be - bs > 1 && input.charCodeAt(bs) === 45)
+        feedStart = bs + 1;
+      let node = 0;
+      let lp = 0;
+      let le = 0;
+      let pending = -1;
+      let ckptTop = 0;
+      if (nodeVlist2[0] >= 0 || nodeHasLit[0] === 1) {
+        ckptNode[0] = 0;
+        ckptTail[0] = feedStart;
+        ckptTop = 1;
+      }
+      let slashNode = DEAD;
+      let slashCkpt = 0;
+      for (let p = feedStart;p < be; p++) {
+        if (p === postfixEnd) {
+          slashNode = lp < le ? DEAD : node;
+          slashCkpt = ckptTop;
+        }
+        if (node !== DEAD) {
+          const cc = input.charCodeAt(p);
+          let arrived = -1;
+          if (lp < le) {
+            if (labelText2.charCodeAt(lp) === cc) {
+              lp++;
+              if (lp === le)
+                arrived = node = pending;
+            } else
+              node = DEAD;
+          } else {
+            const es = edgeStart2[node];
+            const ee = edgeStart2[node + 1];
+            let next = DEAD;
+            for (let e = es;e < ee; e++) {
+              const ls = labelStart2[e];
+              if (labelText2.charCodeAt(ls) === cc) {
+                if (labelStart2[e + 1] - ls === 1)
+                  arrived = next = edgeTarget2[e];
+                else {
+                  lp = ls + 1;
+                  le = labelStart2[e + 1];
+                  pending = edgeTarget2[e];
+                  next = node;
+                }
+                break;
+              }
+            }
+            node = next;
+          }
+          if (arrived >= 0 && (nodeVlist2[arrived] >= 0 || nodeHasLit[arrived] === 1) && p + 1 < be && input.charCodeAt(p + 1) === 45) {
+            if (ckptTop === ckptCap) {
+              ckptCap *= 2;
+              const nv = new Int32Array(ckptCap);
+              nv.set(ckptNode);
+              ckptNode = nv;
+              const nt = new Int32Array(ckptCap);
+              nt.set(ckptTail);
+              ckptTail = nt;
+            }
+            ckptNode[ckptTop] = arrived;
+            ckptTail[ckptTop] = p + 2;
+            ckptTop++;
+          }
+        }
+      }
+      if (postfixEnd === be) {
+        slashNode = lp < le ? DEAD : node;
+        slashCkpt = ckptTop;
+      }
+      const endNode = lp < le ? DEAD : node;
+      let gid;
+      let hasPostfix = false;
+      if (postfixEnd >= 0) {
+        hasPostfix = true;
+        gid = resolveAt(input, bs, postfixEnd, slashNode, slashCkpt);
+        if (gid !== EXTERNAL && gid < GROUP_COUNT2 && postfixLookupSet[gid]) {
+          const gidFull = resolveAt(input, bs, be, endNode, ckptTop);
+          if (gidFull !== EXTERNAL && gidFull !== gid) {
+            gid = gidFull;
+            hasPostfix = false;
+          }
+        } else if (gid === EXTERNAL) {
+          gid = resolveAt(input, bs, be, endNode, ckptTop);
+          hasPostfix = false;
+        }
+      } else
+        gid = resolveAt(input, bs, be, endNode, ckptTop);
+      let ctxId = 0;
+      let flags = 0;
+      if (gid === EXTERNAL)
+        tokGid[t2] = EXTERNAL;
+      else {
+        flags = hasPostfix ? 1 : 0;
+        ctxId = pts >= lastColon ? important ? 1 : 0 : internSpan(ctxByHash, input, pts, lastColon, important ? 1 : 0, (k) => canonicalizeContext(k, important));
+        tokGid[t2] = gid;
+        tokFlags[t2] = flags;
+        tokCtx[t2] = ctxId;
+      }
+      memoPut(way0, input, ts, te, h, gid, ctxId, flags);
+    }
+    if (tokenCount === 0)
+      return "";
+    if (tokenCount === 1)
+      return tokStart[0] === 0 && tokEnd[0] === n ? input : input.slice(tokStart[0], tokEnd[0]);
+    if (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+      while (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+        CLAIM_TABLE <<= 1;
+        claimShift--;
+      }
+      claimKeys = new Float64Array(CLAIM_TABLE);
+      claimEpochs = new Int32Array(CLAIM_TABLE);
+    }
+    if (nextCtxId >= ID_LIMIT || nextDynId >= ID_LIMIT)
+      throw new Error("cn: too many distinct classes in one merge");
+    epoch = epoch + 1 | 0;
+    if (epoch === 0) {
+      claim0.fill(0);
+      claimEpochs.fill(0);
+      epoch = 1;
+    }
+    let didDrop = false;
+    for (let t2 = tokenCount - 1;t2 >= 0; t2--) {
+      const gid = tokGid[t2];
+      if (gid === EXTERNAL) {
+        keep[t2] = 1;
+        continue;
+      }
+      const ctxId = tokCtx[t2];
+      if (claimTest(ctxId, gid) === 1) {
+        keep[t2] = 0;
+        didDrop = true;
+        continue;
+      }
+      keep[t2] = 1;
+      if (gid < GROUP_COUNT2) {
+        const r = adjRow[gid];
+        if (r >= 0)
+          for (let k = adjStart2[r];k < adjStart2[r + 1]; k++)
+            claimTest(ctxId, adjTgt2[k]);
+        if (tokFlags[t2] & 1) {
+          for (let k = 0;k < patGid2.length; k++)
+            if (patGid2[k] === gid)
+              claimTest(ctxId, patTgt2[k]);
+        }
+      }
+    }
+    if (!didDrop && !sawNonSpaceWS && n === totalTokenChars + tokenCount - 1)
+      return input;
+    let out = "";
+    let t = 0;
+    while (t < tokenCount) {
+      if (!keep[t]) {
+        t++;
+        continue;
+      }
+      const runStart = tokStart[t];
+      let runEnd = tokEnd[t];
+      let u = t + 1;
+      while (u < tokenCount && keep[u] && tokStart[u] === runEnd + 1 && input.charCodeAt(runEnd) === 32) {
+        runEnd = tokEnd[u];
+        u++;
+      }
+      if (out.length > 0)
+        out += " ";
+      out += input.slice(runStart, runEnd);
+      t = u;
+    }
+    return out;
+  };
+  const DOOR_SIZE = 16384;
+  const door = new Int32Array(DOOR_SIZE * 2);
+  let doorBase = 0;
+  let doorEpoch = 1;
+  let cache = Object.create(null);
+  let prevCache = Object.create(null);
+  let cacheMap = /* @__PURE__ */ new Map;
+  let prevCacheMap = /* @__PURE__ */ new Map;
+  let cacheCount = 0;
+  let doorMarks = 0;
+  const rotateDoor = () => {
+    doorBase ^= DOOR_SIZE;
+    doorEpoch = doorEpoch + 1 | 0;
+    doorMarks = 0;
+  };
+  const mergeCached = (input) => {
+    let merged = cache[input];
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCache[input];
+      if (merged !== undefined) {
+        cache[input] = merged;
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cache[input] = merged;
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCache = cache;
+        cache = Object.create(null);
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const mergeCachedMap = (input) => {
+    let merged = cacheMap.get(input);
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCacheMap.get(input);
+      if (merged !== undefined) {
+        cacheMap.set(input, merged);
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cacheMap.set(input, merged);
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCacheMap = cacheMap;
+        cacheMap = /* @__PURE__ */ new Map;
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const seenBefore = (input) => {
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    if (door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1))
+      return true;
+    door[slot] = hash ^ doorEpoch;
+    if (++doorMarks > DOOR_SIZE)
+      rotateDoor();
+    return false;
+  };
+  const mergeString = cacheSize === 0 ? mergeClassList : IS_JSC ? (input) => {
+    const merged = cacheMap.get(input);
+    return merged !== undefined ? merged : mergeCachedMap(input);
+  } : mergeCached;
+  const merge = function() {
+    return arguments.length === 1 && typeof arguments[0] === "string" ? mergeString(arguments[0]) : mergeString(twJoin.apply(null, arguments));
+  };
+  return {
+    merge,
+    mergeString,
+    seenBefore: cacheSize === 0 ? () => false : seenBefore,
+    mergeUncached: mergeClassList
+  };
+};
+var resolveValue = (v, clsxMode) => {
+  if (!v)
+    return "";
+  if (typeof v === "string")
+    return v;
+  let out = "";
+  if (typeof v.length === "number" && (clsxMode ? Array.isArray(v) : true)) {
+    const arr = v;
+    for (let i = 0;i < arr.length; i++) {
+      const item = arr[i];
+      if (!item)
+        continue;
+      const r = typeof item === "string" ? item : resolveValue(item, clsxMode);
+      if (r) {
+        if (out)
+          out += " ";
+        out += r;
+      }
+    }
+    return out;
+  }
+  if (clsxMode) {
+    if (typeof v === "number")
+      return "" + v;
+    if (typeof v === "object") {
+      for (const k in v)
+        if (v[k]) {
+          if (out)
+            out += " ";
+          out += k;
+        }
+    }
+  }
+  return out;
+};
+var joinArgs = (args, clsxMode) => {
+  let s = "";
+  for (let i = 0;i < args.length; i++) {
+    const a = args[i];
+    if (!a)
+      continue;
+    const r = typeof a === "string" ? a : resolveValue(a, clsxMode);
+    if (r) {
+      if (s)
+        s += " ";
+      s += r;
+    }
+  }
+  return s;
+};
+var twJoin = function() {
+  return joinArgs(arguments, false);
+};
+var wrapClsx = (mergeString, fresh) => {
+  const seenBefore = fresh === undefined ? () => true : fresh.seenBefore;
+  const mergeUncached = fresh === undefined ? mergeString : fresh.mergeUncached;
+  let argCache = /* @__PURE__ */ new Map;
+  let prevArgCache = /* @__PURE__ */ new Map;
+  let argCount = 0;
+  let lastHit = null;
+  const match3 = (e, v0, v1, v2) => {
+    let k = 0;
+    if (v0) {
+      if (v0 !== e.a0)
+        return false;
+      k = 1;
+    }
+    if (v1) {
+      if (v1 !== (k === 0 ? e.a0 : e.a1))
+        return false;
+      k++;
+    }
+    if (v2) {
+      if (v2 !== (k === 0 ? e.a0 : k === 1 ? e.a1 : e.a2))
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const matchN = (e, vals) => {
+    const ea = e.a;
+    let k = 0;
+    for (let i = 0;i < vals.length; i++) {
+      const v = vals[i];
+      if (!v)
+        continue;
+      if (v !== ea[k])
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const resolveArgs = (vals, probed) => {
+    const nArgs = vals.length;
+    const pred = lastHit === null ? null : lastHit.n;
+    if (!probed) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let first = "";
+    let firstIdx = -1;
+    let truthy = 0;
+    let hasResolvedValue = false;
+    for (let i = 0;i < nArgs; i++) {
+      let v = vals[i];
+      if (!v)
+        continue;
+      if (typeof v !== "string") {
+        v = vals[i] = resolveValue(v, true);
+        if (!v)
+          continue;
+        hasResolvedValue = true;
+      }
+      if (firstIdx < 0) {
+        first = v;
+        firstIdx = i;
+      }
+      truthy++;
+    }
+    if (truthy === 0)
+      return "";
+    if (truthy === 1)
+      return mergeString(first);
+    if (hasResolvedValue) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let bucket = argCache.get(first);
+    if (bucket === undefined) {
+      bucket = prevArgCache.get(first);
+      if (bucket !== undefined)
+        argCache.set(first, bucket);
+    }
+    let hit = null;
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const e = bucket[b];
+          if (e.t !== truthy)
+            continue;
+          const ea = e.a;
+          let k = 1;
+          for (let i = firstIdx + 1;i < nArgs; i++) {
+            const v = vals[i];
+            if (v && v !== ea[k++])
+              continue outer;
+          }
+          hit = e;
+          break;
+        }
+    if (hit === null) {
+      let joined = first;
+      const a = [first];
+      for (let i = firstIdx + 1;i < nArgs; i++) {
+        const v = vals[i];
+        if (!v)
+          continue;
+        joined += " " + v;
+        a.push(v);
+      }
+      if (!seenBefore(joined))
+        return mergeUncached(joined);
+      hit = {
+        r: mergeString(joined),
+        t: a.length,
+        a0: a[0],
+        a1: a[1],
+        a2: a[2] ?? "",
+        a,
+        n: null
+      };
+      if (bucket === undefined)
+        argCache.set(first, bucket = []);
+      if (bucket.length >= 256)
+        bucket.shift();
+      bucket.push(hit);
+      if (++argCount > 1000) {
+        argCount = 0;
+        prevArgCache = argCache;
+        argCache = /* @__PURE__ */ new Map;
+      }
+    }
+    if (lastHit !== null && lastHit !== hit)
+      lastHit.n = hit;
+    lastHit = hit;
+    return hit.r;
+  };
+  const mergeSingleValue = (value) => Array.isArray(value) ? resolveArgs(value.slice(), false) : mergeString(resolveValue(value, true));
+  return function(v0, v1, v2) {
+    const nArgs = arguments.length;
+    if ((nArgs | 1) === 3) {
+      const lh2 = lastHit;
+      if (lh2 !== null) {
+        const pred = lh2.n;
+        if (pred !== null && match3(pred, v0, v1, v2)) {
+          lastHit = pred;
+          return pred.r;
+        }
+        if (lh2 !== pred && match3(lh2, v0, v1, v2))
+          return lh2.r;
+      }
+      return resolveArgs([
+        v0,
+        v1,
+        v2
+      ], true);
+    }
+    if (nArgs === 1)
+      return typeof v0 === "string" ? mergeString(v0) : mergeSingleValue(v0);
+    const lh = lastHit;
+    if (lh !== null) {
+      const pred = lh.n;
+      if (pred !== null) {
+        const pa = pred.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== pa[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === pred.t) {
+          lastHit = pred;
+          return pred.r;
+        }
+      }
+      if (lh !== pred) {
+        const la = lh.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== la[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === lh.t)
+          return lh.r;
+      }
+    }
+    const vals = [];
+    for (let i = 0;i < nArgs; i++)
+      vals.push(arguments[i]);
+    return resolveArgs(vals, true);
+  };
+};
+
+// node_modules/cn/dist/index.js
+var instance = /* @__PURE__ */ createEngine(tables_generated_default);
+var cn = /* @__PURE__ */ wrapClsx(instance.mergeString, instance);
+var twMerge = instance.merge;
 // node_modules/lucide-react/dist/esm/createLucideIcon.mjs
 var import_react3 = __toESM(require_react(), 1);
 
@@ -18292,8 +19531,21 @@ var __iconNode26 = [
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
 var GitCompare = createLucideIcon("git-compare", __iconNode26);
-// node_modules/lucide-react/dist/esm/icons/messages-square.mjs
+// node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
 var __iconNode27 = [
+  [
+    "path",
+    {
+      d: "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z",
+      key: "18887p"
+    }
+  ],
+  ["path", { d: "M12 8v6", key: "1ib9pf" }],
+  ["path", { d: "M9 11h6", key: "1fldmi" }]
+];
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode27);
+// node_modules/lucide-react/dist/esm/icons/messages-square.mjs
+var __iconNode28 = [
   [
     "path",
     {
@@ -18309,9 +19561,9 @@ var __iconNode27 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode27);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode28 = [
+var __iconNode29 = [
   [
     "path",
     {
@@ -18320,18 +19572,18 @@ var __iconNode28 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode28);
+var Moon = createLucideIcon("moon", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode29 = [
+var __iconNode30 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode29);
+var Network = createLucideIcon("network", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode30 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -18341,9 +19593,9 @@ var __iconNode30 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode30);
+var Pencil = createLucideIcon("pencil", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode31 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -18354,9 +19606,9 @@ var __iconNode31 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode31);
+var Save = createLucideIcon("save", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode32 = [
+var __iconNode33 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18367,44 +19619,44 @@ var __iconNode32 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode32);
+var Sun = createLucideIcon("sun", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode33);
+var Trash2 = createLucideIcon("trash-2", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode34);
+var UndoDot = createLucideIcon("undo-dot", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode35);
+var UserCheck = createLucideIcon("user-check", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode36);
+var User = createLucideIcon("user", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode37);
+var X = createLucideIcon("x", __iconNode38);
 // src/scriptorium/surface/App.tsx
-var import_react27 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -19882,8 +21134,8 @@ function qt({
     onLayoutChanged: {}
   }), f = re((x) => {
     K(z.current.onLayoutChange, x) || (z.current.onLayoutChange = x, r?.(x));
-  }), d = re((x, P) => {
-    K(z.current.onLayoutChanged, x) || (z.current.onLayoutChanged = x, l?.(x, { isUserInteraction: P }));
+  }), d = re((x, P2) => {
+    K(z.current.onLayoutChanged, x) || (z.current.onLayoutChanged = x, l?.(x, { isUserInteraction: P2 }));
   }), h = Ce(a), y = import_react4.useRef(null), [b, v] = Kt(), g = import_react4.useRef({
     lastExpandedPanelSizes: {},
     layouts: {},
@@ -19892,24 +21144,24 @@ function qt({
     separators: []
   }), w = Re(y, s);
   Xt(h, u);
-  const E = re((x, P) => {
+  const E = re((x, P2) => {
     const I = W(), R = Oe(x), M = H(x);
     if (M) {
       let k = false;
       switch (I.state) {
         case "active": {
-          k = I.hitRegions.some((U) => U.group === R);
+          k = I.hitRegions.some((U2) => U2.group === R);
           break;
         }
       }
       return {
-        flexGrow: M.layout[P] ?? 1,
+        flexGrow: M.layout[P2] ?? 1,
         pointerEvents: k ? "none" : undefined
       };
     }
-    if (n?.[P])
+    if (n?.[P2])
       return {
-        flexGrow: n?.[P]
+        flexGrow: n?.[P2]
       };
   }), L = Ee({
     defaultLayout: n,
@@ -19922,26 +21174,26 @@ function qt({
     id: h,
     orientation: c,
     registerPanel: (x) => {
-      const P = g.current;
-      return P.panels = ze(c, [
-        ...P.panels,
+      const P2 = g.current;
+      return P2.panels = ze(c, [
+        ...P2.panels,
         x
       ]), v(), () => {
-        P.panels = P.panels.filter((I) => I !== x), v();
+        P2.panels = P2.panels.filter((I) => I !== x), v();
       };
     },
     registerSeparator: (x) => {
-      const P = g.current;
-      return P.separators = ze(c, [
-        ...P.separators,
+      const P2 = g.current;
+      return P2.separators = ze(c, [
+        ...P2.separators,
         x
       ]), v(), () => {
-        P.separators = P.separators.filter((I) => I !== x), v();
+        P2.separators = P2.separators.filter((I) => I !== x), v();
       };
     },
-    updatePanelProps: (x, { disabled: P }) => {
-      const R = g.current.panels.find((U) => U.id === x);
-      R && (R.panelConstraints.disabled = P);
+    updatePanelProps: (x, { disabled: P2 }) => {
+      const R = g.current.panels.find((U2) => U2.id === x);
+      R && (R.panelConstraints.disabled = P2);
       const M = Oe(h), k = H(h);
       M && k && j(M, {
         ...k,
@@ -19949,22 +21201,22 @@ function qt({
       });
     },
     updateSeparatorProps: (x, {
-      disabled: P,
+      disabled: P2,
       disableDoubleClick: I
     }) => {
       const M = g.current.separators.find((k) => k.id === x);
-      M && (M.disabled = P, M.disableDoubleClick = I);
+      M && (M.disabled = P2, M.disableDoubleClick = I);
     }
   }), [E, h, v, c, L]), N = import_react4.useRef(null);
   return q(() => {
     const x = y.current;
     if (x === null)
       return;
-    const P = g.current;
+    const P2 = g.current;
     let I;
-    if (L.defaultLayout !== undefined && Object.keys(L.defaultLayout).length === P.panels.length) {
+    if (L.defaultLayout !== undefined && Object.keys(L.defaultLayout).length === P2.panels.length) {
       I = {};
-      for (const _ of P.panels) {
+      for (const _ of P2.panels) {
         const Y = L.defaultLayout[_.id];
         Y !== undefined && (I[_.id] = Y);
       }
@@ -19980,13 +21232,13 @@ function qt({
         layouts: g.current.layouts
       },
       orientation: c,
-      panels: P.panels,
-      resizeTargetMinimumSize: P.resizeTargetMinimumSize,
-      separators: P.separators
+      panels: P2.panels,
+      resizeTargetMinimumSize: P2.resizeTargetMinimumSize,
+      separators: P2.separators
     };
     N.current = R;
-    const M = Wt(R), { defaultLayoutDeferred: k, derivedPanelConstraints: U, layout: le } = H(R.id, true);
-    !k && U.length > 0 && (f(le), d(le, false));
+    const M = Wt(R), { defaultLayoutDeferred: k, derivedPanelConstraints: U2, layout: le } = H(R.id, true);
+    !k && U2.length > 0 && (f(le), d(le, false));
     const ue = we(h, (_) => {
       const { defaultLayoutDeferred: Y, derivedPanelConstraints: ce, layout: fe } = _.next;
       if (Y || ce.length === 0)
@@ -20225,9 +21477,9 @@ function Qt({
     const R = v(g, d);
     if (R)
       return JSON.stringify(R);
-  }, P = import_react4.useSyncExternalStore((R) => we(g, R), x, x);
+  }, P2 = import_react4.useSyncExternalStore((R) => we(g, R), x, x);
   let I;
-  return P ? I = JSON.parse(P) : i !== undefined ? I = {
+  return P2 ? I = JSON.parse(P2) : i !== undefined ? I = {
     flexGrow: undefined,
     flexShrink: undefined,
     flexBasis: i
@@ -20338,14 +21590,14 @@ function nn({
         disableDoubleClick: l.disableDoubleClick,
         element: N,
         id: r
-      }, P = g(x), I = Rt((M) => {
+      }, P2 = g(x), I = Rt((M) => {
         S(M.next.state !== "inactive" && M.next.hitRegions.some((k) => k.separator === x) ? M.next.state : "inactive");
       }), R = we(b, (M) => {
-        const { derivedPanelConstraints: k, layout: U, separatorToPanels: le } = M.next, ue = le.get(x);
+        const { derivedPanelConstraints: k, layout: U2, separatorToPanels: le } = M.next, ue = le.get(x);
         if (ue) {
           const _ = ue[0], Y = k.findIndex((ce) => ce.panelId === _.id);
           m(tn({
-            layout: U,
+            layout: U2,
             panelConstraints: k,
             panelId: _.id,
             panelIndex: Y
@@ -20353,7 +21605,7 @@ function nn({
         }
       });
       return () => {
-        I(), R(), P();
+        I(), R(), P2();
       };
     }
   }, [b, r, g, l]), import_react4.useEffect(() => {
@@ -21083,12 +22335,12 @@ function update(forkRef, refs) {
     forkRef.callback = null;
     return;
   }
-  forkRef.callback = (instance) => {
+  forkRef.callback = (instance2) => {
     if (forkRef.cleanup) {
       forkRef.cleanup();
       forkRef.cleanup = null;
     }
-    if (instance != null) {
+    if (instance2 != null) {
       const cleanupCallbacks = Array(refs.length).fill(null);
       for (let i = 0;i < refs.length; i += 1) {
         const ref = refs[i];
@@ -21097,14 +22349,14 @@ function update(forkRef, refs) {
         }
         switch (typeof ref) {
           case "function": {
-            const refCleanup = ref(instance);
+            const refCleanup = ref(instance2);
             if (typeof refCleanup === "function") {
               cleanupCallbacks[i] = refCleanup;
             }
             break;
           }
           case "object": {
-            ref.current = instance;
+            ref.current = instance2;
             break;
           }
           default:
@@ -21366,7 +22618,7 @@ function r(e) {
         e[f] && (n && (n += " "), n += f);
   return n;
 }
-function clsx() {
+function clsx2() {
   for (var e, t, f = 0, n = "", o = arguments.length;f < o; f++)
     (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
   return n;
@@ -21374,7 +22626,7 @@ function clsx() {
 
 // node_modules/class-variance-authority/dist/index.mjs
 var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
-var cx = clsx;
+var cx = clsx2;
 var cva = (base, config) => (props) => {
   var _config_compoundVariants;
   if ((config === null || config === undefined ? undefined : config.variants) == null)
@@ -21415,1245 +22667,6 @@ var cva = (base, config) => (props) => {
   }, []);
   return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
 };
-
-// node_modules/cn/dist/tables.js
-var P = 48;
-var U = (s, o = 0) => {
-  const out = new Int32Array(s.length);
-  for (let i = 0;i < s.length; i++)
-    out[i] = s.charCodeAt(i) - P - o;
-  return out;
-};
-var PS = (counts) => {
-  const out = new Int32Array(counts.length + 1);
-  for (let i = 0;i < counts.length; i++)
-    out[i + 1] = out[i] + counts[i];
-  return out;
-};
-var DZ = (s) => {
-  const out = new Int32Array(s.length);
-  let a = 0;
-  for (let i = 0;i < s.length; i++) {
-    const z = s.charCodeAt(i) - P;
-    a += z >>> 1 ^ -(z & 1);
-    out[i] = a;
-  }
-  return out;
-};
-var GROUP_COUNT = 379;
-var customValidatorNames = [];
-var edgeStart = PS(U("E050000200528200000000200015000002002182000001120000000302220200020004200120000200420001200021200301200010400162000010000220021010:2192001200220012000220012000200200200400010200040000000000400200108200110100000022010313000162002000020020012020080213000228200000000082000000000120002000120020020040101020300130001001010"));
-var labelStart = PS(U(":11111111211111119311546544411119731869:67139741568643244111111111116111415121431343415:78311132233313187211117221449443411141111151152226611131111112212518142224214215421421542142424242516171151615616347111111111197911327451111111111111111111113134714133513411111311111111111111111111112444411111342312715245411117:3"));
-var labelText = "@containerabcdefghinlmoprstunderlineviawzccentlignnimatespectuto-colsrowsaglorightnessckdrop-sisbcontrastfiltergrayscalehue-rotateinvertopacityslurrightnessaturateepia-coniclinearpositionradialsizeockurrderttom-belrstxyespacing-xyaretoursorlnt-umnsendspantartentrasteividerop-shadowurationcorationlay-xyasendillexontromlter-featuresstretchapr-xyayscaleidow-colsrowsue-rotatedentlinesetvert-beringsxyeshadoweiadingftnest-clamp-imageabein-lrstxyskx--b-coniclpositionrsizet-x-y-fromto-fromto-inearfromto-fromto-adialfromto-fromtofromtofromtofromtoblockhinlinew-screenesblockhinlinewbjectpacityrutlinederigin-offsetbelrstxyesrspective-originaceholderioghtng-offsettateundedw-xyz-belrstlreseslr-endspantartaturatecepiahizekewpace-taleroll-xyz-barmpbelrstxyesbelrstxyes-thumbrackadowrink-xyxyartrokeabextora-shadowpckingnsformitionlate-xyz-offsetill-changeoom";
-var edgeTarget = (() => {
-  const N = edgeStart.length - 1;
-  const sizes = new Int32Array(N);
-  for (let i = N - 1;i >= 0; i--) {
-    let s = 1;
-    let c = i + 1;
-    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
-      s += sizes[c];
-      c += sizes[c];
-    }
-    sizes[i] = s;
-  }
-  const out = new Int32Array(edgeStart[N]);
-  let e = 0;
-  for (let i = 0;i < N; i++) {
-    let c = i + 1;
-    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
-      out[e++] = c;
-      c += sizes[c];
-    }
-  }
-  return out;
-})();
-var nodeGroup = U("02000000000000900<=0?000B000000F00ŎI0J0LNPRTVX0000]_a0000000000000000000000qrs0000000yŎ00000000000Ŏ0000000Ŏ00000000000000000000000000000000000000000000000000000000000000Ê000000000000000000000Ý000000000000000000ï0000000÷0øùúûüýþÿĀāĂăĄą000000000000000000000000000000000000000000Ħ0ħĩ00000000000000000000Ļļ00000ū000000", 1);
-var vlistPat = PS(U("123333593463463635126367151576"));
-var vlistOps = U("93203242383253248325D>E?F@03263243255B:032325523853:0325B:8GA032542H<C=12727B:03253;D>E?3257D>03258432585:0325B:;0328B:032");
-var vlistRef = U("01211311455155555567811194::::::::;;;:::952888<151=52>>?51921@ABCD;;;588595;9999:9?995;9E11;FGGHGGGGHGG1GG1GG1GGGGGG999IJ;;;;999I;;;;;;1581:5;;;;;11;2;;;;;9:K555544444444444444488855555;;;;;;;;;;;;;;;;;;;;;;225?59555;;L8M?D911199995DI188");
-var vlistGroup = DZ("0202002020200202020020020020200200200200200200200002020202001003040106000200200200200200200200200200200200200200200200200200200200200200200200200200200200020020020020020020002020020200200200200200200200200200202000200202002020022020020020020020020020020020020002002002000200020002000200200200020020020002000200200200020020202002020202000200200020022000200200020020002002000200220002002000200W0Z00020020002002020002002000200g0j00020020002002000200200020020002002000200200020002000200000200200200200200020002000200002002002002002002002020020020200200200200200200200200202020020020020020020020020002002002020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020002002002002002002000200200200200200200200200200020202020002000200020002002002002000020200200");
-var nodeVlist = (() => {
-  const out = (/* @__PURE__ */ new Int32Array(318)).fill(-1);
-  const A2 = DZ("02422242:22222224222422224244222222242222224444224226224222426222422442462222422622222222626222462242622422622422424242422222222422222222242422222222222222222622442224222222222222224424442262222222222222222222226224222424242422224422422422222");
-  const V2 = DZ("0222222222222222222220222222222222222222222222142222222222222222222222222222222222Y\\222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222221422222222222222222222222222222222222222Ŀł222222222222222222");
-  for (let i = 0;i < A2.length; i++)
-    out[A2[i]] = V2[i];
-  return out;
-})();
-var SETS = "container|break-after-all break-after-auto break-after-avoid break-after-avoid-page break-after-column break-after-left break-after-page break-after-right|break-before-all break-before-auto break-before-avoid break-before-avoid-page break-before-column break-before-left break-before-page break-before-right|break-inside-auto break-inside-avoid break-inside-avoid-column break-inside-avoid-page|box-decoration-clone box-decoration-slice|box-border box-content|contents flow-root hidden table table-caption table-cell table-column table-column-group table-footer-group table-header-group table-row table-row-group|not-sr-only sr-only|float-end float-left float-none float-right float-start|clear-both clear-end clear-left clear-none clear-right clear-start|isolate isolation-auto|overflow-auto overflow-clip overflow-hidden overflow-scroll overflow-visible|overflow-x-auto overflow-x-clip overflow-x-hidden overflow-x-scroll overflow-x-visible|overflow-y-auto overflow-y-clip overflow-y-hidden overflow-y-scroll overflow-y-visible|overscroll-auto overscroll-contain overscroll-none|overscroll-x-auto overscroll-x-contain overscroll-x-none|overscroll-y-auto overscroll-y-contain overscroll-y-none|absolute fixed relative static sticky|collapse invisible visible|justify-around justify-baseline justify-between justify-center justify-center-safe justify-end justify-end-safe justify-evenly justify-normal justify-start justify-stretch|justify-items-center justify-items-center-safe justify-items-end justify-items-end-safe justify-items-normal justify-items-start justify-items-stretch|justify-self-auto justify-self-center justify-self-center-safe justify-self-end justify-self-end-safe justify-self-start justify-self-stretch|items-baseline items-baseline-last items-center items-center-safe items-end items-end-safe items-start items-stretch|self-auto self-baseline self-baseline-last self-center self-center-safe self-end self-end-safe self-start self-stretch|place-content-around place-content-baseline place-content-between place-content-center place-content-center-safe place-content-end place-content-end-safe place-content-evenly place-content-start place-content-stretch|place-items-baseline place-items-center place-items-center-safe place-items-end place-items-end-safe place-items-start place-items-stretch|place-self-auto place-self-center place-self-center-safe place-self-end place-self-end-safe place-self-start place-self-stretch|antialiased subpixel-antialiased|italic not-italic|normal-nums|ordinal|slashed-zero|lining-nums oldstyle-nums|proportional-nums tabular-nums|diagonal-fractions stacked-fractions|no-underline overline|capitalize lowercase normal-case uppercase|truncate|whitespace-break-spaces whitespace-normal whitespace-nowrap whitespace-pre whitespace-pre-line whitespace-pre-wrap|break-all break-keep break-normal break-words|wrap-anywhere wrap-break-word wrap-normal|hyphens-auto hyphens-manual hyphens-none|mix-blend-color mix-blend-color-burn mix-blend-color-dodge mix-blend-darken mix-blend-difference mix-blend-exclusion mix-blend-hard-light mix-blend-hue mix-blend-lighten mix-blend-luminosity mix-blend-multiply mix-blend-normal mix-blend-overlay mix-blend-plus-darker mix-blend-plus-lighter mix-blend-saturation mix-blend-screen mix-blend-soft-light|table-auto table-fixed|caption-bottom caption-top|backface-hidden backface-visible|appearance-auto appearance-none|scheme-dark scheme-light scheme-light-dark scheme-normal scheme-only-dark scheme-only-light|field-sizing-content field-sizing-fixed|pointer-events-auto pointer-events-none|resize resize-none resize-x resize-y|snap-align-none snap-center snap-end snap-start|snap-always snap-normal|snap-both snap-none snap-x snap-y|snap-mandatory snap-proximity|touch-auto touch-manipulation touch-none|touch-pan-left touch-pan-right touch-pan-x|touch-pan-down touch-pan-up touch-pan-y|touch-pinch-zoom|select-all select-auto select-none select-text|forced-color-adjust-auto forced-color-adjust-none|normal size|baseline bottom middle sub super text-bottom text-top top|bounce none ping pulse spin|auto square video|auto fr max min|none|auto full px|fixed local scroll|clip-border clip-content clip-padding clip-text|origin-border origin-content origin-padding|bottom bottom-left bottom-right center left left-bottom left-top right right-bottom right-top top top-left top-right|no-repeat repeat repeat-round repeat-space repeat-x repeat-y|auto contain cover|blend-color blend-color-burn blend-color-dodge blend-darken blend-difference blend-exclusion blend-hard-light blend-hue blend-lighten blend-luminosity blend-multiply blend-normal blend-overlay blend-saturation blend-screen blend-soft-light|to-b to-bl to-br to-l to-r to-t to-tl to-tr|auto dvh fit full lh lvh max min px screen svh|dashed dotted double hidden none solid|collapse separate|px|auto|full|around baseline between center center-safe end end-safe evenly normal start stretch|alias all-scroll auto cell col-resize context-menu copy crosshair default e-resize ew-resize grab grabbing help move n-resize ne-resize nesw-resize no-drop none not-allowed ns-resize nw-resize nwse-resize pointer progress row-resize s-resize se-resize sw-resize text vertical-text w-resize wait zoom-in zoom-out|dashed dotted double solid wavy|auto from-font|reverse|initial|in in-out initial linear out|col col-reverse row row-reverse|nowrap wrap wrap-reverse|auto initial none|black bold extrabold extralight light medium normal semibold thin|condensed expanded extra-condensed extra-expanded normal semi-condensed semi-expanded ultra-condensed ultra-expanded|flow-col flow-col-dense flow-dense flow-row flow-row-dense|none subgrid|auto dvh dvw fit full lh lvh lvw max min px screen svh svw|block flex grid table|auto dvw fit full lvw max min px screen svw|loose none normal px relaxed snug tight|through|item|inside outside|decimal disc none|auto px|clip-border clip-content clip-fill clip-padding clip-stroke clip-view no-clip|add exclude intersect subtract|alpha luminance match|origin-border origin-content origin-fill origin-padding origin-stroke origin-view|type-alpha type-luminance|circle ellipse|closest-corner closest-side farthest-corner farthest-side|at-bottom at-bottom-left at-bottom-right at-center at-left at-left-bottom at-left-top at-right at-right-bottom at-right-top at-top at-top-left at-top-right|dvh fit full lh lvh max min none px screen svh|dvw fit full lvw max min none px screen svw|auto dvh dvw fit full lvh lvw max min none prose px svh svw|auto dvh dvw fit full lh lvh lvw max min none px screen svh svw|auto dvh dvw fit full lvh lvw max min none px screen svh svw|contain cover fill none scale-down|first last none|distant dramatic midrange near none normal|inset|full none|3d|auto smooth|gutter-auto gutter-both gutter-stable|auto none thin|auto dvh dvw fit full lvh lvw max min px svh svw|base|center end justify left right start|clip ellipsis|balance nowrap pretty wrap|normal tight tighter wide wider widest|cpu gpu none|3d flat|all colors none opacity shadow transform|discrete normal|full px|auto dvh dvw fit full lvh lvw max min px screen svh svw|auto contents scroll transform".split("|").map((s) => s.split(" "));
-var AA = DZ("0000000000000000000000000000000000000000000000000000000000000262242:6@200000006:240B428:4426046044222426220026642642462026224222824220022400000000\\00N222422242222222224062242222222422226264222422222222222222442804222422222222222222222222220<4<0204260002444020204224422");
-var AG = DZ("ɞ222222222222222222222222222222222222222222222222222222222222˓4222226>6ʮ22ʵʸʵʸʵ42ʲ2ʑ22>62144ɴɯɲɯɲ22ɩ42222ɠ2ɟ26622ɐɋ244ƸƵ222]d24242ǖǓƚ¼ȣ2263ȠȝȠ2222222Ǜ222222222222222222ƺƵ2ƶƭ2222222422222ƔƉ22222222222222222222144Şś22Śŗ222222222222222222222İ2ĩ68ĞěĞəŰ4Ę£¦ĕ822ČĉČ2ċ2222622");
-var AS = DZ("02222222222222222222222222222222222222222222222222222222222222222202021422222222CF2200GJ021KP222?B0WZ2Y10^2222K00N202QT2m0000120porsv22y|{:22p22222222QT2E000gSVI00000q2<40000@00000G000 00000000000000021K¢¡00¤0000000000000000000002§ª>=>U1¬222±2²2222»¾000¡¤2¥");
-var litAnchor = /* @__PURE__ */ new Int32Array(974);
-var litGroup = /* @__PURE__ */ new Int32Array(974);
-var litPool = /* @__PURE__ */ new Int32Array(974);
-var poolText = "";
-var poolOffsets = /* @__PURE__ */ new Int32Array(1008);
-{
-  const tailRef = /* @__PURE__ */ new Map;
-  let nextRef = 0;
-  let e = 0;
-  for (let i = 0;i < AA.length; i++)
-    for (const tail of SETS[AS[i]]) {
-      let r2 = tailRef.get(tail);
-      if (r2 === undefined) {
-        r2 = nextRef++;
-        tailRef.set(tail, r2);
-        poolOffsets[r2 * 2] = poolText.length;
-        poolOffsets[r2 * 2 + 1] = tail.length;
-        poolText += tail;
-      }
-      litAnchor[e] = AA[i];
-      litGroup[e] = AG[i];
-      litPool[e] = r2;
-      e++;
-    }
-}
-var adjGid = DZ("0b2N:222`>F@286¦2@H2D266226FB22B2>BD\\6N22222Z222");
-var adjStart = PS(U("1::2222232:222:22:22>222222:22:222132251111131114"));
-var adjTgt = DZ("24A;33N=C@H4A;33N=C@<2;363@QTQC¸ŴŽ2R2=18cƴÅŅÜÛŲǛȆ:ħ25=11D3A@216Er25;11B3?<438Cn9@7=<8192>2E121@9@EHE@9>2T25511<398216=V25511<398216=ƧNž2ĈÝ242L222290000f22500³222");
-var patGid = U("Ĳ");
-var patTgt = U("");
-var postfixLookupGroups = U("1");
-var orderSensitiveModifiers = "* ** after backdrop before details-content file first-letter first-line marker placeholder selection";
-var tables_generated_default = {
-  GROUP_COUNT,
-  customValidatorNames,
-  edgeStart,
-  labelStart,
-  labelText,
-  edgeTarget,
-  nodeGroup,
-  nodeVlist,
-  vlistPat,
-  vlistOps,
-  vlistRef,
-  vlistGroup,
-  litAnchor,
-  litGroup,
-  litPool,
-  poolOffsets,
-  poolText,
-  adjGid,
-  adjStart,
-  adjTgt,
-  patGid,
-  patTgt,
-  postfixLookupGroups,
-  orderSensitiveModifiers
-};
-
-// node_modules/cn/dist/engine.js
-var IS_JSC = "line" in /* @__PURE__ */ new Error;
-var EXTERNAL = -1;
-var DEAD = -1;
-var fnv = (str, s, e) => {
-  let h = 2166136261;
-  for (let p = s;p < e; p++)
-    h = Math.imul(h ^ str.charCodeAt(p), 16777619);
-  return h;
-};
-var spanHash = (str, s, e) => {
-  const len = e - s;
-  let h = Math.imul(len, 2654435761) ^ str.charCodeAt(s);
-  if (len > 3) {
-    const q2 = len >> 2;
-    const m = len >> 1;
-    h = Math.imul(h ^ str.charCodeAt(s + 1) << 8 ^ str.charCodeAt(s + 2) << 16 ^ str.charCodeAt(s + q2), 2246822507);
-    h = Math.imul(h ^ str.charCodeAt(s + m) << 8 ^ str.charCodeAt(s + m + q2) << 16 ^ str.charCodeAt(e - 3), 3266489909);
-    h ^= str.charCodeAt(e - 2) << 8 ^ str.charCodeAt(e - 1) << 16;
-    for (let p = s + 3, q3 = e - 4;p < s + 8 && p < q3; p++, q3--)
-      h = Math.imul(h ^ str.charCodeAt(p) ^ str.charCodeAt(q3) << 8, 16777619);
-  }
-  return h ^ h >>> 15 | 0;
-};
-var createEngine = (T2, validatorImpls, options = {}) => {
-  const { GROUP_COUNT: GROUP_COUNT2, edgeStart: edgeStart2, labelStart: labelStart2, labelText: labelText2, edgeTarget: edgeTarget2, nodeGroup: nodeGroup2, nodeVlist: nodeVlist2, vlistPat: vlistPat2, vlistOps: vlistOps2, vlistRef: vlistRef2, vlistGroup: vlistGroup2, litAnchor: litAnchor2, litGroup: litGroup2, litPool: litPool2, poolOffsets: poolOffsets2, poolText: poolText2, adjGid: adjGid2, adjStart: adjStart2, adjTgt: adjTgt2, patGid: patGid2, patTgt: patTgt2, postfixLookupGroups: postfixLookupGroups2, customValidatorNames: customValidatorNames2, orderSensitiveModifiers: orderSensitiveModifiers2 } = T2;
-  const adjRow = new Int32Array(GROUP_COUNT2).fill(-1);
-  for (let i = 0;i < adjGid2.length; i++)
-    adjRow[adjGid2[i]] = i;
-  let maxAdj = 0;
-  for (let r2 = 0;r2 + 1 < adjStart2.length; r2++) {
-    const n = adjStart2[r2 + 1] - adjStart2[r2];
-    if (n > maxAdj)
-      maxAdj = n;
-  }
-  let CLAIM_PER_TOKEN = 32;
-  while (CLAIM_PER_TOKEN < 2 * (1 + maxAdj + patGid2.length))
-    CLAIM_PER_TOKEN <<= 1;
-  const vgStart = new Int32Array(vlistRef2.length + 1);
-  for (let l = 0;l < vlistRef2.length; l++)
-    vgStart[l + 1] = vgStart[l] + vlistPat2[vlistRef2[l] + 1] - vlistPat2[vlistRef2[l]];
-  const postfixLookupSet = new Uint8Array(GROUP_COUNT2);
-  for (let i = 0;i < postfixLookupGroups2.length; i++)
-    postfixLookupSet[postfixLookupGroups2[i]] = 1;
-  const nodeCount = edgeStart2.length - 1;
-  const nodeHasLit = new Uint8Array(nodeCount);
-  let litMaxLen = 0;
-  let litNoArb = true;
-  for (let i = 0;i < litAnchor2.length; i++) {
-    nodeHasLit[litAnchor2[i]] = 1;
-    const len = poolOffsets2[litPool2[i] * 2 + 1];
-    if (len > litMaxLen)
-      litMaxLen = len;
-    const c0 = poolText2.charCodeAt(poolOffsets2[litPool2[i] * 2]);
-    if (c0 === 91 || c0 === 40)
-      litNoArb = false;
-  }
-  let LIT_SIZE = 1;
-  while (LIT_SIZE < litAnchor2.length * 2)
-    LIT_SIZE <<= 1;
-  const litTable = new Int32Array(LIT_SIZE).fill(-1);
-  for (let i = 0;i < litAnchor2.length; i++) {
-    const off = poolOffsets2[litPool2[i] * 2];
-    let idx = (fnv(poolText2, off, off + poolOffsets2[litPool2[i] * 2 + 1]) ^ Math.imul(litAnchor2[i], 2654435761) | 0) & LIT_SIZE - 1;
-    while (litTable[idx] !== -1)
-      idx = idx + 1 & LIT_SIZE - 1;
-    litTable[idx] = i;
-  }
-  const litProbe = (anchor, input, s, e) => {
-    let idx = (fnv(input, s, e) ^ Math.imul(anchor, 2654435761) | 0) & LIT_SIZE - 1;
-    const len = e - s;
-    for (;; ) {
-      const entry = litTable[idx];
-      if (entry === -1)
-        return -1;
-      if (litAnchor2[entry] === anchor && poolOffsets2[litPool2[entry] * 2 + 1] === len) {
-        const off = poolOffsets2[litPool2[entry] * 2];
-        let ok = true;
-        for (let k = 0;k < len; k++)
-          if (poolText2.charCodeAt(off + k) !== input.charCodeAt(s + k)) {
-            ok = false;
-            break;
-          }
-        if (ok)
-          return litGroup2[entry];
-      }
-      idx = idx + 1 & LIT_SIZE - 1;
-    }
-  };
-  const cacheSize = options.cacheSize ?? 8192;
-  const RAW_PREFIX = options.prefix ?? T2.prefix ?? "";
-  const FULL_PREFIX = RAW_PREFIX === "" ? "" : RAW_PREFIX + ":";
-  const FPL = FULL_PREFIX.length;
-  const vCustom = (customValidatorNames2 ?? []).map((name) => {
-    const fn = validatorImpls && validatorImpls[name];
-    if (!fn)
-      throw new Error("cn: missing validator " + name);
-    return fn;
-  });
-  const lengthUnitRegex = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/;
-  const colorFunctionRegex = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/;
-  const shadowRegex = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/;
-  const imageRegex = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/;
-  let aKind = 0;
-  let aLabelS = -1;
-  let aLabelE = -1;
-  let aValS = -1;
-  let aValE = -1;
-  const isWordCode = (c) => c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c === 95;
-  const isUniWS = (c) => /\s/.test(String.fromCharCode(c));
-  const analyzeArb = (input, s, e) => {
-    aKind = 0;
-    aLabelS = -1;
-    if (e - s < 3)
-      return;
-    const c0 = input.charCodeAt(s);
-    const cl = input.charCodeAt(e - 1);
-    if (c0 === 91 && cl === 93)
-      aKind = 1;
-    else if (c0 === 40 && cl === 41)
-      aKind = 2;
-    else
-      return;
-    aValS = s + 1;
-    aValE = e - 1;
-    let p = s + 1;
-    if (isWordCode(input.charCodeAt(p))) {
-      p++;
-      while (p < e - 1) {
-        const c = input.charCodeAt(p);
-        if (!isWordCode(c) && c !== 45)
-          break;
-        p++;
-      }
-      if (p < e - 2 && input.charCodeAt(p) === 58) {
-        aLabelS = s + 1;
-        aLabelE = p;
-        aValS = p + 1;
-      }
-    }
-  };
-  const spanEq = (input, s, e, str) => {
-    if (e - s !== str.length)
-      return false;
-    for (let i = 0;i < str.length; i++)
-      if (input.charCodeAt(s + i) !== str.charCodeAt(i))
-        return false;
-    return true;
-  };
-  const fractionRegex = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/;
-  const tshirtRegex = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/;
-  const isNumStr = (v) => !!v && !Number.isNaN(Number(v));
-  const spanIsNamedContainerQuery = (input, s, e) => {
-    if (e - s < 11 || !spanEq(input, s, s + 10, "@container"))
-      return false;
-    if (input.charCodeAt(s + 10) === 47)
-      return e - s >= 12;
-    const c11 = input.charCodeAt(s + 11);
-    return c11 === 115 && e - s >= 17 && spanEq(input, s + 10, s + 16, "-size/") || c11 === 110 && e - s >= 19 && spanEq(input, s + 10, s + 18, "-normal/");
-  };
-  const VKIND = [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2
-  ];
-  const VLABELS = "length|number|number weight|family-name|position percentage|length size bg-size|image url|shadow|length|family-name|position percentage|length size bg-size|image url|shadow|number weight".split("|").map((s) => s.split(" "));
-  const VFALL = [
-    2,
-    3,
-    1,
-    0,
-    0,
-    0,
-    4,
-    5,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    1
-  ];
-  const runValidator = (op, input, s, e) => {
-    if (op >= 10) {
-      if (op >= 25)
-        return vCustom[op - 25](input.slice(s, e));
-      const i = op - 10;
-      if (aKind !== VKIND[i])
-        return false;
-      if (aLabelS >= 0) {
-        for (const L of VLABELS[i])
-          if (spanEq(input, aLabelS, aLabelE, L))
-            return true;
-        return false;
-      }
-      switch (VFALL[i]) {
-        case 0:
-          return false;
-        case 1:
-          return true;
-        case 2: {
-          const v = input.slice(aValS, aValE);
-          return lengthUnitRegex.test(v) && !colorFunctionRegex.test(v);
-        }
-        case 3:
-          return isNumStr(input.slice(aValS, aValE));
-        case 4:
-          return imageRegex.test(input.slice(aValS, aValE));
-        default:
-          return shadowRegex.test(input.slice(aValS, aValE));
-      }
-    }
-    switch (op) {
-      case 0:
-        return true;
-      case 1:
-        return aKind === 0;
-      case 2:
-        return aKind === 1;
-      case 3:
-        return aKind === 2;
-      case 4:
-        return fractionRegex.test(input.slice(s, e));
-      case 5:
-        return isNumStr(input.slice(s, e));
-      case 6: {
-        const v = input.slice(s, e);
-        return !!v && Number.isInteger(Number(v));
-      }
-      case 7:
-        return e > s && input.charCodeAt(e - 1) === 37 && isNumStr(input.slice(s, e - 1));
-      case 8:
-        return tshirtRegex.test(input.slice(s, e));
-      default:
-        return spanIsNamedContainerQuery(input, s, e);
-    }
-  };
-  const orderSensitive = new Set(typeof orderSensitiveModifiers2 === "string" ? orderSensitiveModifiers2.split(" ") : orderSensitiveModifiers2);
-  const internSpan = (map, input, s, e, imp, make) => {
-    const h = fnv(input, s, e) ^ (imp ? 2654435769 : 0) | 0;
-    let bucket = map.get(h);
-    if (bucket !== undefined)
-      outer:
-        for (let b = 0;b < bucket.length; b++) {
-          const en2 = bucket[b];
-          if (en2.imp !== imp || en2.k.length !== e - s)
-            continue;
-          for (let i = 0;i < en2.k.length; i++)
-            if (en2.k.charCodeAt(i) !== input.charCodeAt(s + i))
-              continue outer;
-          return en2.id;
-        }
-    else
-      map.set(h, bucket = []);
-    const k = input.slice(s, e);
-    const id = make(k);
-    bucket.push({
-      k,
-      imp,
-      id
-    });
-    return id;
-  };
-  let ctxByHash = /* @__PURE__ */ new Map;
-  let ctxByCanon = /* @__PURE__ */ new Map;
-  let nextCtxId = 2;
-  const MAX_CTX = 4096;
-  const canonicalizeContext = (raw, important) => {
-    const mods = [];
-    let dB = 0, dP = 0, start = 0;
-    for (let i = 0;i < raw.length; i++) {
-      const c = raw.charCodeAt(i);
-      if (dB === 0 && dP === 0 && c === 58) {
-        mods.push(raw.slice(start, i));
-        start = i + 1;
-      } else if (c === 91)
-        dB++;
-      else if (c === 93)
-        dB--;
-      else if (c === 40)
-        dP++;
-      else if (c === 41)
-        dP--;
-    }
-    mods.push(raw.slice(start));
-    let canonical = mods[0];
-    if (mods.length > 1) {
-      const result = [];
-      let segment = [];
-      for (const mod of mods)
-        if (mod.charCodeAt(0) === 91 || orderSensitive.has(mod)) {
-          if (segment.length) {
-            result.push(...segment.sort());
-            segment = [];
-          }
-          result.push(mod);
-        } else
-          segment.push(mod);
-      if (segment.length)
-        result.push(...segment.sort());
-      canonical = result.join(":");
-    }
-    const key = important ? canonical + " !" : canonical;
-    let id = ctxByCanon.get(key);
-    if (id === undefined)
-      ctxByCanon.set(key, id = nextCtxId++);
-    return id;
-  };
-  let dynByHash = /* @__PURE__ */ new Map;
-  let nextDynId = GROUP_COUNT2;
-  const MAX_DYN = GROUP_COUNT2 + 4096;
-  const newDynId = () => nextDynId++;
-  const ID_LIMIT = 2097152;
-  const TOKEN_TABLE = 8192;
-  const memoHash = new Int32Array(TOKEN_TABLE);
-  const memoStr = new Array(TOKEN_TABLE).fill(null);
-  const memoGid = new Int32Array(TOKEN_TABLE);
-  const memoCtx = new Int32Array(TOKEN_TABLE);
-  const memoFlags = new Uint8Array(TOKEN_TABLE);
-  let memoTick = 0;
-  const memoPut = (way0, input, ts, te2, h, gid, ctxId, flags) => {
-    let slot = way0;
-    if (memoStr[way0] !== null) {
-      if (memoStr[way0 | 1] === null)
-        slot = way0 | 1;
-      else if ((memoTick++ & 3) === 0)
-        slot = way0 | memoTick >> 2 & 1;
-      else
-        return;
-    }
-    memoStr[slot] = input.slice(ts, te2);
-    memoHash[slot] = h;
-    memoGid[slot] = gid;
-    memoCtx[slot] = ctxId;
-    memoFlags[slot] = flags;
-  };
-  const memoReset = () => memoStr.fill(null);
-  let cap = 256;
-  let tokI32 = [
-    new Int32Array(cap),
-    new Int32Array(cap),
-    new Int32Array(cap),
-    new Int32Array(cap)
-  ];
-  let [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
-  let tokFlags = new Uint8Array(cap);
-  let keep = new Uint8Array(cap);
-  const growTokens = () => {
-    cap *= 2;
-    tokI32 = tokI32.map((a) => {
-      const n = new Int32Array(cap);
-      n.set(a);
-      return n;
-    });
-    [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
-    const nf = new Uint8Array(cap);
-    nf.set(tokFlags);
-    tokFlags = nf;
-    keep = new Uint8Array(cap);
-  };
-  let ckptCap = 64;
-  let ckptNode = new Int32Array(ckptCap);
-  let ckptTail = new Int32Array(ckptCap);
-  const claim0 = new Int32Array(GROUP_COUNT2);
-  let CLAIM_TABLE = 2048;
-  let claimShift = 21;
-  let claimKeys = new Float64Array(CLAIM_TABLE);
-  let claimEpochs = new Int32Array(CLAIM_TABLE);
-  let epoch = 0;
-  const claimTest = (ctx, gid) => {
-    if (ctx === 0 && gid < GROUP_COUNT2) {
-      if (claim0[gid] === epoch)
-        return 1;
-      claim0[gid] = epoch;
-      return 0;
-    }
-    const key = ctx * 2097152 + gid + 1;
-    let idx = Math.imul(key, 2654435761) >>> claimShift;
-    for (;; ) {
-      if (claimEpochs[idx] !== epoch)
-        break;
-      if (claimKeys[idx] === key)
-        return 1;
-      idx = idx + 1 & CLAIM_TABLE - 1;
-    }
-    claimKeys[idx] = key;
-    claimEpochs[idx] = epoch;
-    return 0;
-  };
-  const resolveAt = (input, bs, endPos, nodeAt, ckptAt) => {
-    if (endPos - bs >= 2 && input.charCodeAt(bs) === 91 && input.charCodeAt(endPos - 1) === 93) {
-      let colon = -1;
-      for (let p = bs + 1;p < endPos - 1; p++)
-        if (input.charCodeAt(p) === 58) {
-          colon = p;
-          break;
-        }
-      if (colon === -1 || colon === bs + 1)
-        return EXTERNAL;
-      return internSpan(dynByHash, input, bs + 1, colon, 0, newDynId);
-    }
-    if (nodeAt >= 0 && nodeGroup2[nodeAt] >= 0)
-      return nodeGroup2[nodeAt];
-    for (let k = ckptAt - 1;k >= 0; k--) {
-      const tailStart = ckptTail[k];
-      if (tailStart > endPos)
-        continue;
-      const nodeId = ckptNode[k];
-      const tlen = endPos - tailStart;
-      if (nodeHasLit[nodeId] === 1 && tlen > 0 && tlen <= litMaxLen) {
-        const c0 = input.charCodeAt(tailStart);
-        if (litNoArb === false || c0 !== 91 && c0 !== 40) {
-          const g = litProbe(nodeId, input, tailStart, endPos);
-          if (g >= 0)
-            return g;
-        }
-      }
-      const vl = nodeVlist2[nodeId];
-      if (vl < 0)
-        continue;
-      const pat = vlistRef2[vl];
-      const vs = vlistPat2[pat];
-      const ve2 = vlistPat2[pat + 1];
-      if (vs === ve2)
-        continue;
-      analyzeArb(input, tailStart, endPos);
-      const g0 = vgStart[vl] - vs;
-      for (let v = vs;v < ve2; v++)
-        if (runValidator(vlistOps2[v], input, tailStart, endPos))
-          return vlistGroup2[g0 + v];
-    }
-    return EXTERNAL;
-  };
-  const mergeClassList = (input) => {
-    const n = input.length;
-    let tokenCount = 0;
-    let totalTokenChars = 0;
-    let sawNonSpaceWS = false;
-    if (nextCtxId > MAX_CTX || ctxByHash.size > MAX_CTX) {
-      ctxByHash = /* @__PURE__ */ new Map;
-      ctxByCanon = /* @__PURE__ */ new Map;
-      nextCtxId = 2;
-      memoReset();
-    }
-    if (nextDynId > MAX_DYN) {
-      dynByHash = /* @__PURE__ */ new Map;
-      nextDynId = GROUP_COUNT2;
-      memoReset();
-    }
-    let i = 0;
-    while (i < n) {
-      let c = input.charCodeAt(i);
-      if (c === 32 || c >= 9 && c <= 13 || c >= 160 && isUniWS(c)) {
-        if (c !== 32)
-          sawNonSpaceWS = true;
-        i++;
-        continue;
-      }
-      const ts = i;
-      let th = 0;
-      while (i < n) {
-        c = input.charCodeAt(i);
-        if (c <= 32) {
-          if (c === 32)
-            break;
-          if (c >= 9 && c <= 13) {
-            sawNonSpaceWS = true;
-            break;
-          }
-        } else if (c >= 160 && isUniWS(c)) {
-          sawNonSpaceWS = true;
-          break;
-        }
-        th = Math.imul(th ^ c, 16777619);
-        i++;
-      }
-      const te2 = i;
-      const len = te2 - ts;
-      if (tokenCount === cap)
-        growTokens();
-      const t2 = tokenCount++;
-      tokStart[t2] = ts;
-      tokEnd[t2] = te2;
-      totalTokenChars += len;
-      th ^= Math.imul(len, 2654435761);
-      const h = th ^ th >>> 15 | 0;
-      const way0 = h & 8190;
-      {
-        let hitAt = -1;
-        if (memoHash[way0] === h && memoStr[way0] !== null && memoStr[way0].length === len)
-          hitAt = way0;
-        else if (memoHash[way0 | 1] === h && memoStr[way0 | 1] !== null && memoStr[way0 | 1].length === len)
-          hitAt = way0 | 1;
-        if (hitAt >= 0) {
-          const s = memoStr[hitAt];
-          let ok = true;
-          for (let k = 0;k < len; k++)
-            if (s.charCodeAt(k) !== input.charCodeAt(ts + k)) {
-              ok = false;
-              break;
-            }
-          if (ok) {
-            tokGid[t2] = memoGid[hitAt];
-            tokCtx[t2] = memoCtx[hitAt];
-            tokFlags[t2] = memoFlags[hitAt];
-            continue;
-          }
-        }
-      }
-      let pts = ts;
-      if (FPL !== 0) {
-        if (te2 - ts <= FPL || !input.startsWith(FULL_PREFIX, ts)) {
-          tokGid[t2] = EXTERNAL;
-          memoPut(way0, input, ts, te2, h, EXTERNAL, 0, 0);
-          continue;
-        }
-        pts = ts + FPL;
-      }
-      let depthB = 0, depthP = 0;
-      let lastColon = -1, lastSlash = -1;
-      for (let p = pts;p < te2; p++) {
-        const pc = input.charCodeAt(p);
-        if (depthB === 0 && depthP === 0) {
-          if (pc === 58) {
-            lastColon = p;
-            continue;
-          }
-          if (pc === 47) {
-            lastSlash = p;
-            continue;
-          }
-        }
-        if (pc === 91)
-          depthB++;
-        else if (pc === 93)
-          depthB--;
-        else if (pc === 40)
-          depthP++;
-        else if (pc === 41)
-          depthP--;
-      }
-      const modStart = lastColon >= pts ? lastColon + 1 : pts;
-      let bs = modStart;
-      let be2 = te2;
-      let important = false;
-      let prefixShift = 0;
-      if (be2 > bs && input.charCodeAt(be2 - 1) === 33) {
-        important = true;
-        be2--;
-      } else if (be2 > bs && input.charCodeAt(bs) === 33) {
-        important = true;
-        bs++;
-        prefixShift = 1;
-      }
-      let postfixEnd = -1;
-      if (lastSlash > modStart) {
-        postfixEnd = lastSlash + prefixShift;
-        if (postfixEnd >= be2)
-          postfixEnd = -1;
-      }
-      let feedStart = bs;
-      if (be2 - bs > 1 && input.charCodeAt(bs) === 45)
-        feedStart = bs + 1;
-      let node = 0;
-      let lp = 0;
-      let le = 0;
-      let pending = -1;
-      let ckptTop = 0;
-      if (nodeVlist2[0] >= 0 || nodeHasLit[0] === 1) {
-        ckptNode[0] = 0;
-        ckptTail[0] = feedStart;
-        ckptTop = 1;
-      }
-      let slashNode = DEAD;
-      let slashCkpt = 0;
-      for (let p = feedStart;p < be2; p++) {
-        if (p === postfixEnd) {
-          slashNode = lp < le ? DEAD : node;
-          slashCkpt = ckptTop;
-        }
-        if (node !== DEAD) {
-          const cc = input.charCodeAt(p);
-          let arrived = -1;
-          if (lp < le) {
-            if (labelText2.charCodeAt(lp) === cc) {
-              lp++;
-              if (lp === le)
-                arrived = node = pending;
-            } else
-              node = DEAD;
-          } else {
-            const es = edgeStart2[node];
-            const ee2 = edgeStart2[node + 1];
-            let next = DEAD;
-            for (let e = es;e < ee2; e++) {
-              const ls = labelStart2[e];
-              if (labelText2.charCodeAt(ls) === cc) {
-                if (labelStart2[e + 1] - ls === 1)
-                  arrived = next = edgeTarget2[e];
-                else {
-                  lp = ls + 1;
-                  le = labelStart2[e + 1];
-                  pending = edgeTarget2[e];
-                  next = node;
-                }
-                break;
-              }
-            }
-            node = next;
-          }
-          if (arrived >= 0 && (nodeVlist2[arrived] >= 0 || nodeHasLit[arrived] === 1) && p + 1 < be2 && input.charCodeAt(p + 1) === 45) {
-            if (ckptTop === ckptCap) {
-              ckptCap *= 2;
-              const nv = new Int32Array(ckptCap);
-              nv.set(ckptNode);
-              ckptNode = nv;
-              const nt2 = new Int32Array(ckptCap);
-              nt2.set(ckptTail);
-              ckptTail = nt2;
-            }
-            ckptNode[ckptTop] = arrived;
-            ckptTail[ckptTop] = p + 2;
-            ckptTop++;
-          }
-        }
-      }
-      if (postfixEnd === be2) {
-        slashNode = lp < le ? DEAD : node;
-        slashCkpt = ckptTop;
-      }
-      const endNode = lp < le ? DEAD : node;
-      let gid;
-      let hasPostfix = false;
-      if (postfixEnd >= 0) {
-        hasPostfix = true;
-        gid = resolveAt(input, bs, postfixEnd, slashNode, slashCkpt);
-        if (gid !== EXTERNAL && gid < GROUP_COUNT2 && postfixLookupSet[gid]) {
-          const gidFull = resolveAt(input, bs, be2, endNode, ckptTop);
-          if (gidFull !== EXTERNAL && gidFull !== gid) {
-            gid = gidFull;
-            hasPostfix = false;
-          }
-        } else if (gid === EXTERNAL) {
-          gid = resolveAt(input, bs, be2, endNode, ckptTop);
-          hasPostfix = false;
-        }
-      } else
-        gid = resolveAt(input, bs, be2, endNode, ckptTop);
-      let ctxId = 0;
-      let flags = 0;
-      if (gid === EXTERNAL)
-        tokGid[t2] = EXTERNAL;
-      else {
-        flags = hasPostfix ? 1 : 0;
-        ctxId = pts >= lastColon ? important ? 1 : 0 : internSpan(ctxByHash, input, pts, lastColon, important ? 1 : 0, (k) => canonicalizeContext(k, important));
-        tokGid[t2] = gid;
-        tokFlags[t2] = flags;
-        tokCtx[t2] = ctxId;
-      }
-      memoPut(way0, input, ts, te2, h, gid, ctxId, flags);
-    }
-    if (tokenCount === 0)
-      return "";
-    if (tokenCount === 1)
-      return tokStart[0] === 0 && tokEnd[0] === n ? input : input.slice(tokStart[0], tokEnd[0]);
-    if (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
-      while (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
-        CLAIM_TABLE <<= 1;
-        claimShift--;
-      }
-      claimKeys = new Float64Array(CLAIM_TABLE);
-      claimEpochs = new Int32Array(CLAIM_TABLE);
-    }
-    if (nextCtxId >= ID_LIMIT || nextDynId >= ID_LIMIT)
-      throw new Error("cn: too many distinct classes in one merge");
-    epoch = epoch + 1 | 0;
-    if (epoch === 0) {
-      claim0.fill(0);
-      claimEpochs.fill(0);
-      epoch = 1;
-    }
-    let didDrop = false;
-    for (let t2 = tokenCount - 1;t2 >= 0; t2--) {
-      const gid = tokGid[t2];
-      if (gid === EXTERNAL) {
-        keep[t2] = 1;
-        continue;
-      }
-      const ctxId = tokCtx[t2];
-      if (claimTest(ctxId, gid) === 1) {
-        keep[t2] = 0;
-        didDrop = true;
-        continue;
-      }
-      keep[t2] = 1;
-      if (gid < GROUP_COUNT2) {
-        const r2 = adjRow[gid];
-        if (r2 >= 0)
-          for (let k = adjStart2[r2];k < adjStart2[r2 + 1]; k++)
-            claimTest(ctxId, adjTgt2[k]);
-        if (tokFlags[t2] & 1) {
-          for (let k = 0;k < patGid2.length; k++)
-            if (patGid2[k] === gid)
-              claimTest(ctxId, patTgt2[k]);
-        }
-      }
-    }
-    if (!didDrop && !sawNonSpaceWS && n === totalTokenChars + tokenCount - 1)
-      return input;
-    let out = "";
-    let t = 0;
-    while (t < tokenCount) {
-      if (!keep[t]) {
-        t++;
-        continue;
-      }
-      const runStart = tokStart[t];
-      let runEnd = tokEnd[t];
-      let u = t + 1;
-      while (u < tokenCount && keep[u] && tokStart[u] === runEnd + 1 && input.charCodeAt(runEnd) === 32) {
-        runEnd = tokEnd[u];
-        u++;
-      }
-      if (out.length > 0)
-        out += " ";
-      out += input.slice(runStart, runEnd);
-      t = u;
-    }
-    return out;
-  };
-  const DOOR_SIZE = 16384;
-  const door = new Int32Array(DOOR_SIZE * 2);
-  let doorBase = 0;
-  let doorEpoch = 1;
-  let cache = Object.create(null);
-  let prevCache = Object.create(null);
-  let cacheMap = /* @__PURE__ */ new Map;
-  let prevCacheMap = /* @__PURE__ */ new Map;
-  let cacheCount = 0;
-  let doorMarks = 0;
-  const rotateDoor = () => {
-    doorBase ^= DOOR_SIZE;
-    doorEpoch = doorEpoch + 1 | 0;
-    doorMarks = 0;
-  };
-  const mergeCached = (input) => {
-    let merged = cache[input];
-    if (merged !== undefined)
-      return merged;
-    const hash = spanHash(input, 0, input.length);
-    const slot = (hash & 16383) + doorBase;
-    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
-    if (wasSeen) {
-      merged = prevCache[input];
-      if (merged !== undefined) {
-        cache[input] = merged;
-        return merged;
-      }
-    }
-    merged = mergeClassList(input);
-    if (wasSeen) {
-      cache[input] = merged;
-      if (++cacheCount > cacheSize) {
-        cacheCount = 0;
-        prevCache = cache;
-        cache = Object.create(null);
-        rotateDoor();
-      }
-    } else {
-      door[slot] = hash ^ doorEpoch;
-      if (++doorMarks > DOOR_SIZE)
-        rotateDoor();
-    }
-    return merged;
-  };
-  const mergeCachedMap = (input) => {
-    let merged = cacheMap.get(input);
-    if (merged !== undefined)
-      return merged;
-    const hash = spanHash(input, 0, input.length);
-    const slot = (hash & 16383) + doorBase;
-    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
-    if (wasSeen) {
-      merged = prevCacheMap.get(input);
-      if (merged !== undefined) {
-        cacheMap.set(input, merged);
-        return merged;
-      }
-    }
-    merged = mergeClassList(input);
-    if (wasSeen) {
-      cacheMap.set(input, merged);
-      if (++cacheCount > cacheSize) {
-        cacheCount = 0;
-        prevCacheMap = cacheMap;
-        cacheMap = /* @__PURE__ */ new Map;
-        rotateDoor();
-      }
-    } else {
-      door[slot] = hash ^ doorEpoch;
-      if (++doorMarks > DOOR_SIZE)
-        rotateDoor();
-    }
-    return merged;
-  };
-  const seenBefore = (input) => {
-    const hash = spanHash(input, 0, input.length);
-    const slot = (hash & 16383) + doorBase;
-    if (door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1))
-      return true;
-    door[slot] = hash ^ doorEpoch;
-    if (++doorMarks > DOOR_SIZE)
-      rotateDoor();
-    return false;
-  };
-  const mergeString = cacheSize === 0 ? mergeClassList : IS_JSC ? (input) => {
-    const merged = cacheMap.get(input);
-    return merged !== undefined ? merged : mergeCachedMap(input);
-  } : mergeCached;
-  const merge = function() {
-    return arguments.length === 1 && typeof arguments[0] === "string" ? mergeString(arguments[0]) : mergeString(twJoin.apply(null, arguments));
-  };
-  return {
-    merge,
-    mergeString,
-    seenBefore: cacheSize === 0 ? () => false : seenBefore,
-    mergeUncached: mergeClassList
-  };
-};
-var resolveValue = (v, clsxMode) => {
-  if (!v)
-    return "";
-  if (typeof v === "string")
-    return v;
-  let out = "";
-  if (typeof v.length === "number" && (clsxMode ? Array.isArray(v) : true)) {
-    const arr = v;
-    for (let i = 0;i < arr.length; i++) {
-      const item = arr[i];
-      if (!item)
-        continue;
-      const r2 = typeof item === "string" ? item : resolveValue(item, clsxMode);
-      if (r2) {
-        if (out)
-          out += " ";
-        out += r2;
-      }
-    }
-    return out;
-  }
-  if (clsxMode) {
-    if (typeof v === "number")
-      return "" + v;
-    if (typeof v === "object") {
-      for (const k in v)
-        if (v[k]) {
-          if (out)
-            out += " ";
-          out += k;
-        }
-    }
-  }
-  return out;
-};
-var joinArgs = (args, clsxMode) => {
-  let s = "";
-  for (let i = 0;i < args.length; i++) {
-    const a = args[i];
-    if (!a)
-      continue;
-    const r2 = typeof a === "string" ? a : resolveValue(a, clsxMode);
-    if (r2) {
-      if (s)
-        s += " ";
-      s += r2;
-    }
-  }
-  return s;
-};
-var twJoin = function() {
-  return joinArgs(arguments, false);
-};
-var wrapClsx = (mergeString, fresh) => {
-  const seenBefore = fresh === undefined ? () => true : fresh.seenBefore;
-  const mergeUncached = fresh === undefined ? mergeString : fresh.mergeUncached;
-  let argCache = /* @__PURE__ */ new Map;
-  let prevArgCache = /* @__PURE__ */ new Map;
-  let argCount = 0;
-  let lastHit = null;
-  const match3 = (e, v0, v1, v2) => {
-    let k = 0;
-    if (v0) {
-      if (v0 !== e.a0)
-        return false;
-      k = 1;
-    }
-    if (v1) {
-      if (v1 !== (k === 0 ? e.a0 : e.a1))
-        return false;
-      k++;
-    }
-    if (v2) {
-      if (v2 !== (k === 0 ? e.a0 : k === 1 ? e.a1 : e.a2))
-        return false;
-      k++;
-    }
-    return k === e.t;
-  };
-  const matchN = (e, vals) => {
-    const ea = e.a;
-    let k = 0;
-    for (let i = 0;i < vals.length; i++) {
-      const v = vals[i];
-      if (!v)
-        continue;
-      if (v !== ea[k])
-        return false;
-      k++;
-    }
-    return k === e.t;
-  };
-  const resolveArgs = (vals, probed) => {
-    const nArgs = vals.length;
-    const pred = lastHit === null ? null : lastHit.n;
-    if (!probed) {
-      if (pred !== null && matchN(pred, vals)) {
-        lastHit = pred;
-        return pred.r;
-      }
-      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
-        return lastHit.r;
-    }
-    let first = "";
-    let firstIdx = -1;
-    let truthy = 0;
-    let hasResolvedValue = false;
-    for (let i = 0;i < nArgs; i++) {
-      let v = vals[i];
-      if (!v)
-        continue;
-      if (typeof v !== "string") {
-        v = vals[i] = resolveValue(v, true);
-        if (!v)
-          continue;
-        hasResolvedValue = true;
-      }
-      if (firstIdx < 0) {
-        first = v;
-        firstIdx = i;
-      }
-      truthy++;
-    }
-    if (truthy === 0)
-      return "";
-    if (truthy === 1)
-      return mergeString(first);
-    if (hasResolvedValue) {
-      if (pred !== null && matchN(pred, vals)) {
-        lastHit = pred;
-        return pred.r;
-      }
-      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
-        return lastHit.r;
-    }
-    let bucket = argCache.get(first);
-    if (bucket === undefined) {
-      bucket = prevArgCache.get(first);
-      if (bucket !== undefined)
-        argCache.set(first, bucket);
-    }
-    let hit = null;
-    if (bucket !== undefined)
-      outer:
-        for (let b = 0;b < bucket.length; b++) {
-          const e = bucket[b];
-          if (e.t !== truthy)
-            continue;
-          const ea = e.a;
-          let k = 1;
-          for (let i = firstIdx + 1;i < nArgs; i++) {
-            const v = vals[i];
-            if (v && v !== ea[k++])
-              continue outer;
-          }
-          hit = e;
-          break;
-        }
-    if (hit === null) {
-      let joined = first;
-      const a = [first];
-      for (let i = firstIdx + 1;i < nArgs; i++) {
-        const v = vals[i];
-        if (!v)
-          continue;
-        joined += " " + v;
-        a.push(v);
-      }
-      if (!seenBefore(joined))
-        return mergeUncached(joined);
-      hit = {
-        r: mergeString(joined),
-        t: a.length,
-        a0: a[0],
-        a1: a[1],
-        a2: a[2] ?? "",
-        a,
-        n: null
-      };
-      if (bucket === undefined)
-        argCache.set(first, bucket = []);
-      if (bucket.length >= 256)
-        bucket.shift();
-      bucket.push(hit);
-      if (++argCount > 1000) {
-        argCount = 0;
-        prevArgCache = argCache;
-        argCache = /* @__PURE__ */ new Map;
-      }
-    }
-    if (lastHit !== null && lastHit !== hit)
-      lastHit.n = hit;
-    lastHit = hit;
-    return hit.r;
-  };
-  const mergeSingleValue = (value) => Array.isArray(value) ? resolveArgs(value.slice(), false) : mergeString(resolveValue(value, true));
-  return function(v0, v1, v2) {
-    const nArgs = arguments.length;
-    if ((nArgs | 1) === 3) {
-      const lh2 = lastHit;
-      if (lh2 !== null) {
-        const pred = lh2.n;
-        if (pred !== null && match3(pred, v0, v1, v2)) {
-          lastHit = pred;
-          return pred.r;
-        }
-        if (lh2 !== pred && match3(lh2, v0, v1, v2))
-          return lh2.r;
-      }
-      return resolveArgs([
-        v0,
-        v1,
-        v2
-      ], true);
-    }
-    if (nArgs === 1)
-      return typeof v0 === "string" ? mergeString(v0) : mergeSingleValue(v0);
-    const lh = lastHit;
-    if (lh !== null) {
-      const pred = lh.n;
-      if (pred !== null) {
-        const pa = pred.a;
-        let k = 0;
-        let ok = true;
-        for (let i = 0;i < nArgs; i++) {
-          const v = arguments[i];
-          if (!v)
-            continue;
-          if (v !== pa[k]) {
-            ok = false;
-            break;
-          }
-          k++;
-        }
-        if (ok && k === pred.t) {
-          lastHit = pred;
-          return pred.r;
-        }
-      }
-      if (lh !== pred) {
-        const la = lh.a;
-        let k = 0;
-        let ok = true;
-        for (let i = 0;i < nArgs; i++) {
-          const v = arguments[i];
-          if (!v)
-            continue;
-          if (v !== la[k]) {
-            ok = false;
-            break;
-          }
-          k++;
-        }
-        if (ok && k === lh.t)
-          return lh.r;
-      }
-    }
-    const vals = [];
-    for (let i = 0;i < nArgs; i++)
-      vals.push(arguments[i]);
-    return resolveArgs(vals, true);
-  };
-};
-
-// node_modules/cn/dist/index.js
-var instance = /* @__PURE__ */ createEngine(tables_generated_default);
-var cn = /* @__PURE__ */ wrapClsx(instance.mergeString, instance);
-var twMerge = instance.merge;
 
 // src/scriptorium/surface/ui/button.tsx
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
@@ -61052,6 +61065,21 @@ var markdownHighlighting = [markdownMode, syntaxHighlighting(scriptoriumHighligh
 // src/scriptorium/surface/components/DocumentView.tsx
 var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 var remote = Annotation.define();
+var setNotes = StateEffect.define();
+var noteMark = Decoration.mark({ class: "cm-note" });
+var guessMark = Decoration.mark({ class: "cm-note cm-note-guess" });
+var noteField = StateField.define({
+  create: () => Decoration.none,
+  update(marks2, tr) {
+    for (const e of tr.effects)
+      if (e.is(setNotes)) {
+        const placed = e.value.filter((n) => n.from !== null && n.to !== null && n.from < n.to).sort((a2, b) => a2.from - b.from).map((n) => (n.how === "nearest" ? guessMark : noteMark).range(n.from, n.to));
+        return Decoration.set(placed, true);
+      }
+    return marks2.map(tr.changes);
+  },
+  provide: (f) => EditorView.decorations.from(f)
+});
 var EDIT_DEBOUNCE_MS = 250;
 var scriptoriumTheme = EditorView.theme({
   "&": {
@@ -61075,6 +61103,11 @@ var scriptoriumTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-rubric) 28%, transparent)"
   },
   ".cm-activeLine": { backgroundColor: "transparent" },
+  ".cm-note": {
+    backgroundColor: "color-mix(in srgb, var(--color-attention) 22%, transparent)",
+    borderBottom: "1px solid color-mix(in srgb, var(--color-attention) 55%, transparent)"
+  },
+  ".cm-note-guess": { borderBottomStyle: "dashed" },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" }
 });
 function minimalChange(a2, b) {
@@ -61096,17 +61129,22 @@ function DocumentView({
   docKey,
   text,
   editable: editable2 = false,
+  notes,
   onChange,
-  onSave
+  onSave,
+  onSelect,
+  reveal
 }) {
   const host = import_react19.useRef(null);
   const view = import_react19.useRef(null);
   const initial3 = import_react19.useRef(text);
   initial3.current = text;
-  const handlers2 = import_react19.useRef({ onChange, onSave });
-  handlers2.current = { onChange, onSave };
+  const handlers2 = import_react19.useRef({ onChange, onSave, onSelect });
+  handlers2.current = { onChange, onSave, onSelect };
   const pending = import_react19.useRef(null);
   const lastRemote = import_react19.useRef(text);
+  const notesRef = import_react19.useRef(notes);
+  notesRef.current = notes;
   import_react19.useEffect(() => {
     if (!host.current)
       return;
@@ -61129,7 +61167,14 @@ function DocumentView({
     };
     const extensions = [
       EditorView.lineWrapping,
+      noteField,
       markdownHighlighting,
+      EditorView.updateListener.of((update3) => {
+        if (!update3.selectionSet)
+          return;
+        const { from, to } = update3.state.selection.main;
+        handlers2.current.onSelect?.(from, to);
+      }),
       scriptoriumTheme,
       EditorState.readOnly.of(!editable2),
       EditorView.editable.of(editable2)
@@ -61164,12 +61209,31 @@ function DocumentView({
       state: EditorState.create({ doc: initial3.current, extensions })
     });
     view.current = v;
+    v.dispatch({ effects: setNotes.of(notesRef.current ?? []) });
     return () => {
       flush();
       v.destroy();
       view.current = null;
     };
   }, [docKey, editable2]);
+  import_react19.useEffect(() => {
+    const v = view.current;
+    if (!v || !reveal)
+      return;
+    const end = Math.min(reveal.to, v.state.doc.length);
+    const start = Math.min(reveal.from, end);
+    v.dispatch({
+      selection: { anchor: start, head: end },
+      effects: EditorView.scrollIntoView(start, { y: "center" })
+    });
+    v.focus();
+  }, [reveal]);
+  import_react19.useEffect(() => {
+    const v = view.current;
+    if (!v)
+      return;
+    v.dispatch({ effects: setNotes.of(notes ?? []) });
+  }, [notes]);
   import_react19.useEffect(() => {
     const v = view.current;
     if (!v)
@@ -68400,6 +68464,8 @@ function DocumentPane({
   onNewVersion,
   onDeleteVersion,
   onRevealVersion,
+  onSelect,
+  reveal,
   splitLayout,
   onEdit,
   onSave,
@@ -68603,8 +68669,11 @@ function DocumentPane({
         docKey: doc2.slug,
         text: shown,
         editable: true,
+        notes: doc2.notes,
         onChange: onEdit,
-        onSave
+        onSave,
+        onSelect,
+        reveal
       }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MarkdownView, {
         text: shown,
         meta: doc2.meta,
@@ -68624,8 +68693,11 @@ function DocumentPane({
               docKey: doc2.slug,
               text: shown,
               editable: true,
+              notes: doc2.notes,
               onChange: onEdit,
-              onSave
+              onSave,
+              onSelect,
+              reveal
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizableHandle, {
@@ -68663,27 +68735,222 @@ function DocumentPane({
   }, undefined, true, undefined, this);
 }
 
-// src/scriptorium/surface/components/Toasts.tsx
+// src/scriptorium/surface/components/NotesPanel.tsx
 var import_react25 = __toESM(require_react(), 1);
 var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var UNCERTAIN = {
+  nearest: {
+    label: "moved?",
+    title: "This text appears more than once and its surroundings changed. This is the closest match — it may be the wrong one."
+  },
+  orphaned: {
+    label: "text gone",
+    title: "The text this note was made on is no longer in this version."
+  }
+};
+function Note({
+  note,
+  onGoTo,
+  onResolve,
+  onRemove
+}) {
+  const uncertain = UNCERTAIN[note.how];
+  const anchored = note.from !== null;
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+    className: cn("group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs", note.resolved && "opacity-60"),
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "flex items-start gap-1.5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+            type: "button",
+            onClick: () => onGoTo(note),
+            disabled: !anchored,
+            title: anchored ? "Show this in the document" : "This note has no place in the text",
+            className: cn("min-w-0 flex-1 truncate text-left font-mono text-[11px] text-ink-dim", anchored && "hover:text-ink hover:underline", !anchored && "cursor-default line-through"),
+            children: note.quote.replace(/\s+/gu, " ").trim() || "—"
+          }, undefined, false, undefined, this),
+          uncertain && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            title: uncertain.title,
+            className: "shrink-0 rounded-sm bg-attention/15 px-1 text-[10px] text-attention",
+            children: uncertain.label
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+        className: "mt-1 whitespace-pre-wrap text-ink",
+        children: note.body
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "mt-1 flex items-center gap-1 text-[10px] text-ink-faint",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            children: note.who === "agent" ? "Agent" : "You"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            children: "·"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            children: [
+              "v",
+              note.version
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            className: "ml-auto flex items-center gap-0.5 opacity-0 group-hover/note:opacity-100 focus-within:opacity-100",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+                type: "button",
+                onClick: () => onResolve(note.id, !note.resolved),
+                title: note.resolved ? "Put this note back" : "Mark this note dealt with",
+                "aria-label": note.resolved ? "Reopen note" : "Resolve note",
+                className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-ink",
+                children: note.resolved ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(UndoDot, {
+                  "aria-hidden": true,
+                  className: "size-3"
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Check, {
+                  "aria-hidden": true,
+                  className: "size-3"
+                }, undefined, false, undefined, this)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+                type: "button",
+                onClick: () => onRemove(note.id),
+                title: "Delete this note",
+                "aria-label": "Delete note",
+                className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-danger",
+                children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Trash2, {
+                  "aria-hidden": true,
+                  className: "size-3"
+                }, undefined, false, undefined, this)
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function NotesPanel({
+  notes,
+  selection,
+  onAdd,
+  onGoTo,
+  onResolve,
+  onRemove
+}) {
+  const [body, setBody] = import_react25.useState("");
+  const [showResolved, setShowResolved] = import_react25.useState(false);
+  const open3 = notes.filter((n) => !n.resolved);
+  const resolved = notes.filter((n) => n.resolved);
+  const shown = showResolved ? notes : open3;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!selection || !body.trim())
+      return;
+    onAdd(selection.from, selection.to, body);
+    setBody("");
+  };
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+    className: "flex min-h-0 flex-1 flex-col",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "min-h-0 flex-1 overflow-auto p-3",
+        children: [
+          shown.length === 0 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            className: "px-1 py-6 text-center text-xs text-ink-faint",
+            children: "Select some text in the document and write a note about it."
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+            className: "flex flex-col gap-2",
+            children: shown.map((n) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Note, {
+              note: n,
+              onGoTo,
+              onResolve,
+              onRemove
+            }, n.id, false, undefined, this))
+          }, undefined, false, undefined, this),
+          resolved.length > 0 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+            type: "button",
+            onClick: () => setShowResolved((v) => !v),
+            className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink",
+            children: [
+              showResolved ? "Hide" : "Show",
+              " ",
+              resolved.length,
+              " resolved"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("form", {
+        onSubmit: submit,
+        className: "shrink-0 border-t border-edge p-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            className: "mb-1 truncate font-mono text-[11px] text-ink-faint",
+            children: selection ? selection.text.replace(/\s+/gu, " ").trim() : "No selection"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("textarea", {
+            value: body,
+            onChange: (e) => setBody(e.target.value),
+            disabled: !selection,
+            placeholder: selection ? "What about it?" : "Select text in the document first",
+            rows: 2,
+            className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none", "disabled:cursor-not-allowed disabled:opacity-60"),
+            onKeyDown: (e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                submit(e);
+            }
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+            className: "mt-1 flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+                className: "text-[10px] text-ink-faint",
+                children: "⌘↩ to add"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button3, {
+                type: "submit",
+                size: "sm",
+                disabled: !selection || !body.trim(),
+                className: "ml-auto h-6 px-2 text-xs",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MessageSquarePlus, {
+                    "aria-hidden": true,
+                    className: "size-3"
+                  }, undefined, false, undefined, this),
+                  "Add note"
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/scriptorium/surface/components/Toasts.tsx
+var import_react26 = __toESM(require_react(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 var TOAST_MS = 6000;
 function useToasts() {
-  const [toasts, setToasts] = import_react25.useState([]);
-  const next = import_react25.useRef(1);
-  const timers = import_react25.useRef(new Map);
-  const dismiss = import_react25.useCallback((id) => {
+  const [toasts, setToasts] = import_react26.useState([]);
+  const next = import_react26.useRef(1);
+  const timers = import_react26.useRef(new Map);
+  const dismiss = import_react26.useCallback((id) => {
     const timer2 = timers.current.get(id);
     if (timer2)
       clearTimeout(timer2);
     timers.current.delete(id);
     setToasts((prev) => prev.filter((t2) => t2.id !== id));
   }, []);
-  const announce = import_react25.useCallback((title, description) => {
+  const announce = import_react26.useCallback((title, description) => {
     const id = next.current++;
     setToasts((prev) => [...prev, { id, title, ...description ? { description } : {} }]);
     timers.current.set(id, setTimeout(() => dismiss(id), TOAST_MS));
   }, [dismiss]);
-  import_react25.useEffect(() => {
+  import_react26.useEffect(() => {
     const pending = timers.current;
     return () => {
       for (const timer2 of pending.values())
@@ -68699,32 +68966,32 @@ function Toasts({
 }) {
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
     role: "status",
     "aria-live": "polite",
     className: "pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2",
-    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
       className: cn("pointer-events-auto flex items-start gap-2 rounded-md border border-edge", "bg-surface-raised px-3 py-2 text-sm text-ink shadow-lg"),
       children: [
-        /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "min-w-0 flex-1",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
               className: "font-medium",
               children: t2.title
             }, undefined, false, undefined, this),
-            t2.description && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            t2.description && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
               className: "mt-0.5 text-xs text-ink-dim",
               children: t2.description
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
           type: "button",
           onClick: () => onDismiss(t2.id),
           "aria-label": "Dismiss",
           className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-          children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(X, {
+          children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(X, {
             "aria-hidden": true,
             className: "size-3.5"
           }, undefined, false, undefined, this)
@@ -68761,21 +69028,21 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react26 = __toESM(require_react(), 1);
+var import_react27 = __toESM(require_react(), 1);
 var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
-  const [state, setState] = import_react26.useState(null);
-  const [connection, setConnection] = import_react26.useState("connecting");
-  const [lastError, setLastError] = import_react26.useState(null);
-  const [texts, setTexts] = import_react26.useState(() => new Map);
-  const [done, setDone] = import_react26.useState(null);
-  const [diff, setDiff] = import_react26.useState(null);
-  const wsRef = import_react26.useRef(null);
-  const pending = import_react26.useRef(new Map);
-  const plans = import_react26.useRef(new Map);
-  const maps = import_react26.useRef(new Map);
-  const suggestions = import_react26.useRef(new Map);
-  import_react26.useEffect(() => {
+  const [state, setState] = import_react27.useState(null);
+  const [connection, setConnection] = import_react27.useState("connecting");
+  const [lastError, setLastError] = import_react27.useState(null);
+  const [texts, setTexts] = import_react27.useState(() => new Map);
+  const [done, setDone] = import_react27.useState(null);
+  const [diff, setDiff] = import_react27.useState(null);
+  const wsRef = import_react27.useRef(null);
+  const pending = import_react27.useRef(new Map);
+  const plans = import_react27.useRef(new Map);
+  const maps = import_react27.useRef(new Map);
+  const suggestions = import_react27.useRef(new Map);
+  import_react27.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer2;
@@ -68872,12 +69139,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react26.useCallback((msg) => {
+  const send = import_react27.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react26.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react27.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -68891,7 +69158,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react26.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react27.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -68906,7 +69173,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react26.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react27.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -68920,7 +69187,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const suggestMeta = import_react26.useCallback((path2) => new Promise((resolve) => {
+  const suggestMeta = import_react27.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -68934,7 +69201,7 @@ function useDaemon() {
     suggestions.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
   }), []);
-  const noteText = import_react26.useCallback((doc2, version3, text4) => {
+  const noteText = import_react27.useCallback((doc2, version3, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version3);
       if (prev.get(key) === text4)
@@ -68944,7 +69211,7 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react26.useCallback(() => setLastError(null), []);
+  const clearError = import_react27.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
@@ -68963,7 +69230,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -68975,7 +69242,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -68984,9 +69251,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react27.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react28.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react27.useEffect(() => {
+  import_react28.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -68998,41 +69265,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -69056,9 +69323,9 @@ function Workspace({
     clearError,
     done
   } = daemon;
-  const prefsRef = import_react27.useRef(state.prefs);
+  const prefsRef = import_react28.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react27.useMemo(() => ({
+  const storage = import_react28.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -69070,13 +69337,17 @@ function Workspace({
   });
   const saved = state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const [against, setAgainst] = import_react27.useState("original");
+  const [against, setAgainst] = import_react28.useState("original");
   const { toasts, announce, dismiss } = useToasts();
+  const [selection, setSelection] = import_react28.useState(null);
+  const [rightPane, setRightPane] = import_react28.useState("conversation");
+  const [reveal, setReveal] = import_react28.useState(null);
   const open3 = state.docs.find((d) => d.slug === state.openDoc) ?? null;
+  const openNotes = (open3?.notes ?? []).filter((n) => !n.resolved);
   const activeDoc = open3?.entryId && open3.rel !== null ? { entryId: open3.entryId, rel: open3.rel } : null;
   const text4 = open3 ? texts.get(textKey(open3.slug, open3.active)) : undefined;
-  const asked = import_react27.useRef(new Set);
-  import_react27.useEffect(() => {
+  const asked = import_react28.useRef(new Set);
+  import_react28.useEffect(() => {
     if (!open3 || text4 !== undefined)
       return;
     const key = textKey(open3.slug, open3.active);
@@ -69085,7 +69356,7 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open3.slug, version: open3.active });
   }, [open3, text4, send]);
-  import_react27.useEffect(() => {
+  import_react28.useEffect(() => {
     if (mode !== "compare" || !open3)
       return;
     if (against === open3.active || typeof against === "number" && !open3.versions.some((v) => v.n === against)) {
@@ -69094,9 +69365,9 @@ function Workspace({
     }
     send({ type: "diff", doc: open3.slug, against });
   }, [mode, open3, against, text4, send]);
-  const openRef = import_react27.useRef(open3);
+  const openRef = import_react28.useRef(open3);
   openRef.current = open3;
-  import_react27.useEffect(() => {
+  import_react28.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -69108,38 +69379,38 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react27.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react28.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react27.useEffect(() => {
+  import_react28.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(jsx_dev_runtime24.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(jsx_dev_runtime25.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ActiveVersionToast, {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ActiveVersionToast, {
         doc: open3,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Toasts, {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Toasts, {
         toasts,
         onDismiss: dismiss
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizablePanelGroup, {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: layout2.defaultLayout,
         onLayoutChanged: layout2.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
             id: "context",
             defaultSize: "22",
             minSize: "12",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(PaneHeading, {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(PaneHeading, {
                 children: "Context"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextSidebar, {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ContextSidebar, {
                 entries: state.context,
                 activeDoc,
                 userHome: state.userHome,
@@ -69160,15 +69431,15 @@ function Workspace({
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
             id: "document",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col bg-bg",
-            children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(DocumentPane, {
+            children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DocumentPane, {
               doc: open3,
               text: text4,
               mode,
@@ -69200,6 +69471,8 @@ function Workspace({
                 if (open3)
                   send({ type: "reveal.version", doc: open3.slug, version: version3 });
               },
+              onSelect: (from, to) => setSelection(from === to ? null : { from, to }),
+              reveal,
               splitLayout,
               onAddFrontmatter: async () => {
                 if (!open3)
@@ -69225,35 +69498,61 @@ function Workspace({
               onRevert: () => open3 && send({ type: "revert", doc: open3.slug })
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
             id: "chat",
             defaultSize: "28",
             minSize: "15",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(PaneHeading, {
-                children: "Conversation"
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+                className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
+                children: ["conversation", "notes"].map((which) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("button", {
+                  type: "button",
+                  onClick: () => setRightPane(which),
+                  "aria-pressed": rightPane === which,
+                  className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
+                  children: which === "notes" && openNotes.length > 0 ? `Notes ${openNotes.length}` : which
+                }, which, false, undefined, this))
               }, undefined, false, undefined, this),
-              state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Empty, {
+              rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(NotesPanel, {
+                notes: open3?.notes ?? [],
+                selection: open3 && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
+                onAdd: (from, to, body) => {
+                  if (open3)
+                    send({ type: "note.add", doc: open3.slug, from, to, body });
+                },
+                onGoTo: (n) => {
+                  if (n.from !== null)
+                    setReveal({ from: n.from, to: n.to, seq: Date.now() });
+                },
+                onResolve: (id, resolved) => {
+                  if (open3)
+                    send({ type: "note.resolve", doc: open3.slug, id, resolved });
+                },
+                onRemove: (id) => {
+                  if (open3)
+                    send({ type: "note.remove", doc: open3.slug, id });
+                }
+              }, undefined, false, undefined, this) : state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Empty, {
                 className: "h-full",
-                children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(EmptyHeader, {
+                children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyHeader, {
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(EmptyMedia, {
+                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyMedia, {
                       variant: "icon",
-                      children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                      children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(EmptyTitle, {
+                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyTitle, {
                       children: "No messages yet"
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(EmptyDescription, {
+                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyDescription, {
                       children: "The conversation with the agent lives here."
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this)
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ActivityLog, {
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ActivityLog, {
                 chat: state.chat
               }, undefined, false, undefined, this)
             ]
@@ -69264,28 +69563,28 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react27.useRef(null);
+  const end = import_react28.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react27.useEffect(() => {
+  import_react28.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m2.text
         ]
       }, m2.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -69293,7 +69592,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime25.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime26.jsxDEV(App, {}, undefined, false, undefined, this));

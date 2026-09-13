@@ -20,13 +20,52 @@
 // Markdown highlighting is in `markdownMode.ts`, which also records why it is
 // hand-written rather than `@codemirror/lang-markdown` (E20's open question).
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { Annotation, EditorState, type Extension } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import {
+  Annotation,
+  EditorState,
+  type Extension,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
+import { Decoration, type DecorationSet, EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
+import type { PlacedNote } from "../../backend/protocol";
 import { markdownHighlighting } from "./markdownMode";
 
 /** A change that came FROM the daemon, so the listener does not send it back. */
 const remote = Annotation.define<boolean>();
+
+// ── notes, drawn over the text (E45) ─────────────────────────────────────────
+//
+// ⛔ THE DAEMON DECIDES WHERE A NOTE IS, not this view. The ranges arrive
+// already placed (`anchors.ts` re-finds each note's quote on every snapshot),
+// so the editor's only job is to paint them. A decoration computed here from a
+// stored offset would be the stale-offset bug the anchoring exists to avoid.
+const setNotes = StateEffect.define<PlacedNote[]>();
+
+/** `nearest` is a guess, and is drawn as one — dashed rather than solid. */
+const noteMark = Decoration.mark({ class: "cm-note" });
+const guessMark = Decoration.mark({ class: "cm-note cm-note-guess" });
+
+const noteField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(marks, tr) {
+    for (const e of tr.effects)
+      if (e.is(setNotes)) {
+        const placed = e.value
+          .filter((n) => n.from !== null && n.to !== null && n.from < n.to)
+          .sort((a, b) => (a.from as number) - (b.from as number))
+          .map((n) =>
+            (n.how === "nearest" ? guessMark : noteMark).range(n.from as number, n.to as number),
+          );
+        return Decoration.set(placed, true);
+      }
+    // Between snapshots the text moves under the marks; mapping keeps them on
+    // the words they were on until the daemon's next placement arrives.
+    return marks.map(tr.changes);
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
 
 /** How long typing settles before the buffer is sent (one daemon write per message). */
 export const EDIT_DEBOUNCE_MS = 250;
@@ -58,6 +97,11 @@ const scriptoriumTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-rubric) 28%, transparent)",
   },
   ".cm-activeLine": { backgroundColor: "transparent" },
+  ".cm-note": {
+    backgroundColor: "color-mix(in srgb, var(--color-attention) 22%, transparent)",
+    borderBottom: "1px solid color-mix(in srgb, var(--color-attention) 55%, transparent)",
+  },
+  ".cm-note-guess": { borderBottomStyle: "dashed" },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" },
 });
 
@@ -83,8 +127,11 @@ export function DocumentView({
   docKey,
   text,
   editable = false,
+  notes,
   onChange,
   onSave,
+  onSelect,
+  reveal,
 }: {
   docKey: string;
   text: string;
@@ -94,17 +141,26 @@ export function DocumentView({
   onChange?: (text: string) => void;
   /** ⌘S / Ctrl-S: the one act that writes the original (E7). */
   onSave?: () => void;
+  /** Notes, already PLACED by the daemon (E45). */
+  notes?: PlacedNote[];
+  /** The selection, so something outside can offer to note it. */
+  onSelect?: (from: number, to: number) => void;
+  /** Ask the editor to show a range — `seq` makes the same range askable twice. */
+  reveal?: { from: number; to: number; seq: number } | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initial = useRef(text);
   initial.current = text;
   // The handlers change identity every render; the extensions must not.
-  const handlers = useRef({ onChange, onSave });
-  handlers.current = { onChange, onSave };
+  const handlers = useRef({ onChange, onSave, onSelect });
+  handlers.current = { onChange, onSave, onSelect };
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** The last text the DAEMON gave us — see the remote effect below. */
   const lastRemote = useRef(text);
+  // Read at mount so a remount (a version change) repaints its notes at once.
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
 
   // One view per document, rebuilt when the document or its editability changes.
   useEffect(() => {
@@ -126,7 +182,13 @@ export function DocumentView({
     };
     const extensions: Extension[] = [
       EditorView.lineWrapping,
+      noteField,
       markdownHighlighting,
+      EditorView.updateListener.of((update) => {
+        if (!update.selectionSet) return;
+        const { from, to } = update.state.selection.main;
+        handlers.current.onSelect?.(from, to);
+      }),
       scriptoriumTheme,
       EditorState.readOnly.of(!editable),
       EditorView.editable.of(editable),
@@ -167,12 +229,34 @@ export function DocumentView({
       state: EditorState.create({ doc: initial.current, extensions }),
     });
     view.current = v;
+    v.dispatch({ effects: setNotes.of(notesRef.current ?? []) });
     return () => {
       flush();
       v.destroy();
       view.current = null;
     };
   }, [docKey, editable]);
+
+  // Clicking a note's quote brings it into view and selects it — `seq` is what
+  // lets the same note be asked for twice in a row.
+  useEffect(() => {
+    const v = view.current;
+    if (!v || !reveal) return;
+    const end = Math.min(reveal.to, v.state.doc.length);
+    const start = Math.min(reveal.from, end);
+    v.dispatch({
+      selection: { anchor: start, head: end },
+      effects: EditorView.scrollIntoView(start, { y: "center" }),
+    });
+    v.focus();
+  }, [reveal]);
+
+  // Notes arrive already placed; push them in whenever the daemon re-places them.
+  useEffect(() => {
+    const v = view.current;
+    if (!v) return;
+    v.dispatch({ effects: setNotes.of(notes ?? []) });
+  }, [notes]);
 
   // The text changed UNDER us (a version made active, the original reloaded).
   useEffect(() => {

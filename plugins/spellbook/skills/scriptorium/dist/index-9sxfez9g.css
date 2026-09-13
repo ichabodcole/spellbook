@@ -552,6 +552,10 @@
     margin-top: calc(var(--spacing) * 1);
   }
 
+  .mt-2 {
+    margin-top: calc(var(--spacing) * 2);
+  }
+
   .mr-1\.5 {
     margin-right: calc(var(--spacing) * 1.5);
   }
@@ -853,6 +857,10 @@
 
   .cursor-pointer {
     cursor: pointer;
+  }
+
+  .resize-none {
+    resize: none;
   }
 
   .grid-cols-2 {
@@ -1470,6 +1478,10 @@
     padding-block: calc(var(--spacing) * 4);
   }
 
+  .py-6 {
+    padding-block: calc(var(--spacing) * 6);
+  }
+
   .py-px {
     padding-block-start: 1px;
     padding-block-end: 1px;
@@ -1758,6 +1770,14 @@
     accent-color: var(--color-rubric);
   }
 
+  .opacity-0 {
+    opacity: 0;
+  }
+
+  .opacity-60 {
+    opacity: .6;
+  }
+
   .shadow-2xl {
     --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, #00000040);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1900,6 +1920,12 @@
     --tw-ring-inset: inset;
   }
 
+  @media (hover: hover) {
+    .group-hover\/note\:opacity-100:is(:where(.group\/note):hover *) {
+      opacity: 1;
+    }
+  }
+
   .group-focus\/context-menu-item\:text-accent-foreground:is(:where(.group\/context-menu-item):focus *) {
     color: var(--color-accent-foreground);
   }
@@ -1970,6 +1996,10 @@
     color: var(--color-foreground);
   }
 
+  .placeholder\:text-ink-faint::placeholder {
+    color: var(--color-ink-faint);
+  }
+
   .placeholder\:text-muted-foreground::placeholder {
     color: var(--color-muted-foreground);
   }
@@ -1998,6 +2028,10 @@
     content: var(--tw-content);
     --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
     translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+
+  .focus-within\:opacity-100:focus-within {
+    opacity: 1;
   }
 
   @media (hover: hover) {
@@ -2215,6 +2249,11 @@
     }
   }
 
+  .focus-visible\:outline-none:focus-visible {
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
   .focus-visible\:ring-inset:focus-visible {
     --tw-ring-inset: inset;
   }
@@ -2248,6 +2287,10 @@
 
   .disabled\:opacity-50:disabled {
     opacity: .5;
+  }
+
+  .disabled\:opacity-60:disabled {
+    opacity: .6;
   }
 
   @media (hover: hover) {
