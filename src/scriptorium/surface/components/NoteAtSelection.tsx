@@ -11,7 +11,7 @@
 // when you right-click near the bottom edge is worse than a centred dialog, so
 // the position is measured against the viewport rather than trusted.
 import { cn } from "cn";
-import { MessageSquarePlusIcon, MessagesSquareIcon } from "lucide-react";
+import { MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 
@@ -35,6 +35,7 @@ export function NoteAtSelection({
   onClose,
   onAdd,
   onShowNote,
+  onDeleteNote,
 }: {
   at: At | null;
   /** The selected text, shown so the note is never written about the wrong passage. */
@@ -44,6 +45,7 @@ export function NoteAtSelection({
   onClose: () => void;
   onAdd: (from: number, to: number, body: string) => void;
   onShowNote: (id: string) => void;
+  onDeleteNote: (id: string) => void;
 }) {
   // Two steps on purpose: the MENU is where other acts on a passage will go
   // (ask the agent, copy the quote), so it does not collapse into the composer.
@@ -141,21 +143,46 @@ export function NoteAtSelection({
               noted is far more often "what did I say about this?" than "let me
               say something else", so the reading act leads. */}
           {existing.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              onClick={() => {
-                onShowNote(n.id);
-                onClose();
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink",
-                "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
-              )}
-            >
-              <MessagesSquareIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
-              <span className="min-w-0 flex-1 truncate">{n.label}</span>
-            </button>
+            <div key={n.id} className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onShowNote(n.id);
+                  onClose();
+                }}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink",
+                  "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
+                )}
+              >
+                <MessagesSquareIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
+                <span className="min-w-0 flex-1 truncate">{n.label}</span>
+              </button>
+              {/* ⛔ IMMEDIATE, LIKE THE PANEL'S. Deleting a note asks nowhere
+                  else, and one delete that confirms while its twin does not is
+                  worse than either rule applied consistently. The note's own
+                  words are in the row being clicked, which is the check that
+                  matters. */}
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteNote(n.id);
+                  onClose();
+                }}
+                aria-label={`Delete note: ${n.label}`}
+                title="Delete this note"
+                // ⛔ ALWAYS VISIBLE, unlike the panel's. A panel row is a
+                // thing being READ and its actions stay out of the way until
+                // wanted; a menu is a list of ACTS, and an act hidden until
+                // hover is one most people will never find.
+                className={cn(
+                  "shrink-0 rounded-sm p-1.5 text-ink-faint",
+                  "hover:bg-bg hover:text-danger focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
+                )}
+              >
+                <Trash2Icon aria-hidden className="size-3.5" />
+              </button>
+            </div>
           ))}
           {existing.length > 0 && at.from < at.to && (
             <div className="my-1 h-px bg-edge" aria-hidden />

@@ -103,6 +103,7 @@ export function DocumentPane({
   reveal,
   onAddNote,
   onShowNote,
+  onDeleteNote,
   splitLayout,
   onEdit,
   onSave,
@@ -130,6 +131,7 @@ export function DocumentPane({
   onAddNote: (from: number, to: number, body: string) => void;
   /** E47: the document pointing at a note — the panel borders it. */
   onShowNote: (id: string) => void;
+  onDeleteNote: (id: string) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -409,6 +411,7 @@ export function DocumentPane({
         onClose={() => setNoteAt(null)}
         onAdd={onAddNote}
         onShowNote={onShowNote}
+        onDeleteNote={onDeleteNote}
       />
       {doc && (
         <NewVersionDialog

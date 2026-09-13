@@ -1303,3 +1303,17 @@ something must not edit it.
 - **The note may be RESOLVED while resolved notes are hidden.** A focused note
   is shown regardless of that filter, or the menu would scroll to an empty list
   and read as broken.
+
+**Fixed the same day:** clicking a note's quote in the panel showed its passage
+but did not move the border, so the panel pointed at one note while the editor
+showed another. **Whatever was last asked for is the one marked** — there is
+only ever one focused note, whichever door it was reached through.
+
+**And the menu grew a delete** (Cole). Immediate, like the panel's — one delete
+that confirms while its twin does not is worse than either rule applied
+consistently, and the note's own words are in the row being clicked, which is
+the check that matters. Unlike the panel's, it is ALWAYS VISIBLE rather than
+revealed on hover: a panel row is a thing being READ and its actions stay out of
+the way until wanted; a menu is a list of ACTS, and an act hidden until hover is
+one most people never find. _(Built hover-gated first, and the screenshot showed
+an empty-looking menu — which was the argument.)_

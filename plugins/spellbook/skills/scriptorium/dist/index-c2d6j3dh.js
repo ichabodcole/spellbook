@@ -68166,7 +68166,8 @@ function NoteAtSelection({
   existing,
   onClose,
   onAdd,
-  onShowNote
+  onShowNote,
+  onDeleteNote
 }) {
   const [writing, setWriting] = import_react22.useState(false);
   const [body, setBody] = import_react22.useState("");
@@ -68256,21 +68257,40 @@ function NoteAtSelection({
     }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
       className: "flex flex-col p-1",
       children: [
-        existing.map((n) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
-          type: "button",
-          onClick: () => {
-            onShowNote(n.id);
-            onClose();
-          },
-          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+        existing.map((n) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          className: "flex items-center gap-0.5",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessagesSquare, {
-              "aria-hidden": true,
-              className: "size-3.5 shrink-0 text-ink-faint"
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
-              className: "min-w-0 flex-1 truncate",
-              children: n.label
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+              type: "button",
+              onClick: () => {
+                onShowNote(n.id);
+                onClose();
+              },
+              className: cn("flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessagesSquare, {
+                  "aria-hidden": true,
+                  className: "size-3.5 shrink-0 text-ink-faint"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+                  className: "min-w-0 flex-1 truncate",
+                  children: n.label
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+              type: "button",
+              onClick: () => {
+                onDeleteNote(n.id);
+                onClose();
+              },
+              "aria-label": `Delete note: ${n.label}`,
+              title: "Delete this note",
+              className: cn("shrink-0 rounded-sm p-1.5 text-ink-faint", "hover:bg-bg hover:text-danger focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+              children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Trash2, {
+                "aria-hidden": true,
+                className: "size-3.5"
+              }, undefined, false, undefined, this)
             }, undefined, false, undefined, this)
           ]
         }, n.id, true, undefined, this)),
@@ -68654,6 +68674,7 @@ function DocumentPane({
   reveal,
   onAddNote,
   onShowNote,
+  onDeleteNote,
   splitLayout,
   onEdit,
   onSave,
@@ -68922,7 +68943,8 @@ function DocumentPane({
         }),
         onClose: () => setNoteAt(null),
         onAdd: onAddNote,
-        onShowNote
+        onShowNote,
+        onDeleteNote
       }, undefined, false, undefined, this),
       doc2 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(NewVersionDialog, {
         open: naming !== null,
@@ -69756,6 +69778,10 @@ function Workspace({
                 if (open3)
                   send({ type: "note.add", doc: open3.slug, from, to, body });
               },
+              onDeleteNote: (id) => {
+                if (open3)
+                  send({ type: "note.remove", doc: open3.slug, id });
+              },
               onShowNote: (id) => {
                 setRightPane("notes");
                 setFocusedNote(id);
@@ -69813,6 +69839,7 @@ function Workspace({
                     send({ type: "note.add", doc: open3.slug, from, to, body });
                 },
                 onGoTo: (n) => {
+                  setFocusedNote(n.id);
                   if (n.from !== null)
                     setReveal({ from: n.from, to: n.to, seq: Date.now() });
                 },

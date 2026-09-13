@@ -306,6 +306,9 @@ function Workspace({
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
             }}
+            onDeleteNote={(id) => {
+              if (open) send({ type: "note.remove", doc: open.slug, id });
+            }}
             onShowNote={(id) => {
               // Pointing at a note has to OPEN the notes — the panel may be
               // showing the conversation, in which case a border nobody can
@@ -381,6 +384,11 @@ function Workspace({
                 if (open) send({ type: "note.add", doc: open.slug, from, to, body });
               }}
               onGoTo={(n) => {
+                // ⛔ THE BORDER FOLLOWS THE CLICK (E47 fix). Showing a note's
+                // passage without moving the border left the PREVIOUS note
+                // bordered — so the panel pointed at one note while the editor
+                // showed another. Whatever was last asked for is the one marked.
+                setFocusedNote(n.id);
                 if (n.from !== null)
                   setReveal({ from: n.from, to: n.to as number, seq: Date.now() });
               }}
