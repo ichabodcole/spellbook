@@ -367,7 +367,9 @@ function Workspace({
                   rightPane === which && "bg-surface-raised text-ink",
                 )}
               >
-                {which === "notes" && openNotes.length > 0 ? `Notes ${openNotes.length}` : which}
+                {/* Parenthesised so the number reads as a COUNT rather than
+                    part of the tab's name (Cole). */}
+                {which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which}
               </button>
             ))}
           </div>

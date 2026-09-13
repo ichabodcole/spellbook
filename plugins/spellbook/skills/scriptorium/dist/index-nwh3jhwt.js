@@ -69827,7 +69827,7 @@ function Workspace({
                   onClick: () => setRightPane(which),
                   "aria-pressed": rightPane === which,
                   className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                  children: which === "notes" && openNotes.length > 0 ? `Notes ${openNotes.length}` : which
+                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which
                 }, which, false, undefined, this))
               }, undefined, false, undefined, this),
               rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(NotesPanel, {
