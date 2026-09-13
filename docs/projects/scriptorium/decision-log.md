@@ -1392,3 +1392,52 @@ _The finding is the method, not the bug: two corpora had been driven through
 this code and neither had a space in a filename. The class of input that breaks
 you is the one your fixtures share an assumption about — and the way to meet it
 is to run the real thing, for a real reason, on somebody's actual documents._
+
+## E50 · The work queue — a message that can be marked done
+
+**Designed by Cole, 2026-09-13**, from using the chat slice: _"I could see part
+of the workflow is you maintain your role as basically just being there to
+listen to me… but when there's task work, just sub-task that to an agent."_ Then
+the shape: _"they could be both — a message that can be marked done seems really
+useful, but that could also feed into things like a toast… a list of tasks in
+the queue that have not been marked done, and maybe some sort of spinner… all of
+those affordances could be built around something really simple for an agent to
+update."_
+
+**⛔ THE PRIMITIVE IS TINY AND EVERYTHING IS BUILT ON IT.** A task is a chat
+message with a `doneAt` or without one. The count, the tab spinner, the
+outstanding list, the completion toast — none of them ask the agent for anything
+beyond `task` and `task-done`. An agent that manages only those two verbs drives
+all of it correctly, which is the property Cole was after and the reason not to
+model a richer lifecycle.
+
+**Announced and recorded in one act.** `startTask` posts the chat message AND
+creates the task, linked by `messageId`: the conversation reads as a narrative,
+the queue reads as state, over one fact rather than two.
+
+**`status` is the optional richness** for long multi-step work — "reading the
+three entries" — and Cole flagged it as maybe-not-MVP. It cost one field and one
+verb, and the alternative was a schema change later.
+
+**Finishing is IDEMPOTENT.** A task finished twice — an agent retrying, a human
+clicking as the agent reports — is not an error, and refusing would make the
+surface handle a race it did not cause.
+
+**The human can always close a task.** An agent that dies mid-task would
+otherwise leave the queue spinning forever, and a queue you cannot clear stops
+being information.
+
+**Two verbs beyond the brief, both because the queue is a RECORD:**
+`task-remove` forgets one started by mistake — marking it done would put
+something that never happened into the account — and `tasks-clear` (Cole, the
+same day) forgets every FINISHED task while leaving outstanding work alone.
+
+**The toast watches the QUEUE, not the act** — the same shape as E42's. The
+human marks almost none of these done; an agent does, in another process, while
+they are reading something else. A toast wired to a button would announce only
+the ones they did themselves, which is exactly backwards.
+
+_Process note, recorded because it was my error: this was tested in Cole's LIVE
+session, which left three invented tasks in his real queue. `task-remove` exists
+partly because I needed it to clean up after myself — a good verb found for a
+bad reason. The scratch session was right there._

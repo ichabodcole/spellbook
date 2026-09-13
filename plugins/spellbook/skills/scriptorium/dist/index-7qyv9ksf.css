@@ -29,6 +29,7 @@
     --radius-md: .375rem;
     --radius-lg: .5rem;
     --radius-xl: .75rem;
+    --animate-spin: spin 1s linear infinite;
     --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
     --blur-xs: 4px;
     --default-transition-duration: .15s;
@@ -851,6 +852,10 @@
     animation: var(--animate-pulse);
   }
 
+  .animate-spin {
+    animation: var(--animate-spin);
+  }
+
   .cursor-default {
     cursor: default;
   }
@@ -1570,6 +1575,10 @@
     padding-left: calc(var(--spacing) * 3);
   }
 
+  .pl-4\.5 {
+    padding-left: calc(var(--spacing) * 4.5);
+  }
+
   .pl-5 {
     padding-left: calc(var(--spacing) * 5);
   }
@@ -1693,6 +1702,10 @@
 
   .whitespace-pre-wrap {
     white-space: pre-wrap;
+  }
+
+  .text-added {
+    color: var(--color-added);
   }
 
   .text-attention {
@@ -1971,6 +1984,12 @@
     }
   }
 
+  @media (hover: hover) {
+    .group-hover\/task\:opacity-100:is(:where(.group\/task):hover *) {
+      opacity: 1;
+    }
+  }
+
   .group-focus\/context-menu-item\:text-accent-foreground:is(:where(.group\/context-menu-item):focus *) {
     color: var(--color-accent-foreground);
   }
@@ -2227,6 +2246,10 @@
 
   .focus-visible\:border-ring:focus-visible {
     border-color: var(--color-ring);
+  }
+
+  .focus-visible\:opacity-100:focus-visible {
+    opacity: 1;
   }
 
   .focus-visible\:ring-1:focus-visible {
@@ -3416,6 +3439,12 @@
 @property --tw-backdrop-sepia {
   syntax: "*";
   inherits: false
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {

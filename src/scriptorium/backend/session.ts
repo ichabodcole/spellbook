@@ -73,6 +73,7 @@ import type {
   PlacedNote,
   PublicState,
   Selection,
+  Task,
   Version,
   VersionAuthor,
 } from "./protocol";
@@ -150,6 +151,8 @@ export type Manifest = {
   docs: DocRecord[];
   openDoc: string | null;
   chat: ChatMessage[];
+  /** The work queue (E50). Absent in a manifest written before it existed. */
+  tasks?: Task[];
   /** E23's workspace. Absent in a manifest written before it existed: the user's home. */
   workspace?: string;
 };
@@ -1477,6 +1480,97 @@ export class Session {
 
   // ── chat ───────────────────────────────────────────────────────────────
 
+  // ── the work queue (E50) ───────────────────────────────────────────────────
+
+  /**
+   * Start a task. It is ANNOUNCED as a chat message and recorded as a task at
+   * the same moment — Cole's framing, "a message that can be marked done" —
+   * so the conversation reads as a narrative and the queue reads as state,
+   * over one fact rather than two.
+   */
+  startTask(text: string, who: VersionAuthor): Task {
+    const body = text.trim();
+    if (!body) throw new SessionError("a task needs to say what the work is", 400);
+    const message = this.addMessage(who, body);
+    const task: Task = {
+      id: `t-${randHex(4)}`,
+      text: body,
+      who,
+      createdAt: Date.now(),
+      messageId: message.id,
+    };
+    this.m.tasks = [...(this.m.tasks ?? []), task];
+    this.persist();
+    return task;
+  }
+
+  private taskOrDie(id: string): Task {
+    const task = (this.m.tasks ?? []).find((t) => t.id === id);
+    if (!task)
+      throw new SessionError(
+        `no task ${id} in this session`,
+        404,
+        (this.m.tasks ?? []).filter((t) => t.doneAt === undefined).map((t) => t.id),
+      );
+    return task;
+  }
+
+  /** Say what is being done right now — for work with steps worth watching. */
+  setTaskStatus(id: string, status: string): Task {
+    const task = this.taskOrDie(id);
+    if (task.doneAt !== undefined)
+      throw new SessionError(`task ${id} is already done — its status cannot change`, 409);
+    task.status = status.trim();
+    this.persist();
+    return task;
+  }
+
+  /**
+   * Mark it done. Idempotent on purpose: a task finished twice — an agent
+   * retrying, a human clicking as the agent reports — is not an error, and
+   * refusing would make the surface handle a race it did not cause.
+   */
+  finishTask(id: string, outcome?: string): { task: Task; already: boolean } {
+    const task = this.taskOrDie(id);
+    const already = task.doneAt !== undefined;
+    if (!already) {
+      task.doneAt = Date.now();
+      task.status = undefined;
+      if (outcome?.trim()) task.outcome = outcome.trim();
+      this.persist();
+    }
+    return { task, already };
+  }
+
+  /**
+   * Forget a task entirely — for one started by mistake. Marking it done would
+   * put a thing that never happened into the record; a queue you cannot clear
+   * of its own mistakes stops being a trustworthy account of the work.
+   */
+  removeTask(id: string): Task {
+    const task = this.taskOrDie(id);
+    this.m.tasks = (this.m.tasks ?? []).filter((t) => t.id !== id);
+    this.persist();
+    return task;
+  }
+
+  /**
+   * Forget every finished task. Outstanding ones are untouched — clearing is
+   * tidying what is OVER, never abandoning work still in flight.
+   */
+  clearDoneTasks(): number {
+    const before = (this.m.tasks ?? []).length;
+    this.m.tasks = (this.m.tasks ?? []).filter((t) => t.doneAt === undefined);
+    const cleared = before - (this.m.tasks?.length ?? 0);
+    if (cleared > 0) this.persist();
+    return cleared;
+  }
+
+  /** Newest first — a queue is read from the top. */
+  tasks(): Task[] {
+    return [...(this.m.tasks ?? [])].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
   addMessage(
     who: ChatWho,
     text: string,
@@ -1769,6 +1863,7 @@ export class Session {
       openDoc: this.m.openDoc,
       selection,
       chat: this.m.chat,
+      tasks: this.tasks(),
     };
   }
 }

@@ -726,6 +726,72 @@ const COMMANDS: CommandSpec[] = [
     },
   },
   {
+    name: "task",
+    flags: [...SESSION, "stdin", "body-file"],
+    positionals: [{ name: "text", required: false, variadic: true }],
+    describe: "say you have started something; prints the id to finish it with",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags) }),
+      );
+    },
+  },
+  {
+    name: "task-status",
+    flags: SESSION,
+    positionals: [
+      { name: "id", required: true },
+      { name: "status", required: true, variadic: true },
+    ],
+    describe: "say what step a task is on (for work worth watching)",
+    run: async (pos, _flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "task.status",
+          id: pos[0] as string,
+          status: pos.slice(1).join(" "),
+        }),
+      );
+    },
+  },
+  {
+    name: "task-done",
+    flags: SESSION,
+    positionals: [
+      { name: "id", required: true },
+      { name: "outcome", required: false, variadic: true },
+    ],
+    describe: "mark a task finished, optionally saying what came of it",
+    run: async (pos, _flags, session) => {
+      const outcome = pos.slice(1).join(" ").trim();
+      printJson(
+        await postCmd(session, {
+          type: "task.done",
+          id: pos[0] as string,
+          ...(outcome ? { outcome } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "task-remove",
+    flags: SESSION,
+    positionals: [{ name: "id", required: true }],
+    describe: "forget a task entirely — for one started by mistake",
+    run: async (pos, _flags, session) => {
+      printJson(await postCmd(session, { type: "task.remove", id: pos[0] as string }));
+    },
+  },
+  {
+    name: "tasks-clear",
+    flags: SESSION,
+    positionals: [],
+    describe: "forget every finished task; outstanding ones are left alone",
+    run: async (_pos, _flags, session) => {
+      printJson(await postCmd(session, { type: "tasks.clear" }));
+    },
+  },
+  {
     name: "note",
     flags: [...SESSION, "doc", "quote", "stdin", "body-file"],
     positionals: [{ name: "text", required: false, variadic: true }],

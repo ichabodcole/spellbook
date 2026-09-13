@@ -160,6 +160,32 @@ export type DiffPayload = {
   diff: Diff;
 };
 
+// ── the work queue (E50) ─────────────────────────────────────────────────────
+//
+// ⛔ A TASK IS A MESSAGE THAT CAN BE MARKED DONE. Cole's framing, and the whole
+// design follows from it: the primitive is tiny and trivially updatable by an
+// agent, and every affordance — a count, a spinner, a list of what is
+// outstanding, a toast when something finishes — is built ON that rather than
+// requiring its own machinery. `status` is for long multi-step work ("reading
+// the corpus", "writing the links") and is optional: a task that never sets one
+// is not a lesser task.
+
+export type Task = {
+  id: string;
+  /** What the work IS — the message a human reads in the conversation. */
+  text: string;
+  who: VersionAuthor;
+  createdAt: number;
+  /** The chat message this task was announced as, so the two stay one thing. */
+  messageId: string;
+  /** The step currently being done — absent until someone says (E50). */
+  status?: string;
+  /** Set when it is finished. Absent means outstanding. */
+  doneAt?: number;
+  /** What came of it, said at the moment it was marked done. */
+  outcome?: string;
+};
+
 // ── notes (E45) ───────────────────────────────────────────────────────────────
 
 /** How a note found its place in the current text — see `anchors.ts`. */
@@ -255,6 +281,8 @@ export type PublicState = {
   openDoc: string | null;
   selection: Selection | null;
   chat: ChatMessage[];
+  /** The work queue (E50) — newest first, done ones included. */
+  tasks: Task[];
   /**
    * Per-viewer conveniences (pane sizes, …), kept in `$SCRIPTORIUM_HOME/prefs.json`
    * rather than the browser's storage: every session is a new port, and browser
@@ -378,6 +406,10 @@ export type ClientMsg =
   | { type: "version.delete"; doc: string; version: number }
   /** E45: the human notes a SELECTION — offsets into the active text. */
   | { type: "note.add"; doc: string; from: number; to: number; body: string }
+  | { type: "task.done"; id: string; outcome?: string }
+  | { type: "task.remove"; id: string }
+  /** Forget every finished task at once — the queue's own tidy-up. */
+  | { type: "tasks.clear" }
   | { type: "note.edit"; doc: string; id: string; body: string }
   | { type: "note.resolve"; doc: string; id: string; resolved: boolean }
   | { type: "note.remove"; doc: string; id: string }
@@ -465,6 +497,12 @@ export type AgentCmd =
   | { type: "note.add"; doc?: string; quote: string; body: string }
   | { type: "notes"; doc?: string; all?: boolean }
   | { type: "note.edit"; doc?: string; id: string; body: string }
+  /** E50: the agent says it has started something, and later that it is done. */
+  | { type: "task.start"; text: string }
+  | { type: "task.status"; id: string; status: string }
+  | { type: "task.done"; id: string; outcome?: string }
+  | { type: "task.remove"; id: string }
+  | { type: "tasks.clear" }
   | { type: "note.resolve"; doc?: string; id: string; resolved: boolean }
   | { type: "note.remove"; doc?: string; id: string }
   | { type: "diff"; doc?: string; against: DiffSide; context?: number }

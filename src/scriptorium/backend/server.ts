@@ -494,6 +494,25 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "task.done": {
+        const r = session.finishTask(msg.id, msg.outcome);
+        if (!r.already) {
+          session.addMessage("system", `Done: ${r.task.text}`);
+          log.emit({ type: "task.done", task: r.task.id, by: "human" });
+        }
+        broadcastState();
+        return;
+      }
+      case "task.remove": {
+        session.removeTask(msg.id);
+        broadcastState();
+        return;
+      }
+      case "tasks.clear": {
+        session.clearDoneTasks();
+        broadcastState();
+        return;
+      }
       case "note.edit": {
         const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
         log.emit({ type: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
@@ -912,6 +931,38 @@ export async function startDaemon(opts: StartOpts) {
       case "notes": {
         const r = session.notesOf({ doc: cmd.doc, ...(cmd.all ? { all: true } : {}) });
         return { doc: r.slug, notes: r.notes };
+      }
+      case "task.remove": {
+        const t = session.removeTask(cmd.id);
+        broadcastState();
+        return { task: t.id, removed: true };
+      }
+      case "tasks.clear": {
+        const cleared = session.clearDoneTasks();
+        broadcastState();
+        return { cleared };
+      }
+      case "task.start": {
+        const t = session.startTask(cmd.text, "agent");
+        log.emit({ type: "task.started", task: t.id, text: t.text, by: "agent" });
+        broadcastState();
+        return { task: t.id, text: t.text };
+      }
+      case "task.status": {
+        const t = session.setTaskStatus(cmd.id, cmd.status);
+        broadcastState();
+        return { task: t.id, status: t.status };
+      }
+      case "task.done": {
+        const r = session.finishTask(cmd.id, cmd.outcome);
+        if (!r.already)
+          announce(`Done: ${r.task.text}${r.task.outcome ? ` — ${r.task.outcome}` : ""}`, {
+            fact: "task.done",
+            task: r.task.id,
+            by: "agent",
+          });
+        broadcastState();
+        return { task: r.task.id, already: r.already };
       }
       case "note.edit": {
         const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body });

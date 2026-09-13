@@ -24,6 +24,8 @@ import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
 import { NotesPanel } from "./components/NotesPanel";
+import { Spinner, TasksPanel } from "./components/TasksPanel";
+import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
@@ -171,7 +173,7 @@ function Workspace({
     text: string;
   } | null>(null);
   // Which of the right pane's two things is showing.
-  const [rightPane, setRightPane] = useState<"conversation" | "notes">("conversation");
+  const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
   const [reveal, setReveal] = useState<{ from: number; to: number; seq: number } | null>(null);
   /** The note the document is pointing at (E47). */
@@ -179,6 +181,7 @@ function Workspace({
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
+  const openTasks = state.tasks.filter((t) => t.doneAt === undefined);
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
@@ -277,6 +280,7 @@ function Workspace({
   return (
     <>
       <ActiveVersionToast doc={open} announce={announce} />
+      <TaskToasts tasks={state.tasks} announce={announce} />
       <Toasts toasts={toasts} onDismiss={dismiss} />
       <ResizablePanelGroup
         orientation="horizontal"
@@ -397,7 +401,7 @@ function Workspace({
               chat lands it joins as the same kind of tab rather than needing
               somewhere new to live. */}
           <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2">
-            {(["conversation", "notes"] as const).map((which) => (
+            {(["conversation", "notes", "tasks"] as const).map((which) => (
               <button
                 key={which}
                 type="button"
@@ -411,11 +415,29 @@ function Workspace({
               >
                 {/* Parenthesised so the number reads as a COUNT rather than
                     part of the tab's name (Cole). */}
-                {which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which}
+                {which === "notes" && openNotes.length > 0 ? (
+                  `Notes (${openNotes.length})`
+                ) : which === "tasks" && openTasks.length > 0 ? (
+                  // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
+                  // the point of a queue is knowing work is outstanding while
+                  // you are looking at something else.
+                  <span className="flex items-center gap-1">
+                    <Spinner className="text-ink-dim" />
+                    {`Tasks (${openTasks.length})`}
+                  </span>
+                ) : (
+                  which
+                )}
               </button>
             ))}
           </div>
-          {rightPane === "notes" ? (
+          {rightPane === "tasks" ? (
+            <TasksPanel
+              tasks={state.tasks}
+              onDone={(id) => send({ type: "task.done", id })}
+              onClear={() => send({ type: "tasks.clear" })}
+            />
+          ) : rightPane === "notes" ? (
             <NotesPanel
               notes={open?.notes ?? []}
               focusedId={focusedNote}
