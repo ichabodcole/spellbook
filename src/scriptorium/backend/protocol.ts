@@ -335,7 +335,13 @@ export type ClientMsg =
    * the surface had no way to make one at all, which made the versions the
    * compare view reads an agent-only concept.
    */
-  | { type: "version.new"; doc: string; from?: number; label?: string }
+  /**
+   * E42: `activate` is what separates the two intentions. BRANCHING (true) —
+   * "I want to work in a new version" — moves the human into it. SNAPSHOTTING
+   * (false) — "mark this moment, I'm staying" — leaves them where they are.
+   * The agent's `version.new` never activates: its versions arrive unbidden.
+   */
+  | { type: "version.new"; doc: string; from?: number; label?: string; activate?: boolean }
   /** E41: remove a version and its file. Never the active one. */
   | { type: "version.delete"; doc: string; version: number }
   | { type: "save"; doc: string }

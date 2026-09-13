@@ -22,6 +22,7 @@ import {
   BadgeCheckIcon,
   BookmarkPlusIcon,
   ChevronDownIcon,
+  GitBranchIcon,
   GitCompareIcon,
   SparklesIcon,
   Trash2Icon,
@@ -82,7 +83,7 @@ export function VersionMenu({
   active: number;
   onActivate: (n: number) => void;
   onCompare: (n: number) => void;
-  onNewVersion: () => void;
+  onNewVersion: (intent: "branch" | "snapshot") => void;
   /** E41: remove a version and its file — never the active one, so never offered on it. */
   onDelete: (n: number) => void;
 }) {
@@ -205,14 +206,28 @@ export function VersionMenu({
           ))}
         </div>
         <DropdownMenuSeparator />
+        {/* ⛔ TWO ITEMS, BECAUSE THERE ARE TWO INTENTIONS (E42). The first is
+            the default because it is what "new version" means to a human who
+            has just decided to change something: they expect to be IN it. The
+            second is the older behaviour, kept because "mark this and keep
+            typing" is a real thing to want and branching labels it backwards. */}
         <DropdownMenuItem
           onClick={() => {
             setOpen(false);
-            onNewVersion();
+            onNewVersion("branch");
+          }}
+        >
+          <GitBranchIcon aria-hidden className="size-3.5" />
+          New version from v{active} and edit it…
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            setOpen(false);
+            onNewVersion("snapshot");
           }}
         >
           <BookmarkPlusIcon aria-hidden className="size-3.5" />
-          New version from v{active}…
+          Snapshot v{active}, keep editing it…
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

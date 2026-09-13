@@ -1028,3 +1028,63 @@ so the surface never shows an action the wire would refuse.
 **The compare view falls back to the original** when the side it was showing is
 deleted or becomes active. The side can vanish under it; the original always
 exists.
+
+## E42 · Two intentions, two menu items, and the app says where you are
+
+**Reported by Cole, 2026-09-12**, from using it: he made a version, carried on
+typing, and was editing the OLD one. _"It's easy to miss the step of create a
+new version and then now make that the active version."_
+
+**E37 chose snapshot semantics from Operator, and the evidence it was
+under-decided was in this spell's own dialog copy** — one hint offering both
+_"before the agent's pass"_ and _"shorter draft"_. Those are two mental models
+in one sentence:
+
+- **Snapshot** — the new version is the archive; you keep working where you are;
+  the name describes what the copy PRESERVES.
+- **Branch** — the new version is where you are going; the old one becomes the
+  archive; the name describes what you are about to DO there.
+
+**Both make the same file.** A byte-identical copy of what is in front of you,
+either way. Nothing is ever lost in one and kept in the other. The whole
+difference is which copy you keep typing into — and therefore which side your
+label ends up describing.
+
+**Branch is the right DEFAULT for this spell, because versions here are working
+files an agent edits with its own tools** — you make one to do something in it.
+Operator's snapshot default is right for Operator, whose Save Version is a
+backup button.
+
+**But snapshot is kept as a second item rather than dropped, because branching
+labels a bookmark BACKWARDS.** If you meant "mark this and keep typing", branch
+leaves the frozen marker unnamed and hangs your label on the copy you are still
+editing. And that is not repairable: version labels are write-once — there is no
+rename-version verb — so a name attached to the wrong side stays wrong. Hence:
+_New version from vN and edit it…_ and _Snapshot vN, keep editing it…_, each
+with its own wording, and the dialog says which version you will be in.
+
+**The agent's `version.new` still never activates.** Its versions arrive
+unbidden; moving the human mid-thought would be the same failure in the other
+direction. That asymmetry is E24, not an inconsistency.
+
+**And the app now says where you are.** The conversation line gained a second
+sentence — _"You are now editing v5."_ / _"You are still editing v2."_ — and a
+TOAST fires whenever the active version changes, from any cause. It watches the
+FACT rather than the action, which is why it also catches the agent activating a
+version while the human is reading — the case that most needs saying, and the
+one an action-fires-its-own-toast design would miss.
+
+**⛔ THE TOAST IS HAND-WRITTEN, AND THAT IS A DEPENDENCY RULING.** shadcn's
+`toast` recipe is generated against `@base-ui/react` ^1.8; this repo pins ^1.6
+at the ROOT for every spell, and the CLI silently wrote ^1.8 into scriptorium's
+own manifest while nothing installed it. Under 1.6 the recipe's manager accepted
+`add()` with no error and its viewport stayed empty — a mismatch with no
+diagnostic. Bumping base-ui would touch the shadcn components of FIVE spells for
+one toast, and a visual regression in the other four is precisely what this
+repo's tests do not catch. So the pin stays and the toast is ~50 lines in the
+spell. If a second spell wants one, that file is the thing to lift into `kit/ui`
+beside `ConfirmDialog`.
+
+_A bar would have been wrong here: the conflict bar persists because it is a
+state awaiting a decision. "You're now editing v5" is "that happened, carry on",
+which is what a toast is for._

@@ -505,15 +505,24 @@ export async function startDaemon(opts: StartOpts) {
           ...(msg.label ? { label: msg.label } : {}),
           author: "human",
         });
+        // ⛔ SAY WHERE THEY ARE, not just what was made (E42). The old message
+        // announced the new version and went quiet about which one the human
+        // was editing — which is exactly how someone types into v1 believing
+        // they are in v2.
+        if (msg.activate) session.activate({ doc: r.slug, version: r.version.n });
         const m = session.addMessage(
           "system",
-          `Made v${r.version.n} of ${r.slug} from v${r.version.from}${msg.label ? ` — ${msg.label}` : ""}.`,
+          `Made v${r.version.n} of ${r.slug} from v${r.version.from}${msg.label ? ` — ${msg.label}` : ""}. ` +
+            (msg.activate
+              ? `You are now editing v${r.version.n}.`
+              : `You are still editing v${r.version.from}.`),
         );
         log.emit({
           type: "version.created",
           doc: r.slug,
           version: r.version.n,
           from: r.version.from,
+          activated: msg.activate === true,
           by: "human",
           ts: m.ts,
         });

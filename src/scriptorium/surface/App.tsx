@@ -16,9 +16,11 @@ import type {
   DocView,
   PublicState,
 } from "../backend/protocol";
+import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
+import { Toasts, useToasts } from "./components/Toasts";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -153,6 +155,7 @@ function Workspace({
   // version you wanted to look at last session says nothing about this one,
   // and the original is the side that always exists.
   const [against, setAgainst] = useState<DiffSide>("original");
+  const { toasts, announce, dismiss } = useToasts();
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const activeDoc =
@@ -219,104 +222,119 @@ function Workspace({
   }, [created, send]);
 
   return (
-    <ResizablePanelGroup
-      orientation="horizontal"
-      className="min-h-0 flex-1"
-      defaultLayout={layout.defaultLayout}
-      onLayoutChanged={layout.onLayoutChanged}
-    >
-      <ResizablePanel
-        id="context"
-        defaultSize="22"
-        minSize="12"
-        className="flex flex-col bg-surface"
+    <>
+      <ActiveVersionToast doc={open} announce={announce} />
+      <Toasts toasts={toasts} onDismiss={dismiss} />
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="min-h-0 flex-1"
+        defaultLayout={layout.defaultLayout}
+        onLayoutChanged={layout.onLayoutChanged}
       >
-        <PaneHeading>Context</PaneHeading>
-        <ContextSidebar
-          entries={state.context}
-          activeDoc={activeDoc}
-          userHome={state.userHome}
-          workspace={state.workspace}
-          onOpenDoc={onOpenDoc}
-          onAddPath={(path) => send({ type: "context.add", path })}
-          onStructure={send}
-          onReveal={(path) => send({ type: "reveal", path })}
-          onPick={(want) => send({ type: "pick", want })}
-          metaFor={(path) => state.docMeta[path]}
-          listDir={listDir}
-          planMove={planMove}
-          mapOf={mapOf}
-          onOpenPath={(path) => send({ type: "open", path })}
-          created={created}
-          notice={lastError}
-          onDismissNotice={clearError}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
-        <DocumentPane
-          doc={open}
-          text={text}
-          mode={mode}
-          onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
-          diff={diff}
-          onAgainst={setAgainst}
-          onTake={(hunks) => {
-            if (open) send({ type: "merge", doc: open.slug, against, hunks });
-          }}
-          onActivate={(version) => {
-            if (open) send({ type: "activate", doc: open.slug, version });
-          }}
-          onNewVersion={(label) => {
-            if (open) send({ type: "version.new", doc: open.slug, ...(label ? { label } : {}) });
-          }}
-          onDeleteVersion={(version) => {
-            if (open) send({ type: "version.delete", doc: open.slug, version });
-          }}
-          splitLayout={splitLayout}
-          onAddFrontmatter={async () => {
-            if (!open) return;
-            const { block, error } = await suggestMeta(open.original);
-            if (!block || error) return;
-            // The block goes into the BUFFER, not the file: the human reads it,
-            // fills the blank description, and Save puts it on disk (E7).
-            const next = `${block}${text ?? ""}`;
-            noteText(open.slug, open.active, next);
-            send({ type: "edit", doc: open.slug, version: open.active, text: next });
-          }}
-          onFollowLink={(target) => {
-            if (open) send({ type: "link.open", from: open.original, target });
-          }}
-          onEdit={(next) => {
-            if (!open) return;
-            // The daemon does not echo an edit back, so this viewer keeps its
-            // own copy in step — otherwise the prop would trail the buffer and
-            // every re-render would look like news from the daemon.
-            noteText(open.slug, open.active, next);
-            send({ type: "edit", doc: open.slug, version: open.active, text: next });
-          }}
-          onSave={() => open && send({ type: "save", doc: open.slug })}
-          onRevert={() => open && send({ type: "revert", doc: open.slug })}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel id="chat" defaultSize="28" minSize="15" className="flex flex-col bg-surface">
-        <PaneHeading>Conversation</PaneHeading>
-        {state.chat.length === 0 ? (
-          <Empty className="h-full">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <MessagesSquareIcon />
-              </EmptyMedia>
-              <EmptyTitle>No messages yet</EmptyTitle>
-              <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ActivityLog chat={state.chat} />
-        )}
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        <ResizablePanel
+          id="context"
+          defaultSize="22"
+          minSize="12"
+          className="flex flex-col bg-surface"
+        >
+          <PaneHeading>Context</PaneHeading>
+          <ContextSidebar
+            entries={state.context}
+            activeDoc={activeDoc}
+            userHome={state.userHome}
+            workspace={state.workspace}
+            onOpenDoc={onOpenDoc}
+            onAddPath={(path) => send({ type: "context.add", path })}
+            onStructure={send}
+            onReveal={(path) => send({ type: "reveal", path })}
+            onPick={(want) => send({ type: "pick", want })}
+            metaFor={(path) => state.docMeta[path]}
+            listDir={listDir}
+            planMove={planMove}
+            mapOf={mapOf}
+            onOpenPath={(path) => send({ type: "open", path })}
+            created={created}
+            notice={lastError}
+            onDismissNotice={clearError}
+          />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
+          <DocumentPane
+            doc={open}
+            text={text}
+            mode={mode}
+            onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
+            diff={diff}
+            onAgainst={setAgainst}
+            onTake={(hunks) => {
+              if (open) send({ type: "merge", doc: open.slug, against, hunks });
+            }}
+            onActivate={(version) => {
+              if (open) send({ type: "activate", doc: open.slug, version });
+            }}
+            onNewVersion={(label, intent) => {
+              if (open)
+                send({
+                  type: "version.new",
+                  doc: open.slug,
+                  ...(label ? { label } : {}),
+                  activate: intent === "branch",
+                });
+            }}
+            onDeleteVersion={(version) => {
+              if (open) send({ type: "version.delete", doc: open.slug, version });
+            }}
+            splitLayout={splitLayout}
+            onAddFrontmatter={async () => {
+              if (!open) return;
+              const { block, error } = await suggestMeta(open.original);
+              if (!block || error) return;
+              // The block goes into the BUFFER, not the file: the human reads it,
+              // fills the blank description, and Save puts it on disk (E7).
+              const next = `${block}${text ?? ""}`;
+              noteText(open.slug, open.active, next);
+              send({ type: "edit", doc: open.slug, version: open.active, text: next });
+            }}
+            onFollowLink={(target) => {
+              if (open) send({ type: "link.open", from: open.original, target });
+            }}
+            onEdit={(next) => {
+              if (!open) return;
+              // The daemon does not echo an edit back, so this viewer keeps its
+              // own copy in step — otherwise the prop would trail the buffer and
+              // every re-render would look like news from the daemon.
+              noteText(open.slug, open.active, next);
+              send({ type: "edit", doc: open.slug, version: open.active, text: next });
+            }}
+            onSave={() => open && send({ type: "save", doc: open.slug })}
+            onRevert={() => open && send({ type: "revert", doc: open.slug })}
+          />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel
+          id="chat"
+          defaultSize="28"
+          minSize="15"
+          className="flex flex-col bg-surface"
+        >
+          <PaneHeading>Conversation</PaneHeading>
+          {state.chat.length === 0 ? (
+            <Empty className="h-full">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <MessagesSquareIcon />
+                </EmptyMedia>
+                <EmptyTitle>No messages yet</EmptyTitle>
+                <EmptyDescription>The conversation with the agent lives here.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <ActivityLog chat={state.chat} />
+          )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </>
   );
 }
 

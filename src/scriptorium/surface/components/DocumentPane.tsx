@@ -21,7 +21,7 @@ import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
-import { NewVersionDialog } from "./NewVersionDialog";
+import { NewVersionDialog, type VersionIntent } from "./NewVersionDialog";
 import { type StatusSegment, StatusStrip } from "./StatusStrip";
 import { VersionMenu, versionSummary } from "./VersionMenu";
 
@@ -115,7 +115,7 @@ export function DocumentPane({
   onTake: (hunks: number[]) => void;
   /** E37: the human makes a version, and chooses which one is active. */
   onActivate: (version: number) => void;
-  onNewVersion: (label: string) => void;
+  onNewVersion: (label: string, intent: VersionIntent) => void;
   onDeleteVersion: (version: number) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
@@ -147,7 +147,7 @@ export function DocumentPane({
   const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
   const showing: ViewMode = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc?.versions.find((v) => v.n === doc.active);
-  const [naming, setNaming] = useState(false);
+  const [naming, setNaming] = useState<VersionIntent | null>(null);
   const { confirm, dialog } = useConfirm();
 
   const segments: StatusSegment[] = doc
@@ -187,7 +187,7 @@ export function DocumentPane({
                 onAgainst(n);
                 onMode("compare");
               }}
-              onNewVersion={() => setNaming(true)}
+              onNewVersion={setNaming}
               onDelete={async (n) => {
                 const v = doc.versions.find((x) => x.n === n);
                 // ⛔ ASKED, because this removes a FILE. The version's own text
@@ -368,11 +368,14 @@ export function DocumentPane({
       {dialog}
       {doc && (
         <NewVersionDialog
-          open={naming}
+          open={naming !== null}
+          intent={naming ?? "branch"}
           from={doc.active}
           next={Math.max(...doc.versions.map((v) => v.n)) + 1}
-          onOpenChange={setNaming}
-          onCreate={onNewVersion}
+          onOpenChange={(o) => {
+            if (!o) setNaming(null);
+          }}
+          onCreate={(label) => onNewVersion(label, naming ?? "branch")}
         />
       )}
     </div>
