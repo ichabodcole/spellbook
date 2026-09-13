@@ -1120,6 +1120,38 @@ _Small, but the shape recurs: a name that is exactly right inside the code can
 be exactly wrong in the sentence a human reads, and the two do not have to
 match._
 
+### E43 revised, within the hour — the file is NAMED, not described
+
+"The saved file" survived about an hour. Cole came back with the case it fails:
+Save. _"I'm not saving version 2 to version 2 — I'm saving the changes in
+version 2 to the source file."_ As a DESTINATION the phrase is circular ("save
+to the saved file"), and "source file" would be a third noun for one thing.
+
+**So there is no noun.** The file is called by its name — `note.md` — in the
+compare picker, the Save tooltip, the merge announcements and the CLI's
+refusals. Cole: _"that's probably closer to the right answer versus trying to
+come up with a word that encapsulates like it's this file at this location."_
+Long names truncate in the MIDDLE: the extension says what kind of thing it is,
+and a long name's tail is often what distinguishes it. The full name is the
+`title`.
+
+**The Save BUTTON keeps its label — deferred, not decided against.** The tooltip
+names the destination (`Save v5 to note.md — the file in your folder`) and the
+header shows the filename two inches away, so "Save" alone is not lying. Cole:
+_"If anything I'd probably change it to 'Save to Name-of-file' so it's really
+obvious, but let's defer."_ The cost to weigh when it returns is a label whose
+WIDTH changes with the document, in a header already holding six controls.
+
+**Underneath all of it was a question about PLACE, not language:** _"where are
+these other files on disk?"_ Versions are real, permanent files at
+`$SCRIPTORIUM_HOME/sessions/<id>/docs/<slug>/vN.md` — deliberately nowhere near
+the human's project folder, which is why a version never litters a repo and why
+the agent can edit one with ordinary file tools. E44 makes that answerable in
+one click.
+
+_A question of the form "which word means X?" is sometimes evidence that no word
+does, and the thing should be pointed at instead._
+
 ## E44 · Reveal on every version row — and `disabled` gives way to `aria-current`
 
 **Asked by Cole, 2026-09-12**, as the practical answer to E43's real question:
