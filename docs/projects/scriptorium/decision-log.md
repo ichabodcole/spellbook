@@ -1360,3 +1360,35 @@ along.
 Driven end to end against a real `tail`: selection → message → the agent's tail
 carrying doc, version, lines, quote and both paths → `say` back → both turns in
 the conversation.
+
+## E49 · A link target with a space in it is percent-encoded, and we never decoded it
+
+**Found in USE, 2026-09-13** — the first real task driven through the chat
+slice. Cole asked for links between his Hollowbrook world-bible documents; a
+subagent added ten, every one resolving on disk; and the map drew **six dangling
+edges and no inbound links at all** into three of the five documents.
+
+**The documents were right. The resolver was wrong.** A markdown link to a file
+whose name has a space carries it percent-encoded — `Maren's%20Bakery.md` — and
+`splitTarget` handed that on literally, so the lookup never matched the real
+file. `Maren.md` resolved (no space in the name) and everything else silently
+did not.
+
+**This would have hit every Operator folder Cole has**, because his filenames
+are prose — _Maren's Bakery.md_, _Hollowbrook — Overview.md_, _Visual Style.md_.
+It never appeared in the corpus E33 was built against (`agent-cli-conformance`),
+whose filenames are all kebab-case, and no fixture had a space in it either.
+
+**⛔ THE DECODE MUST NOT THROW.** `decodeURIComponent` rejects a lone `%`, and
+`100% done.md` is an ordinary filename. An undecodable target is returned
+unchanged — worst case it fails to resolve, which is the behaviour before
+decoding existed, rather than taking the whole graph down.
+
+**Pinned with cells** covering the space, the em dash, a query after the
+encoding, an anchor after it, and the undecodable case. `dangling` on Cole's set
+went 6 → 0; `Visual Style.md` went from `in:0 out:0` to `in:2`.
+
+_The finding is the method, not the bug: two corpora had been driven through
+this code and neither had a space in a filename. The class of input that breaks
+you is the one your fixtures share an assumption about — and the way to meet it
+is to run the real thing, for a real reason, on somebody's actual documents._

@@ -103,13 +103,32 @@ export function parseRel(query: string | undefined): string[] {
 }
 
 /** Split a written target into its path, its query and its anchor. */
+/**
+ * Percent-decoding, which a markdown link target carries whenever the file it
+ * names has a space in it — `Maren's%20Bakery.md` (E49).
+ *
+ * ⛔ IT MUST NOT THROW. `decodeURIComponent` rejects a lone `%`, and a file
+ * called `100% done.md` is a perfectly ordinary thing to link to. An
+ * undecodable target is returned as it stands: worst case it fails to resolve,
+ * which is the behaviour before decoding existed, rather than taking the graph
+ * down with it.
+ */
+function decodePath(raw: string): string {
+  if (!raw.includes("%")) return raw;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export function splitTarget(raw: string): { path: string; query?: string; anchor?: string } {
   const hash = raw.indexOf("#");
   const withoutAnchor = hash === -1 ? raw : raw.slice(0, hash);
   const anchor = hash === -1 ? undefined : raw.slice(hash + 1);
   const q = withoutAnchor.indexOf("?");
   return {
-    path: (q === -1 ? withoutAnchor : withoutAnchor.slice(0, q)).trim(),
+    path: decodePath((q === -1 ? withoutAnchor : withoutAnchor.slice(0, q)).trim()),
     ...(q === -1 ? {} : { query: withoutAnchor.slice(q + 1) }),
     ...(anchor ? { anchor } : {}),
   };

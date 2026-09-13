@@ -241,3 +241,40 @@ describe("the map", () => {
     expect(graph.edges.some((e) => e.state === "missing")).toBe(true);
   });
 });
+
+describe("percent-encoded targets (E49)", () => {
+  test("a space encoded as %20 resolves to the file it names", () => {
+    // ⛔ FOUND IN USE, not in a fixture: a real corpus whose filenames have
+    // spaces linked itself correctly and the graph drew NO edges into those
+    // documents, because the target was looked up literally.
+    expect(splitTarget("Maren's%20Bakery.md").path).toBe("Maren's Bakery.md");
+  });
+
+  test("decoding happens before the query is read, not after", () => {
+    const t = splitTarget("Visual%20Style.md?rel=renders-per");
+    expect(t.path).toBe("Visual Style.md");
+    expect(parseRel(t.query)).toEqual(["renders-per"]);
+  });
+
+  test("an em dash survives encoding", () => {
+    expect(splitTarget("Hollowbrook%20%E2%80%94%20Overview.md").path).toBe(
+      "Hollowbrook — Overview.md",
+    );
+  });
+
+  test("an UNDECODABLE target is left alone rather than throwing", () => {
+    // `100% done.md` is an ordinary filename and a lone % is not valid encoding.
+    expect(() => splitTarget("100% done.md")).not.toThrow();
+    expect(splitTarget("100% done.md").path).toBe("100% done.md");
+  });
+
+  test("a target with no encoding is untouched", () => {
+    expect(splitTarget("Maren.md").path).toBe("Maren.md");
+  });
+
+  test("an anchor is still split off, and decoded", () => {
+    const t = splitTarget("Hollowbrook%20Overview.md#the-rules");
+    expect(t.path).toBe("Hollowbrook Overview.md");
+    expect(t.anchor).toBe("the-rules");
+  });
+});
