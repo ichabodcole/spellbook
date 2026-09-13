@@ -4,7 +4,7 @@
 // surface can actually be wrong.
 import { describe, expect, test } from "bun:test";
 import { diffText } from "../../backend/diff";
-import { rowsOf } from "./CompareView";
+import { fileLabel, rowsOf, sideLabel } from "./CompareView";
 
 /** The rows a real comparison produces, the way the component builds them. */
 const rows = (before: string, after: string) => {
@@ -99,5 +99,39 @@ describe("rowsOf", () => {
     }
     expect(left.join("\n")).toBe(before);
     expect(right.join("\n")).toBe(after);
+  });
+});
+
+describe("fileLabel (E43)", () => {
+  test("a short name is left exactly as it is", () => {
+    expect(fileLabel("note.md")).toBe("note.md");
+  });
+
+  test("a long name is cut in the MIDDLE, keeping the extension", () => {
+    // The tail is where the extension lives — and where a long name's
+    // distinguishing part often is — so end-truncation would hide both.
+    const out = fileLabel("how-to-derive-your-surface-from-one-registry.md", 22);
+    expect(out).toContain("…");
+    expect(out.endsWith(".md")).toBe(true);
+    expect(out.startsWith("how-to-")).toBe(true);
+  });
+
+  test("never exceeds the budget it was given", () => {
+    for (const max of [8, 12, 22, 40]) {
+      for (const name of ["a.md", "short.md", "a-really-quite-long-document-name.md"]) {
+        expect(fileLabel(name, max).length).toBeLessThanOrEqual(Math.max(max, name.length));
+      }
+    }
+  });
+
+  test("a name exactly at the budget is not cut", () => {
+    const name = "exactly-twentytwo!!.md";
+    expect(name.length).toBe(22);
+    expect(fileLabel(name, 22)).toBe(name);
+  });
+
+  test("the saved side is called by the file; a version by its number", () => {
+    expect(sideLabel("original", "note.md")).toBe("note.md");
+    expect(sideLabel(3, "note.md")).toBe("v3");
   });
 });

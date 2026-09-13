@@ -781,7 +781,7 @@ export class Session {
     const missing = opts.hunks.filter((id) => !known.has(id));
     if (missing.length)
       throw new SessionError(
-        `${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against)} — ` +
+        `${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against, d.name)} — ` +
           `it has ${known.size === 0 ? "none" : `1..${Math.max(...known)}`}. Run diff again: ` +
           `the text changed under the numbers.`,
         409,
@@ -1691,10 +1691,18 @@ function countDocs(dir: string): number {
 /**
  * How a comparison side reads in a message to a human or an agent.
  *
- * "The saved file" rather than "the original" (E43) — and it matches what
- * Revert already told the human ("Reverted v2 to the saved file"), so the app
- * now says one thing about the file of record instead of two.
+ * ⛔ THE FILE IS NAMED, NOT DESCRIBED (E43, revised). "The original" sounded
+ * temporal when the thing is locational; "the saved file" fixed that but reads
+ * circular the moment it is a DESTINATION — "save to the saved file" says
+ * nothing. No noun encapsulates "this file, at this place", so the file gets
+ * its own name: `note.md`. Cole: "that's probably closer to the right answer
+ * versus trying to come up with a word that encapsulates it."
+ *
+ * `file` is the document's name when the caller knows it; without one this
+ * falls back to a generic, which is only for contexts that have no document in
+ * hand.
  */
-export function sideName(side: DiffSide): string {
-  return side === "original" ? "the saved file" : `v${side}`;
+export function sideName(side: DiffSide, file?: string): string {
+  if (side !== "original") return `v${side}`;
+  return file ?? "the saved file";
 }

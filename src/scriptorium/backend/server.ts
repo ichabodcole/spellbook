@@ -610,7 +610,7 @@ export async function startDaemon(opts: StartOpts) {
         });
         const m = session.addMessage(
           "system",
-          `Took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(msg.against)} into v${r.version} of ${r.slug}.`,
+          `Took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(msg.against, session.doc(r.slug).name)} into v${r.version} of ${r.slug}.`,
         );
         log.emit({
           type: "merged",
@@ -862,7 +862,7 @@ export async function startDaemon(opts: StartOpts) {
           hunks: p.diff.hunks,
           unified: unified(p.diff, {
             from: `v${p.active}`,
-            to: sideName(p.against),
+            to: sideName(p.against, session.doc(p.doc).name),
             ...(cmd.context === undefined ? {} : { context: cmd.context }),
           }),
         };
@@ -877,7 +877,7 @@ export async function startDaemon(opts: StartOpts) {
           origin: "remote",
         });
         announce(
-          `Agent took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(cmd.against)} into v${r.version} of ${r.slug}.`,
+          `Agent took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(cmd.against, session.doc(r.slug).name)} into v${r.version} of ${r.slug}.`,
           { fact: "merged", doc: r.slug, version: r.version, hunks: cmd.hunks, by: "agent" },
         );
         return { doc: r.slug, version: r.version, applied: r.applied };

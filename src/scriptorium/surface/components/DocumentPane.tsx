@@ -226,7 +226,7 @@ export function DocumentPane({
                 size="sm"
                 onClick={onSave}
                 disabled={!doc.dirty}
-                title="Write this version over the file (⌘S)"
+                title={`Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`}
                 className="h-7 gap-1.5 px-2 text-xs"
               >
                 <SaveIcon className="size-3.5" />
@@ -326,6 +326,7 @@ export function DocumentPane({
         diff && diff.doc === doc.slug ? (
           <CompareView
             payload={diff}
+            file={doc.name}
             versions={doc.versions}
             onAgainst={onAgainst}
             onTake={onTake}

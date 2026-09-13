@@ -45737,8 +45737,14 @@ function relativeTime(ts, now2) {
 // src/scriptorium/surface/components/CompareView.tsx
 var import_react18 = __toESM(require_react(), 1);
 var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
-function sideLabel(side2) {
-  return side2 === "original" ? "the saved file" : `v${side2}`;
+function fileLabel(name2, max2 = 22) {
+  if (name2.length <= max2)
+    return name2;
+  const head = Math.ceil((max2 - 1) / 2);
+  return `${name2.slice(0, head)}…${name2.slice(name2.length - (max2 - 1 - head))}`;
+}
+function sideLabel(side2, file, max2) {
+  return side2 === "original" ? fileLabel(file, max2) : `v${side2}`;
 }
 function rowsOf(lines, hunkIds) {
   const rows = [];
@@ -45814,6 +45820,7 @@ function Cell({
 }
 function CompareView({
   payload,
+  file,
   versions,
   onAgainst,
   onTake,
@@ -45852,8 +45859,9 @@ function CompareView({
               type: "button",
               onClick: () => onAgainst(s),
               "aria-pressed": s === against,
+              title: s === "original" ? file : `version ${s}`,
               className: cn("rounded-sm px-1.5 py-0.5 text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", s === against && "bg-surface-raised font-medium text-ink"),
-              children: sideLabel(s)
+              children: sideLabel(s, file)
             }, String(s), false, undefined, this))
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
@@ -45865,7 +45873,7 @@ function CompareView({
                 size: "sm",
                 disabled: busy,
                 onClick: () => onTake(diff.hunks.map((h) => h.id)),
-                title: `Take every change from ${sideLabel(against)} into v${active}`,
+                title: `Take every change from ${sideLabel(against, file, 60)} into v${active}`,
                 className: "h-6 px-2 text-xs",
                 children: "Take all"
               }, undefined, false, undefined, this)
@@ -68471,7 +68479,7 @@ function DocumentPane({
                   size: "sm",
                   onClick: onSave,
                   disabled: !doc2.dirty,
-                  title: "Write this version over the file (⌘S)",
+                  title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
                     /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Save, {
@@ -68566,6 +68574,7 @@ function DocumentPane({
         "aria-busy": "true"
       }, undefined, false, undefined, this) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(CompareView, {
         payload: diff,
+        file: doc2.name,
         versions: doc2.versions,
         onAgainst,
         onTake

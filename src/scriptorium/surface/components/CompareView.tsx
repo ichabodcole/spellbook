@@ -20,17 +20,22 @@ import type { DiffLine, DiffPayload, DiffSide, DiffSpan, Version } from "../../b
 /**
  * How a comparison side reads to a human (E43).
  *
- * ⛔ "THE SAVED FILE", NOT "THE ORIGINAL". The word `original` is the code's
- * name for the file of record and it is wrong in prose: it sounds TEMPORAL —
- * "the first one" — which is exactly what v1 is, the thing it is not. This side
- * is LOCATIONAL: the .md file in the human's folder, re-read from disk on every
- * comparison, so it also shows a change made outside scriptorium entirely.
- * Naming it by the act that writes it (Save) is what separates it from a
- * version without making anyone think about where files live. (Cole: "I'm
- * finding that language maybe a little ambiguous.")
+ * ⛔ THE FILE IS NAMED, NOT DESCRIBED. `original` is the code's word for the
+ * file of record and it misleads in prose — it sounds TEMPORAL, "the first
+ * one", which is exactly what v1 is. "The saved file" fixed the tense and then
+ * failed as a DESTINATION ("save to the saved file"). No noun carries "this
+ * file, at this place", so the file is called by its name. Truncated in the
+ * middle rather than the end, because the extension is the half that says what
+ * kind of thing it is and a long name's tail is often the distinguishing part.
  */
-export function sideLabel(side: DiffSide): string {
-  return side === "original" ? "the saved file" : `v${side}`;
+export function fileLabel(name: string, max = 22): string {
+  if (name.length <= max) return name;
+  const head = Math.ceil((max - 1) / 2);
+  return `${name.slice(0, head)}…${name.slice(name.length - (max - 1 - head))}`;
+}
+
+export function sideLabel(side: DiffSide, file: string, max?: number): string {
+  return side === "original" ? fileLabel(file, max) : `v${side}`;
 }
 
 /** One rendered row: the same line on both sides, or one side of a change. */
@@ -141,12 +146,15 @@ function Cell({
 
 export function CompareView({
   payload,
+  file,
   versions,
   onAgainst,
   onTake,
   busy,
 }: {
   payload: DiffPayload;
+  /** The document's file name — the saved side is called by it. */
+  file: string;
   versions: Version[];
   onAgainst: (side: DiffSide) => void;
   onTake: (hunks: number[]) => void;
@@ -177,13 +185,14 @@ export function CompareView({
               type="button"
               onClick={() => onAgainst(s)}
               aria-pressed={s === against}
+              title={s === "original" ? file : `version ${s}`}
               className={cn(
                 "rounded-sm px-1.5 py-0.5 text-ink-faint outline-none",
                 "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
                 s === against && "bg-surface-raised font-medium text-ink",
               )}
             >
-              {sideLabel(s)}
+              {sideLabel(s, file)}
             </button>
           ))}
         </div>
@@ -197,7 +206,7 @@ export function CompareView({
               size="sm"
               disabled={busy}
               onClick={() => onTake(diff.hunks.map((h) => h.id))}
-              title={`Take every change from ${sideLabel(against)} into v${active}`}
+              title={`Take every change from ${sideLabel(against, file, 60)} into v${active}`}
               className="h-6 px-2 text-xs"
             >
               Take all
