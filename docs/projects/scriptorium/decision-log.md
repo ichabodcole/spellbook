@@ -1235,3 +1235,40 @@ sentence.
 Driven end to end: a note followed a 68-character shift at full confidence,
 orphaned when its line was deleted, came back when the text did, and clicking it
 in the list selects its passage in the editor.
+
+## E46 · A note can be rewritten, and made without leaving the text
+
+**Two gaps Cole found by using E45.**
+
+**1. A note could not be edited.** Now `note.edit` on both unions and
+`note-edit` on the CLI, with a pencil on each row in the panel.
+
+**⛔ EDITING CHANGES WHAT A NOTE SAYS, NEVER WHAT IT IS ABOUT.** The quote and
+its context are untouched: a note you rewrote is still about the passage you
+made it on. Re-quoting on edit would silently move the note to wherever the
+caret happened to be — which is the same class of failure as a re-anchor onto
+unrelated words, arriving by a different door. `editedAt` is recorded and shown,
+because a note that changed after someone read it should say so.
+
+**2. Making a note meant leaving the text.** Cole: _"this is a little quicker,
+because the user does not need to switch to notes in the panel to add a note,
+only to read or edit a note."_ That is the right split — making a note happens
+mid-read, dozens of times; reading them back happens once — so the FAST path
+went to where the eyes already are and the panel kept the slow one.
+
+Right-click over a selection opens a small menu at the click, and "Add note"
+swaps it for a composer in the same place. **Only over a SELECTION:** with
+nothing selected there is nothing to note, so the browser's own menu (spelling,
+copy, look up) is left alone rather than replaced with something useless.
+
+**⛔ THE PASSAGE IS PAINTED, NOT SELECTED, WHILE THE COMPOSER IS OPEN.** The
+browser's selection dims or vanishes the moment focus moves to a textarea, and
+the one thing that must stay visible is WHICH passage is being written about. A
+decoration makes it independent of focus — and it is deliberately rubric where a
+real note is attention-amber, so a passage being noted never reads as a note
+already made. The dismissal listens on `mousedown` rather than `click`, because
+the editor would otherwise move the caret first and drop the selection.
+
+**The menu is two steps rather than one on purpose:** it is where the other acts
+on a passage will go — ask the agent about this, copy the quote — so it does not
+collapse into the composer just because there is one item today.

@@ -494,6 +494,12 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "note.edit": {
+        const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
+        log.emit({ type: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
+        broadcastState();
+        return;
+      }
       case "note.resolve": {
         const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
         log.emit({
@@ -906,6 +912,16 @@ export async function startDaemon(opts: StartOpts) {
       case "notes": {
         const r = session.notesOf({ doc: cmd.doc, ...(cmd.all ? { all: true } : {}) });
         return { doc: r.slug, notes: r.notes };
+      }
+      case "note.edit": {
+        const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body });
+        announce(`Agent rewrote a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`, {
+          fact: "note.edited",
+          doc: r.slug,
+          note: r.note.id,
+          by: "agent",
+        });
+        return { doc: r.slug, note: r.note.id };
       }
       case "note.resolve": {
         const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });

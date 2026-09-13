@@ -125,6 +125,7 @@ test("the brief's verb roster is exactly the table's", () => {
       "version-delete",
       "note",
       "notes",
+      "note-edit",
       "note-resolve",
       "note-remove",
       "new-doc",

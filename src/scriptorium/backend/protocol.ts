@@ -178,6 +178,8 @@ export type Note = {
   body: string;
   who: VersionAuthor;
   createdAt: number;
+  /** When the body was last changed — absent if it never was (E46). */
+  editedAt?: number;
   resolved: boolean;
 };
 
@@ -376,6 +378,7 @@ export type ClientMsg =
   | { type: "version.delete"; doc: string; version: number }
   /** E45: the human notes a SELECTION — offsets into the active text. */
   | { type: "note.add"; doc: string; from: number; to: number; body: string }
+  | { type: "note.edit"; doc: string; id: string; body: string }
   | { type: "note.resolve"; doc: string; id: string; resolved: boolean }
   | { type: "note.remove"; doc: string; id: string }
   | { type: "save"; doc: string }
@@ -461,6 +464,7 @@ export type AgentCmd =
    */
   | { type: "note.add"; doc?: string; quote: string; body: string }
   | { type: "notes"; doc?: string; all?: boolean }
+  | { type: "note.edit"; doc?: string; id: string; body: string }
   | { type: "note.resolve"; doc?: string; id: string; resolved: boolean }
   | { type: "note.remove"; doc?: string; id: string }
   | { type: "diff"; doc?: string; against: DiffSide; context?: number }

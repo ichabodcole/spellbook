@@ -762,6 +762,25 @@ const COMMANDS: CommandSpec[] = [
     },
   },
   {
+    name: "note-edit",
+    flags: [...SESSION, "doc", "stdin", "body-file"],
+    positionals: [
+      { name: "id", required: true },
+      { name: "text", required: false, variadic: true },
+    ],
+    describe: "rewrite what a note says (its passage is unchanged)",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "note.edit",
+          id: pos[0] as string,
+          body: await readSayBody(pos.slice(1), flags),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
     name: "note-resolve",
     flags: [...SESSION, "doc", "reopen"],
     positionals: [{ name: "id", required: true }],

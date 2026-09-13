@@ -22,6 +22,7 @@ import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
 import { NewVersionDialog, type VersionIntent } from "./NewVersionDialog";
+import { type At, NoteAtSelection } from "./NoteAtSelection";
 import { type StatusSegment, StatusStrip } from "./StatusStrip";
 import { VersionMenu, versionSummary } from "./VersionMenu";
 
@@ -100,6 +101,7 @@ export function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  onAddNote,
   splitLayout,
   onEdit,
   onSave,
@@ -124,6 +126,7 @@ export function DocumentPane({
   /** E45: the editor's selection, so the notes panel can offer to note it. */
   onSelect: (from: number, to: number) => void;
   reveal: { from: number; to: number; seq: number } | null;
+  onAddNote: (from: number, to: number, body: string) => void;
   /** The buffer, debounced by the editor — written to the active version (E7). */
   onEdit: (text: string) => void;
   /** Write the active version over the original. The human's decision, always. */
@@ -156,6 +159,8 @@ export function DocumentPane({
   const active = doc?.versions.find((v) => v.n === doc.active);
   const [naming, setNaming] = useState<VersionIntent | null>(null);
   const { confirm, dialog } = useConfirm();
+  /** Where the human right-clicked a passage, and which passage (E46). */
+  const [noteAt, setNoteAt] = useState<At | null>(null);
 
   const segments: StatusSegment[] = doc
     ? [
@@ -352,6 +357,8 @@ export function DocumentPane({
           onSave={onSave}
           onSelect={onSelect}
           reveal={reveal}
+          pendingNote={noteAt}
+          onContextMenu={setNoteAt}
         />
       ) : showing === "rendered" ? (
         <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
@@ -372,6 +379,8 @@ export function DocumentPane({
               onSave={onSave}
               onSelect={onSelect}
               reveal={reveal}
+              pendingNote={noteAt}
+              onContextMenu={setNoteAt}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -387,6 +396,12 @@ export function DocumentPane({
       )}
       {doc && <StatusStrip segments={segments} />}
       {dialog}
+      <NoteAtSelection
+        at={noteAt}
+        quote={noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : ""}
+        onClose={() => setNoteAt(null)}
+        onAdd={onAddNote}
+      />
       {doc && (
         <NewVersionDialog
           open={naming !== null}

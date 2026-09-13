@@ -43,9 +43,34 @@ const remote = Annotation.define<boolean>();
 // stored offset would be the stale-offset bug the anchoring exists to avoid.
 const setNotes = StateEffect.define<PlacedNote[]>();
 
+/**
+ * The passage a note is being written about, while the composer is open (E46).
+ *
+ * ⛔ A DECORATION, NOT THE SELECTION. The browser's selection dims or vanishes
+ * the moment focus moves to a textarea, and the one thing the composer must
+ * keep visible is WHICH passage you are writing about. Painting it as a mark
+ * makes it independent of focus entirely.
+ */
+const setPending = StateEffect.define<{ from: number; to: number } | null>();
+
 /** `nearest` is a guess, and is drawn as one — dashed rather than solid. */
 const noteMark = Decoration.mark({ class: "cm-note" });
 const guessMark = Decoration.mark({ class: "cm-note cm-note-guess" });
+
+const pendingMark = Decoration.mark({ class: "cm-note cm-note-pending" });
+
+const pendingField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(marks, tr) {
+    for (const e of tr.effects)
+      if (e.is(setPending))
+        return e.value
+          ? Decoration.set([pendingMark.range(e.value.from, e.value.to)])
+          : Decoration.none;
+    return marks.map(tr.changes);
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
 
 const noteField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
@@ -102,6 +127,10 @@ const scriptoriumTheme = EditorView.theme({
     borderBottom: "1px solid color-mix(in srgb, var(--color-attention) 55%, transparent)",
   },
   ".cm-note-guess": { borderBottomStyle: "dashed" },
+  ".cm-note-pending": {
+    backgroundColor: "color-mix(in srgb, var(--color-rubric) 24%, transparent)",
+    borderBottom: "1px solid var(--color-rubric)",
+  },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" },
 });
 
@@ -132,6 +161,8 @@ export function DocumentView({
   onSave,
   onSelect,
   reveal,
+  pendingNote,
+  onContextMenu,
 }: {
   docKey: string;
   text: string;
@@ -147,14 +178,18 @@ export function DocumentView({
   onSelect?: (from: number, to: number) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
+  /** The passage a note is being written about — painted while the composer is open. */
+  pendingNote?: { from: number; to: number } | null;
+  /** Right-click over a SELECTION: where, and what is selected. */
+  onContextMenu?: (at: { x: number; y: number; from: number; to: number }) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initial = useRef(text);
   initial.current = text;
   // The handlers change identity every render; the extensions must not.
-  const handlers = useRef({ onChange, onSave, onSelect });
-  handlers.current = { onChange, onSave, onSelect };
+  const handlers = useRef({ onChange, onSave, onSelect, onContextMenu });
+  handlers.current = { onChange, onSave, onSelect, onContextMenu };
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** The last text the DAEMON gave us — see the remote effect below. */
   const lastRemote = useRef(text);
@@ -183,6 +218,7 @@ export function DocumentView({
     const extensions: Extension[] = [
       EditorView.lineWrapping,
       noteField,
+      pendingField,
       markdownHighlighting,
       EditorView.updateListener.of((update) => {
         if (!update.selectionSet) return;
@@ -222,6 +258,16 @@ export function DocumentView({
             flush();
             return false;
           },
+          // ⛔ ONLY OVER A SELECTION. With nothing selected there is nothing to
+          // note, so the browser's own menu (spelling, copy, look up) is left
+          // alone rather than replaced with something useless.
+          contextmenu: (event, view) => {
+            const { from, to } = view.state.selection.main;
+            if (from === to || !handlers.current.onContextMenu) return false;
+            event.preventDefault();
+            handlers.current.onContextMenu({ x: event.clientX, y: event.clientY, from, to });
+            return true;
+          },
         }),
       );
     const v = new EditorView({
@@ -250,6 +296,10 @@ export function DocumentView({
     });
     v.focus();
   }, [reveal]);
+
+  useEffect(() => {
+    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+  }, [pendingNote]);
 
   // Notes arrive already placed; push them in whenever the daemon re-places them.
   useEffect(() => {

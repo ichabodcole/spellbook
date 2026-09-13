@@ -891,6 +891,19 @@ export class Session {
     return note;
   }
 
+  /** Change what a note SAYS. Its anchor is untouched — it is still about the
+   *  same passage, which is why editing does not re-quote (E46). */
+  editNote(opts: { doc?: string; id: string; body: string }): { slug: string; note: Note } {
+    const d = this.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    const body = opts.body.trim();
+    if (!body) throw new SessionError("a note needs something written in it", 400);
+    note.body = body;
+    note.editedAt = Date.now();
+    this.persist();
+    return { slug: d.slug, note };
+  }
+
   resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
     slug: string;
     note: Note;

@@ -301,6 +301,9 @@ function Workspace({
             }}
             onSelect={(from, to) => setSelection(from === to ? null : { from, to })}
             reveal={reveal}
+            onAddNote={(from, to, body) => {
+              if (open) send({ type: "note.add", doc: open.slug, from, to, body });
+            }}
             splitLayout={splitLayout}
             onAddFrontmatter={async () => {
               if (!open) return;
@@ -370,6 +373,9 @@ function Workspace({
               onGoTo={(n) => {
                 if (n.from !== null)
                   setReveal({ from: n.from, to: n.to as number, seq: Date.now() });
+              }}
+              onEdit={(id, body) => {
+                if (open) send({ type: "note.edit", doc: open.slug, id, body });
               }}
               onResolve={(id, resolved) => {
                 if (open) send({ type: "note.resolve", doc: open.slug, id, resolved });

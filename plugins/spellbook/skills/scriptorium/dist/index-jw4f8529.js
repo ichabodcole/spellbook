@@ -19656,7 +19656,7 @@ var __iconNode38 = [
 ];
 var X = createLucideIcon("x", __iconNode38);
 // src/scriptorium/surface/App.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -45717,7 +45717,7 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react24 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
 var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
@@ -61066,8 +61066,20 @@ var markdownHighlighting = [markdownMode, syntaxHighlighting(scriptoriumHighligh
 var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 var remote = Annotation.define();
 var setNotes = StateEffect.define();
+var setPending = StateEffect.define();
 var noteMark = Decoration.mark({ class: "cm-note" });
 var guessMark = Decoration.mark({ class: "cm-note cm-note-guess" });
+var pendingMark = Decoration.mark({ class: "cm-note cm-note-pending" });
+var pendingField = StateField.define({
+  create: () => Decoration.none,
+  update(marks2, tr) {
+    for (const e of tr.effects)
+      if (e.is(setPending))
+        return e.value ? Decoration.set([pendingMark.range(e.value.from, e.value.to)]) : Decoration.none;
+    return marks2.map(tr.changes);
+  },
+  provide: (f) => EditorView.decorations.from(f)
+});
 var noteField = StateField.define({
   create: () => Decoration.none,
   update(marks2, tr) {
@@ -61108,6 +61120,10 @@ var scriptoriumTheme = EditorView.theme({
     borderBottom: "1px solid color-mix(in srgb, var(--color-attention) 55%, transparent)"
   },
   ".cm-note-guess": { borderBottomStyle: "dashed" },
+  ".cm-note-pending": {
+    backgroundColor: "color-mix(in srgb, var(--color-rubric) 24%, transparent)",
+    borderBottom: "1px solid var(--color-rubric)"
+  },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" }
 });
 function minimalChange(a2, b) {
@@ -61133,14 +61149,16 @@ function DocumentView({
   onChange,
   onSave,
   onSelect,
-  reveal
+  reveal,
+  pendingNote,
+  onContextMenu
 }) {
   const host = import_react19.useRef(null);
   const view = import_react19.useRef(null);
   const initial3 = import_react19.useRef(text);
   initial3.current = text;
-  const handlers2 = import_react19.useRef({ onChange, onSave, onSelect });
-  handlers2.current = { onChange, onSave, onSelect };
+  const handlers2 = import_react19.useRef({ onChange, onSave, onSelect, onContextMenu });
+  handlers2.current = { onChange, onSave, onSelect, onContextMenu };
   const pending = import_react19.useRef(null);
   const lastRemote = import_react19.useRef(text);
   const notesRef = import_react19.useRef(notes);
@@ -61168,6 +61186,7 @@ function DocumentView({
     const extensions = [
       EditorView.lineWrapping,
       noteField,
+      pendingField,
       markdownHighlighting,
       EditorView.updateListener.of((update3) => {
         if (!update3.selectionSet)
@@ -61202,6 +61221,14 @@ function DocumentView({
         blur: () => {
           flush();
           return false;
+        },
+        contextmenu: (event, view2) => {
+          const { from, to } = view2.state.selection.main;
+          if (from === to || !handlers2.current.onContextMenu)
+            return false;
+          event.preventDefault();
+          handlers2.current.onContextMenu({ x: event.clientX, y: event.clientY, from, to });
+          return true;
         }
       }));
     const v = new EditorView({
@@ -61228,6 +61255,9 @@ function DocumentView({
     });
     v.focus();
   }, [reveal]);
+  import_react19.useEffect(() => {
+    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+  }, [pendingNote]);
   import_react19.useEffect(() => {
     const v = view.current;
     if (!v)
@@ -68109,29 +68139,149 @@ function NewVersionDialog({
   }, undefined, false, undefined, this);
 }
 
-// src/scriptorium/surface/components/StatusStrip.tsx
+// src/scriptorium/surface/components/NoteAtSelection.tsx
 var import_react22 = __toESM(require_react(), 1);
 var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
-function StatusStrip({ segments }) {
+var CARD_W = 320;
+var MARGIN = 12;
+function place(at2, height) {
+  const left = Math.min(Math.max(MARGIN, at2.x), window.innerWidth - CARD_W - MARGIN);
+  const below = at2.y + MARGIN;
+  const top2 = below + height + MARGIN < window.innerHeight ? below : at2.y - height - MARGIN;
+  return { left, top: Math.max(MARGIN, top2) };
+}
+function NoteAtSelection({
+  at: at2,
+  quote,
+  onClose,
+  onAdd
+}) {
+  const [writing, setWriting] = import_react22.useState(false);
+  const [body, setBody] = import_react22.useState("");
+  const card = import_react22.useRef(null);
+  const field = import_react22.useRef(null);
+  const [pos, setPos] = import_react22.useState(null);
+  import_react22.useEffect(() => {
+    if (!at2) {
+      setWriting(false);
+      setBody("");
+    }
+  }, [at2]);
+  import_react22.useLayoutEffect(() => {
+    if (!at2 || !card.current)
+      return;
+    setPos(place(at2, card.current.offsetHeight));
+  }, [at2]);
+  import_react22.useEffect(() => {
+    if (writing)
+      field.current?.focus();
+  }, [writing]);
+  import_react22.useEffect(() => {
+    if (!at2)
+      return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    const onDown = (e) => {
+      if (card.current && !card.current.contains(e.target))
+        onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [at2, onClose]);
+  if (!at2)
+    return null;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!body.trim())
+      return;
+    onAdd(at2.from, at2.to, body);
+    onClose();
+  };
   return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+    ref: card,
+    style: { left: pos?.left ?? at2.x, top: pos?.top ?? at2.y, width: CARD_W },
+    className: cn("fixed z-50 rounded-md border border-edge bg-surface-raised shadow-lg", pos ? "opacity-100" : "opacity-0"),
+    children: writing ? /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("form", {
+      onSubmit: submit,
+      className: "flex flex-col gap-1.5 p-2",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("p", {
+          className: "truncate font-mono text-[11px] text-ink-faint",
+          children: quote.replace(/\s+/gu, " ").trim()
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("textarea", {
+          ref: field,
+          value: body,
+          onChange: (e) => setBody(e.target.value),
+          rows: 3,
+          placeholder: "What about it?",
+          className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          onKeyDown: (e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+              submit(e);
+          }
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              className: "text-[10px] text-ink-faint",
+              children: "⌘↩ to add · esc to close"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button3, {
+              type: "submit",
+              size: "sm",
+              disabled: !body.trim(),
+              className: "ml-auto h-6 px-2 text-xs",
+              children: "Add note"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      ]
+    }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      className: "p-1",
+      children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+        type: "button",
+        onClick: () => setWriting(true),
+        className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessageSquarePlus, {
+            "aria-hidden": true,
+            className: "size-3.5 text-ink-faint"
+          }, undefined, false, undefined, this),
+          "Add note"
+        ]
+      }, undefined, true, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/scriptorium/surface/components/StatusStrip.tsx
+var import_react23 = __toESM(require_react(), 1);
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+function StatusStrip({ segments }) {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(import_react22.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(import_react23.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
           children: [
-            s.label && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+            s.label && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
               children: [
                 s.label,
                 ":"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
               className: "text-ink tabular-nums",
               children: s.value
             }, undefined, false, undefined, this)
@@ -68143,18 +68293,18 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/VersionMenu.tsx
-var import_react23 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/ui/dropdown-menu.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
 function DropdownMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Root, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Root, {
     "data-slot": "dropdown-menu",
     ...props
   }, undefined, false, undefined, this);
 }
 function DropdownMenuTrigger({ ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Trigger, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Trigger, {
     "data-slot": "dropdown-menu-trigger",
     ...props
   }, undefined, false, undefined, this);
@@ -68167,14 +68317,14 @@ function DropdownMenuContent({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Portal, {
-    children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Positioner, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Positioner, {
       className: "isolate z-50 outline-none",
       align: align2,
       alignOffset,
       side: side2,
       sideOffset,
-      children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Popup, {
+      children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Popup, {
         "data-slot": "dropdown-menu-content",
         className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -68188,7 +68338,7 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Item, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Item, {
     "data-slot": "dropdown-menu-item",
     "data-inset": inset,
     "data-variant": variant,
@@ -68197,7 +68347,7 @@ function DropdownMenuItem({
   }, undefined, false, undefined, this);
 }
 function DropdownMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(exports_index_parts.Separator, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts.Separator, {
     "data-slot": "dropdown-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
@@ -68205,7 +68355,7 @@ function DropdownMenuSeparator({ className, ...props }) {
 }
 
 // src/scriptorium/surface/components/VersionMenu.tsx
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 function versionLabel(v) {
   const label = v.label?.trim();
   return label && label.length > 0 ? label : `v${v.n}`;
@@ -68237,70 +68387,70 @@ function VersionMenu({
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
-  const [open3, setOpen] = import_react23.useState(false);
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenu, {
+  const [open3, setOpen] = import_react24.useState(false);
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenu, {
     open: open3,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuTrigger, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuTrigger, {
         className: cn("flex h-7 shrink-0 items-center gap-1 rounded-md border border-edge px-2", "text-xs text-ink outline-none hover:bg-surface-raised", "focus-visible:ring-2 focus-visible:ring-ring/60"),
         "aria-label": `Version ${active}${current?.label ? ` — ${current.label}` : ""}: ${versions.length} version${versions.length === 1 ? "" : "s"}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
             className: "font-medium tabular-nums",
             children: [
               "v",
               active
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ChevronDown, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ChevronDown, {
             "aria-hidden": true,
             className: "size-3 shrink-0 text-ink-faint"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuContent, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuContent, {
         align: "start",
         className: "w-80",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
             className: "border-b border-edge px-2 py-1.5",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
                 className: "text-sm font-medium text-ink",
                 children: "Versions"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
                 className: "text-xs text-ink-faint",
                 children: "Choosing one makes it the version you edit and Save writes."
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v, i2) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(import_react23.Fragment, {
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(import_react24.Fragment, {
               children: [
-                i2 > 0 && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+                i2 > 0 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuItem, {
                   onClick: () => v.n !== active && onActivate(v.n),
                   "aria-current": v.n === active ? "true" : undefined,
                   className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                       className: "flex w-full items-center gap-1.5",
                       children: [
-                        v.n === active ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BadgeCheck, {
+                        v.n === active ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(BadgeCheck, {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0 text-selected"
-                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0"
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                           className: "min-w-0 flex-1 truncate font-medium text-ink",
                           children: versionLabel(v)
                         }, undefined, false, undefined, this),
-                        v.label && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                        v.label && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                           className: "shrink-0 text-[11px] text-ink-faint",
                           children: [
                             "v",
@@ -68309,21 +68459,21 @@ function VersionMenu({
                         }, undefined, true, undefined, this)
                       ]
                     }, undefined, true, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                       className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
                       children: [
-                        v.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Sparkles, {
+                        v.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Sparkles, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
-                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(User, {
+                        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(User, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
                           className: "whitespace-nowrap",
                           children: when(v.createdAt)
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -68333,12 +68483,12 @@ function VersionMenu({
                           "aria-label": `Show ${versionLabel(v)} in the file manager`,
                           title: `Show v${v.n}.md in the file manager`,
                           className: cn("flex items-center rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink", v.n === active && "ml-auto"),
-                          children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(FolderOpen, {
+                          children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FolderOpen, {
                             "aria-hidden": true,
                             className: "size-3"
                           }, undefined, false, undefined, this)
                         }, undefined, false, undefined, this),
-                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -68347,14 +68497,14 @@ function VersionMenu({
                           },
                           className: "flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitCompare, {
+                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(GitCompare, {
                               "aria-hidden": true,
                               className: "size-3"
                             }, undefined, false, undefined, this),
                             "Compare"
                           ]
                         }, undefined, true, undefined, this),
-                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -68364,7 +68514,7 @@ function VersionMenu({
                           "aria-label": `Delete ${versionLabel(v)}`,
                           title: `Delete ${versionLabel(v)}`,
                           className: "flex items-center rounded-sm px-1 py-0.5 text-ink-faint hover:bg-bg hover:text-danger",
-                          children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Trash2, {
+                          children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Trash2, {
                             "aria-hidden": true,
                             className: "size-3"
                           }, undefined, false, undefined, this)
@@ -68376,14 +68526,14 @@ function VersionMenu({
               ]
             }, v.n, true, undefined, this))
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuSeparator, {}, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("branch");
             },
             children: [
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(GitBranch, {
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(GitBranch, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }, undefined, false, undefined, this),
@@ -68392,13 +68542,13 @@ function VersionMenu({
               " and edit it…"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("snapshot");
             },
             children: [
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(BookmarkPlus, {
+              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(BookmarkPlus, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }, undefined, false, undefined, this),
@@ -68414,13 +68564,13 @@ function VersionMenu({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split", "compare"];
 var SPLIT_MIN_PX = 720;
 function useWidth() {
-  const ref = import_react24.useRef(null);
-  const [width, setWidth] = import_react24.useState(0);
-  import_react24.useEffect(() => {
+  const ref = import_react25.useRef(null);
+  const [width, setWidth] = import_react25.useState(0);
+  import_react25.useEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -68437,16 +68587,16 @@ var MODE_BUTTONS = [
   { mode: "compare", label: "Compare with another version", icon: GitCompare }
 ];
 function useDebouncedStats(text4, ms = 300) {
-  const [stats, setStats] = import_react24.useState(() => contentStats(text4 ?? ""));
-  import_react24.useEffect(() => {
+  const [stats, setStats] = import_react25.useState(() => contentStats(text4 ?? ""));
+  import_react25.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now2, setNow] = import_react24.useState(() => Date.now());
-  import_react24.useEffect(() => {
+  const [now2, setNow] = import_react25.useState(() => Date.now());
+  import_react25.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
@@ -68466,6 +68616,7 @@ function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  onAddNote,
   splitLayout,
   onEdit,
   onSave,
@@ -68473,7 +68624,7 @@ function DocumentPane({
   onFollowLink,
   onAddFrontmatter
 }) {
-  const lastShown = import_react24.useRef(null);
+  const lastShown = import_react25.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown = text4 ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
@@ -68483,8 +68634,9 @@ function DocumentPane({
   const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
   const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc2?.versions.find((v) => v.n === doc2.active);
-  const [naming, setNaming] = import_react24.useState(null);
+  const [naming, setNaming] = import_react25.useState(null);
   const { confirm, dialog } = useConfirm();
+  const [noteAt, setNoteAt] = import_react25.useState(null);
   const segments = doc2 ? [
     { label: "Version", value: versionSummary(active, doc2.active) },
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
@@ -68497,15 +68649,15 @@ function DocumentPane({
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     ref: paneRef,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(jsx_dev_runtime22.Fragment, {
+        children: doc2 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(jsx_dev_runtime23.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(VersionMenu, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(VersionMenu, {
               versions: doc2.versions,
               active: doc2.active,
               onActivate,
@@ -68528,23 +68680,23 @@ function DocumentPane({
                   onDeleteVersion(n);
               }
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Separator2, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Separator2, {
               orientation: "vertical",
               className: "my-2 shrink-0"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FileText, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(FileText, {
               "aria-hidden": true,
               className: "size-3.5 shrink-0 text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
               className: "truncate text-sm text-ink",
               title: doc2.original,
               children: doc2.name
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
               className: "ml-auto flex shrink-0 items-center gap-1",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onRevert,
@@ -68552,13 +68704,13 @@ function DocumentPane({
                   title: "Take the file on disk back over your edits",
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(UndoDot, {
+                    /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(UndoDot, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Revert"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button3, {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button3, {
                   variant: "ghost",
                   size: "sm",
                   onClick: onSave,
@@ -68566,19 +68718,19 @@ function DocumentPane({
                   title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
                   className: "h-7 gap-1.5 px-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Save, {
+                    /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Save, {
                       className: "size-3.5"
                     }, undefined, false, undefined, this),
                     "Save"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
                   role: "toolbar",
                   "aria-label": "How to show this document",
                   className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
                   children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
                     const unavailable = m2 === "split" && !roomToSplit;
-                    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
+                    return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
                       type: "button",
                       onClick: () => onMode(m2),
                       disabled: unavailable,
@@ -68586,7 +68738,7 @@ function DocumentPane({
                       "aria-label": label,
                       title: unavailable ? `${label} — the pane is too narrow` : label,
                       className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
-                      children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Icon2, {
+                      children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Icon2, {
                         "aria-hidden": true,
                         className: "size-3.5"
                       }, undefined, false, undefined, this)
@@ -68596,18 +68748,18 @@ function DocumentPane({
               ]
             }, undefined, true, undefined, this)
           ]
-        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
           className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
           children: "Document"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             children: "This document has no frontmatter."
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
             type: "button",
             onClick: onAddFrontmatter,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -68615,21 +68767,21 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      doc2?.outsideChanged && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
             className: "min-w-0 flex-1",
             children: "This file changed on disk while you have unsaved edits."
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
             type: "button",
             onClick: onSave,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "Keep mine"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
             type: "button",
             onClick: onRevert,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -68637,35 +68789,35 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      !doc2 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FileText, {}, undefined, false, undefined, this)
+              children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(FileText, {}, undefined, false, undefined, this)
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyTitle, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyTitle, {
               children: "No document open"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      }, undefined, false, undefined, this) : shown === undefined ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(CompareView, {
+      }, undefined, false, undefined, this) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(CompareView, {
         payload: diff,
         file: doc2.name,
         versions: doc2.versions,
         onAgainst,
         onTake
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DocumentView, {
+      }, undefined, false, undefined, this) : showing === "raw" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(DocumentView, {
         docKey: doc2.slug,
         text: shown,
         editable: true,
@@ -68673,23 +68825,25 @@ function DocumentPane({
         onChange: onEdit,
         onSave,
         onSelect,
-        reveal
-      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MarkdownView, {
+        reveal,
+        pendingNote: noteAt,
+        onContextMenu: setNoteAt
+      }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MarkdownView, {
         text: shown,
         meta: doc2.meta,
         onFollowLink
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanelGroup, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: splitLayout.defaultLayout,
         onLayoutChanged: splitLayout.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanel, {
             id: "doc-raw",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col",
-            children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DocumentView, {
+            children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(DocumentView, {
               docKey: doc2.slug,
               text: shown,
               editable: true,
@@ -68697,18 +68851,20 @@ function DocumentPane({
               onChange: onEdit,
               onSave,
               onSelect,
-              reveal
+              reveal,
+              pendingNote: noteAt,
+              onContextMenu: setNoteAt
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ResizablePanel, {
             id: "doc-rendered",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col border-l border-edge",
-            children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MarkdownView, {
+            children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MarkdownView, {
               text: shown,
               meta: doc2.meta,
               onFollowLink
@@ -68716,11 +68872,17 @@ function DocumentPane({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(StatusStrip, {
+      doc2 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(StatusStrip, {
         segments
       }, undefined, false, undefined, this),
       dialog,
-      doc2 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(NewVersionDialog, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(NoteAtSelection, {
+        at: noteAt,
+        quote: noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : "",
+        onClose: () => setNoteAt(null),
+        onAdd: onAddNote
+      }, undefined, false, undefined, this),
+      doc2 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(NewVersionDialog, {
         open: naming !== null,
         intent: naming ?? "branch",
         from: doc2.active,
@@ -68736,8 +68898,8 @@ function DocumentPane({
 }
 
 // src/scriptorium/surface/components/NotesPanel.tsx
-var import_react25 = __toESM(require_react(), 1);
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react26 = __toESM(require_react(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 var UNCERTAIN = {
   nearest: {
     label: "moved?",
@@ -68751,18 +68913,20 @@ var UNCERTAIN = {
 function Note({
   note,
   onGoTo,
+  onEdit,
   onResolve,
   onRemove
 }) {
   const uncertain = UNCERTAIN[note.how];
   const anchored = note.from !== null;
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+  const [draft, setDraft] = import_react26.useState(null);
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
     className: cn("group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs", note.resolved && "opacity-60"),
     children: [
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
         className: "flex items-start gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
             type: "button",
             onClick: () => onGoTo(note),
             disabled: !anchored,
@@ -68770,56 +68934,118 @@ function Note({
             className: cn("min-w-0 flex-1 truncate text-left font-mono text-[11px] text-ink-dim", anchored && "hover:text-ink hover:underline", !anchored && "cursor-default line-through"),
             children: note.quote.replace(/\s+/gu, " ").trim() || "—"
           }, undefined, false, undefined, this),
-          uncertain && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+          uncertain && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             title: uncertain.title,
             className: "shrink-0 rounded-sm bg-attention/15 px-1 text-[10px] text-attention",
             children: uncertain.label
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+      draft === null ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
         className: "mt-1 whitespace-pre-wrap text-ink",
         children: note.body
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("form", {
+        className: "mt-1 flex flex-col gap-1",
+        onSubmit: (e) => {
+          e.preventDefault();
+          if (draft.trim())
+            onEdit(note.id, draft);
+          setDraft(null);
+        },
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("textarea", {
+            autoFocus: true,
+            value: draft,
+            onChange: (e) => setDraft(e.target.value),
+            rows: 3,
+            className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+            onKeyDown: (e) => {
+              if (e.key === "Escape")
+                setDraft(null);
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                e.currentTarget.form?.requestSubmit();
+            }
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+            className: "flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+                className: "text-[10px] text-ink-faint",
+                children: "⌘↩ to save · esc to cancel"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button3, {
+                type: "button",
+                variant: "ghost",
+                size: "sm",
+                onClick: () => setDraft(null),
+                className: "ml-auto h-5 px-1.5 text-[11px]",
+                children: "Cancel"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button3, {
+                type: "submit",
+                size: "sm",
+                disabled: !draft.trim(),
+                className: "h-5 px-1.5 text-[11px]",
+                children: "Save"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
         className: "mt-1 flex items-center gap-1 text-[10px] text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             children: note.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             children: "·"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             children: [
               "v",
               note.version
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+          note.editedAt !== undefined && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+            title: "This note was rewritten",
+            children: "· edited"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             className: "ml-auto flex items-center gap-0.5 opacity-0 group-hover/note:opacity-100 focus-within:opacity-100",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
+                type: "button",
+                onClick: () => setDraft(note.body),
+                title: "Rewrite this note",
+                "aria-label": "Edit note",
+                className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-ink",
+                children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Pencil, {
+                  "aria-hidden": true,
+                  className: "size-3"
+                }, undefined, false, undefined, this)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
                 type: "button",
                 onClick: () => onResolve(note.id, !note.resolved),
                 title: note.resolved ? "Put this note back" : "Mark this note dealt with",
                 "aria-label": note.resolved ? "Reopen note" : "Resolve note",
                 className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-ink",
-                children: note.resolved ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(UndoDot, {
+                children: note.resolved ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(UndoDot, {
                   "aria-hidden": true,
                   className: "size-3"
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Check, {
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Check, {
                   "aria-hidden": true,
                   className: "size-3"
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
                 type: "button",
                 onClick: () => onRemove(note.id),
                 title: "Delete this note",
                 "aria-label": "Delete note",
                 className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-danger",
-                children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Trash2, {
+                children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Trash2, {
                   "aria-hidden": true,
                   className: "size-3"
                 }, undefined, false, undefined, this)
@@ -68836,11 +69062,12 @@ function NotesPanel({
   selection,
   onAdd,
   onGoTo,
+  onEdit,
   onResolve,
   onRemove
 }) {
-  const [body, setBody] = import_react25.useState("");
-  const [showResolved, setShowResolved] = import_react25.useState(false);
+  const [body, setBody] = import_react26.useState("");
+  const [showResolved, setShowResolved] = import_react26.useState(false);
   const open3 = notes.filter((n) => !n.resolved);
   const resolved = notes.filter((n) => n.resolved);
   const shown = showResolved ? notes : open3;
@@ -68851,25 +69078,26 @@ function NotesPanel({
     onAdd(selection.from, selection.to, body);
     setBody("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
         className: "min-h-0 flex-1 overflow-auto p-3",
         children: [
-          shown.length === 0 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+          shown.length === 0 ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
             className: "px-1 py-6 text-center text-xs text-ink-faint",
             children: "Select some text in the document and write a note about it."
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
             className: "flex flex-col gap-2",
-            children: shown.map((n) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Note, {
+            children: shown.map((n) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Note, {
               note: n,
               onGoTo,
+              onEdit,
               onResolve,
               onRemove
             }, n.id, false, undefined, this))
           }, undefined, false, undefined, this),
-          resolved.length > 0 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
+          resolved.length > 0 && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
             type: "button",
             onClick: () => setShowResolved((v) => !v),
             className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink",
@@ -68882,15 +69110,15 @@ function NotesPanel({
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("form", {
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("form", {
         onSubmit: submit,
         className: "shrink-0 border-t border-edge p-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
             className: "mb-1 truncate font-mono text-[11px] text-ink-faint",
             children: selection ? selection.text.replace(/\s+/gu, " ").trim() : "No selection"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("textarea", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("textarea", {
             value: body,
             onChange: (e) => setBody(e.target.value),
             disabled: !selection,
@@ -68902,20 +69130,20 @@ function NotesPanel({
                 submit(e);
             }
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
             className: "mt-1 flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
                 className: "text-[10px] text-ink-faint",
                 children: "⌘↩ to add"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button3, {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button3, {
                 type: "submit",
                 size: "sm",
                 disabled: !selection || !body.trim(),
                 className: "ml-auto h-6 px-2 text-xs",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(MessageSquarePlus, {
+                  /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(MessageSquarePlus, {
                     "aria-hidden": true,
                     className: "size-3"
                   }, undefined, false, undefined, this),
@@ -68931,26 +69159,26 @@ function NotesPanel({
 }
 
 // src/scriptorium/surface/components/Toasts.tsx
-var import_react26 = __toESM(require_react(), 1);
-var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react27 = __toESM(require_react(), 1);
+var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
 var TOAST_MS = 6000;
 function useToasts() {
-  const [toasts, setToasts] = import_react26.useState([]);
-  const next = import_react26.useRef(1);
-  const timers = import_react26.useRef(new Map);
-  const dismiss = import_react26.useCallback((id) => {
+  const [toasts, setToasts] = import_react27.useState([]);
+  const next = import_react27.useRef(1);
+  const timers = import_react27.useRef(new Map);
+  const dismiss = import_react27.useCallback((id) => {
     const timer2 = timers.current.get(id);
     if (timer2)
       clearTimeout(timer2);
     timers.current.delete(id);
     setToasts((prev) => prev.filter((t2) => t2.id !== id));
   }, []);
-  const announce = import_react26.useCallback((title, description) => {
+  const announce = import_react27.useCallback((title, description) => {
     const id = next.current++;
     setToasts((prev) => [...prev, { id, title, ...description ? { description } : {} }]);
     timers.current.set(id, setTimeout(() => dismiss(id), TOAST_MS));
   }, [dismiss]);
-  import_react26.useEffect(() => {
+  import_react27.useEffect(() => {
     const pending = timers.current;
     return () => {
       for (const timer2 of pending.values())
@@ -68966,32 +69194,32 @@ function Toasts({
 }) {
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
     role: "status",
     "aria-live": "polite",
     className: "pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2",
-    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
       className: cn("pointer-events-auto flex items-start gap-2 rounded-md border border-edge", "bg-surface-raised px-3 py-2 text-sm text-ink shadow-lg"),
       children: [
-        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
           className: "min-w-0 flex-1",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
               className: "font-medium",
               children: t2.title
             }, undefined, false, undefined, this),
-            t2.description && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("p", {
+            t2.description && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
               className: "mt-0.5 text-xs text-ink-dim",
               children: t2.description
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("button", {
           type: "button",
           onClick: () => onDismiss(t2.id),
           "aria-label": "Dismiss",
           className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-          children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(X, {
+          children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(X, {
             "aria-hidden": true,
             className: "size-3.5"
           }, undefined, false, undefined, this)
@@ -69028,21 +69256,21 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react27 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
-  const [state, setState] = import_react27.useState(null);
-  const [connection, setConnection] = import_react27.useState("connecting");
-  const [lastError, setLastError] = import_react27.useState(null);
-  const [texts, setTexts] = import_react27.useState(() => new Map);
-  const [done, setDone] = import_react27.useState(null);
-  const [diff, setDiff] = import_react27.useState(null);
-  const wsRef = import_react27.useRef(null);
-  const pending = import_react27.useRef(new Map);
-  const plans = import_react27.useRef(new Map);
-  const maps = import_react27.useRef(new Map);
-  const suggestions = import_react27.useRef(new Map);
-  import_react27.useEffect(() => {
+  const [state, setState] = import_react28.useState(null);
+  const [connection, setConnection] = import_react28.useState("connecting");
+  const [lastError, setLastError] = import_react28.useState(null);
+  const [texts, setTexts] = import_react28.useState(() => new Map);
+  const [done, setDone] = import_react28.useState(null);
+  const [diff, setDiff] = import_react28.useState(null);
+  const wsRef = import_react28.useRef(null);
+  const pending = import_react28.useRef(new Map);
+  const plans = import_react28.useRef(new Map);
+  const maps = import_react28.useRef(new Map);
+  const suggestions = import_react28.useRef(new Map);
+  import_react28.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer2;
@@ -69139,12 +69367,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react27.useCallback((msg) => {
+  const send = import_react28.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react27.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react28.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -69158,7 +69386,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react27.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react28.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -69173,7 +69401,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react27.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react28.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -69187,7 +69415,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const suggestMeta = import_react27.useCallback((path2) => new Promise((resolve) => {
+  const suggestMeta = import_react28.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -69201,7 +69429,7 @@ function useDaemon() {
     suggestions.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
   }), []);
-  const noteText = import_react27.useCallback((doc2, version3, text4) => {
+  const noteText = import_react28.useCallback((doc2, version3, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version3);
       if (prev.get(key) === text4)
@@ -69211,7 +69439,7 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react27.useCallback(() => setLastError(null), []);
+  const clearError = import_react28.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
@@ -69230,7 +69458,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -69242,7 +69470,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -69251,9 +69479,9 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react28.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react29.useState(readAppliedTheme);
   const savedTheme = state?.prefs.theme;
-  import_react28.useEffect(() => {
+  import_react29.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -69265,41 +69493,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -69323,9 +69551,9 @@ function Workspace({
     clearError,
     done
   } = daemon;
-  const prefsRef = import_react28.useRef(state.prefs);
+  const prefsRef = import_react29.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react28.useMemo(() => ({
+  const storage = import_react29.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -69337,17 +69565,17 @@ function Workspace({
   });
   const saved = state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const [against, setAgainst] = import_react28.useState("original");
+  const [against, setAgainst] = import_react29.useState("original");
   const { toasts, announce, dismiss } = useToasts();
-  const [selection, setSelection] = import_react28.useState(null);
-  const [rightPane, setRightPane] = import_react28.useState("conversation");
-  const [reveal, setReveal] = import_react28.useState(null);
+  const [selection, setSelection] = import_react29.useState(null);
+  const [rightPane, setRightPane] = import_react29.useState("conversation");
+  const [reveal, setReveal] = import_react29.useState(null);
   const open3 = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open3?.notes ?? []).filter((n) => !n.resolved);
   const activeDoc = open3?.entryId && open3.rel !== null ? { entryId: open3.entryId, rel: open3.rel } : null;
   const text4 = open3 ? texts.get(textKey(open3.slug, open3.active)) : undefined;
-  const asked = import_react28.useRef(new Set);
-  import_react28.useEffect(() => {
+  const asked = import_react29.useRef(new Set);
+  import_react29.useEffect(() => {
     if (!open3 || text4 !== undefined)
       return;
     const key = textKey(open3.slug, open3.active);
@@ -69356,7 +69584,7 @@ function Workspace({
     asked.current.add(key);
     send({ type: "read", doc: open3.slug, version: open3.active });
   }, [open3, text4, send]);
-  import_react28.useEffect(() => {
+  import_react29.useEffect(() => {
     if (mode !== "compare" || !open3)
       return;
     if (against === open3.active || typeof against === "number" && !open3.versions.some((v) => v.n === against)) {
@@ -69365,9 +69593,9 @@ function Workspace({
     }
     send({ type: "diff", doc: open3.slug, against });
   }, [mode, open3, against, text4, send]);
-  const openRef = import_react28.useRef(open3);
+  const openRef = import_react29.useRef(open3);
   openRef.current = open3;
-  import_react28.useEffect(() => {
+  import_react29.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -69379,38 +69607,38 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react28.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react29.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react28.useEffect(() => {
+  import_react29.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(jsx_dev_runtime25.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(jsx_dev_runtime26.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ActiveVersionToast, {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ActiveVersionToast, {
         doc: open3,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Toasts, {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Toasts, {
         toasts,
         onDismiss: dismiss
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanelGroup, {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: layout2.defaultLayout,
         onLayoutChanged: layout2.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizablePanel, {
             id: "context",
             defaultSize: "22",
             minSize: "12",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(PaneHeading, {
+              /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(PaneHeading, {
                 children: "Context"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ContextSidebar, {
+              /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ContextSidebar, {
                 entries: state.context,
                 activeDoc,
                 userHome: state.userHome,
@@ -69431,15 +69659,15 @@ function Workspace({
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizablePanel, {
             id: "document",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col bg-bg",
-            children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DocumentPane, {
+            children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DocumentPane, {
               doc: open3,
               text: text4,
               mode,
@@ -69473,6 +69701,10 @@ function Workspace({
               },
               onSelect: (from, to) => setSelection(from === to ? null : { from, to }),
               reveal,
+              onAddNote: (from, to, body) => {
+                if (open3)
+                  send({ type: "note.add", doc: open3.slug, from, to, body });
+              },
               splitLayout,
               onAddFrontmatter: async () => {
                 if (!open3)
@@ -69498,18 +69730,18 @@ function Workspace({
               onRevert: () => open3 && send({ type: "revert", doc: open3.slug })
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ResizablePanel, {
             id: "chat",
             defaultSize: "28",
             minSize: "15",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
                 className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
-                children: ["conversation", "notes"].map((which) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("button", {
+                children: ["conversation", "notes"].map((which) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("button", {
                   type: "button",
                   onClick: () => setRightPane(which),
                   "aria-pressed": rightPane === which,
@@ -69517,7 +69749,7 @@ function Workspace({
                   children: which === "notes" && openNotes.length > 0 ? `Notes ${openNotes.length}` : which
                 }, which, false, undefined, this))
               }, undefined, false, undefined, this),
-              rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(NotesPanel, {
+              rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(NotesPanel, {
                 notes: open3?.notes ?? [],
                 selection: open3 && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
                 onAdd: (from, to, body) => {
@@ -69528,6 +69760,10 @@ function Workspace({
                   if (n.from !== null)
                     setReveal({ from: n.from, to: n.to, seq: Date.now() });
                 },
+                onEdit: (id, body) => {
+                  if (open3)
+                    send({ type: "note.edit", doc: open3.slug, id, body });
+                },
                 onResolve: (id, resolved) => {
                   if (open3)
                     send({ type: "note.resolve", doc: open3.slug, id, resolved });
@@ -69536,23 +69772,23 @@ function Workspace({
                   if (open3)
                     send({ type: "note.remove", doc: open3.slug, id });
                 }
-              }, undefined, false, undefined, this) : state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Empty, {
+              }, undefined, false, undefined, this) : state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Empty, {
                 className: "h-full",
-                children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyHeader, {
+                children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(EmptyHeader, {
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyMedia, {
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(EmptyMedia, {
                       variant: "icon",
-                      children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                      children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyTitle, {
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(EmptyTitle, {
                       children: "No messages yet"
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(EmptyDescription, {
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(EmptyDescription, {
                       children: "The conversation with the agent lives here."
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this)
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ActivityLog, {
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ActivityLog, {
                 chat: state.chat
               }, undefined, false, undefined, this)
             ]
@@ -69563,28 +69799,28 @@ function Workspace({
   }, undefined, true, undefined, this);
 }
 function ActivityLog({ chat }) {
-  const end = import_react28.useRef(null);
+  const end = import_react29.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react28.useEffect(() => {
+  import_react29.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
         "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m2.text
         ]
       }, m2.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -69592,7 +69828,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime26.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime27.jsxDEV(App, {}, undefined, false, undefined, this));
