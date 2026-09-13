@@ -194,6 +194,8 @@ const CLI_OPTIONS = {
   entry: { type: "string" },
   from: { type: "string" },
   full: { type: "boolean" },
+  quote: { type: "string" },
+  reopen: { type: "boolean" },
   hunks: { type: "string" },
   into: { type: "string" },
   lifecycle: { type: "string" },
@@ -718,6 +720,73 @@ const COMMANDS: CommandSpec[] = [
         await postCmd(session, {
           type: "version.delete",
           version: parseVersion(pos[0] ?? "", "version-delete"),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "note",
+    flags: [...SESSION, "doc", "quote", "stdin", "body-file"],
+    positionals: [{ name: "text", required: false, variadic: true }],
+    describe:
+      "note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+    run: async (pos, flags, session) => {
+      if (typeof flags.quote !== "string" || flags.quote.trim() === "")
+        die("note: --quote is required — the exact text the note is about", "usage", {
+          hint: "run: cli.ts state --full (the active version's text is on disk; quote from it)",
+        });
+      printJson(
+        await postCmd(session, {
+          type: "note.add",
+          quote: flags.quote,
+          body: await readSayBody(pos, flags),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "notes",
+    flags: [...SESSION, "doc", "full"],
+    positionals: [],
+    describe: "the notes on a document, placed in the active version (--full includes resolved)",
+    run: async (_pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "notes",
+          ...(flags.full ? { all: true } : {}),
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "note-resolve",
+    flags: [...SESSION, "doc", "reopen"],
+    positionals: [{ name: "id", required: true }],
+    describe: "mark a note dealt with (--reopen puts it back)",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "note.resolve",
+          id: pos[0] as string,
+          resolved: !flags.reopen,
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
+    name: "note-remove",
+    flags: [...SESSION, "doc"],
+    positionals: [{ name: "id", required: true }],
+    describe: "delete a note",
+    run: async (pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "note.remove",
+          id: pos[0] as string,
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );

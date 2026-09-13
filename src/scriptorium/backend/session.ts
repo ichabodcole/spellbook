@@ -43,6 +43,7 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { type Anchor, anchorOf, findAnchor } from "./anchors";
 import { applyHunks, diffText } from "./diff";
 import {
   buildBlock,
@@ -68,6 +69,8 @@ import type {
   GraphPayload,
   MetaFilter,
   MovePlan,
+  Note,
+  PlacedNote,
   PublicState,
   Selection,
   Version,
@@ -126,6 +129,9 @@ type DocRecord = {
    * `takeVersion` derives it once, from the highest that ever was.
    */
   nextVersion?: number;
+  /** Notes on this document (E45). Stored in the manifest: they travel with the
+   *  session and never litter the human's folder. */
+  notes?: Note[];
   /** Hash of the original as we last read or wrote it — at open, save, revert
    *  and reload — so a restore can tell that it changed while no daemon was
    *  watching (verify-pass fix 2). */
@@ -798,6 +804,112 @@ export class Session {
     };
   }
 
+  // ── notes (E45) ────────────────────────────────────────────────────────────
+
+  /** The active version's text — what every note is anchored against. */
+  private activeText(d: DocRecord): string {
+    return readFileSync(this.versionPath(d, d.active), "utf8");
+  }
+
+  /** Place every note in the active text as it stands now. */
+  private placedNotes(d: DocRecord): PlacedNote[] {
+    const notes = d.notes ?? [];
+    if (notes.length === 0) return [];
+    const text = this.activeText(d);
+    return notes.map((n) => ({ ...n, ...findAnchor(text, n) }));
+  }
+
+  /**
+   * Note a range of the active version's text (the human selects) or a quote
+   * found in it (the agent quotes — it has no offsets).
+   */
+  addNote(opts: {
+    doc?: string;
+    body: string;
+    who: VersionAuthor;
+    range?: { from: number; to: number };
+    quote?: string;
+  }): { slug: string; note: Note; how: "selection" | "quote" } {
+    const d = this.docOrDie(opts.doc);
+    const body = opts.body.trim();
+    if (!body) throw new SessionError("a note needs something written in it", 400);
+    const text = this.activeText(d);
+
+    let anchor: Anchor;
+    if (opts.range) {
+      const { from, to } = opts.range;
+      if (from < 0 || to > text.length || from >= to)
+        throw new SessionError(
+          `${from}..${to} is not a range in v${d.active} of ${d.slug} (${text.length} characters)`,
+          400,
+        );
+      anchor = anchorOf(text, from, to);
+    } else {
+      const quote = opts.quote ?? "";
+      if (!quote) throw new SessionError("a note needs a selection or a quote", 400);
+      const at = text.indexOf(quote);
+      // ⛔ REFUSED, not anchored hopefully. A quote the active version does not
+      // contain would become an orphan the moment it was made, which reads as
+      // "the text changed" when the truth is "you quoted something else".
+      if (at === -1)
+        throw new SessionError(
+          `v${d.active} of ${d.slug} does not contain that text — quote it exactly as it appears`,
+          404,
+        );
+      anchor = anchorOf(text, at, at + quote.length);
+    }
+
+    const note: Note = {
+      id: `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      version: d.active,
+      ...anchor,
+      body,
+      who: opts.who,
+      createdAt: Date.now(),
+      resolved: false,
+    };
+    d.notes = [...(d.notes ?? []), note];
+    this.persist();
+    return { slug: d.slug, note, how: opts.range ? "selection" : "quote" };
+  }
+
+  /** Notes on a document, placed — `all` includes the resolved ones. */
+  notesOf(opts: { doc?: string; all?: boolean }): { slug: string; notes: PlacedNote[] } {
+    const d = this.docOrDie(opts.doc);
+    const placed = this.placedNotes(d);
+    return { slug: d.slug, notes: opts.all ? placed : placed.filter((n) => !n.resolved) };
+  }
+
+  private noteOrDie(d: DocRecord, id: string): Note {
+    const note = (d.notes ?? []).find((n) => n.id === id);
+    if (!note)
+      throw new SessionError(
+        `${d.slug} has no note ${id}`,
+        404,
+        (d.notes ?? []).map((n) => n.id),
+      );
+    return note;
+  }
+
+  resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
+    slug: string;
+    note: Note;
+  } {
+    const d = this.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    note.resolved = opts.resolved;
+    this.persist();
+    return { slug: d.slug, note };
+  }
+
+  removeNote(opts: { doc?: string; id: string }): { slug: string; note: Note } {
+    const d = this.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    d.notes = (d.notes ?? []).filter((n) => n.id !== opts.id);
+    this.persist();
+    return { slug: d.slug, note };
+  }
+
   /** Save: the active version's text over the original. The ONLY write to it (E7). */
   save(slug: string): { original: string; version: number } {
     const d = this.docOrDie(slug);
@@ -1384,6 +1496,7 @@ export class Session {
       entryId: d.entryId,
       rel: d.rel,
       versions: d.versions.map((v) => ({ ...v, path: this.versionPath(d, v.n) })),
+      notes: this.placedNotes(d),
       active: d.active,
       dirty: this.isDirty(d),
       outsideChanged: d.outsideChanged,

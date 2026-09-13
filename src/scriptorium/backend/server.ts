@@ -61,6 +61,7 @@ import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
+import { quoteLabel } from "./anchors";
 import { unified } from "./diff";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
@@ -482,6 +483,34 @@ export async function startDaemon(opts: StartOpts) {
       case "activate":
         activate(msg.doc, msg.version, "human");
         return;
+      case "note.add": {
+        const r = session.addNote({
+          doc: msg.doc,
+          body: msg.body,
+          who: "human",
+          range: { from: msg.from, to: msg.to },
+        });
+        log.emit({ type: "note.added", doc: r.slug, note: r.note.id, by: "human" });
+        broadcastState();
+        return;
+      }
+      case "note.resolve": {
+        const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
+        log.emit({
+          type: msg.resolved ? "note.resolved" : "note.reopened",
+          doc: r.slug,
+          note: r.note.id,
+          by: "human",
+        });
+        broadcastState();
+        return;
+      }
+      case "note.remove": {
+        const r = session.removeNote({ doc: msg.doc, id: msg.id });
+        log.emit({ type: "note.removed", doc: r.slug, note: r.note.id, by: "human" });
+        broadcastState();
+        return;
+      }
       case "version.delete": {
         const r = session.deleteVersion({ doc: msg.doc, version: msg.version });
         const m = session.addMessage(
@@ -858,6 +887,43 @@ export async function startDaemon(opts: StartOpts) {
           by: "agent",
         });
         return { doc: r.slug, version: r.version, remaining: r.remaining };
+      }
+      case "note.add": {
+        const r = session.addNote({
+          doc: cmd.doc,
+          body: cmd.body,
+          who: "agent",
+          quote: cmd.quote,
+        });
+        announce(`Agent noted “${quoteLabel(r.note.quote)}” on ${r.slug}.`, {
+          fact: "note.added",
+          doc: r.slug,
+          note: r.note.id,
+          by: "agent",
+        });
+        return { doc: r.slug, note: r.note.id, quote: r.note.quote };
+      }
+      case "notes": {
+        const r = session.notesOf({ doc: cmd.doc, ...(cmd.all ? { all: true } : {}) });
+        return { doc: r.slug, notes: r.notes };
+      }
+      case "note.resolve": {
+        const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });
+        announce(
+          `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`,
+          { fact: "note.resolved", doc: r.slug, note: r.note.id, by: "agent" },
+        );
+        return { doc: r.slug, note: r.note.id, resolved: r.note.resolved };
+      }
+      case "note.remove": {
+        const r = session.removeNote({ doc: cmd.doc, id: cmd.id });
+        announce(`Agent removed a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`, {
+          fact: "note.removed",
+          doc: r.slug,
+          note: r.note.id,
+          by: "agent",
+        });
+        return { doc: r.slug, note: r.note.id };
       }
       case "diff": {
         const p = session.compare({ doc: cmd.doc, against: cmd.against });

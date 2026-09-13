@@ -141,7 +141,12 @@ const EXPECTED: Record<
   // hold, naming the range it does have. No `choices`: the ids are positions in
   // a comparison that has already moved, so listing them would invite a retry
   // against numbers that are themselves stale — the hint says re-run `diff`.
-  scriptorium: { sites: 33, choices: 10, verbRoster: true, flagMap: true },
+  // 33/10 -> 34/10 (E45): `note` refuses without `--quote`, with the shape in
+  // the hint rather than a set of choices — the quote is the document's own
+  // text, so there is no closed set to name. (The daemon's own refusals —
+  // a quote the active version does not contain, an empty body, a range
+  // outside the text — are SessionErrors, which this census does not count.)
+  scriptorium: { sites: 34, choices: 10, verbRoster: true, flagMap: true },
 };
 
 /**

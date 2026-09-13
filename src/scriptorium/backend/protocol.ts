@@ -160,6 +160,34 @@ export type DiffPayload = {
   diff: Diff;
 };
 
+// ── notes (E45) ───────────────────────────────────────────────────────────────
+
+/** How a note found its place in the current text — see `anchors.ts`. */
+export type NoteHow = "context" | "unique" | "nearest" | "orphaned";
+
+/** A note as it is STORED: the text it was made on, never an offset. */
+export type Note = {
+  id: string;
+  /** The version it was made on — provenance. It is not what anchors it. */
+  version: number;
+  quote: string;
+  before: string;
+  after: string;
+  /** Where it was when made — a hint for choosing between identical quotes. */
+  at: number;
+  body: string;
+  who: VersionAuthor;
+  createdAt: number;
+  resolved: boolean;
+};
+
+/** A note PLACED in the active version's text as it stands right now. */
+export type PlacedNote = Note & {
+  from: number | null;
+  to: number | null;
+  how: NoteHow;
+};
+
 export type VersionAuthor = "human" | "agent";
 
 export type Version = {
@@ -189,6 +217,8 @@ export type DocView = {
   dirty: boolean;
   /** The original changed on disk while the buffer was dirty — asked, not merged. */
   outsideChanged: boolean;
+  /** Notes, placed against the ACTIVE version's text on every snapshot (E45). */
+  notes: PlacedNote[];
 };
 
 /** What the human has selected — rides every message they send (E5/E11). */
@@ -344,6 +374,10 @@ export type ClientMsg =
   | { type: "version.new"; doc: string; from?: number; label?: string; activate?: boolean }
   /** E41: remove a version and its file. Never the active one. */
   | { type: "version.delete"; doc: string; version: number }
+  /** E45: the human notes a SELECTION — offsets into the active text. */
+  | { type: "note.add"; doc: string; from: number; to: number; body: string }
+  | { type: "note.resolve"; doc: string; id: string; resolved: boolean }
+  | { type: "note.remove"; doc: string; id: string }
   | { type: "save"; doc: string }
   | { type: "revert"; doc: string }
   | { type: "context.add"; path: string }
@@ -420,6 +454,15 @@ export type AgentCmd =
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
   | { type: "version.delete"; doc?: string; version: number }
+  /**
+   * E45: the agent notes a QUOTE — it has no offsets, and asking it to count
+   * characters would be asking it to be wrong. The daemon finds the quote in
+   * the active text and anchors from there, so both parties store the same shape.
+   */
+  | { type: "note.add"; doc?: string; quote: string; body: string }
+  | { type: "notes"; doc?: string; all?: boolean }
+  | { type: "note.resolve"; doc?: string; id: string; resolved: boolean }
+  | { type: "note.remove"; doc?: string; id: string }
   | { type: "diff"; doc?: string; against: DiffSide; context?: number }
   | { type: "merge"; doc?: string; against: DiffSide; hunks: number[] }
   | { type: "close" }
