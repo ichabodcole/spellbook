@@ -1088,3 +1088,34 @@ beside `ConfirmDialog`.
 _A bar would have been wrong here: the conflict bar persists because it is a
 state awaiting a decision. "You're now editing v5" is "that happened, carry on",
 which is what a toast is for._
+
+## E43 · "The saved file", not "the original"
+
+**Reported by Cole, 2026-09-12:** _"What does the original actually mean in this
+context? Is it the active document? Is it always the initial version… I'm
+finding that language maybe a little ambiguous."_
+
+**It is the .md file in the human's folder**, re-read from disk on every
+comparison — so it also shows a change made outside scriptorium entirely. It is
+NOT v1, and not the active version. Three things that can all differ: v1 is a
+COPY taken at open and drifts the moment anyone edits it; the file of record
+changes only when Save writes it or something outside does; the active version
+is where keystrokes land.
+
+**The word was doing locational work while sounding temporal.** "Original" reads
+as "the first one", which is precisely what v1 is — the thing it is not. In the
+CODE `original` is right and stays: it names the file of record on a record that
+also holds versions. In PROSE it misleads.
+
+**"The saved file" names it by the act that writes it**, which separates it from
+a version without asking anyone to think about where files live. It also turns
+out to be what the app already said elsewhere — Revert has always reported
+"Reverted v2 of note to the saved file" — so this removes a second vocabulary
+rather than inventing one.
+
+The CLI now accepts `saved` alongside `original` and `file`; the older tokens
+keep working because earlier sessions, notes and agent transcripts use them.
+
+_Small, but the shape recurs: a name that is exactly right inside the code can
+be exactly wrong in the sentence a human reads, and the two do not have to
+match._

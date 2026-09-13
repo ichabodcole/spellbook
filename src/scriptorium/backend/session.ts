@@ -1688,7 +1688,13 @@ function countDocs(dir: string): number {
   return n;
 }
 
-/** How a comparison side reads in a message to a human or an agent. */
+/**
+ * How a comparison side reads in a message to a human or an agent.
+ *
+ * "The saved file" rather than "the original" (E43) — and it matches what
+ * Revert already told the human ("Reverted v2 to the saved file"), so the app
+ * now says one thing about the file of record instead of two.
+ */
 export function sideName(side: DiffSide): string {
-  return side === "original" ? "the original" : `v${side}`;
+  return side === "original" ? "the saved file" : `v${side}`;
 }

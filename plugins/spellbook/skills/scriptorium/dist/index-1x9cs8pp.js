@@ -45737,6 +45737,9 @@ function relativeTime(ts, now2) {
 // src/scriptorium/surface/components/CompareView.tsx
 var import_react18 = __toESM(require_react(), 1);
 var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+function sideLabel(side2) {
+  return side2 === "original" ? "the saved file" : `v${side2}`;
+}
 function rowsOf(lines, hunkIds) {
   const rows = [];
   let i = 0;
@@ -45850,7 +45853,7 @@ function CompareView({
               onClick: () => onAgainst(s),
               "aria-pressed": s === against,
               className: cn("rounded-sm px-1.5 py-0.5 text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", s === against && "bg-surface-raised font-medium text-ink"),
-              children: s === "original" ? "the original" : `v${s}`
+              children: sideLabel(s)
             }, String(s), false, undefined, this))
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
@@ -45862,7 +45865,7 @@ function CompareView({
                 size: "sm",
                 disabled: busy,
                 onClick: () => onTake(diff.hunks.map((h) => h.id)),
-                title: `Take every change from ${against === "original" ? "the original" : `v${against}`} into v${active}`,
+                title: `Take every change from ${sideLabel(against)} into v${active}`,
                 className: "h-6 px-2 text-xs",
                 children: "Take all"
               }, undefined, false, undefined, this)

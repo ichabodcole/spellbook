@@ -294,7 +294,9 @@ export function parseCount(token: string, what: string): number {
  */
 export function parseSide(token: string, what: string): number | "original" {
   const t = token.trim().toLowerCase();
-  if (t === "original" || t === "file") return "original";
+  // `saved` is the word the SURFACE uses for this side (E43); `original` and
+  // `file` keep working because they are what earlier sessions and notes say.
+  if (t === "original" || t === "file" || t === "saved") return "original";
   return parseVersion(token, what);
 }
 
@@ -726,7 +728,7 @@ const COMMANDS: CommandSpec[] = [
     flags: [...SESSION, "doc", "context", "patch"],
     positionals: [{ name: "against", required: true }],
     describe:
-      "compare the active version with another (vN or 'original'); --patch for plain unified text",
+      "compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
     run: async (pos, flags, session) => {
       const r = (await postCmd(session, {
         type: "diff",

@@ -17,6 +17,22 @@ import { Fragment } from "react";
 import { Button } from "@/ui/button";
 import type { DiffLine, DiffPayload, DiffSide, DiffSpan, Version } from "../../backend/protocol";
 
+/**
+ * How a comparison side reads to a human (E43).
+ *
+ * ⛔ "THE SAVED FILE", NOT "THE ORIGINAL". The word `original` is the code's
+ * name for the file of record and it is wrong in prose: it sounds TEMPORAL —
+ * "the first one" — which is exactly what v1 is, the thing it is not. This side
+ * is LOCATIONAL: the .md file in the human's folder, re-read from disk on every
+ * comparison, so it also shows a change made outside scriptorium entirely.
+ * Naming it by the act that writes it (Save) is what separates it from a
+ * version without making anyone think about where files live. (Cole: "I'm
+ * finding that language maybe a little ambiguous.")
+ */
+export function sideLabel(side: DiffSide): string {
+  return side === "original" ? "the saved file" : `v${side}`;
+}
+
 /** One rendered row: the same line on both sides, or one side of a change. */
 type Row =
   | { kind: "same"; line: DiffLine }
@@ -167,7 +183,7 @@ export function CompareView({
                 s === against && "bg-surface-raised font-medium text-ink",
               )}
             >
-              {s === "original" ? "the original" : `v${s}`}
+              {sideLabel(s)}
             </button>
           ))}
         </div>
@@ -181,7 +197,7 @@ export function CompareView({
               size="sm"
               disabled={busy}
               onClick={() => onTake(diff.hunks.map((h) => h.id))}
-              title={`Take every change from ${against === "original" ? "the original" : `v${against}`} into v${active}`}
+              title={`Take every change from ${sideLabel(against)} into v${active}`}
               className="h-6 px-2 text-xs"
             >
               Take all
