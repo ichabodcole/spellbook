@@ -38,13 +38,46 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Every `dangerouslySetInnerHTML={{ __html: <expr> }}` in the surface. */
+/**
+ * Every HTML sink in the surface, in EITHER of the two shapes React allows.
+ *
+ * ⛔ IT USED TO SCAN ONLY `dangerouslySetInnerHTML={{ __html: x }}`, AND THAT
+ * WENT BLIND. E51 had to hoist the prop into a memoised object
+ * (`dangerouslySetInnerHTML={htmlProp}`) because React 19 compares the prop
+ * OBJECT and rewrote the whole subtree on every render otherwise — and the
+ * moment it did, this scanner matched nothing. Its zero-guard is what said so,
+ * which is the guard working; but a ward that a legitimate refactor can silence
+ * would also be silenced by an illegitimate one. So both shapes are scanned,
+ * and every `__html:` in the surface is enumerated separately below — a sink
+ * reached through one more level of indirection still has to write that key.
+ */
 function sinks(): { file: string; expr: string }[] {
   const found: { file: string; expr: string }[] = [];
   for (const file of walk(SURFACE)) {
-    for (const m of readFileSync(file, "utf8").matchAll(
-      /dangerouslySetInnerHTML=\{\{\s*__html:\s*([^}]+?)\s*\}\}/g,
-    )) {
+    const src = code(readFileSync(file, "utf8"));
+    const rel = file.replace(`${SURFACE}/`, "");
+    // Inline: dangerouslySetInnerHTML={{ __html: <expr> }}
+    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{\{\s*__html:\s*([^}]+?)\s*\}\}/g)) {
+      const expr = m[1];
+      if (expr !== undefined) found.push({ file: rel, expr });
+    }
+    // Hoisted: dangerouslySetInnerHTML={<identifier>}
+    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{([A-Za-z_$][\w$]*)\}/g)) {
+      const expr = m[1];
+      if (expr !== undefined) found.push({ file: rel, expr });
+    }
+  }
+  return found;
+}
+
+/** Every place in the surface that writes the `__html` key at all. */
+function htmlKeys(): { file: string; expr: string }[] {
+  const found: { file: string; expr: string }[] = [];
+  for (const file of walk(SURFACE)) {
+    // ⚠ `code()` FIRST. Without it this scanner matched a `__html: html` written
+    // inside a COMMENT — including one in this very file — and reported a second
+    // sink that does not exist.
+    for (const m of code(readFileSync(file, "utf8")).matchAll(/__html:\s*([^},]+?)\s*[},]/g)) {
       const expr = m[1];
       if (expr !== undefined) found.push({ file: file.replace(`${SURFACE}/`, ""), expr });
     }
@@ -56,8 +89,17 @@ function sinks(): { file: string; expr: string }[] {
 const ALLOWED = [
   {
     file: "components/MarkdownView.tsx",
+    expr: "htmlProp",
+    why: "the rendered view — `htmlProp` is `{ __html: html }` and `html` is `renderMarkdown(text)` and nothing else (E51 hoisted it; see the scanner's note)",
+  },
+] as const;
+
+/** The complete, DECLARED set of `__html` writers. */
+const ALLOWED_KEYS = [
+  {
+    file: "components/MarkdownView.tsx",
     expr: "html",
-    why: "the rendered view — `html` is `renderMarkdown(text)` and nothing else",
+    why: "the memoised prop object the one sink is fed from",
   },
 ] as const;
 
@@ -69,6 +111,32 @@ describe("the surface's HTML sinks", () => {
     expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
       ALLOWED.map((s) => `${s.file} <- ${s.expr}`).sort(),
     );
+  });
+
+  test("nothing else in the surface writes an `__html` key", () => {
+    const found = htmlKeys();
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
+      ALLOWED_KEYS.map((s) => `${s.file} <- ${s.expr}`).sort(),
+    );
+  });
+
+  /**
+   * ⛔ THE HOISTED FORM IS REQUIRED, NOT MERELY TOLERATED — do not "simplify"
+   * `dangerouslySetInnerHTML={htmlProp}` back to an inline `{{ __html: html }}`.
+   * React 19 compares the PROP OBJECT, so a fresh literal per render re-runs
+   * `setInnerHTML` on every commit and replaces the whole subtree even when the
+   * markup is identical. That wipes any live selection in the pane, which is
+   * E51's entire feature: MEASURED as 10 childList mutations for one drag, with
+   * a patched `innerHTML` setter naming React's own `commitUpdate` as the
+   * writer. The `ALLOWED` entry above declares `htmlProp` precisely so that
+   * reverting to the literal turns this file red.
+   */
+  test("the hoisted prop is the renderer's output, not something assembled beside it", () => {
+    const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
+    // `htmlProp` must be `{ __html: html }` — the indirection E51 introduced is
+    // allowed to be exactly this and nothing cleverer.
+    expect(view).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
   });
 
   test("that sink is fed by renderMarkdown, in the same file, and by nothing else", () => {

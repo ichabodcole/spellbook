@@ -69622,6 +69622,7 @@ function MarkdownView({
   onContextMenu
 }) {
   const html = import_react21.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
+  const htmlProp = import_react21.useMemo(() => ({ __html: html }), [html]);
   const projection = import_react21.useMemo(() => project(text4), [text4]);
   const body = import_react21.useRef(null);
   const lastRange = import_react21.useRef(null);
@@ -69647,6 +69648,9 @@ function MarkdownView({
         return;
       const r2 = selectedRange();
       if (!r2)
+        return;
+      const was = lastRange.current;
+      if (was && was.from === r2.from && was.to === r2.to)
         return;
       lastRange.current = r2;
       onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
@@ -69731,7 +69735,7 @@ function MarkdownView({
             noteIds
           });
         },
-        dangerouslySetInnerHTML: { __html: html }
+        dangerouslySetInnerHTML: htmlProp
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);

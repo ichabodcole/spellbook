@@ -89,6 +89,26 @@ export function MarkdownView({
   // The frontmatter is METADATA, so it leaves the rendered body and becomes the
   // header above it (E32). The raw view still shows it: there, it IS the file.
   const html = useMemo(() => renderMarkdown(splitFrontmatter(text).body), [text]);
+  /**
+   * ⛔ MEMOISED, AND THE WHOLE OF E51 DEPENDS ON IT. React 19 compares the
+   * `dangerouslySetInnerHTML` PROP OBJECT, not the `__html` string inside it —
+   * so a fresh `{ __html: html }` literal per render makes every commit call
+   * `setInnerHTML` again and REPLACE THE ENTIRE SUBTREE, even when the markup is
+   * character-for-character identical.
+   *
+   * That was harmless while nothing in this pane cared about the DOM. It stopped
+   * being harmless the moment a selection lived here: reporting a selection
+   * re-renders, the re-render rebuilt every text node, and the browser re-anchored
+   * the now-homeless selection to the start of the container. Which is exactly
+   * what Cole saw — "any selection I make is actually starting from the beginning
+   * of the content", plus a selection that flickered and died on mouse-up.
+   *
+   * MEASURED, not reasoned: a MutationObserver on `.md-prose` recorded 10 childList
+   * records for a single drag, each removing all ten children and adding ten new
+   * ones, and a patched `innerHTML` setter named the writer —
+   * `setProp → updateProperties → commitUpdate`, i.e. React on every commit.
+   */
+  const htmlProp = useMemo(() => ({ __html: html }), [html]);
   // The same text, as the human sees it, carrying where each part came from.
   const projection = useMemo(() => project(text), [text]);
   const body = useRef<HTMLDivElement>(null);
@@ -132,6 +152,10 @@ export function MarkdownView({
       if (sel.rangeCount > 0 && !root.contains(sel.getRangeAt(0).commonAncestorContainer)) return;
       const r = selectedRange();
       if (!r) return;
+      // Nothing has changed — a `selectionchange` for the same range is not
+      // news, and each report costs a render.
+      const was = lastRange.current;
+      if (was && was.from === r.from && was.to === r.to) return;
       lastRange.current = r;
       onSelect(r.from, r.to, lineAt(text, r.from), lineAt(text, r.to), text.slice(r.from, r.to));
     };
@@ -235,7 +259,7 @@ export function MarkdownView({
         // every link target has been checked (state/markdown.ts, with cells).
         // `src/scriptorium/sinks.test.ts` fails if a second sink appears, or if
         // this one is ever fed by anything but `renderMarkdown`.
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={htmlProp}
       />
     </div>
   );
