@@ -51,7 +51,7 @@
  * leaves a window in which a verb resolves a session that will refuse it.
  */
 
-import { type FSWatcher, readFileSync, statSync, unlinkSync, watch } from "node:fs";
+import { existsSync, type FSWatcher, readFileSync, statSync, unlinkSync, watch } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -424,7 +424,17 @@ export async function startDaemon(opts: StartOpts) {
       case "hide": {
         const h = session.hide(op.path);
         r = h;
-        line = `${who} removed ${shown(h.path)} from Scriptorium (the file is still on disk).`;
+        // ⚠ THE PARENTHETICAL HAS TO BE TRUE. It said "(the file is still on
+        // disk)" unconditionally, which is wrong twice over on a GHOST — an
+        // entry whose file is already gone — and calls a folder a file. Cole
+        // met both in one go while clearing residue from the E60 bug, and a
+        // reassurance that is false is worse than no reassurance: it is the
+        // same defect as the conflict banner claiming edits he had not made.
+        const gone = !existsSync(h.path);
+        const kind = gone ? "" : statSync(h.path).isDirectory() ? "folder" : "file";
+        line = gone
+          ? `${who} removed ${shown(h.path)} from Scriptorium (it was already gone from disk).`
+          : `${who} removed ${shown(h.path)} from Scriptorium (the ${kind} is still on disk).`;
         break;
       }
       case "unhide": {
