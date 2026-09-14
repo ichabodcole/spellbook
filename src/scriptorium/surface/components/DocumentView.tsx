@@ -20,6 +20,7 @@
 // Markdown highlighting is in `markdownMode.ts`, which also records why it is
 // hand-written rather than `@codemirror/lang-markdown` (E20's open question).
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import {
   Annotation,
   EditorState,
@@ -132,6 +133,72 @@ const scriptoriumTheme = EditorView.theme({
     borderBottom: "1px solid var(--color-rubric)",
   },
   ".cm-cursor": { borderLeftColor: "var(--color-rubric)", borderLeftWidth: "2px" },
+
+  // ── the search panel ────────────────────────────────────────────────────────
+  // ⚠ STYLED, NOT ACCEPTED AS-IS. `@codemirror/search` ships a panel that
+  // inherits the browser's default form controls, which in a themed surface
+  // reads as a piece of a different application bolted to the top of the
+  // document. These rules are the spell's own tokens, so both themes follow —
+  // the same reason `.md-prose` is written by hand rather than borrowed.
+  ".cm-panels": {
+    backgroundColor: "var(--color-surface-raised)",
+    color: "var(--color-ink)",
+    borderBottom: "1px solid var(--color-edge)",
+  },
+  ".cm-panels.cm-panels-top": { borderBottom: "1px solid var(--color-edge)" },
+  ".cm-search": {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 10px",
+    fontFamily: "var(--font-sans)",
+    fontSize: "12px",
+  },
+  ".cm-search label": { display: "inline-flex", alignItems: "center", gap: "4px" },
+  ".cm-search input[type=text]": {
+    backgroundColor: "var(--color-bg)",
+    color: "var(--color-ink)",
+    border: "1px solid var(--color-edge)",
+    borderRadius: "6px",
+    padding: "3px 7px",
+    fontFamily: "var(--font-mono)",
+    fontSize: "12px",
+    outline: "none",
+  },
+  ".cm-search input[type=text]:focus": {
+    borderColor: "var(--color-rubric)",
+    boxShadow: "0 0 0 2px color-mix(in srgb, var(--color-ring) 45%, transparent)",
+  },
+  ".cm-search button": {
+    backgroundColor: "transparent",
+    backgroundImage: "none",
+    color: "var(--color-ink-dim)",
+    border: "1px solid var(--color-edge)",
+    borderRadius: "6px",
+    padding: "3px 8px",
+    cursor: "pointer",
+    fontFamily: "var(--font-sans)",
+    fontSize: "12px",
+  },
+  ".cm-search button:hover": { color: "var(--color-ink)" },
+  ".cm-search button[name=close]": {
+    border: "none",
+    fontSize: "16px",
+    lineHeight: "1",
+    padding: "0 4px",
+  },
+  // The current match, told apart from the others — the thing the panel is for.
+  ".cm-searchMatch": {
+    backgroundColor: "color-mix(in srgb, var(--color-attention) 26%, transparent)",
+  },
+  ".cm-searchMatch.cm-searchMatch-selected": {
+    backgroundColor: "color-mix(in srgb, var(--color-rubric) 42%, transparent)",
+    outline: "1px solid var(--color-rubric)",
+  },
+  ".cm-selectionMatch": {
+    backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)",
+  },
 });
 
 /** The smallest single replacement turning `a` into `b`: common prefix and suffix kept. */
@@ -233,6 +300,15 @@ export function DocumentView({
       noteField,
       pendingField,
       markdownHighlighting,
+      // ⛔ SEARCH IS NOT GATED ON `editable`, because finding is reading. It
+      // also cannot be left to the BROWSER's find: CodeMirror renders only the
+      // viewport, so ⌘F would silently miss every line that is scrolled out —
+      // worse than no search, because it answers confidently and wrongly.
+      // `top: true` puts the panel above the text rather than over the status
+      // strip at the bottom.
+      search({ top: true }),
+      highlightSelectionMatches(),
+      keymap.of(searchKeymap),
       EditorView.updateListener.of((update) => {
         if (!update.selectionSet) return;
         const { from, to } = update.state.selection.main;

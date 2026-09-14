@@ -1772,3 +1772,32 @@ Verified as the exact scenario he described: chip shows
 `prose.md · v1 · line 6 starter`, note added, chip gone, daemon
 `selection: null`, and "I've made some notes, take a look at them." arrives
 carrying nothing.
+
+## E58 — search inside the document
+
+Cole asked whether it existed. **It did not:** `@codemirror/search` was not
+installed and nothing wired it, so ⌘F did nothing.
+
+**⛔ AND THE BROWSER'S FIND IS NOT A SUBSTITUTE.** CodeMirror 6 renders only the
+viewport, so `⌘F` at the browser level silently misses every line scrolled out
+of view — which is worse than having no search, because it answers confidently
+and wrongly. That is the reason this is a dependency rather than a shrug.
+
+**Not gated on `editable`, because finding is reading.** The panel is
+`top: true` so it does not sit over the status strip.
+
+**The panel is STYLED, not accepted as shipped.** `@codemirror/search` inherits
+the browser's default form controls, which in a themed surface reads as a piece
+of another application bolted above the document. The rules use the spell's own
+tokens so both themes follow — the same reason `.md-prose` is written by hand.
+
+### Open for Cole's ruling: does search-navigation attach?
+
+Stepping through matches sets the editor's selection, so it reports as one: the
+daemon holds `text: "bridge"` after two presses of Enter, and the next message
+would carry it. **Measured, not theorised.** This is E57's principle pointing
+two ways at once — search is sometimes navigation ("just show me the line") and
+sometimes exactly how you find the passage you want to talk about. The
+suppression is a two-line change if wanted
+(`update.transactions.some((t) => t.isUserEvent("select.search"))`), so the
+decision is worth more than the code. Not decided unilaterally.
