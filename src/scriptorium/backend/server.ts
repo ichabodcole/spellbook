@@ -63,6 +63,7 @@ import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serv
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { quoteLabel } from "./anchors";
 import { unified } from "./diff";
+import { summary } from "./doctor";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type Act, type After, type Before, History, type Inverse, planInverse } from "./history";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
@@ -1061,6 +1062,10 @@ export async function startDaemon(opts: StartOpts) {
         return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
       case "dangling":
         return session.danglingLinks(cmd.entry);
+      case "doctor": {
+        const list = session.checkup();
+        return { findings: list, count: list.length } as unknown as Record<string, unknown>;
+      }
       case "forget": {
         const f = session.forgetDoc(cmd.doc);
         announce(
@@ -1466,6 +1471,26 @@ export async function startDaemon(opts: StartOpts) {
         : `${f.original} changed on disk while this session was closed. Save overwrites it with the active version; Revert takes the file's version.`,
       { fact: "original.conflict", doc: f.doc, whileClosed: true },
     );
+
+  // E62: one line when the session has something worth looking at, and silence
+  // when it does not.
+  //
+  // ⛔ A SUMMARY, NOT A REPEAT. The per-document conflicts above say their own
+  // piece with the Save/Revert nuance; this counts what is there — including
+  // the things those lines never covered, like a context entry pointing at
+  // nothing — and points at the verb. A startup check that restates what was
+  // just said, or that announces itself when everything is fine, is a line
+  // people learn to skip.
+  {
+    const list = session.checkup();
+    const line = summary(list);
+    if (line) {
+      announce(line, { fact: "doctor", findings: list.length });
+      // The agent gets the whole report on its tail, so an agent that arrives
+      // later does not have to ask — and does not have to parse the sentence.
+      log.emit({ type: "doctor", count: list.length, findings: list });
+    }
+  }
 
   /**
    * E53's attention tick. Separate from housekeeping because it is about the

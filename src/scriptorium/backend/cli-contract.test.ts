@@ -148,6 +148,7 @@ test("the brief's verb roster is exactly the table's", () => {
       "workspace",
       "meta",
       "find",
+      "doctor",
       "forget",
       "graph",
       "backlinks",

@@ -51,6 +51,7 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { type Anchor, anchorOf, findAnchor } from "./anchors";
 import { applyHunks, diffText } from "./diff";
+import { type Finding, findings } from "./doctor";
 import {
   bodyLineOffset,
   buildBlock,
@@ -1506,6 +1507,46 @@ export class Session {
     }
     this.forgetPath(abs);
     return { path: abs, removed: true };
+  }
+
+  /**
+   * Everything worth looking at in this session, with the verb for each (E62).
+   *
+   * ⛔ IT ONLY LOOKS. Repairing would mean deciding for the human that a ghost
+   * entry is not wanted back and that versions held for a vanished file are not
+   * worth saving — both of which are theirs to decide (Cole: "report, name the
+   * verb, let you decide").
+   *
+   * ⚠ `existsSync` per document and per node, which is the one cost here. It is
+   * bounded by the context the human chose and runs on demand plus once at
+   * startup, not on a timer.
+   */
+  checkup(): Finding[] {
+    const nodes: { entry: string; path: string; shown: string; exists: boolean }[] = [];
+    const links: { entry: string; label: string; dangling: number }[] = [];
+    for (const e of this.m.context) {
+      for (const p of docPaths(e))
+        nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
+      if (e.membership !== "mirrored") continue;
+      try {
+        const g = this.graphFor(e.id);
+        if (g.dangling > 0)
+          links.push({ entry: e.id, label: e.label ?? basename(e.root), dangling: g.dangling });
+      } catch {
+        // A set that cannot be mapped is not a finding about links.
+      }
+    }
+    return findings({
+      docs: this.m.docs.map((d) => ({
+        slug: d.slug,
+        name: d.name,
+        original: d.original,
+        exists: existsSync(d.original),
+        versions: d.versions.length,
+      })),
+      nodes,
+      links,
+    });
   }
 
   /**

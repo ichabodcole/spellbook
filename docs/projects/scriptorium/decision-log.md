@@ -2006,3 +2006,56 @@ forgotten document is by definition not in the sidebar, so there is nowhere
 natural to put a button. The conversation is the primary capability here (the
 house's conversation-primary rule), and asking is the path until a
 documents-this-session-knows-about view exists to hang it from.
+
+## E62 — `doctor`, and a ghost that had nothing to do with the bug
+
+Cole: _"is there any sort of app startup check that would inform an agent, hey,
+there's some documents that maybe need to be forgotten… kind of like a doctor
+command, but it would also just run at startup."_
+
+**A startup check already existed, and asking about it found a real defect.**
+Restore compares every document's file of record and announces what it finds —
+that is the "gone from disk / changed on disk" line. But it covers document
+RECORDS only, speaks in prose an agent must parse, and fires ONCE, so an agent
+that joins later never sees it.
+
+**⚠ WHAT IT NEVER COVERED, MEASURED:** a single document added to the context
+and then deleted in Finder survives a restart as a GHOST in the sidebar.
+Mirrored folders self-heal because restore rescans them; **`rescan` returns
+early for a `listed` entry**, so a single-document entry is never rescanned at
+all. Same root cause as E60's sidebar bug, a different way in — and this one is
+reachable today with no bug involved, just Finder. Driven before writing a line
+of E62.
+
+**⛔ REPORTS, NEVER REPAIRS** (Cole: _"report, name the verb, let you decide"_).
+Silently pruning a ghost would throw away the fact that the human asked for that
+file to be in their context — and if it returns from a `git checkout` they would
+have to notice its absence and add it again. Forgetting a record would discard
+versions the session is still holding for them.
+
+**⛔ EVERY FINDING CARRIES ITS VERB, with the argument already in it.** A report
+that says "3 problems" and leaves you to work out what to type is the shape this
+spell keeps failing at and fixing: the conflict banner with no route to the
+comparison (E54), the "gone from disk" notice with no way to answer it (E61).
+**A finding without a fix is half a finding.**
+
+**Three checks, all evidenced rather than imagined** — a record whose original
+is gone (→ `forget`), a context entry pointing at nothing (→ `hide`), links a
+set cannot answer (→ `dangling`). Nothing is checked because it sounded
+plausible.
+
+**⚠ A record and an entry for the same missing path are TWO findings**, with two
+verbs: merging them would leave whichever one the human did not do.
+
+**⛔ ONE LINE AT STARTUP, AND SILENCE WHEN CLEAN.** A check that announces
+itself when everything is fine is a line people learn to skip, and then it is
+not a check. The summary counts by kind and points at the verb; the whole report
+also goes on the agent's tail, so an agent arriving later neither has to ask nor
+has to parse the sentence.
+
+_Small thing caught in its own cells: appending "s" produced "ghost in the
+contexts" and "1 link that answer nothing". Both forms are written out now — the
+kind of small wrongness that makes a tool read as careless._
+
+Driven against a session carrying all three at once, and the startup line
+reported them in one sentence.

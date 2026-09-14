@@ -628,6 +628,8 @@ export type AgentCmd =
    * exists — taking something out of the context is `hide`.
    */
   | { type: "forget"; doc?: string }
+  /** E62: what is wrong with this session, each finding naming its own verb. */
+  | { type: "doctor" }
   /**
    * E59: search the context. ⛔ THE ONE SEARCH VERB THERE IS, and deliberately
    * cross-document only: a single document an agent can read or grep, but the

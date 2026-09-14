@@ -1173,6 +1173,16 @@ const COMMANDS: CommandSpec[] = [
     },
   },
   {
+    name: "doctor",
+    flags: SESSION,
+    positionals: [],
+    describe:
+      "what is worth looking at in this session — each finding names the verb that fixes it",
+    run: async (_pos, _flags, session) => {
+      printJson(await postCmd(session, { type: "doctor" }));
+    },
+  },
+  {
     name: "forget",
     flags: [...SESSION, "doc"],
     positionals: [],
