@@ -228,7 +228,19 @@ const stem = (p: string) => basename(p, extname(p));
  * which resolves by TYPE and BASENAME so a page can move folders without
  * breaking inbound references — and a bare name (a wiki link), by basename.
  */
-export function resolveTarget(target: string, from: string, index: BundleIndex): Resolution {
+export function resolveTarget(rawTarget: string, from: string, index: BundleIndex): Resolution {
+  // ⛔ SPLIT FIRST, BECAUSE THE CALLERS DISAGREE ABOUT WHAT THEY HAND OVER.
+  // `extractLinks` splits a target before it ever gets here (E49), but the
+  // CLICK path does not: `link.open` carries the href exactly as the document
+  // wrote it. So an Operator typed link — `Maren's%20Bakery.md?rel=located-in`
+  // — arrived with its query and its encoding intact, `extname` read
+  // `.md?rel=located-in`, and the lookup went hunting for a file named after
+  // the whole string. The GRAPH drew that edge correctly the entire time, which
+  // is what made it puzzling: the same link was fine in the map and dead under
+  // the pointer. Splitting here fixes every caller at once and is idempotent
+  // for the two that had already done it. (Cole found it by clicking one in
+  // Hollowbrook, 2026-09-14.)
+  const target = splitTarget(rawTarget).path;
   // ⛔ WHAT MAKES A TARGET A PATH RATHER THAN A KEY, and the case that taught
   // it: `[the linter](lint.ts)` in the real wiki has no `./` and is not a `.md`,
   // so a rule keyed on those two read it as a NAME and reported it missing

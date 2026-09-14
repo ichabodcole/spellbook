@@ -128,6 +128,40 @@ describe("frontmatter references — the SHAPE decides, not the key", () => {
 
 describe("resolving against the bundle", () => {
   const from = "/w/wiki/decisions/stay-pre-1-0.md";
+  // ⛔ THE CLICK PATH GETS THE TARGET AS WRITTEN — query, anchor, encoding and
+  // all. `extractLinks` splits it before building the graph (E49), so the graph
+  // was right while FOLLOWING the same link reported it missing; Cole found it
+  // by clicking an Operator typed link in Hollowbrook. These four are that bug.
+  test("an Operator typed link (`?rel=`) resolves — the query is not part of the name", () => {
+    const i = index();
+    expect(resolveTarget("../concepts/exit-codes.md?rel=located-in", from, i)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/concepts/exit-codes.md",
+    });
+  });
+  test("a percent-encoded space resolves", () => {
+    const i = index(["/w/wiki/concepts/two words.md"]);
+    const withFile: BundleIndex = { ...i, paths: [...i.paths, "/w/wiki/concepts/two words.md"] };
+    expect(resolveTarget("../concepts/two%20words.md", from, withFile)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/concepts/two words.md",
+    });
+  });
+  test("an anchor is not part of the name either", () => {
+    expect(resolveTarget("../concepts/exit-codes.md#the-rule", from, index())).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/concepts/exit-codes.md",
+    });
+  });
+  test("all three at once — the Hollowbrook shape", () => {
+    const i = index();
+    const withFile: BundleIndex = { ...i, paths: [...i.paths, "/w/wiki/concepts/two words.md"] };
+    expect(resolveTarget("../concepts/two%20words.md?rel=located-in#top", from, withFile)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/concepts/two words.md",
+    });
+  });
+
   test("a relative path resolves against the document", () => {
     expect(resolveTarget("../concepts/exit-codes.md", from, index())).toEqual({
       state: "in-bundle",
