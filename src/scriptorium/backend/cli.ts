@@ -87,9 +87,13 @@ function daemonRefused(what: string, status: number, data: unknown): never {
         : status === 409
           ? "conflict"
           : "internal";
-  const body = (data ?? {}) as { error?: unknown; choices?: unknown };
+  const body = (data ?? {}) as { error?: unknown; choices?: unknown; hint?: unknown };
   const choices = Array.isArray(body.choices) ? body.choices.map(String) : undefined;
+  // ⚠ The daemon's own hint, forwarded. A refusal that knows what to do next
+  // used to drop that knowledge on the floor at this line.
+  const hint = typeof body.hint === "string" ? body.hint : undefined;
   die(typeof body.error === "string" ? body.error : `${what} failed (HTTP ${status})`, kind, {
+    ...(hint ? { hint } : {}),
     ...(choices ? { choices } : {}),
     ...(data !== null && data !== undefined ? { server: data } : {}),
   });

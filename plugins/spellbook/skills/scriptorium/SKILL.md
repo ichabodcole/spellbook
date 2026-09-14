@@ -44,6 +44,19 @@ to the human does neither well, and the human is left watching a spinner with no
 one to ask. If you are working directly and they have been waiting, you will be
 told — see **When you go quiet** below.
 
+**Where the line is:** if it will take longer than a reply, it is work. One
+version of one document is usually not — write it and answer. Reading four
+entries to check they agree is, even though it touches no document. When you
+cannot tell, `task` costs almost nothing and makes the waiting legible; guessing
+the other way leaves them with no one to ask.
+
+**Three ways to put something in front of them, and they are not
+interchangeable:** `say` is the conversation and it is what answers a question;
+`task` is the conversation plus a record that something is in flight, which is
+what makes a spinner honest; `note` is an annotation pinned to a passage in a
+document, for something worth marking where it happened rather than saying out
+loud. If you are replying, `say`. If you are disappearing for a while, `task`.
+
 ## Four rules the CLI will not teach you
 
 **1 · Their files are the point.** Opening a document copies it into the session
@@ -51,11 +64,12 @@ as `v1`; their keystrokes land there. The file on disk changes only when they
 press Save. You never write their file directly — not with Edit, not with Write.
 
 **2 · ⛔ NEVER WRITE THE ACTIVE VERSION.** The active version is the one they
-are typing in. To propose a change: `version-new` (it prints a path), then edit
-_that_ path with your own tools. The surface shows it immediately and they
-choose whether to make it active. Writing the active version is detected, kept
-as a version of its own, and announced to both of you as a mistake — nothing is
-lost, but they are told, and their cursor was in there.
+are typing in — `docs[].active` in `state`. To propose a change: `version-new`
+(it prints a path), then edit _that_ path with your own tools. The surface shows
+it immediately and they choose whether to make it active. Writing the active
+version is detected, kept as a version of its own, and announced to both of you
+as a mistake — nothing is lost, but they are told, and their cursor was in
+there.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.
@@ -69,22 +83,47 @@ before the CLI sees them. Same for `note` and `task`.
 ```bash
 S=<this skill's directory>
 bun $S/scripts/cli.ts open ~/notes/chapter-3.md ~/notes/research/
-bun $S/scripts/cli.ts tail        # wrap with Monitor: one JSON line per event
+bun $S/scripts/cli.ts tail        # wrap with Monitor
 ```
+
+**⚠ Not every line is JSON. Ignore any line beginning with `:`** — those are
+keepalives (`: scriptorium-keepalive`), and a loop that parses every line will
+throw on the first one. Everything else is one event per line.
 
 Every human message arrives on the tail carrying **what they were looking at** —
 the selected passage with its document, version and line numbers, and the path
 of the active version. Read it; do not ask what "this" means. Then:
 
 ```bash
-bun $S/scripts/cli.ts version-new --doc <slug-or-path> --label "tighter opening"
+bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening"
 #   → {doc, version, path} — edit that path, then:
 bun $S/scripts/cli.ts say --body-file /tmp/reply.md
 ```
 
-`--doc` takes a slug, a path, or a unique filename. A document they have not
-opened yet works too — passing its path opens it for you without moving their
-view. `state` lists everything the session knows.
+### Getting a document into the session
+
+**There is no `open-document` verb — expect to look for one.** `open` starts a
+SESSION over files and folders; that puts them in the context but does not open
+any of them. A document becomes open — copied in as `v1`, with versions you can
+write — the first time someone reaches for it: the human by clicking it, you by
+naming its **path** to `version-new`.
+
+So for a document the human has not opened:
+
+```bash
+bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md
+```
+
+That opens it and gives you a v2 to write, without moving their view.
+
+**⚠ `--doc` accepts a slug or a unique filename only for a document that is
+ALREADY open.** For anything else it must be an absolute path — a filename gets
+you `no document "keeper.md" in this session`. `state` lists what is open
+(`docs[].slug`) and what is merely in the context. A refusal names the paths you
+could have used.
+
+**The path `version-new` prints is never the active one** — that is what makes
+it safe to write with your own tools.
 
 ## What else arrives on the tail
 
@@ -98,7 +137,9 @@ Facts, not chatter. The ones worth acting on:
   the text; `notes --doc <slug>` reads it. **A note is not a request.** They are
   marking something for themselves unless they say otherwise.
 - **`doctor`** — at startup, anything worth looking at in the session, each
-  finding carrying the verb that fixes it. Offer; do not silently repair.
+  finding carrying the verb that fixes it. Offer; do not silently repair. **It
+  says nothing when there is nothing wrong**, so its absence is good news rather
+  than a broken tail. Run the `doctor` verb any time to ask directly.
 - **`saved`, `activated`, `system`** — they changed what is where. `system`
   announcements carry a `fact` and, for structure changes, who did it.
 - **`closed`** — the session ended and `tail` exits 0. A tail that stops with no
@@ -117,6 +158,29 @@ honest replies:
 
 You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
+
+## The four words that mean something specific
+
+You will meet these in `state` and `help`. Two of them are the kind you can act
+wrongly on precisely because you already know the ordinary English word.
+
+- **A SET is a structural unit, not a loose grouping.** It is a top-level folder
+  in the context, with an id (`--entry`), its own link graph, and rules about
+  what may be created inside it. `make-set` is not cosmetic: it makes a folder
+  named for a document and moves the document into it.
+- **The CONTEXT is what is in their sidebar** — the documents and sets they
+  chose for this session. (Unrelated to `diff --context`, which means lines of
+  surrounding text. Same word, two meanings, one of them a flag.)
+- **The WORKSPACE is where new things land** — a `new-doc` outside a set goes
+  there. **⚠ `open` does NOT set it**, so it may be somewhere other than the
+  folder you just opened; `workspace` prints it, `workspace <dir>` moves it.
+  Check before creating, or you will leave a document where they are not
+  looking.
+- **ACTIVE means two different things in `state`.** `docs[].active` is a version
+  number, and it is the one rule 2 is about. `state.active` (beside `openDoc`)
+  is which document their VIEW is on, and is `null` before they open anything.
+  Reading the wrong one under a rule that says "never write the active version"
+  is the expensive mistake here.
 
 ## Their half, and yours
 
@@ -140,37 +204,28 @@ document you already have, read it or grep it — that is what it is for.
 
 ## When something is wrong
 
-Failures print one JSON envelope on stderr with stdout empty:
-`{ok:false, error:{kind, exit_code, retryable, message, hint?, choices?}}`.
-**Branch on `kind`, never on the message.** `choices` names what would have been
-accepted, and `hint` says what to do — including how to bring back a session
-whose daemon has exited.
+A failure is one JSON envelope on stderr, stdout empty. **Branch on `kind`,
+never on the message.** `choices` names what would have been accepted and `hint`
+says what to do — including how to bring back a session whose daemon has exited.
 
 Run `help` for every verb with its flags and a description, and `schema` for the
-machine-readable declaration. **The verb list is deliberately not repeated
-here** — it would go stale the moment a verb changed, and the CLI cannot.
+machine-readable declaration. The verb list is not repeated here.
 
 ### The flags, once
 
-Named here because a roster-wide ward requires it, and the ward is what keeps
-the list honest: it fails if this section drifts from the CLI in either
-direction, so this is duplication that cannot quietly rot. What each one means
-belongs to `help`.
+Every flag the CLI accepts, in one place. **⚠ Deliberately FLAT: which verb
+takes which is in `help`, on that verb's own row.** Grouping them by theme reads
+as a claim about what they do and gets it wrong — `--status` looks like it
+belongs to `task-status`, and it does not; `task-status` takes a positional and
+`--status` is a `find` filter.
 
-`--session` targets a session other than the most recent, and works with every
-verb. `--doc` takes a slug, a path or a unique filename. Prose comes in through
-`--stdin` or `--body-file`.
+`--body-file` `--by` `--context` `--doc` `--entry` `--for` `--from` `--full`
+`--hunks` `--into` `--label` `--lifecycle` `--limit` `--no-open` `--patch`
+`--quote` `--reopen` `--restore` `--session` `--since` `--start-timeout`
+`--status` `--stdin` `--tag` `--timeout` `--type`
 
-| group              | flags                                                 |
-| ------------------ | ----------------------------------------------------- |
-| session and scope  | `--session` `--doc` `--entry` `--context` `--full`    |
-| opening a session  | `--no-open` `--restore` `--timeout` `--start-timeout` |
-| prose in           | `--stdin` `--body-file`                               |
-| versions and diffs | `--from` `--label` `--patch` `--hunks`                |
-| notes              | `--quote` `--reopen`                                  |
-| work and waiting   | `--for` `--status`                                    |
-| documents and sets | `--into` `--by`                                       |
-| finding            | `--since` `--limit` `--type` `--tag` `--lifecycle`    |
+`--session` works with every verb and targets a session other than the most
+recent.
 
 Every flag goes to the LEFT of a bare `--`; after it, a flag is text. (`help`
 and the version are verbs of their own, not flags.)

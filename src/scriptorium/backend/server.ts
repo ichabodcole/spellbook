@@ -1305,7 +1305,12 @@ export async function startDaemon(opts: StartOpts) {
   const refusal = (e: unknown): Response => {
     if (e instanceof SessionError)
       return Response.json(
-        { ok: false, error: e.message, ...(e.choices ? { choices: e.choices } : {}) },
+        {
+          ok: false,
+          error: e.message,
+          ...(e.choices ? { choices: e.choices } : {}),
+          ...(e.hint ? { hint: e.hint } : {}),
+        },
         { status: e.status },
       );
     if (e instanceof PathError)

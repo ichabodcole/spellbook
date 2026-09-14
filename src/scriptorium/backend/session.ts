@@ -173,6 +173,12 @@ export class SessionError extends Error {
     message: string,
     readonly status: 400 | 404 | 409,
     readonly choices?: string[],
+    /**
+     * What to DO about it, when the message alone does not say. Carried to the
+     * CLI's envelope, where the house taxonomy already has a `hint` field that
+     * refusals from this side were never filling.
+     */
+    readonly hint?: string,
   ) {
     super(message);
   }
@@ -474,11 +480,29 @@ export class Session {
 
   private docOrDie(slug?: string): DocRecord {
     const want = slug ?? this.m.openDoc ?? undefined;
-    const choices = this.m.docs.map((d) => d.slug);
+    const opened = this.m.docs.map((d) => d.slug);
+    /**
+     * ⛔ WHEN NOTHING IS OPEN, THE OPENED SLUGS ARE AN EMPTY LIST AND AN EMPTY
+     * LIST IS NOT AN ANSWER. A cold agent named a document by filename before
+     * anything was open and got `choices: []` with no hint — from a session
+     * whose context held exactly the two documents it could have named. The
+     * refusal was correct and useless, which is the failure mode `choices`
+     * exists to prevent.
+     *
+     * So an unopened session offers the paths it COULD open, and says how. A
+     * filename only resolves for a document that is already open; a path always
+     * opens one.
+     */
+    const choices =
+      opened.length > 0 ? opened : this.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
+    const hint =
+      opened.length > 0
+        ? undefined
+        : "nothing is open yet — pass a PATH from the context (a filename only resolves once a document is open)";
     if (want === undefined)
-      throw new SessionError("no document is open — name one with --doc", 409, choices);
+      throw new SessionError("no document is open — name one with --doc", 409, choices, hint);
     const d = this.findDoc(want);
-    if (!d) throw new SessionError(`no document "${want}" in this session`, 404, choices);
+    if (!d) throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
     return d;
   }
 
