@@ -5,7 +5,7 @@
     "email": "alienlobsterbuffet.dev@gmail.com"
   },
   "metadata": {
-    "description": "The Spellbook — agent-conjured apps. Lightweight, standalone, purpose-built surfaces with an agent as the runtime underneath.",
+    "description": "The Spellbook \u2014 agent-conjured apps. Lightweight, standalone, purpose-built surfaces with an agent as the runtime underneath.",
     "version": "1.0.0"
   },
   "plugins": [
@@ -23,7 +23,8 @@
         "magpie",
         "glamour",
         "imago",
-        "astrolabe"
+        "astrolabe",
+        "scriptorium"
       ]
     }
   ]

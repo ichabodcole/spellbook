@@ -4,15 +4,16 @@ Each subfolder here is a **spell** — a self-contained agent surface, shipped a
 a Claude Code skill. Zip one folder and it runs anywhere `bun` is on PATH; no
 cross-spell imports, no build step.
 
-| Spell       | Kind        | What it conjures                                                    |
-| ----------- | ----------- | ------------------------------------------------------------------- |
-| `digestify` | cantrip     | A one-shot reading/review surface with inline questions.            |
-| `grapevine` | conjuration | A standing daemon for agent-to-agent channels.                      |
-| `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).              |
-| `magpie`    | conjuration | A surface to extract each asset from a composite image into PNGs.   |
-| `glamour`   | conjuration | A style studio — references in, re-castable style spec out.         |
-| `imago`     | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.           |
-| `astrolabe` | conjuration | A standing observatory — live state across every project in flight. |
+| Spell         | Kind        | What it conjures                                                      |
+| ------------- | ----------- | --------------------------------------------------------------------- |
+| `digestify`   | cantrip     | A one-shot reading/review surface with inline questions.              |
+| `grapevine`   | conjuration | A standing daemon for agent-to-agent channels.                        |
+| `bounty`      | conjuration | A live duplex Kanban board (human ↔ agent, real-time).                |
+| `magpie`      | conjuration | A surface to extract each asset from a composite image into PNGs.     |
+| `glamour`     | conjuration | A style studio — references in, re-castable style spec out.           |
+| `imago`       | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.             |
+| `astrolabe`   | conjuration | A standing observatory — live state across every project in flight.   |
+| `scriptorium` | conjuration | A co-present markdown editor — the human edits, you propose versions. |
 
 **Cantrip** = cast-and-resolve (spawn → user acts → submit → JSON on stdout →
 exit). **Conjuration** = summons something with duration (a daemon / board you

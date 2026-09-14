@@ -160,11 +160,6 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
   // owns caller-facing arg-parsing entry points and no contract wards them.
   const SPELLS_WITHOUT_SKILL_MD: Record<string, string> = {
     "mind-mapper": "39 caller-facing flags unwarded; folder is undeclared (see #989) and shipped",
-    // WIP by mind-mapper's precedent (47238d7): the draft is
-    // docs/projects/scriptorium/SKILL.draft.md, so its flags are documented but
-    // not where this ward reads. Unpin when the SKILL.md ships.
-    scriptorium:
-      "12 caller-facing flags; SKILL.md is a draft in docs/projects/scriptorium until the foundation is usable",
   };
 
   test("every spell with no SKILL.md is PINNED, not silently skipped", () => {

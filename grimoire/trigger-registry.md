@@ -33,17 +33,17 @@ meaning to summon anything, is a bug.
 
 ## Reserved spells
 
-| Name          | Kind        | Conjures                                                                      | Status             |
-| ------------- | ----------- | ----------------------------------------------------------------------------- | ------------------ |
-| `digestify`   | cantrip     | One-shot reading/review surface, inline questions                             | shipped            |
-| `grapevine`   | conjuration | Agent-to-agent channel daemon                                                 | shipped            |
-| `bounty`      | conjuration | Live duplex Kanban board (todo→doing→review→done)                             | shipped            |
-| `magpie`      | conjuration | Extract individual assets from a composite image → PNG files                  | shipped            |
-| `glamour`     | conjuration | Compose a visual style from influences → re-castable spec + images            | shipped            |
-| `imago`       | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent    | shipped            |
-| `astrolabe`   | conjuration | Cross-project observatory — live status of many projects, presence, needs-you | shipped            |
-| `mind-mapper` | conjuration | Spike a thought into a traceable map — nodes, edges, provenance               | **in testing**     |
-| `scriptorium` | conjuration | Co-present markdown editor — edit real files, the agent writes new versions   | **in development** |
+| Name          | Kind        | Conjures                                                                      | Status         |
+| ------------- | ----------- | ----------------------------------------------------------------------------- | -------------- |
+| `digestify`   | cantrip     | One-shot reading/review surface, inline questions                             | shipped        |
+| `grapevine`   | conjuration | Agent-to-agent channel daemon                                                 | shipped        |
+| `bounty`      | conjuration | Live duplex Kanban board (todo→doing→review→done)                             | shipped        |
+| `magpie`      | conjuration | Extract individual assets from a composite image → PNG files                  | shipped        |
+| `glamour`     | conjuration | Compose a visual style from influences → re-castable spec + images            | shipped        |
+| `imago`       | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent    | shipped        |
+| `astrolabe`   | conjuration | Cross-project observatory — live status of many projects, presence, needs-you | shipped        |
+| `mind-mapper` | conjuration | Spike a thought into a traceable map — nodes, edges, provenance               | **in testing** |
+| `scriptorium` | conjuration | Co-present markdown editor — edit real files, the agent writes new versions   | shipped        |
 
 > **⚠ `mind-mapper` is RESERVED AND NOT RELEASED — and it is absent from the
 > other listings ON PURPOSE. Do not "fix" that.**
@@ -67,10 +67,10 @@ meaning to summon anything, is a bug.
 > do need it. _(Recorded 2026-09-01, at Cole's ruling: "it is intended for now,
 > as mind-mapper is still undergoing a bit of testing.")_
 
-> **`scriptorium` is in the same state, for the same reason** (2026-09-11): the
-> first spell scaffolded onto the build, building its foundation slice, with its
-> `SKILL.md` drafted at `docs/projects/scriptorium/SKILL.draft.md` rather than
-> shipped, and pinned in `roster-drift`'s `PINNED`. Release it the same way.
+> **`scriptorium` was in that state and no longer is** (2026-09-14): its
+> `SKILL.md` ships, so it is unpinned from both `roster-drift` and
+> `flag-invariant`, and it is listed in the two READMEs and the marketplace
+> tags. The draft it grew from stays in the project folder as history.
 
 ## Retired names (renamed away — don't reuse)
 

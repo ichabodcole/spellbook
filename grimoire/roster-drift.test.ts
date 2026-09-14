@@ -54,9 +54,6 @@ import { dirname, join } from "node:path";
 // artifact belongs in the published package while the spell is WIP.
 const PINNED: Record<string, string> = {
   "mind-mapper": "WIP by Cole's ruling (47238d7) — correctly undeclared, nothing to repair",
-  // The first spell SCAFFOLDED onto the build (2026-09-11), undeclared on
-  // mind-mapper's precedent: its SKILL.md is a draft in the project folder.
-  scriptorium: "WIP — no SKILL.md until the foundation is usable",
 };
 
 function repoRoot(): string {
