@@ -101,6 +101,7 @@ export function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  focusedNote,
   onAddNote,
   onShowNote,
   onDeleteNote,
@@ -128,6 +129,8 @@ export function DocumentPane({
   /** E45/E48: the editor's selection — offsets for notes, lines for the wire. */
   onSelect: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   reveal: { from: number; to: number; seq: number } | null;
+  /** E47: the note the panel has focused — the rendered view paints it apart. */
+  focusedNote: string | null;
   onAddNote: (from: number, to: number, body: string) => void;
   /** E47: the document pointing at a note — the panel borders it. */
   onShowNote: (id: string) => void;
@@ -366,7 +369,16 @@ export function DocumentPane({
           onContextMenu={setNoteAt}
         />
       ) : showing === "rendered" ? (
-        <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
+        <MarkdownView
+          text={shown}
+          meta={doc.meta}
+          notes={doc.notes}
+          focusedNote={focusedNote}
+          pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
+          onFollowLink={onFollowLink}
+          onSelect={onSelect}
+          onContextMenu={setNoteAt}
+        />
       ) : (
         <ResizablePanelGroup
           orientation="horizontal"
@@ -395,7 +407,16 @@ export function DocumentPane({
             minSize="25"
             className="flex flex-col border-l border-edge"
           >
-            <MarkdownView text={shown} meta={doc.meta} onFollowLink={onFollowLink} />
+            <MarkdownView
+              text={shown}
+              meta={doc.meta}
+              notes={doc.notes}
+              focusedNote={focusedNote}
+              pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
+              onFollowLink={onFollowLink}
+              onSelect={onSelect}
+              onContextMenu={setNoteAt}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       )}

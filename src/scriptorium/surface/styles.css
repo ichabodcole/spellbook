@@ -120,6 +120,44 @@
     font-size: 15px;
     line-height: 1.7;
   }
+
+  /* ─── Notes, painted over the rendered text (E51) ───────────────────────────
+     The CSS Custom Highlight API, so the renderer's output is never touched:
+     nothing is wrapped, nothing is inserted, and the one HTML sink stays fed
+     only by `renderMarkdown`. Deliberately the SAME attention tint and underline
+     the raw view's `.cm-note` uses, because a note is one thing seen two ways —
+     a reader switching modes should recognise it, not re-learn it.
+
+     ⚠ A highlight pseudo-element accepts only a few properties (colour,
+     background, decoration, shadow) — a border or padding here is silently
+     dropped, which is why the underline is a text-decoration and not a
+     border-bottom as it is in the editor. */
+  ::highlight(scriptorium-note) {
+    background-color: color-mix(in srgb, var(--color-attention) 22%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-attention) 55%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  /* The passage a note is being written about (E46) — the rubric, as the
+     editor's `.cm-note-pending` uses, so the two views agree about "this is
+     what you are noting". */
+  ::highlight(scriptorium-note-pending) {
+    background-color: color-mix(in srgb, var(--color-rubric) 24%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-rubric);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  /* The note the panel is pointing at (E47) — the same relationship the editor
+     draws, one step louder than its neighbours. */
+  ::highlight(scriptorium-note-focus) {
+    background-color: color-mix(in srgb, var(--color-attention) 38%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-attention);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
   .md-prose > :first-child {
     margin-top: 0;
   }

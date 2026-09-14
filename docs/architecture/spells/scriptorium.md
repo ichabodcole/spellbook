@@ -209,6 +209,18 @@ merge applies come from the same engine, so a hunk the human accepted cannot be
 a hunk a different implementation found (E36). The surface renders; it does not
 calculate.
 
+⚠ **E51 is the one deliberate exception, and it is here so the rule above is not
+read as universal.** `surface/state/projection.ts` computes the rendered
+document's plain text with a source span per segment — a real calculation, in
+the surface. It is there because the thing it must agree with is the RENDERER,
+which is also in the surface: the projection is built by
+`mdast-util-from-markdown`, wrapping the same micromark that produces the HTML,
+so the two cannot disagree about what is text and what is markup. Moving it into
+the daemon would put the calculation on the far side of the seam from the only
+artifact it has to match, and would make a right-click wait for a round trip.
+The daemon did not gain a verb for this: `dist/server.js` and `dist/cli.js` are
+unchanged across that slice.
+
 ## 8 · The surface
 
 React 19 + Tailwind v4, shadcn on `@base-ui/react`, three resizable panes:
@@ -217,6 +229,15 @@ React 19 + Tailwind v4, shadcn on `@base-ui/react`, three resizable panes:
 - **Document view** is CodeMirror 6, hand-wrapped — the spell dispatches its own
   transactions, so the view's lifecycle is ours (§5's annotation depends on it).
 - **Four view modes**: raw, rendered, split, compare.
+- **Selection works in the rendered view too** (E51), and resolves to the SAME
+  source offsets the raw view reports — so the chat's attachment and a note's
+  anchor mean one thing regardless of which half the human was reading.
+  `state/renderedRange.ts` is the DOM half (node walking, `Range` building);
+  everything decidable without a DOM is next door in `projection.ts` and has
+  cells. Two things bought with scars: the rendered view keeps its OWN memory of
+  the last selection, because a right-click collapses the browser's, and note
+  highlights are **painted** with the CSS Custom Highlight API rather than
+  wrapped in markup, because the rendered HTML is the spell's one sink.
 - **State lives in the daemon**, not the surface. The surface holds view
   preferences (persisted as prefs through the daemon) and transient UI state.
   Anything another party must see is session state and goes over the wire.

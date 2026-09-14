@@ -349,6 +349,7 @@ function Workspace({
               setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel })
             }
             reveal={reveal}
+            focusedNote={focusedNote}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
             }}

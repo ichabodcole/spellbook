@@ -1441,3 +1441,77 @@ _Process note, recorded because it was my error: this was tested in Cole's LIVE
 session, which left three invented tasks in his real queue. `task-remove` exists
 partly because I needed it to clean up after myself — a good verb found for a
 bad reason. The scratch session was right there._
+
+## E51 — a selection in the rendered view means what it means in the raw one
+
+Cole, reading: _"if possible one thing that would be nice is when in markdown
+render mode I can still select text and use that as context in a message, and
+also still annotate text if possible."_
+
+**The obstacle is that the two views do not share a coordinate system.** A
+selection in the raw view is CodeMirror's, in SOURCE offsets, and everything
+downstream is built on that — the chat's line numbers, a note's anchor. A
+selection in the rendered view is a run of rendered text: `**Maren's Bakery**`
+reaches the human as `Maren's Bakery`.
+
+**Searching the source for what was selected was rejected, on evidence.** It
+holds for plain prose and fails on exactly the documents this spell is for —
+Hollowbrook's relationship rows are bold-inside-a-link on every line, so the
+selected string does not occur in the source at all. There is a cell that
+asserts that absence, so the reason survives the reasoning.
+
+**micromark's own token stream would have been ideal and is not reachable:** its
+`exports` map exposes `.` and `./stream` only, so the offsets its tokenizer
+carries cannot be had from outside. Measured, not assumed.
+
+**So the projection is built by `mdast-util-from-markdown`** — two new
+dependencies, which Cole accepted on the argument that they wrap THE SAME
+micromark the renderer uses, so the projection cannot disagree with what is on
+screen about what is text and what is markup. The alternative was a hand-rolled
+inline stripper with no dependency, refused as a second partial markdown reader
+with nothing holding it level with the first — the lockstep-mirror drift
+`diff.ts` names in its own header.
+
+**It lives in the SURFACE, and the wire did not change at all.** The daemon has
+no use for it: the agent's `note --quote` resolves against the source and always
+did. `dist/server.js` and `dist/cli.js` are byte-identical across this slice,
+which is the check that the claim is true. Putting it beside the renderer also
+means the right-click menu resolves a passage in the frame the human clicked,
+rather than after a round trip.
+
+**Alignment is a PROGRESSIVE SEARCH, not an assumed concatenation.** micromark
+writes a newline between block tags, so the DOM offers a `"\n"` text node where
+the projection wrote `"\n\n"`; treating the container's text as the projection
+puts every offset after the first block off by one and drifting. Matching each
+run forwards from a cursor cannot drift, and a run that will not place gets
+`null` rather than a guess.
+
+**⛔ A RIGHT-CLICK DESTROYS THE THING IT IS ASKING ABOUT.** Found in the
+browser: select a passage, right-click it, and the menu opens with nothing to
+act on, because pressing a button collapses the DOM selection. The raw view
+never had this problem — CodeMirror's selection is a MODEL, which a click cannot
+touch. So the rendered view remembers the last range it resolved and trusts it
+only when the pointer is inside it; a right-click elsewhere must not silently
+offer a note on the previous passage. This is the whole reason "select, then
+right-click" works here.
+
+**And the passage stays visibly marked while the composer is open**, painted in
+the rubric as the editor's `cm-note-pending` is — because the click that opened
+the composer took the selection with it, and Cole asked for the text to stay
+selected (E46). Without a mark of our own the human writes a note about text
+that no longer looks chosen.
+
+**Highlights are PAINTED, not wrapped** — the CSS Custom Highlight API, so
+nothing is inserted into the rendered HTML. Wrapping a note's passage in a
+`<mark>` would mean this component editing the renderer's output, and that
+output is the spell's one HTML sink. Where the API is absent the notes simply
+are not highlighted and everything else still works.
+
+**A selection crossing markup carries the markup between its endpoints.** From
+the rendered view, `Maren's Bakery … an extension` arrives as
+`Maren's Bakery**](Maren's%20Bakery.md) (Locations) — her place, and an extension`.
+The ENDPOINTS are exact; the span between them is the source that is really
+there. The agent gets something it can locate in the file, and the chip shows
+markup — flagged to Cole rather than decided quietly, since the alternative
+(sending the rendered text) would hand the agent a string the file does not
+contain.

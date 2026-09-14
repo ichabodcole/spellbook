@@ -67860,6 +67860,1609 @@ function renderMarkdown(text4) {
   return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
 }
 
+// node_modules/mdast-util-to-string/lib/index.js
+var emptyOptions2 = {};
+function toString(value, options) {
+  const settings = options || emptyOptions2;
+  const includeImageAlt = typeof settings.includeImageAlt === "boolean" ? settings.includeImageAlt : true;
+  const includeHtml = typeof settings.includeHtml === "boolean" ? settings.includeHtml : true;
+  return one(value, includeImageAlt, includeHtml);
+}
+function one(value, includeImageAlt, includeHtml) {
+  if (node(value)) {
+    if ("value" in value) {
+      return value.type === "html" && !includeHtml ? "" : value.value;
+    }
+    if (includeImageAlt && "alt" in value && value.alt) {
+      return value.alt;
+    }
+    if ("children" in value) {
+      return all(value.children, includeImageAlt, includeHtml);
+    }
+  }
+  if (Array.isArray(value)) {
+    return all(value, includeImageAlt, includeHtml);
+  }
+  return "";
+}
+function all(values2, includeImageAlt, includeHtml) {
+  const result = [];
+  let index4 = -1;
+  while (++index4 < values2.length) {
+    result[index4] = one(values2[index4], includeImageAlt, includeHtml);
+  }
+  return result.join("");
+}
+function node(value) {
+  return Boolean(value && typeof value === "object");
+}
+// node_modules/micromark-util-decode-string/dev/index.js
+var characterEscapeOrReference = /\\([!-/:-@[-`{-~])|&(#(?:\d{1,7}|x[\da-f]{1,6})|[\da-z]{1,31});/gi;
+function decodeString(value) {
+  return value.replace(characterEscapeOrReference, decode);
+}
+function decode($0, $1, $2) {
+  if ($1) {
+    return $1;
+  }
+  const head = $2.charCodeAt(0);
+  if (head === codes.numberSign) {
+    const head2 = $2.charCodeAt(1);
+    const hex = head2 === codes.lowercaseX || head2 === codes.uppercaseX;
+    return decodeNumericCharacterReference($2.slice(hex ? 2 : 1), hex ? constants.numericBaseHexadecimal : constants.numericBaseDecimal);
+  }
+  return decodeNamedCharacterReference($2) || $0;
+}
+
+// node_modules/unist-util-stringify-position/lib/index.js
+function stringifyPosition(value) {
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+  if ("position" in value || "type" in value) {
+    return position(value.position);
+  }
+  if ("start" in value || "end" in value) {
+    return position(value);
+  }
+  if ("line" in value || "column" in value) {
+    return point(value);
+  }
+  return "";
+}
+function point(point2) {
+  return index4(point2 && point2.line) + ":" + index4(point2 && point2.column);
+}
+function position(pos) {
+  return point(pos && pos.start) + "-" + point(pos && pos.end);
+}
+function index4(value) {
+  return value && typeof value === "number" ? value : 1;
+}
+// node_modules/mdast-util-from-markdown/dev/lib/index.js
+var own2 = {}.hasOwnProperty;
+function fromMarkdown(value, encoding, options) {
+  if (encoding && typeof encoding === "object") {
+    options = encoding;
+    encoding = undefined;
+  }
+  return compiler(options)(postprocess(parse(options).document().write(preprocess()(value, encoding, true))));
+}
+function compiler(options) {
+  const config = {
+    transforms: [],
+    canContainEols: ["emphasis", "fragment", "heading", "paragraph", "strong"],
+    enter: {
+      autolink: opener(link),
+      autolinkProtocol: onenterdata,
+      autolinkEmail: onenterdata,
+      atxHeading: opener(heading2),
+      blockQuote: opener(blockQuote2),
+      characterEscape: onenterdata,
+      characterReference: onenterdata,
+      codeFenced: opener(codeFlow),
+      codeFencedFenceInfo: buffer,
+      codeFencedFenceMeta: buffer,
+      codeIndented: opener(codeFlow, buffer),
+      codeText: opener(codeText2, buffer),
+      codeTextData: onenterdata,
+      data: onenterdata,
+      codeFlowValue: onenterdata,
+      definition: opener(definition2),
+      definitionDestinationString: buffer,
+      definitionLabelString: buffer,
+      definitionTitleString: buffer,
+      emphasis: opener(emphasis),
+      hardBreakEscape: opener(hardBreak),
+      hardBreakTrailing: opener(hardBreak),
+      htmlFlow: opener(html, buffer),
+      htmlFlowData: onenterdata,
+      htmlText: opener(html, buffer),
+      htmlTextData: onenterdata,
+      image: opener(image),
+      label: buffer,
+      link: opener(link),
+      listItem: opener(listItem),
+      listItemValue: onenterlistitemvalue,
+      listOrdered: opener(list2, onenterlistordered),
+      listUnordered: opener(list2),
+      paragraph: opener(paragraph),
+      reference: onenterreference,
+      referenceString: buffer,
+      resourceDestinationString: buffer,
+      resourceTitleString: buffer,
+      setextHeading: opener(heading2),
+      strong: opener(strong),
+      thematicBreak: opener(thematicBreak2)
+    },
+    exit: {
+      atxHeading: closer(),
+      atxHeadingSequence: onexitatxheadingsequence,
+      autolink: closer(),
+      autolinkEmail: onexitautolinkemail,
+      autolinkProtocol: onexitautolinkprotocol,
+      blockQuote: closer(),
+      characterEscapeValue: onexitdata,
+      characterReferenceMarkerHexadecimal: onexitcharacterreferencemarker,
+      characterReferenceMarkerNumeric: onexitcharacterreferencemarker,
+      characterReferenceValue: onexitcharacterreferencevalue,
+      characterReference: onexitcharacterreference,
+      codeFenced: closer(onexitcodefenced),
+      codeFencedFence: onexitcodefencedfence,
+      codeFencedFenceInfo: onexitcodefencedfenceinfo,
+      codeFencedFenceMeta: onexitcodefencedfencemeta,
+      codeFlowValue: onexitdata,
+      codeIndented: closer(onexitcodeindented),
+      codeText: closer(onexitcodetext),
+      codeTextData: onexitdata,
+      data: onexitdata,
+      definition: closer(),
+      definitionDestinationString: onexitdefinitiondestinationstring,
+      definitionLabelString: onexitdefinitionlabelstring,
+      definitionTitleString: onexitdefinitiontitlestring,
+      emphasis: closer(),
+      hardBreakEscape: closer(onexithardbreak),
+      hardBreakTrailing: closer(onexithardbreak),
+      htmlFlow: closer(onexithtmlflow),
+      htmlFlowData: onexitdata,
+      htmlText: closer(onexithtmltext),
+      htmlTextData: onexitdata,
+      image: closer(onexitimage),
+      label: onexitlabel,
+      labelText: onexitlabeltext,
+      lineEnding: onexitlineending,
+      link: closer(onexitlink),
+      listItem: closer(),
+      listOrdered: closer(),
+      listUnordered: closer(),
+      paragraph: closer(),
+      referenceString: onexitreferencestring,
+      resourceDestinationString: onexitresourcedestinationstring,
+      resourceTitleString: onexitresourcetitlestring,
+      resource: onexitresource,
+      setextHeading: closer(onexitsetextheading),
+      setextHeadingLineSequence: onexitsetextheadinglinesequence,
+      setextHeadingText: onexitsetextheadingtext,
+      strong: closer(),
+      thematicBreak: closer()
+    }
+  };
+  configure(config, (options || {}).mdastExtensions || []);
+  const data = {};
+  return compile2;
+  function compile2(events) {
+    let tree = { type: "root", children: [] };
+    const context = {
+      stack: [tree],
+      tokenStack: [],
+      config,
+      enter,
+      exit: exit2,
+      buffer,
+      resume,
+      data
+    };
+    const listStack = [];
+    let index5 = -1;
+    while (++index5 < events.length) {
+      if (events[index5][1].type === types2.listOrdered || events[index5][1].type === types2.listUnordered) {
+        if (events[index5][0] === "enter") {
+          listStack.push(index5);
+        } else {
+          const tail = listStack.pop();
+          ok(typeof tail === "number", "expected list to be open");
+          index5 = prepareList(events, tail, index5);
+        }
+      }
+    }
+    index5 = -1;
+    while (++index5 < events.length) {
+      const handler = config[events[index5][0]];
+      if (own2.call(handler, events[index5][1].type)) {
+        handler[events[index5][1].type].call(Object.assign({ sliceSerialize: events[index5][2].sliceSerialize }, context), events[index5][1]);
+      }
+    }
+    if (context.tokenStack.length > 0) {
+      const tail = context.tokenStack[context.tokenStack.length - 1];
+      const handler = tail[1] || defaultOnError;
+      handler.call(context, undefined, tail[0]);
+    }
+    tree.position = {
+      start: point2(events.length > 0 ? events[0][1].start : { line: 1, column: 1, offset: 0 }),
+      end: point2(events.length > 0 ? events[events.length - 2][1].end : { line: 1, column: 1, offset: 0 })
+    };
+    index5 = -1;
+    while (++index5 < config.transforms.length) {
+      tree = config.transforms[index5](tree) || tree;
+    }
+    return tree;
+  }
+  function prepareList(events, start, length) {
+    let index5 = start - 1;
+    let containerBalance = -1;
+    let listSpread = false;
+    let listItem2;
+    let lineIndex;
+    let firstBlankLineIndex;
+    let atMarker;
+    while (++index5 <= length) {
+      const event = events[index5];
+      switch (event[1].type) {
+        case types2.listUnordered:
+        case types2.listOrdered:
+        case types2.blockQuote: {
+          if (event[0] === "enter") {
+            containerBalance++;
+          } else {
+            containerBalance--;
+          }
+          atMarker = undefined;
+          break;
+        }
+        case types2.lineEndingBlank: {
+          if (event[0] === "enter") {
+            if (listItem2 && !atMarker && !containerBalance && !firstBlankLineIndex) {
+              firstBlankLineIndex = index5;
+            }
+            atMarker = undefined;
+          }
+          break;
+        }
+        case types2.linePrefix:
+        case types2.listItemValue:
+        case types2.listItemMarker:
+        case types2.listItemPrefix:
+        case types2.listItemPrefixWhitespace: {
+          break;
+        }
+        default: {
+          atMarker = undefined;
+        }
+      }
+      if (!containerBalance && event[0] === "enter" && event[1].type === types2.listItemPrefix || containerBalance === -1 && event[0] === "exit" && (event[1].type === types2.listUnordered || event[1].type === types2.listOrdered)) {
+        if (listItem2) {
+          let tailIndex = index5;
+          lineIndex = undefined;
+          while (tailIndex--) {
+            const tailEvent = events[tailIndex];
+            if (tailEvent[1].type === types2.lineEnding || tailEvent[1].type === types2.lineEndingBlank) {
+              if (tailEvent[0] === "exit")
+                continue;
+              if (lineIndex) {
+                events[lineIndex][1].type = types2.lineEndingBlank;
+                listSpread = true;
+              }
+              tailEvent[1].type = types2.lineEnding;
+              lineIndex = tailIndex;
+            } else if (tailEvent[1].type === types2.linePrefix || tailEvent[1].type === types2.blockQuotePrefix || tailEvent[1].type === types2.blockQuotePrefixWhitespace || tailEvent[1].type === types2.blockQuoteMarker || tailEvent[1].type === types2.listItemIndent) {} else {
+              break;
+            }
+          }
+          if (firstBlankLineIndex && (!lineIndex || firstBlankLineIndex < lineIndex)) {
+            listItem2._spread = true;
+          }
+          listItem2.end = Object.assign({}, lineIndex ? events[lineIndex][1].start : event[1].end);
+          events.splice(lineIndex || index5, 0, ["exit", listItem2, event[2]]);
+          index5++;
+          length++;
+        }
+        if (event[1].type === types2.listItemPrefix) {
+          const item = {
+            type: "listItem",
+            _spread: false,
+            start: Object.assign({}, event[1].start),
+            end: undefined
+          };
+          listItem2 = item;
+          events.splice(index5, 0, ["enter", item, event[2]]);
+          index5++;
+          length++;
+          firstBlankLineIndex = undefined;
+          atMarker = true;
+        }
+      }
+    }
+    events[start][1]._spread = listSpread;
+    return length;
+  }
+  function opener(create, and) {
+    return open3;
+    function open3(token) {
+      enter.call(this, create(token), token);
+      if (and)
+        and.call(this, token);
+    }
+  }
+  function buffer() {
+    this.stack.push({ type: "fragment", children: [] });
+  }
+  function enter(node2, token, errorHandler) {
+    const parent = this.stack[this.stack.length - 1];
+    ok(parent, "expected `parent`");
+    ok("children" in parent, "expected `parent`");
+    const siblings = parent.children;
+    siblings.push(node2);
+    this.stack.push(node2);
+    this.tokenStack.push([token, errorHandler || undefined]);
+    node2.position = {
+      start: point2(token.start),
+      end: undefined
+    };
+  }
+  function closer(and) {
+    return close;
+    function close(token) {
+      if (and)
+        and.call(this, token);
+      exit2.call(this, token);
+    }
+  }
+  function exit2(token, onExitError) {
+    const node2 = this.stack.pop();
+    ok(node2, "expected `node`");
+    const open3 = this.tokenStack.pop();
+    if (!open3) {
+      throw new Error("Cannot close `" + token.type + "` (" + stringifyPosition({ start: token.start, end: token.end }) + "): it’s not open");
+    } else if (open3[0].type !== token.type) {
+      if (onExitError) {
+        onExitError.call(this, token, open3[0]);
+      } else {
+        const handler = open3[1] || defaultOnError;
+        handler.call(this, token, open3[0]);
+      }
+    }
+    ok(node2.type !== "fragment", "unexpected fragment `exit`ed");
+    ok(node2.position, "expected `position` to be defined");
+    node2.position.end = point2(token.end);
+  }
+  function resume() {
+    return toString(this.stack.pop());
+  }
+  function onenterlistordered() {
+    this.data.expectingFirstListItemValue = true;
+  }
+  function onenterlistitemvalue(token) {
+    if (this.data.expectingFirstListItemValue) {
+      const ancestor = this.stack[this.stack.length - 2];
+      ok(ancestor, "expected nodes on stack");
+      ok(ancestor.type === "list", "expected list on stack");
+      ancestor.start = Number.parseInt(this.sliceSerialize(token), constants.numericBaseDecimal);
+      this.data.expectingFirstListItemValue = undefined;
+    }
+  }
+  function onexitcodefencedfenceinfo() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "code", "expected code on stack");
+    node2.lang = data2;
+  }
+  function onexitcodefencedfencemeta() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "code", "expected code on stack");
+    node2.meta = data2;
+  }
+  function onexitcodefencedfence() {
+    if (this.data.flowCodeInside)
+      return;
+    this.buffer();
+    this.data.flowCodeInside = true;
+  }
+  function onexitcodefenced() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "code", "expected code on stack");
+    node2.value = data2.replace(/^(\r?\n|\r)|(\r?\n|\r)$/g, "");
+    this.data.flowCodeInside = undefined;
+  }
+  function onexitcodeindented() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "code", "expected code on stack");
+    node2.value = data2.replace(/(\r?\n|\r)$/g, "");
+  }
+  function onexitdefinitionlabelstring(token) {
+    const label = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "definition", "expected definition on stack");
+    node2.label = label;
+    node2.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
+  }
+  function onexitdefinitiontitlestring() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "definition", "expected definition on stack");
+    node2.title = data2;
+  }
+  function onexitdefinitiondestinationstring() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "definition", "expected definition on stack");
+    node2.url = data2;
+  }
+  function onexitatxheadingsequence(token) {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "heading", "expected heading on stack");
+    if (!node2.depth) {
+      const depth = this.sliceSerialize(token).length;
+      ok(depth === 1 || depth === 2 || depth === 3 || depth === 4 || depth === 5 || depth === 6, "expected `depth` between `1` and `6`");
+      node2.depth = depth;
+    }
+  }
+  function onexitsetextheadingtext() {
+    this.data.setextHeadingSlurpLineEnding = true;
+  }
+  function onexitsetextheadinglinesequence(token) {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "heading", "expected heading on stack");
+    node2.depth = this.sliceSerialize(token).codePointAt(0) === codes.equalsTo ? 1 : 2;
+  }
+  function onexitsetextheading() {
+    this.data.setextHeadingSlurpLineEnding = undefined;
+  }
+  function onenterdata(token) {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok("children" in node2, "expected parent on stack");
+    const siblings = node2.children;
+    let tail = siblings[siblings.length - 1];
+    if (!tail || tail.type !== "text") {
+      tail = text4();
+      tail.position = {
+        start: point2(token.start),
+        end: undefined
+      };
+      siblings.push(tail);
+    }
+    this.stack.push(tail);
+  }
+  function onexitdata(token) {
+    const tail = this.stack.pop();
+    ok(tail, "expected a `node` to be on the stack");
+    ok("value" in tail, "expected a `literal` to be on the stack");
+    ok(tail.position, "expected `node` to have an open position");
+    tail.value += this.sliceSerialize(token);
+    tail.position.end = point2(token.end);
+  }
+  function onexitlineending(token) {
+    const context = this.stack[this.stack.length - 1];
+    ok(context, "expected `node`");
+    if (this.data.atHardBreak) {
+      ok("children" in context, "expected `parent`");
+      const tail = context.children[context.children.length - 1];
+      ok(tail.position, "expected tail to have a starting position");
+      tail.position.end = point2(token.end);
+      this.data.atHardBreak = undefined;
+      return;
+    }
+    if (!this.data.setextHeadingSlurpLineEnding && config.canContainEols.includes(context.type)) {
+      onenterdata.call(this, token);
+      onexitdata.call(this, token);
+    }
+  }
+  function onexithardbreak() {
+    this.data.atHardBreak = true;
+  }
+  function onexithtmlflow() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "html", "expected html on stack");
+    node2.value = data2;
+  }
+  function onexithtmltext() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "html", "expected html on stack");
+    node2.value = data2;
+  }
+  function onexitcodetext() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "inlineCode", "expected inline code on stack");
+    node2.value = data2;
+  }
+  function onexitlink() {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "link", "expected link on stack");
+    if (this.data.inReference) {
+      const referenceType = this.data.referenceType || "shortcut";
+      node2.type += "Reference";
+      node2.referenceType = referenceType;
+      delete node2.url;
+      delete node2.title;
+    } else {
+      delete node2.identifier;
+      delete node2.label;
+    }
+    this.data.referenceType = undefined;
+  }
+  function onexitimage() {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "image", "expected image on stack");
+    if (this.data.inReference) {
+      const referenceType = this.data.referenceType || "shortcut";
+      node2.type += "Reference";
+      node2.referenceType = referenceType;
+      delete node2.url;
+      delete node2.title;
+    } else {
+      delete node2.identifier;
+      delete node2.label;
+    }
+    this.data.referenceType = undefined;
+  }
+  function onexitlabeltext(token) {
+    const string4 = this.sliceSerialize(token);
+    const ancestor = this.stack[this.stack.length - 2];
+    ok(ancestor, "expected ancestor on stack");
+    ok(ancestor.type === "image" || ancestor.type === "link", "expected image or link on stack");
+    ancestor.label = decodeString(string4);
+    ancestor.identifier = normalizeIdentifier(string4).toLowerCase();
+  }
+  function onexitlabel() {
+    const fragment = this.stack[this.stack.length - 1];
+    ok(fragment, "expected node on stack");
+    ok(fragment.type === "fragment", "expected fragment on stack");
+    const value = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "image" || node2.type === "link", "expected image or link on stack");
+    this.data.inReference = true;
+    if (node2.type === "link") {
+      const children = fragment.children;
+      node2.children = children;
+    } else {
+      node2.alt = value;
+    }
+  }
+  function onexitresourcedestinationstring() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "image" || node2.type === "link", "expected image or link on stack");
+    node2.url = data2;
+  }
+  function onexitresourcetitlestring() {
+    const data2 = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "image" || node2.type === "link", "expected image or link on stack");
+    node2.title = data2;
+  }
+  function onexitresource() {
+    this.data.inReference = undefined;
+  }
+  function onenterreference() {
+    this.data.referenceType = "collapsed";
+  }
+  function onexitreferencestring(token) {
+    const label = this.resume();
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "image" || node2.type === "link", "expected image reference or link reference on stack");
+    node2.label = label;
+    node2.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
+    this.data.referenceType = "full";
+  }
+  function onexitcharacterreferencemarker(token) {
+    ok(token.type === "characterReferenceMarkerNumeric" || token.type === "characterReferenceMarkerHexadecimal");
+    this.data.characterReferenceType = token.type;
+  }
+  function onexitcharacterreferencevalue(token) {
+    const data2 = this.sliceSerialize(token);
+    const type = this.data.characterReferenceType;
+    let value;
+    if (type) {
+      value = decodeNumericCharacterReference(data2, type === types2.characterReferenceMarkerNumeric ? constants.numericBaseDecimal : constants.numericBaseHexadecimal);
+      this.data.characterReferenceType = undefined;
+    } else {
+      const result = decodeNamedCharacterReference(data2);
+      ok(result !== false, "expected reference to decode");
+      value = result;
+    }
+    const tail = this.stack[this.stack.length - 1];
+    ok(tail, "expected `node`");
+    ok("value" in tail, "expected `node.value`");
+    tail.value += value;
+  }
+  function onexitcharacterreference(token) {
+    const tail = this.stack.pop();
+    ok(tail, "expected `node`");
+    ok(tail.position, "expected `node.position`");
+    tail.position.end = point2(token.end);
+  }
+  function onexitautolinkprotocol(token) {
+    onexitdata.call(this, token);
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "link", "expected link on stack");
+    node2.url = this.sliceSerialize(token);
+  }
+  function onexitautolinkemail(token) {
+    onexitdata.call(this, token);
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2, "expected node on stack");
+    ok(node2.type === "link", "expected link on stack");
+    node2.url = "mailto:" + this.sliceSerialize(token);
+  }
+  function blockQuote2() {
+    return { type: "blockquote", children: [] };
+  }
+  function codeFlow() {
+    return { type: "code", lang: null, meta: null, value: "" };
+  }
+  function codeText2() {
+    return { type: "inlineCode", value: "" };
+  }
+  function definition2() {
+    return {
+      type: "definition",
+      identifier: "",
+      label: null,
+      title: null,
+      url: ""
+    };
+  }
+  function emphasis() {
+    return { type: "emphasis", children: [] };
+  }
+  function heading2() {
+    return {
+      type: "heading",
+      depth: 0,
+      children: []
+    };
+  }
+  function hardBreak() {
+    return { type: "break" };
+  }
+  function html() {
+    return { type: "html", value: "" };
+  }
+  function image() {
+    return { type: "image", title: null, url: "", alt: null };
+  }
+  function link() {
+    return { type: "link", title: null, url: "", children: [] };
+  }
+  function list2(token) {
+    return {
+      type: "list",
+      ordered: token.type === "listOrdered",
+      start: null,
+      spread: token._spread,
+      children: []
+    };
+  }
+  function listItem(token) {
+    return {
+      type: "listItem",
+      spread: token._spread,
+      checked: null,
+      children: []
+    };
+  }
+  function paragraph() {
+    return { type: "paragraph", children: [] };
+  }
+  function strong() {
+    return { type: "strong", children: [] };
+  }
+  function text4() {
+    return { type: "text", value: "" };
+  }
+  function thematicBreak2() {
+    return { type: "thematicBreak" };
+  }
+}
+function point2(d) {
+  return { line: d.line, column: d.column, offset: d.offset };
+}
+function configure(combined, extensions) {
+  let index5 = -1;
+  while (++index5 < extensions.length) {
+    const value = extensions[index5];
+    if (Array.isArray(value)) {
+      configure(combined, value);
+    } else {
+      extension(combined, value);
+    }
+  }
+}
+function extension(combined, extension2) {
+  let key;
+  for (key in extension2) {
+    if (own2.call(extension2, key)) {
+      switch (key) {
+        case "canContainEols": {
+          const right = extension2[key];
+          if (right) {
+            combined[key].push(...right);
+          }
+          break;
+        }
+        case "transforms": {
+          const right = extension2[key];
+          if (right) {
+            combined[key].push(...right);
+          }
+          break;
+        }
+        case "enter":
+        case "exit": {
+          const right = extension2[key];
+          if (right) {
+            Object.assign(combined[key], right);
+          }
+          break;
+        }
+      }
+    }
+  }
+}
+function defaultOnError(left, right) {
+  if (left) {
+    throw new Error("Cannot close `" + left.type + "` (" + stringifyPosition({ start: left.start, end: left.end }) + "): a different token (`" + right.type + "`, " + stringifyPosition({ start: right.start, end: right.end }) + ") is open");
+  } else {
+    throw new Error("Cannot close document, a token (`" + right.type + "`, " + stringifyPosition({ start: right.start, end: right.end }) + ") is still open");
+  }
+}
+// node_modules/ccount/index.js
+function ccount(value, character) {
+  const source = String(value);
+  if (typeof character !== "string") {
+    throw new TypeError("Expected character");
+  }
+  let count = 0;
+  let index5 = source.indexOf(character);
+  while (index5 !== -1) {
+    count++;
+    index5 = source.indexOf(character, index5 + character.length);
+  }
+  return count;
+}
+
+// node_modules/escape-string-regexp/index.js
+function escapeStringRegexp(string4) {
+  if (typeof string4 !== "string") {
+    throw new TypeError("Expected a string");
+  }
+  return string4.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&").replace(/-/g, "\\x2d");
+}
+
+// node_modules/unist-util-is/lib/index.js
+var convert = function(test) {
+  if (test === null || test === undefined) {
+    return ok2;
+  }
+  if (typeof test === "function") {
+    return castFactory(test);
+  }
+  if (typeof test === "object") {
+    return Array.isArray(test) ? anyFactory(test) : propertiesFactory(test);
+  }
+  if (typeof test === "string") {
+    return typeFactory(test);
+  }
+  throw new Error("Expected function, string, or object as test");
+};
+function anyFactory(tests) {
+  const checks = [];
+  let index5 = -1;
+  while (++index5 < tests.length) {
+    checks[index5] = convert(tests[index5]);
+  }
+  return castFactory(any);
+  function any(...parameters) {
+    let index6 = -1;
+    while (++index6 < checks.length) {
+      if (checks[index6].apply(this, parameters))
+        return true;
+    }
+    return false;
+  }
+}
+function propertiesFactory(check) {
+  const checkAsRecord = check;
+  return castFactory(all2);
+  function all2(node2) {
+    const nodeAsRecord = node2;
+    let key;
+    for (key in check) {
+      if (nodeAsRecord[key] !== checkAsRecord[key])
+        return false;
+    }
+    return true;
+  }
+}
+function typeFactory(check) {
+  return castFactory(type);
+  function type(node2) {
+    return node2 && node2.type === check;
+  }
+}
+function castFactory(testFunction) {
+  return check;
+  function check(value, index5, parent) {
+    return Boolean(looksLikeANode(value) && testFunction.call(this, value, typeof index5 === "number" ? index5 : undefined, parent || undefined));
+  }
+}
+function ok2() {
+  return true;
+}
+function looksLikeANode(value) {
+  return value !== null && typeof value === "object" && "type" in value;
+}
+// node_modules/unist-util-visit-parents/lib/color.js
+function color(d) {
+  return d;
+}
+
+// node_modules/unist-util-visit-parents/lib/index.js
+var empty = [];
+var CONTINUE = true;
+var EXIT = false;
+var SKIP = "skip";
+function visitParents(tree, test, visitor, reverse) {
+  let check;
+  if (typeof test === "function" && typeof visitor !== "function") {
+    reverse = visitor;
+    visitor = test;
+  } else {
+    check = test;
+  }
+  const is2 = convert(check);
+  const step = reverse ? -1 : 1;
+  factory(tree, undefined, [])();
+  function factory(node2, index5, parents) {
+    const value = node2 && typeof node2 === "object" ? node2 : {};
+    if (typeof value.type === "string") {
+      const name3 = typeof value.tagName === "string" ? value.tagName : typeof value.name === "string" ? value.name : undefined;
+      Object.defineProperty(visit, "name", {
+        value: "node (" + color(node2.type + (name3 ? "<" + name3 + ">" : "")) + ")"
+      });
+    }
+    return visit;
+    function visit() {
+      let result = empty;
+      let subresult;
+      let offset5;
+      let grandparents;
+      if (!test || is2(node2, index5, parents[parents.length - 1] || undefined)) {
+        result = toResult(visitor(node2, parents));
+        if (result[0] === EXIT) {
+          return result;
+        }
+      }
+      if ("children" in node2 && node2.children) {
+        const nodeAsParent = node2;
+        if (nodeAsParent.children && result[0] !== SKIP) {
+          offset5 = (reverse ? nodeAsParent.children.length : -1) + step;
+          grandparents = parents.concat(nodeAsParent);
+          while (offset5 > -1 && offset5 < nodeAsParent.children.length) {
+            const child = nodeAsParent.children[offset5];
+            subresult = factory(child, offset5, grandparents)();
+            if (subresult[0] === EXIT) {
+              return subresult;
+            }
+            offset5 = typeof subresult[1] === "number" ? subresult[1] : offset5 + step;
+          }
+        }
+      }
+      return result;
+    }
+  }
+}
+function toResult(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === "number") {
+    return [CONTINUE, value];
+  }
+  return value === null || value === undefined ? empty : [value];
+}
+// node_modules/mdast-util-find-and-replace/lib/index.js
+function findAndReplace(tree, list2, options) {
+  const settings = options || {};
+  const ignored = convert(settings.ignore || []);
+  const pairs = toPairs(list2);
+  let pairIndex = -1;
+  while (++pairIndex < pairs.length) {
+    visitParents(tree, "text", visitor);
+  }
+  function visitor(node2, parents) {
+    let index5 = -1;
+    let grandparent;
+    while (++index5 < parents.length) {
+      const parent = parents[index5];
+      const siblings = grandparent ? grandparent.children : undefined;
+      if (ignored(parent, siblings ? siblings.indexOf(parent) : undefined, grandparent)) {
+        return;
+      }
+      grandparent = parent;
+    }
+    if (grandparent) {
+      return handler(node2, parents);
+    }
+  }
+  function handler(node2, parents) {
+    const parent = parents[parents.length - 1];
+    const find3 = pairs[pairIndex][0];
+    const replace3 = pairs[pairIndex][1];
+    let start = 0;
+    const siblings = parent.children;
+    const index5 = siblings.indexOf(node2);
+    let change = false;
+    let nodes = [];
+    find3.lastIndex = 0;
+    let match = find3.exec(node2.value);
+    while (match) {
+      const position2 = match.index;
+      const matchObject = {
+        index: match.index,
+        input: match.input,
+        stack: [...parents, node2]
+      };
+      let value = replace3(...match, matchObject);
+      if (typeof value === "string") {
+        value = value.length > 0 ? { type: "text", value } : undefined;
+      }
+      if (value === false) {
+        find3.lastIndex = position2 + 1;
+      } else {
+        if (start !== position2) {
+          nodes.push({
+            type: "text",
+            value: node2.value.slice(start, position2)
+          });
+        }
+        if (Array.isArray(value)) {
+          nodes.push(...value);
+        } else if (value) {
+          nodes.push(value);
+        }
+        start = position2 + match[0].length;
+        change = true;
+      }
+      if (!find3.global) {
+        break;
+      }
+      match = find3.exec(node2.value);
+    }
+    if (change) {
+      if (start < node2.value.length) {
+        nodes.push({ type: "text", value: node2.value.slice(start) });
+      }
+      parent.children.splice(index5, 1, ...nodes);
+    } else {
+      nodes = [node2];
+    }
+    return index5 + nodes.length;
+  }
+}
+function toPairs(tupleOrList) {
+  const result = [];
+  if (!Array.isArray(tupleOrList)) {
+    throw new TypeError("Expected find and replace tuple or list of tuples");
+  }
+  const list2 = !tupleOrList[0] || Array.isArray(tupleOrList[0]) ? tupleOrList : [tupleOrList];
+  let index5 = -1;
+  while (++index5 < list2.length) {
+    const tuple = list2[index5];
+    result.push([toExpression(tuple[0]), toFunction(tuple[1])]);
+  }
+  return result;
+}
+function toExpression(find3) {
+  return typeof find3 === "string" ? new RegExp(escapeStringRegexp(find3), "g") : find3;
+}
+function toFunction(replace3) {
+  return typeof replace3 === "function" ? replace3 : function() {
+    return replace3;
+  };
+}
+// node_modules/mdast-util-gfm-autolink-literal/lib/index.js
+function gfmAutolinkLiteralFromMarkdown() {
+  return {
+    transforms: [transformGfmAutolinkLiterals],
+    enter: {
+      literalAutolink: enterLiteralAutolink,
+      literalAutolinkEmail: enterLiteralAutolinkValue,
+      literalAutolinkHttp: enterLiteralAutolinkValue,
+      literalAutolinkWww: enterLiteralAutolinkValue
+    },
+    exit: {
+      literalAutolink: exitLiteralAutolink,
+      literalAutolinkEmail: exitLiteralAutolinkEmail,
+      literalAutolinkHttp: exitLiteralAutolinkHttp,
+      literalAutolinkWww: exitLiteralAutolinkWww
+    }
+  };
+}
+function enterLiteralAutolink(token) {
+  this.enter({ type: "link", title: null, url: "", children: [] }, token);
+}
+function enterLiteralAutolinkValue(token) {
+  this.config.enter.autolinkProtocol.call(this, token);
+}
+function exitLiteralAutolinkHttp(token) {
+  this.config.exit.autolinkProtocol.call(this, token);
+}
+function exitLiteralAutolinkWww(token) {
+  this.config.exit.data.call(this, token);
+  const node2 = this.stack[this.stack.length - 1];
+  ok(node2.type === "link");
+  node2.url = "http://" + this.sliceSerialize(token);
+}
+function exitLiteralAutolinkEmail(token) {
+  this.config.exit.autolinkEmail.call(this, token);
+}
+function exitLiteralAutolink(token) {
+  this.exit(token);
+}
+function transformGfmAutolinkLiterals(tree) {
+  findAndReplace(tree, [
+    [/(https?:\/\/|www(?=\.))([-.\w]+)([^ \t\r\n]*)/gi, findUrl],
+    [/(?<=^|\s|\p{P}|\p{S})([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
+  ], { ignore: ["link", "linkReference"] });
+}
+function findUrl(_, protocol, domain2, path2, match) {
+  let prefix2 = "";
+  if (!previous2(match)) {
+    return false;
+  }
+  if (/^w/i.test(protocol)) {
+    domain2 = protocol + domain2;
+    protocol = "";
+    prefix2 = "http://";
+  }
+  if (!isCorrectDomain(domain2)) {
+    return false;
+  }
+  const parts = splitUrl(domain2 + path2);
+  if (!parts[0])
+    return false;
+  const result = {
+    type: "link",
+    title: null,
+    url: prefix2 + protocol + parts[0],
+    children: [{ type: "text", value: protocol + parts[0] }]
+  };
+  if (parts[1]) {
+    return [result, { type: "text", value: parts[1] }];
+  }
+  return result;
+}
+function findEmail(_, atext, label, match) {
+  if (!previous2(match, true) || /[-\d_]$/.test(label)) {
+    return false;
+  }
+  return {
+    type: "link",
+    title: null,
+    url: "mailto:" + atext + "@" + label,
+    children: [{ type: "text", value: atext + "@" + label }]
+  };
+}
+function isCorrectDomain(domain2) {
+  const parts = domain2.split(".");
+  if (parts.length < 2 || parts[parts.length - 1] && (/_/.test(parts[parts.length - 1]) || !/[a-zA-Z\d]/.test(parts[parts.length - 1])) || parts[parts.length - 2] && (/_/.test(parts[parts.length - 2]) || !/[a-zA-Z\d]/.test(parts[parts.length - 2]))) {
+    return false;
+  }
+  return true;
+}
+function splitUrl(url) {
+  const trailExec = /[!"&'),.:;<>?\]}]+$/.exec(url);
+  if (!trailExec) {
+    return [url, undefined];
+  }
+  url = url.slice(0, trailExec.index);
+  let trail2 = trailExec[0];
+  let closingParenIndex = trail2.indexOf(")");
+  const openingParens = ccount(url, "(");
+  let closingParens = ccount(url, ")");
+  while (closingParenIndex !== -1 && openingParens > closingParens) {
+    url += trail2.slice(0, closingParenIndex + 1);
+    trail2 = trail2.slice(closingParenIndex + 1);
+    closingParenIndex = trail2.indexOf(")");
+    closingParens++;
+  }
+  return [url, trail2];
+}
+function previous2(match, email) {
+  const code3 = match.input.charCodeAt(match.index - 1);
+  return (match.index === 0 || unicodeWhitespace(code3) || unicodePunctuation(code3)) && (!email || code3 !== 47);
+}
+// node_modules/mdast-util-gfm-footnote/lib/index.js
+footnoteReference.peek = footnoteReferencePeek;
+function enterFootnoteCallString() {
+  this.buffer();
+}
+function enterFootnoteCall(token) {
+  this.enter({ type: "footnoteReference", identifier: "", label: "" }, token);
+}
+function enterFootnoteDefinitionLabelString() {
+  this.buffer();
+}
+function enterFootnoteDefinition(token) {
+  this.enter({ type: "footnoteDefinition", identifier: "", label: "", children: [] }, token);
+}
+function exitFootnoteCallString(token) {
+  const label = this.resume();
+  const node2 = this.stack[this.stack.length - 1];
+  ok(node2.type === "footnoteReference");
+  node2.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
+  node2.label = label;
+}
+function exitFootnoteCall(token) {
+  this.exit(token);
+}
+function exitFootnoteDefinitionLabelString(token) {
+  const label = this.resume();
+  const node2 = this.stack[this.stack.length - 1];
+  ok(node2.type === "footnoteDefinition");
+  node2.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
+  node2.label = label;
+}
+function exitFootnoteDefinition(token) {
+  this.exit(token);
+}
+function footnoteReferencePeek() {
+  return "[";
+}
+function footnoteReference(node2, _, state, info) {
+  const tracker = state.createTracker(info);
+  let value = tracker.move("[^");
+  const exit2 = state.enter("footnoteReference");
+  const subexit = state.enter("reference");
+  value += tracker.move(state.safe(state.associationId(node2), { after: "]", before: value }));
+  subexit();
+  exit2();
+  value += tracker.move("]");
+  return value;
+}
+function gfmFootnoteFromMarkdown() {
+  return {
+    enter: {
+      gfmFootnoteCallString: enterFootnoteCallString,
+      gfmFootnoteCall: enterFootnoteCall,
+      gfmFootnoteDefinitionLabelString: enterFootnoteDefinitionLabelString,
+      gfmFootnoteDefinition: enterFootnoteDefinition
+    },
+    exit: {
+      gfmFootnoteCallString: exitFootnoteCallString,
+      gfmFootnoteCall: exitFootnoteCall,
+      gfmFootnoteDefinitionLabelString: exitFootnoteDefinitionLabelString,
+      gfmFootnoteDefinition: exitFootnoteDefinition
+    }
+  };
+}
+// node_modules/mdast-util-gfm-strikethrough/lib/index.js
+handleDelete.peek = peekDelete;
+function gfmStrikethroughFromMarkdown() {
+  return {
+    canContainEols: ["delete"],
+    enter: { strikethrough: enterStrikethrough },
+    exit: { strikethrough: exitStrikethrough }
+  };
+}
+function enterStrikethrough(token) {
+  this.enter({ type: "delete", children: [] }, token);
+}
+function exitStrikethrough(token) {
+  this.exit(token);
+}
+function handleDelete(node2, _, state, info) {
+  const tracker = state.createTracker(info);
+  const exit2 = state.enter("strikethrough");
+  let value = tracker.move("~~");
+  value += state.containerPhrasing(node2, {
+    ...tracker.current(),
+    before: value,
+    after: "~"
+  });
+  value += tracker.move("~~");
+  exit2();
+  return value;
+}
+function peekDelete() {
+  return "~";
+}
+// node_modules/mdast-util-gfm-table/lib/index.js
+function gfmTableFromMarkdown() {
+  return {
+    enter: {
+      table: enterTable,
+      tableData: enterCell,
+      tableHeader: enterCell,
+      tableRow: enterRow
+    },
+    exit: {
+      codeText: exitCodeText,
+      table: exitTable,
+      tableData: exit2,
+      tableHeader: exit2,
+      tableRow: exit2
+    }
+  };
+}
+function enterTable(token) {
+  const align2 = token._align;
+  ok(align2, "expected `_align` on table");
+  this.enter({
+    type: "table",
+    align: align2.map(function(d) {
+      return d === "none" ? null : d;
+    }),
+    children: []
+  }, token);
+  this.data.inTable = true;
+}
+function exitTable(token) {
+  this.exit(token);
+  this.data.inTable = undefined;
+}
+function enterRow(token) {
+  this.enter({ type: "tableRow", children: [] }, token);
+}
+function exit2(token) {
+  this.exit(token);
+}
+function enterCell(token) {
+  this.enter({ type: "tableCell", children: [] }, token);
+}
+function exitCodeText(token) {
+  let value = this.resume();
+  if (this.data.inTable) {
+    value = value.replace(/\\([\\|])/g, replace3);
+  }
+  const node2 = this.stack[this.stack.length - 1];
+  ok(node2.type === "inlineCode");
+  node2.value = value;
+  this.exit(token);
+}
+function replace3($0, $1) {
+  return $1 === "|" ? $1 : $0;
+}
+// node_modules/mdast-util-gfm-task-list-item/lib/index.js
+function gfmTaskListItemFromMarkdown() {
+  return {
+    exit: {
+      taskListCheckValueChecked: exitCheck,
+      taskListCheckValueUnchecked: exitCheck,
+      paragraph: exitParagraphWithTaskListItem
+    }
+  };
+}
+function exitCheck(token) {
+  const node2 = this.stack[this.stack.length - 2];
+  ok(node2.type === "listItem");
+  node2.checked = token.type === "taskListCheckValueChecked";
+}
+function exitParagraphWithTaskListItem(token) {
+  const parent = this.stack[this.stack.length - 2];
+  if (parent && parent.type === "listItem" && typeof parent.checked === "boolean") {
+    const node2 = this.stack[this.stack.length - 1];
+    ok(node2.type === "paragraph");
+    const head = node2.children[0];
+    if (head && head.type === "text") {
+      const siblings = parent.children;
+      let index5 = -1;
+      let firstParaghraph;
+      while (++index5 < siblings.length) {
+        const sibling = siblings[index5];
+        if (sibling.type === "paragraph") {
+          firstParaghraph = sibling;
+          break;
+        }
+      }
+      if (firstParaghraph === node2) {
+        head.value = head.value.slice(1);
+        if (head.value.length === 0) {
+          node2.children.shift();
+        } else if (node2.position && head.position && typeof head.position.start.offset === "number") {
+          head.position.start.column++;
+          head.position.start.offset++;
+          node2.position.start = Object.assign({}, head.position.start);
+        }
+      }
+    }
+  }
+  this.exit(token);
+}
+// node_modules/mdast-util-gfm/lib/index.js
+function gfmFromMarkdown() {
+  return [
+    gfmAutolinkLiteralFromMarkdown(),
+    gfmFootnoteFromMarkdown(),
+    gfmStrikethroughFromMarkdown(),
+    gfmTableFromMarkdown(),
+    gfmTaskListItemFromMarkdown()
+  ];
+}
+// src/scriptorium/surface/state/projection.ts
+var TIGHT = new Set(["listItem", "tableCell", "tableRow"]);
+var BLOCKS = new Set([
+  "paragraph",
+  "heading",
+  "code",
+  "blockquote",
+  "list",
+  "listItem",
+  "table",
+  "tableRow",
+  "tableCell",
+  "thematicBreak",
+  "definition",
+  "footnoteDefinition"
+]);
+function project(text4) {
+  const body = splitFrontmatter(text4).body;
+  const base2 = text4.length - body.length;
+  const tree = fromMarkdown(body, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()]
+  });
+  const segments = [];
+  let plain = "";
+  let pendingBoundary = null;
+  const flushBoundary = () => {
+    if (!pendingBoundary || plain === "") {
+      pendingBoundary = null;
+      return;
+    }
+    const { sep, at: at2 } = pendingBoundary;
+    pendingBoundary = null;
+    const src = base2 + at2;
+    segments.push({
+      plainFrom: plain.length,
+      plainTo: plain.length + sep.length,
+      srcFrom: src,
+      srcTo: src,
+      exact: false
+    });
+    plain += sep;
+  };
+  const emit = (value, node2) => {
+    if (value === "")
+      return;
+    flushBoundary();
+    const s = node2.position?.start.offset;
+    const e = node2.position?.end.offset;
+    const srcFrom = base2 + (s ?? 0);
+    const srcTo = base2 + (e ?? s ?? 0);
+    segments.push({
+      plainFrom: plain.length,
+      plainTo: plain.length + value.length,
+      srcFrom,
+      srcTo,
+      exact: srcTo - srcFrom === value.length
+    });
+    plain += value;
+  };
+  const walk = (node2) => {
+    if (BLOCKS.has(node2.type) && plain !== "" && pendingBoundary === null) {
+      pendingBoundary = {
+        sep: TIGHT.has(node2.type) ? `
+` : `
+
+`,
+        at: node2.position?.start.offset ?? 0
+      };
+    }
+    switch (node2.type) {
+      case "text":
+      case "inlineCode":
+      case "code":
+      case "html":
+        emit(node2.value ?? "", node2);
+        return;
+      case "break":
+        emit(`
+`, node2);
+        return;
+      case "image":
+      case "imageReference":
+      case "thematicBreak":
+        return;
+      default:
+        break;
+    }
+    for (const child of node2.children ?? [])
+      walk(child);
+  };
+  for (const child of tree.children ?? [])
+    walk(child);
+  return { plain, segments };
+}
+function segmentAt(p, at2) {
+  for (const seg of p.segments)
+    if (at2 >= seg.plainFrom && at2 < seg.plainTo)
+      return seg;
+  return null;
+}
+function toSource(p, plainFrom, plainTo) {
+  const lo = Math.max(0, Math.min(plainFrom, p.plain.length));
+  const hi = Math.max(lo, Math.min(plainTo, p.plain.length));
+  const first = segmentAt(p, lo) ?? p.segments[0];
+  const last2 = hi > lo ? segmentAt(p, hi - 1) ?? first : first;
+  if (!first || !last2)
+    return { from: 0, to: 0 };
+  const from = first.exact ? first.srcFrom + (lo - first.plainFrom) : first.srcFrom;
+  const to = last2.exact ? last2.srcFrom + (hi - last2.plainFrom) : last2.srcTo;
+  return { from, to: Math.max(from, to) };
+}
+function toPlain(p, srcFrom, srcTo) {
+  let first = null;
+  let last2 = null;
+  for (const seg of p.segments) {
+    if (seg.srcTo <= srcFrom || seg.srcFrom >= srcTo)
+      continue;
+    if (seg.plainTo === seg.plainFrom)
+      continue;
+    if (!first)
+      first = seg;
+    last2 = seg;
+  }
+  if (!first || !last2)
+    return null;
+  const from = first.exact ? first.plainFrom + Math.max(0, srcFrom - first.srcFrom) : first.plainFrom;
+  const to = last2.exact ? last2.plainFrom + Math.min(last2.plainTo - last2.plainFrom, Math.max(0, srcTo - last2.srcFrom)) : last2.plainTo;
+  return { from: Math.min(from, to), to: Math.max(from, to) };
+}
+function alignRuns(plain, runs) {
+  const out = [];
+  let cursor = 0;
+  for (const run of runs) {
+    if (run === "") {
+      out.push(null);
+      continue;
+    }
+    const at2 = plain.indexOf(run, cursor);
+    if (at2 === -1) {
+      out.push(null);
+      continue;
+    }
+    out.push(at2);
+    cursor = at2 + run.length;
+  }
+  return out;
+}
+function lineAt(text4, offset5) {
+  const at2 = Math.max(0, Math.min(offset5, text4.length));
+  let line = 1;
+  for (let i2 = 0;i2 < at2; i2++)
+    if (text4.charCodeAt(i2) === 10)
+      line++;
+  return line;
+}
+
+// src/scriptorium/surface/state/renderedRange.ts
+function textNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const out = [];
+  for (let n = walker.nextNode();n !== null; n = walker.nextNode())
+    out.push(n);
+  return out;
+}
+function align2(root, p) {
+  const nodes = textNodes(root);
+  return {
+    nodes,
+    starts: alignRuns(p.plain, nodes.map((n) => n.data))
+  };
+}
+function plainAt(a2, container, offset5, dir) {
+  let node2 = null;
+  let within = offset5;
+  if (container.nodeType === Node.TEXT_NODE) {
+    node2 = container;
+  } else {
+    const kids = container.childNodes;
+    const at2 = Math.min(offset5, kids.length - 1);
+    const from = kids[Math.max(0, at2)] ?? container;
+    const inside = textNodes(from);
+    node2 = (dir === "start" ? inside[0] : inside[inside.length - 1]) ?? null;
+    within = dir === "start" ? 0 : node2?.data.length ?? 0;
+  }
+  if (!node2)
+    return null;
+  const i2 = a2.nodes.indexOf(node2);
+  if (i2 === -1)
+    return null;
+  const own3 = a2.starts[i2];
+  if (own3 !== null && own3 !== undefined)
+    return own3 + Math.min(within, node2.data.length);
+  if (dir === "start") {
+    for (let j2 = i2 + 1;j2 < a2.starts.length; j2++) {
+      const s = a2.starts[j2];
+      if (s !== null && s !== undefined)
+        return s;
+    }
+    return null;
+  }
+  for (let j2 = i2 - 1;j2 >= 0; j2--) {
+    const s = a2.starts[j2];
+    if (s !== null && s !== undefined)
+      return s + (a2.nodes[j2]?.data.length ?? 0);
+  }
+  return null;
+}
+function resolveRange(root, p, range) {
+  const a2 = align2(root, p);
+  const lo = plainAt(a2, range.startContainer, range.startOffset, "start");
+  const hi = plainAt(a2, range.endContainer, range.endOffset, "end");
+  if (lo === null || hi === null)
+    return null;
+  const { from, to } = toSource(p, Math.min(lo, hi), Math.max(lo, hi));
+  return from === to ? null : { from, to };
+}
+function paintRange(a2, p, srcFrom, srcTo) {
+  const plain = toPlain(p, srcFrom, srcTo);
+  if (!plain || plain.to <= plain.from)
+    return null;
+  let start = null;
+  let end = null;
+  for (let i2 = 0;i2 < a2.nodes.length; i2++) {
+    const s = a2.starts[i2];
+    const node2 = a2.nodes[i2];
+    if (s === null || s === undefined || !node2)
+      continue;
+    const e = s + node2.data.length;
+    if (!start && plain.from < e)
+      start = { node: node2, offset: Math.max(0, plain.from - s) };
+    if (plain.to > s && plain.to <= e)
+      end = { node: node2, offset: plain.to - s };
+    else if (plain.to > e)
+      end = { node: node2, offset: node2.data.length };
+  }
+  if (!start || !end)
+    return null;
+  const range = document.createRange();
+  try {
+    range.setStart(start.node, Math.min(start.offset, start.node.data.length));
+    range.setEnd(end.node, Math.min(end.offset, end.node.data.length));
+  } catch {
+    return null;
+  }
+  return range.collapsed ? null : range;
+}
+
 // src/scriptorium/surface/components/MetaHeader.tsx
 var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 var STATUS_TONE = {
@@ -67996,12 +69599,92 @@ function MetaHeader({ meta: meta2 }) {
 // src/scriptorium/surface/components/MarkdownView.tsx
 var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 var OPENS_OUTWARD = /^(https?:|mailto:)/i;
+var NOTE_HL = "scriptorium-note";
+var FOCUS_HL = "scriptorium-note-focus";
+var PENDING_HL = "scriptorium-note-pending";
+function registry() {
+  const css = globalThis.CSS;
+  const has = typeof globalThis.Highlight === "function";
+  return has && css?.highlights ? css.highlights : null;
+}
+function makeHighlight(ranges) {
+  const Ctor = globalThis.Highlight;
+  return Ctor ? new Ctor(...ranges) : null;
+}
 function MarkdownView({
   text: text4,
   meta: meta2,
-  onFollowLink
+  notes,
+  focusedNote,
+  pendingNote,
+  onFollowLink,
+  onSelect,
+  onContextMenu
 }) {
   const html = import_react21.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
+  const projection = import_react21.useMemo(() => project(text4), [text4]);
+  const body = import_react21.useRef(null);
+  const lastRange = import_react21.useRef(null);
+  const selectedRange = import_react21.useCallback(() => {
+    const root = body.current;
+    const sel = window.getSelection();
+    if (!root || !sel || sel.rangeCount === 0 || sel.isCollapsed)
+      return null;
+    const range = sel.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer))
+      return null;
+    return resolveRange(root, projection, range);
+  }, [projection]);
+  import_react21.useEffect(() => {
+    if (!onSelect)
+      return;
+    const handler = () => {
+      const root = body.current;
+      const sel = window.getSelection();
+      if (!root || !sel)
+        return;
+      if (sel.rangeCount > 0 && !root.contains(sel.getRangeAt(0).commonAncestorContainer))
+        return;
+      const r2 = selectedRange();
+      if (!r2)
+        return;
+      lastRange.current = r2;
+      onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [onSelect, selectedRange, text4]);
+  import_react21.useEffect(() => {
+    const reg = registry();
+    const root = body.current;
+    if (!reg || !root)
+      return;
+    const placed = (notes ?? []).filter((n) => n.from !== null && n.to !== null);
+    const a2 = align2(root, projection);
+    const plain = [];
+    const focused = [];
+    for (const n of placed) {
+      const r2 = paintRange(a2, projection, n.from, n.to);
+      if (!r2)
+        continue;
+      (n.id === focusedNote ? focused : plain).push(r2);
+    }
+    const pending = pendingNote && pendingNote.from < pendingNote.to ? paintRange(a2, projection, pendingNote.from, pendingNote.to) : null;
+    const one2 = makeHighlight(plain);
+    const two = makeHighlight(focused);
+    const three = makeHighlight(pending ? [pending] : []);
+    if (one2)
+      reg.set(NOTE_HL, one2);
+    if (two)
+      reg.set(FOCUS_HL, two);
+    if (three)
+      reg.set(PENDING_HL, three);
+    return () => {
+      reg.delete(NOTE_HL);
+      reg.delete(FOCUS_HL);
+      reg.delete(PENDING_HL);
+    };
+  }, [notes, projection, focusedNote, pendingNote, html]);
   return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     className: "min-h-0 flex-1 overflow-auto",
     "data-slot": "markdown-view",
@@ -68013,6 +69696,7 @@ function MarkdownView({
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+        ref: body,
         className: "md-prose mx-auto max-w-[76ch] px-8 pb-16",
         onClick: (e) => {
           const anchor = e.target.closest("a");
@@ -68028,10 +69712,52 @@ function MarkdownView({
           }
           onFollowLink?.(href);
         },
+        onContextMenu: (e) => {
+          if (!onContextMenu)
+            return;
+          const root = body.current;
+          const point3 = root ? pointOffset(root, projection, e.clientX, e.clientY) : null;
+          const remembered = lastRange.current;
+          const r2 = selectedRange() ?? (remembered && point3 !== null && point3 >= remembered.from && point3 <= remembered.to ? remembered : null);
+          const noteIds = point3 === null ? [] : (notes ?? []).filter((n) => n.from !== null && n.to !== null && point3 >= n.from && point3 <= n.to).map((n) => n.id);
+          if (!r2 && noteIds.length === 0)
+            return;
+          e.preventDefault();
+          onContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            from: r2?.from ?? 0,
+            to: r2?.to ?? 0,
+            noteIds
+          });
+        },
         dangerouslySetInnerHTML: { __html: html }
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
+}
+function pointOffset(root, projection, x3, y3) {
+  const doc2 = document;
+  let range = null;
+  if (doc2.caretRangeFromPoint)
+    range = doc2.caretRangeFromPoint(x3, y3);
+  else if (doc2.caretPositionFromPoint) {
+    const pos = doc2.caretPositionFromPoint(x3, y3);
+    if (pos) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.setEnd(pos.offsetNode, pos.offset);
+    }
+  }
+  if (!range || !root.contains(range.startContainer))
+    return null;
+  const probe = document.createRange();
+  probe.setStart(range.startContainer, range.startOffset);
+  const node2 = range.startContainer;
+  const len = node2.nodeType === Node.TEXT_NODE ? node2.data.length : 0;
+  probe.setEnd(node2, Math.min(range.startOffset + 1, len));
+  const resolved = resolveRange(root, projection, probe);
+  return resolved?.from ?? null;
 }
 
 // src/scriptorium/surface/components/NewVersionDialog.tsx
@@ -68480,7 +70206,7 @@ function DropdownMenuTrigger({ ...props }) {
   }, undefined, false, undefined, this);
 }
 function DropdownMenuContent({
-  align: align2 = "start",
+  align: align3 = "start",
   alignOffset = 0,
   side: side2 = "bottom",
   sideOffset = 4,
@@ -68490,7 +70216,7 @@ function DropdownMenuContent({
   return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(exports_index_parts.Portal, {
     children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(exports_index_parts.Positioner, {
       className: "isolate z-50 outline-none",
-      align: align2,
+      align: align3,
       alignOffset,
       side: side2,
       sideOffset,
@@ -68786,6 +70512,7 @@ function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  focusedNote,
   onAddNote,
   onShowNote,
   onDeleteNote,
@@ -68841,14 +70568,14 @@ function DocumentPane({
               onReveal: onRevealVersion,
               onDelete: async (n) => {
                 const v = doc2.versions.find((x3) => x3.n === n);
-                const ok2 = await confirm({
+                const ok3 = await confirm({
                   title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
                   message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
                   warning: "Anything written only in this version is lost.",
                   confirmLabel: "Delete",
                   confirmClassName: "bg-danger text-bg hover:bg-danger/90"
                 });
-                if (ok2)
+                if (ok3)
                   onDeleteVersion(n);
               }
             }, undefined, false, undefined, this),
@@ -69003,7 +70730,12 @@ function DocumentPane({
       }, undefined, false, undefined, this) : showing === "rendered" ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(MarkdownView, {
         text: shown,
         meta: doc2.meta,
-        onFollowLink
+        notes: doc2.notes,
+        focusedNote,
+        pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
+        onFollowLink,
+        onSelect,
+        onContextMenu: setNoteAt
       }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
@@ -69039,7 +70771,12 @@ function DocumentPane({
             children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(MarkdownView, {
               text: shown,
               meta: doc2.meta,
-              onFollowLink
+              notes: doc2.notes,
+              focusedNote,
+              pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
+              onFollowLink,
+              onSelect,
+              onContextMenu: setNoteAt
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
@@ -70061,6 +71798,7 @@ function Workspace({
               },
               onSelect: (from, to, fromLine, toLine, sel) => setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel }),
               reveal,
+              focusedNote,
               onAddNote: (from, to, body) => {
                 if (open3)
                   send({ type: "note.add", doc: open3.slug, from, to, body });
