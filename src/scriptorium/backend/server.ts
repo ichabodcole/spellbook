@@ -1061,6 +1061,15 @@ export async function startDaemon(opts: StartOpts) {
         return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
       case "dangling":
         return session.danglingLinks(cmd.entry);
+      case "forget": {
+        const f = session.forgetDoc(cmd.doc);
+        announce(
+          `Agent forgot ${f.name} — its file was gone, and ${f.versions === 1 ? "1 version" : `${f.versions} versions`} in this session ${f.versions === 1 ? "is" : "are"} no longer reachable.`,
+          { fact: "doc.forgotten", doc: f.slug, original: f.original },
+        );
+        broadcastState();
+        return f as unknown as Record<string, unknown>;
+      }
       case "search":
         return session.searchAll(cmd) as unknown as Record<string, unknown>;
       case "backlinks":

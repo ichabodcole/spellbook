@@ -643,3 +643,57 @@ describe("removeCreated — undo's delete must forget the thing (E60 fix)", () =
     expect(existsSync(made.path)).toBe(true);
   });
 });
+
+describe("forget — the answer the 'gone from disk' warning never had (E61)", () => {
+  test("forgets a document whose file is gone, and says how many versions go with it", () => {
+    const s = inContext();
+    s.openPath(join(docs, "solo.md"));
+    const slug = s.view("release", null).docs[0]?.slug as string;
+    rmSync(join(docs, "solo.md"));
+
+    const f = s.forgetDoc(slug);
+    expect(f.name).toBe("solo.md");
+    expect(f.versions).toBe(1);
+    expect(s.view("release", null).docs.map((d) => d.slug)).not.toContain(slug);
+  });
+
+  test("⛔ REFUSED WHILE THE FILE EXISTS, and names the right verb instead", () => {
+    // Forgetting a live document's record would discard its version history
+    // while the document itself sits on disk.
+    const s = inContext();
+    s.openPath(join(docs, "solo.md"));
+    const slug = s.view("release", null).docs[0]?.slug as string;
+    const e = refusal(() => s.forgetDoc(slug));
+    expect(e.message).toContain("still on disk");
+    expect(e.message).toContain("remove it from Scriptorium");
+    expect(s.view("release", null).docs.map((d) => d.slug)).toContain(slug);
+  });
+
+  test("the version files are LEFT — nothing reads them, and nobody asked", () => {
+    const s = inContext();
+    s.openPath(join(docs, "solo.md"));
+    const slug = s.view("release", null).docs[0]?.slug as string;
+    const vPath = join(home, "sessions", s.id, "docs", slug, "v1.md");
+    rmSync(join(docs, "solo.md"));
+    s.forgetDoc(slug);
+    expect(existsSync(vPath)).toBe(true);
+  });
+
+  test("forgetting the OPEN document leaves something else open, not a dangling name", () => {
+    const s = inContext();
+    s.openPath(join(docs, "sibling.md"));
+    s.openPath(join(docs, "solo.md"));
+    const open = s.view("release", null).openDoc as string;
+    rmSync(join(docs, "solo.md"));
+    s.forgetDoc(open);
+    const after = s.view("release", null);
+    expect(after.openDoc).not.toBe(open);
+    expect(after.docs.some((d) => d.slug === after.openDoc)).toBe(true);
+  });
+
+  test("an unknown document is a refusal that lists what there is", () => {
+    const s = inContext();
+    const e = refusal(() => s.forgetDoc("nothing-like-this"));
+    expect(e.message).toContain("no document");
+  });
+});

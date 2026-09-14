@@ -1173,6 +1173,21 @@ const COMMANDS: CommandSpec[] = [
     },
   },
   {
+    name: "forget",
+    flags: [...SESSION, "doc"],
+    positionals: [],
+    describe:
+      "forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+    run: async (_pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "forget",
+          ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
+        }),
+      );
+    },
+  },
+  {
     name: "dangling",
     flags: [...SESSION, "entry"],
     positionals: [],

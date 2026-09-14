@@ -1509,6 +1509,48 @@ export class Session {
   }
 
   /**
+   * Forget a document whose file of record is gone (E61).
+   *
+   * ⛔ THE WARNING HAD NO ANSWER, WHICH IS WHY THIS EXISTS. When a document's
+   * original disappears between sessions, restore says so on purpose — "gone
+   * from disk since this session was last open. Save would recreate it" — and
+   * that is the RIGHT thing to say, because the session is still holding the
+   * content and offering it back. What was missing was any way to reply "no, I
+   * meant to delete that": the notice repeated on every restore forever and the
+   * only escape was recreating the session. A warning with no corresponding act
+   * is the shape this spell keeps trying not to have.
+   *
+   * ⛔ REFUSED WHILE THE FILE EXISTS, and the refusal names the right verb.
+   * Forgetting a LIVE document's record would throw away its version history
+   * while the document itself sits there on disk — the confusion this must not
+   * enable. Taking something out of the sidebar is `hide`; this is only for a
+   * record whose subject is gone.
+   *
+   * ⚠ The version files under the session home are LEFT where they are, as
+   * with undo's delete: nothing reads them once the record is gone, and
+   * removing them would be a second deletion nobody asked for.
+   */
+  forgetDoc(ref?: string): { slug: string; name: string; original: string; versions: number } {
+    const d = this.docOrDie(ref);
+    if (existsSync(d.original))
+      throw new SessionError(
+        `${this.display(d.original)} is still on disk — forget is for a document whose file is gone. To take it out of the context, remove it from Scriptorium instead.`,
+        409,
+      );
+    const forgotten = {
+      slug: d.slug,
+      name: d.name,
+      original: d.original,
+      versions: d.versions.length,
+    };
+    this.m.docs = this.m.docs.filter((x) => x.slug !== d.slug);
+    if (this.m.openDoc === d.slug) this.m.openDoc = this.m.docs[0]?.slug ?? null;
+    this.relink();
+    this.persist();
+    return forgotten;
+  }
+
+  /**
    * Forget a path that is no longer on disk: prune it from every context entry,
    * drop the entry if that empties it, and forget any document record for it.
    *

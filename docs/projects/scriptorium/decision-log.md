@@ -1958,3 +1958,51 @@ only that is forgotten, at the moment it happens.
 record is gone so nothing reads them, and removing them would be a second
 deletion the human was never asked about — the dialog promised the created file,
 not the session's own copies.
+
+## E61 — `forget`, the answer the warning never had
+
+Cole, after the E60 residue: _"should we have an explicit way to do that? Is
+this a one-off because we had a bug, or is there actually a reason an agent
+might need to do this?"_
+
+**It was both, and the second half is the interesting one.** The stale record in
+his session came from the E60 bug, which is fixed. But the same state arrives
+from an ordinary act with no bug anywhere near it: **delete a document in
+Finder, or `git checkout` it away, or rename it outside the app.** The record
+survives, and restore says — correctly — _"gone from disk since this session was
+last open. Save would recreate it."_ That notice is RIGHT: the session is still
+holding the content and offering it back.
+
+**What was missing was any way to answer it.** When the human's reply is "no, I
+meant to delete that", there was no verb: the warning repeated on every restore
+forever and the only escape was recreating the session. **A warning with no
+corresponding act** is the shape this spell keeps trying not to have — the same
+defect as the conflict banner with no route to the comparison (E54) and the
+removal notice that claimed a file was still on disk.
+
+So: **`forget <doc>`**, and deliberately narrow.
+
+**⛔ REFUSED WHILE THE FILE EXISTS, and the refusal names the right verb.**
+Forgetting a live document's record would discard its version history while the
+document sits there on disk. Taking something out of the sidebar is `hide`; this
+is only for a record whose subject is gone.
+
+**⚠ It says what it is letting go** — "1 version in this session is no longer
+reachable" — because the versions are content the session was holding and the
+human should know the number before it stops being reachable.
+
+**⚠ The version files are LEFT where they are**, as with undo's delete: nothing
+reads them once the record is gone, and removing them would be a second deletion
+nobody asked for.
+
+**And the cleanup went through the verb rather than by hand.** Cole had already
+approved removing his stale record; doing it by editing `manifest.json` would
+have left the gap unfixed and the precedent bad. The first use of `forget` was
+the case that motivated it — his session went from 37+1 records to 37, with no
+paths pointing at missing files.
+
+**No human-side affordance yet, and that is honest rather than lazy:** a
+forgotten document is by definition not in the sidebar, so there is nowhere
+natural to put a button. The conversation is the primary capability here (the
+house's conversation-primary rule), and asking is the path until a
+documents-this-session-knows-about view exists to hang it from.

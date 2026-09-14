@@ -624,6 +624,11 @@ export type AgentCmd =
    */
   | { type: "dangling"; entry?: string }
   /**
+   * E61: forget a document whose file of record is gone. Refused while the file
+   * exists — taking something out of the context is `hide`.
+   */
+  | { type: "forget"; doc?: string }
+  /**
    * E59: search the context. ⛔ THE ONE SEARCH VERB THERE IS, and deliberately
    * cross-document only: a single document an agent can read or grep, but the
    * ACTIVE VERSION of an open document is not at its original path, so grep
