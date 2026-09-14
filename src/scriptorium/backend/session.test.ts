@@ -559,3 +559,87 @@ describe("dangling links, as a report you can act on (E54)", () => {
     expect(ref?.line).toBeUndefined();
   });
 });
+
+describe("removeCreated — undo's delete must forget the thing (E60 fix)", () => {
+  test("⛔ A DELETED SINGLE DOCUMENT LEAVES THE SIDEBAR", () => {
+    // Cole, within a minute of E60: "it's not being removed from the sidebar…
+    // even though it was removed from the file system". `rescan` returns early
+    // for a `listed` entry, and a single document IS one, so nothing pruned it.
+    const s = Session.create(home);
+    s.setWorkspace(docs);
+    const made = s.createDoc(docs, "Untitled.md");
+    s.addContext(made.path);
+    expect(existsSync(made.path)).toBe(true);
+    const before = s.view("release", null).context.length;
+
+    s.removeCreated(made.path, false);
+
+    expect(existsSync(made.path)).toBe(false);
+    const after = s.view("release", null).context;
+    // The entry is gone, not merely emptied.
+    expect(after.length).toBe(before - 1);
+    expect(JSON.stringify(after)).not.toContain("Untitled.md");
+  });
+
+  test("⚠ AND FREES THE SLUG — the second half of the same bug", () => {
+    // The record outlived the file, so the slug stayed taken and the NEXT
+    // Untitled.md became `untitled-2` while the file on disk was `Untitled.md`.
+    const s = Session.create(home);
+    s.setWorkspace(docs);
+    const first = s.createDoc(docs, "Untitled.md");
+    s.addContext(first.path);
+    s.openPath(first.path);
+    const slug = s.view("release", null).docs[0]?.slug;
+    expect(slug).toBe("untitled");
+
+    s.removeCreated(first.path, false);
+    expect(s.view("release", null).docs.map((d) => d.slug)).not.toContain("untitled");
+
+    const again = s.createDoc(docs, "Untitled.md");
+    s.addContext(again.path);
+    s.openPath(again.path);
+    // The same name gets the same slug, because nothing stale is holding it.
+    expect(s.view("release", null).docs.map((d) => d.slug)).toEqual(["untitled"]);
+  });
+
+  test("a document inside a mirrored set leaves the tree too", () => {
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const made = s.createDoc(join(docs, "set"), "temp.md");
+    expect(JSON.stringify(s.view("release", null).context)).toContain("temp.md");
+    s.removeCreated(made.path, false);
+    const after = s.view("release", null).context;
+    expect(JSON.stringify(after)).not.toContain("temp.md");
+    // The SET survives — only the document went.
+    expect(after.some((e) => e.id === entry.id)).toBe(true);
+  });
+
+  test("a non-empty folder is refused, and nothing is forgotten", () => {
+    const s = Session.create(home);
+    s.setWorkspace(docs);
+    const folder = s.createFolder(docs, "keep");
+    writeFileSync(join(folder.path, "stray.md"), "# stray\n");
+    expect(refusal(() => s.removeCreated(folder.path, true)).message).toContain("not empty");
+    expect(existsSync(join(folder.path, "stray.md"))).toBe(true);
+    expect(existsSync(folder.path)).toBe(true);
+  });
+
+  test("a path already gone is not an error", () => {
+    const s = Session.create(home);
+    expect(s.removeCreated(join(docs, "never-existed.md"), false)).toEqual({
+      path: join(docs, "never-existed.md"),
+      removed: false,
+    });
+  });
+
+  test("a file that has become a folder is refused — the world moved", () => {
+    const s = Session.create(home);
+    s.setWorkspace(docs);
+    const made = s.createFolder(docs, "surprise");
+    // Recorded as a file, found as a directory.
+    expect(refusal(() => s.removeCreated(made.path, false)).message).toContain(
+      "no longer describes",
+    );
+    expect(existsSync(made.path)).toBe(true);
+  });
+});

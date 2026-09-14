@@ -1920,3 +1920,41 @@ Driven end to end: a rename recorded and undone on DISK (the file came back as
 `a.md`), redo offered with an accurate label, a created folder deleted through
 the dialog, the non-empty refusal, and ⌘Z inside the pane stepping the context's
 history while refusing the deleting step.
+
+### E60 addendum — the delete forgot to forget
+
+Cole, within a minute of E60 landing: _"if I delete a file via undo and then
+confirming, it's not being removed from the sidebar… then I created another
+document also untitled and I think there might have been even a weird naming
+issue."_
+
+**Both halves were one bug, one level apart.** `removeCreated` called `rescan`
+on every context entry — and **`rescan` returns early for any entry whose
+membership is not `mirrored`**. A single document is a `listed` entry, so
+nothing pruned it: the file left the disk and the node stayed in the sidebar.
+One level down, the `DocRecord` outlived the file too, so its SLUG stayed taken
+and the next `Untitled.md` became `untitled-2` while the file on disk was plain
+`Untitled.md` — which is the "weird naming issue" he half-noticed.
+
+**Evidence from his own session, not inference:**
+`c-aeb0b9 listed → …/Spellbook/Untitled.md` and
+`untitled-2 → …/Spellbook/Untitled.md`, both pointing at a path that no longer
+existed.
+
+Fixed with `forgetPath`, which prunes by hand what `rescan` will not look at,
+drops an entry the pruning empties, and forgets records for a path that is gone.
+**Two cells verified RED against the old code and green with the fix** — one for
+the sidebar, one for the freed slug.
+
+**⛔ AND DELIBERATELY NOT SELF-HEALED ON RESTORE.** The tempting generalisation
+— prune anything missing when a session loads — would conflate two different
+situations. A file that vanished BETWEEN sessions is already handled as a
+finding ("X is gone from disk since this session was last open. Save would
+recreate it"), and forgetting its record would throw away versions the human can
+still save back. Residue from a deletion WE performed is a different thing, and
+only that is forgotten, at the moment it happens.
+
+**⚠ The version files under the session home are left where they are.** The
+record is gone so nothing reads them, and removing them would be a second
+deletion the human was never asked about — the dialog promised the created file,
+not the session's own copies.

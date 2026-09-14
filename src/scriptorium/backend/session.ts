@@ -68,6 +68,7 @@ import type {
   ChatMessage,
   ChatWho,
   ContextEntry,
+  ContextNode,
   DiffPayload,
   DiffSide,
   DocMeta,
@@ -1503,12 +1504,57 @@ export class Session {
     } else {
       unlinkSync(abs);
     }
-    // Whatever pointed at it must stop pointing at it.
-    for (const e of this.m.context) this.rescan(e.id);
+    this.forgetPath(abs);
+    return { path: abs, removed: true };
+  }
+
+  /**
+   * Forget a path that is no longer on disk: prune it from every context entry,
+   * drop the entry if that empties it, and forget any document record for it.
+   *
+   * ⛔ `rescan` IS NOT ENOUGH, AND THAT WAS THE BUG. It returns early for any
+   * entry whose membership is not `mirrored` — and a single document is a
+   * `listed` entry, so deleting one left its node in the sidebar forever while
+   * the file was gone from the disk. Cole found it within a minute of E60
+   * shipping: "it's not being removed from the sidebar… then I created another
+   * document also untitled and I think there might have been even a weird
+   * naming issue".
+   *
+   * ⚠ THE NAMING ODDITY WAS THE SECOND HALF OF THE SAME BUG. The `DocRecord`
+   * outlived the file too, so its SLUG stayed taken and the next `Untitled.md`
+   * became `untitled-2` while the file on disk was plain `Untitled.md`. A
+   * record for a document that does not exist has no reader; it only gets in
+   * the way of the next one.
+   *
+   * ⚠ The version files under the session home are LEFT where they are. The
+   * record is gone, so nothing reads them, and removing them would be a second
+   * deletion the human was never asked about — the dialog promised the created
+   * file, not the session's own copies.
+   */
+  private forgetPath(abs: string): void {
+    const inside = (p: string) => p === abs || p.startsWith(abs + sep);
+    for (const e of [...this.m.context]) {
+      if (e.membership === "mirrored" && !inside(e.root)) {
+        this.rescan(e.id);
+        continue;
+      }
+      // A `listed` entry (or a mirrored one that WAS the deleted folder):
+      // prune the nodes by hand, since `rescan` will not look at it.
+      const prune = (nodes: ContextNode[]): ContextNode[] =>
+        nodes
+          .filter((n) => !inside(join(e.root, n.rel)))
+          .map((n) => (n.kind === "group" ? { ...n, children: prune(n.children) } : n));
+      e.nodes = prune(e.nodes);
+      if (e.nodes.length === 0 || inside(e.root)) this.removeContext(e.id);
+    }
+    // A record for a file that is gone has no reader, and its slug would
+    // otherwise stay taken.
+    this.m.docs = this.m.docs.filter((d) => !inside(d.original));
+    if (this.m.openDoc && !this.m.docs.some((d) => d.slug === this.m.openDoc))
+      this.m.openDoc = this.m.docs[0]?.slug ?? null;
     this.relink();
     this.closeOrphanedOpenDoc();
     this.persist();
-    return { path: abs, removed: true };
   }
 
   unhide(entryId: string): { entry: string; restored: number } {
