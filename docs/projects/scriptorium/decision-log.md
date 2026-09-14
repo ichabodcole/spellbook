@@ -1515,3 +1515,40 @@ there. The agent gets something it can locate in the file, and the chip shows
 markup — flagged to Cole rather than decided quietly, since the alternative
 (sending the rendered text) would hand the agent a string the file does not
 contain.
+
+### E51 addendum — the pane was destroying its own selection
+
+Cole, from the app: a selection ran from the START of the content to the cursor;
+it flickered while dragging; it died on release unless it ended at a paragraph
+boundary. **One cause for all three**, and not in the projection:
+`dangerouslySetInnerHTML={{ __html: html }}` allocates a new OBJECT per render,
+and React 19 compares the prop object rather than the `__html` string — so every
+commit re-ran `setInnerHTML` and replaced the whole subtree, identical markup or
+not. Reporting a selection re-renders, the re-render rebuilt every text node,
+and the browser re-anchored the homeless selection to its container's start.
+
+**Latent long before this slice, and harmless until the pane held DOM state
+worth keeping.** Adding selection is what promoted it to a bug.
+
+**Three theories were wrong before the measurement** — focus theft by the chat
+composer, the Custom Highlight API, stale `Range` objects. What settled it was a
+MutationObserver (10 childList records for one drag, each replacing all ten
+children) and a patched `innerHTML` setter that named React's own `commitUpdate`
+as the writer. The lesson is the cheap one: instrument the DOM before theorising
+about React.
+
+_And a harness lesson worth keeping: my synthetic drags were unreliable in a way
+that looked like app bugs. Some coordinate pairs never began a selection at all
+with no JS involved, and a press inside an existing selection makes Chrome start
+a drag-and-drop instead. I briefly believed cross-paragraph selection was broken
+on that evidence; it was not. The trustworthy instrument turned out to be a
+programmatic selection plus a forced re-render — which is also the crisp
+regression check, since before the fix one render destroyed it and after it
+three do not._
+
+**`sinks.test.ts` went blind and said so.** It scanned only the inline
+`{{ __html: x }}` shape, so hoisting the prop left it matching nothing — caught
+by its own zero-guard. It now scans both shapes, enumerates every `__html`
+writer in the surface separately, strips comments first (it had counted a
+`__html: html` inside a comment in the ward itself), and declares `htmlProp` so
+that reverting to the inline literal turns it red.
