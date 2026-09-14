@@ -3,6 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { splitFrontmatter as splitInSurface } from "../surface/state/markdown";
 import {
+  bodyLineOffset,
   buildBlock,
   generatedAt,
   guessType,
@@ -263,5 +264,32 @@ describe("writing (E35) — a new block is built, an existing one is line-edited
     test("a document with no block refuses rather than inventing one", () => {
       expect(() => setKey("# No frontmatter\n", "status", "stable")).toThrow();
     });
+  });
+});
+
+describe("bodyLineOffset", () => {
+  test("no frontmatter, no offset", () => {
+    expect(bodyLineOffset("# Title\n\nprose\n")).toBe(0);
+  });
+
+  test("the block and both delimiters are counted", () => {
+    // ---\ntype: note\ntitle: C\n---\n  → four lines before the body.
+    const text = "---\ntype: note\ntitle: C\n---\n# C\n";
+    expect(bodyLineOffset(text)).toBe(4);
+    expect(splitFrontmatter(text).body.startsWith("# C")).toBe(true);
+  });
+
+  test("the mapping holds: fileLine = bodyLine + offset", () => {
+    // ⚠ A blank line after the closing `---` belongs to the BODY, not the
+    // block — `FRONTMATTER_BLOCK` stops at the newline that ends the fence. So
+    // body line 1 here is the blank, and `# C` is body line 2. What matters is
+    // that the ARITHMETIC lands, which is what a report depends on.
+    const text = "---\na: 1\n---\n\n# C\n";
+    const off = bodyLineOffset(text);
+    const body = splitFrontmatter(text).body.split("\n");
+    const file = text.split("\n");
+    for (let bodyLine = 1; bodyLine <= body.length; bodyLine++) {
+      expect(file[bodyLine + off - 1]).toBe(body[bodyLine - 1]);
+    }
   });
 });

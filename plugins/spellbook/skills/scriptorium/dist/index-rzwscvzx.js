@@ -70676,7 +70676,16 @@ function DocumentPane({
         children: [
           /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
             className: "min-w-0 flex-1",
-            children: "This file changed on disk while you have unsaved edits."
+            children: doc2.dirty ? "This file changed on disk while you have unsaved edits." : "This file changed on disk since this version was made."
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
+            type: "button",
+            onClick: () => {
+              onAgainst("original");
+              onMode("compare");
+            },
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            children: "See the difference"
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
             type: "button",

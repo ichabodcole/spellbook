@@ -1652,3 +1652,97 @@ Two things it did prove, which the scratch sessions could not:
 - **The clock-from-the-first-unanswered-message rule was right.** It named the
   ORIGINAL question rather than the most recent, which is the one that had been
   waiting longest — exactly what the rule exists for.
+
+## E54–E56 — the four queued gaps, and one I had misdescribed
+
+Cole: _"tackle those in the order you see fit."_
+
+### E54 · a dangling-link report you can act on
+
+**`graph` already had the facts and still did not answer the question.** Cole
+asked whether an agent can check dangling links; the honest answer was "yes, by
+fetching a set's whole map and filtering several hundred edges", which is a
+different thing. The new `dangling` verb says only what is broken.
+
+**What the map was throwing away is the part that matters.** An edge's `to` is
+the RESOLVED target, so a report built from it says `deep.md` when the document
+says `./missing/deep.md?rel=x` — a string that is not in the file. `LinkRef` and
+`Edge` now carry `raw` (as written) and `line`, because the point of a report is
+repair.
+
+**⛔ BODY LINES ARE NOT FILE LINES.** Links are extracted from the body, so
+every number was short by the frontmatter — a report saying "line 9" pointing
+into the frontmatter of a document whose link is on line 15. Caught by reading
+the first real report rather than by thinking about it; fixed with
+`bodyLineOffset`, which has its own cells because the arithmetic is the whole
+value.
+
+**⚠ A fenced block shifts nothing**, and there is a cell for it: `withoutFences`
+BLANKS fenced lines rather than removing them, so the line count survives. That
+was luck, not design, and the cell makes it a property.
+
+**Not an error.** A dangling link is a fact about a set (OKF §11), so the verb
+reports and exits zero. A world bible pointing at things not written yet is
+normal.
+
+### E55 · a tail that says when it has lost the daemon
+
+Cole's timeout question exposed it: a graceful close emits `closed` and ends the
+tail, but a **crash, a `kill -9` or a sleeping laptop emits nothing** — the
+client retries in silence and the absence of events is not an event. A watcher
+waiting for the human's next message would wait forever and never learn it had
+stopped listening.
+
+**One line per EPISODE, not per attempt.** The reconnect loop runs with backoff
+forever; a hook that spoke each time would emit a line every few seconds for as
+long as the daemon stayed down, which is how a watcher gets muted and then
+nobody hears the next real thing. **A keepalive clears the flag** — there is no
+`onConnect` hook and this is the honest substitute, since the daemon only sends
+comments down a live stream.
+
+Measured: `kill -9` produced exactly one `tail.disconnected`
+(`cause: "stream-error"`), still one after 40 s down, then one
+`tail.reconnected` when the daemon came back.
+
+### E56 · a dead session says how to come back
+
+`"no running scriptorium session"` reads like the work is gone. It never is: the
+manifest and every version file are on disk, so an exited daemon costs the URL
+and nothing else. The hint now names **the command with the id already in it**,
+and lists the restorable sessions as `choices`.
+
+**`--timeout 0` already worked** — the flag forwards and `timeoutMs <= 0` means
+never. So the gap was discoverability, not capability: the `open` verb now says
+so, and the `ready` event carries `idle_timeout_s` so a standing session can be
+confirmed from outside rather than discovered by losing one.
+
+### The one I had misdescribed
+
+I told Cole "compare against the file on disk" was missing. **It was not:**
+`DiffSide` includes `"original"`, which reads the file of record, and it is the
+default side. What was missing was any ROUTE to it from the warning about it —
+so the conflict banner now offers **See the difference** first, before the two
+buttons that each discard something. The banner also stopped claiming "while you
+have unsaved edits" unconditionally: Cole's case was a reopened session where
+the file had moved on and the active version had no edits at all, and asserting
+edits someone has not made is how a warning loses its credibility.
+
+### A mirror that was not guarded, and then was
+
+`GraphPayload` hand-duplicates `links.ts`'s `Edge` and `GraphNode` because
+`protocol.ts` is import-free on purpose. Adding `raw`/`line` to the computing
+side alone drifted them, and the **type-check ward caught it** — which is the
+ward working, but the duplication had no guard of its own. It has one now, and
+the first version of that guard was WRONG in an instructive way: two-way
+assignability is blind to an OPTIONAL field added to one side, measured by
+planting exactly E54's drift and watching zero errors. The guard compares KEY
+SETS (plus assignability, for a field whose type drifts while its name stays),
+and was verified red against the planted drift and clean without it.
+
+_Process note: while testing E55 I picked a daemon to kill with `head -1` over a
+grep that matched every spell's server, and killed a process that was not mine —
+most likely one of the mind-mapper daemons. Cole's scriptorium session and my
+own scratch daemon were both still alive afterwards, so the victim was something
+else of his. The fix is method, not care: resolve the daemon by the SESSION's
+own port and confirm the process is the one you mean before signalling it, which
+is what the re-run did._

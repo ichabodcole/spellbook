@@ -910,6 +910,8 @@ export async function startDaemon(opts: StartOpts) {
         return session.metaFor(cmd.path);
       case "graph":
         return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
+      case "dangling":
+        return session.danglingLinks(cmd.entry);
       case "backlinks":
         return session.backlinks(cmd.path);
       case "meta.init": {
@@ -1285,7 +1287,17 @@ export async function startDaemon(opts: StartOpts) {
   }
 
   syncWatchers();
-  log.emit({ type: "ready", mode, session_id: sessionId, restored: !!opts.restore });
+  // ⚠ THE SESSION SAYS WHAT ITS OWN TIMEOUT IS. `--timeout 0` has always meant
+  // "stand until closed" and there was no way to confirm from outside that a
+  // daemon had taken it — which is the kind of setting you find out about by
+  // losing a session at the wrong moment.
+  log.emit({
+    type: "ready",
+    mode,
+    session_id: sessionId,
+    restored: !!opts.restore,
+    idle_timeout_s: opts.timeoutS ?? 1800,
+  });
   // Verify-pass fix 2: what changed on disk while no daemon was watching.
   for (const f of session.restoreFindings)
     announce(

@@ -51,6 +51,18 @@ export type LinkRef = {
   kind: LinkKind;
   /** The target as authored, with its query and anchor stripped. */
   target: string;
+  /**
+   * The target EXACTLY as written — query, anchor, percent-encoding and all.
+   *
+   * ⛔ THIS IS WHAT MAKES A DANGLING LINK FIXABLE. `target` is the resolved
+   * shape, so a report built from it tells you to look for `deep.md` when the
+   * document actually says `./missing/deep.md?rel=x` — a string that is not in
+   * the file. Whoever (or whatever) goes to repair the link needs the string
+   * that is there.
+   */
+  raw: string;
+  /** 1-based line in the body the link was written on, for the same reason. */
+  line: number;
   /** Relations from `?rel=`; EMPTY means no assertion, never `references`. */
   rel: string[];
   label?: string;
@@ -142,6 +154,15 @@ const WIKI_LINK = /\[\[([^\]\n]+)\]\]/g;
 export function extractLinks(body: string): LinkRef[] {
   const text = withoutFences(body);
   const out: LinkRef[] = [];
+  // ⚠ LINE NUMBERS SURVIVE `withoutFences` AND OFFSETS DO NOT: it blanks each
+  // fenced line rather than deleting it, so the line COUNT is preserved while
+  // the character offsets are not. Counting newlines is therefore sound; using
+  // `m.index` as a character position in the original body would not be.
+  const lineAt = (at: number) => {
+    let line = 1;
+    for (let i = 0; i < at && i < text.length; i++) if (text.charCodeAt(i) === 10) line++;
+    return line;
+  };
   for (const m of text.matchAll(MD_LINK)) {
     if (m[1] === "!") continue; // an image is not a document link
     const raw = m[3] ?? "";
@@ -151,6 +172,8 @@ export function extractLinks(body: string): LinkRef[] {
     out.push({
       kind: "markdown",
       target: path,
+      raw,
+      line: lineAt(m.index ?? 0),
       rel: parseRel(query),
       ...(m[2] ? { label: m[2] } : {}),
     });
@@ -162,7 +185,14 @@ export function extractLinks(body: string): LinkRef[] {
     const label = pipe === -1 ? undefined : inner.slice(pipe + 1).trim();
     const { path, query } = splitTarget(targetPart);
     if (path === "") continue;
-    out.push({ kind: "wiki", target: path, rel: parseRel(query), ...(label ? { label } : {}) });
+    out.push({
+      kind: "wiki",
+      target: path,
+      raw: targetPart,
+      line: lineAt(m.index ?? 0),
+      rel: parseRel(query),
+      ...(label ? { label } : {}),
+    });
   }
   return out;
 }
@@ -296,6 +326,12 @@ export type Edge = {
   source: "link" | "frontmatter";
   /** The frontmatter key that carried it (`related`, `sources.resource`, …). */
   key?: string;
+  /**
+   * For a BODY link: the target as written, and the line it is on. Absent for a
+   * frontmatter reference, where `key` is the address instead.
+   */
+  raw?: string;
+  line?: number;
   rel: string[];
   state: Resolution["state"];
 };
@@ -332,6 +368,8 @@ export function buildGraph(index: BundleIndex, bodyOf: (path: string) => string,
         from,
         to: r.state === "missing" ? r.tried : r.path,
         source: "link",
+        raw: link.raw,
+        line: link.line,
         rel: link.rel,
         state: r.state,
       });

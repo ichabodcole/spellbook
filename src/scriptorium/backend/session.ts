@@ -46,6 +46,7 @@ import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { type Anchor, anchorOf, findAnchor } from "./anchors";
 import { applyHunks, diffText } from "./diff";
 import {
+  bodyLineOffset,
   buildBlock,
   guessType,
   matchesFilter,
@@ -1727,6 +1728,58 @@ export class Session {
       }
     });
     return { entry: e.id, ...g };
+  }
+
+  /**
+   * Every link in a set that nothing answers — the report you can ACT on (E54).
+   *
+   * ⛔ IT EXISTS BECAUSE `graph` ALREADY HAD THE FACTS AND STILL DID NOT ANSWER
+   * THE QUESTION. Cole asked whether an agent can check dangling links; the
+   * honest answer was "yes, by fetching a set's whole map and filtering several
+   * hundred edges", which is a different thing from being able to check them.
+   * This says only what is broken, and says it as `file:line` plus THE STRING
+   * THE DOCUMENT ACTUALLY CONTAINS — which is what you need to repair one, and
+   * what the map's resolved `to` had quietly thrown away.
+   *
+   * ⚠ NOT AN ERROR. A dangling link is a fact about a set, not a failure: OKF
+   * §11's rule, and it is why this reports and exits zero. Documents that point
+   * at things not written yet are normal in a world bible.
+   */
+  danglingLinks(entryId?: string): Record<string, unknown> {
+    const g = this.graphFor(entryId);
+    const broken = g.edges.filter((e) => e.state === "missing");
+    // ⛔ BODY LINES BECOME FILE LINES HERE. Links are extracted from the body,
+    // so the number the graph carries is short by however much frontmatter the
+    // document has — and a report is for opening a file at a line.
+    const offsets = new Map<string, number>();
+    const offsetOf = (path: string): number => {
+      const known = offsets.get(path);
+      if (known !== undefined) return known;
+      let off = 0;
+      try {
+        off = bodyLineOffset(readFileSync(path, "utf8"));
+      } catch {
+        /* unreadable — report the body line rather than nothing */
+      }
+      offsets.set(path, off);
+      return off;
+    };
+    return {
+      entry: g.entry,
+      root: g.root,
+      count: broken.length,
+      links: broken.map((e) => ({
+        from: e.from,
+        ...(e.line !== undefined ? { line: e.line + offsetOf(e.from) } : {}),
+        // What the document says, not what we looked for.
+        ...(e.raw !== undefined ? { wrote: e.raw } : {}),
+        // Where the resolution ended up, so a near-miss is visible.
+        tried: e.to,
+        source: e.source,
+        ...(e.key ? { key: e.key } : {}),
+        ...(e.rel.length ? { rel: e.rel } : {}),
+      })),
+    };
   }
 
   /**

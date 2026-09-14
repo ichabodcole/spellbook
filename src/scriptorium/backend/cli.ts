@@ -115,7 +115,42 @@ function scriptoriumHome(): string {
 
 type SessionPointer = { url: string; port: number; session_id: string; home: string; dir: string };
 
-const NO_SESSION_HINT = { hint: "run: cli.ts open (or pass --session <id>)" };
+/**
+ * Sessions whose work is still on disk, newest first (E56).
+ *
+ * ⛔ A DEAD SESSION IS NOT A LOST ONE, and the CLI used to imply otherwise. The
+ * manifest and every version file live under the home, so a daemon that has
+ * exited — the 30-minute idle timeout, a crash, a reboot — costs the URL and
+ * nothing else. Cole hit exactly this ("that link doesn't seem to be live
+ * anymore") and the only thing the tooling said was "no running scriptorium
+ * session", which reads like the work is gone.
+ */
+function restorable(): string[] {
+  const dir = join(scriptoriumHome(), "sessions");
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, "manifest.json")))
+      .map((e) => ({ id: e.name, at: statSync(join(dir, e.name, "manifest.json")).mtimeMs }))
+      .sort((a, b) => b.at - a.at)
+      .map((e) => e.id);
+  } catch {
+    return [];
+  }
+}
+
+/** What to say when no daemon answers — including the way back, when there is one. */
+function noSessionHint(): { hint: string; choices?: string[] } {
+  const ids = restorable();
+  const newest = ids[0];
+  if (newest === undefined)
+    return { hint: "no session has been opened in this home yet — run: cli.ts open <path>" };
+  return {
+    // ⚠ The COMMAND, with the id already in it. A hint that says "you can
+    // restore a session" leaves the reader to find the id and guess the flag.
+    hint: `no daemon is running, but the work is on disk — bring it back with: cli.ts open --restore ${newest}`,
+    choices: ids.slice(0, 10),
+  };
+}
 
 function sessionFilePath(session?: string): string {
   return join(tmpdir(), session ? `scriptorium-${session}.json` : "scriptorium-latest.json");
@@ -141,7 +176,7 @@ function readSession(session?: string): SessionPointer | null {
 
 function requireSession(session?: string): SessionPointer {
   const s = readSession(session);
-  if (!s) die("no running scriptorium session", "not_found", NO_SESSION_HINT);
+  if (!s) die("no running scriptorium session", "not_found", noSessionHint());
   return s;
 }
 
@@ -553,6 +588,13 @@ async function readSayBody(
   return text.trim();
 }
 
+/**
+ * Whether the tail has already reported that it lost the daemon (E55). Module
+ * scope because a tail is one process doing one thing, and the two hooks that
+ * read it are handed to a client that owns its own loop.
+ */
+let disconnected = false;
+
 async function cmdTail(session: string | undefined, since: number): Promise<number> {
   let boundId = session;
   let grounded = false;
@@ -582,7 +624,36 @@ async function cmdTail(session: string | undefined, since: number): Promise<numb
     onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     terminal: (ev) => ev.type === "closed",
     idleMs: TAIL_IDLE_MS,
-    onComment: () => ": scriptorium-keepalive",
+    // ⛔ A KEEPALIVE IS PROOF OF LIFE, so it is also what clears a reported
+    // disconnection. There is no `onConnect` hook and this is the honest
+    // substitute: the daemon only sends comments down a live stream.
+    onComment: () => {
+      if (!disconnected) return ": scriptorium-keepalive";
+      disconnected = false;
+      return JSON.stringify({ type: "tail.reconnected" });
+    },
+    // ⛔ ONE LINE PER EPISODE, NOT PER ATTEMPT. The client reconnects with
+    // backoff forever, so a hook that spoke every time would emit a line every
+    // few seconds for as long as the daemon stayed down — which is how a
+    // watcher gets muted, and then nobody hears the next real thing.
+    //
+    // ⚠ WHY THIS EXISTS AT ALL: without it a DEAD daemon and a QUIET one are
+    // the same thing from out here. A graceful close emits `closed` and ends
+    // the tail; a crash, a kill -9 or a sleeping laptop emits nothing, the
+    // client retries in silence, and the absence of events is not an event. A
+    // watcher waiting for the human's next message would wait forever and
+    // never learn it had stopped listening. (Found 2026-09-14 while answering
+    // Cole's question about whether a timeout would notify me. It would not.)
+    onDisconnect: ({ cause, status }) => {
+      if (disconnected) return null;
+      disconnected = true;
+      return JSON.stringify({
+        type: "tail.disconnected",
+        cause,
+        ...(status !== undefined ? { status } : {}),
+        note: "retrying; the session may have closed or crashed",
+      });
+    },
   });
 }
 
@@ -659,7 +730,8 @@ const COMMANDS: CommandSpec[] = [
     name: "open",
     flags: ["no-open", "restore", "timeout", "start-timeout"],
     positionals: [{ name: "path", required: false, variadic: true }],
-    describe: "spawn a session (opens the browser), adding paths; prints {url, port, session_id}",
+    describe:
+      "spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
     run: (pos, flags) => cmdOpen(pos, flags),
   },
   {
@@ -1079,6 +1151,20 @@ const COMMANDS: CommandSpec[] = [
         if (typeof flags[k] === "string") filter[k] = flags[k];
       if (typeof flags.since === "string") filter.since = parseSinceDate(flags.since);
       printJson(await postCmd(session, { type: "find", filter }));
+    },
+  },
+  {
+    name: "dangling",
+    flags: [...SESSION, "entry"],
+    positionals: [],
+    describe: "links in a set that nothing answers — file, line, and the target as written",
+    run: async (_pos, flags, session) => {
+      printJson(
+        await postCmd(session, {
+          type: "dangling",
+          ...(typeof flags.entry === "string" ? { entry: flags.entry } : {}),
+        }),
+      );
     },
   },
   {

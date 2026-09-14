@@ -307,9 +307,34 @@ export function DocumentPane({
           role="alert"
           className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink"
         >
+          {/* ⚠ THE SENTENCE HAS TO MATCH THE SITUATION. It said "while you have
+              unsaved edits" unconditionally, and the case that taught otherwise
+              was Cole's: a session reopened where the FILE had moved on and the
+              active version had no edits at all. Claiming edits he had not made
+              is the kind of wrong that makes someone distrust the next warning
+              too. */}
           <span className="min-w-0 flex-1">
-            This file changed on disk while you have unsaved edits.
+            {doc.dirty
+              ? "This file changed on disk while you have unsaved edits."
+              : "This file changed on disk since this version was made."}
           </span>
+          {/* ⛔ THE DIFFERENCE COMES FIRST, because it is what the other two
+              buttons need you to know. "Keep mine" and "Take the file's" each
+              discard something, and until E54 the only way to see WHICH was to
+              diff the files in a shell — which is exactly what Cole had to have
+              done for him, and the overwrite happened anyway. The comparison
+              already existed (`against: "original"` reads the file of record);
+              what was missing was any route to it from the warning about it. */}
+          <button
+            type="button"
+            onClick={() => {
+              onAgainst("original");
+              onMode("compare");
+            }}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+          >
+            See the difference
+          </button>
           <button
             type="button"
             onClick={onSave}

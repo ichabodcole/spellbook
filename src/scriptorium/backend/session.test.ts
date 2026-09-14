@@ -508,3 +508,54 @@ describe("deleting a version (E41)", () => {
     expect(again.newVersion({ doc: slug, author: "human" }).version.n).toBe(3);
   });
 });
+
+describe("dangling links, as a report you can act on (E54)", () => {
+  test("file:line lands on the real line, and `wrote` is the string in the file", () => {
+    // Four lines of frontmatter, so every body line is short by four.
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: note", "title: A", "---", "# A", "", "see [it](./nowhere.md?rel=x)", ""].join(
+        "\n",
+      ),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as {
+      count: number;
+      links: { from: string; line?: number; wrote?: string; tried: string }[];
+    };
+    expect(report.count).toBe(1);
+    const hit = report.links[0] as { from: string; line?: number; wrote?: string };
+    // ⛔ THE LINE IS A FILE LINE. The link is on body line 3 and file line 7;
+    // reporting 3 would send a repair to the frontmatter.
+    expect(hit.line).toBe(7);
+    const fileLines = readFileSync(hit.from, "utf8").split("\n");
+    expect(fileLines[(hit.line as number) - 1]).toContain("./nowhere.md?rel=x");
+    // And the reported string is the one that is actually there.
+    expect(hit.wrote).toBe("./nowhere.md?rel=x");
+  });
+
+  test("a resolved link is not in the report at all", () => {
+    writeFileSync(join(docs, "set", "a.md"), "# A\n\n[b](part/b.md)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as { count: number };
+    expect(report.count).toBe(0);
+  });
+
+  test("a frontmatter reference is reported with its KEY and no line", () => {
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: note", "related:", "  - note/ghost", "---", "# A", ""].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as {
+      links: { key?: string; line?: number; source: string }[];
+    };
+    const ref = report.links.find((l) => l.source === "frontmatter");
+    expect(ref?.key).toBe("related");
+    // There is no line to give: the address is the key.
+    expect(ref?.line).toBeUndefined();
+  });
+});

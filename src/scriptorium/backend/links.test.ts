@@ -1,6 +1,7 @@
 // The resolver, over real shapes: the wiki's `type/slug` keys, Operator's typed
 // links, wiki links, and the frontmatter references that are NOT links.
 import { describe, expect, test } from "bun:test";
+import type { Edge, GraphNode } from "./links";
 import {
   type BundleIndex,
   buildGraph,
@@ -12,7 +13,7 @@ import {
   splitTarget,
   withoutFences,
 } from "./links";
-import type { DocMeta } from "./protocol";
+import type { DocMeta, GraphPayload } from "./protocol";
 
 const meta = (fields: Record<string, unknown>): DocMeta => ({
   raw: "",
@@ -123,6 +124,47 @@ describe("frontmatter references — the SHAPE decides, not the key", () => {
         "supersedes=decision/older",
       ].sort(),
     );
+  });
+});
+
+describe("what a dangling link report needs (E54)", () => {
+  test("a link carries the target AS WRITTEN, not only the resolved shape", () => {
+    const [link] = extractLinks("See [it](./missing/deep.md?rel=x#top).\n");
+    expect(link?.target).toBe("./missing/deep.md");
+    // ⛔ The written string is the one that is IN the file, so it is the one a
+    // repair can search for. `target` alone sends you looking for `deep.md`.
+    expect(link?.raw).toBe("./missing/deep.md?rel=x#top");
+  });
+
+  test("and the line it is on, counted from 1", () => {
+    const body = ["# Title", "", "prose", "", "- [a](x.md)", "- [b](y.md)"].join("\n");
+    const links = extractLinks(body);
+    expect(links.map((l) => `${l.target}:${l.line}`)).toEqual(["x.md:5", "y.md:6"]);
+  });
+
+  test("⚠ A FENCED BLOCK SHIFTS NOTHING — line numbers survive fence stripping", () => {
+    // `withoutFences` BLANKS fenced lines rather than removing them, so the
+    // count is preserved. A link after a code block must still report its real
+    // line, or every report in a document with code is off by the block.
+    const body = [
+      "# Title",
+      "",
+      "```ts",
+      "const a = [1](not-a-link.md);",
+      "```",
+      "",
+      "real [link](x.md)",
+    ].join("\n");
+    const links = extractLinks(body);
+    expect(links).toHaveLength(1);
+    expect(links[0]?.line).toBe(7);
+  });
+
+  test("a wiki link reports what was written inside the brackets", () => {
+    const [link] = extractLinks("A [[Ghost Page|the ghost]] here.\n");
+    expect(link?.target).toBe("Ghost Page");
+    expect(link?.raw).toBe("Ghost Page");
+    expect(link?.line).toBe(1);
   });
 });
 
@@ -312,3 +354,38 @@ describe("percent-encoded targets (E49)", () => {
     expect(t.anchor).toBe("the-rules");
   });
 });
+
+// ── the mirror guard ────────────────────────────────────────────────────────
+//
+// ⛔ `protocol.ts` DUPLICATES these shapes BY NECESSITY — it is import-free so
+// that the surface and `dist/cli.js` never drag the daemon's graph — which
+// makes it the lockstep mirror this repo has paid for before. This is the check
+// that the copy stays a copy. Nothing runs; the type checker is the assertion.
+//
+// ⚠ IT COMPARES KEY SETS, NOT ASSIGNABILITY, AND THE DIFFERENCE IS THE WHOLE
+// POINT. Two-way assignability was the first attempt and it was measured to be
+// USELESS for this: an OPTIONAL field added to one side alone keeps both
+// directions assignable, so planting exactly the drift E54 introduced
+// (`raw?`/`line?` on the computing side only) produced zero errors. Key
+// equality catches it, because the key is there whether or not it is optional.
+type ExactKeys<A, B> = [keyof A] extends [keyof B]
+  ? [keyof B] extends [keyof A]
+    ? true
+    : false
+  : false;
+type ProtoEdge = GraphPayload["edges"][number];
+type ProtoNode = GraphPayload["nodes"][number];
+const _edgeKeysMatch: ExactKeys<Edge, ProtoEdge> = true;
+const _nodeKeysMatch: ExactKeys<GraphNode, ProtoNode> = true;
+// And assignability on top, which catches a field whose TYPE drifted while its
+// name stayed — the case key equality cannot see.
+const _edgeToProto: ProtoEdge = {} as Edge;
+const _protoToEdge: Edge = {} as ProtoEdge;
+const _nodeToProto: ProtoNode = {} as GraphNode;
+const _protoToNode: GraphNode = {} as ProtoNode;
+void _edgeKeysMatch;
+void _nodeKeysMatch;
+void _edgeToProto;
+void _protoToEdge;
+void _nodeToProto;
+void _protoToNode;

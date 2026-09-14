@@ -379,11 +379,21 @@ export type GraphPayload = {
     linksOut: number;
     linksIn: number;
   }[];
+  /**
+   * ⚠ A HAND-WRITTEN MIRROR OF `links.ts`'s `Edge`, and it has to be: this file
+   * is import-free on purpose, so it cannot reference the module that computes
+   * these. The mirror is GUARDED — `links.test.ts` asserts the two shapes are
+   * assignable in both directions, so adding a field to one and not the other
+   * fails the type check rather than drifting quietly. (E54 added `raw`/`line`
+   * to the computing side only, and that is exactly how this was found.)
+   */
   edges: {
     from: string;
     to: string;
     source: "link" | "frontmatter";
     key?: string;
+    raw?: string;
+    line?: number;
     rel: string[];
     state: "in-bundle" | "outside" | "missing";
   }[];
@@ -551,6 +561,12 @@ export type AgentCmd =
   /** A set's map as JSON, in pdocs' shape (E33). */
   | { type: "graph"; entry?: string }
   /** What cites a document — `related` and body `links` kept apart, as pdocs keeps them. */
+  /**
+   * E54: every link in a set that nothing answers, as `file:line` plus the
+   * string the document actually contains. `graph` has the same facts and
+   * buries them in several hundred edges.
+   */
+  | { type: "dangling"; entry?: string }
   | { type: "backlinks"; path: string }
   /** Add a frontmatter block to a document that has none (E35). */
   | { type: "meta.init"; path: string; metaType?: string; by?: string }

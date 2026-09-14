@@ -24,6 +24,24 @@ const BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
  * Pure string work, no YAML — the SURFACE has the same function (it must strip
  * the block before rendering) and `frontmatter.test.ts` holds the two equal.
  */
+/**
+ * How many lines of a document come BEFORE its body — the frontmatter block and
+ * its delimiters.
+ *
+ * ⛔ WITHOUT THIS A REPORTED LINE NUMBER IS A LIE. Links are extracted from the
+ * BODY, so a link on body line 9 of a document with four lines of frontmatter
+ * is on FILE line 13 — and a report that says 9 sends whoever is fixing it to
+ * the wrong place, confidently. Caught the moment E54's report was first read
+ * against a document that had frontmatter.
+ */
+export function bodyLineOffset(text: string): number {
+  const { body } = splitFrontmatter(text);
+  const prefix = text.slice(0, text.length - body.length);
+  let lines = 0;
+  for (let i = 0; i < prefix.length; i++) if (prefix.charCodeAt(i) === 10) lines++;
+  return lines;
+}
+
 export function splitFrontmatter(text: string): { raw: string | null; body: string } {
   const m = BLOCK.exec(text);
   if (!m) return { raw: null, body: text };

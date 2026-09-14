@@ -113,6 +113,7 @@ test("the brief's verb roster is exactly the table's", () => {
       "activate",
       "add",
       "close",
+      "dangling",
       "diff",
       "help",
       "info",
