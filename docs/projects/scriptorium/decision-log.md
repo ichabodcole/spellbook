@@ -1552,3 +1552,77 @@ by its own zero-guard. It now scans both shapes, enumerates every `__html`
 writer in the surface separately, strips comments first (it had counted a
 `__html: html` inside a comment in the ward itself), and declares `htmlProp` so
 that reverting to the inline literal turns it red.
+
+## E53 — the human is waiting, and the agent gets told once
+
+Cole, through the app: _"after I send a message there is like a thinking sort of
+animation until you reply, just provides a little reassurance that something is
+happening"_ — stolen from mind-mapper and glamour, as he asked.
+
+**Derived, never declared. His ruling, and the reasoning is the good part:**
+_"we're not adding more tasks for the agent to have to explicitly do."_ An agent
+that must remember to announce "thinking" will forget exactly when it matters —
+it is busy, which is the situation being signalled. So the state is read off the
+conversation: a human message with no agent message after it is a human waiting.
+
+**mind-mapper's rule taken whole: the reply IS the completion signal.** No
+`done` to emit, so no `done` to get out of sync. It also fell out that
+`startTask` posts as the AGENT (E50), so the happy path Cole described — "I'll
+get that started", then a task, then a subagent — clears this by construction,
+with no acknowledgement of its own. Verified live: starting a task cleared the
+wait.
+
+**⚠ A SYSTEM LINE IS NOT A REPLY.** `announce()` narrates agent acts ("Agent
+noted … on maren"), which is evidence of life but not a check-in with the person
+waiting. Counting it would silence the signal in precisely the case this exists
+for — an agent busy doing things that has not said a word. There is a cell.
+
+**Stalled does not pulse.** 30 s (Cole's number) flips the badge to "took this
+in, then went quiet — may be stuck", static and in the attention colour. An
+animation is a claim that work is happening; running it over a wedged agent is
+false liveness, which is the one thing this must not do. mind-mapper separates
+them for the same reason.
+
+**The clock runs from the FIRST unanswered message, not the latest.** Someone
+who sends three messages while waiting has been waiting since the first —
+resetting on every follow-up would mean the more anxious they get, the shorter
+we claim their wait has been.
+
+**⛔ ONE NUDGE PER MESSAGE, which is the whole anti-nag rule.** Cole: _"we don't
+want to have a situation where an agent keeps getting pinged about something and
+it's like, no, I'm actually working."_ At 30 s the daemon emits one
+`{type:"waiting"}` on the AGENT'S TAIL — never in the chat, because the human
+already sees the badge and telling them what they are looking at is noise. It
+carries the pending message's TEXT (an agent returning needs to know what is
+owed, not merely that something is) and names the two ways out. A message id
+enters `nudged` when reported or when snoozed, and never leaves.
+
+**`working` is the snooze, and carries nothing else.** An agent with something
+to tell the human has `say` (a reply, which clears the wait) and `task-status`
+(progress on declared work). A third channel for "here is what I am doing" would
+be a third place to look, and two of them would go stale. A `note` field was
+built and then removed for that reason.
+
+**A snooze expiring changes what the HUMAN sees, not what the agent receives.**
+The badge returns to stalled, because they are owed the truth eventually; the
+agent is not pinged again, because it already answered the alarm. Measured end
+to end: pulse → stalled at 31 s → one nudge → snoozed back to a pulse → stalled
+again on expiry → still exactly one nudge.
+
+**Where it is computed:** the daemon, in `PublicState.waiting`, on a 1 s tick
+that broadcasts only when the badge CHANGES. The daemon needs the value anyway
+to decide when to nudge, and two implementations of "is anyone waiting" would
+eventually disagree about whether to draw a pulse and whether to send a ping.
+`Waiting` itself lives in `protocol.ts` because it rides in state and that file
+is import-free on purpose.
+
+### Deployment note, not yet actionable
+
+Cole's framing of the division of labour, to go into the spell's SKILL.md **when
+there is one** (scriptorium is still declared WIP in the roster ward): the main
+agent should work as an **orchestrator** — attentive to the human, creating
+tasks, delegating the actual work to subagents — rather than doing the work
+itself. His reason: _"you're essentially overloading an agent with multiple
+responsibilities, both doing the work, attending to the user, maintaining
+awareness of what's going on in the interface."_ E53's nudge is explicitly the
+**error case** for when that discipline slips, not a substitute for it.

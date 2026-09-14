@@ -261,6 +261,23 @@ export type Selection = {
 
 export type ChatWho = "human" | "agent" | "system";
 
+/**
+ * E53: the human is waiting on an answer, and how that should read.
+ *
+ * ⛔ DEFINED HERE, NOT IN `waiting.ts`, because it rides in `PublicState` — and
+ * because this file is import-free ON PURPOSE (see the header). Re-exporting it
+ * from the module that computes it would have made the wire vocabulary import
+ * the daemon's logic and created a type cycle, for the convenience of one line.
+ *
+ * `working` is a pulse. `stalled` is STATIC and says so in words: a pulse over a
+ * wedged agent is false liveness, which is the one thing this must not do.
+ */
+export type Waiting = {
+  messageId: string;
+  since: number;
+  badge: "working" | "stalled";
+};
+
 export type ChatMessage = {
   id: string;
   who: ChatWho;
@@ -283,6 +300,16 @@ export type PublicState = {
   chat: ChatMessage[];
   /** The work queue (E50) — newest first, done ones included. */
   tasks: Task[];
+  /**
+   * Whether the human is waiting on an answer (E53), computed by the DAEMON
+   * because that is where the clock is. Null when nobody is waiting.
+   *
+   * ⛔ IT IS IN STATE RATHER THAN DERIVED IN THE SURFACE so there is one rule.
+   * The daemon needs it anyway — it is what decides when to nudge the agent —
+   * and two implementations of "is anyone waiting" would eventually disagree
+   * about whether to draw a pulse and whether to send a ping.
+   */
+  waiting: Waiting | null;
   /**
    * Per-viewer conveniences (pane sizes, …), kept in `$SCRIPTORIUM_HOME/prefs.json`
    * rather than the browser's storage: every session is a new port, and browser
@@ -498,6 +525,17 @@ export type AgentCmd =
   | { type: "notes"; doc?: string; all?: boolean }
   | { type: "note.edit"; doc?: string; id: string; body: string }
   /** E50: the agent says it has started something, and later that it is done. */
+  /**
+   * E53: "still working" — the snooze, and ONLY that. It silences the waiting
+   * nudge for the message it is about and keeps the human's indicator a pulse
+   * for a while; `seconds` overrides the default.
+   *
+   * ⛔ IT CARRIES NO MESSAGE, deliberately. An agent with something to tell the
+   * human has `say` (which is a reply, and clears the wait) and `task-status`
+   * (for the progress of declared work). A third channel saying "here is what I
+   * am doing" would be a third place to look and two of them would go stale.
+   */
+  | { type: "working"; seconds?: number }
   | { type: "task.start"; text: string }
   | { type: "task.status"; id: string; status: string }
   | { type: "task.done"; id: string; outcome?: string }

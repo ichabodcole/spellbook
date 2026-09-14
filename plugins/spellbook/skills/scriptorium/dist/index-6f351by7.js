@@ -71297,6 +71297,27 @@ function Toasts({
   }, undefined, false, undefined, this);
 }
 
+// src/scriptorium/surface/components/WaitingBadge.tsx
+var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var LABEL = {
+  working: "working on this…",
+  stalled: "took this in, then went quiet — may be stuck"
+};
+function WaitingBadge({ badge }) {
+  const working = badge === "working";
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
+    "aria-live": "polite",
+    className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention"),
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+        "aria-hidden": true,
+        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
+      }, undefined, false, undefined, this),
+      LABEL[badge]
+    ]
+  }, undefined, true, undefined, this);
+}
+
 // src/scriptorium/surface/state/storage.ts
 var safeStorage = {
   getItem(key) {
@@ -71526,7 +71547,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -71538,7 +71559,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -71561,41 +71582,41 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Workspace, {
         state,
         daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -71710,36 +71731,36 @@ function Workspace({
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(jsx_dev_runtime28.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(jsx_dev_runtime29.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ActiveVersionToast, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ActiveVersionToast, {
         doc: open3,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(TaskToasts, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(TaskToasts, {
         tasks: state.tasks,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Toasts, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Toasts, {
         toasts,
         onDismiss: dismiss
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizablePanelGroup, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: layout2.defaultLayout,
         onLayoutChanged: layout2.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
             id: "context",
             defaultSize: "22",
             minSize: "12",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(PaneHeading, {
+              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(PaneHeading, {
                 children: "Context"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ContextSidebar, {
+              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextSidebar, {
                 entries: state.context,
                 activeDoc,
                 userHome: state.userHome,
@@ -71760,15 +71781,15 @@ function Workspace({
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
             id: "document",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col bg-bg",
-            children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(DocumentPane, {
+            children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(DocumentPane, {
               doc: open3,
               text: text4,
               mode,
@@ -71840,26 +71861,26 @@ function Workspace({
               onRevert: () => open3 && send({ type: "revert", doc: open3.slug })
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
             id: "chat",
             defaultSize: "28",
             minSize: "15",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
                 className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
-                children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("button", {
+                children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("button", {
                   type: "button",
                   onClick: () => setRightPane(which),
                   "aria-pressed": rightPane === which,
                   className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
                     className: "flex items-center gap-1",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Spinner, {
+                      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Spinner, {
                         className: "text-ink-dim"
                       }, undefined, false, undefined, this),
                       `Tasks (${openTasks.length})`
@@ -71867,11 +71888,11 @@ function Workspace({
                   }, undefined, true, undefined, this) : which
                 }, which, false, undefined, this))
               }, undefined, false, undefined, this),
-              rightPane === "tasks" ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(TasksPanel, {
+              rightPane === "tasks" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(TasksPanel, {
                 tasks: state.tasks,
                 onDone: (id) => send({ type: "task.done", id }),
                 onClear: () => send({ type: "tasks.clear" })
-              }, undefined, false, undefined, this) : rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(NotesPanel, {
+              }, undefined, false, undefined, this) : rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(NotesPanel, {
                 notes: open3?.notes ?? [],
                 focusedId: focusedNote,
                 selection: open3 && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
@@ -71896,28 +71917,29 @@ function Workspace({
                   if (open3)
                     send({ type: "note.remove", doc: open3.slug, id });
                 }
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(jsx_dev_runtime28.Fragment, {
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(jsx_dev_runtime29.Fragment, {
                 children: [
-                  state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Empty, {
+                  state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Empty, {
                     className: "flex-1",
-                    children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(EmptyHeader, {
+                    children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyHeader, {
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(EmptyMedia, {
+                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyMedia, {
                           variant: "icon",
-                          children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                          children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(EmptyTitle, {
+                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyTitle, {
                           children: "No messages yet"
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(EmptyDescription, {
+                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyDescription, {
                           children: "Ask the agent something. If you have text selected, it comes too."
                         }, undefined, false, undefined, this)
                       ]
                     }, undefined, true, undefined, this)
-                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ActivityLog, {
-                    chat: state.chat
+                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ActivityLog, {
+                    chat: state.chat,
+                    waiting: state.waiting
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(ChatComposer, {
+                  /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ChatComposer, {
                     connected: connection === "open",
                     attachable: open3 && selection ? {
                       doc: open3.slug,
@@ -71938,30 +71960,33 @@ function Workspace({
     ]
   }, undefined, true, undefined, this);
 }
-function ActivityLog({ chat }) {
+function ActivityLog({
+  chat,
+  waiting
+}) {
   const end = import_react31.useRef(null);
   const last2 = chat.at(-1)?.id;
   import_react31.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [last2]);
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+  }, [last2, waiting?.badge]);
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
         "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m2.text,
-          m2.selection && /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
+          m2.selection && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("p", {
             className: "mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
                 className: "text-ink-faint",
                 children: [
                   m2.selection.doc,
@@ -71972,13 +71997,16 @@ function ActivityLog({ chat }) {
                   m2.selection.fromLine === m2.selection.toLine ? `line ${m2.selection.fromLine}` : `lines ${m2.selection.fromLine}–${m2.selection.toLine}`
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("br", {}, undefined, false, undefined, this),
               m2.selection.text.replace(/\s+/gu, " ").trim()
             ]
-          }, undefined, true, undefined, this)
+          }, undefined, true, undefined, this),
+          waiting?.messageId === m2.id && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(WaitingBadge, {
+            badge: waiting.badge
+          }, undefined, false, undefined, this)
         ]
       }, m2.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -71986,7 +72014,7 @@ function ActivityLog({ chat }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime29.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime30.jsxDEV(App, {}, undefined, false, undefined, this));

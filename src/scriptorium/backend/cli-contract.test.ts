@@ -142,6 +142,7 @@ test("the brief's verb roster is exactly the table's", () => {
       "make-set",
       "merge",
       "import",
+      "working",
       "workspace",
       "meta",
       "find",

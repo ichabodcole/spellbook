@@ -192,6 +192,7 @@ const CLI_OPTIONS = {
   context: { type: "string" },
   doc: { type: "string" },
   entry: { type: "string" },
+  for: { type: "string" },
   from: { type: "string" },
   full: { type: "boolean" },
   quote: { type: "string" },
@@ -789,6 +790,22 @@ const COMMANDS: CommandSpec[] = [
     describe: "forget every finished task; outstanding ones are left alone",
     run: async (_pos, _flags, session) => {
       printJson(await postCmd(session, { type: "tasks.clear" }));
+    },
+  },
+  {
+    name: "working",
+    flags: [...SESSION, "for"],
+    positionals: [],
+    describe: "say you are still on it — silences the waiting nudge, keeps the human's pulse",
+    run: async (_pos, flags, session) => {
+      const seconds =
+        typeof flags.for === "string" ? parseCount(flags.for, "working --for") : undefined;
+      printJson(
+        await postCmd(session, {
+          type: "working",
+          ...(seconds !== undefined ? { seconds } : {}),
+        }),
+      );
     },
   },
   {

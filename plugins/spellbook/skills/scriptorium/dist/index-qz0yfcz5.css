@@ -1132,6 +1132,10 @@
     }
   }
 
+  .bg-attention {
+    background-color: var(--color-attention);
+  }
+
   .bg-attention\/10 {
     background-color: #e2a94b1a;
   }

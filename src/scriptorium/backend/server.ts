@@ -65,9 +65,17 @@ import { quoteLabel } from "./anchors";
 import { unified } from "./diff";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
-import type { AgentCmd, ClientMsg, Selection, ServerMsg, StructureOp } from "./protocol";
+import type {
+  AgentCmd,
+  ClientMsg,
+  PublicState,
+  Selection,
+  ServerMsg,
+  StructureOp,
+} from "./protocol";
 import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
+import { DEFAULT_SNOOZE_MS, waitingOn } from "./waiting";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
@@ -148,7 +156,28 @@ export async function startDaemon(opts: StartOpts) {
     return out;
   };
   const userHome = homedir();
-  const viewState = () => ({ ...session.view(mode, selection), prefs: readPrefs(), userHome });
+  /**
+   * E53: the snooze the agent asked for, and the messages already nudged.
+   *
+   * ⛔ ONE NUDGE PER MESSAGE, AND THAT IS THE WHOLE ANTI-NAG RULE. Cole: "we
+   * don't want to have a situation where an agent keeps getting pinged about
+   * something and it's like, no, I'm actually working." So a message id enters
+   * `nudged` the first time it is reported — or the moment the agent snoozes it
+   * — and never leaves. A snooze EXPIRING therefore changes what the HUMAN
+   * sees (back to "may be stuck", because they are owed the truth) without
+   * pinging the agent again.
+   *
+   * ⚠ IN MEMORY, NOT IN THE MANIFEST, deliberately. A restored session whose
+   * human was left waiting SHOULD tell the agent that arrives — the wait is
+   * real and the new agent has not heard about it.
+   */
+  let acknowledgedUntil: number | undefined;
+  const nudged = new Set<string>();
+
+  const viewState = (): PublicState => {
+    const base = { ...session.view(mode, selection), prefs: readPrefs(), userHome };
+    return { ...base, waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil }) };
+  };
 
   // --- channels ---------------------------------------------------------------
   const sockets = new Set<import("bun").ServerWebSocket<unknown>>();
@@ -942,6 +971,23 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return { cleared };
       }
+      case "working": {
+        // E53's snooze. It does NOT post to the chat: an agent saying "still
+        // working" in the conversation is a reply, and it can do that with
+        // `say` — this is the quieter thing, for when there is nothing to
+        // report yet but the alarm should stop.
+        const ms = cmd.seconds !== undefined ? cmd.seconds * 1000 : DEFAULT_SNOOZE_MS;
+        acknowledgedUntil = Date.now() + Math.max(0, ms);
+        // Whatever is pending is acknowledged, so it must never be nudged again.
+        const w = waitingOn(session.messages(), Date.now(), { acknowledgedUntil });
+        if (w) nudged.add(w.messageId);
+        broadcastState();
+        return {
+          until: acknowledgedUntil,
+          seconds: Math.round(Math.max(0, ms) / 1000),
+          ...(w ? { waiting: w.messageId } : {}),
+        };
+      }
       case "task.start": {
         const t = session.startTask(cmd.text, "agent");
         log.emit({ type: "task.started", task: t.id, text: t.text, by: "agent" });
@@ -1249,6 +1295,39 @@ export async function startDaemon(opts: StartOpts) {
       { fact: "original.conflict", doc: f.doc, whileClosed: true },
     );
 
+  /**
+   * E53's attention tick. Separate from housekeeping because it is about the
+   * HUMAN's patience rather than the daemon's lifetime, and because it must run
+   * on a slower clock: a 250 ms sweep re-broadcasting state would be churn for a
+   * value that changes twice in a wait.
+   */
+  let lastWaiting: string | null = null;
+  const attentionTimer = setInterval(() => {
+    const w = waitingOn(session.messages(), Date.now(), { acknowledgedUntil });
+    const key = w ? `${w.messageId}:${w.badge}` : null;
+    if (key === lastWaiting) return;
+    lastWaiting = key;
+    // The badge changed, so the surface needs the new snapshot.
+    broadcastState();
+    if (!w) return;
+    if (w.badge !== "stalled" || nudged.has(w.messageId)) return;
+    nudged.add(w.messageId);
+    // ⛔ THE NUDGE GOES TO THE AGENT'S TAIL AND NOWHERE ELSE. The human already
+    // sees the badge; putting this in the chat as well would be telling them
+    // what they are looking at. It carries the message TEXT because an agent
+    // that has been away needs to know what is pending, not just that something
+    // is — and it names the two ways out, because a nudge that does not say how
+    // to answer it invites a fourth primitive.
+    const pending = session.messages().find((m) => m.id === w.messageId);
+    log.emit({
+      type: "waiting",
+      message_id: w.messageId,
+      seconds: Math.round((Date.now() - w.since) / 1000),
+      ...(pending ? { text: pending.text } : {}),
+      hint: "reply with `say`, or `working` to say you are still on it",
+    });
+  }, 1000);
+
   const stopHousekeeping = startHousekeeping({
     subscriberCount: () => sockets.size + sseClients.size,
     idleMs: () => performance.now() - lastActivity,
@@ -1284,6 +1363,7 @@ export async function startDaemon(opts: StartOpts) {
     if (closed) return;
     closed = true;
     stopHousekeeping();
+    clearInterval(attentionTimer);
     for (const w of watchers.values()) w.close();
     watchers.clear();
     for (const t of pending.values()) clearTimeout(t);

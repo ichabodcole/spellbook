@@ -1846,10 +1846,22 @@ export class Session {
   }
 
   /** The session's half of `PublicState`; the daemon adds the home-level `prefs` and `userHome`. */
+  /**
+   * The conversation, without building a snapshot around it.
+   *
+   * ⚠ E53's attention tick runs every second and only needs the chat; calling
+   * `view()` for it would re-read every document's frontmatter on a timer.
+   */
+  messages(): readonly ChatMessage[] {
+    return this.m.chat;
+  }
+
   view(
     mode: "dev" | "release",
     selection: Selection | null,
-  ): Omit<PublicState, "prefs" | "userHome"> {
+    // ⚠ `waiting` is the SERVER's to add (E53): it depends on the clock and on
+    // the snooze the server holds, neither of which belongs in the session.
+  ): Omit<PublicState, "prefs" | "userHome" | "waiting"> {
     const meta = this.contextMeta();
     return {
       sessionId: this.m.sessionId,

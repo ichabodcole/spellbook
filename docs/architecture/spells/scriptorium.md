@@ -229,6 +229,12 @@ React 19 + Tailwind v4, shadcn on `@base-ui/react`, three resizable panes:
 - **Document view** is CodeMirror 6, hand-wrapped — the spell dispatches its own
   transactions, so the view's lifecycle is ours (§5's annotation depends on it).
 - **Four view modes**: raw, rendered, split, compare.
+- **The chat is whole** (E48): the composer sends `{type: "say"}` with the
+  current selection attached, and E53 puts a **waiting badge** on the human's
+  last unanswered message — a pulse under 30 s, then a static "may be stuck".
+  The badge is `PublicState.waiting`, computed by the daemon (it needs the same
+  value to decide when to nudge the agent), and the agent's reply is the only
+  thing that clears it.
 - **Selection works in the rendered view too** (E51), and resolves to the SAME
   source offsets the raw view reports — so the chat's attachment and a note's
   anchor mean one thing regardless of which half the human was reading.
@@ -249,18 +255,17 @@ React 19 + Tailwind v4, shadcn on `@base-ui/react`, three resizable panes:
 
 Named so their absence is a decision rather than an oversight:
 
-- **Chat — the WIRE is built; the COMPOSER is not.** `say` exists on both
-  `ClientMsg` and `AgentCmd`, a human message reaches the agent's `tail`
-  carrying the selection and the active version's path, the agent's `say` lands
-  in the same chat, and the pane already styles human and agent messages
-  differently. What is missing is a place to type in the surface: nothing in
-  `surface/` ever sends `{type: "say"}`. Explicitly last (Cole).
 - **Undo/redo — the EDITOR has it; the SESSION does not.** CodeMirror's
   `history` is installed, so ⌘Z works inside the buffer today. What E28 decided
   and nobody has built is _one shared timeline of committed acts_ — undoing a
   move, a merge, an activation. The next thing editing needs.
 - **Relative images** do not load; a daemon asset route scoped to the entry
   folder is the fix (E29).
+- **The SKILL.md's division of labour** — the main agent as an orchestrator
+  (attentive to the human, creating tasks, delegating work to subagents) rather
+  than the worker. Cole's ruling, and E53's nudge is the error case for when it
+  slips, not a replacement for it. Pending because this spell has no SKILL.md
+  yet: it is declared WIP in the roster-drift ward on purpose.
 - **Split halves do not scroll together** — compare's two columns cannot drift
   (one scroller, by construction), but raw/rendered are two scrollers of two
   renderings and syncing them is approximate work of its own (E36).

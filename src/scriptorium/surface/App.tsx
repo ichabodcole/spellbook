@@ -17,6 +17,7 @@ import type {
   DiffSide,
   DocView,
   PublicState,
+  Waiting,
 } from "../backend/protocol";
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ChatComposer } from "./components/ChatComposer";
@@ -27,6 +28,7 @@ import { NotesPanel } from "./components/NotesPanel";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
+import { WaitingBadge } from "./components/WaitingBadge";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -484,7 +486,7 @@ function Workspace({
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <ActivityLog chat={state.chat} />
+                <ActivityLog chat={state.chat} waiting={state.waiting} />
               )}
               <ChatComposer
                 connected={connection === "open"}
@@ -515,13 +517,22 @@ function Workspace({
  * session's lines, newest last, so what either party did — "Agent moved …",
  * "You created …" (E24) — is visible where the conversation will be.
  */
-function ActivityLog({ chat }: { chat: readonly ChatMessage[] }) {
+function ActivityLog({
+  chat,
+  waiting,
+}: {
+  chat: readonly ChatMessage[];
+  /** E53: which message nobody has answered, and how that reads. */
+  waiting: Waiting | null;
+}) {
   const end = useRef<HTMLDivElement>(null);
   const last = chat.at(-1)?.id;
-  // Scroll when a NEW line arrives, keyed by its id.
+  // Scroll when a NEW line arrives, keyed by its id — and when the badge
+  // appears or changes, because it is rendered below the last message and would
+  // otherwise land just out of sight.
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [last]);
+  }, [last, waiting?.badge]);
   return (
     <div
       role="log"
@@ -554,6 +565,7 @@ function ActivityLog({ chat }: { chat: readonly ChatMessage[] }) {
               {m.selection.text.replace(/\s+/gu, " ").trim()}
             </p>
           )}
+          {waiting?.messageId === m.id && <WaitingBadge badge={waiting.badge} />}
         </div>
       ))}
       <div ref={end} />
