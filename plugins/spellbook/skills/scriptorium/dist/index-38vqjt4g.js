@@ -62604,7 +62604,7 @@ var scriptoriumTheme = EditorView.theme({
     fontSize: "12px"
   },
   ".cm-search label": { display: "inline-flex", alignItems: "center", gap: "4px" },
-  ".cm-search input[type=text]": {
+  ".cm-panel.cm-search .cm-textfield": {
     backgroundColor: "var(--color-bg)",
     color: "var(--color-ink)",
     border: "1px solid var(--color-edge)",
@@ -62614,7 +62614,10 @@ var scriptoriumTheme = EditorView.theme({
     fontSize: "12px",
     outline: "none"
   },
-  ".cm-search input[type=text]:focus": {
+  ".cm-panel.cm-search .cm-textfield::placeholder": {
+    color: "var(--color-ink-faint)"
+  },
+  ".cm-panel.cm-search .cm-textfield:focus": {
     borderColor: "var(--color-rubric)",
     boxShadow: "0 0 0 2px color-mix(in srgb, var(--color-ring) 45%, transparent)"
   },

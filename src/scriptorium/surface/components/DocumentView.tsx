@@ -156,7 +156,20 @@ const scriptoriumTheme = EditorView.theme({
     fontSize: "12px",
   },
   ".cm-search label": { display: "inline-flex", alignItems: "center", gap: "4px" },
-  ".cm-search input[type=text]": {
+  // ⛔ `.cm-textfield`, AND THE SELECTOR IS THE FIX. CodeMirror's own base theme
+  // carries `&light .cm-textfield { backgroundColor: "white" }`, and `&light` vs
+  // `&dark` is chosen by whether the EDITOR THEME declares `dark: true` — which
+  // this one does not, so CodeMirror believes the editor is light in both
+  // themes and paints the input white. At `(0,2,0)` that beat the
+  // `input[type=text]` selector used here first `(0,1,1)`, while the `color`
+  // rule below did apply: white text in a white box, in dark mode only.
+  // (Cole, with a screenshot. I had verified the panel in ONE theme.)
+  //
+  // Scoped through `.cm-panel.cm-search` to be unambiguously more specific than
+  // the base rule rather than relying on registration order. The colours are
+  // the app's tokens, so the panel follows `data-theme` without CodeMirror
+  // needing to know anything about it.
+  ".cm-panel.cm-search .cm-textfield": {
     backgroundColor: "var(--color-bg)",
     color: "var(--color-ink)",
     border: "1px solid var(--color-edge)",
@@ -166,7 +179,10 @@ const scriptoriumTheme = EditorView.theme({
     fontSize: "12px",
     outline: "none",
   },
-  ".cm-search input[type=text]:focus": {
+  ".cm-panel.cm-search .cm-textfield::placeholder": {
+    color: "var(--color-ink-faint)",
+  },
+  ".cm-panel.cm-search .cm-textfield:focus": {
     borderColor: "var(--color-rubric)",
     boxShadow: "0 0 0 2px color-mix(in srgb, var(--color-ring) 45%, transparent)",
   },
