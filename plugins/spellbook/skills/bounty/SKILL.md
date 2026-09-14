@@ -665,8 +665,8 @@ The session-ending outcome (a clean exit 0, or 124 on idle timeout) belongs to
 the **daemon** and surfaces to the agent via the `closed` event's `reason` on
 the tail. That family is the table above and the taxonomy does not govern it.
 
-**`cli.ts`'s own exits are the house taxonomy** (`src/kit/wire/errors.ts`), and
-every one of them prints ONE JSON envelope on **stderr** with stdout left empty:
+**`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
+ONE JSON envelope on **stderr** with stdout left empty:
 
 | Code | `kind`      | What it means                  | Typical cause                                                                    |
 | ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------- |
