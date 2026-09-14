@@ -1626,3 +1626,29 @@ itself. His reason: _"you're essentially overloading an agent with multiple
 responsibilities, both doing the work, attending to the user, maintaining
 awareness of what's going on in the interface."_ E53's nudge is explicitly the
 **error case** for when that discipline slips, not a substitute for it.
+
+### E53 addendum — what the nudge actually measures
+
+It fired for real on Cole's own session within minutes of landing, reporting a
+26,857-second wait. Nothing had been forgotten: he was asking through the app
+and being answered in the terminal, so the app was watching one side of a
+conversation happening somewhere else.
+
+**So the honest description of the signal is "unanswered IN THIS CHANNEL", not
+"the agent forgot".** Those coincide in an ordinary session and came apart here
+because this period of work is mixed — Cole switching between "change this
+document" and "change the spell" — which is a property of building the thing
+while using it, not a state worth engineering around. Ruled: leave it. Cole:
+_"if both of us forget and we're chatting in a terminal or there's some mix, at
+some point you'll get a reminder from the app and you can respond… it just shows
+that it's working even if it's not actually needed."_
+
+Two things it did prove, which the scratch sessions could not:
+
+- **The restore nudge earns its keep.** A fresh agent joining a restored session
+  had no idea three questions were owed; the tail told it. That behaviour was
+  argued for on paper (in-memory, not persisted, so a restored wait re-reports)
+  and this is the first time it mattered.
+- **The clock-from-the-first-unanswered-message rule was right.** It named the
+  ORIGINAL question rather than the most recent, which is the one that had been
+  waiting longest — exactly what the rule exists for.
