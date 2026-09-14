@@ -12,12 +12,20 @@ description:
 ---
 
 <!--
-  DRAFT — NOT SHIPPED. scriptorium is in development (brief A, slice A). This
-  file lives in docs/projects/scriptorium/ on mind-mapper's precedent
-  (47238d7): a spell that has not coalesced does not claim a roster slot. It is
-  how the lead drives the spell during development. Ship it as
-  plugins/spellbook/skills/scriptorium/SKILL.md when the foundation is usable,
-  and unpin roster-drift, flag-invariant and the trigger-registry row then.
+  ⛔ SUPERSEDED, 2026-09-14 — KEPT AS HISTORY, NOT AS GUIDANCE.
+
+  The shipped skill is plugins/spellbook/skills/scriptorium/SKILL.md, and it is
+  not this file rewritten: it was rebuilt methodology-first, because this draft
+  was catalogue-shaped (tables for every verb, every tail event, every exit
+  code) at a time when the CLI could not explain itself. It can now — `help`
+  carries every verb with its flags, `schema` emits the declaration — so the
+  shipped version points there instead and spends its words on what the CLI
+  cannot say.
+
+  Everything below describes the spell as it stood around E18. Several claims
+  are now false: chat, annotations, the split diff, search and the context undo
+  all exist, and the "Not yet" list at the end is wrong in five places. Read the
+  shipped file for what is true; read this one only to see where it started.
 -->
 
 # Scriptorium — edit documents together

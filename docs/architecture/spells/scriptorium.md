@@ -150,11 +150,10 @@ alone: "made from v2" stays true after v2 is gone.
 **The agent's medium is the file.** `version-new` copies a version and prints
 its path; the agent then edits that file with its own tools. E2 is **detected,
 not prevented** — the daemon notices a write to the active version and preserves
-it as a new version rather than forbidding it. ⚠ The other half of the design is
-a social rule telling the agent not to, and **that rule is not published yet**:
-scriptorium has no `SKILL.md` (there is a draft at
-`docs/projects/scriptorium/SKILL.draft.md`). Until it ships, detection is the
-whole mechanism.
+it as a new version rather than forbidding it. The other half of the design is a
+social rule telling the agent not to, and **that rule is now published**: it is
+rule 2 of the shipped `SKILL.md`, stated as the one prohibition with a ⛔ on it.
+Detection is the floor under the rule, not the whole mechanism.
 
 ## 5 · Editing
 
