@@ -364,6 +364,24 @@ export type StructureOpType = StructureOp["type"];
 
 export type FsListEntry = { name: string; path: string; dir: boolean };
 
+/**
+ * E59's report.
+ *
+ * ⚠ ANOTHER HAND-WRITTEN MIRROR, for the same reason `GraphPayload` is one:
+ * this file is import-free so the surface and `dist/cli.js` never drag the
+ * daemon's modules. It is GUARDED the same way — `search.test.ts` asserts key
+ * equality with `search.ts`'s types in both directions, so a field added to one
+ * side alone fails the type check instead of drifting.
+ */
+export type SearchHit = { line: number; text: string; from: number; to: number };
+export type SearchReport = {
+  query: string;
+  documents: { path: string; slug?: string; name: string; title?: string; score: number }[];
+  text: { path: string; slug?: string; name: string; version?: number; hits: SearchHit[] }[];
+  count: number;
+  truncated: boolean;
+};
+
 /** The map of one set (E33). Shapes follow pdocs' `graph` where they overlap. */
 export type GraphPayload = {
   entry: string;
@@ -425,6 +443,8 @@ export type ClientMsg =
   | { type: "open.doc"; doc: string }
   | { type: "edit"; doc: string; version: number; text: string }
   | { type: "select"; selection: Selection | null }
+  /** E59: the header search bar. Empty query means "close the results". */
+  | { type: "search"; query: string; limit?: number }
   | { type: "say"; text: string; withSelection: boolean }
   | { type: "activate"; doc: string; version: number }
   /**
@@ -495,6 +515,12 @@ export type ServerMsg =
   | { type: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   | { type: "move.plan"; path: string; into: string; plan?: MovePlan; error?: string }
   | { type: "graph"; entry: string; graph?: GraphPayload; error?: string }
+  /**
+   * E59's answer. `query` rides along so a slow reply cannot overwrite the
+   * results of a query the human has already moved on from — the surface drops
+   * anything that does not match what is in the box.
+   */
+  | { type: "search.results"; report: SearchReport }
   /** A block the HUMAN may insert into their buffer — suggested, never written for them. */
   | {
       type: "meta.suggestion";
@@ -567,6 +593,14 @@ export type AgentCmd =
    * buries them in several hundred edges.
    */
   | { type: "dangling"; entry?: string }
+  /**
+   * E59: search the context. ⛔ THE ONE SEARCH VERB THERE IS, and deliberately
+   * cross-document only: a single document an agent can read or grep, but the
+   * ACTIVE VERSION of an open document is not at its original path, so grep
+   * over the workspace finds the saved file and misses what the human is
+   * reading. That asymmetry is the whole justification.
+   */
+  | { type: "search"; query: string; limit?: number }
   | { type: "backlinks"; path: string }
   /** Add a frontmatter block to a document that has none (E35). */
   | { type: "meta.init"; path: string; metaType?: string; by?: string }

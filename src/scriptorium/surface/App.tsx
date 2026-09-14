@@ -25,6 +25,7 @@ import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
 import { NotesPanel } from "./components/NotesPanel";
+import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
@@ -62,6 +63,20 @@ export function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
   const [theme, setTheme] = useState<Theme>(readAppliedTheme);
+  /**
+   * A search result the human clicked (E59): open this document, and scroll to
+   * `at` when it arrives. `seq` makes the same result clickable twice.
+   *
+   * ⚠ IT LIVES UP HERE because the search bar is in the HEADER and the editor
+   * is inside `Workspace`; passing a request down is what keeps `Workspace`'s
+   * reveal state where it belongs rather than hoisting the whole editor's
+   * plumbing to the top of the tree.
+   */
+  const [jump, setJump] = useState<{
+    path: string;
+    at?: { from: number; to: number };
+    seq: number;
+  } | null>(null);
 
   // ONE global theme, last choice wins (Cole, E21): kept in the HOME's prefs so
   // every session — each on its own port, where browser storage cannot follow —
@@ -88,6 +103,28 @@ export function App() {
         {state && (
           <span className="font-mono text-xs text-ink-faint">session {state.sessionId}</span>
         )}
+        {/* ⛔ CENTRED IN THE HEADER (Cole). `mx-auto` between the two flex
+            groups is what centres it against the WINDOW rather than against
+            whatever the label on its left happens to say today — a bar that
+            drifts when the session id changes length reads as misaligned. */}
+        {state && (
+          <div className="mx-auto flex min-w-0 flex-1 justify-center px-4">
+            <SearchBar
+              report={daemon.search}
+              onQuery={(query) => send({ type: "search", query })}
+              onOpen={(target) => {
+                send({ type: "open", path: target.path });
+                // The document has to arrive before it can be scrolled, so the
+                // jump is handed to the pane as a REQUEST rather than done here.
+                setJump({
+                  path: target.path,
+                  ...(target.at ? { at: target.at } : {}),
+                  seq: Date.now(),
+                });
+              }}
+            />
+          </div>
+        )}
         <span
           data-connection={connection}
           className="ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention"
@@ -104,7 +141,7 @@ export function App() {
         </Button>
       </header>
       {state ? (
-        <Workspace state={state} daemon={daemon} />
+        <Workspace state={state} daemon={daemon} jump={jump} />
       ) : (
         <div className="flex-1" aria-busy="true" />
       )}
@@ -120,9 +157,12 @@ export function App() {
 function Workspace({
   state,
   daemon,
+  jump,
 }: {
   state: PublicState;
   daemon: ReturnType<typeof useDaemon>;
+  /** E59: a clicked search result — open it, then scroll to the hit. */
+  jump: { path: string; at?: { from: number; to: number }; seq: number } | null;
 }) {
   const {
     send,
@@ -187,6 +227,19 @@ function Workspace({
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text = open ? texts.get(textKey(open.slug, open.active)) : undefined;
+
+  // ⛔ THE JUMP WAITS FOR THE DOCUMENT. A search result is clicked while another
+  // document is open, so `open` still names the old one for a frame or two;
+  // revealing immediately would scroll the WRONG document to an offset that
+  // means nothing in it. Keyed on `seq` and on the document actually being the
+  // one asked for.
+  const jumped = useRef<number>(0);
+  useEffect(() => {
+    if (!jump?.at || jump.seq === jumped.current) return;
+    if (!open || open.original !== jump.path) return;
+    jumped.current = jump.seq;
+    setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
+  }, [jump, open]);
 
   // A snapshot can name an open document whose text this viewer has never
   // received (a reload, a reconnect, the agent activating a version): ask once.

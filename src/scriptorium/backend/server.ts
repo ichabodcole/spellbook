@@ -488,6 +488,18 @@ export async function startDaemon(opts: StartOpts) {
         } else if (r.dirtyChanged) broadcastState();
         return;
       }
+      case "search": {
+        // ⛔ REPLIED TO THE ASKING SOCKET, NOT BROADCAST. A search is one
+        // viewer's question; pushing results to every client would put someone
+        // else's query in your pane. (The same reason `diff` replies rather
+        // than broadcasting.)
+        try {
+          reply(ws, { type: "search.results", report: session.searchAll(msg) });
+        } catch (e) {
+          reply(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
+        }
+        return;
+      }
       case "select":
         // AMBIENT state: stored and shown, never pushed onto the agent's tail.
         selection = msg.selection;
@@ -912,6 +924,8 @@ export async function startDaemon(opts: StartOpts) {
         return session.graphFor(cmd.entry) as unknown as Record<string, unknown>;
       case "dangling":
         return session.danglingLinks(cmd.entry);
+      case "search":
+        return session.searchAll(cmd) as unknown as Record<string, unknown>;
       case "backlinks":
         return session.backlinks(cmd.path);
       case "meta.init": {

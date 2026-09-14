@@ -1801,3 +1801,61 @@ sometimes exactly how you find the passage you want to talk about. The
 suppression is a two-line change if wanted
 (`update.transactions.some((t) => t.isUserEvent("select.search"))`), so the
 decision is worth more than the code. Not decided unilaterally.
+
+## E59 — search across the context
+
+Cole: a search bar in the header, centered; type and get a list of files where
+there's a match, click one and it opens. He raised **Fuse** as a library he has
+used and asked for an idiomatic answer.
+
+**⛔ TWO MATCHERS, BECAUSE THERE ARE TWO QUESTIONS.** Fuzzy on NAMES is for
+jumping ("mabak" → Maren's Bakery); exact on CONTENT is for finding ("where did
+I say 'asking-nicely'"). Note apps split these and it is not an accident. Fuzzy
+full-text would be the worst of both: `bridge` would surface documents that
+merely contain similar-looking letters, and "this phrase is on line 29" would
+stop being trustworthy — which is the only thing a content search is for. Shown
+as two groups, so the answer never pretends to be one ranking.
+
+**Hand-rolled scorer, no dependency** (Cole's call, offered against Fuse): there
+is no second engine this has to agree with, so fuzzy ranking is a self-contained
+taste judgment with no drift risk. **Its cells assert ORDERINGS, never numbers**
+— "contiguous beats scattered", "a word start beats mid-word", "shorter wins a
+tie" — so the weights stay retunable without rewriting the suite, which is the
+only way a scorer like this stays changeable.
+
+**⛔ THE SWAP SEAM IS CORPUS-SHAPED, AND THAT IS THE DESIGN.** Cole asked for
+the hand-rolled code to be easy to replace with Fuse. The obvious seam — a
+per-item `score(name, query)` hook — looks smaller and would have FOUGHT the
+library it exists to admit: Fuse indexes a list and searches it, it does not
+score one string at a time. `NameSearch(candidates, query, limit) → ranked` fits
+both, so a move to Fuse is one adapter and one default changed, with nothing in
+the module, the session, the wire or the surface moving. There is a cell that
+proves it with a stand-in matcher.
+
+### Why the agent gets a verb at all — Cole's question, answered
+
+He asked whether an agent needs this or can just grep. **It can grep files; it
+cannot grep what the human is looking at.** A document open in the session is
+shown as its ACTIVE VERSION, which lives under the session home and not at the
+original path — so grep over the workspace finds the SAVED file and silently
+misses the text being read. Demonstrated rather than argued: a phrase written
+only into `v2` was invisible to `grep -rn` over the folder and found by `search`
+at `maren.md v2` line 18.
+
+So: **one cross-document verb, and no in-document verb.** For a single document
+an agent can read it or grep it, and a verb there would be the layer that adds
+nothing — which is the judgment he asked me to make.
+
+**The surface drops stale answers.** Replies are asynchronous and the human
+keeps typing, so the report carries its `query` and anything not matching the
+box is discarded: results for a question already moved past are worse than an
+empty pane.
+
+**And the jump waits for the document.** A result is clicked while another
+document is open, so revealing immediately would scroll the WRONG document to an
+offset that means nothing in it. The request is keyed on a sequence and on the
+open document actually being the one asked for.
+
+Driven in a browser, in both themes: ⌘K focuses, "zephyr-clause" finds the
+active-version-only line, clicking it opens `maren.md` and selects the phrase,
+and "mar" shows both groups at once.

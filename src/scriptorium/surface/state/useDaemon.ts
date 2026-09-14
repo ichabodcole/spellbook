@@ -13,6 +13,7 @@ import type {
   GraphPayload,
   MovePlan,
   PublicState,
+  SearchReport,
   ServerMsg,
   StructureOpType,
 } from "../../backend/protocol";
@@ -36,6 +37,8 @@ export type Done = { op: StructureOpType; path: string; seq: number };
 export function useDaemon(): {
   state: PublicState | null;
   connection: Connection;
+  /** E59: the daemon's last search answer, or null before the first one. */
+  search: SearchReport | null;
   lastError: string | null;
   clearError: () => void;
   texts: ReadonlyMap<string, string>;
@@ -57,6 +60,8 @@ export function useDaemon(): {
   // The latest comparison the daemon computed (E36). Live state rather than a
   // promise: a merge changes the document, and the view must re-read itself.
   const [diff, setDiff] = useState<DiffPayload | null>(null);
+  /** E59's last answer. The caller drops it when the query has moved on. */
+  const [search, setSearch] = useState<SearchReport | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
@@ -99,6 +104,8 @@ export function useDaemon(): {
           });
         } else if (msg.type === "diff") {
           setDiff(msg);
+        } else if (msg.type === "search.results") {
+          setSearch(msg.report);
         } else if (msg.type === "structure.done") {
           setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
         } else if (msg.type === "move.plan") {
@@ -255,6 +262,7 @@ export function useDaemon(): {
   return {
     state,
     connection,
+    search,
     lastError,
     clearError,
     texts,

@@ -235,6 +235,7 @@ const CLI_OPTIONS = {
   hunks: { type: "string" },
   into: { type: "string" },
   lifecycle: { type: "string" },
+  limit: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
   patch: { type: "boolean" },
@@ -1151,6 +1152,24 @@ const COMMANDS: CommandSpec[] = [
         if (typeof flags[k] === "string") filter[k] = flags[k];
       if (typeof flags.since === "string") filter.since = parseSinceDate(flags.since);
       printJson(await postCmd(session, { type: "find", filter }));
+    },
+  },
+  {
+    name: "search",
+    flags: [...SESSION, "limit"],
+    positionals: [{ name: "query", required: true, variadic: true }],
+    describe:
+      "search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
+    run: async (pos, flags, session) => {
+      const limit =
+        typeof flags.limit === "string" ? parseCount(flags.limit, "search --limit") : undefined;
+      printJson(
+        await postCmd(session, {
+          type: "search",
+          query: pos.join(" "),
+          ...(limit !== undefined ? { limit } : {}),
+        }),
+      );
     },
   },
   {

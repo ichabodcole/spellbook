@@ -78,6 +78,7 @@ import type {
   Version,
   VersionAuthor,
 } from "./protocol";
+import { type Candidate, type SearchReport, searchDocuments } from "./search";
 import {
   DOC_EXTENSIONS,
   docPaths,
@@ -1728,6 +1729,52 @@ export class Session {
       }
     });
     return { entry: e.id, ...g };
+  }
+
+  /**
+   * Search everything in the context: fuzzy over names, exact over content (E59).
+   *
+   * ⛔ THIS IS WHY THE VERB EXISTS AT ALL, and the reason is one line: a
+   * document open in the session is shown as its ACTIVE VERSION, which lives
+   * under the session home and not at the original path. An agent grepping the
+   * workspace therefore finds the SAVED file and silently misses the text the
+   * human is reading — so "search what you can see" is a question only the
+   * session can answer. Everything else about searching files, an agent can
+   * already do with grep, which is why there is no in-document verb.
+   *
+   * ⚠ Hidden documents are excluded, because the context is what the human
+   * chose to look at; a result they cannot see in the sidebar would be a result
+   * they cannot open.
+   */
+  searchAll(opts: { query: string; limit?: number }): SearchReport {
+    const candidates: Candidate[] = [];
+    const seen = new Set<string>();
+    for (const entry of this.m.context) {
+      for (const path of docPaths(entry)) {
+        if (seen.has(path)) continue;
+        seen.add(path);
+        const record = this.m.docs.find((d) => d.original === path);
+        const title = readMeta(readHead(path))?.title;
+        candidates.push({
+          path,
+          name: basename(path),
+          ...(record ? { slug: record.slug, version: record.active } : {}),
+          ...(title ? { title } : {}),
+        });
+      }
+    }
+    return searchDocuments(
+      candidates,
+      opts.query,
+      (c) => {
+        // The ACTIVE VERSION when the session has one — see the note above.
+        const record =
+          c.slug === undefined ? undefined : this.m.docs.find((d) => d.slug === c.slug);
+        if (record) return this.activeText(record);
+        return readFileSync(c.path, "utf8");
+      },
+      opts.limit !== undefined ? { total: opts.limit } : {},
+    );
   }
 
   /**

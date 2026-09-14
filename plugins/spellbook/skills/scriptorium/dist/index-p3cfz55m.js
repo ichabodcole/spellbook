@@ -19619,8 +19619,14 @@ var __iconNode33 = [
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
 var Save = createLucideIcon("save", __iconNode33);
-// node_modules/lucide-react/dist/esm/icons/sun.mjs
+// node_modules/lucide-react/dist/esm/icons/search.mjs
 var __iconNode34 = [
+  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
+  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
+];
+var Search = createLucideIcon("search", __iconNode34);
+// node_modules/lucide-react/dist/esm/icons/sun.mjs
+var __iconNode35 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -19631,44 +19637,44 @@ var __iconNode34 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode34);
+var Sun = createLucideIcon("sun", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode35);
+var Trash2 = createLucideIcon("trash-2", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode36);
+var UndoDot = createLucideIcon("undo-dot", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode37);
+var UserCheck = createLucideIcon("user-check", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode38 = [
+var __iconNode39 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode38);
+var User = createLucideIcon("user", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode39);
+var X = createLucideIcon("x", __iconNode40);
 // src/scriptorium/surface/App.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react32 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -72507,62 +72513,256 @@ function NotesPanel({
   }, undefined, true, undefined, this);
 }
 
-// src/scriptorium/surface/components/TasksPanel.tsx
+// src/scriptorium/surface/components/SearchBar.tsx
+var import_react28 = __toESM(require_react(), 1);
 var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
+var DEBOUNCE_MS = 140;
+function SearchBar({
+  report,
+  onQuery,
+  onOpen
+}) {
+  const [query, setQuery] = import_react28.useState("");
+  const [open3, setOpen] = import_react28.useState(false);
+  const box = import_react28.useRef(null);
+  const field = import_react28.useRef(null);
+  import_react28.useEffect(() => {
+    const q3 = query.trim();
+    if (q3 === "") {
+      onQuery("");
+      return;
+    }
+    const t2 = setTimeout(() => onQuery(q3), DEBOUNCE_MS);
+    return () => clearTimeout(t2);
+  }, [query, onQuery]);
+  import_react28.useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        field.current?.focus();
+        field.current?.select();
+        return;
+      }
+      if (e.key === "Escape" && open3)
+        setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open3]);
+  import_react28.useEffect(() => {
+    const onDown = (e) => {
+      if (box.current && !box.current.contains(e.target))
+        setOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, []);
+  const q2 = query.trim();
+  const fresh = report && report.query === q2 ? report : null;
+  const showing = open3 && q2 !== "";
+  const nothing = fresh !== null && fresh.documents.length === 0 && fresh.text.length === 0;
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+    ref: box,
+    className: "relative w-full max-w-md",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        className: "flex items-center gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Search, {
+            "aria-hidden": true,
+            className: "size-3.5 shrink-0 text-ink-faint"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("input", {
+            ref: field,
+            value: query,
+            onChange: (e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            },
+            onFocus: () => setOpen(true),
+            placeholder: "Search documents (⌘K)",
+            "aria-label": "Search documents",
+            spellCheck: false,
+            className: cn("min-w-0 flex-1 bg-transparent text-xs text-ink outline-none", "placeholder:text-ink-faint")
+          }, undefined, false, undefined, this),
+          q2 !== "" && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("button", {
+            type: "button",
+            "aria-label": "Clear the search",
+            onClick: () => {
+              setQuery("");
+              setOpen(false);
+              field.current?.focus();
+            },
+            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
+            children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(X, {
+              className: "size-3"
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      showing && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        className: cn("absolute top-full right-0 left-0 z-50 mt-1 max-h-[60vh] overflow-auto", "rounded-md border border-edge bg-surface-raised shadow-lg"),
+        children: fresh === null ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+          className: "px-3 py-2 text-xs text-ink-faint",
+          children: "Searching…"
+        }, undefined, false, undefined, this) : nothing ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+          className: "px-3 py-2 text-xs text-ink-dim",
+          children: [
+            "Nothing matches ",
+            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+              className: "font-mono text-ink",
+              children: q2
+            }, undefined, false, undefined, this),
+            "."
+          ]
+        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(jsx_dev_runtime26.Fragment, {
+          children: [
+            fresh.documents.length > 0 && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("section", {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("h2", {
+                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+                  children: "Documents"
+                }, undefined, false, undefined, this),
+                fresh.documents.map((d) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("button", {
+                  type: "button",
+                  onClick: () => {
+                    onOpen({ path: d.path, ...d.slug ? { slug: d.slug } : {} });
+                    setOpen(false);
+                  },
+                  className: "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-bg",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(FileText, {
+                      "aria-hidden": true,
+                      className: "size-3.5 shrink-0 text-ink-faint"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                      className: "truncate text-ink",
+                      children: d.name
+                    }, undefined, false, undefined, this),
+                    d.title && d.title !== d.name && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                      className: "truncate text-ink-faint",
+                      children: d.title
+                    }, undefined, false, undefined, this)
+                  ]
+                }, `name:${d.path}`, true, undefined, this))
+              ]
+            }, undefined, true, undefined, this),
+            fresh.text.length > 0 && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("section", {
+              className: "border-t border-edge",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("h2", {
+                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+                  children: [
+                    "In text (",
+                    fresh.count,
+                    fresh.truncated ? "+" : "",
+                    ")"
+                  ]
+                }, undefined, true, undefined, this),
+                fresh.text.map((t2) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+                      className: "truncate px-3 pt-1.5 text-[11px] text-ink-dim",
+                      children: [
+                        t2.name,
+                        t2.version !== undefined && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                          className: "text-ink-faint",
+                          children: [
+                            " · v",
+                            t2.version
+                          ]
+                        }, undefined, true, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
+                    t2.hits.map((h) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("button", {
+                      type: "button",
+                      onClick: () => {
+                        onOpen({
+                          path: t2.path,
+                          ...t2.slug ? { slug: t2.slug } : {},
+                          at: { from: h.from, to: h.to }
+                        });
+                        setOpen(false);
+                      },
+                      className: "flex w-full items-baseline gap-2 px-3 py-1 text-left hover:bg-bg",
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                          className: "shrink-0 font-mono text-[10px] text-ink-faint",
+                          children: h.line
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                          className: "truncate font-mono text-[11px] text-ink",
+                          children: h.text.trim()
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, `${t2.path}:${h.from}`, true, undefined, this))
+                  ]
+                }, `text:${t2.path}`, true, undefined, this))
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/scriptorium/surface/components/TasksPanel.tsx
+var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
 var when2 = (ms) => new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(new Date(ms));
 function Spinner({ className }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Loader, {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Loader, {
     "aria-hidden": true,
     className: cn("size-3 animate-spin", className)
   }, undefined, false, undefined, this);
 }
 function Row2({ task, onDone }) {
   const open3 = task.doneAt === undefined;
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
     className: cn("group/task rounded-md border border-edge bg-bg px-2 py-1.5 text-xs", !open3 && "opacity-60"),
     children: [
-      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
         className: "flex items-start gap-1.5",
         children: [
-          open3 ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Spinner, {
+          open3 ? /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Spinner, {
             className: "mt-0.5 shrink-0 text-ink-faint"
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Check, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Check, {
             "aria-hidden": true,
             className: "mt-0.5 size-3 shrink-0 text-added"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
             className: "min-w-0 flex-1 whitespace-pre-wrap text-ink",
             children: task.text
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      task.status && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+      task.status && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
         className: "mt-0.5 pl-4.5 text-[11px] text-ink-dim italic",
         children: task.status
       }, undefined, false, undefined, this),
-      task.outcome && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+      task.outcome && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
         className: "mt-0.5 pl-4.5 text-[11px] text-ink-dim",
         children: task.outcome
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
         className: "mt-1 flex items-center gap-1.5 pl-4.5 text-[10px] text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
             children: task.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
             children: "·"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
             children: when2(task.createdAt)
           }, undefined, false, undefined, this),
-          !open3 && task.doneAt !== undefined && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+          !open3 && task.doneAt !== undefined && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
             children: [
               "· done ",
               when2(task.doneAt)
             ]
           }, undefined, true, undefined, this),
-          open3 && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button3, {
+          open3 && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button3, {
             type: "button",
             variant: "ghost",
             size: "sm",
@@ -72582,26 +72782,26 @@ function TasksPanel({
 }) {
   const open3 = tasks.filter((t2) => t2.doneAt === undefined);
   const done = tasks.filter((t2) => t2.doneAt !== undefined);
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
     className: "min-h-0 flex-1 overflow-auto p-3",
-    children: tasks.length === 0 ? /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+    children: tasks.length === 0 ? /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
       className: "px-1 py-6 text-center text-xs text-ink-faint",
       children: "Work the agent has started shows up here, and clears when it finishes."
-    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
       className: "flex flex-col gap-2",
       children: [
-        open3.map((t2) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Row2, {
+        open3.map((t2) => /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Row2, {
           task: t2,
           onDone
         }, t2.id, false, undefined, this)),
-        done.length > 0 && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        done.length > 0 && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
           className: "mt-1 flex items-center gap-2",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
               className: "text-[10px] tracking-wide text-ink-faint uppercase",
               children: "Done"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button3, {
+            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button3, {
               type: "button",
               variant: "ghost",
               size: "sm",
@@ -72616,7 +72816,7 @@ function TasksPanel({
             }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        done.slice(0, 20).map((t2) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Row2, {
+        done.slice(0, 20).map((t2) => /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Row2, {
           task: t2,
           onDone
         }, t2.id, false, undefined, this))
@@ -72626,13 +72826,13 @@ function TasksPanel({
 }
 
 // src/scriptorium/surface/components/TaskToasts.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 function TaskToasts({
   tasks,
   announce
 }) {
-  const seen = import_react28.useRef(null);
-  import_react28.useEffect(() => {
+  const seen = import_react29.useRef(null);
+  import_react29.useEffect(() => {
     const done = new Set(tasks.filter((t2) => t2.doneAt !== undefined).map((t2) => t2.id));
     if (seen.current === null) {
       seen.current = done;
@@ -72649,26 +72849,26 @@ function TaskToasts({
 }
 
 // src/scriptorium/surface/components/Toasts.tsx
-var import_react29 = __toESM(require_react(), 1);
-var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react30 = __toESM(require_react(), 1);
+var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
 var TOAST_MS = 6000;
 function useToasts() {
-  const [toasts, setToasts] = import_react29.useState([]);
-  const next = import_react29.useRef(1);
-  const timers = import_react29.useRef(new Map);
-  const dismiss = import_react29.useCallback((id) => {
+  const [toasts, setToasts] = import_react30.useState([]);
+  const next = import_react30.useRef(1);
+  const timers = import_react30.useRef(new Map);
+  const dismiss = import_react30.useCallback((id) => {
     const timer2 = timers.current.get(id);
     if (timer2)
       clearTimeout(timer2);
     timers.current.delete(id);
     setToasts((prev) => prev.filter((t2) => t2.id !== id));
   }, []);
-  const announce = import_react29.useCallback((title, description) => {
+  const announce = import_react30.useCallback((title, description) => {
     const id = next.current++;
     setToasts((prev) => [...prev, { id, title, ...description ? { description } : {} }]);
     timers.current.set(id, setTimeout(() => dismiss(id), TOAST_MS));
   }, [dismiss]);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     const pending = timers.current;
     return () => {
       for (const timer2 of pending.values())
@@ -72684,32 +72884,32 @@ function Toasts({
 }) {
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
     role: "status",
     "aria-live": "polite",
     className: "pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2",
-    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
+    children: toasts.map((t2) => /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
       className: cn("pointer-events-auto flex items-start gap-2 rounded-md border border-edge", "bg-surface-raised px-3 py-2 text-sm text-ink shadow-lg"),
       children: [
-        /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
           className: "min-w-0 flex-1",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
               className: "font-medium",
               children: t2.title
             }, undefined, false, undefined, this),
-            t2.description && /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("p", {
+            t2.description && /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
               className: "mt-0.5 text-xs text-ink-dim",
               children: t2.description
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("button", {
+        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("button", {
           type: "button",
           onClick: () => onDismiss(t2.id),
           "aria-label": "Dismiss",
           className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-          children: /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(X, {
+          children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(X, {
             "aria-hidden": true,
             className: "size-3.5"
           }, undefined, false, undefined, this)
@@ -72720,18 +72920,18 @@ function Toasts({
 }
 
 // src/scriptorium/surface/components/WaitingBadge.tsx
-var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
 var LABEL = {
   working: "working on this…",
   stalled: "took this in, then went quiet — may be stuck"
 };
 function WaitingBadge({ badge }) {
   const working = badge === "working";
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("p", {
     "aria-live": "polite",
     className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention"),
     children: [
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
         "aria-hidden": true,
         className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
       }, undefined, false, undefined, this),
@@ -72767,21 +72967,22 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react30 = __toESM(require_react(), 1);
+var import_react31 = __toESM(require_react(), 1);
 var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
-  const [state, setState] = import_react30.useState(null);
-  const [connection, setConnection] = import_react30.useState("connecting");
-  const [lastError, setLastError] = import_react30.useState(null);
-  const [texts, setTexts] = import_react30.useState(() => new Map);
-  const [done, setDone] = import_react30.useState(null);
-  const [diff, setDiff] = import_react30.useState(null);
-  const wsRef = import_react30.useRef(null);
-  const pending = import_react30.useRef(new Map);
-  const plans = import_react30.useRef(new Map);
-  const maps = import_react30.useRef(new Map);
-  const suggestions = import_react30.useRef(new Map);
-  import_react30.useEffect(() => {
+  const [state, setState] = import_react31.useState(null);
+  const [connection, setConnection] = import_react31.useState("connecting");
+  const [lastError, setLastError] = import_react31.useState(null);
+  const [texts, setTexts] = import_react31.useState(() => new Map);
+  const [done, setDone] = import_react31.useState(null);
+  const [diff, setDiff] = import_react31.useState(null);
+  const [search3, setSearch] = import_react31.useState(null);
+  const wsRef = import_react31.useRef(null);
+  const pending = import_react31.useRef(new Map);
+  const plans = import_react31.useRef(new Map);
+  const maps = import_react31.useRef(new Map);
+  const suggestions = import_react31.useRef(new Map);
+  import_react31.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer2;
@@ -72816,6 +73017,8 @@ function useDaemon() {
           });
         } else if (msg.type === "diff") {
           setDiff(msg);
+        } else if (msg.type === "search.results") {
+          setSearch(msg.report);
         } else if (msg.type === "structure.done") {
           setDone((prev) => ({ op: msg.op, path: msg.path, seq: (prev?.seq ?? 0) + 1 }));
         } else if (msg.type === "move.plan") {
@@ -72878,12 +73081,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react30.useCallback((msg) => {
+  const send = import_react31.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react30.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react31.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -72897,7 +73100,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react30.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react31.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -72912,7 +73115,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react30.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react31.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -72926,7 +73129,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const suggestMeta = import_react30.useCallback((path2) => new Promise((resolve) => {
+  const suggestMeta = import_react31.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -72940,7 +73143,7 @@ function useDaemon() {
     suggestions.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
   }), []);
-  const noteText = import_react30.useCallback((doc2, version3, text4) => {
+  const noteText = import_react31.useCallback((doc2, version3, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version3);
       if (prev.get(key) === text4)
@@ -72950,10 +73153,11 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react30.useCallback(() => setLastError(null), []);
+  const clearError = import_react31.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
+    search: search3,
     lastError,
     clearError,
     texts,
@@ -72969,7 +73173,7 @@ function useDaemon() {
 }
 
 // src/scriptorium/surface/App.tsx
-var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = ["context", "document", "chat"];
 var LAYOUT_ID = "scriptorium:panes";
 var SPLIT_PANES = ["doc-raw", "doc-rendered"];
@@ -72981,7 +73185,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function PaneHeading({ children }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
     className: "flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children
   }, undefined, false, undefined, this);
@@ -72990,9 +73194,10 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react31.useState(readAppliedTheme);
+  const [theme2, setTheme] = import_react32.useState(readAppliedTheme);
+  const [jump, setJump] = import_react32.useState(null);
   const savedTheme = state?.prefs.theme;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -73004,41 +73209,57 @@ function App() {
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
   };
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("header", {
         className: "flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
             className: "font-manuscript text-base text-ink",
             children: "scriptorium"
           }, undefined, false, undefined, this),
-          state && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
             className: "font-mono text-xs text-ink-faint",
             children: [
               "session ",
               state.sessionId
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+          state && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+            className: "mx-auto flex min-w-0 flex-1 justify-center px-4",
+            children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SearchBar, {
+              report: daemon.search,
+              onQuery: (query) => send({ type: "search", query }),
+              onOpen: (target) => {
+                send({ type: "open", path: target.path });
+                setJump({
+                  path: target.path,
+                  ...target.at ? { at: target.at } : {},
+                  seq: Date.now()
+                });
+              }
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
             "data-connection": connection,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: toggleTheme,
             "aria-label": theme2 === "dark" ? "Switch to light theme" : "Switch to dark theme",
-            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Moon, {}, undefined, false, undefined, this)
+            children: theme2 === "dark" ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Sun, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Moon, {}, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Workspace, {
+      state ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Workspace, {
         state,
-        daemon
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+        daemon,
+        jump
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
         className: "flex-1",
         "aria-busy": "true"
       }, undefined, false, undefined, this)
@@ -73047,7 +73268,8 @@ function App() {
 }
 function Workspace({
   state,
-  daemon
+  daemon,
+  jump
 }) {
   const {
     send,
@@ -73063,9 +73285,9 @@ function Workspace({
     clearError,
     done
   } = daemon;
-  const prefsRef = import_react31.useRef(state.prefs);
+  const prefsRef = import_react32.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react31.useMemo(() => ({
+  const storage = import_react32.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
@@ -73077,19 +73299,28 @@ function Workspace({
   });
   const saved = state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const [against, setAgainst] = import_react31.useState("original");
+  const [against, setAgainst] = import_react32.useState("original");
   const { toasts, announce, dismiss } = useToasts();
-  const [selection, setSelection] = import_react31.useState(null);
-  const [rightPane, setRightPane] = import_react31.useState("conversation");
-  const [reveal, setReveal] = import_react31.useState(null);
-  const [focusedNote, setFocusedNote] = import_react31.useState(null);
+  const [selection, setSelection] = import_react32.useState(null);
+  const [rightPane, setRightPane] = import_react32.useState("conversation");
+  const [reveal, setReveal] = import_react32.useState(null);
+  const [focusedNote, setFocusedNote] = import_react32.useState(null);
   const open3 = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open3?.notes ?? []).filter((n) => !n.resolved);
   const openTasks = state.tasks.filter((t2) => t2.doneAt === undefined);
   const activeDoc = open3?.entryId && open3.rel !== null ? { entryId: open3.entryId, rel: open3.rel } : null;
   const text4 = open3 ? texts.get(textKey(open3.slug, open3.active)) : undefined;
-  const asked = import_react31.useRef(new Set);
-  import_react31.useEffect(() => {
+  const jumped = import_react32.useRef(0);
+  import_react32.useEffect(() => {
+    if (!jump?.at || jump.seq === jumped.current)
+      return;
+    if (!open3 || open3.original !== jump.path)
+      return;
+    jumped.current = jump.seq;
+    setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
+  }, [jump, open3]);
+  const asked = import_react32.useRef(new Set);
+  import_react32.useEffect(() => {
     if (!open3 || text4 !== undefined)
       return;
     const key = textKey(open3.slug, open3.active);
@@ -73101,7 +73332,7 @@ function Workspace({
   const openSlug = open3?.slug ?? null;
   const activeVersion = open3?.active ?? null;
   const original = open3?.original ?? null;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     if (!openSlug || activeVersion === null || original === null)
       return;
     send({
@@ -73124,7 +73355,7 @@ function Workspace({
     selection?.text,
     send
   ]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     if (mode !== "compare" || !open3)
       return;
     if (against === open3.active || typeof against === "number" && !open3.versions.some((v) => v.n === against)) {
@@ -73133,9 +73364,9 @@ function Workspace({
     }
     send({ type: "diff", doc: open3.slug, against });
   }, [mode, open3, against, text4, send]);
-  const openRef = import_react31.useRef(open3);
+  const openRef = import_react32.useRef(open3);
   openRef.current = open3;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -73147,42 +73378,42 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react31.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react32.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(jsx_dev_runtime29.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(jsx_dev_runtime30.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ActiveVersionToast, {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ActiveVersionToast, {
         doc: open3,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(TaskToasts, {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(TaskToasts, {
         tasks: state.tasks,
         announce
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Toasts, {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Toasts, {
         toasts,
         onDismiss: dismiss
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanelGroup, {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: layout2.defaultLayout,
         onLayoutChanged: layout2.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizablePanel, {
             id: "context",
             defaultSize: "22",
             minSize: "12",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(PaneHeading, {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(PaneHeading, {
                 children: "Context"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextSidebar, {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextSidebar, {
                 entries: state.context,
                 activeDoc,
                 userHome: state.userHome,
@@ -73203,15 +73434,15 @@ function Workspace({
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizablePanel, {
             id: "document",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col bg-bg",
-            children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(DocumentPane, {
+            children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(DocumentPane, {
               doc: open3,
               text: text4,
               mode,
@@ -73284,26 +73515,26 @@ function Workspace({
               onRevert: () => open3 && send({ type: "revert", doc: open3.slug })
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizableHandle, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizableHandle, {
             withHandle: true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ResizablePanel, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ResizablePanel, {
             id: "chat",
             defaultSize: "28",
             minSize: "15",
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
                 className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
-                children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("button", {
+                children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("button", {
                   type: "button",
                   onClick: () => setRightPane(which),
                   "aria-pressed": rightPane === which,
                   className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
                     className: "flex items-center gap-1",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Spinner, {
+                      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Spinner, {
                         className: "text-ink-dim"
                       }, undefined, false, undefined, this),
                       `Tasks (${openTasks.length})`
@@ -73311,11 +73542,11 @@ function Workspace({
                   }, undefined, true, undefined, this) : which
                 }, which, false, undefined, this))
               }, undefined, false, undefined, this),
-              rightPane === "tasks" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(TasksPanel, {
+              rightPane === "tasks" ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(TasksPanel, {
                 tasks: state.tasks,
                 onDone: (id) => send({ type: "task.done", id }),
                 onClear: () => send({ type: "tasks.clear" })
-              }, undefined, false, undefined, this) : rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(NotesPanel, {
+              }, undefined, false, undefined, this) : rightPane === "notes" ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(NotesPanel, {
                 notes: open3?.notes ?? [],
                 focusedId: focusedNote,
                 selection: open3 && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
@@ -73340,29 +73571,29 @@ function Workspace({
                   if (open3)
                     send({ type: "note.remove", doc: open3.slug, id });
                 }
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(jsx_dev_runtime29.Fragment, {
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(jsx_dev_runtime30.Fragment, {
                 children: [
-                  state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Empty, {
+                  state.chat.length === 0 ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Empty, {
                     className: "flex-1",
-                    children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyHeader, {
+                    children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(EmptyHeader, {
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyMedia, {
+                        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(EmptyMedia, {
                           variant: "icon",
-                          children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
+                          children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(MessagesSquare, {}, undefined, false, undefined, this)
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyTitle, {
+                        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(EmptyTitle, {
                           children: "No messages yet"
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(EmptyDescription, {
+                        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(EmptyDescription, {
                           children: "Ask the agent something. If you have text selected, it comes too."
                         }, undefined, false, undefined, this)
                       ]
                     }, undefined, true, undefined, this)
-                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ActivityLog, {
+                  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ActivityLog, {
                     chat: state.chat,
                     waiting: state.waiting
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ChatComposer, {
+                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ChatComposer, {
                     connected: connection === "open",
                     attachable: open3 && selection ? {
                       doc: open3.slug,
@@ -73387,29 +73618,29 @@ function ActivityLog({
   chat,
   waiting
 }) {
-  const end = import_react31.useRef(null);
+  const end = import_react32.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2, waiting?.badge]);
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
     role: "log",
     "aria-label": "Activity",
     className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3",
     children: [
-      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+      chat.slice(-200).map((m2) => /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
         "data-who": m2.who,
         className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
             className: "mr-1.5 font-medium text-ink-faint",
             children: m2.who === "system" ? "·" : m2.who === "agent" ? "Agent" : "You"
           }, undefined, false, undefined, this),
           m2.text,
-          m2.selection && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("p", {
+          m2.selection && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
             className: "mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
                 className: "text-ink-faint",
                 children: [
                   m2.selection.doc,
@@ -73420,16 +73651,16 @@ function ActivityLog({
                   m2.selection.fromLine === m2.selection.toLine ? `line ${m2.selection.fromLine}` : `lines ${m2.selection.fromLine}–${m2.selection.toLine}`
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("br", {}, undefined, false, undefined, this),
               m2.selection.text.replace(/\s+/gu, " ").trim()
             ]
           }, undefined, true, undefined, this),
-          waiting?.messageId === m2.id && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(WaitingBadge, {
+          waiting?.messageId === m2.id && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(WaitingBadge, {
             badge: waiting.badge
           }, undefined, false, undefined, this)
         ]
       }, m2.id, true, undefined, this)),
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
         ref: end
       }, undefined, false, undefined, this)
     ]
@@ -73437,7 +73668,7 @@ function ActivityLog({
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime31 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime30.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime31.jsxDEV(App, {}, undefined, false, undefined, this));
