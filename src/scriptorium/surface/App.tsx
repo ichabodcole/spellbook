@@ -22,8 +22,9 @@ import type {
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ChatComposer } from "./components/ChatComposer";
 import { ContextSidebar } from "./components/context/ContextSidebar";
-import { joinPath } from "./components/context/model";
+import { joinPath, shortPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
+import { HistoryArrows } from "./components/HistoryArrows";
 import { NotesPanel } from "./components/NotesPanel";
 import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
@@ -48,10 +49,11 @@ const CONNECTION_LABEL: Record<Connection, string> = {
   closed: "daemon unreachable — retrying",
 };
 
-function PaneHeading({ children }: { children: string }) {
+function PaneHeading({ children, actions }: { children: string; actions?: React.ReactNode }) {
   return (
-    <div className="flex h-9 shrink-0 items-center border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase">
+    <div className="flex h-9 shrink-0 items-center gap-1 border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase">
       {children}
+      {actions && <div className="ml-auto flex items-center gap-0.5">{actions}</div>}
     </div>
   );
 }
@@ -348,8 +350,45 @@ function Workspace({
           defaultSize="22"
           minSize="12"
           className="flex flex-col bg-surface"
+          // ⛔ ⌘Z HERE MEANS THE CONTEXT, AND ONLY WHILE THE FOCUS IS IN HERE
+          // (Cole: "if you've got that area focused, shortcuts could do it").
+          // Scoped by letting the event BUBBLE to this panel rather than
+          // listening on the window: the editor's ⌘Z must keep belonging to
+          // CodeMirror, and a global listener would have to guess which one the
+          // human meant. Focus is the answer, so focus is the mechanism.
+          //
+          // ⚠ A DELETING UNDO IS NOT OFFERED TO THE KEYBOARD. There is no
+          // dialog in a keystroke, and a reflex that removes a file is the one
+          // thing this must not grow into; the arrow (which can ask) stays the
+          // only way through that step.
+          onKeyDown={(e) => {
+            if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+            e.preventDefault();
+            if (e.shiftKey) {
+              if (state.history.canRedo) send({ type: "history.redo" });
+              return;
+            }
+            if (state.history.canUndo && !state.history.undoDeletes) send({ type: "history.undo" });
+          }}
         >
-          <PaneHeading>Context</PaneHeading>
+          <PaneHeading
+            actions={
+              <HistoryArrows
+                history={state.history}
+                display={(p) => shortPath(p, state.userHome, 2)}
+                onUndo={(confirmDelete) =>
+                  send(
+                    confirmDelete
+                      ? { type: "history.undo", confirmDelete }
+                      : { type: "history.undo" },
+                  )
+                }
+                onRedo={() => send({ type: "history.redo" })}
+              />
+            }
+          >
+            Context
+          </PaneHeading>
           <ContextSidebar
             entries={state.context}
             activeDoc={activeDoc}

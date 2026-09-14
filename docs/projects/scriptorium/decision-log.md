@@ -1859,3 +1859,64 @@ open document actually being the one asked for.
 Driven in a browser, in both themes: ⌘K focuses, "zephyr-clause" finds the
 active-version-only line, clicking it opens `maren.md` and selects the phrase,
 and "mar" shows both groups at once.
+
+## E60 — the context has its own undo
+
+Cole: _"undo redo in terms of the context sidebar — moving things around,
+adding… those left and right arrows at the top of the context header… as you're
+moving things around, those buttons light up… letting the user know that there's
+an undo for this sidebar that isn't the same as undo redo when you're in the
+editor."_
+
+**⛔ PLACEMENT IS THE EXPLANATION.** ⌘Z inside the text belongs to CodeMirror
+and always will; these arrows step through acts on the SHAPE of the context.
+Putting them in the context header is the only honest way to say which undo is
+which, and the keyboard follows the same rule — ⌘Z is the context's only while
+focus is INSIDE that pane, scoped by letting the event bubble to the panel
+rather than by a window listener that would have to guess what the human meant.
+
+**⛔ UNDOING A CREATION DELETES, BEHIND A CONFIRMATION — and this reversed my
+own design.** I first built a hard block (undo never deletes) and Cole pushed
+back: blocking does not refuse one step, **it strands everything behind it**.
+Create a folder, do two moves, undo the moves, and you meet a wall you can never
+pass, at which point the history has stopped being a history. He was right, and
+the second argument is what settled it: the thing undo would remove is one the
+session made moments ago, usually empty — categorically different from deleting
+work — and the app already had the pattern in the version-delete dialog.
+
+**⛔ WITH ONE LIMIT NO DIALOG CAN AUTHORISE: a non-empty folder is refused.**
+Undo runs backwards, so it empties a folder before it reaches that folder's
+creation; if contents remain, something put them there the history does not know
+about, and removing a directory TREE is a different act. Driven: a stray file
+written into a created folder produced _"undodocs/keep is not empty (1 item) —
+move what is inside it out first"_, the folder and the file survived, and **the
+act stayed on the undo stack** — nothing happened, so nothing was forgotten.
+`rmdirSync` rather than a recursive remove, so ENOTEMPTY is a second net under
+the explicit check.
+
+**⛔ A CONFIRMED DELETE HAS NO REDO, and says so by planning `null`.** Once a
+created file is gone its contents are gone; a redo that "re-creates" it would
+hand back an empty file wearing the same name, which is the kind of lie an undo
+stack must not tell. Verified: after confirming, both arrows are grey.
+
+**⛔ THE KEYBOARD IS NOT OFFERED THE DELETION.** There is no dialog in a
+keystroke, and a reflex that removes a file is the one thing this must not grow
+into. Measured: ⌘Z at a deleting step does nothing and opens no dialog, so the
+arrow that can ask is the only way through.
+
+**⚠ THE INVERSE IS BUILT WHEN THE ACT HAPPENS**, from what was true then — not
+reconstructed later. A `move` records where the thing came from because only the
+mover knows; a `hide` records the entry's WHOLE hidden list, because reading it
+afterwards returns the list including what was just hidden, which restores
+nothing. A no-op (unhiding an entry with nothing hidden) is not recorded at all:
+an arrow that steps over acts which changed nothing lies about how far back it
+can go.
+
+**⚠ IN MEMORY, NOT IN THE MANIFEST.** An inverse describes the world as it is
+now, and a session restored tomorrow may meet files somebody has since moved by
+hand. Grey arrows after a restore are honest about what can still be put back.
+
+Driven end to end: a rename recorded and undone on DISK (the file came back as
+`a.md`), redo offered with an accurate label, a created folder deleted through
+the dialog, the non-empty refusal, and ⌘Z inside the pane stepping the context's
+history while refusing the deleting step.

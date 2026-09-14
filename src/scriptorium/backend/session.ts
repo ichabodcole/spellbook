@@ -36,8 +36,14 @@ import {
   readSync,
   realpathSync,
   renameSync,
+  // ⚠ `rmdirSync` rather than `rmSync(…, {recursive:true})` ON PURPOSE: it
+  // throws ENOTEMPTY, which is a second net under `removeCreated`'s own
+  // emptiness check. A recursive delete would make the bug it prevents
+  // unrecoverable rather than loud.
+  rmdirSync,
   rmSync,
   statSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -405,6 +411,11 @@ export class Session {
     this.relink();
     this.persist();
     return { entry: probe, added: true };
+  }
+
+  /** An entry's root path, so E60 can put back a context entry it removed. */
+  entryRoot(id: string): string | null {
+    return this.m.context.find((e) => e.id === id)?.root ?? null;
   }
 
   removeContext(id: string): void {
@@ -1409,6 +1420,97 @@ export class Session {
     return { path: item.abs, entry: item.entry.id, removedEntry: false };
   }
 
+  /**
+   * The hidden list of the entry a path belongs to, BEFORE anything changes it
+   * — what E60 records so a hide can be put back exactly.
+   */
+  hiddenBefore(rawPath: string): { entry: string; rels: string[] } | null {
+    try {
+      const item = this.itemOrDie(rawPath);
+      return { entry: item.entry.id, rels: [...(item.entry.hidden ?? [])] };
+    } catch {
+      return null;
+    }
+  }
+
+  /** The same, addressed by entry — what `unhide` needs recorded. */
+  hiddenOfEntry(entryId: string): { entry: string; rels: string[] } | null {
+    const e = this.m.context.find((x) => x.id === entryId);
+    return e ? { entry: e.id, rels: [...(e.hidden ?? [])] } : null;
+  }
+
+  /**
+   * Set an entry's hidden list to exactly `rels` (E60's inverse of both hide
+   * and unhide). Returns what it WAS, so the caller can build the opposite act
+   * without reading state it has already changed.
+   */
+  restoreHidden(entryId: string, rels: string[]): { entry: string; was: string[] } {
+    const e = this.m.context.find((x) => x.id === entryId);
+    if (!e)
+      throw new SessionError(
+        `no context entry ${entryId}`,
+        404,
+        this.m.context.map((x) => x.id),
+      );
+    const was = [...(e.hidden ?? [])];
+    if (rels.length === 0) delete e.hidden;
+    else e.hidden = [...rels];
+    this.rescan(e.id);
+    this.relink();
+    this.closeOrphanedOpenDoc();
+    this.persist();
+    return { entry: e.id, was };
+  }
+
+  /**
+   * Remove something this session created (E60's undo of a creation).
+   *
+   * ⛔ A NON-EMPTY DIRECTORY IS REFUSED, and no dialog can authorise it. Undo
+   * works backwards, so it empties a folder before it reaches that folder's
+   * creation; if the folder still has contents then something put them there
+   * that the history does not know about, and removing a directory TREE is a
+   * different act from removing the empty thing you just made. (Cole ruled the
+   * file case the other way — confirmed, not refused — and this limit is the
+   * carve-out he accepted.)
+   *
+   * ⚠ It also refuses anything that is not where the history said it was: a
+   * path that has become a directory, or a directory that has become a file,
+   * means the world moved and the recorded inverse no longer describes it.
+   */
+  removeCreated(rawPath: string, dir: boolean): { path: string; removed: boolean } {
+    const abs = resolve(rawPath);
+    let st: ReturnType<typeof statSync>;
+    try {
+      st = statSync(abs);
+    } catch {
+      // Already gone: the undo has nothing to do, which is not an error.
+      return { path: abs, removed: false };
+    }
+    if (st.isDirectory() !== dir)
+      throw new SessionError(
+        `${this.display(abs)} is ${st.isDirectory() ? "a folder" : "a file"} now — the change this would undo no longer describes it`,
+        409,
+      );
+    if (dir) {
+      const left = readdirSync(abs);
+      if (left.length > 0)
+        throw new SessionError(
+          `${this.display(abs)} is not empty (${left.length} item${left.length === 1 ? "" : "s"}) — move what is inside it out first`,
+          409,
+          left.slice(0, 10),
+        );
+      rmdirSync(abs);
+    } else {
+      unlinkSync(abs);
+    }
+    // Whatever pointed at it must stop pointing at it.
+    for (const e of this.m.context) this.rescan(e.id);
+    this.relink();
+    this.closeOrphanedOpenDoc();
+    this.persist();
+    return { path: abs, removed: true };
+  }
+
   unhide(entryId: string): { entry: string; restored: number } {
     const e = this.m.context.find((x) => x.id === entryId);
     if (!e)
@@ -1961,7 +2063,10 @@ export class Session {
     selection: Selection | null,
     // ⚠ `waiting` is the SERVER's to add (E53): it depends on the clock and on
     // the snooze the server holds, neither of which belongs in the session.
-  ): Omit<PublicState, "prefs" | "userHome" | "waiting"> {
+    // ⚠ `waiting` and `history` are the SERVER's to add (E53, E60): one depends
+    // on the clock and the snooze it holds, the other on the in-memory act
+    // stacks. Neither belongs in the session's persisted state.
+  ): Omit<PublicState, "prefs" | "userHome" | "waiting" | "history"> {
     const meta = this.contextMeta();
     return {
       sessionId: this.m.sessionId,

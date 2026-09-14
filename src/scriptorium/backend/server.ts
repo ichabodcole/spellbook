@@ -64,6 +64,7 @@ import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { quoteLabel } from "./anchors";
 import { unified } from "./diff";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
+import { type Act, type After, type Before, History, type Inverse, planInverse } from "./history";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
   AgentCmd,
@@ -173,10 +174,21 @@ export async function startDaemon(opts: StartOpts) {
    */
   let acknowledgedUntil: number | undefined;
   const nudged = new Set<string>();
+  /**
+   * E60: the CONTEXT's undo history — not the editor's, which CodeMirror owns.
+   * In memory on purpose (see `history.ts`): an inverse describes the world as
+   * it is now, and a session restored tomorrow may meet files somebody has
+   * since moved by hand.
+   */
+  const history = new History();
 
   const viewState = (): PublicState => {
     const base = { ...session.view(mode, selection), prefs: readPrefs(), userHome };
-    return { ...base, waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil }) };
+    return {
+      ...base,
+      waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil }),
+      history: history.view(),
+    };
   };
 
   // --- channels ---------------------------------------------------------------
@@ -377,6 +389,14 @@ export async function startDaemon(opts: StartOpts) {
 
   const structure = (op: StructureOp, by: "human" | "agent"): Record<string, unknown> => {
     const who = by === "agent" ? "Agent" : "You";
+    // ⛔ CAPTURED BEFORE THE ACT, because every field here is something the act
+    // CHANGES: reading an entry's hidden list afterwards returns the list
+    // including what was just hidden, which restores nothing (E60).
+    const before: Before = {
+      ...(op.type === "hide" ? { hidden: session.hiddenBefore(op.path) ?? undefined } : {}),
+      ...(op.type === "unhide" ? { hidden: session.hiddenOfEntry(op.entry) ?? undefined } : {}),
+      ...(op.type === "workspace.set" ? { workspace: session.workspace } : {}),
+    };
     const shown = (p: string) => session.display(p);
     let r: Record<string, unknown> & { path?: string };
     let line: string;
@@ -429,8 +449,76 @@ export async function startDaemon(opts: StartOpts) {
         break;
     }
     syncWatchers();
+    // The way back, planned now and from what was true now.
+    history.did(planInverse(op, r as After, before));
     announce(line, { fact: op.type, by, ...r });
+    broadcastState();
     return r;
+  };
+
+  /**
+   * Apply one recorded inverse, and return the act that would reverse THAT —
+   * which is what goes onto the other stack.
+   *
+   * ⛔ A DELETE HAS NO WAY BACK, and says so by returning null. Once a created
+   * file is gone its contents are gone with it, so a redo that "re-creates" it
+   * would hand back an empty file wearing the same name — the kind of lie an
+   * undo stack must not tell. Confirmed deletions are therefore one-way, which
+   * is also why they are confirmed.
+   */
+  const applyInverse = (inv: Inverse): Act | null => {
+    switch (inv.kind) {
+      case "move": {
+        const m = session.move(inv.path, inv.into);
+        return {
+          label: `moved ${basename(m.from)} back into ${basename(dirname(m.path))}`,
+          inverse: { kind: "move", path: m.path, into: dirname(m.from) },
+        };
+      }
+      case "rename": {
+        const m = session.rename(inv.path, inv.name);
+        return {
+          label: `renamed ${basename(m.from)} back to ${basename(m.path)}`,
+          inverse: { kind: "rename", path: m.path, name: basename(m.from) },
+        };
+      }
+      case "hidden": {
+        const r = session.restoreHidden(inv.entry, inv.rels);
+        return {
+          label: r.was.length > inv.rels.length ? "brought items back" : "hid items again",
+          inverse: { kind: "hidden", entry: r.entry, rels: r.was },
+        };
+      }
+      case "context.add": {
+        const { entry } = session.addContext(inv.path);
+        return {
+          label: `put ${basename(inv.path)} back in the context`,
+          inverse: { kind: "context.remove", entry: entry.id },
+        };
+      }
+      case "context.remove": {
+        const path = session.entryRoot(inv.entry);
+        session.removeContext(inv.entry);
+        return path === null
+          ? null
+          : {
+              label: `took ${basename(path)} back out of the context`,
+              inverse: { kind: "context.add", path },
+            };
+      }
+      case "workspace": {
+        const was = session.workspace;
+        session.setWorkspace(inv.path);
+        return {
+          label: `set the workspace back to ${basename(inv.path)}`,
+          inverse: { kind: "workspace", path: was },
+        };
+      }
+      case "delete": {
+        session.removeCreated(inv.path, inv.dir);
+        return null;
+      }
+    }
   };
 
   // --- surface messages (WebSocket) --------------------------------------------
@@ -495,6 +583,45 @@ export async function startDaemon(opts: StartOpts) {
         // than broadcasting.)
         try {
           reply(ws, { type: "search.results", report: session.searchAll(msg) });
+        } catch (e) {
+          reply(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
+        }
+        return;
+      }
+      case "history.undo": {
+        const act = history.peekUndo();
+        if (!act) return;
+        // ⛔ A DELETING UNDO NEEDS THE HUMAN'S WORD, carried explicitly. A
+        // client that simply omits the flag gets a refusal rather than a
+        // deletion, so "forgot to confirm" can never become "deleted anyway".
+        if (act.inverse.kind === "delete" && msg.confirmDelete !== true) {
+          reply(ws, {
+            type: "error",
+            message: `Undoing "${act.label}" would delete ${session.display(act.inverse.path)} — confirm it first.`,
+          });
+          return;
+        }
+        try {
+          history.tookUndo(applyInverse(act.inverse));
+          syncWatchers();
+          announce(`You undid: ${act.label}.`, { fact: "history.undo" });
+          broadcastState();
+        } catch (e) {
+          // The refusal the human needs to read — a folder with things in it,
+          // or a world that has moved under a recorded inverse. The act STAYS
+          // on the stack: nothing happened, so nothing should be forgotten.
+          reply(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
+        }
+        return;
+      }
+      case "history.redo": {
+        const act = history.peekRedo();
+        if (!act) return;
+        try {
+          history.tookRedo(applyInverse(act.inverse));
+          syncWatchers();
+          announce(`You redid: ${act.label}.`, { fact: "history.redo" });
+          broadcastState();
         } catch (e) {
           reply(ws, { type: "error", message: e instanceof Error ? e.message : String(e) });
         }

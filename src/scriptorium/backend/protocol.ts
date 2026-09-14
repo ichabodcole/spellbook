@@ -249,6 +249,23 @@ export type DocView = {
   notes: PlacedNote[];
 };
 
+/**
+ * What the context's undo arrows show (E60).
+ *
+ * ⚠ A hand-written mirror of `history.ts`'s `HistoryView`, for the same reason
+ * `GraphPayload` and `SearchReport` are mirrors: this file is import-free so the
+ * surface and `dist/cli.js` never drag the daemon's modules. Guarded by key
+ * equality in `history.test.ts`.
+ */
+export type HistoryView = {
+  canUndo: boolean;
+  canRedo: boolean;
+  undoLabel?: string;
+  redoLabel?: string;
+  /** Present when the next undo would DELETE — the surface confirms first. */
+  undoDeletes?: { path: string; dir: boolean };
+};
+
 /** What the human has selected — rides every message they send (E5/E11). */
 export type Selection = {
   doc: string;
@@ -310,6 +327,12 @@ export type PublicState = {
    * about whether to draw a pulse and whether to send a ping.
    */
   waiting: Waiting | null;
+  /**
+   * E60: what the context's undo arrows should show. ⚠ NOT the editor's undo —
+   * CodeMirror owns keystrokes inside a document; this is acts on the SHAPE of
+   * the context (moves, renames, hiding, creation).
+   */
+  history: HistoryView;
   /**
    * Per-viewer conveniences (pane sizes, …), kept in `$SCRIPTORIUM_HOME/prefs.json`
    * rather than the browser's storage: every session is a new port, and browser
@@ -445,6 +468,13 @@ export type ClientMsg =
   | { type: "select"; selection: Selection | null }
   /** E59: the header search bar. Empty query means "close the results". */
   | { type: "search"; query: string; limit?: number }
+  /**
+   * E60: step the CONTEXT's history. `confirmDelete` is the surface saying the
+   * human has seen the dialog and said yes — without it a deleting undo is
+   * refused, so a client cannot delete by omission.
+   */
+  | { type: "history.undo"; confirmDelete?: boolean }
+  | { type: "history.redo" }
   | { type: "say"; text: string; withSelection: boolean }
   | { type: "activate"; doc: string; version: number }
   /**
