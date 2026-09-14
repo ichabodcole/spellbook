@@ -354,6 +354,14 @@ function Workspace({
             focusedNote={focusedNote}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
+              // ⛔ THE NOTE CONSUMES THE SELECTION (E57, Cole). Making a note is
+              // what you chose to DO with that passage, so leaving it attached
+              // means the next message you type silently carries the same text
+              // again — "I've made some notes, take a look" arriving with the
+              // very passage the note is about. Clearing it here also reaches
+              // the daemon, because the effect below reports `selection` as it
+              // changes, so the agent's view and the composer's chip agree.
+              setSelection(null);
             }}
             onDeleteNote={(id) => {
               if (open) send({ type: "note.remove", doc: open.slug, id });

@@ -71836,6 +71836,7 @@ function Workspace({
               onAddNote: (from, to, body) => {
                 if (open3)
                   send({ type: "note.add", doc: open3.slug, from, to, body });
+                setSelection(null);
               },
               onDeleteNote: (id) => {
                 if (open3)

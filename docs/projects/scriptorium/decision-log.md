@@ -1746,3 +1746,29 @@ own scratch daemon were both still alive afterwards, so the victim was something
 else of his. The fix is method, not care: resolve the daemon by the SESSION's
 own port and confirm the process is the one you mean before signalling it, which
 is what the re-run did._
+
+## E57 — a note consumes the selection
+
+Cole, from the app, having found it by using it: select a passage, right-click,
+add a note — and the selection is still attached to the composer, so the next
+message silently carries the same text. His words for the fix, and the reasoning
+is the whole ruling: _"if you add a note, we should automatically treat that as
+if you basically deselected the text because the note is the actual action
+you're taking. You don't want to then also start typing in chat and realize
+you're also sending basically the same context that you've already captured as
+part of the note."_
+
+**The passage was SPENT.** Attaching a selection to the composer is an offer —
+"talk about this" — and making a note is one of the things you can do with it
+instead. The bug was treating the attachment as ambient when it is really a
+pending act that another act had already answered.
+
+**Cleared in the surface, not the daemon**, and that direction matters: the chip
+reads App's local `selection`, so clearing it there is what the human sees, and
+the existing effect reports the change onward so the daemon's copy — the one
+`say` attaches — agrees. Clearing daemon-side would have left the chip lying.
+
+Verified as the exact scenario he described: chip shows
+`prose.md · v1 · line 6 starter`, note added, chip gone, daemon
+`selection: null`, and "I've made some notes, take a look at them." arrives
+carrying nothing.
