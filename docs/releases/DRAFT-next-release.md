@@ -1,3 +1,28 @@
+<!-- ⛔ SUPERSEDED — DO NOT READ THIS AS THE RELEASE NOTE.
+
+     This draft was reconstructed 2026-09-09 and then went 186 COMMITS STALE,
+     which is the second time a draft in this file did that. It is wrong on
+     every headline number and on one entire section; scriptorium does not
+     appear in it at all.
+
+     The release note for this release is the develop -> main merge commit body
+     and PR #103, written 2026-09-14 from the tree by a fresh agent and then
+     cold-read. Read `git log --first-parent main` for it.
+
+     KEPT, NOT DELETED, for the reason its own header gives about its
+     predecessor: a living document that quietly loses its history teaches
+     nobody. What is useful here is the RECORD OF HOW IT DECAYED — register
+     item D4 — and the one sentence in it that was always correct:
+     "⚠ EVERY NUMBER BELOW DECAYS. Re-measure before shipping; do not inherit."
+
+     ⚠ The third occurrence is now on record too: this file was found stale
+     again, by the 2026-09-14 reconstruction, exactly as D4 predicted. Nothing
+     connects the tree to a release note, so a note is a snapshot with no
+     mechanism that reddens when the tree moves past it. Deciding where a
+     release note should LIVE is deferred to the shared project-docs standard
+     rather than invented per-repo (land skill §5).
+-->
+
 <!-- DRAFT — NOT SHIPPED. Reconstructed 2026-09-09 from the tree by a fresh
      agent (land skill §3): named merge bodies, docs/projects/*/,
      docs/investigations/, and the backend-convergence decision log D1–D54.
