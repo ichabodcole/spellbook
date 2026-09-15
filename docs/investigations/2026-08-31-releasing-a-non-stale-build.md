@@ -232,7 +232,15 @@ keeps sending correct work to the wrong verdict.
    one.**
 5. **A `--no-verify` commit, or a push straight to `main`.** Only the PR check
    survives, and only if marked required — **a GitHub settings change, not a
-   file in this repo, and therefore not something an agent can land or verify.**
+   file in this repo, and therefore not something an agent can land.** ⚠
+   **CORRECTED 2026-09-15: the "or verify" this clause used to end with was
+   wrong, and it cost a false claim in the 3.0.0 release note.** Repo
+   configuration is not in the tree, but it is observable —
+   `gh api repos/<owner>/<repo>/rulesets` reads it. The ruleset was in fact
+   created 2026-09-01 (one day after this investigation) with `gate` required,
+   and for two weeks every document here said otherwise because "not in the
+   tree" was read as "not knowable". Landing the change is Cole's; **verifying
+   it is one API call.**
 6. **A Bun upgrade that changes bundler output.** The check goes red repo-wide
    with no source change. Correct behaviour, alarming presentation; the remedy
    is a deliberate rebuild-and-commit and a runbook line beside the pin.
