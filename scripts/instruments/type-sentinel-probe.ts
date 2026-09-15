@@ -33,20 +33,38 @@
 // `grimoire/type-check-ward.test.ts`. The fence still stands for THIS file: the
 // gate is that ward, not a grown version of this probe.)
 //
-// ⛔ MACHINE-BOUND ON PURPOSE, AND SAYING SO RATHER THAN LEAVING IT TO BE FOUND.
-// This file hardcodes an absolute path to this checkout (the `typescript` import
-// specifier and the repo constant). IT WILL NOT RUN ON ANOTHER MACHINE.
-// That is ACCEPTED, not overlooked: this is a declared corpse kept for its
-// VERDICT and its method, not for reuse — the predicate does not work and nobody
-// should be running it in CI or on a fresh clone. Anyone who wants to re-derive
-// the result should re-point the two paths; the arms are synthetic and portable.
-// Flagged by a cold reader who could not tell "deliberate" from "broken" — which
-// is the whole reason it now says which.
+// ⛔ IT USED TO BE MACHINE-BOUND ON PURPOSE, AND THAT DECISION OUTLIVED ITS
+// WORLD — which is the more useful scar. This file hardcoded absolute paths into
+// one checkout (the `typescript` import specifier and the repo constant) and
+// declared that ACCEPTED, because it is a corpse kept for its VERDICT and its
+// method, not for reuse, and nobody should be running it in CI or on a fresh
+// clone. (A cold reader who could not tell "deliberate" from "broken" is why it
+// said so.)
+//
+// ⛔ THEN THE TYPECHECK GATE WAS RULED IN — four days later, noted in the fence
+// above — and `scripts/` BECAME A MEASURED AREA. An unresolvable import is a
+// type error, so the ward reds on this file everywhere the hardcoded path does
+// not exist. It stayed green on the author's laptop and ONLY there: the gate's
+// first run on a real release PR failed with
+// `TS2307: Cannot find module '/Users/…/node_modules/typescript/lib/typescript.js'`
+// (2026-09-14). **A green gate that depends on one machine's directory layout is
+// not a gate.**
+//
+// So the two paths are portable now — a bare `typescript` specifier and a repo
+// root derived from this file's own location. ⚠ THAT IS NOT AN ENDORSEMENT: the
+// predicate still does not work, the verdict below still stands, and this is
+// still not something to run in CI. Portable means it can be TYPE-CHECKED like
+// every other committed file, not that it is worth executing. The general rule
+// it earned: **"this file is exempt because nobody runs it" stops being true the
+// moment something starts reading it, and nothing tells you when that happens.**
 //
 // Run:  bun scripts/instruments/type-sentinel-probe.ts <file.ts> [...]
-import ts from "/Users/colereed/Projects/Spellbook/node_modules/typescript/lib/typescript.js";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
-const repo = "/Users/colereed/Projects/Spellbook";
+/** This checkout, from this file's own location — `scripts/instruments/` is two down. */
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const cfg = ts.readConfigFile(`${repo}/tsconfig.json`, ts.sys.readFile);
 const parsed = ts.parseJsonConfigFileContent(cfg.config, ts.sys, repo);
 const files = process.argv.slice(2);
