@@ -42,17 +42,20 @@ in `grimoire/house-style.md`.
   Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
 - **UI:** React 19 + Tailwind 4 on the house token layer, for **every** surface
-  in the roster (astrolabe, bounty, digestify, glamour, grapevine watch, imago,
-  magpie, mind-mapper). digestify was the last hand-written page and it was
-  rewritten on 2026-09-07; there is no CDN surface left anywhere in the tree
+  in the tree (astrolabe, bounty, digestify, glamour, grapevine watch, imago,
+  magpie, mind-mapper, scriptorium). digestify was the last hand-written page
+  and it was rewritten on 2026-09-07; there is no CDN surface left anywhere in
+  the tree, and scriptorium (2026-09-11) was born on the bundler
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
-- **Build Tools:** ⛔ **`bun run build` at the spell level, for all eight** —
-  each spell has its own `src/<spell>/build.ts`, and both halves are built: the
-  surface bundle and, since the backend convergence (2026-09-08→09), the backend
-  entries too. The emitted `dist/` is **committed** (Contract 4), and a spell's
-  deployed `scripts/*.ts` are launchers rather than source. _"None at the spell
-  level — Bun runs source directly" was true of every spell once and is now true
-  of none;_ `dist-check` and `dist-roster-ward` are what hold this honest
+- **Build Tools:** ⛔ **`bun run build` at the spell level, for every spell
+  `buildableSpells()` finds** (`src/build.ts` — do not hand-keep a number here)
+  — each spell has its own `src/<spell>/build.ts`, and both halves are built:
+  the surface bundle and, since the backend convergence (2026-09-08→09), the
+  backend entries too. The emitted `dist/` is **committed** (Contract 4), and a
+  spell's deployed `scripts/*.ts` are launchers rather than source. _"None at
+  the spell level — Bun runs source directly" was true of every spell once and
+  is now true of none;_ `dist-check` and `dist-roster-ward` are what hold this
+  honest
 - **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
   (`.md`), Husky + lint-staged pre-commit, release-please for versioning
 - **Current version:** spellbook **2.2.0**
@@ -173,12 +176,15 @@ _Five, as of the 2026-08-10 sweep
   and a committed `dist/` that shipped in v2.2.0 — the real release cut the
   proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
   landed (`house-style.md` now opens `## The build` with a per-spell port
-  queue), and astrolabe was **migrated** rather than dropped. **EIGHT spells
-  build** — every spell in the roster — **and as of 2026-09-09 every one of them
-  builds its BACKEND too** (backend convergence, 2026-09-08→09: astrolabe and
-  magpie had built CLIs before it; glamour, imago, bounty, digestify, grapevine
-  and mind-mapper ported in that order). ⛔ **This line has now gone stale three
-  times, twice in the same direction — undercounting — so do not hand-keep it:**
+  queue), and astrolabe was **migrated** rather than dropped. **EVERY spell
+  `buildableSpells()` finds builds** — the number is deliberately not written
+  here — **and as of 2026-09-09 every one of them builds its BACKEND too**
+  (backend convergence, 2026-09-08→09: astrolabe and magpie had built CLIs
+  before it; glamour, imago, bounty, digestify, grapevine and mind-mapper ported
+  in that order). ⛔ **This line has now gone stale FOUR times, every time in
+  the same direction — undercounting — and the fourth happened while carrying
+  this very warning (scriptorium, 2026-09-11, caught at the release
+  reconstruction). The count is gone rather than corrected:**
   `buildableSpells()` in `src/build.ts` counts it and `dist-roster-ward` prints
   it. Via `spell-kit`; glamour joined 2026-09-03 (`cae26f8`), grapevine
   2026-09-05 (the first REWRITTEN surface, not a relocated one —

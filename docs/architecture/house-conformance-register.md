@@ -1,9 +1,24 @@
-# The house conformance register — where the eight spells do not yet agree
+# The house conformance register — where the spells do not yet agree
 
 **Created:** 2026-09-09, inside the backend convergence · **Relocated here
 2026-09-10** (D92) · **Last Updated:** 2026-09-10 · **Status:** LIVING. **Not
-acc conformance** — this is _house_ conformance: one specification these eight
-spells are all supposed to satisfy.
+acc conformance** — this is _house_ conformance: one specification the spells
+are all supposed to satisfy.
+
+> ⚠ **WHICH SPELLS, AND WHO IS MISSING — read this before trusting a count
+> below.** Every row here was written against the **eight** spells that existed
+> when the backend convergence ran: astrolabe, bounty, digestify, glamour,
+> grapevine, imago, magpie, mind-mapper. **`scriptorium` landed 2026-09-11 and
+> has never been reconciled against a single row**, so an "eight" in a row body
+> is a faithful record of what was measured and NOT a statement about today's
+> roster. Two populations share the number eight and they are different sets:
+> the eight audited here (including mind-mapper, which ships no `SKILL.md` by
+> ruling) and the eight DECLARED spells in `plugins/spellbook/skills/README.md`
+> (including scriptorium, excluding mind-mapper). `buildableSpells()` in
+> `src/build.ts` counts what builds, which is nine. **Reconciling scriptorium
+> into these rows is open work** — this note exists because the release
+> reconstruction (2026-09-14) could not tell the populations apart, which is
+> register item D4's defect one document over.
 
 > ⛔ **THIS DOCUMENT OUTLIVES THE PROJECT THAT STARTED IT, AND THAT IS WHY IT
 > MOVED.** It was written inside `docs/projects/_archive/backend-convergence/`

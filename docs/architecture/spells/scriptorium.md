@@ -323,14 +323,19 @@ Named so their absence is a decision rather than an oversight:
   selection, and reusable instructions across sessions. Same reason, his words:
   _"I want to actually experience a need and then go, oh yeah, I actually need
   that thing."_
-- **Spell daemons accept any WebSocket origin** — not a feature, and it ships
-  with one.
+- **Spell daemons accept any WebSocket origin** — ⚠ **this means the OTHER eight
+  daemons, not this one.** Scriptorium is the spell that found the hole and the
+  only one that closed it: its `/ws` upgrade and `/cmd` POST both refuse a
+  foreign `Origin` with 403, asserted in
+  `src/scriptorium/backend/daemon.integration.test.ts`. The entry stays in this
+  section because the roster-wide fix is unshipped, and it is listed under
+  scriptorium because scriptorium is where the payload was demonstrated.
   `docs/backlog/2026-09-11-spell-daemons-accept-any-websocket-origin.md`.
 
 ## Related
 
 - [`decision-log.md`](../../projects/scriptorium/decision-log.md) — why, entry
-  by entry (E1–E41)
+  by entry (E1–E62)
 - [`spell-backend-architecture.md`](../spell-backend-architecture.md) — how any
   spell is built, shipped and spawned
 - [`dependency-and-package-boundaries.md`](../dependency-and-package-boundaries.md)

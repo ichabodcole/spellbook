@@ -1,8 +1,16 @@
 # Spells
 
 Each subfolder here is a **spell** — a self-contained agent surface, shipped as
-a Claude Code skill. Zip one folder and it runs anywhere `bun` is on PATH; no
-cross-spell imports, no build step.
+a Claude Code skill. Zip one folder and it runs anywhere `bun` is on PATH.
+
+⛔ **Self-contained is a property of what SHIPS, not of how it is written.**
+Each folder here carries a **committed `dist/`** and, at `scripts/`,
+**launchers** — a few lines importing that built artifact. The spell itself is
+authored at `src/<spell>/{backend,surface}/` and does share code across spells
+(`src/kit/`). So the zip still runs anywhere, but _"no cross-spell imports, no
+build step"_ was true of every spell once and is now true of none:
+`bun run build` emits both halves, and `dist-check` holds the committed output
+honest.
 
 | Spell         | Kind        | What it conjures                                                      |
 | ------------- | ----------- | --------------------------------------------------------------------- |
@@ -17,20 +25,33 @@ cross-spell imports, no build step.
 
 **Cantrip** = cast-and-resolve (spawn → user acts → submit → JSON on stdout →
 exit). **Conjuration** = summons something with duration (a daemon / board you
-return to). The structural tell: conjurations ship a `daemon.ts` (or
-`server.ts`); cantrips don't.
+return to).
+
+⚠ **There is no structural tell, and do not go looking for one.** This paragraph
+used to say _"conjurations ship a `daemon.ts` (or `server.ts`); cantrips don't"_
+— and since the backend convergence closed (2026-09-09) **the kind decides none
+of the structure**: what ships at `scripts/` is a launcher either way. The kind
+is a fact about the spell's LIFECYCLE, and the only place it is recorded is the
+table above and the spell's own `SKILL.md`. (`scaffold/README.md` carries the
+same correction, for the same reason.)
 
 ## Anatomy of a spell
 
 ```
 <spell>/
   SKILL.md          # trigger conditions, invocation, response shape, exit codes
-  scripts/
+  scripts/          # LAUNCHERS — each imports a built entry from dist/
     cli.ts          # the agent-facing entry
-    daemon.ts        # conjurations only — the standing process
-    *.test.ts       # bun test: pure-function + subprocess integration
-  assets/           # index.html, client js, css (self-contained, CDN libs only)
+    server.ts       # conjurations — the standing process (grapevine: daemon.ts)
+  dist/             # COMMITTED build output: the real cli/server, surface bundle
+  acc.config.json   # where the CLI is held to the conformance kit (not every spell)
+  assets/           # only where a surface predates the bundler (three spells)
 ```
+
+⛔ **`dist/` is committed on purpose** — a consumer installs this folder and
+runs it; there is no build step on their side. Source without it ships nothing,
+which is what `dist-check` exists to catch. Tests live with the source at
+`src/<spell>/`, not here.
 
 ## Adding a new spell
 
