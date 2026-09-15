@@ -1,6 +1,6 @@
 # Backlog — spell daemons accept a WebSocket (and a POST) from any web page
 
-**Status:** ✅ **CLOSED 2026-09-14 — `fab803b0`.** Captured 2026-09-11 by
+**Status:** ✅ **CLOSED 2026-09-14 — `c010f80e`.** Captured 2026-09-11 by
 scriptorium's slice-A verify pass; closed at the release that would have changed
 who was exposed. The guard is `src/kit/wire/origin.ts`, called by all nine
 servers and held there by `grimoire/origin-guard-ward.test.ts`, with real
