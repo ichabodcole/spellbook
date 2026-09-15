@@ -26,6 +26,7 @@ import { parseArgs } from "node:util";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import type { EventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop } from "../../kit/wire/housekeeping.ts";
+import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse } from "../../kit/wire/sse.ts";
 import { clearActions, setActions } from "./actions.ts";
@@ -525,6 +526,14 @@ async function main(argv: string[]): Promise<number> {
       // max instead.
       idleTimeout: IDLE_TIMEOUT_SEC,
       fetch: (req, srv) => {
+        // ⛔ FOREIGN ORIGIN REFUSED — FIRST, BEFORE ANY ROUTING. Any web page the
+        // human visits can open a WebSocket or POST to this port; the browser
+        // attaches its `Origin` and the CLI sends none. `src/kit/wire/origin.ts`
+        // carries the reasoning and the demonstrated payload.
+        {
+          const refused = refuseForeignOrigin(req, srv.port);
+          if (refused) return refused;
+        }
         const url = new URL(req.url);
         const path = url.pathname;
         const projectId = url.searchParams.get("project") ?? undefined;

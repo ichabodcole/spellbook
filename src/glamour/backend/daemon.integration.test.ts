@@ -498,3 +498,32 @@ test("mode rides the ready event AND the discovery file AND startDaemon's return
   expect(discovery.mode).toBe(ready.mode);
   expect(ready.mode).toBe(d.mode);
 });
+
+// ── THE ORIGIN GUARD, OVER A REAL SOCKET ─────────────────────────────────────
+//
+// `grimoire/origin-guard-ward.test.ts` holds all nine servers to CALLING the
+// guard; these two cells prove it WORKS here, which a text scan cannot. The
+// second is the one that matters most: it is the false-positive check, and a
+// false positive means this spell's own surface stops working.
+test("a foreign origin is refused (403)", async () => {
+  const res = await fetch(`http://127.0.0.1:${d.port}/state`, {
+    headers: { Origin: "https://evil.example" },
+  });
+  expect(res.status).toBe(403);
+  expect((await res.json()) as { error?: string }).toMatchObject({
+    error: "foreign origin refused",
+  });
+});
+
+test("⛔ OUR OWN PAGE AND THE CLI ARE UNAFFECTED — the false-positive check", async () => {
+  // The surface's own fetches carry this Origin; the CLI carries none. Both
+  // must pass, or the guard broke the spell instead of protecting it.
+  for (const headers of [
+    { Origin: `http://127.0.0.1:${d.port}` },
+    { Origin: `http://localhost:${d.port}` },
+    {} as Record<string, string>,
+  ]) {
+    const res = await fetch(`http://127.0.0.1:${d.port}/state`, { headers });
+    expect(res.status).not.toBe(403);
+  }
+});

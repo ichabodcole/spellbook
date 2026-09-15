@@ -683,3 +683,34 @@ test("b13 — a malformed element.add is REFUSED, not silently ignored at ok:tru
   const after = await waitForState(s, () => true);
   expect(after.elements.length).toBe(before.elements.length);
 });
+
+// ── THE ORIGIN GUARD, OVER A REAL SOCKET ─────────────────────────────────────
+//
+// `grimoire/origin-guard-ward.test.ts` holds all nine servers to CALLING the
+// guard; these two cells prove it WORKS here, which a text scan cannot. The
+// second is the one that matters most: it is the false-positive check, and a
+// false positive means this spell's own surface stops working.
+test("a foreign origin is refused (403)", async () => {
+  const s = await spawnDaemon();
+  const res = await fetch(`http://127.0.0.1:${s.port}/state`, {
+    headers: { Origin: "https://evil.example" },
+  });
+  expect(res.status).toBe(403);
+  expect((await res.json()) as { error?: string }).toMatchObject({
+    error: "foreign origin refused",
+  });
+});
+
+test("⛔ OUR OWN PAGE AND THE CLI ARE UNAFFECTED — the false-positive check", async () => {
+  // The surface's own fetches carry this Origin; the CLI carries none. Both
+  // must pass, or the guard broke the spell instead of protecting it.
+  const s = await spawnDaemon();
+  for (const headers of [
+    { Origin: `http://127.0.0.1:${s.port}` },
+    { Origin: `http://localhost:${s.port}` },
+    {} as Record<string, string>,
+  ]) {
+    const res = await fetch(`http://127.0.0.1:${s.port}/state`, { headers });
+    expect(res.status).not.toBe(403);
+  }
+});

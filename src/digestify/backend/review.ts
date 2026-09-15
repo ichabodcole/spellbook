@@ -48,6 +48,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors.ts";
 import { shouldIdleClose } from "../../kit/wire/housekeeping.ts";
+import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 
 // The review page used to be `scripts/template.html`, read at boot and string
@@ -700,7 +701,16 @@ async function runReview(argv: string[]): Promise<number> {
       // response and the payload could never be injected. "/" stays this
       // module's, and reads the bundle through here.
       routes: (devIndex ? { [DEV_SURFACE_ROUTE]: devIndex } : {}) as Record<string, never>,
-      fetch: async (req) => {
+      fetch: async (req, srv) => {
+        // ⛔ FOREIGN ORIGIN REFUSED — FIRST, BEFORE ANY ROUTING. digestify is a
+        // cantrip, but it still binds a port and still serves a page, so the
+        // browser-shaped attack reaches it exactly as it reaches a daemon.
+        // `srv` was added to this signature for the guard; Bun has always
+        // passed it.
+        {
+          const refused = refuseForeignOrigin(req, srv.port);
+          if (refused) return refused;
+        }
         const url = new URL(req.url);
         const path = url.pathname;
         const method = req.method;

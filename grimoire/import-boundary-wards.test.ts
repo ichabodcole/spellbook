@@ -1624,7 +1624,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // cell is about. The file that used to hold it is now a launcher with no
     // imports of its own; had the pin been left at the old address it would have
     // read `undefined` and been indistinguishable from "the escape vanished".
-    expect(at("src/glamour/backend/server.ts", 141)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
+    expect(at("src/glamour/backend/server.ts", 142)).toBe("type"); // was 77, then 146, then 141; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped; 2026-09-14: the shared origin guard added one import line). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it FOUR times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
     expect(at("src/mind-mapper/backend/propose.test.ts", 463)).toBe("type"); // ⚠ RE-ADDRESSED in backend convergence Phase 7 — the suite moved with its subject and the line number did NOT change, because the port edited nothing above it. Same warning as the row above: a line number is the wrong pin, and this is the fourth time this cell has paid for it.
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

@@ -49,6 +49,7 @@ import {
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
@@ -1428,6 +1429,14 @@ async function main(argv: string[]): Promise<number> {
       idleTimeout: IDLE_TIMEOUT_SEC,
       development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
+        // ⛔ FOREIGN ORIGIN REFUSED — FIRST, BEFORE ANY ROUTING. Any web page the
+        // human visits can open a WebSocket or POST to this port; the browser
+        // attaches its `Origin` and the CLI sends none. `src/kit/wire/origin.ts`
+        // carries the reasoning and the demonstrated payload.
+        {
+          const refused = refuseForeignOrigin(req, srv.port);
+          if (refused) return refused;
+        }
         const url = new URL(req.url);
         const path = url.pathname;
         if (path === "/ws") {

@@ -69,6 +69,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { drainAndStop } from "../../kit/wire/housekeeping.ts";
+import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 
@@ -712,7 +713,15 @@ async function readJsonBody(req: Request): Promise<JsonBody> {
   }
 }
 
-async function handle(req: Request): Promise<Response> {
+async function handle(req: Request, srv?: { port?: number }): Promise<Response> {
+  // ⛔ FOREIGN ORIGIN REFUSED — FIRST, BEFORE ANY ROUTING. `Bun.serve` has
+  // always passed the server as the second argument; this handler simply never
+  // named it. The port is OS-assigned here (`port: 0`), so the BOUND port must
+  // come from the server rather than from the option.
+  {
+    const refused = refuseForeignOrigin(req, srv?.port);
+    if (refused) return refused;
+  }
   const url = new URL(req.url);
   const path = url.pathname;
   const method = req.method;

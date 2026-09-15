@@ -59,6 +59,7 @@ import { parseArgs as nodeParseArgs } from "node:util";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { quoteLabel } from "./anchors";
@@ -1339,17 +1340,18 @@ export async function startDaemon(opts: StartOpts) {
     idleTimeout: IDLE_TIMEOUT_SEC,
     development: { hmr: mode === "dev" },
     fetch(req, srv) {
+      // ⛔ VERIFY-PASS FIX 1a, NOW THE KIT'S AND NOW ROSTER-WIDE. This was the
+      // first copy and it listed paths (`/ws`, `/cmd`, `/fs/`) — a list that
+      // was already missing `/state`, which answers a session's whole contents.
+      // `src/kit/wire/origin.ts` refuses on the REQUEST instead, so no path
+      // inventory can go stale, and `grimoire/origin-guard-ward.test.ts` holds
+      // the other eight daemons to the same line.
+      {
+        const refused = refuseForeignOrigin(req, srv.port);
+        if (refused) return refused;
+      }
       const url = new URL(req.url);
       const path = url.pathname;
-      // ⛔ VERIFY-PASS FIX 1a — A FOREIGN ORIGIN IS REFUSED. Any web page the
-      // human visits can open a WebSocket or POST to 127.0.0.1; the browser
-      // sends its Origin, and only this daemon's own page may drive it. The
-      // CLI's fetch sends no Origin at all, so it is unaffected.
-      if (
-        (path === "/ws" || path === "/cmd" || path.startsWith("/fs/")) &&
-        !sameOrigin(req, srv.port)
-      )
-        return Response.json({ ok: false, error: "foreign origin refused" }, { status: 403 });
       if (path === "/ws")
         return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 426 });
       if (req.method === "GET" && path === "/state") {
@@ -1581,13 +1583,6 @@ export async function startDaemon(opts: StartOpts) {
   done.then(() => close());
 
   return { port: boundPort, sessionId, mode, dir: session.dir, close, done, shutdown };
-}
-
-/** An absent Origin (the CLI, curl) or this daemon's own page; nothing else. */
-export function sameOrigin(req: Request, port: number | undefined): boolean {
-  const origin = req.headers.get("origin");
-  if (origin === null) return true;
-  return origin === `http://127.0.0.1:${port}` || origin === `http://localhost:${port}`;
 }
 
 /**

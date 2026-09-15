@@ -1,8 +1,20 @@
 # Backlog — spell daemons accept a WebSocket (and a POST) from any web page
 
-**Status:** backlog (not scheduled). Captured 2026-09-11 by scriptorium's
-slice-A verify pass. **Severity:** state tampering, not file writes — for every
-spell except the one already fixed.
+**Status:** ✅ **CLOSED 2026-09-14 — `fab803b0`.** Captured 2026-09-11 by
+scriptorium's slice-A verify pass; closed at the release that would have changed
+who was exposed. The guard is `src/kit/wire/origin.ts`, called by all nine
+servers and held there by `grimoire/origin-guard-ward.test.ts`, with real
+over-the-wire 403s in the four spells that own a spawn harness and a browser
+drive against bounty (attacker page on a foreign origin: WebSocket refused,
+`/state` and `/cmd` unreadable).
+
+⚠ **THE SEVERITY LINE BELOW WAS NEVER EVIDENCED, and a cold reader caught it.**
+It read _"state tampering, not file writes — for every spell except the one
+already fixed"_, asserted with no reasoning in a document that had just
+demonstrated file writes for the ninth daemon. Nobody checked whether any of the
+other eight could be driven to a write. It is moot now, and it is recorded
+because the habit is not: a severity claim that lowers urgency needs the same
+evidence as one that raises it.
 
 ## The finding
 
