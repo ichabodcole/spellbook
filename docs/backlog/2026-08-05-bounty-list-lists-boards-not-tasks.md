@@ -30,6 +30,6 @@ Fold whichever lands into the `SKILL.md` accuracy pass tracked in
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/cli.ts` — `cmdList`
+- `src/bounty/backend/cli.ts` — `cmdList`
 - Context: anthill team session 9; same session filed the `state --full` pipe
   truncation ([#78](https://github.com/ichabodcole/spellbook/issues/78))

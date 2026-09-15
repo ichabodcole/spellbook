@@ -127,12 +127,23 @@ anything retyped here.**
 ### Reading history — two queries, two questions
 
 ```bash
-# what FEATURES landed          (~22 entries)
-git log --merges --format='%h %ci %s' | grep -v "Merge pull request"
+# what FEATURES landed          (the feature spine — count drifts, do not pin it)
+git log --merges --format='%h %ci %s' \
+  | grep -vE "Merge pull request|Merge branch 'main' into"
 
 # what RELEASES shipped         (main's spine)
 git log --first-parent main --format='%h %ci %s'
 ```
+
+> **Both exclusions are load-bearing and they strip different noise.**
+> `Merge pull request` removes GitHub's PR merges; **`Merge branch 'main' into`
+> removes our own back-merges**, which are not features and were showing up as
+> two phantom entries here. _Measured 2026-08-10, and confirmed to PORT: anthill
+> ran the identical query and found three of its own. The string is **git's
+> default back-merge subject**, not one either repo chose — a mechanism claim,
+> which is why one measurement on each side licensed it. Had it been a subject
+> we authored, it would have been topology and neither measurement would have
+> licensed the other._
 
 > **⚠ `--first-parent develop` does NOT work here and is a trap.** The
 > `develop`→`main` PR merge is created **on main**, so its first parent is main

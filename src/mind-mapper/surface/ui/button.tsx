@@ -6,7 +6,7 @@
 // exist for).
 
 import type * as React from "react";
-import { cn } from "../lib/utils";
+import { cn } from "../../../kit/lib/cn";
 
 type ButtonVariant = "outline" | "ghost" | "card";
 type ButtonSize = "sm" | "icon" | "icon-xs" | "auto";

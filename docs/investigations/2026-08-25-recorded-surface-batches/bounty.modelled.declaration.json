@@ -1,0 +1,32 @@
+{
+  "formatVersion": "0",
+  "provenance": "modelled",
+  "selfDescription": null,
+  "commands": [
+    {
+      "path": [],
+      "args": [{ "name": "--help", "type": "boolean", "status": "valid" }],
+      "positionals": [{ "name": "verb", "required": false }]
+    },
+    {
+      "path": ["state"],
+      "args": [
+        { "name": "--mine", "type": "boolean", "status": "valid" },
+        { "name": "--owner", "type": "string", "status": "valid" },
+        { "name": "--as", "type": "string", "status": "valid" },
+        { "name": "--full", "type": "boolean", "status": "valid" }
+      ],
+      "positionals": []
+    },
+    {
+      "path": ["claim"],
+      "args": [{ "name": "--as", "type": "string", "status": "valid" }],
+      "positionals": [{ "name": "id", "required": true }]
+    },
+    {
+      "path": ["list"],
+      "args": [],
+      "positionals": []
+    }
+  ]
+}

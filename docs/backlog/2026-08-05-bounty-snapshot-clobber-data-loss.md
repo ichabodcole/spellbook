@@ -62,8 +62,8 @@ fix.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/` — daemon lifecycle, `close`,
-  snapshot write path, `open --session-key` / `--restore`
+- `src/bounty/backend/` — daemon lifecycle, `close`, snapshot write path,
+  `open --session-key` / `--restore`
 - `~/.bounty/snapshots/` — the single-slot snapshot files
 - Context: mind-mapper V1 session 2026-07-16 (daedalus, self-reported on the
   vine); operator team session (9-task board, session key `operator`)

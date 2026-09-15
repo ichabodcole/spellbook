@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  AGENT_EVENT_TYPES,
-  defaultState,
-  defaultStyleGuide,
-  VALID_KIND,
-} from "../surface/state/types";
+import { AGENT_EVENT_TYPES, defaultState, defaultStyleGuide, VALID_KIND } from "../shared/types";
 
 test("defaultState is an empty library session", () => {
   const s = defaultState("My Style", "logo set");
@@ -22,7 +17,7 @@ test("VALID_KIND covers the four tile kinds", () => {
 test("every imperative client message has an agent event type", () => {
   // The structural guard against V1's dropped-input bug: any browser message
   // that is NOT a pure board move must be representable as an agent event.
-  for (const t of ["item.add"]) {
+  for (const t of ["item.add"] as const) {
     expect(AGENT_EVENT_TYPES).toContain(t);
   }
   // item.annotate is ambient (a per-item note read on demand) — NOT pushed.

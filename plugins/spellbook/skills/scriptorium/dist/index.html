@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>scriptorium</title>
+    <!-- Pre-paint theme: stored choice > OS preference > dark. Mirrors
+         state/theme.ts resolveInitialTheme — keep the two in sync by hand. -->
+    <script>
+      (() => {
+        let t = null;
+        try {
+          t = localStorage.getItem("scriptorium:theme");
+        } catch {}
+        if (t !== "light" && t !== "dark") {
+          t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!-- Pre-boot ground so a cold dev open does not flash. LITERALS on purpose:
+         no token exists until styles.css loads; these mirror --color-bg. -->
+    <style>
+      html {
+        color-scheme: dark;
+        background-color: #15130f;
+      }
+      html[data-theme="light"] {
+        color-scheme: light;
+        background-color: #f6f1e7;
+      }
+    </style>
+    
+    <link rel="icon" href="data:," />
+  <link rel="stylesheet" crossorigin href="./index-1qdda350.css"><script type="module" crossorigin src="./index-j42hseac.js"></script></head>
+  <body class="h-dvh overflow-hidden bg-bg font-sans text-sm leading-normal text-ink antialiased">
+    <div id="root" class="contents"></div>
+    
+  </body>
+</html>

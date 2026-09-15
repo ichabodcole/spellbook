@@ -1,0 +1,22 @@
+{
+  "name": "@spellbook/scriptorium",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/search": "^6.5.11",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
+    "@headless-tree/core": "^1.7.0",
+    "@headless-tree/react": "^1.7.0",
+    "@lezer/highlight": "^1.2.1",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.2.5",
+    "d3-force": "^3.0.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "react-resizable-panels": "^4.12.4"
+  }
+}

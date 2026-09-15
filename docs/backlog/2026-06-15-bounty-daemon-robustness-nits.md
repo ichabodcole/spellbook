@@ -28,6 +28,6 @@ practice today; bundled here so a single cleanup pass can knock them out.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/{server.ts,cli.ts}`
+- `src/bounty/backend/{server.ts,cli.ts}`
 - Origin: `docs/projects/_archive/bounty-agent-usable/backlog.md` (R1, R2, #3,
   #4)

@@ -22,9 +22,27 @@
 //   glamour style.save const style = saveStyle(…); push; uniform               -> RED  (lost-value)
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-const SKILLS = "/Users/colereed/Projects/Spellbook/plugins/spellbook/skills";
+// ⛔ THE ROOT: AN ENV OVERRIDE WITH A DERIVED DEFAULT, AND IT USED TO BE A
+// HARDCODED ABSOLUTE PATH TO ONE MACHINE'S CHECKOUT — pointed, moreover, at
+// `plugins/spellbook/skills`, which the backend convergence emptied of
+// dispatchers. Every one of the three r8 copies therefore exited 1 with
+// `ZERO-DENOMINATOR — verdict withheld` (type-debt Phase 1, T10): live,
+// self-calibrating logic aimed at a tree that had moved out from under it, and
+// unrunnable on any other machine besides.
+//
+// The default is DERIVED from this file's own location, so the instrument runs
+// wherever the checkout is; `R8_ROOT` is the house override idiom
+// (`gate-blind-set.ts` takes `ROOT_DIR`, `type-debt-census.ts`
+// `TYPE_DEBT_ROOT`, `canon-ledger-ward.ts` `CANON_DIR`) and is what points it
+// at the OLD tree, or at a fixture, without editing a specimen.
+//
+// ⚠ AND THE REPORT IS BYTE-IDENTICAL TO THE PRE-CHANGE FILE RUN AGAINST THE
+// SAME ROOT — verified for all three copies before and after `biome --write`,
+// which is `c4d669eb`'s own discipline for touching these files. The only thing
+// that changed is which tree the instrument can find.
+const ROOT = resolve(process.env.R8_ROOT ?? join(import.meta.dir, "..", "..", "src"));
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -35,6 +53,25 @@ function walk(dir: string, out: string[] = []): string[] {
     } else if (e.endsWith(".ts") && !e.endsWith(".test.ts")) out.push(p);
   }
   return out;
+}
+
+// ⛔ R3, MADE LOCAL: READ THE POSSIBLY-UNDEFINED, AND DIE NAMING THE INVARIANT.
+// `x!` and `?? fallback` both make the type error vanish and only one of those
+// is honest. In an INSTRUMENT `?? fallback` is the worse one, and
+// `if (!x) continue` is worse still: a skipped element lowers a DENOMINATOR
+// with nothing said, which is D64's defect exactly — a coverage count going
+// down is not a failure, so nothing reds and a shipped number is quietly false.
+// An instrument that crashes gets repaired; one that counts less ships a lie.
+//
+// ⚠ THIS HELPER IS DUPLICATED PER INSTRUMENT ON PURPOSE. Every file under
+// `scripts/instruments/` imports node builtins and nothing else — each is
+// runnable and copyable on its own — and the three r8 files are CALIBRATED
+// SPECIMENS whose independence is their evidentiary value (c4d669eb verified
+// each byte-identical to its own baseline). A shared module would let one edit
+// move all three specimens at once, silently.
+function must<T>(v: T | undefined, invariant: string): T {
+  if (v === undefined) throw new Error(`INVARIANT VIOLATED — ${invariant}`);
+  return v;
 }
 
 function blockAfter(src: string, from: number, hardEnd: number): string {
@@ -72,7 +109,7 @@ type Row = {
   distinguishing: boolean;
 };
 
-const files = walk(SKILLS);
+const files = walk(ROOT);
 const rows: Row[] = [];
 let branches = 0;
 const dispatchers = new Set<string>();
@@ -84,31 +121,56 @@ for (const f of files) {
   for (const m of src.matchAll(MARK))
     marks.push({
       disc: m[1] ?? "«case»",
-      verb: m[2] ?? m[3],
+      // MARK is two alternatives; group 2 rides the `if` form and group 3 the
+      // `case` form, so a match sets exactly one. (`disc: m[1] ?? "«case»"`
+      // above is NOT this shape — group 1 is genuinely absent for `case`, and
+      // that sentinel is an honest alternative, which is why it never typed as
+      // an error.)
+      verb: must(m[2] ?? m[3], "MARK matched with neither verb group set"),
       start: m.index,
       end: m.index + m[0].length,
     });
 
   let i = 0;
   while (i < marks.length) {
+    // ⚠ `head` IS `group[0]` BY CONSTRUCTION — `marks.slice(i, …)[0]` is
+    // `marks[i]` — so naming it once removes the indexed read at both sites
+    // WITHOUT hiding one behind a parameter (D64's route). The grouping walk is
+    // rewritten as a `for(;;)` so the end-of-array case is a NAMED terminal
+    // (`next === undefined`, past the last mark) rather than a length
+    // comparison the type system cannot connect to the read.
+    const head = must(marks[i], `marks[${i}] absent inside 0..${marks.length}`);
     let j = i;
-    while (j + 1 < marks.length && marks[j + 1].disc === marks[i].disc) j++;
+    for (;;) {
+      const next = marks[j + 1];
+      if (next === undefined || next.disc !== head.disc) break;
+      j++;
+    }
     const group = marks.slice(i, j + 1);
     if (group.length >= 3) {
       dispatchers.add(f);
       for (let k = 0; k < group.length; k++) {
-        const body = blockAfter(src, group[k].end, group[k + 1]?.start ?? src.length);
+        const g = must(group[k], `group[${k}] absent inside 0..${group.length}`);
+        // ⚠ `group[k + 1]` is legitimately absent on the dispatcher's last
+        // branch; that `??` is the terminal case and stays.
+        const body = blockAfter(src, g.end, group[k + 1]?.start ?? src.length);
         branches++;
         const dist = DISTINGUISHING.test(body);
         const seen = new Set<string>();
         for (const c of body.matchAll(MUTATOR)) {
-          const [, local, callee] = c;
+          // ⭐ MUTATOR's group 1 IS OPTIONAL — `(?:(?:const|let)\s+(…)\s*=\s*)?`
+          // — because a BARE mutator call has nothing to capture, and seeing
+          // those is exactly what v3 added over v2. So `local` is GENUINELY
+          // `string | undefined` and the two `?? ""` / `?? null` below are real
+          // alternatives, not silencings. Group 2 (the callee) is mandatory.
+          const local = c[1];
+          const callee = must(c[2], "MUTATOR matched without its `callee` group");
           const key = `${callee}|${local ?? ""}`;
           if (seen.has(key)) continue;
           seen.add(key);
           rows.push({
-            file: f.replace(`${SKILLS}/`, ""),
-            verb: group[k].verb,
+            file: f.replace(`${ROOT}/`, ""),
+            verb: g.verb,
             local: local ?? null,
             callee,
             distinguishing: dist,

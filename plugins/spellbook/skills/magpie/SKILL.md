@@ -90,6 +90,25 @@ All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/magpie/scripts/cli.ts <verb>`. Verb
 first; pass `--session <id>` **after the verb** to target a specific session
 (default: most recent). `help` prints the full surface.
 
+> **Flags are scoped to their verb.** `extract`'s `--pad` is not accepted by
+> `say`. A rejection names the verb and lists what that verb does accept, and it
+> distinguishes the two cases: an unrecognized token ("Unknown option") from a
+> real magpie flag used in the wrong place ("`--bbox` is not accepted by
+> `say`"). `--session` is accepted by every verb that acts on a session — not by
+> `open`, `sessions` or `help`, which have none to target.
+
+> **A bare invocation is a usage error, not a help path.** `cli.ts` with no verb
+> exits `2` with empty stdout and the usage on stderr. magpie is agent-driven,
+> so an empty argv is a caller that failed to name what it wanted; answering it
+> with `0` would report success for it. Use `help` for the surface.
+
+> **Failures are JSON on stderr**, one document, shaped
+> `{ok:false,error:{kind,exit_code,retryable,message,hint,choices},meta}`.
+> `kind` is the contract and `message` is presentation — branch on `kind`, never
+> on prose. Exit codes follow the taxonomy: `2` usage (your command is wrong),
+> `1` internal (magpie is wrong), `5` not_found, `6` conflict. stdout stays
+> empty on every failure. `--version` prints `{"name","version"}` on stdout.
+
 > **`${CLAUDE_PLUGIN_ROOT}` unset?** Some harnesses leave it empty, turning
 > `${VAR}/skills/…` into `/skills/…` so bun fails with "module not found."
 > Substitute the absolute path to this skill's `scripts/cli.ts`.

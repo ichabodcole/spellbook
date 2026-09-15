@@ -1,0 +1,160 @@
+// ⛔ IS THE RENDERED VIEW STILL THE ONLY WAY HTML REACHES THE PAGE?
+//
+// E29's rendered view has one `dangerouslySetInnerHTML`, and what makes it safe
+// is entirely upstream of it: micromark encodes raw HTML in the source, so every
+// tag came from the renderer, and `state/markdown.ts` refuses a link target that
+// is not http, https, mailto or relative. Feed that sink anything else — a
+// document's text, a chat message, a daemon field — and the page executes it at
+// a localhost origin that is also driving a daemon with filesystem verbs.
+//
+// Losing it would be SILENT: every document that is not an attack renders
+// identically either way. So, digestify's shape (its `sinks.test.ts`, which this
+// follows): the sink set is DECLARED, and a second one has to be argued for
+// rather than merged quietly.
+//
+// It lives at src/scriptorium/, NOT inside surface/, because `@source "./"` in
+// styles.css scans the surface directory whole — a test file there contributes
+// its own strings to Tailwind's candidate set and changes the SHIPPED stylesheet.
+import { describe, expect, test } from "bun:test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const SURFACE = join(import.meta.dir, "surface");
+
+/** ⛔ COMMENTS STRIPPED, AND THE STRIP IS PART OF THE ASSERTION. This file's
+ *  subject is described in prose in the very files it reads: the renderer's own
+ *  header explains why `allowDangerousHtml` must never be set, and unstripped
+ *  the cell below reads that sentence as the setting. Caught on the first run
+ *  (digestify's ward documents the same trap, and this is a second sighting). */
+function code(text: string): string {
+  return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) walk(join(dir, e.name), out);
+    else if (/\.tsx?$/.test(e.name)) out.push(join(dir, e.name));
+  }
+  return out;
+}
+
+/**
+ * Every HTML sink in the surface, in EITHER of the two shapes React allows.
+ *
+ * ⛔ IT USED TO SCAN ONLY `dangerouslySetInnerHTML={{ __html: x }}`, AND THAT
+ * WENT BLIND. E51 had to hoist the prop into a memoised object
+ * (`dangerouslySetInnerHTML={htmlProp}`) because React 19 compares the prop
+ * OBJECT and rewrote the whole subtree on every render otherwise — and the
+ * moment it did, this scanner matched nothing. Its zero-guard is what said so,
+ * which is the guard working; but a ward that a legitimate refactor can silence
+ * would also be silenced by an illegitimate one. So both shapes are scanned,
+ * and every `__html:` in the surface is enumerated separately below — a sink
+ * reached through one more level of indirection still has to write that key.
+ */
+function sinks(): { file: string; expr: string }[] {
+  const found: { file: string; expr: string }[] = [];
+  for (const file of walk(SURFACE)) {
+    const src = code(readFileSync(file, "utf8"));
+    const rel = file.replace(`${SURFACE}/`, "");
+    // Inline: dangerouslySetInnerHTML={{ __html: <expr> }}
+    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{\{\s*__html:\s*([^}]+?)\s*\}\}/g)) {
+      const expr = m[1];
+      if (expr !== undefined) found.push({ file: rel, expr });
+    }
+    // Hoisted: dangerouslySetInnerHTML={<identifier>}
+    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{([A-Za-z_$][\w$]*)\}/g)) {
+      const expr = m[1];
+      if (expr !== undefined) found.push({ file: rel, expr });
+    }
+  }
+  return found;
+}
+
+/** Every place in the surface that writes the `__html` key at all. */
+function htmlKeys(): { file: string; expr: string }[] {
+  const found: { file: string; expr: string }[] = [];
+  for (const file of walk(SURFACE)) {
+    // ⚠ `code()` FIRST. Without it this scanner matched a `__html: html` written
+    // inside a COMMENT — including one in this very file — and reported a second
+    // sink that does not exist.
+    for (const m of code(readFileSync(file, "utf8")).matchAll(/__html:\s*([^},]+?)\s*[},]/g)) {
+      const expr = m[1];
+      if (expr !== undefined) found.push({ file: file.replace(`${SURFACE}/`, ""), expr });
+    }
+  }
+  return found;
+}
+
+/** The complete, DECLARED set of HTML sinks this surface may have. */
+const ALLOWED = [
+  {
+    file: "components/MarkdownView.tsx",
+    expr: "htmlProp",
+    why: "the rendered view — `htmlProp` is `{ __html: html }` and `html` is `renderMarkdown(text)` and nothing else (E51 hoisted it; see the scanner's note)",
+  },
+] as const;
+
+/** The complete, DECLARED set of `__html` writers. */
+const ALLOWED_KEYS = [
+  {
+    file: "components/MarkdownView.tsx",
+    expr: "html",
+    why: "the memoised prop object the one sink is fed from",
+  },
+] as const;
+
+describe("the surface's HTML sinks", () => {
+  test("there is exactly one, and it is the declared one", () => {
+    const found = sinks();
+    // A zero-guard: an empty scan and a clean surface look identical otherwise.
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
+      ALLOWED.map((s) => `${s.file} <- ${s.expr}`).sort(),
+    );
+  });
+
+  test("nothing else in the surface writes an `__html` key", () => {
+    const found = htmlKeys();
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
+      ALLOWED_KEYS.map((s) => `${s.file} <- ${s.expr}`).sort(),
+    );
+  });
+
+  /**
+   * ⛔ THE HOISTED FORM IS REQUIRED, NOT MERELY TOLERATED — do not "simplify"
+   * `dangerouslySetInnerHTML={htmlProp}` back to an inline `{{ __html: html }}`.
+   * React 19 compares the PROP OBJECT, so a fresh literal per render re-runs
+   * `setInnerHTML` on every commit and replaces the whole subtree even when the
+   * markup is identical. That wipes any live selection in the pane, which is
+   * E51's entire feature: MEASURED as 10 childList mutations for one drag, with
+   * a patched `innerHTML` setter naming React's own `commitUpdate` as the
+   * writer. The `ALLOWED` entry above declares `htmlProp` precisely so that
+   * reverting to the literal turns this file red.
+   */
+  test("the hoisted prop is the renderer's output, not something assembled beside it", () => {
+    const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
+    // `htmlProp` must be `{ __html: html }` — the indirection E51 introduced is
+    // allowed to be exactly this and nothing cleverer.
+    expect(view).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
+  });
+
+  test("that sink is fed by renderMarkdown, in the same file, and by nothing else", () => {
+    const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
+    // E32 changed the ARGUMENT (the frontmatter block is split off before
+    // rendering) and this cell red on it, which is the cell working: what is
+    // asserted is that the sink's input still comes THROUGH the renderer.
+    expect(view).toMatch(/renderMarkdown\(\s*splitFrontmatter\(text\)\.body\s*\)/);
+    // The failure this catches: someone "simplifying" to the raw document text.
+    expect(view).not.toContain("__html: text");
+  });
+
+  test("the renderer never turns on raw HTML, and checks every link target", () => {
+    const md = code(readFileSync(join(SURFACE, "state", "markdown.ts"), "utf8"));
+    // micromark's ONE dangerous option, which would void the whole claim.
+    expect(md).not.toContain("allowDangerousHtml");
+    // The href pass is the other half, and it is what the cells in
+    // state/markdown.test.ts exercise.
+    expect(md).toContain("safeHref");
+  });
+});

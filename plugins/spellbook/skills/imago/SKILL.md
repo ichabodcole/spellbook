@@ -127,13 +127,13 @@ which refs) a request is about without a separate read: `say` and `marks.commit`
 ride the focused variant + `selectedRefIds`; `context.capture` rides the focus.
 
 **Where the shapes live:** an event's full payload and the `state` snapshot are
-the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
-single contract). That's where field names come from — and where you read the
-ambient board state (`state.focus`, `state.batches[].variants[].refSelected`
-(selected refs are variants where `refSelected` is true), `state.library`
-(unified Context Library of `ContextEntry`), `state.activeContextIds` (styles
-linked to the active-context tray), `state.quickPromptIds` (quick-prompts linked
-to the composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
+the `AgentEventPayload` and `ImagoState` types in `shared/types.ts` (the single
+contract). That's where field names come from — and where you read the ambient
+board state (`state.focus`, `state.batches[].variants[].refSelected` (selected
+refs are variants where `refSelected` is true), `state.library` (unified Context
+Library of `ContextEntry`), `state.activeContextIds` (styles linked to the
+active-context tray), `state.quickPromptIds` (quick-prompts linked to the
+composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
 `state.batches[].variants[].id` (+ `.path` for the on-disk image). Notifications
 truncate; read the full payload from the tail line or from `state`. Polling only
 when you happen to check leaves the user waiting.
@@ -146,9 +146,11 @@ There's no phase pipeline — react to what the user does:
   fine; pull options out of it — "widescreen" → you'll generate 16:9). Reply
   with `say` (your read), then `propose` a prompt. Don't silently forward their
   words to a generator — you're the collaborator interpreting them.
-- **`proposal.send`** (they hit Send on your prompt) —
-  `status on "generating…"`, generate via media-forge, post a
-  `batch --kind generate`, `status off`. The first variant auto-focuses.
+- **`proposal.send`** (they hit Send on your prompt — the frame carries
+  `proposalId`, the conversation message the proposal hangs off; the frame's
+  `id` is the tail cursor, not the proposal) — `status on "generating…"`,
+  generate via media-forge, post a `batch --kind generate`, `status off`. The
+  first variant auto-focuses.
 - **`marks.commit`** / a change request about the focused image — this is an
   **edit**: read the focused variant's `path` from `state`, generate with
   `--ref <path>` + an instruction that folds in what they marked, post a

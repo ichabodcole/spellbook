@@ -1,0 +1,9 @@
+{
+  "name": "@spellbook/grapevine",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.2.5"
+  }
+}

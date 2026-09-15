@@ -1,0 +1,110 @@
+@import "tailwindcss" source(none);
+/* L0 shared tokens (src/kit/theme/base.css), imported BEFORE this surface's
+   own @theme so every token below overrides the kit default and grapevine
+   keeps its own palette. */
+@import "../../kit/theme/base.css";
+/* `source(none)` on the tailwindcss import is load-bearing: it turns OFF
+   automatic content detection (which roots at the process cwd — the repo
+   root under `bun run build`). The @source below is this surface's ONLY
+   content source; the kit stylesheet brings its own. A bare directory, not a
+   ts/tsx glob, so index.html and the registry ui/ are scanned too.
+   grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+@source "./";
+
+/* L2 — grapevine's palette. The original page's eleven `:root` properties,
+   each mapped onto the kit name for its role where one exists (bg, surface,
+   surface-raised, ink, ink-dim, edge, attention — the imago/mind-mapper
+   taxonomy) and declared under its own name where none does (grape, leaf).
+   No raw palette in markup: components use these through utilities. */
+@theme {
+  --color-bg: #0e1410; /* --bg */
+  --color-surface: #141b16; /* --bg-elev */
+  --color-surface-raised: #1a2219; /* --bg-card */
+  --color-edge: #28332b; /* --line */
+  --color-ink: #e7efe9; /* --ink */
+  --color-ink-dim: #8aa093; /* --ink-mute */
+  --color-grape: #7c5cff; /* --grape (the accent) */
+  --color-grape-soft: #b9a8ff; /* --grape-soft */
+  --color-leaf: #57c97a; /* --leaf */
+  --color-leaf-soft: #a6e2b7; /* --leaf-soft */
+  --color-attention: #f0b265; /* --warn */
+  --color-on-grape: #ffffff; /* text on the accent fill */
+  --color-danger: #ff6b6b; /* the close button's hover */
+  --color-announce-wash: color-mix(in srgb, var(--color-attention) 8%, var(--color-surface-raised));
+
+  /* Fonts: the Google Fonts links are gone with the CDN; the stacks fall
+     through to the system faces when Inter / JetBrains Mono are not local. */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* L1 — the shadcn names the installed registry set consumes (button,
+     badge, input, textarea, alert-dialog, dialog, context-menu, field,
+     label, switch, tooltip, separator, empty), each a
+     var() onto a grapevine token above. Never a value: the recipes keep
+     their stock class vocabulary and resolve to this spell's palette. Add
+     a name here when a newly added component consumes one; remove nothing
+     a shipped component still reads. */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-grape);
+  --color-primary-foreground: var(--color-on-grape);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-dim);
+  /* accent is the highlighted-item fill (menus): it must differ from popover,
+     or a hovered menu item is invisible (found by Cole 2026-09-06). */
+  --color-accent: var(--color-edge);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-grape);
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-ink);
+
+  /* The rail's new-channel flash (C6) and the status dot's pulse (T1). */
+  --animate-flash: flash 1.5s ease-out;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+  @keyframes flash {
+    0% {
+      background-color: var(--color-grape);
+      color: var(--color-on-grape);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+/* Two recipes reach past the utility layer with a raw var() — the secondary
+   button's hover is `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`.
+   Those names exist here as aliases of the same tokens; nothing else defines them. */
+:root {
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);
+}
+
+/* The registry recipes carry `dark:` arms tuned for a dark ground. Tailwind's
+   default `dark:` follows the OS (prefers-color-scheme), which would make this
+   always-dark surface look different per machine. Pin the variant to a class
+   and set it on <html> in index.html, so the dark arms always apply. */
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind v4 gives buttons the default cursor; the registry's button docs
+   offer this base rule to keep the pointer, and the original page had it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}

@@ -276,7 +276,8 @@ The first variant auto-focuses if nothing is focused yet.
 1. **`say`** event — the user expressed intent. Interpret it; reply with
    `cli.ts say "<your read>"`, then `cli.ts propose "<prompt>" --n 4` (the
    surface shows a Send card).
-2. **`proposal.send`** event — they confirmed. `cli.ts status on "generating…"`,
+2. **`proposal.send`** event — they confirmed (the frame's `proposalId` names
+   the proposal; its `id` is the tail cursor). `cli.ts status on "generating…"`,
    then
    `media-forge generate image --prompt="<the proposal>" --model=<routed> --n=4 --format json`.
 3. `cli.ts batch --kind generate --prompt "<…>" --tag "<…>" <url…>`, then
@@ -309,10 +310,10 @@ linking/unlinking a style doesn't wake you, same as `focus`/`like`):
 
 - **At generation,** read the active styles: resolve `state.activeContextIds`
   against `state.library` (each entry is a `ContextEntry`; field names live in
-  `surface/state/types.ts`, the single contract). For each, put its words into
-  the prompt AND pass its canonical image as a `--ref` (a captured style's image
-  is a style reference, same as a selected content ref). Active styles +
-  selected refs stack as the conditioning set.
+  `shared/types.ts`, the single contract). For each, put its words into the
+  prompt AND pass its canonical image as a `--ref` (a captured style's image is
+  a style reference, same as a selected content ref). Active styles + selected
+  refs stack as the conditioning set.
 - **Capturing a style is a wake event (`context.capture`)** handled in SKILL.md
   — it gives the exact `context style … --link active` command and where each
   argument comes from; don't restate it here. Pick a SPECIFIC name when the look

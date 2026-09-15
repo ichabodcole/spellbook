@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "acc": {
+      "source": "ichabodcole/agent-cli-conformance",
+      "sourceType": "github",
+      "skillPath": "skills/acc/SKILL.md",
+      "computedHash": "5a7af3bb8f453ac2cc7544aa833d1c6ce06879011eeb773030637ed37208723f"
+    }
+  }
+}

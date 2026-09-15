@@ -1,0 +1,113 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   src/kit/theme/base.css — L0 BASE TOKENS for the shared kit.
+
+   THE LAYERS (R3's four-layer mechanism, proven in src/mind-mapper/surface):
+     L0  these tokens — the shared vocabulary, with a default value each
+     L1  a spell's shadcn aliases (--color-accent, --color-popover, …)
+     L2  a spell's own @theme, which OVERRIDES any L0 token by redeclaring it
+     L3  a mode override ([data-theme="light"]) on the same names
+
+   A spell imports this file AFTER `@import "tailwindcss"` and BEFORE its own
+   @theme. Later declarations win, so a spell that redeclares --color-surface
+   keeps its own value and one that does not inherits the kit's.
+
+   ⛔ THE L0 SET IS THE INTERSECTION OF NAMES THE ROSTER ALREADY USES, NOT AN
+   INVENTION. Every token here is spelled the same way in at least two shipped
+   surfaces today. Where the roster DISAGREES on a name for one role
+   (mind-mapper's `ink-dim`/`ink-faint` vs imago's `muted`/`faint`;
+   `surface-raised` vs `surface-3`) the token is DELIBERATELY ABSENT — picking a
+   winner there is a rename across two surfaces, and this phase is relocation
+   plus a naming decision, not a migration. Add one when a second signal asks.
+
+   ⛔ NO L1 SHADCN ALIAS BELONGS HERE. `--color-accent` is imago's BRAND slot
+   and simultaneously mind-mapper's shadcn alias (`var(--color-edge)`) — the two
+   meanings collide, and R3 resolves it by renaming imago's brand out of the
+   shadcn namespace across 95 sites. A kit component that touched `bg-accent`
+   would drag that rename onto this phase's critical path. It does not.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ⛔ THIS @source IS THE ONLY THING THAT PUTS src/kit/ IN FRONT OF TAILWIND.
+   Resolved relative to THIS FILE, not to the importer — verified empirically,
+   not assumed (an @import-ed sheet's @source is self-relative).
+
+   ⚠ AMENDED 2026-08-31 (Sprint 03 Phase 4b), AND THE OLD WORDING WAS THE
+   DANGEROUS HALF. It said "its absence FAILS ONLY IN DEV", on the reasoning
+   that Tailwind's automatic content detection roots at the process CWD, that
+   `bun run build` runs from the repo root, and that src/kit/ was therefore
+   scanned by accident in release. All three were true. None of them are now:
+   every spell's styles.css opens `@import "tailwindcss" source(none)`, which
+   turns automatic detection OFF, so there is no accident left to rely on and
+   this line is load-bearing in BOTH modes. Measured by deleting it and
+   rebuilding imago — Dot's three utilities (the ward's sentinel, its pulse and
+   its default L0 tone) all vanished from the shipped stylesheet, with a green
+   build and no error.
+   ⛔ AND THAT SENTENCE MUST NOT NAME THEM — THOUGH NOT FOR THE REASON THIS
+   PARAGRAPH USED TO GIVE. It said this file is INSIDE the directory its own
+   @source scans, "so a class written here in prose stays emitted". The first
+   clause is true. The second is FALSE, and the sentence it justified — that
+   the ward guarding this mechanism was caught by itself on this comment —
+   never happened: kit-styling-ward's discrimination cell skips src/kit/
+   outright. Re-measured 2026-09-01 by a seat that did not write this file, one
+   probe class per `bun run build`, counted in imago's and mind-mapper's
+   shipped CSS, with a live control in EVERY run (the same probe in Dot.tsx's
+   className: 1 in imago, 1 in mind-mapper, 0 in the two spells that do not
+   import this file). Byte-identical one-line bodies, siblings of this file:
+       .css 0 · .scss 0 · .less 0 · .styl 0 · .log 0 · .lock 0
+       .md 1 · .html 1 · .txt 1 · .json 1 · .yaml 1
+   Extension is the ONLY variable, and CSS is not special-cased — oxide's
+   auto_source_detection ignores a stylesheet/lockfile/log GROUP, so the real
+   rule is a blocklist, not the four-extension allowlist it reads like. Naming
+   the file explicitly changes nothing either: an @source giving the .css by
+   path, by star glob, and by a brace glob that literally spells css all emit
+   NOTHING from it, while the .md reached by that same brace glob emits. So
+   this file sits inside the scanned directory and is not scanned, and
+   kit-prose-ward's .css exemption is CORRECT rather than a hole.
+
+   ⛔ THE PROHIBITION STANDS ANYWAY, AND NOTHING ENFORCES IT HERE. Two
+   stock-palette classes planted in this very comment leave every grimoire ward
+   green: kit-prose-ward exempts .css because the leak is genuinely absent, and
+   `bun run check` never reads this file at all — it is a declared entry in
+   gate-honesty's blind set. This is the ONE file in src/kit/ where the
+   directory's "prose does not spell class names" rule is on your honour.
+   Keep it, because PROSE MIGRATES: the identical sentence in a .tsx comment,
+   a README.md or a .txt note in this directory is a LIVE RULE in both
+   consumers' shipped stylesheets — which is how Dot.tsx's header came to ship
+   eight utilities, three of them live, before it was rewritten. Say it in
+   words, not in the class's own spelling.
+
+   ⛔ AND THIS IS WHY IT CANNOT BE REPLACED BY "the bundler will find it".
+   Under source(none) Bun's Tailwind plugin DISCARDS the module graph outright
+   (`getModuleGraphCandidates` returns an empty set when the content root is
+   `none`), so importing a kit COMPONENT brings its markup and none of its
+   utilities. A spell adopts the kit by importing THIS STYLESHEET; importing
+   Dot.tsx alone is not adoption. grimoire/kit-styling-ward.test.ts fails on
+   both halves of that now — see its amendment. */
+@source "../";
+
+@theme {
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-ink: #e2e8f0;
+  --color-edge: #1e293b;
+  /* Tertiary ink. THIS IS THE NAMING DECISION the phase called for, and it is
+     the one token here that a consumer does NOT already define: the roster
+     spells this role two ways — mind-mapper `ink-faint`, imago `faint`. The kit
+     takes mind-mapper's spelling because it is the `ink-*` family's third
+     member and the family already reads as a scale. imago keeps its own
+     `--color-faint` untouched (renaming 
+     it is a migration, not this phase) and simply INHERITS this one.
+     ⛔ That inheritance is what makes this file load-bearing rather than
+     decorative: every other token here is overridden by both consumers, so
+     this is the only one whose absence a consumer would feel. */
+  --color-ink-faint: #64748b;
+}
+
+/* L3 — the mode override, on the same names. A spell that redeclares a token
+   in its OWN [data-theme="light"] block wins here too, by the same rule. */
+[data-theme="light"] {
+  --color-bg: #f7f6f3;
+  --color-surface: #fdfcfa;
+  --color-ink: #1e293b;
+  --color-edge: #ddd8cf;
+  --color-ink-faint: #8b93a1;
+}

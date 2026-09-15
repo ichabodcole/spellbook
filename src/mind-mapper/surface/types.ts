@@ -186,8 +186,9 @@ export type StubMap = {
 
 // V1 wire (seams vine msgs 3–6, daedalus's ratify at msg 6): GET /state
 // returns this full snapshot; WS /events emits per-entity ServerEvents that
-// the reducer applies onto it. `cursor` is the last-applied event seq — a
-// gap (event.seq !== cursor + 1) means refetch /state wholesale, never patch
+// the reducer applies onto it. `cursor` is the last-applied event `id` — the
+// kit event log's frame cursor (src/kit/wire/eventLog.ts) — and a gap
+// (event.id !== cursor + 1) means refetch /state wholesale, never patch
 // around the hole.
 export type ProjectMeta = {
   id: string;
@@ -280,11 +281,6 @@ export type ProjectState = {
   // Claim C: agents-only standing presence (agent = open SSE tail; the
   // browser WS is the human side and deliberately never counts).
   presence: { agents: number };
-  // R4 B1: release mode only, spread AT THE HANDLER like presence (the
-  // engine's exported ProjectState under-reports the wire — grep server.ts,
-  // not state.ts). Absent in dev mode / on a pre-stamp dist / from an old
-  // daemon = render NO footer.
-  buildInfo?: { commit: string; builtAt: string; stale: boolean };
 };
 
 // GET /search wire hit (search.ts; prospero's one-endpoint ruling, vine msg
@@ -353,7 +349,7 @@ export type ServerEventKind =
   | "job.claimed"
   | "job.deleted"
   // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
-  // row — but every emit consumed a seq, so they still route THROUGH
+  // row — but every emit consumed a frame `id`, so they still route THROUGH
   // applyEvent (default case advances the cursor) and useProjectState
   // surfaces them separately via the {payload, seq} idiom.
   | "agent.activity"
@@ -368,7 +364,11 @@ export type ServerEventKind =
 export type AgentActivityState = "received" | "thinking" | "idle" | "stalled";
 
 export type ServerEvent = {
-  seq: number;
+  // The kit event log's frame cursor (src/kit/wire/eventLog.ts builds frames
+  // as `{ id: seq, ...msg }`) — monotonic per epoch, and what the reducer's
+  // gap detection compares against `cursor`. Named `seq` on mind-mapper's own
+  // pre-kit bus; the kit names the field, so the wire says `id`.
+  id: number;
   // Random per daemon boot (events.ts) — the browser doesn't need it: every
   // reconnect refetches /state fresh, which always carries the current
   // epoch's cursor, so a stale watermark across a restart never happens here

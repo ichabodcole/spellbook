@@ -1,0 +1,382 @@
+// Release-mode serve (seams Contract 1). THIRD port of this gate — after
+// mind-mapper's original and astrolabe's (scripts/release-serve.test.ts).
+//
+// ⛔ SINCE PHASE 3 THE COPIED TREE IS THE ARTIFACT, NOT THE SOURCE: the
+// launcher `scripts/server.ts` and the bundle `dist/server.js` it imports,
+// which is precisely what a marketplace clone contains.
+// cassandra's Seam D recipe: boot the daemon from a COPIED tree that has a
+// dist/ but NO surface/ and NO bunfig.toml, proving the code path genuinely
+// never reads surface source in release mode rather than merely working when
+// both happen to sit side by side.
+//
+// ⛔ WHICH CELLS IMAGO EARNS, AND WHICH IT DOES NOT — stated here rather than
+// silently dropped, because a shortened copy is how a template's coverage
+// erodes with nobody deciding to erode it.
+//
+// NOT PORTED, and why — the reason CHANGED, so read it again:
+//   · STALE DIST warning  — asserted mind-mapper's Round 4 build stamp
+//     (dist/build.json). imago never had the stamp, astrolabe never ported it,
+//     and the stamp is now REMOVED FROM THE TREE ENTIRELY by Cole's ruling.
+//   · /state buildInfo     — same stamp. Same reason.
+//   These are no longer cells awaiting a port; their subject is gone. Do not
+//   re-add them, and do not re-add a stamp for them to assert.
+//
+// PORTED UNCHANGED IN SUBSTANCE: dist entry, hashed assets, unknown-path 404,
+// traversal 404, backend-still-works, and the SPELLBOOK_SURFACE_MODE override.
+//
+// EARNED BY IMAGO ALONE, not in either precedent — two cells, for two facts
+// that are true of imago and of no other spell yet:
+//   1. shared/ NEED NOT BE IN THE COPIED TREE — ⚠ AND THIS CELL INVERTED IN
+//      PHASE 3, WHICH IS RECORDED RATHER THAN QUIETLY REWRITTEN. It used to
+//      read "shared/ MUST be in the copied tree": imago was the first spell
+//      with a shared/ (Phase 1b), the daemon imported it as a sibling, and a
+//      release tree missing it did not boot. Building the daemon absorbed it —
+//      dist/server.js IS the whole module graph — so the rig now asserts the
+//      STRONGER fact: the daemon boots from a tree with no shared/ at all.
+//      shared/ still ships, because the surface imports it 33 times (D10).
+//   2. /assets/ MUST NOT BECOME A DIST READER. imago already owns a
+//      GET /assets/<name> route for session files, and serveDist was added
+//      BELOW it. The cell proves the two stay disjoint: a file that exists in
+//      dist/ is reachable at "/" and NOT through /assets/.
+//
+// AND ONE STRUCTURAL DIFFERENCE FROM BOTH PRECEDENTS: imago's server writes
+// NOTHING to stdout. mind-mapper and astrolabe print a one-line handshake and
+// their gates read `mode` off it; imago's handshake is its DISCOVERY FILE
+// ($TMPDIR/imago-<id>.json, which cli.ts reads). So `mode` is asserted from the
+// discovery file AND from the ready event, and there is no stdout cell to port.
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+// ⛔ THE SKILL ROOT IS EXPLICIT, NOT COUNTED FROM THIS FILE'S NEIGHBOURS
+// (playbook B6). This suite used to sit at `<skill>/tests/`, where
+// `join(import.meta.dir, "..")` WAS the skill root; from `src/imago/backend/`
+// the same expression names `src/imago/`.
+const SKILL_SRC = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "plugins",
+  "spellbook",
+  "skills",
+  "imago",
+);
+
+/** The backend bundles the convergence put in `dist/`. Named here rather
+ *  than globbed, so a build that stops emitting one turns the cell below red
+ *  instead of quietly asserting nothing. */
+const BACKEND_ARTIFACTS = ["cli.js", "server.js"];
+
+let skillRoot: string;
+let home: string;
+let proc: Bun.Subprocess<"ignore", "pipe", "pipe">;
+let url = "";
+
+function buildReleaseTree(): string {
+  const root = mkdtempSync(join(tmpdir(), "imago-release-test-"));
+  // ⛔ TWO FILES, NOT A GLOB — AND THE SCAR THE GLOB CARRIED IS RE-HOMED, NOT
+  // DELETED. It copied every non-test `.ts` beside the daemon, under a property
+  // earned when mind-mapper's hand-maintained mirror shipped a broken release
+  // twice: a NEW MODULE IS IN THE COPIED TREE BY CONSTRUCTION. That property is
+  // now true by BUNDLING instead of by globbing — `dist/server.js` IS the whole
+  // module graph — and the glob has additionally become impossible, because the
+  // sources it used to copy now carry `../../../plugins/…` specifiers that
+  // cannot resolve from a temp directory. So the copy is the launcher and its
+  // bundle: exactly what a marketplace clone contains, and exactly what runs.
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  cpSync(join(SKILL_SRC, "scripts", "server.ts"), join(root, "scripts", "server.ts"));
+  // The dist/ a real build.ts produces — flat, hashed chunk names, relative
+  // hrefs, UNHASHED entry (Contract 2's shape). Content is fake; the SHAPE is
+  // what release-mode serving reads.
+  mkdirSync(join(root, "dist"), { recursive: true });
+  cpSync(join(SKILL_SRC, "dist", "server.js"), join(root, "dist", "server.js"));
+  // ⛔ THE CLI BUNDLE TOO, THOUGH THE DAEMON NEVER IMPORTS IT — a marketplace
+  // clone HAS it in the served directory, and the leak cell is about what a
+  // browser can reach, not about what the daemon loads.
+  cpSync(join(SKILL_SRC, "dist", "cli.js"), join(root, "dist", "cli.js"));
+  writeFileSync(
+    join(root, "dist", "index.html"),
+    '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
+  );
+  writeFileSync(join(root, "dist", "chunk-abc123.js"), "console.log('release mode');");
+  writeFileSync(join(root, "dist", "chunk-abc123.css"), "body { margin: 0; }");
+  // A REAL file at a nested path. Without it the "nested paths 404" cell is
+  // VACUOUS: every nested request 404s anyway because nothing resolves there,
+  // so the cell passes with the traversal guard deleted. Measured — an earlier
+  // draft of this file shipped exactly that green.
+  mkdirSync(join(root, "dist", "sub"), { recursive: true });
+  writeFileSync(join(root, "dist", "sub", "nested.js"), "console.log('must not be served');");
+  return root;
+}
+
+/** imago has no stdout handshake — poll its discovery file, the way cli.ts does. */
+async function waitForSession(id: string): Promise<{ url: string; mode?: string }> {
+  const file = join(tmpdir(), `imago-${id}.json`);
+  for (let i = 0; i < 200; i++) {
+    if (existsSync(file)) {
+      try {
+        return JSON.parse(readFileSync(file, "utf8"));
+      } catch {
+        /* half-written — retry */
+      }
+    }
+    await Bun.sleep(50);
+  }
+  throw new Error("daemon never wrote its discovery file");
+}
+
+const SESSION_ID = `release-${process.pid}`;
+
+beforeAll(async () => {
+  skillRoot = buildReleaseTree();
+  home = mkdtempSync(join(tmpdir(), "imago-release-home-"));
+
+  // The gate's actual assertions about the TREE: no surface source, no bunfig,
+  // and — imago-specific — shared/ present, because the daemon imports it.
+  expect(existsSync(join(skillRoot, "surface"))).toBe(false);
+  expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
+  // ⚠ THE `shared/` CELL INVERTED, AND SAYING SO IS THE POINT. Before the
+  // backend was built, imago was the first spell with a `shared/` the daemon
+  // imported as a sibling, so this rig ASSERTED `shared/` was present — a
+  // release tree without it did not boot. The bundle absorbed it: `shared/` is
+  // inlined into `dist/server.js`, and the stronger claim is now available and
+  // asserted here — the daemon boots from a tree that has NO `shared/` at all.
+  // `shared/` still ships in the deployed skill folder, because the SURFACE
+  // imports it 33 times (D10), but the DAEMON no longer needs it on disk.
+  expect(existsSync(join(skillRoot, "shared"))).toBe(false);
+  expect(existsSync(join(skillRoot, "dist", "server.js"))).toBe(true);
+
+  proc = Bun.spawn(
+    [
+      process.execPath,
+      "run",
+      join(skillRoot, "scripts", "server.ts"),
+      "--no-open",
+      "--port",
+      "0",
+      "--id",
+      SESSION_ID,
+    ],
+    {
+      cwd: skillRoot,
+      env: { ...process.env, IMAGO_HOME: home },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  const session = await waitForSession(SESSION_ID);
+  expect(session.mode).toBe("release");
+  url = session.url;
+});
+
+afterAll(() => {
+  proc.kill();
+  rmSync(skillRoot, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
+  rmSync(join(tmpdir(), `imago-${SESSION_ID}.json`), { force: true });
+});
+
+test("the ready EVENT carries the resolved mode, not only the discovery file", async () => {
+  // The requirement a VERIFIER reads. cli.ts spawns the daemon detached with
+  // stdio ignored, so an agent holding only a tail never sees a handshake of
+  // any kind — a dev daemon with root deps present renders an identical-looking
+  // surface, and `mode` is the only thing that tells them apart.
+  const res = await fetch(`${url}/events?since=0`);
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+  // ⚠ THE STREAM NOW OPENS WITH A COMMENT, and reading "the first line" is no
+  // longer the same as reading "the first event". `kit/wire/sse.ts` writes
+  // `: connected` before the replay — a spec-legal comment that tells a client
+  // the stream is live even when the replay is empty — so this cell reads until
+  // it finds a `data:` line instead of assuming index 0. Phase 3 chapter 2.
+  const dec = new TextDecoder();
+  let buf = "";
+  let dataLine: string | undefined;
+  for (let i = 0; i < 20 && dataLine === undefined; i++) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    dataLine = buf.split("\n").find((l) => l.startsWith("data:"));
+  }
+  await reader.cancel();
+  expect(buf.startsWith(": connected")).toBe(true);
+  const ready = JSON.parse((dataLine ?? "").replace(/^data: ?/, "")) as {
+    type: string;
+    mode: string;
+  };
+  expect(ready.type).toBe("ready");
+  expect(ready.mode).toBe("release");
+});
+
+test("GET / serves dist/index.html verbatim", async () => {
+  const res = await fetch(`${url}/`);
+  expect(res.status).toBe(200);
+  expect(res.headers.get("content-type")).toContain("text/html");
+  expect(await res.text()).toContain("chunk-abc123.js");
+});
+
+test("GET /chunk-*.js and .css serve the hashed assets with the right content type", async () => {
+  const js = await fetch(`${url}/chunk-abc123.js`);
+  expect(js.status).toBe(200);
+  expect(js.headers.get("content-type")).toContain("text/javascript");
+  expect(await js.text()).toContain("release mode");
+
+  const css = await fetch(`${url}/chunk-abc123.css`);
+  expect(css.status).toBe(200);
+  expect(css.headers.get("content-type")).toContain("text/css");
+});
+
+test("an unknown static path 404s (not a silent fallthrough)", async () => {
+  expect((await fetch(`${url}/nope.js`)).status).toBe(404);
+});
+
+test("the nesting guard REFUSES a nested dist file that would otherwise resolve", async () => {
+  // dist/sub/nested.js EXISTS in the rig. serveDist must still refuse it,
+  // because a static asset request is always a bare filename — that guard is
+  // what keeps the dist route one level deep and unable to walk.
+  // ⛔ THE FILE HAS TO EXIST OR THIS CELL IS VACUOUS. Verified by mutation:
+  // deleting `rel.includes("/")` turns this cell red only because the target
+  // resolves; against a non-existent nested path it stays green either way.
+  expect((await fetch(`${url}/sub/nested.js`)).status).toBe(404);
+  // The bare sibling of the same name IS served, so the refusal is about the
+  // nesting and not about the file.
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});
+
+test("/assets/ and dist/ are disjoint BY THE NESTING GUARD, not by route order", async () => {
+  // imago owns GET /assets/<name> for session files and serveDist was added
+  // BELOW it. The disjointness does NOT come from that ordering — measured: a
+  // mutation hoisting serveDist above /assets/ AND dropping the nesting guard
+  // left an order-based cell green, because "/assets/index.html" never maps to
+  // "dist/index.html" under any variant of serveDist. What actually separates
+  // them is that every /assets/ path is nested, so the guard refuses it and it
+  // falls through to imago's own handler. This cell asserts THAT: a dist file
+  // planted under dist/assets/ is unreachable through the /assets/ route.
+  expect((await fetch(`${url}/index.html`)).status).toBe(200);
+  const planted = join(skillRoot, "dist", "assets");
+  mkdirSync(planted, { recursive: true });
+  writeFileSync(join(planted, "leak.js"), "console.log('leaked from dist');");
+  const res = await fetch(`${url}/assets/leak.js`);
+  expect(res.status).toBe(404);
+  expect(await res.text()).toContain("not found");
+});
+
+test("the backend still works in release mode — /state reads back and /cmd writes", async () => {
+  const fresh = (await (await fetch(`${url}/state`)).json()) as {
+    state: { title: string; batches: unknown[] };
+  };
+  expect(fresh.state.title).toBe("imago");
+  expect(fresh.state.batches).toEqual([]);
+
+  const res = await fetch(`${url}/cmd`, {
+    method: "POST",
+    body: JSON.stringify({ type: "say", text: "release probe" }),
+  });
+  expect(res.status).toBe(200);
+  const after = (await (await fetch(`${url}/state`)).json()) as {
+    state: { conversation: Array<{ text?: string }> };
+  };
+  expect(after.state.conversation.map((m) => m.text)).toContain("release probe");
+});
+
+test("SPELLBOOK_SURFACE_MODE=dev OVERRIDES dist/ presence — and dev genuinely needs surface source", async () => {
+  // Contract 1 specifies the override in both directions. Forcing `dev` over
+  // the SAME dist-present tree must take the dev branch, whose dynamic import
+  // cannot resolve here — so the daemon dies at that import instead of quietly
+  // serving dist/. That failure is the point: it proves the override really
+  // overrides, AND that release mode is the only reason a surface-source-free
+  // tree boots at all.
+  const devProc = Bun.spawn(
+    [
+      process.execPath,
+      "run",
+      join(skillRoot, "scripts", "server.ts"),
+      "--no-open",
+      "--port",
+      "0",
+      "--id",
+      `${SESSION_ID}-dev`,
+    ],
+    {
+      cwd: skillRoot,
+      env: { ...process.env, IMAGO_HOME: home, SPELLBOOK_SURFACE_MODE: "dev" },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  try {
+    // Bounded at 3s, deliberately under bun test's 5s per-test timeout, so THIS
+    // assertion reports a daemon that wrongly stays up rather than the runner's
+    // timeout reporting it as flake.
+    const exitCode = await Promise.race([
+      devProc.exited,
+      Bun.sleep(3000).then(() => "still-running" as const),
+    ]);
+    expect(exitCode).not.toBe("still-running");
+    expect(exitCode).not.toBe(0);
+    expect(await new Response(devProc.stderr).text()).toContain("src/imago/surface/index.html");
+    // And it never got far enough to publish a discovery file, so nothing
+    // downstream can mistake it for a booted daemon.
+    expect(existsSync(join(tmpdir(), `imago-${SESSION_ID}-dev.json`))).toBe(false);
+  } finally {
+    devProc.kill();
+    rmSync(join(tmpdir(), `imago-${SESSION_ID}-dev.json`), { force: true });
+  }
+});
+
+// ⛔ THE LEAK THIS PROJECT'S OWN CONVERGENCE CREATED, DRIVEN AT THE SEAM THAT
+// CREATED IT. Phase 1b moved the implementation INTO the served directory, and
+// `serveFromDist`'s permission was `existsSync` — so every backend bundle in
+// `dist/` answered at 200, `text/javascript`, byte-identical to the committed
+// artifact, and each carries an INLINE SOURCEMAP, so the response embeds the
+// complete original TypeScript. Closed in `src/kit/wire/serveDist.ts` by
+// deriving the served set from what the built `index.html` LINKS.
+//
+// CALIBRATED BOTH WAYS: the artifact must be ON DISK in the served tree and
+// still refused, or the cell passes over an empty subject; and the surface
+// cells above prove the whitelist did not simply refuse everything.
+test("⛔ the backend bundles in dist/ are REFUSED — and they are really there", async () => {
+  const present = readdirSync(join(skillRoot, "dist")).filter((f) => BACKEND_ARTIFACTS.includes(f));
+  expect(present.sort()).toEqual([...BACKEND_ARTIFACTS].sort());
+  for (const name of present) {
+    // The subject: the bundle is in the served directory, and it is the real
+    // artifact — its inline sourcemap is the thing that must not reach a browser.
+    const onDisk = readFileSync(join(skillRoot, "dist", name), "utf8");
+    expect(`${name}:${onDisk.includes("sourceMappingURL=data:application/json;base64,")}`).toBe(
+      `${name}:true`,
+    );
+    const res = await fetch(`${url}/${name}`);
+    expect(`${name}:${res.status}`).toBe(`${name}:404`);
+    const body = await res.text();
+    expect(body.length).toBeLessThan(1_000);
+    expect(body).not.toContain("sourceMappingURL");
+  }
+});
+
+// ⛔ CASE-INSENSITIVE BY CONSTRUCTION, NOT BY A SECOND BLACKLIST ENTRY. APFS
+// resolves every one of these to the same inode. Membership in the whitelist is
+// an exact match against the emitted name, so no variant of any name — servable
+// or not — has a route, and there is no lower-case pass anywhere to keep in sync.
+test("case variants of a servable name are refused; the emitted name still serves", async () => {
+  for (const p of [
+    "/INDEX.HTML",
+    "/Index.html",
+    "/index.HTML",
+    "/iNdEx.HtMl",
+    "/CHUNK-ABC123.JS",
+  ]) {
+    expect(`${p}:${(await fetch(`${url}${p}`)).status}`).toBe(`${p}:404`);
+  }
+  expect((await fetch(`${url}/index.html`)).status).toBe(200);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});

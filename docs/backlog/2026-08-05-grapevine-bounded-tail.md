@@ -36,7 +36,7 @@ The consume-mode story it completes: **push = Monitor, episodic = drain.**
 ## References
 
 - `plugins/spellbook/skills/grapevine/scripts/cli.ts` — `cmdTail`
-- `plugins/spellbook/skills/bounty/scripts/cli.ts` — `cmdTail` (the twin)
+- `src/bounty/backend/cli.ts` — `cmdTail` (the twin)
 - Context: anthill multi-seat session (Operator monorepo); the join-history
   backfill hit this repeatedly
 - ⚠ Coordinate with

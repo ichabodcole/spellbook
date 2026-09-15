@@ -1,0 +1,65 @@
+# CI — the gate, plus the one check the gate cannot run locally.
+#
+# ⛔ THE JOB'S NAME IS `gate` AND IT MUST STAY `gate`.
+#    A ruleset on `main` requires a status check named `gate`. GitHub names a
+#    check run after the JOB (the workflow's own `name:` is not part of it), and
+#    a matrix would append ` (…)` to it. A required check that never reports does
+#    not fail — it hangs every PR forever on "Expected — waiting for status to be
+#    reported", which looks like GitHub is broken. So: ONE job, no matrix, named
+#    `gate`. Renaming it, adding a matrix, or splitting it in two blocks the
+#    develop→main PR until someone edits the ruleset.
+#
+# ⛔ CI VERIFIES; IT MUST NOT GENERATE (seams Contract 18). Nothing here commits
+#    a rebuilt artifact. A GITHUB_TOKEN commit triggers no further workflow, so a
+#    CI-regenerated `dist/` would be the one thing in the repo nothing verifies —
+#    a false reassurance about an instrument.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    # A hung job leaves the required check "in progress", which is
+    # indistinguishable from never reporting. Fail instead of hanging.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # THE BUN PIN IS CONSUMED FROM `.bun-version`, NOT RESTATED HERE.
+      # Contract 18's reproduction basis is "the pinned Bun"; a version written
+      # in this file as well would be a second declaration that drifts, and the
+      # drift's symptom is a repo-wide red with no source change.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - run: bun install --frozen-lockfile
+
+      # The same gate every seat runs locally (`gate` in .anthill/config.json):
+      # bun run build && bun run check && bun test.
+      - name: gate
+        run: bun run gate
+
+      # ARM 2 (reproduction) lives HERE and only here. Locally the gate builds
+      # first, so any un-committed surface edit legitimately dirties dist/ and
+      # this would red on correct work-in-progress. The runner has no work in
+      # progress — it checks out committed state — so dirt genuinely means "this
+      # commit shipped a stale artifact."
+      #
+      # Exit 3 is NO VERDICT (empty denominator), not a pass. Left unpiped and
+      # unguarded on purpose: any non-zero exit fails the step, and therefore the
+      # `gate` check. Do not add `|| true`, `continue-on-error`, or a pipe — a
+      # pipe reports the FILTER's exit status, which is always 0.
+      - name: dist-check
+        run: bun scripts/dist-check.ts

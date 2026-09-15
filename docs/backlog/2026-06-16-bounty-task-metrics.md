@@ -34,5 +34,5 @@ just Doing-entry), and the rest reuse it. Sequence the substrate once.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/server.ts` — `applyTaskUpdate` /
-  `applyTaskMove`, `emitEvent`; `Task` shape.
+- `src/bounty/backend/server.ts` — `applyTaskUpdate` / `applyTaskMove`,
+  `emitEvent`; `Task` shape.

@@ -170,7 +170,7 @@ describe("the SCRUB — asserted against the enumeration, which is the un-skippa
     // test of the mechanism you already thought of, because the gap is always in
     // the sites that never call it.
     const src = readFileSync(
-      join(import.meta.dir, "..", "plugins/spellbook/skills/bounty/scripts/server.test.ts"),
+      join(import.meta.dir, "..", "src/bounty/backend/server.test.ts"),
       "utf8",
     );
     const body = src.slice(src.indexOf("function hermeticEnv"));

@@ -152,9 +152,12 @@ opens the registration form.
 ## Exit Code Contract
 
 `0` clean dismiss (the human closes the board, or an agent `cli.ts close`) · `2`
-bad arguments or a rejected command (dedupe / unknown id) · `124` idle timeout
-(only if a positive `--timeout` was set — the observatory stands indefinitely by
-default). A conjuration has no "cancel"/`130` discard path.
+bad arguments, a bare invocation, or a rejected command (dedupe / unknown id) ·
+`1` internal fault (the daemon failed to start) · `124` idle timeout (only if a
+positive `--timeout` was set — the observatory stands indefinitely by default).
+A conjuration has no "cancel"/`130` discard path. Failures leave stdout empty
+and put one JSON error envelope (`{ok:false, error:{kind, message}}`) on stderr;
+`cli.ts --version` answers `{name, version}` at exit 0.
 
 ## Limits
 

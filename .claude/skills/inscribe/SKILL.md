@@ -53,13 +53,19 @@ When the exploration has cohered:
   `POST /submit`, exits) or conjuration (standing daemon holding state), or
   both.
 - **Give it an identity** — the visual treatment that makes it _this_ spell.
-- **Solidify** into a self-contained spell at
-  `plugins/spellbook/skills/<name>/`. Clone an existing spell of the matching
-  kind as the structural start — cantrip → `digestify`; conjuration →
-  `grapevine` or `bounty` — and bring the prototype's surface and contract into
-  it, house-style in hand. (`grimoire/house-style.md` is the source of truth for
-  conventions, the file anatomy, and the Bun gotchas; the fuller shared-shape
-  write-up is the `agent-surface-bun` recipe, which lives in project-docs.)
+- **Give it a real home — and this step is a PLAYBOOK, not a clone.** ⛔ It used
+  to read _"solidify into a self-contained spell at
+  `plugins/spellbook/skills/<name>/`; clone an existing spell of the matching
+  kind"_, which describes the world before the backend convergence. **All eight
+  spells now build**: the authored source lives at
+  `src/<name>/{backend,surface}/`, the skill folder carries a **committed,
+  generated `dist/`** and **launchers** at `scripts/`, and the kind (cantrip vs
+  conjuration) decides **none** of the structure. Follow
+  [`docs/playbooks/scaffolding-a-spell-playbook.md`](../../../docs/playbooks/scaffolding-a-spell-playbook.md)
+  — start with its eight questions, which are the design choices everything else
+  dispatches on. Then hand off to `ward`, which is the checklist.
+  (`grimoire/house-style.md` remains the source of truth for conventions and the
+  Bun gotchas.)
 - **Write the spell's SKILL.md** (this is what ships). Write the invocation
   **generously** — multiple natural phrasings and any distinct lenses (e.g.
   creating vs. joining) so the agent recognizes intent however it's said.
@@ -69,8 +75,18 @@ When the exploration has cohered:
 
 ## 4. Harden
 
+- **`bun run build`, then `bun scripts/dist-check.ts` unpiped (expect `0`)** —
+  the generated `dist/` is **committed**, so source without it ships nothing.
+  Confirm the spell appears **by name** in the roster `dist-check` prints; a
+  spell absent from that roster has not been examined, not passed. Exit `3` is
+  NO VERDICT.
 - **`bun test`** — cover parsers / state-merge, plus subprocess integration
-  (submit / cancel / timeout).
+  (submit / cancel / timeout). **Test the ARTIFACT, not only the source**, and
+  expect the pinned instruments to red on a new spell's arrival — that is them
+  working. See the playbook's instrument phase for the twelve pins.
+- **Drive the launcher end to end and watch the process** — it either exits when
+  it must or stays up when it must, and reading the file does not tell you
+  which.
 - **Subtraction pass.** Cut the spell's SKILL.md to the least-explicit version
   you think works — you just did the work, so you've almost certainly
   over-specified. (Two house disciplines to apply: only include what the agent

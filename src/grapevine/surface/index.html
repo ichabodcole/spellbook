@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>grapevine</title>
+    <!-- Pre-boot ground so a cold dev open (Bun bundles lazily) does not
+         flash white before styles.css arrives. A LITERAL on purpose: no token
+         exists until the stylesheet loads, so this mirrors `--color-bg` in
+         styles.css (#0e1410) and must move with it. -->
+    <style>
+      html {
+        color-scheme: dark;
+        background-color: #0e1410;
+      }
+    </style>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body class="flex h-dvh flex-col bg-bg font-sans text-sm leading-normal text-ink">
+    <div id="root" class="contents"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

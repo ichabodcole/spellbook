@@ -13,5 +13,5 @@ drain). Surfaced by both cold workers in the fresh-agent fleet test (MED).
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/cli.ts` — `cmdTail`
+- `src/bounty/backend/cli.ts` — `cmdTail`
 - Origin: `docs/projects/_archive/bounty-agent-usable/backlog.md` (F1)

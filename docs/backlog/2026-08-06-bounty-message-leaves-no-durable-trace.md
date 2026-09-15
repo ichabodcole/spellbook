@@ -31,7 +31,7 @@ not work**, because there is nothing in `state` to follow up with.
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/server.ts:949-950`
+- `src/bounty/backend/server.ts:949-950`
 - `plugins/spellbook/skills/bounty/SKILL.md:679-681`
 - `docs/projects/spell-hardening/sprints/01-drained-exit/plan.md` — candidate 7
 - Related: `#83`, `#84` (the same family, already in scope as P0d)

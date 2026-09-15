@@ -1,0 +1,313 @@
+@import "tailwindcss" source(none);
+/* L0 shared tokens (src/kit/theme/base.css, Contract 21), imported BEFORE this
+   surface's own @theme so every token below overrides the kit default. */
+@import "../../kit/theme/base.css";
+/* `source(none)` is load-bearing: automatic detection roots at the process cwd
+   (the repo root under `bun run build`). This bare-directory @source is the
+   surface's ONLY content source — index.html and ui/ included. The kit sheet
+   brings its own. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+@source "./";
+
+/* L2 — scriptorium's palette: a warm paper-and-ink manuscript room. Semantic
+   names only (house theming convention: no raw palette in markup); the dark
+   palette is the default, the light one is the [data-theme="light"] block. */
+@theme {
+  --color-bg: #15130f;
+  --color-surface: #1c1a15;
+  --color-surface-raised: #25221b;
+  --color-edge: #363126;
+  --color-ink: #ece6d8;
+  --color-ink-dim: #a39b88;
+  --color-ink-faint: #6f6858;
+  --color-rubric: #d0704f; /* the scribe's red — the accent */
+  --color-on-rubric: #1a120e;
+  --color-attention: #e2a94b;
+  --color-danger: #e5675a;
+  /* ⛔ E36 — THE DIFF NEEDS A SECOND HUE AND THE PALETTE HAS NONE. Every
+     token above is warm (rubric and danger are both reds), so tinting
+     additions with one and deletions with the other made the two sides of a
+     comparison look the same — measured in the browser, not guessed. These
+     are the one concession: a muted sage that still belongs on parchment,
+     against the existing red. They are SEMANTIC (added/removed), not a
+     palette, so nothing else may reach for them to mean "good" and "bad". */
+  --color-added: #7f9c6a;
+  --color-removed: #c2705f;
+  /* ⛔ E40 — SELECTION IS NOT THE BRAND COLOUR. `--color-rubric` is the
+     scribe's red and it was doing five jobs, one of which was "this row is
+     selected" — a few degrees from `--color-danger`, so the open document read
+     as a warning (Cole). Selection needs a hue that asserts nothing: not red
+     (caution), not green (success). This is iron-gall ink — the blue-black a
+     scribe actually wrote in — which is conventional for selection, sits
+     against parchment rather than fighting it, and means only "this one".
+     HOVER stays warm-neutral (surface-raised), so the two never collide. */
+  --color-selected: #8098c0;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
+
+  /* L1 — the shadcn names the installed recipes (resizable, empty, button)
+     consume, each a var() onto a token above so the light block below is the
+     only palette switch. Add a name when a newly added component reads one. */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-rubric);
+  --color-primary-foreground: var(--color-on-rubric);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-dim);
+  --color-accent: var(--color-edge);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-rubric);
+  /* Menus and popovers (context-menu) — without these the popup rendered with
+     NO background, transparent over the page (Cole, 2026-09-11). */
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-ink);
+}
+
+/* L3 — the light palette, written once as token overrides. Unlayered, so it
+   beats @theme's layered declarations without a specificity fight. The
+   attribute lives on <html>, set by the pre-paint script in index.html. */
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f6f1e7;
+  --color-surface: #fbf8f2;
+  --color-surface-raised: #efe8da;
+  --color-edge: #d9cfbd;
+  --color-ink: #2a251c;
+  --color-ink-dim: #6b6250;
+  --color-ink-faint: #9a917f;
+  --color-rubric: #a8432a;
+  --color-on-rubric: #fff8f0;
+  --color-attention: #9a6212;
+  --color-danger: #b33a2e;
+  --color-added: #4e7040;
+  --color-removed: #a8432a;
+  --color-selected: #3f5f8f;
+}
+
+/* Two recipes reach past the utility layer with a raw var() (the secondary
+   button's color-mix hover); alias them so the hover is not dropped. */
+:root {
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);
+}
+
+/* The recipes' `dark:` arms follow the THEME ATTRIBUTE, not the OS — so a
+   viewer who picked light on a dark OS gets the light arms. */
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* ─── The rendered document (E29) ─────────────────────────────────────────────
+   `.md-prose` styles micromark's output, which is plain semantic HTML with no
+   classes on it — so these are ELEMENT rules under one class, not utilities.
+   Written in the spell's own tokens, so both themes follow, and sized against
+   the reading measure the raw view already uses (76ch). Tailwind's typography
+   plugin would do this too, and is not worth a dependency for one pane. */
+@layer components {
+  .md-prose {
+    color: var(--color-ink);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ─── Notes, painted over the rendered text (E51) ───────────────────────────
+     The CSS Custom Highlight API, so the renderer's output is never touched:
+     nothing is wrapped, nothing is inserted, and the one HTML sink stays fed
+     only by `renderMarkdown`. Deliberately the SAME attention tint and underline
+     the raw view's `.cm-note` uses, because a note is one thing seen two ways —
+     a reader switching modes should recognise it, not re-learn it.
+
+     ⚠ A highlight pseudo-element accepts only a few properties (colour,
+     background, decoration, shadow) — a border or padding here is silently
+     dropped, which is why the underline is a text-decoration and not a
+     border-bottom as it is in the editor. */
+  ::highlight(scriptorium-note) {
+    background-color: color-mix(in srgb, var(--color-attention) 22%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-attention) 55%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  /* The passage a note is being written about (E46) — the rubric, as the
+     editor's `.cm-note-pending` uses, so the two views agree about "this is
+     what you are noting". */
+  ::highlight(scriptorium-note-pending) {
+    background-color: color-mix(in srgb, var(--color-rubric) 24%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-rubric);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  /* The note the panel is pointing at (E47) — the same relationship the editor
+     draws, one step louder than its neighbours. */
+  ::highlight(scriptorium-note-focus) {
+    background-color: color-mix(in srgb, var(--color-attention) 38%, transparent);
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-attention);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+  .md-prose > :first-child {
+    margin-top: 0;
+  }
+  .md-prose h1,
+  .md-prose h2,
+  .md-prose h3,
+  .md-prose h4 {
+    font-family: var(--font-manuscript, inherit);
+    color: var(--color-ink);
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1.6em 0 0.6em;
+  }
+  .md-prose h1 {
+    font-size: 1.7em;
+  }
+  .md-prose h2 {
+    font-size: 1.35em;
+  }
+  .md-prose h3 {
+    font-size: 1.15em;
+  }
+  .md-prose p,
+  .md-prose ul,
+  .md-prose ol,
+  .md-prose blockquote,
+  .md-prose pre,
+  .md-prose table {
+    margin: 0.9em 0;
+  }
+  .md-prose ul,
+  .md-prose ol {
+    padding-left: 1.5em;
+  }
+  .md-prose ul {
+    list-style: disc;
+  }
+  .md-prose ol {
+    list-style: decimal;
+  }
+  .md-prose li {
+    margin: 0.3em 0;
+  }
+  .md-prose li input[type="checkbox"] {
+    margin-right: 0.5em;
+    accent-color: var(--color-rubric);
+  }
+  .md-prose a {
+    color: var(--color-rubric);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  /* A link whose target the renderer refused: the words stay, the link does not. */
+  .md-prose a[data-blocked-link] {
+    color: var(--color-ink-dim);
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+  .md-prose blockquote {
+    border-left: 3px solid var(--color-edge);
+    padding-left: 1em;
+    color: var(--color-ink-dim);
+  }
+  .md-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-surface-raised);
+    border-radius: 4px;
+    padding: 0.15em 0.35em;
+  }
+  .md-prose pre {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-edge);
+    border-radius: 8px;
+    padding: 0.9em 1em;
+    overflow-x: auto;
+  }
+  .md-prose pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.85em;
+  }
+  .md-prose table {
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+    font-size: 0.95em;
+  }
+  .md-prose th,
+  .md-prose td {
+    border: 1px solid var(--color-edge);
+    padding: 0.4em 0.7em;
+    text-align: left;
+  }
+  .md-prose th {
+    background: var(--color-surface-raised);
+    font-weight: 600;
+  }
+  .md-prose hr {
+    border: none;
+    border-top: 1px solid var(--color-edge);
+    margin: 1.8em 0;
+  }
+  .md-prose img {
+    max-width: 100%;
+    border-radius: 6px;
+  }
+  .md-prose del {
+    color: var(--color-ink-dim);
+  }
+}
+
+/* ─── Scrollbars, in the spell's own colours ──────────────────────────────────
+   Cole asked for shadcn's look rather than the OS bar. Done in CSS, NOT with
+   `ScrollArea`, for one reason that decides it: `ScrollArea` replaces a native
+   scroller with its own viewport, and CodeMirror OWNS its scroller
+   (`.cm-scroller`) — it cannot be wrapped without taking its scrolling away.
+   These rules reach every scroller in the surface, the editor's included, so
+   the raw view and the rendered view carry the same bar.
+
+   ⚠ ONE MECHANISM, NOT TWO. Chromium honours `scrollbar-color` and then
+   IGNORES `::-webkit-scrollbar` entirely, so declaring both would silently
+   drop the detailed rules. The pseudo-elements are the Chromium/WebKit path
+   (Brave is Cole's browser); the standard properties are behind an @supports
+   that only Firefox takes. */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent);
+    border-radius: 9999px;
+    /* The border is the inset: a thumb that fills 10px looks like a gutter. */
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 75%, transparent);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent) transparent;
+    }
+  }
+}

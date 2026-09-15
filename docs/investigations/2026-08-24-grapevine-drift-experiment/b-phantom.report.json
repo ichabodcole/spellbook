@@ -1,0 +1,1295 @@
+{
+  "ok": true,
+  "data": {
+    "target": "/private/tmp/claude-501/-Users-colereed-Projects-Spellbook/4f1a3e53-b48c-42cb-a010-566f351c46eb/scratchpad/drift/skills/b-phantom/scripts/cli.ts",
+    "kitVersion": "0.1.0",
+    "configSource": { "origin": "none", "path": null, "dir": "/Users/colereed/Projects/Spellbook" },
+    "level": "L0",
+    "conformant": true,
+    "fullyVerified": false,
+    "counts": {
+      "core": 17,
+      "corePassed": 15,
+      "coreFailures": 0,
+      "diagnosticFailures": 0,
+      "unverified": 4,
+      "coreUnverified": 2,
+      "corePartial": 15,
+      "notApplicable": 3,
+      "waived": 0
+    },
+    "targetArgv0": [
+      "bun",
+      "/private/tmp/claude-501/-Users-colereed-Projects-Spellbook/4f1a3e53-b48c-42cb-a010-566f351c46eb/scratchpad/drift/skills/b-phantom/scripts/cli.ts"
+    ],
+    "evidenceGaps": [
+      {
+        "ruleId": "A1",
+        "gaps": [
+          "only the root is probed so a flag unknown to a subcommand is not",
+          "the MUST NOT act on a suggested correction clause is not exercised here",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "only long flags are probed so a short flag or a cluster of short flags is not",
+          "that the command did not otherwise proceed and that the value was not absorbed are both inferred from a non-zero exit rather than observed"
+        ]
+      },
+      {
+        "ruleId": "A2",
+        "gaps": [
+          "nested subcommands are not probed at L0",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "naming the offending verb on stderr is not asserted",
+          "only a sentinel-shaped token is probed so a verb that near-misses a real command is never offered",
+          "the first positional is assumed to select a subcommand so a target that reads it as free-form data is judged on the work it did rather than on a rejection"
+        ]
+      },
+      {
+        "ruleId": "A3",
+        "gaps": [
+          "the machine-mode field is any string value anywhere in the document because no declaration exists at L0 to name the envelope field the rule requires",
+          "only an unknown flag and an unknown verb are probed",
+          "the SHOULD to enumerate a closed set as choices is not exercised",
+          "the assertion is that the sentinel substring reached stderr and not that the whole offending token appears verbatim",
+          "the verb probe assumes the first positional selects a subcommand so a target that reads it as free-form data is judged for not naming a token it never rejected"
+        ]
+      },
+      {
+        "ruleId": "A5",
+        "gaps": [
+          "only a near-miss FLAG is probed and never a near-miss verb",
+          "performing no work is inferred from a non-zero exit rather than observed",
+          "the MUST NOT prompt to confirm a guess clause is not exercised here",
+          "only a single deletion near-miss of one discovered flag is probed so a transposition or an insertion or a case change is not",
+          "the near-miss is sent at the root so a near-miss of a flag belonging to a subcommand is never built"
+        ]
+      },
+      {
+        "ruleId": "A7",
+        "gaps": [
+          "unverified: root help advertises no closed value set for any flag, so this target has made no declaration to falsify",
+          "a rejection naming the value is not shown to come from the set validation rather than from an unparsable spelling or the value being read as a positional",
+          "only the first flag whose set help advertises is probed so a target declaring several sets is checked on one of them",
+          "the value is sent at the root so a set advertised only for a subcommand flag is probed where that flag may be unknown",
+          "the SHOULD to enumerate the valid set alongside the rejection is not exercised",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "that the flag's default did not silently apply is inferred from a non-zero exit rather than observed"
+        ]
+      },
+      {
+        "ruleId": "B1",
+        "gaps": [
+          "only usage-error failures are probed and never a runtime failure",
+          "stdout on a SUCCESSFUL command is never inspected for diagnostics",
+          "stderr is never required to carry the diagnostic so a failure that reports nothing at all passes"
+        ]
+      },
+      {
+        "ruleId": "B2",
+        "gaps": [
+          "only CSI escapes are detected and not OSC or single-character escape sequences",
+          "carriage-return animation is not detected",
+          "the NO_COLOR and --no-color and TERM=dumb overrides need a TTY and are never exercised",
+          "only root help and two usage errors are sampled so nested help and version output and successful command output and other diagnostics are never inspected"
+        ]
+      },
+      {
+        "ruleId": "B5",
+        "gaps": [
+          "unverified: no machine mode was DECLARED, and a flag matched from help by spelling is a guess at one rather than evidence of one; add `defaultOutput` to acc.config.json to have this checked",
+          "a machine mode is reached only through a declaration so a target whose machine mode is real but undeclared is not checked and only an unrecognised flag provokes the error a declared target is judged on",
+          "only an unrecognised flag provokes the error so a missing value or a missing required argument or an out-of-set value is not",
+          "the answer is only required to parse and is never checked against a declared envelope shape",
+          "that the invocation failed to PARSE is inferred from a non-zero exit rather than observed",
+          "NDJSON is reported unverified rather than failed because no output kind is declared at L0"
+        ]
+      },
+      {
+        "ruleId": "C1",
+        "gaps": [
+          "nested help is not probed at L0",
+          "a help subcommand is not probed",
+          "appending --help to an otherwise complete invocation is not probed",
+          "stdout is only required to be non-empty and is never checked to contain help text"
+        ]
+      },
+      {
+        "ruleId": "C2",
+        "gaps": [
+          "the internal-fault contrast is not established at L0 because no internal fault can be provoked inertly",
+          "the taxonomy codes for more specific failures are not exercised",
+          "an unexpected positional is never compared because a stray positional needs a verb to be stray to and sending a verb is above L0",
+          "the verb shape assumes the first positional selects a subcommand so a target that reads it as free-form data contributes an exit code that is not a usage error at all"
+        ]
+      },
+      {
+        "ruleId": "C3",
+        "gaps": [
+          "only one usage-error invocation shape is repeated and only three times",
+          "unchanged state is assumed rather than established",
+          "the retryable declaration for genuinely intermittent failures is not exercised",
+          "only a usage-error path is repeated so a success path or a real command is never compared",
+          "the three runs land within milliseconds of each other so variation that appears only over a longer interval is invisible"
+        ]
+      },
+      {
+        "ruleId": "D1",
+        "gaps": [
+          "a machine mode is reached only through a declaration so a target whose --version misbehaves only under a flag it never declared is not checked",
+          "the machine-mode payload is only required to be a structured document because no declaration exists at L0 to name the field the version belongs in",
+          "no network and no credentials and no side effects cannot be observed at L0",
+          "the SHOULD to support -V is not probed",
+          "stdout is never checked to carry a version string in either mode"
+        ]
+      },
+      {
+        "ruleId": "D2",
+        "gaps": [
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "stderr is never checked to carry the usage summary",
+          "the bare invocation is only run against pipes so a wizard that starts only with a terminal attached is out of reach",
+          "only a genuinely empty argv is sent so an invocation carrying nothing but global flags requests nothing either and is never probed"
+        ]
+      },
+      {
+        "ruleId": "D4",
+        "gaps": [
+          "only root help is compared and never nested help",
+          "forbidden content such as a timestamp or a varying absolute path is only caught when it differs between two adjacent runs",
+          "only stdout is compared and never stderr"
+        ]
+      },
+      {
+        "ruleId": "E1",
+        "gaps": [
+          "only inert paths are probed so a real confirmation path is never reached",
+          "the structured confirmation_required response and its exit 8 are not established",
+          "treating EOF or closed stdin as an answer is not detectable from termination alone",
+          "blocking is only detected when it outlasts the kit's deadline so a prompt that gives up sooner reads as terminating"
+        ]
+      },
+      {
+        "ruleId": "F1",
+        "gaps": [
+          "only root help is scanned and never schema output or error messages",
+          "only seven known credential shapes are matched so a bespoke token is invisible",
+          "a secret carried as a flag default is only seen if help prints defaults",
+          "nested subcommand help is never scanned even though a flag default usually belongs to a leaf command"
+        ]
+      },
+      {
+        "ruleId": "G1",
+        "gaps": [
+          "only the inert invocations other checkers already request are observed so an unprobed path such as nested help is never judged",
+          "no invocation that does real work is sent at L0 so a crash on the paths a caller actually uses is out of reach",
+          "a crash provoked by the probe's own sentinel token is not distinguished from one the target would suffer on any input",
+          "only the target's own termination is recorded so a fault in a child process it spawned is never observed"
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "ruleId": "A1",
+        "verdict": "pass",
+        "detail": "root flag rejected with exit 2, stdout empty, flag named; the same flag carrying a value likewise",
+        "evidence": ["b8d1ef65cae5", "913ff831a756"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/unknown-flag-exits-nonzero.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only the root is probed so a flag unknown to a subcommand is not",
+          "the MUST NOT act on a suggested correction clause is not exercised here",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "only long flags are probed so a short flag or a cluster of short flags is not",
+          "that the command did not otherwise proceed and that the value was not absorbed are both inferred from a non-zero exit rather than observed"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A2",
+        "verdict": "pass",
+        "detail": "root verb rejected with exit 2; nested case not probed at L0; this verdict assumes the first positional selects a subcommand, which nothing at L0 established",
+        "evidence": ["7b14f3dba1a0"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/unknown-command-exits-nonzero.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "nested subcommands are not probed at L0",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "naming the offending verb on stderr is not asserted",
+          "only a sentinel-shaped token is probed so a verb that near-misses a real command is never offered",
+          "the first positional is assumed to select a subcommand so a target that reads it as free-form data is judged on the work it did rather than on a rejection"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A3",
+        "verdict": "pass",
+        "detail": "the unknown-flag and unknown-verb rejections both named the offending token; no machine mode was reachable at L0 so the envelope clause was not reached; this verdict assumes the first positional selects a subcommand, which nothing at L0 established",
+        "evidence": ["b8d1ef65cae5", "7b14f3dba1a0"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/errors-name-the-offending-token.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "the machine-mode field is any string value anywhere in the document because no declaration exists at L0 to name the envelope field the rule requires",
+          "only an unknown flag and an unknown verb are probed",
+          "the SHOULD to enumerate a closed set as choices is not exercised",
+          "the assertion is that the sentinel substring reached stderr and not that the whole offending token appears verbatim",
+          "the verb probe assumes the first positional selects a subcommand so a target that reads it as free-form data is judged for not naming a token it never rejected"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A4",
+        "verdict": "unverified",
+        "detail": "arity cannot be probed at L0 — testing it requires running a real subcommand, which is only safe once the command has declared effects: read_only",
+        "evidence": [],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/unexpected-positionals-rejected.md",
+        "probeLevel": "L1",
+        "coverage": "partial",
+        "coverageGaps": ["no probe is declared so nothing about arity is established"],
+        "applicable": false,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A5",
+        "verdict": "pass",
+        "detail": "near-miss flag rejected with exit 2; that no work was done is inferred, not observed",
+        "evidence": ["65a35727e11f"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/no-fuzzy-auto-correction.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only a near-miss FLAG is probed and never a near-miss verb",
+          "performing no work is inferred from a non-zero exit rather than observed",
+          "the MUST NOT prompt to confirm a guess clause is not exercised here",
+          "only a single deletion near-miss of one discovered flag is probed so a transposition or an insertion or a case change is not",
+          "the near-miss is sent at the root so a near-miss of a flag belonging to a subcommand is never built"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A6",
+        "verdict": "unverified",
+        "detail": "cannot be probed through a `bun` launcher: bun swallows the leading `--`, so the target never receives the terminator",
+        "evidence": [],
+        "tier": "diagnostic",
+        "deviation": "design-choice",
+        "rulePath": "docs/wiki/rules/parsing/double-dash-terminator.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "the value after the terminator is only shown not to be rejected as a flag and never shown to arrive as a positional",
+          "the delegator passthrough requirement is not exercised",
+          "a rejection is recognised only from an English unknown-option or unknown-flag phrase so a differently worded rejection reads as a pass",
+          "only a bare terminator at the root followed by a single value is probed"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "A7",
+        "verdict": "unverified",
+        "detail": "root help advertises no closed value set for any flag, so this target has made no declaration to falsify",
+        "evidence": [],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/parsing/advertised-value-set-is-enforced.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "a rejection naming the value is not shown to come from the set validation rather than from an unparsable spelling or the value being read as a positional",
+          "only the first flag whose set help advertises is probed so a target declaring several sets is checked on one of them",
+          "the value is sent at the root so a set advertised only for a subcommand flag is probed where that flag may be unknown",
+          "the SHOULD to enumerate the valid set alongside the rejection is not exercised",
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "that the flag's default did not silently apply is inferred from a non-zero exit rather than observed"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "B1",
+        "verdict": "pass",
+        "detail": "stdout empty across 2 failing usage-error invocation(s), machine mode included where reachable",
+        "evidence": ["b8d1ef65cae5", "7b14f3dba1a0"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/streams/stdout-carries-only-data.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only usage-error failures are probed and never a runtime failure",
+          "stdout on a SUCCESSFUL command is never inspected for diagnostics",
+          "stderr is never required to carry the diagnostic so a failure that reports nothing at all passes"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "B2",
+        "verdict": "pass",
+        "detail": "no CSI escapes across 2 non-TTY invocation(s)",
+        "evidence": ["b8d1ef65cae5", "5a5cb180a70f"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/streams/no-ansi-when-piped.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only CSI escapes are detected and not OSC or single-character escape sequences",
+          "carriage-return animation is not detected",
+          "the NO_COLOR and --no-color and TERM=dumb overrides need a TTY and are never exercised",
+          "only root help and two usage errors are sampled so nested help and version output and successful command output and other diagnostics are never inspected"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "B3",
+        "verdict": "unverified",
+        "detail": "no machine mode was DECLARED, and a flag matched from help by spelling is a guess at one rather than evidence of one; add `defaultOutput` to acc.config.json and this rule becomes reachable at L1",
+        "evidence": [],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/streams/machine-output-is-parseable.md",
+        "probeLevel": "L1",
+        "coverage": "partial",
+        "coverageGaps": [
+          "a machine mode is reached only through a declaration so a target with a real machine mode that never declares one is not checked for it at all",
+          "the undeclared-output default of data is not enforced at L0 so NDJSON is reported unverified rather than failed",
+          "shape stability across invocations and across commands is not compared",
+          "the stream and opaque output kinds are never exercised because no declaration exists at L0 to select them"
+        ],
+        "applicable": false,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "B4",
+        "verdict": "unverified",
+        "detail": "no checker exists for this rule yet, so this run establishes nothing about it",
+        "evidence": [],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/streams/output-is-delivered-whole.md",
+        "probeLevel": "L1",
+        "coverage": "partial",
+        "coverageGaps": ["no checker exists for this rule so nothing about it is established"],
+        "applicable": false,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "B5",
+        "verdict": "unverified",
+        "detail": "no machine mode was DECLARED, and a flag matched from help by spelling is a guess at one rather than evidence of one; add `defaultOutput` to acc.config.json to have this checked",
+        "evidence": [],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/streams/machine-mode-holds-on-parser-errors.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "a machine mode is reached only through a declaration so a target whose machine mode is real but undeclared is not checked and only an unrecognised flag provokes the error a declared target is judged on",
+          "only an unrecognised flag provokes the error so a missing value or a missing required argument or an out-of-set value is not",
+          "the answer is only required to parse and is never checked against a declared envelope shape",
+          "that the invocation failed to PARSE is inferred from a non-zero exit rather than observed",
+          "NDJSON is reported unverified rather than failed because no output kind is declared at L0"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "C1",
+        "verdict": "pass",
+        "detail": "root --help and -h both exit 0 with non-empty stdout",
+        "evidence": ["5a5cb180a70f", "070cc242f897"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/exit-codes/help-exits-zero.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "nested help is not probed at L0",
+          "a help subcommand is not probed",
+          "appending --help to an otherwise complete invocation is not probed",
+          "stdout is only required to be non-empty and is never checked to contain help text"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "C2",
+        "verdict": "pass",
+        "detail": "3 usage-error shapes all use exit 2; internal-fault contrast unverified at L0; this verdict assumes the first positional selects a subcommand, which nothing at L0 established",
+        "evidence": ["b8d1ef65cae5", "7b14f3dba1a0", "cf21d6899d33"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/exit-codes/usage-errors-are-distinguishable.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "the internal-fault contrast is not established at L0 because no internal fault can be provoked inertly",
+          "the taxonomy codes for more specific failures are not exercised",
+          "an unexpected positional is never compared because a stray positional needs a verb to be stray to and sending a verb is above L0",
+          "the verb shape assumes the first positional selects a subcommand so a target that reads it as free-form data contributes an exit code that is not a usage error at all"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "C3",
+        "verdict": "pass",
+        "detail": "three identical invocations all exited 2",
+        "evidence": ["865d764aaf03", "e98da6a8fd84", "a64671cdbe1d"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/exit-codes/exit-codes-are-deterministic.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only one usage-error invocation shape is repeated and only three times",
+          "unchanged state is assumed rather than established",
+          "the retryable declaration for genuinely intermittent failures is not exercised",
+          "only a usage-error path is repeated so a success path or a real command is never compared",
+          "the three runs land within milliseconds of each other so variation that appears only over a longer interval is invisible"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "D1",
+        "verdict": "pass",
+        "detail": "version reported with an unusable HOME and XDG_CONFIG_HOME; no machine mode was declared, so the payload clause was not reached",
+        "evidence": ["f0c9715b2c6c", "085b0e703f76"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/discoverability/version-flag-exists.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "a machine mode is reached only through a declaration so a target whose --version misbehaves only under a flag it never declared is not checked",
+          "the machine-mode payload is only required to be a structured document because no declaration exists at L0 to name the field the version belongs in",
+          "no network and no credentials and no side effects cannot be observed at L0",
+          "the SHOULD to support -V is not probed",
+          "stdout is never checked to carry a version string in either mode"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "D2",
+        "verdict": "pass",
+        "detail": "bare invocation exited 2 with stdout empty; stderr not inspected",
+        "evidence": ["cf21d6899d33"],
+        "tier": "core",
+        "deviation": "design-choice",
+        "rulePath": "docs/wiki/rules/discoverability/bare-invocation-is-a-usage-error.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "the exit code is only required to be non-zero here and not the declared 2",
+          "stderr is never checked to carry the usage summary",
+          "the bare invocation is only run against pipes so a wizard that starts only with a terminal attached is out of reach",
+          "only a genuinely empty argv is sent so an invocation carrying nothing but global flags requests nothing either and is never probed"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "D3",
+        "verdict": "unverified",
+        "detail": "no machine-mode flag or schema command was advertised; help appears to CLAIM structured output is the default, which is a claim matched in prose rather than a token this kit can verify",
+        "evidence": ["5a5cb180a70f"],
+        "tier": "diagnostic",
+        "deviation": "design-choice",
+        "rulePath": "docs/wiki/rules/discoverability/help-advertises-machine-mode.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "a flagless machine-first tool cannot reach a pass by any route because a flag is the only token this rule accepts and a prose claim only downgrades the verdict so for that shape the best available outcome is unverified",
+          "a machine-first tool with no flag is recognised only by matching a claim in help prose which is a heuristic that misreads contrastive and scoped statements and cannot see a non-English one",
+          "help is only required to advertise either the machine-mode flag or a schema command and never both",
+          "the flag scan falls back to the whole help text when no options block is recognised so a flag named only in an example can satisfy it",
+          "a pass establishes only that help names the flag and never that the flag is accepted"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "D4",
+        "verdict": "pass",
+        "detail": "help identical across two runs of the same invocation",
+        "evidence": ["0d4eb5955895", "957d11b0734f"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/discoverability/help-output-is-deterministic.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only root help is compared and never nested help",
+          "forbidden content such as a timestamp or a varying absolute path is only caught when it differs between two adjacent runs",
+          "only stdout is compared and never stderr"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "E1",
+        "verdict": "pass",
+        "detail": "all 4 inert invocation(s) terminated (bare, --help, unknown flag, unknown verb)",
+        "evidence": ["b8d1ef65cae5", "7b14f3dba1a0", "5a5cb180a70f", "cf21d6899d33"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/interactivity/never-block-without-a-tty.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only inert paths are probed so a real confirmation path is never reached",
+          "the structured confirmation_required response and its exit 8 are not established",
+          "treating EOF or closed stdin as an answer is not detectable from termination alone",
+          "blocking is only detected when it outlasts the kit's deadline so a prompt that gives up sooner reads as terminating"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "F1",
+        "verdict": "pass",
+        "detail": "no KNOWN credential pattern in root help (absence of a known pattern, not proof)",
+        "evidence": ["5a5cb180a70f"],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/safety/no-secrets-in-help-or-schema.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only root help is scanned and never schema output or error messages",
+          "only seven known credential shapes are matched so a bespoke token is invisible",
+          "a secret carried as a flag default is only seen if help prints defaults",
+          "nested subcommand help is never scanned even though a flag default usually belongs to a leaf command"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "F2",
+        "verdict": "pass",
+        "detail": "--version first byte in 14ms (runs: 15, 14, 15ms)",
+        "evidence": ["4feada7c54d0", "da6b10014a57", "b6b40a60ba79"],
+        "tier": "diagnostic",
+        "deviation": "design-choice",
+        "rulePath": "docs/wiki/rules/safety/first-byte-is-prompt.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only --version is timed and never help or an argument-validation failure",
+          "the stream first-record and per-record flush requirement is not exercised",
+          "the progress signal a long-running command owes stderr is not exercised",
+          "the verdict is the fastest of three runs so a target that is usually slower still passes"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      },
+      {
+        "ruleId": "G1",
+        "verdict": "pass",
+        "detail": "all 18 inert invocation(s) exited under the target's own control",
+        "evidence": [
+          "b8d1ef65cae5",
+          "913ff831a756",
+          "7b14f3dba1a0",
+          "65a35727e11f",
+          "35cbdfb2c2f6",
+          "5a5cb180a70f",
+          "070cc242f897",
+          "cf21d6899d33",
+          "865d764aaf03",
+          "e98da6a8fd84",
+          "a64671cdbe1d",
+          "f0c9715b2c6c",
+          "085b0e703f76",
+          "0d4eb5955895",
+          "957d11b0734f",
+          "4feada7c54d0",
+          "da6b10014a57",
+          "b6b40a60ba79"
+        ],
+        "tier": "core",
+        "deviation": "defect",
+        "rulePath": "docs/wiki/rules/lifecycle/inert-invocations-do-not-crash.md",
+        "probeLevel": "L0",
+        "coverage": "partial",
+        "coverageGaps": [
+          "only the inert invocations other checkers already request are observed so an unprobed path such as nested help is never judged",
+          "no invocation that does real work is sent at L0 so a crash on the paths a caller actually uses is out of reach",
+          "a crash provoked by the probe's own sentinel token is not distinguished from one the target would suffer on any input",
+          "only the target's own termination is recorded so a fault in a child process it spawned is never observed"
+        ],
+        "applicable": true,
+        "excused": false,
+        "waived": false
+      }
+    ],
+    "observations": [
+      {
+        "id": "b8d1ef65cae5",
+        "args": ["--acc-probe-xyzzy-flag"],
+        "inertness": "sentinel",
+        "purposes": [
+          "A1: an unrecognised flag must be rejected",
+          "A3: the rejection must name the flag",
+          "B1: failure via bad flag",
+          "B2: errors must be escape-free",
+          "C2: usage error via flag",
+          "E1: bad flag"
+        ],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 332,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "ce35526a1168c18cba2c9d4f5ae7f80bb290b6524765d5113976dc689f555625",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "913ff831a756",
+        "args": ["--acc-probe-xyzzy-flag", "acc-probe-xyzzy-value"],
+        "inertness": "sentinel",
+        "purposes": ["A1: an unrecognised flag carrying a value must be rejected too"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 332,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "ce35526a1168c18cba2c9d4f5ae7f80bb290b6524765d5113976dc689f555625",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "7b14f3dba1a0",
+        "args": ["acc-probe-xyzzy-verb"],
+        "inertness": "sentinel",
+        "purposes": [
+          "A2: unknown root verb",
+          "A3: the rejection must name the verb",
+          "B1: failure via bad verb",
+          "C2: usage error via verb",
+          "E1: bad verb"
+        ],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 251,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "0433fb610b1d4c72695b65b2b53aff253eb6259d9d7b81afc67920cf371b0c8a",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "65a35727e11f",
+        "args": ["--toic"],
+        "inertness": "no-verb",
+        "purposes": ["A5: near-miss of --topic"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 316,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "1edc084d85fd1a8ad288451a34e281602847630ccdd81050049e43c5cf360d5b",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "35cbdfb2c2f6",
+        "args": ["--", "--acc-probe-xyzzy-value"],
+        "inertness": "sentinel",
+        "purposes": ["A6: `--` must end option parsing"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 16,
+        "timeToFirstByteMs": 15,
+        "stdoutBytes": 0,
+        "stderrBytes": 333,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "025dbbeadc3c0f9f0b93323050033258c8a1c6f6ceb705013b793539bc9eb6c7",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "5a5cb180a70f",
+        "args": ["--help"],
+        "inertness": "help-path",
+        "purposes": [
+          "B2: help must be escape-free",
+          "C1: --help",
+          "D3: help mentions machine mode",
+          "E1: help",
+          "F1: scan help"
+        ],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 17,
+        "timeToFirstByteMs": 16,
+        "stdoutBytes": 3523,
+        "stderrBytes": 0,
+        "stdoutDigest": "114a38b559225eabb2a1877cf7cfa67d71c3d060f69d7f43536e771f95de459a",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "070cc242f897",
+        "args": ["-h"],
+        "inertness": "help-path",
+        "purposes": ["C1: -h"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 15,
+        "stdoutBytes": 3523,
+        "stderrBytes": 0,
+        "stdoutDigest": "114a38b559225eabb2a1877cf7cfa67d71c3d060f69d7f43536e771f95de459a",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "cf21d6899d33",
+        "args": [],
+        "inertness": "bare",
+        "purposes": ["C2: usage error via the bare invocation", "D2: bare invocation", "E1: bare"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 277,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "2abcd225e375e99d7b89b54da1b5456f5c5023efcc9fec56489124b8ae9d7007",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "865d764aaf03",
+        "args": ["--acc-probe-xyzzy-flag"],
+        "inertness": "sentinel",
+        "repeat": 1,
+        "purposes": ["C3: repeat 1"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 332,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "ce35526a1168c18cba2c9d4f5ae7f80bb290b6524765d5113976dc689f555625",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "e98da6a8fd84",
+        "args": ["--acc-probe-xyzzy-flag"],
+        "inertness": "sentinel",
+        "repeat": 2,
+        "purposes": ["C3: repeat 2"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 332,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "ce35526a1168c18cba2c9d4f5ae7f80bb290b6524765d5113976dc689f555625",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "a64671cdbe1d",
+        "args": ["--acc-probe-xyzzy-flag"],
+        "inertness": "sentinel",
+        "repeat": 3,
+        "purposes": ["C3: repeat 3"],
+        "exitCode": 2,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 0,
+        "stderrBytes": 332,
+        "stdoutDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrDigest": "ce35526a1168c18cba2c9d4f5ae7f80bb290b6524765d5113976dc689f555625",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "f0c9715b2c6c",
+        "args": ["--version"],
+        "inertness": "help-path",
+        "purposes": ["D1: --version"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 39,
+        "stderrBytes": 0,
+        "stdoutDigest": "c23a6a3cc7022ec9b82da373dd3eeacd478cb7552159105d1d88eb04425c5043",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "085b0e703f76",
+        "args": ["--version"],
+        "env": { "HOME": "/nonexistent-acc-probe", "XDG_CONFIG_HOME": "/nonexistent-acc-probe" },
+        "inertness": "help-path",
+        "purposes": ["D1: --version with no usable HOME"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 17,
+        "timeToFirstByteMs": 16,
+        "stdoutBytes": 39,
+        "stderrBytes": 0,
+        "stdoutDigest": "c23a6a3cc7022ec9b82da373dd3eeacd478cb7552159105d1d88eb04425c5043",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "0d4eb5955895",
+        "args": ["--help"],
+        "inertness": "help-path",
+        "repeat": 1,
+        "purposes": ["D4: help run 1"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 3523,
+        "stderrBytes": 0,
+        "stdoutDigest": "114a38b559225eabb2a1877cf7cfa67d71c3d060f69d7f43536e771f95de459a",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "957d11b0734f",
+        "args": ["--help"],
+        "inertness": "help-path",
+        "repeat": 2,
+        "purposes": ["D4: help run 2"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 16,
+        "timeToFirstByteMs": 15,
+        "stdoutBytes": 3523,
+        "stderrBytes": 0,
+        "stdoutDigest": "114a38b559225eabb2a1877cf7cfa67d71c3d060f69d7f43536e771f95de459a",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "4feada7c54d0",
+        "args": ["--version"],
+        "inertness": "help-path",
+        "repeat": 1,
+        "purposes": ["F2: timing run 1"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 16,
+        "timeToFirstByteMs": 15,
+        "stdoutBytes": 39,
+        "stderrBytes": 0,
+        "stdoutDigest": "c23a6a3cc7022ec9b82da373dd3eeacd478cb7552159105d1d88eb04425c5043",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "da6b10014a57",
+        "args": ["--version"],
+        "inertness": "help-path",
+        "repeat": 2,
+        "purposes": ["F2: timing run 2"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 15,
+        "timeToFirstByteMs": 14,
+        "stdoutBytes": 39,
+        "stderrBytes": 0,
+        "stdoutDigest": "c23a6a3cc7022ec9b82da373dd3eeacd478cb7552159105d1d88eb04425c5043",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      },
+      {
+        "id": "b6b40a60ba79",
+        "args": ["--version"],
+        "inertness": "help-path",
+        "repeat": 3,
+        "purposes": ["F2: timing run 3"],
+        "exitCode": 0,
+        "signal": null,
+        "crashed": false,
+        "timedOut": false,
+        "spawnFailed": false,
+        "durationMs": 16,
+        "timeToFirstByteMs": 15,
+        "stdoutBytes": 39,
+        "stderrBytes": 0,
+        "stdoutDigest": "c23a6a3cc7022ec9b82da373dd3eeacd478cb7552159105d1d88eb04425c5043",
+        "stderrDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutLossy": false,
+        "stderrLossy": false,
+        "truncated": false
+      }
+    ],
+    "notApplicable": ["A4", "B3", "B4"],
+    "surface": {
+      "status": "enumerated",
+      "flags": ["--help", "--version", "-V", "-h"],
+      "consistent": true,
+      "evidence": [
+        {
+          "observationId": "b8d1ef65cae5",
+          "args": ["--acc-probe-xyzzy-flag"],
+          "stream": "stderr",
+          "shape": "prose-marker",
+          "matched": "recognized flags:",
+          "flags": ["--help", "--version", "-h", "-V"]
+        },
+        {
+          "observationId": "65a35727e11f",
+          "args": ["--toic"],
+          "stream": "stderr",
+          "shape": "prose-marker",
+          "matched": "recognized flags:",
+          "flags": ["--help", "--version", "-h", "-V"]
+        },
+        {
+          "observationId": "865d764aaf03",
+          "args": ["--acc-probe-xyzzy-flag"],
+          "stream": "stderr",
+          "shape": "prose-marker",
+          "matched": "recognized flags:",
+          "flags": ["--help", "--version", "-h", "-V"]
+        },
+        {
+          "observationId": "e98da6a8fd84",
+          "args": ["--acc-probe-xyzzy-flag"],
+          "stream": "stderr",
+          "shape": "prose-marker",
+          "matched": "recognized flags:",
+          "flags": ["--help", "--version", "-h", "-V"]
+        },
+        {
+          "observationId": "a64671cdbe1d",
+          "args": ["--acc-probe-xyzzy-flag"],
+          "stream": "stderr",
+          "shape": "prose-marker",
+          "matched": "recognized flags:",
+          "flags": ["--help", "--version", "-h", "-V"]
+        }
+      ],
+      "probesRead": 5
+    },
+    "declaration": {
+      "provenance": "emitted",
+      "status": "checked",
+      "paths": [
+        { "path": [], "checked": true },
+        {
+          "path": ["open"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["topic"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["list"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["send"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["announce"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["pull"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["triage"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["read"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["wait"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["who"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["alias"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["tail"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["grep"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["close"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["reset"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["mark"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["reopen"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["archive"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["unarchive"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["start"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["up"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["restart"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["roll"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["stop"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["watch"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["reap"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["prune"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["info"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["doctor"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["version"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["schema"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        },
+        {
+          "path": ["help"],
+          "checked": false,
+          "reason": "no flag-surface evidence for this path — the kit enumerates the root only, because probing below it needs an effects claim nothing can yet falsify"
+        }
+      ],
+      "findings": [
+        {
+          "kind": "declared-not-accepted",
+          "path": [],
+          "subject": "--debug",
+          "readings": [
+            "the tool publishes --debug at (root) and its own parser does not list it among the flags it accepts — one process, both statements",
+            "the declaration claims --debug is valid at (root) and the enumeration read back from the tool does not name it — the enumeration may also be short of a flag the tool does accept"
+          ]
+        }
+      ],
+      "declaredCommands": 33,
+      "checkedCommands": 1
+    },
+    "knownFailures": [],
+    "staleExpectations": [],
+    "inertExpectations": [],
+    "waivers": [],
+    "severityOverrides": []
+  },
+  "meta": { "command": "check", "durationMs": 300 },
+  "next": [{ "command": "acc show A7", "when": "to read the rule that could not be verified" }]
+}

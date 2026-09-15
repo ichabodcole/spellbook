@@ -4,7 +4,7 @@
 // a single entity, never replaces a whole array wholesale. Unknown kinds are
 // ignored, not thrown — a peripheral wire surprise must never take the board
 // down (the reflex in circe's seat doc) — but the cursor still advances,
-// since the event still consumed a seq the bus won't reissue.
+// since the event still consumed a frame `id` the bus won't reissue.
 
 import type {
   ActionSlot,
@@ -18,12 +18,14 @@ import type {
   Zone,
 } from "../types";
 
-// A resumed/duplicate event (seq <= cursor) is a no-op — dedupe on WS
-// reconnect. A skipped seq (seq > cursor + 1) is a genuine gap: the caller
+// `id` is the envelope's cursor — the kit event log's frame id
+// (src/kit/wire/eventLog.ts), which mind-mapper's own bus used to call `seq`.
+// A resumed/duplicate event (id <= cursor) is a no-op — dedupe on WS
+// reconnect. A skipped id (id > cursor + 1) is a genuine gap: the caller
 // (useProjectState) must refetch /state wholesale rather than patch around
 // the hole.
-export function isGap(cursor: number, seq: number): boolean {
-  return seq > cursor + 1;
+export function isGap(cursor: number, id: number): boolean {
+  return id > cursor + 1;
 }
 
 function upsertById<T extends { id: string }>(list: T[], item: T): T[] {
@@ -54,17 +56,17 @@ function markProposalRatified(proposals: Proposal[], proposalId: unknown): Propo
 }
 
 export function applyEvent(state: ProjectState, event: ServerEvent): ProjectState {
-  if (event.seq <= state.cursor) return state;
+  if (event.id <= state.cursor) return state;
 
   switch (event.kind) {
     case "doc.added":
-      return { ...state, docs: [...state.docs, event.payload as DocMeta], cursor: event.seq };
+      return { ...state, docs: [...state.docs, event.payload as DocMeta], cursor: event.id };
     case "doc.deleted": {
       // Thin event ({id} only, Claim A) — nodes SURVIVE a doc delete
       // (map-as-view: deleting a source doesn't un-ratify the claim), so
       // only docs[] filters; stale source refs are tolerated by consumers.
       const { id } = event.payload as { id?: unknown };
-      return { ...state, docs: state.docs.filter((d) => d.id !== id), cursor: event.seq };
+      return { ...state, docs: state.docs.filter((d) => d.id !== id), cursor: event.id };
     }
     case "doc.kind": {
       // R4 K1 — {docId, kind, author}: kind already wire-normalized (null,
@@ -75,7 +77,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         kind?: unknown;
         author?: unknown;
       };
-      if (typeof docId !== "string") return { ...state, cursor: event.seq };
+      if (typeof docId !== "string") return { ...state, cursor: event.id };
       const nextKind = typeof kind === "string" ? kind : null;
       const nextAuthor = author === "user" || author === "agent" ? author : null;
       return {
@@ -83,7 +85,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         docs: state.docs.map((d) =>
           d.id === docId ? { ...d, kind: nextKind, kindAuthor: nextAuthor } : d,
         ),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "doc.marked": {
@@ -93,13 +95,13 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // false is true by construction until the next /state read says
       // otherwise.
       const { docId, mark } = event.payload as { docId?: unknown; mark?: DocMark };
-      if (typeof docId !== "string" || !mark) return { ...state, cursor: event.seq };
+      if (typeof docId !== "string" || !mark) return { ...state, cursor: event.id };
       return {
         ...state,
         docs: state.docs.map((d) =>
           d.id === docId ? { ...d, mark: { ...mark, stale: false } } : d,
         ),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "node.deleted": {
@@ -113,14 +115,14 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // (the node.anchored derived-count tolerance) — a rare, self-correcting
       // cosmetic, never a dangling edge or an orphaned child.
       const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      if (typeof id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         nodes: state.nodes
           .filter((n) => n.id !== id)
           .map((n) => (n.anchorNodeId === id ? { ...n, anchorNodeId: null } : n)),
         edges: state.edges.filter((e) => e.source !== id && e.target !== id),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "proposal.deleted": {
@@ -129,11 +131,11 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // pending edge lives only in opaque draft_json and fails safe at its own
       // ratify (Contract 8) — nothing else to reconcile here.
       const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      if (typeof id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.filter((p) => p.id !== id),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "proposal.rejected": {
@@ -144,11 +146,11 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // the flip makes the proposal leave the canvas + queue WITHOUT a refetch —
       // the live fix for reject previously emitting nothing.
       const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      if (typeof id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.map((p) => (p.id === id ? { ...p, status: "rejected" } : p)),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "node.ratified":
@@ -157,7 +159,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       return {
         ...state,
         proposals: markProposalRatified(state.proposals, payload.proposalId),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     // The payload is the full tagged Proposal (zoneId always carried, Claim
@@ -168,15 +170,15 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       return {
         ...state,
         proposals: upsertById(state.proposals, event.payload as Proposal),
-        cursor: event.seq,
+        cursor: event.id,
       };
     case "zone.created": {
       const zone = event.payload as Zone;
-      if (typeof zone?.id !== "string") return { ...state, cursor: event.seq };
+      if (typeof zone?.id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         zones: state.zones.some((z) => z.id === zone.id) ? state.zones : [...state.zones, zone],
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "zone.deleted": {
@@ -185,12 +187,12 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // SCOPED drop, never a wholesale replace (main-queue and other-zone
       // proposals are untouched by construction).
       const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      if (typeof id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         zones: state.zones.filter((z) => z.id !== id),
         proposals: state.proposals.filter((p) => p.zoneId !== id),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "proposal.promoted": {
@@ -199,11 +201,11 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // re-homes it to the main review queue at render. Draft/evidence/
       // status untouched (it stays a normal pending item).
       const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      if (typeof id !== "string") return { ...state, cursor: event.id };
       return {
         ...state,
         proposals: state.proposals.map((p) => (p.id === id ? { ...p, zoneId: null } : p)),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "actions.set": {
@@ -218,7 +220,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         actions?: unknown;
       };
       if (typeof targetId !== "string" || !Array.isArray(actions)) {
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       }
       const slots = actions as ActionSlot[];
       const apply = <T extends { id: string; actions?: ActionSlot[] }>(list: T[]): T[] =>
@@ -231,7 +233,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         ...state,
         nodes: apply(state.nodes),
         proposals: apply(state.proposals),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "tags.set": {
@@ -246,7 +248,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         tags?: unknown;
       };
       if (typeof targetId !== "string" || !Array.isArray(tags)) {
-        return { ...state, cursor: event.seq };
+        return { ...state, cursor: event.id };
       }
       const list = tags as string[];
       const apply = <T extends { id: string; tags?: string[] }>(items: T[]): T[] =>
@@ -259,7 +261,7 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         ...state,
         nodes: apply(state.nodes),
         proposals: apply(state.proposals),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "node.anchored": {
@@ -274,30 +276,30 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         nodeId?: unknown;
         anchorNodeId?: unknown;
       };
-      if (typeof nodeId !== "string") return { ...state, cursor: event.seq };
+      if (typeof nodeId !== "string") return { ...state, cursor: event.id };
       const nextAnchor = typeof anchorNodeId === "string" ? anchorNodeId : null;
       return {
         ...state,
         nodes: state.nodes.map((n) => (n.id === nodeId ? { ...n, anchorNodeId: nextAnchor } : n)),
-        cursor: event.seq,
+        cursor: event.id,
       };
     }
     case "message.posted":
       return {
         ...state,
         conversation: [...state.conversation, event.payload as WireMessage],
-        cursor: event.seq,
+        cursor: event.id,
       };
     case "lens.set":
-      return { ...state, lens: event.payload as Lens, cursor: event.seq };
+      return { ...state, lens: event.payload as Lens, cursor: event.id };
     case "presence.changed": {
       const { agents } = event.payload as { agents?: unknown };
-      if (typeof agents !== "number") return { ...state, cursor: event.seq };
-      return { ...state, presence: { agents }, cursor: event.seq };
+      if (typeof agents !== "number") return { ...state, cursor: event.id };
+      return { ...state, presence: { agents }, cursor: event.id };
     }
     // Ephemeral kinds (look.here, agent.activity) fall through to the
     // default ON PURPOSE — the ephemeral-event cursor clause (Contract 9
-    // amendment): every emit consumed a seq, so the cursor must advance
+    // amendment): every emit consumed a frame `id`, so the cursor must advance
     // here even though no state row changes; useProjectState surfaces the
     // signal separately via the {payload, seq} idiom. Early-returning
     // around the reducer is the bug this clause exists to kill (a
@@ -306,9 +308,9 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
     //
     // R11 SEAM 5 — `job.*` joins them here: the surface's jobs view is gone
     // (jobs stay an engine/agent primitive), and this same clause is what
-    // makes dropping the cases free — an unhandled kind costs a seq, not a
+    // makes dropping the cases free — an unhandled kind costs an `id`, not a
     // wholesale refetch.
     default:
-      return { ...state, cursor: event.seq };
+      return { ...state, cursor: event.id };
   }
 }

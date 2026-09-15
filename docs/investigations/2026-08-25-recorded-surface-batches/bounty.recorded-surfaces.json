@@ -1,0 +1,48 @@
+{
+  "formatVersion": "0",
+  "records": [
+    {
+      "path": ["state"],
+      "argv": ["state", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "bounty: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--acc-not-a-flag\"\n  recognized flags: --as --expect --id --notes --on --owner --restore --session --session-key --since --size --status --tag --timeout --title --fresh --full --mine --no-open --pin --stdin --stdin-tasks\n  for free text containing dashes, use --stdin, or put it after a bare --\n",
+      "completeness": "complete",
+      "recordedBy": "trellis@spellbook (develop working tree, post-1c61d13)",
+      "recordedAt": "2026-08-25T18:18:34Z"
+    },
+    {
+      "path": ["claim"],
+      "argv": ["claim", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "bounty: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--acc-not-a-flag\"\n  recognized flags: --as --expect --id --notes --on --owner --restore --session --session-key --since --size --status --tag --timeout --title --fresh --full --mine --no-open --pin --stdin --stdin-tasks\n  for free text containing dashes, use --stdin, or put it after a bare --\n",
+      "completeness": "complete",
+      "recordedBy": "trellis@spellbook (develop working tree, post-1c61d13)",
+      "recordedAt": "2026-08-25T18:18:34Z"
+    },
+    {
+      "path": ["list"],
+      "argv": ["list", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "bounty: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--acc-not-a-flag\"\n  recognized flags: --as --expect --id --notes --on --owner --restore --session --session-key --since --size --status --tag --timeout --title --fresh --full --mine --no-open --pin --stdin --stdin-tasks\n  for free text containing dashes, use --stdin, or put it after a bare --\n",
+      "completeness": "complete",
+      "recordedBy": "trellis@spellbook (develop working tree, post-1c61d13)",
+      "recordedAt": "2026-08-25T18:18:34Z"
+    }
+  ],
+  "identity": {
+    "argv": ["--version"],
+    "exitCode": 2,
+    "streams": "separated",
+    "stdout": "",
+    "stderr": "bounty: unknown verb \"--version\" \u2014 run: cli.ts help\n",
+    "completeness": "complete",
+    "recordedBy": "trellis@spellbook (develop working tree, post-1c61d13)",
+    "recordedAt": "2026-08-25T18:18:34Z"
+  }
+}

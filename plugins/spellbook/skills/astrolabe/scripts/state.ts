@@ -102,7 +102,12 @@ function hashString(s: string): number {
   return h;
 }
 export function fallbackAvatar(name: string): string {
-  return AVATAR_GLYPHS[hashString(name.trim().toLowerCase()) % AVATAR_GLYPHS.length];
+  const glyph = AVATAR_GLYPHS[hashString(name.trim().toLowerCase()) % AVATAR_GLYPHS.length];
+  // Unreachable: a non-empty literal indexed modulo its own length. The branch
+  // names the answer for the day the list is emptied — the observatory's own
+  // glyph — rather than letting `undefined` become a card's avatar.
+  if (glyph === undefined) return "🔭";
+  return glyph;
 }
 
 // A registry id derived from a display name. Lives here (the pure layer) and is

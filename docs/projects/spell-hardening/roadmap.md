@@ -1,6 +1,7 @@
 # Spell Hardening — roadmap
 
-**Updated:** 2026-08-08 · **Project:** [README](./README.md) ·
+**Updated:** 2026-08-11 (the `Now` section; **everything below "Superseded" is
+2026-08-08 text kept deliberately**) · **Project:** [README](./README.md) ·
 [proposal.md](./proposal.md)
 
 > ## ⚠ THIS DOCUMENT IS A FORECAST, NOT A PLAN
@@ -294,9 +295,37 @@ the other seven**, and reads identically.
 
 ---
 
-## Now — Sprint 04, "The shape of nothing"
+## Now — Sprint 06, "Filed is not fixed"
 
-🟡 **SCAFFOLD** · [plan.md](./sprints/04-the-shape-of-nothing/plan.md)
+🟡 **SCAFFOLD** · [plan.md](./sprints/06-filed-is-not-fixed/plan.md) · **not
+ratified, no branch cut**
+
+**Two phases, ruled by Cole 2026-08-11: drain the fix queue, then close clause
+(ii).** Phase 1 is the six defects held out of sprint 05 by explicit ruling —
+including `#98`, which is **another team's open issue** — plus `c1`, which is
+**row 2's demotion half and is not solved by `terminator-invariant`**. Phase 2
+is clause (ii) plus the sprint 05 deferrals with a 06 horizon (D1–D6), and **row
+3, the exit-code contract, which is the first thing to cut.**
+
+> ⚠ **This section is what this document warned about, arriving on schedule.**
+> The forecast below said sprint 05 would be _"a harness, not a discovery
+> round"_ and was falsified. **The sprint-06 scaffold names its own falsifiers**
+> rather than waiting for a ratify round to find them; the sharpest is that a
+> fix queue with undecided design calls in it is **a discovery round wearing a
+> fix's clothes.**
+
+_Reconciled 2026-08-11 @ `05a30d3` — "Now: sprint 04": **FALSIFIED**, 04 shipped
+in v2.2.0 and 05 merged 2026-08-10; this section stood two sprints stale, and
+**the read-it-back-at-every-convene instruction below fired at neither.** The
+sprint-05 forecast further down is **kept as written and NOT updated** — it is
+the record of a guess that was half-refuted, and rewriting it would destroy the
+evidence for that. "Nothing past the current sprint is committed": **HELD**._
+
+## Shipped — Sprint 04, "The shape of nothing"
+
+✅ **Complete**, shipped in v2.2.0 ·
+[plan.md](./sprints/04-the-shape-of-nothing/plan.md) ·
+[outcome.md](./sprints/04-the-shape-of-nothing/outcome.md)
 
 **Thesis:** a consumer must be able to distinguish _"nothing is there"_ from _"I
 cannot tell you."_
@@ -311,7 +340,16 @@ terminator, `t-2df67738`). See the plan for what it deliberately excludes.
 
 ---
 
-## Next — Sprint 05 (FORECAST), "the gate"
+## Superseded — the Sprint 05 forecast, KEPT AS WRITTEN
+
+✅ **Sprint 05 shipped** ([outcome](./sprints/05-the-gate/outcome.md)) and this
+section is **the forecast that preceded it, preserved unedited.** It is here as
+evidence about forecasting, not as guidance — **read it against the outcome, not
+instead of it.** Its headline prediction was falsified by the sprint it
+predicted, and its `(a)/(b)` split was right. Both facts are only legible while
+the original wording survives.
+
+**Everything below this line is the 2026-08-08 text. Do not update it.**
 
 **Not scaffolded. No plan.md. This is a guess with a rationale.**
 
@@ -363,9 +401,54 @@ an anonymous inline handler without naming any of them. **Intent was.**
 
 ### ⛔ A HARD CONSTRAINT ON HOW (a) IS RUN — measured 2026-08-08, not anticipated
 
-> **Mutation calibration happens in an ISOLATED COPY, never in the shared tree.
-> If a mutation must touch the shared tree, it is ANNOUNCED before and cleared
-> after — the window is the announcement, not the mutation.**
+> **Mutation calibration happens in a DETACHED GIT WORKTREE at an explicit sha,
+> never in the shared tree — and never in a plain directory copy. If a mutation
+> must touch the shared tree, it is ANNOUNCED before and cleared after — the
+> window is the announcement, not the mutation.**
+
+> **⛔ AMENDED 2026-08-10 (sprint 05 finalize, measured by `cassandra`) — "AN
+> ISOLATED COPY" WAS WRONG AND IT UNDER-CALIBRATES SILENTLY.**
+>
+> Same `HEAD`, two harnesses, different test populations:
+>
+> ```
+>                     git archive / cp -R      git worktree --detach
+> grimoire/ total     30 tests                 46 tests
+>   roster-drift      crashed                  17      <- the whole delta
+>   gate-honesty      5, ALL THREW              5
+> ```
+>
+> **Sixteen cells did not exist in the copy.** `roster-drift` generates its
+> cells from repo files outside the copied subtree, and `gate-honesty` →
+> `gate-blind-set.ts` → **`git ls-files`**, which cannot run in a non-repo:
+> `fatal: not a git repository`.
+>
+> **So a git-dependent ward CANNOT be calibrated by the method this constraint
+> mandated**, and the constraint was therefore in direct conflict with H3
+> (_every new cell is mutation-calibrated by a second seat_). Neither rule was
+> bad; they were written for different wards.
+>
+> ⚠ **THE DANGEROUS CASE IS THE COUNT, NOT THE CRASH.** Her copy failed loudly,
+> so she noticed. Had `roster-drift` enumerated over a missing directory and
+> produced **zero** cells instead of throwing, the run reads `25 pass 0 fail` —
+> **a clean calibration over two-thirds of the population, with nothing anywhere
+> saying sixteen cells did not exist.** That is this project's own thesis
+> occurring **inside the harness built to enforce it**.
+>
+> **THE REPLACEMENT, VERIFIED (46/46, matching the real tree):**
+>
+> ```
+> git worktree add --detach <path> HEAD     # a real repo; pins the world at a sha
+> git worktree remove --force <path>        # at teardown
+> ```
+>
+> **And the calibrator MUST print `pass / fail / CELLS` and reconcile the cell
+> count against the same suite in the real tree.** `0 fail` is not a calibration
+> result; it is a calibration result's shape.
+>
+> ⚠ **Known limitation, unresolved:** a bare worktree has no `node_modules`, so
+> a ward importing a dependency works in **neither** harness. No instance yet —
+> recorded so the third case is not discovered as a surprise.
 
 **Why this is a constraint and not hygiene.** Sprint 04 logged three separate
 "gate contention" incidents — a seat blocked behind a peer, a gate red on a

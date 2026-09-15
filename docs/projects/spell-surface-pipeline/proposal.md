@@ -3,6 +3,14 @@
 **Status:** Draft **Created:** 2026-07-07 **Author:** Cole Reed + Claude Code
 (merlin)
 
+_Reconciled 2026-09-04 @ `e3d80dc` — "Backend ships as Bun-native source, no
+build": **FALSIFIED**, superseded by Contract 3's build criterion (§1 amended in
+place, not removed). "Surface: the only thing that ever builds": **FALSIFIED**
+since `7bb0f4a`, corrected in §1. "this proposal is the hypothesis and astrolabe
+is the validation": **HELD** — astrolabe still has not had a release cut through
+the pipeline, so the validation remains outstanding. The §2 two-mode pipeline
+and the §3 packaging claims: **UNCHECKED** — nobody swept them this session._
+
 ---
 
 ## Overview
@@ -77,14 +85,27 @@ was a stage, not the essence.
 
 ### §1 — Two tiers, one repeal-rule
 
-- **Backend** (daemon / CLI / server): ships as **Bun-native source, no build.**
-  Bun runs `.ts` directly; this is why it remains the right core tech.
-  - _Repeal criterion:_ revisit when a backend dependency or capability
-    genuinely needs a compile/bundle step and holding source-only costs more
-    than the build would. Watch for that signal. (This mirrors how the surface
-    philosophy itself evolved — not wrong then, outgrown when richness crossed a
-    threshold.)
-- **Surface**: the only thing that ever builds.
+- **Backend** (daemon / CLI / server): ships as **Bun-native source** — until it
+  shares code, at which point it builds. Bun runs `.ts` directly, which is why
+  it remains the right core tech and why source stays the default for a backend
+  that shares nothing.
+  - _Repeal criterion (2026-07-07, as written):_ revisit when a backend
+    dependency or capability genuinely needs a compile/bundle step and holding
+    source-only costs more than the build would. Watch for that signal. (This
+    mirrors how the surface philosophy itself evolved — not wrong then, outgrown
+    when richness crossed a threshold.)
+  - ⛔ **SUPERSEDED 2026-09-04 — that criterion never fired, and a different one
+    did.** It watched for a _dependency_ that needs a build; what actually
+    arrived was **shared code**, plus a ruling from Cole that a skill must
+    install self-contained. The operative rule is now: **a backend that imports
+    from outside its own deployed skill folder MUST build**, and the build
+    inlines the shared module so the folder stays whole. Two backends
+    (`astrolabe`, `magpie`) are live under it. Authority:
+    `.anthill/dev/seams.md` Contract 3, amendment 2026-09-04 — **not this
+    proposal**.
+- **Surface**: ~~the only thing that ever builds~~ — **false since `7bb0f4a`.**
+  Surfaces are the only thing that _always_ builds; backends build on the
+  criterion above.
 
 ### §2 — The surface pipeline: one pipeline, two modes
 
@@ -332,6 +353,8 @@ _(Were open questions; settled in the `prospero` design session.)_
 Design was brainstormed in session `prospero` (2026-07-07). Ordering decision
 (Cole): **propose the standard as a hypothesis first, then pressure-test against
 a real spell** — so this proposal is the hypothesis and astrolabe is the
-validation. Backend "no build" is held as a _preference with a repeal
+validation. Backend "no build" was held as a _preference with a repeal
 criterion_, not a law — the same evolutionary posture that produced this
-proposal in the first place.
+proposal in the first place. **That posture is what let it be superseded cleanly
+on 2026-09-04**: the preference gave way to a criterion when deployment, not
+engineering taste, turned out to be the axis that mattered. See §1.

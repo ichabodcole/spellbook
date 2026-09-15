@@ -108,8 +108,8 @@ export function useProjectState(projectId?: string) {
         sock.onopen = () => {
           setStatus("open");
           // A RE-open means the daemon may have restarted: events restart at
-          // seq 1 under a new epoch, and our stale cursor would swallow them
-          // as already-applied (reducer's seq <= cursor dedupe) without ever
+          // id 1 under a new epoch, and our stale cursor would swallow them
+          // as already-applied (reducer's id <= cursor dedupe) without ever
           // tripping isGap. Refetch the snapshot to adopt the new epoch's
           // cursor. Skipped on the first open — mount already fetched.
           if (hasOpenedOnce) {
@@ -123,7 +123,7 @@ export function useProjectState(projectId?: string) {
           const event = JSON.parse(e.data) as ServerEvent;
           // Ephemeral kinds surface as signals BUT still fall through to the
           // reducer below — the ephemeral-event cursor clause (Contract 9
-          // amendment): the emit consumed a seq, so an early return here
+          // amendment): the emit consumed a frame `id`, so an early return here
           // would freeze the cursor and turn every subsequent event into a
           // phantom gap → one wholesale /state refetch per fire-once signal
           // (this was a real bug on the look.here path).
@@ -146,7 +146,7 @@ export function useProjectState(projectId?: string) {
             // fetchSnapshot() resolves to current state, which already
             // includes whatever this event described.
             if (!prev) return prev;
-            if (isGap(prev.cursor, event.seq)) {
+            if (isGap(prev.cursor, event.id)) {
               fetchSnapshot().catch((err) =>
                 setError(err instanceof Error ? err.message : String(err)),
               );

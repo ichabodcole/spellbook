@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { must } from "./lib/must.ts";
 
 // Card a4 — the stable key. Every rule in house-style.md carries a machine-
 // readable id, so canon can be ADDRESSED rather than matched by title.
@@ -36,20 +37,33 @@ function parseHeadings(): Heading[] {
   const lines = readFileSync(HOUSE_STYLE, "utf8").split("\n");
   const out: Heading[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const m = /^(#{3,4}) (.+)$/.exec(lines[i]);
+    const line = must(lines[i], `lines[${i}] absent inside 0..${lines.length}`);
+    const m = /^(#{3,4}) (.+)$/.exec(line);
     if (!m) continue;
     // The id rides in an HTML comment in the next few lines: invisible when
     // rendered, so it imposes no reading cost on a human.
     let id: string | null = null;
     for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-      const idm = /^<!-- rule-id: (.+?) -->$/.exec(lines[j].trim());
+      const ahead = must(lines[j], `lines[${j}] absent inside 0..${lines.length}`);
+      const idm = /^<!-- rule-id: (.+?) -->$/.exec(ahead.trim());
       if (idm) {
-        id = idm[1];
+        // One MANDATORY group. An `idm[1] ?? null` here would have been the
+        // dishonest fix with teeth: a matched id read as `null` makes the
+        // heading look UNIDENTIFIED, and this ward's whole verdict is which
+        // headings lack ids.
+        id = must(idm[1], "rule-id matcher matched without its id group");
         break;
       }
-      if (/^#{1,6} /.test(lines[j])) break;
+      if (/^#{1,6} /.test(ahead)) break;
     }
-    out.push({ line: i + 1, depth: m[1].length, title: m[2], id });
+    // Both groups of `^(#{3,4}) (.+)$` are mandatory and the match is non-null
+    // by the `continue` above.
+    out.push({
+      line: i + 1,
+      depth: must(m[1], "heading matcher matched without its hashes group").length,
+      title: must(m[2], "heading matcher matched without its title group"),
+      id,
+    });
   }
   return out;
 }

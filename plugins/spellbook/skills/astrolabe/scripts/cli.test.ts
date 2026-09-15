@@ -115,6 +115,38 @@ describe("cli ↔ daemon", () => {
     expect(r.err).toMatch(/unknown verb/);
   });
 
+  // The acc L0 contract (2026-08-26 session): failures leave stdout empty and
+  // put ONE parseable JSON envelope on stderr; bare invocation is a usage
+  // error, not a help request; --version answers as a verb-position root token.
+  test("a failure is one JSON envelope on stderr, stdout empty", async () => {
+    const r = await runCli(home, ["bogus"]);
+    expect(r.out).toBe("");
+    const envelope = JSON.parse(r.err);
+    expect(envelope.ok).toBe(false);
+    expect(envelope.error.kind).toBe("usage");
+    expect(envelope.error.message).toContain("bogus");
+  });
+
+  test("a bare invocation is a usage error (exit 2, stdout empty), help stays reachable", async () => {
+    const bare = await runCli(home, []);
+    expect(bare.code).toBe(2);
+    expect(bare.out).toBe("");
+    expect(JSON.parse(bare.err).error.kind).toBe("usage");
+    const help = await runCli(home, ["help"]);
+    expect(help.code).toBe(0);
+    expect(help.out).toContain("astrolabe");
+  });
+
+  test("--version reports a structured version at exit 0 (all three spellings)", async () => {
+    for (const spelling of ["--version", "-V", "version"]) {
+      const r = await runCli(home, [spelling]);
+      expect(r.code).toBe(0);
+      const v = JSON.parse(r.out);
+      expect(v.name).toBe("astrolabe");
+      expect(typeof v.version).toBe("string");
+    }
+  });
+
   test("list guards a stale port file → exits 0 with running:false (no ECONNREFUSED)", async () => {
     // A leftover daemon.port from a crashed daemon must not make `list` throw —
     // the isUp() guard should fall back to the clean running:false path.

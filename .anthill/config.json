@@ -2,7 +2,7 @@
   "version": 2,
   "channel": "spellbook",
   "lead": "prospero",
-  "gate": "bun run check && bun test",
+  "gate": "bun run gate",
   "seats": [
     {
       "handle": "prospero",
@@ -25,7 +25,7 @@
     {
       "handle": "thoth",
       "role": "grimoire",
-      "scope": "the craft canon and its tooling — grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence — and the inscribe / ward authoring rituals they must stay in lockstep with",
+      "scope": "the craft canon and its tooling — grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence — and the inscribe / ward authoring rituals they must stay in lockstep with; CURATED AND VERIFIED AGAINST THE TREE (widened 2026-09-03, glamour conversion): every canon sentence that claims a fact about the tree is a hypothesis this seat RUNS, not only a sentence this seat keeps consistent. Boundary vs cassandra: thoth verifies CANON CLAIMS (what a contract or rule says is true of the tree); cassandra verifies CODE (whether a cell convicts, whether a build reproduces). The measurement may come from any seat; deciding a canon sentence is false and rewording every copy of it is thoth's.",
       "spawn": true
     },
     {
