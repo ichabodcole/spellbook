@@ -253,6 +253,30 @@ async function buildSurface(spell: string): Promise<number> {
     entrypoints: [entry],
     outdir,
     plugins: [tailwind],
+    // ⛔ PIN NODE_ENV, OR REACT RESOLVES TO ITS DEVELOPMENT BUILD AND THE
+    // SURFACE CRASHES ON A TIMER. Unset, React's export conditions pick the
+    // development entry, which carries the Performance Track instrumentation:
+    // `logComponentRender` calls `performance.measure()` with a `detail`
+    // payload on EVERY component render, and nothing ever clears that buffer.
+    // Any surface that re-renders on an interval — scriptorium's `useNow()`
+    // ticks every 30s so "5 min ago" stays true — fills it while the human is
+    // doing NOTHING, until the structured clone of `detail` cannot allocate:
+    // `DataCloneError: ... out of memory`, thrown inside commitPassiveMountOnFiber,
+    // which abandons React's commit phase mid-flight and leaves the tab dead
+    // ("Should not already be working"). Shipped broken in 3.0.0 on all nine
+    // surfaces, found by a consumer whose tab died after a few minutes idle.
+    // Time-to-crash scales with subtree size, which is why a one-file test
+    // session survived an hour and a real document set died in minutes.
+    //
+    // ⚠ `define` ONLY — NOT `minify`, though minify also strips this. Minify is
+    // deferred by Cole under register D7, behind a precondition this fix does
+    // not meet: the instruments that read emitted artifacts AS TEXT (the
+    // spawn-path ward's anchor spellings, the launcher-pairing ward's import
+    // specifiers, exit-site-inventory) have never seen renamed identifiers and
+    // must be calibrated first. `define` leaves the bundle's text shape intact
+    // — measured on scriptorium: 57 module-boundary comments and
+    // `src/kit/lib/cn.ts` present both before and after, 0 after minify.
+    define: { "process.env.NODE_ENV": '"production"' },
     // The HTML entry stays UNHASHED ("index.html") — server.ts's resolveMode()
     // (Contract 1) checks for that exact filename to detect release mode; a
     // hashed entry (index-<hash>.html) makes it invisible to that check and the
