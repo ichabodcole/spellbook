@@ -52,7 +52,7 @@ exactly like a right one, exit 0.**
 - Team board `k-spellbook-f4249899` died twice on 2026-08-06 (`daemon.log`,
   `reason:"close"`, `subscribers:3` then `subscribers:0`). The first is fully
   explained by the test-suite hijack — see
-  [`spell-hardening` Phase 0e](../projects/spell-hardening/plan.md). **The
+  [`spell-hardening` Phase 0e](../projects/spell-hardening/roadmap.md). **The
   second is unexplained and deliberately left unattributed**, because two wrong
   attributions-from-proximity were made and retracted the same evening.
 - The stranger-board read and the misleading `no such task` were found

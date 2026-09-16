@@ -28,7 +28,7 @@ unchanged in re-home), `.../astrolabe/surface/**` (React surface),
 `.../astrolabe/{bunfig.toml,tsconfig.json,SKILL.md}`
 
 **Docs:**
-[Session](../projects/cross-project-observatory/sessions/2026-06-30-astrolabe-build-and-react-rehome.md)
-· [Proposal](../projects/cross-project-observatory/proposal.md) ·
+[Session](../projects/_archive/cross-project-observatory/sessions/2026-06-30-astrolabe-build-and-react-rehome.md)
+· [Proposal](../projects/_archive/cross-project-observatory/proposal.md) ·
 [Scaffold investigation](../backlog/2026-06-30-react-scaffold-as-default-investigation.md)
 (the re-home is its active pilot)

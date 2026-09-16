@@ -176,8 +176,8 @@ External maturity is genuinely unproven; internal validation is strong.
 
 **Related Documents:**
 
-- [Spells as Interface Layer thesis](../fragments/spells-as-interface-layer-decomposing-software.md)
-  — the portability/ownership design center
+- Spells as Interface Layer thesis (fragment since removed) — the
+  portability/ownership design center
 - [media-buffet:library spell proposal](../../../dreamwood/media-buffet/docs/projects/media-manager-spell/proposal.md)
   — the pilot distributed spell
 - Memory: `react-scaffold-investigation`, `spell-deps-resolution-in-host-repo`

@@ -46,8 +46,8 @@ generated: { by: unknown, at: 2026-05-29 }
 ## Overview
 
 The four spells are migrated, typed, and green (see
-[spellbook-extraction](../spellbook-extraction/proposal.md)). But they were
-brought over as-is, and the migration + the fresh-agent dogfood
+[spellbook-extraction](../_archive/spellbook-extraction/proposal.md)). But they
+were brought over as-is, and the migration + the fresh-agent dogfood
 ([findings](../../../grimoire/fresh-agent/2026-05-29-inscribe-ward-findings.md))
 surfaced gaps between "the code runs" and "the set feels coherent and meets the
 standards we've since written." This project closes those gaps before a release.
@@ -112,6 +112,6 @@ decisions).
 
 **Related Documents:**
 
-- [spellbook-extraction proposal](../spellbook-extraction/proposal.md)
+- [spellbook-extraction proposal](../_archive/spellbook-extraction/proposal.md)
 - [fresh-agent findings (inscribe + ward)](../../../grimoire/fresh-agent/2026-05-29-inscribe-ward-findings.md)
 - `grimoire/house-style.md`, `grimoire/decay-ledger.md`

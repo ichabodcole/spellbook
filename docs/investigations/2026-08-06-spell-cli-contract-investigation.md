@@ -332,7 +332,7 @@ document is not.
 **Related Documents:**
 
 - [spell-hardening proposal](../projects/spell-hardening/proposal.md) and
-  [plan](../projects/spell-hardening/plan.md) — fixes the instances
+  [roadmap](../projects/spell-hardening/roadmap.md) — fixes the instances
 - Issues: [#82](https://github.com/ichabodcole/spellbook/issues/82) (the naming
   question that outgrew itself), #83–#88 (defects found by the audit),
   #77/#78/#80/#81 (the defect class)

@@ -2,11 +2,11 @@
 type: backlog
 title: "Sixteen dead references, surfaced the day the docs lint arrived"
 description:
-  Sixteen references in docs/ resolve to nothing — twelve links to missing files
-  and four to missing anchors — found by the lint rather than by any reader, and
-  they are what stands between this repo and turning the docs gate on
+  Sixteen references in docs/ resolved to nothing, found by the lint rather than
+  by any reader — fixed inside the upgrade so lint.adopting could be turned off,
+  which is what gave the docs gate teeth
 status: stable
-lifecycle: open
+lifecycle: done
 generated: { by: unknown, at: 2026-09-15 }
 ---
 
@@ -103,6 +103,37 @@ So these sixteen are precisely what stands between this repository and a docs
 gate that can fail. Until they are fixed, `adopting` stays on and the wired
 check runs without teeth — which is deliberate and is the migration guide's own
 advice, but should not be mistaken for the gate being live.
+
+## ✅ CLOSED — all sixteen fixed, and `lint.adopting` is off
+
+Cole ruled they be fixed inside the upgrade rather than deferred, which is what
+allowed `lint.adopting: false`. Before: `pdocs check` exit 9, 16 problems.
+After: **exit 0, "OK — no problems."** The wired gate can now fail, which was
+the whole point of doing them here.
+
+| what                                  | how many | fix                                                                                                          |
+| ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| anchors pointing at non-headings      | 4        | re-pointed at the lint's own slugs, read out of `headingSlugsOf` rather than guessed from GitHub's algorithm |
+| targets moved into `_archive/`        | 6        | path re-pointed                                                                                              |
+| the split-up monolithic plan          | 3        | → `spell-hardening/roadmap.md`, the overview that survived the split into `sprints/<n>/plan.md`              |
+| genuinely deleted                     | 2        | unlinked, wording kept                                                                                       |
+| illustrative examples in block quotes | 2        | unlinked — they were teaching a convention, not referencing a file                                           |
+
+⚠ **The count was wrong twice, both times too low, both times for the same
+reason.** First "twelve", because the survey grepped `MISSING FILE` and never
+saw 4 `MISSING ANCHOR`. Then "five moved to `_archive/`", because
+`2026-08-05-cli-stdout-truncation-on-pipe.md` was assumed deleted when it sat in
+`backlog/_archive/` — six, not five. Both corrections came from asking the tool
+instead of a regex, which is the same lesson this item was filed to make.
+
+⛔ **AND FIXING THEM BROKE THE GATE ONCE, VIA THE FORMATTER.** Normalising the
+edited markdown with a blanket `bunx prettier --write docs` reformatted 19 files
+that are NOT markdown — four `.report.json`, four `.ts`, eleven `.html` mockups
+— all of which Biome owns here. Eight Biome errors, gate red, on files the
+change never meant to touch. Reverted the collateral, kept the thirteen real
+edits. **`docs/` is not a markdown-only directory, and a blanket formatter over
+it fights whatever else owns what is in there.** Reported upstream as the tenth
+item from this run.
 
 ## Related
 

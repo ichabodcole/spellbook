@@ -48,7 +48,7 @@ The consume-mode story it completes: **push = Monitor, episodic = drain.**
 - Context: anthill multi-seat session (Operator monorepo); the join-history
   backfill hit this repeatedly
 - ⚠ Coordinate with
-  [`2026-08-05-cli-stdout-truncation-on-pipe.md`](./2026-08-05-cli-stdout-truncation-on-pipe.md)
+  [`2026-08-05-cli-stdout-truncation-on-pipe.md`](./_archive/2026-08-05-cli-stdout-truncation-on-pipe.md)
   — a bounded dump that exits is **exactly** the shape that loses its tail to
   the `process.exit` truncation bug. Fix the drain first, or this ships a new
   way to silently lose history.

@@ -26,7 +26,7 @@ route it to Cole through the lead.
 - [Proposal](docs/projects/spell-hardening/proposal.md) — scope, the harm
   ordering, and the **two rulings** you build to (D1 snapshot semantics, D2
   heartbeat card model), each with the reasoning that produced it
-- [Plan](docs/projects/spell-hardening/plan.md) — four phases with owners,
+- [Roadmap](docs/projects/spell-hardening/roadmap.md) — four phases with owners,
   verified file refs, and a cold gate per phase
 
 **The triage these came from** (read the ones for your phase — they carry the
