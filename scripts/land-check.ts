@@ -83,6 +83,21 @@ console.log(`  commits     ${shas.length}`);
 console.log(
   `  cited shas  ${cited.length}${cited.length ? `   ← ${cited.slice(0, 6).join(" ")}${cited.length > 6 ? " …" : ""}` : ""}`,
 );
+if (cited.length === 0) {
+  // ⛔ `0` MEANS "NONE I CAN SEE", NOT "NONE". This greps TRACKED MARKDOWN IN
+  //    THIS REPO. A sha cited on a grapevine channel, in another repository's
+  //    record, in a GitHub issue — or in a COMMIT MESSAGE in this very branch —
+  //    is structurally invisible here.
+  //    Measured 2026-09-15 on `chore/project-docs-upgrade`: this printed
+  //    `cited shas 0` and returned SQUASH-SAFE while four of the branch's SHAs
+  //    were cited to another agent on a channel, and one commit's message
+  //    explained itself by reference to an earlier commit's sha. The verdict
+  //    was right about what it could see and wrong about the branch.
+  console.log("              ⚠ greps TRACKED MARKDOWN IN THIS REPO only. A sha cited on a");
+  console.log("                channel, in another repo, in an issue, or in a COMMIT MESSAGE");
+  console.log('                is invisible here — `0` is "none I can see". If you have');
+  console.log("                published a branch sha anywhere, prefer --ff-only.");
+}
 console.log(`  authors     ${distinct}   ← ${who}`);
 if (failsOpen) {
   console.log("              ⚠ no Anthill-Seat: trailers found, so this counts GIT authors —");
