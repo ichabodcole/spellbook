@@ -3,6 +3,8 @@ type: investigation
 title: 'Bounty board daemon "idle-dies" mid-session (#64)'
 status: stable
 lifecycle: concluded
+description:
+  Bounty board daemon was crashing mid-session when idle, the fix and analysis.
 generated: { by: unknown, at: 2026-08-07 }
 ---
 

@@ -1,8 +1,11 @@
 ---
 type: plan
 title: "Spell Surface Pipeline — dev plan (skeleton)"
+description:
+  Development plan skeleton for the Spell Surface Pipeline, with the hypothesis
+  validated by the mind-mapper pilot in v2.2.0
 status: stable
-lifecycle: draft
+lifecycle: completed
 generated: { by: unknown, at: 2026-07-08 }
 ---
 

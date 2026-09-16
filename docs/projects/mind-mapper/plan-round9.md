@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: 'Round 9 plan — the async Job Queue ("Q edition")'
+description:
+  Round 9 plan implementing a persisted async job queue with status tracking and
+  agent ownership, the biggest round since V1 with multi-seat collaboration
 status: stable
 generated: { by: unknown, at: 2026-07-23 }
 ---

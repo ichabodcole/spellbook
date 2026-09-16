@@ -4,6 +4,9 @@ title:
   "`ward` routes an un-rebuilt surface edit to `chore(`, and the guard that
   should catch it passes"
 status: stable
+description:
+  ward's checklist guard fails to catch un-rebuilt surface edits because the
+  check looks at the source tree, not at what a consumer receives
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

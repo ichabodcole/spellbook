@@ -3,6 +3,9 @@ type: artifact
 title: "Mind Mapper — Landscape Analysis"
 status: stable
 generated: { by: unknown, at: 2026-07-16 }
+description:
+  "Survey of three tool clusters—knowledge graphs, story bibles, and ideation
+  canvases—with transferable lessons for design."
 ---
 
 # Mind Mapper — Landscape Analysis

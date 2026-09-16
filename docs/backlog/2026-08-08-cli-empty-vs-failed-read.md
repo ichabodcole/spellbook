@@ -2,6 +2,7 @@
 type: backlog
 title: "CLI: a FAILED read and a legitimate EMPTY result are the same output"
 status: stable
+description: Disambiguate between empty read and failed read in CLI output
 lifecycle: open
 generated: { by: unknown, at: 2026-08-08 }
 ---

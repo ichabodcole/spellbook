@@ -2,7 +2,10 @@
 type: backlog
 title: The declared Bun pin is not the Bun that builds the shipped artifacts
 status: stable
-lifecycle: open
+description:
+  .bun-version declared 1.4.0 but node_modules held 1.3.14; resolved by making
+  Bun a declared devDependency so all three sources agree
+lifecycle: done
 generated: { by: unknown, at: 2026-09-08 }
 ---
 

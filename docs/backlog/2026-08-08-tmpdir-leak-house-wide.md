@@ -2,6 +2,7 @@
 type: backlog
 title: "House-wide: test temp dirs are never torn down"
 status: stable
+description: Fix house-wide temporary directory leak during daemon lifecycle
 lifecycle: open
 generated: { by: unknown, at: 2026-08-08 }
 ---

@@ -2,8 +2,11 @@
 type: proposal
 title: "Glamour conversion — the fifth spell builds, surface and backend"
 status: stable
-lifecycle: draft
 generated: { by: unknown, at: 2026-09-02 }
+description:
+  "Why glamour should be the fifth spell to build, why it goes first among the
+  remaining spells, and the port strategy."
+lifecycle: implemented
 ---
 
 # Glamour conversion — the fifth spell builds, surface and backend

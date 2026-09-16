@@ -4,6 +4,8 @@ title:
   The tail loop's stream reader is never cancelled, so the P0f fix cannot land
   as a shape fix
 status: stable
+description: Unblock P0F fix by resolving tail reader lifecycle blocking issue
+lifecycle: open
 generated: { by: unknown, at: 2026-08-08 }
 ---
 

@@ -4,6 +4,9 @@ title:
   "mind-mapper: the flag rejection that an agent actually hits is the one
   without `choices`"
 status: stable
+description:
+  mind-mapper's unknown-flag rejection doesn't enumerate valid choices, breaking
+  agent discoverability at the moment of error
 lifecycle: open
 generated: { by: unknown, at: 2026-08-30 }
 ---

@@ -3,7 +3,11 @@ type: backlog
 title:
   "`STALE DIST` fires unconditionally, because mtime is not a content property"
 status: stable
-lifecycle: open
+description:
+  The staleness check fired unconditionally because file mtime is not a content
+  property; resolved by deletion of the build stamp and its associated staleness
+  detector
+lifecycle: done
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

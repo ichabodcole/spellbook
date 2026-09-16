@@ -5,6 +5,9 @@ title:
   spell must become to survive it"
 status: stable
 lifecycle: concluded
+description:
+  Cross-harness spell distribution reviewing how spells ship to Codex, OpenCode,
+  and other platforms.
 generated: { by: unknown, at: 2026-08-30 }
 ---
 

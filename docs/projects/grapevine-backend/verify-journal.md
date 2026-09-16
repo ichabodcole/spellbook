@@ -3,6 +3,9 @@ type: artifact
 title: "Verify journal — the three lifecycle routes, run rather than read"
 status: stable
 generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Step-by-step record of the verification phase, with what was tested, the
+  findings, and the fixes required."
 ---
 
 # Verify journal — the three lifecycle routes, run rather than read

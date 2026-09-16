@@ -1,5 +1,9 @@
 ---
 type: release
+title: "Release note draft — superseded by the 3.0.0 merge commit"
+description:
+  The 2026-09-09 release-note draft, kept as the record of how a snapshot goes
+  stale rather than as guidance — superseded by the 3.0.0 merge commit body.
 status: stable
 generated: { by: unknown, at: 2026-09-02 }
 ---

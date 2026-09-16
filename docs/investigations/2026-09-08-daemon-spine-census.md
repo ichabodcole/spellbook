@@ -2,6 +2,10 @@
 type: investigation
 title: "Census: the daemon spine, eight concerns across eight daemons"
 status: stable
+lifecycle: concluded
+description:
+  Comprehensive census of daemon spine implementations across all eight spells
+  with deliberate versus stale divergences.
 generated: { by: unknown, at: 2026-09-08 }
 ---
 

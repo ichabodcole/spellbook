@@ -1,6 +1,8 @@
 ---
 type: memory
 title: "Memory — mind-mapper dogfood drive #4 + Round 4 merge (2026-07-19/20)"
+description: Mind-mapper's dogfood drive #4 served as Round 4's human gate and passed, Round 4 merged to develop, and the drive produced 11 findings including media/image support, spotlight lens and the asymmetrical-parity intent-composer principle that shaped Round 5
+tags: [mind-mapper, dogfood, round-4, merge]
 status: stable
 generated: { by: unknown, at: 2026-07-20 }
 ---

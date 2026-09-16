@@ -2,6 +2,9 @@
 type: backlog
 title: "`bounty tail` replays its entire event history with no default anchor"
 status: stable
+description:
+  Fix bounty tail to replay only recent history instead of full session event
+  log
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

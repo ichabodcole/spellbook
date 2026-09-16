@@ -3,6 +3,10 @@ type: architecture
 title: "scriptorium — how the document editor works"
 status: stable
 generated: { by: unknown, at: 2026-09-12 }
+description:
+  How scriptorium's document editor daemon, browser surface and CLI share one
+  session, with the invariants and test cells that guard them
+tags: [scriptorium, architecture, editor, daemon, invariants]
 ---
 
 # scriptorium — how the document editor works

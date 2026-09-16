@@ -3,6 +3,10 @@ type: proposal
 title: "Grapevine Conversion — the rewrite-then-relocate pathfinder"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Why grapevine conversion is the pathfinder for rewrite-then-relocate
+  workflow, extending the playbook to unblock the other spells."
+lifecycle: implemented
 ---
 
 # Grapevine Conversion — the rewrite-then-relocate pathfinder

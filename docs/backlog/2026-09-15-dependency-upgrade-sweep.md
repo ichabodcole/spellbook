@@ -2,6 +2,11 @@
 type: backlog
 title: "Backlog — one dependency upgrade sweep, not nine separate bumps"
 status: stable
+description:
+  Conduct one coordinated dependency upgrade sweep across root and per-spell
+  manifests, rather than nine separate bumps with rebuild commits and testing
+  complications
+lifecycle: open
 generated: { by: unknown, at: 2026-09-15 }
 ---
 

@@ -3,6 +3,9 @@ type: artifact
 title: "Round 12 plan — agent ergonomics, node edit, orphan visibility"
 status: stable
 generated: { by: unknown, at: 2026-07-26 }
+description:
+  "Round 12 plan consolidating learnings and preparing for the next phase of the
+  spell."
 ---
 
 # Round 12 plan — agent ergonomics, node edit, orphan visibility

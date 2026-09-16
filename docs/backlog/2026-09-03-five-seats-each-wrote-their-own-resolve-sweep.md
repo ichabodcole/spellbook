@@ -2,6 +2,10 @@
 type: backlog
 title: Five seats have each written their own resolve sweep
 status: stable
+description:
+  Five separate agents each wrote their own resolve sweep to verify relocations,
+  leaving no shared instrument and forcing each port to reinvent the same
+  verification logic
 lifecycle: open
 generated: { by: unknown, at: 2026-09-03 }
 ---

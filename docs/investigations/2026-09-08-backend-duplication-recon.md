@@ -2,6 +2,10 @@
 type: investigation
 title: what the backends are independently reinventing
 status: stable
+lifecycle: concluded
+description:
+  Census of 1500-2500 lines of independently duplicated daemon and CLI code
+  across eight spell backends.
 generated: { by: unknown, at: 2026-09-08 }
 ---
 

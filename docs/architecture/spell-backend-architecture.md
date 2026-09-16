@@ -3,6 +3,10 @@ type: architecture
 title: "Spell backends — how a spell is built, shipped and spawned"
 status: stable
 generated: { by: unknown, at: 2026-09-09 }
+description:
+  How a spell is built, shipped and spawned, and which parts of that every spell
+  is required to share
+tags: [backend, architecture, spells, build, daemon]
 ---
 
 # Spell backends — how a spell is built, shipped and spawned

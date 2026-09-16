@@ -3,6 +3,9 @@ type: session
 title:
   "Session — 2026-09-05 · the grapevine rewrite, inventory to wards, and the
   verify pass"
+description:
+  Grapevine watch surface rewritten from Alpine to React with 68 row behaviour
+  inventory and full verification.
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
 ---

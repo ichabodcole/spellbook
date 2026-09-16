@@ -2,6 +2,10 @@
 type: fragment
 title: "Spellbook aesthetic + thematic rebrand"
 status: stable
+lifecycle: promoted
+description:
+  Spellbook branding and aesthetic direction toward cozy, light magic with
+  consistent visual language across spells.
 generated: { by: unknown, at: 2026-05-29 }
 ---
 

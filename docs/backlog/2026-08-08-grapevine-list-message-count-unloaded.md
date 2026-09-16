@@ -2,6 +2,8 @@
 type: backlog
 title: "Grapevine: `list` reports `message_count: 0` for every unloaded channel"
 status: stable
+description:
+  Fix grapevine list to show accurate message counts for unloaded messages
 lifecycle: open
 generated: { by: unknown, at: 2026-08-08 }
 ---

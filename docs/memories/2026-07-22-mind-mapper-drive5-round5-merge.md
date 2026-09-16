@@ -1,6 +1,8 @@
 ---
 type: memory
 title: "Memory — mind-mapper dogfood drive #5 + Round 5 merge (2026-07-22)"
+description: Mind-mapper's dogfood drive #5 proved subgraphs end-to-end live and served as Round 5's human gate, Round 5 merged to develop, and the drive's 10 findings were triaged into Round 6 (fixes) and Round 7 (images)
+tags: [mind-mapper, dogfood, round-5, merge, subgraphs]
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
 ---

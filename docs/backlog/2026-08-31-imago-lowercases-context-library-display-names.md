@@ -2,6 +2,10 @@
 type: backlog
 title: imago lowercases context-library display names on ingest
 status: stable
+description:
+  imago uses the normalized lowercase form both as a dedup key and as the stored
+  display name, losing original casing that could be preserved at comparison
+  time
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

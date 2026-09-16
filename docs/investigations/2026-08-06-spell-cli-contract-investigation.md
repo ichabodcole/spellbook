@@ -3,6 +3,9 @@ type: investigation
 title: "The Spell CLI Contract — what should every spell's stdout promise?"
 status: stable
 lifecycle: active
+description:
+  Spell CLI contract establishing what every spell's stdout should promise for
+  predictable integration.
 generated: { by: unknown, at: 2026-08-06 }
 ---
 

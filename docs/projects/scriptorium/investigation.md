@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scriptorium — investigation: editor, undo, save, diff, watching"
+description:
+  Investigation findings on editor engine, undo, save, diff, and file watching
+  for Scriptorium implementation
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

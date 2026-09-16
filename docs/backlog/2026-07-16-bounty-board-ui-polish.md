@@ -2,6 +2,9 @@
 type: backlog
 title: "Bounty: board UI polish pass (size badges + wordmark)"
 status: stable
+description:
+  Polish the bounty board UI for improved readability and interaction
+  responsiveness
 lifecycle: open
 generated: { by: unknown, at: 2026-07-16 }
 ---

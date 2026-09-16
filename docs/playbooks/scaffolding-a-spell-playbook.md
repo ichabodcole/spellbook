@@ -3,6 +3,10 @@ type: playbook
 title: "Scaffolding a New Spell on the Build — Playbook"
 status: stable
 generated: { by: unknown, at: 2026-09-10 }
+description:
+  Step-by-step playbook for scaffolding a brand-new spell directly onto the
+  shared build layout, replacing guidance that pre-dated the backend convergence
+tags: [playbook, scaffolding, new-spell, build, spells]
 ---
 
 # Scaffolding a New Spell on the Build — Playbook

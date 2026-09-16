@@ -2,6 +2,9 @@
 type: backlog
 title: "Bounty: per-task timing / cycle-time metrics"
 status: stable
+description:
+  Track per-task metrics in bounty sessions to enable performance analysis
+  across runs
 lifecycle: open
 generated: { by: unknown, at: 2026-06-16 }
 ---

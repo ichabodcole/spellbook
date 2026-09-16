@@ -3,6 +3,9 @@ type: artifact
 title: "Dogfood drive #5 — findings (2026-07-22)"
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
+description:
+  "Findings from drive 5, with refinements to the co-presence model and
+  agent-surface handshake."
 ---
 
 # Dogfood drive #5 — findings (2026-07-22)

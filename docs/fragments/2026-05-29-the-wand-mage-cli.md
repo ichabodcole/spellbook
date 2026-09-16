@@ -2,6 +2,10 @@
 type: fragment
 title: "The Wand — a mage-facing CLI/TUI over the spells"
 status: stable
+lifecycle: open
+description:
+  Wand — the mage's personal TUI instrument for monitoring and controlling
+  running conjurations and spells.
 generated: { by: unknown, at: 2026-05-29 }
 ---
 

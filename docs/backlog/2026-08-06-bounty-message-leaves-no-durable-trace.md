@@ -2,6 +2,9 @@
 type: backlog
 title: "`bounty message` reports success and leaves nothing to read back"
 status: stable
+description:
+  Bounty messages should persist durably like other session data instead of
+  being transient
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

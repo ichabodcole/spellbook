@@ -1,6 +1,9 @@
 ---
 type: report
 title: Project Summary Report
+description:
+  Project summary report at 2026-06-27 following documentation review and
+  project health assessment.
 status: stable
 generated: { by: unknown, at: 2026-06-18 }
 ---

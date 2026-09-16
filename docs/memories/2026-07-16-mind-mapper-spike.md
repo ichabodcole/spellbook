@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Mind-mapper Phase 0 spike: research → passed spike in one day"
+description:
+  Mind-mapper's Phase 0 spike ran the full pre-V1 arc (landscape analysis, user
+  research, architecture resolution) and passed in a single day, clearing the
+  way to V1 planning
+tags: [mind-mapper, spike, anthill, architecture]
 status: stable
 generated: { by: unknown, at: 2026-07-16 }
 ---

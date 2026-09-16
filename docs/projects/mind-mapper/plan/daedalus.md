@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "daedalus's lane — mind-mapper V1 engine"
+description:
+  Daedalus's V1 engine lane with phased implementation of real state, daemon
+  contracts, and CLI verbs
 status: stable
 generated: { by: unknown, at: 2026-07-17 }
 ---

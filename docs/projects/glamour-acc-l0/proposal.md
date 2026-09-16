@@ -2,8 +2,11 @@
 type: proposal
 title: "glamour acc L0 — the characterization harness for the port"
 status: stable
-lifecycle: draft
 generated: { by: unknown, at: 2026-09-02 }
+description:
+  "Why we are building the acc characterization harness now before the glamour
+  port, what it blocks, and the phased approach."
+lifecycle: implemented
 ---
 
 # glamour acc L0 — the characterization harness for the port

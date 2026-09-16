@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: `pull --as <alias>` self-echo suppression"
 status: stable
+description:
+  Remove self-echo from grapevine pull to avoid redundant messages in
+  multi-process scenarios
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

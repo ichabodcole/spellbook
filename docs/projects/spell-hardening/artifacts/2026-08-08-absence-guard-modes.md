@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "The absence guard is not one failure — it is three"
+description:
+  Analysis of three distinct absence guard test failures that were
+  mutation-verified but require different fixes
 status: stable
 generated: { by: unknown, at: 2026-08-08 }
 ---

@@ -1,6 +1,9 @@
 ---
 type: session
 title: "mind-mapper acc L0 — and the census that went 0/48 → 49/49"
+description:
+  Mind-mapper acc L0 session fixing all 49 census items after initial not
+  conformant trial.
 status: stable
 generated: { by: unknown, at: 2026-08-27 }
 ---

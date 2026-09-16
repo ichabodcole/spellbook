@@ -3,6 +3,11 @@ type: playbook
 title: "Porting a Spell to the Built / Shared Layout — Playbook"
 status: stable
 generated: { by: unknown, at: 2026-08-31 }
+description:
+  Step-by-step record of porting all eight spells' surfaces and backends onto
+  the shared build, kept as a playbook now that the port population is closed
+  rather than a schedule
+tags: [playbook, porting, build, spells, migration]
 ---
 
 # Porting a Spell to the Built / Shared Layout — Playbook

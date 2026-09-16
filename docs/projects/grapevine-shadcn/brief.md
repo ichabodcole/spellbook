@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine shadcn — the brief"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Implementation handoff specifying which shadcn primitives to add to the
+  project and the gotchas from prior conversion work."
 ---
 
 # Grapevine shadcn — the brief

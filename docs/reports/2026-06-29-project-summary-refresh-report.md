@@ -1,6 +1,9 @@
 ---
 type: report
 title: Project Summary Refresh Report
+description:
+  Refresh report on project state at 2026-06-29 after completed planning and
+  architecture work.
 status: stable
 generated: { by: unknown, at: 2026-06-29 }
 ---

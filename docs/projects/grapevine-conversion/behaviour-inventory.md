@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine watch surface — behaviour inventory"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Fidelity contract for the surface rewrite, row by row of what must preserve
+  behavior and which roles verify each change."
 ---
 
 # Grapevine watch surface — behaviour inventory

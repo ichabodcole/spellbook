@@ -3,6 +3,9 @@ type: artifact
 title: "mind-mapper Round 5 — plan skeleton (subgraphs + drive-4 cluster)"
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
+description:
+  "Round 5 plan for expanding the casting primitives and hardening the
+  co-presence interaction model."
 ---
 
 # mind-mapper Round 5 — plan skeleton (subgraphs + drive-4 cluster)

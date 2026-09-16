@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scriptorium — slice A journal (the foundation)"
+description:
+  Journal of slice A development, recording scope changes and the split of work
+  between the lead and implementer
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

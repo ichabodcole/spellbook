@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scaffolding a spell (register F1) — decision log"
+description:
+  Live decision log for F1, recording rulings and options not taken for the
+  spell scaffolding work
 status: stable
 generated: { by: unknown, at: 2026-09-10 }
 ---

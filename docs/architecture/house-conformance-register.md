@@ -3,6 +3,10 @@ type: architecture
 title: "The house conformance register — where the spells do not yet agree"
 status: stable
 generated: { by: unknown, at: 2026-09-09 }
+description:
+  Living inventory of where the spells' backends still disagree, tracked as open
+  register rows across sections A through F
+tags: [conformance, register, spells, backend, consistency]
 ---
 
 # The house conformance register — where the spells do not yet agree

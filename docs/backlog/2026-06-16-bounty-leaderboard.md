@@ -2,6 +2,10 @@
 type: backlog
 title: "Bounty: a (fun, on-brand) bounty leaderboard"
 status: stable
+description:
+  Build a leaderboard view for bounty to show session progress and task
+  completion rankings
+lifecycle: open
 generated: { by: unknown, at: 2026-06-16 }
 ---
 

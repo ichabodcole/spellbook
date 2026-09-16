@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Proposal — mind-mapper image / media support (Round 7)"
+description:
+  Proposal for adding image and media support to mind-mapper by treating images
+  as evidence sources with bounding box regions
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
 ---

@@ -3,6 +3,8 @@ type: backlog
 title:
   "Bounty: `--fresh --restore` destroys the snapshot it is meant to restore from"
 status: stable
+description:
+  Fix bug where fresh restore in bounty overwrites snapshot with incomplete data
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

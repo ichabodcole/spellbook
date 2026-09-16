@@ -3,6 +3,9 @@ type: backlog
 title:
   "Bounty: overrun-poke false-fires on session-length cards (card-model gap)"
 status: stable
+description:
+  Add session length indicators to bounty heartbeat cards for quick duration
+  visibility
 lifecycle: open
 generated: { by: unknown, at: 2026-08-05 }
 ---

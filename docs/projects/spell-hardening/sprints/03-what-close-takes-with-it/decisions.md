@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Sprint 03 — decision log"
+description:
+  Sprint 03 decision log written live at the convene, recording all decisions as
+  they were made
 status: stable
 generated: { by: unknown, at: 2026-08-08 }
 ---

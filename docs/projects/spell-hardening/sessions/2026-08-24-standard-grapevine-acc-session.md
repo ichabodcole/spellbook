@@ -3,6 +3,9 @@ type: session
 title:
   "The declared surface — the acc-standard working session on grapevine —
   2026-08-24"
+description:
+  Grapevine conformance session establishing the acc standard working interface
+  for spell CLIs.
 status: stable
 generated: { by: unknown, at: 2026-08-24 }
 ---

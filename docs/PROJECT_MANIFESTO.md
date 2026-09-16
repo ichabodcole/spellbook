@@ -3,6 +3,10 @@ type: manifesto
 title: The Spellbook
 status: stable
 generated: { by: unknown, at: 2026-05-29 }
+description:
+  The conceptual manifesto defining what a spell is, the co-presence principle
+  behind it, and the boundaries of what spells deliberately are not
+tags: [manifesto, co-presence, spells, philosophy, canon]
 ---
 
 <!--

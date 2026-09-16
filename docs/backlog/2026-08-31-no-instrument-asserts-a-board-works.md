@@ -2,6 +2,9 @@
 type: backlog
 title: Nothing in the gate can distinguish a served 200 from a working board
 status: stable
+description:
+  Phase 1a proves relocated boards work end-to-end by hand, but the automated
+  gate cannot verify they actually function—only that they return HTTP 200
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

@@ -2,6 +2,9 @@
 type: backlog
 title: "Glamour: `open` prints a URL and port for a daemon that is already gone"
 status: stable
+description:
+  Fix glamour open to gracefully handle and report dead daemon instead of
+  hanging
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

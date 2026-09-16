@@ -4,7 +4,11 @@ title:
   "imago's shipped daemon cannot start without a network: `sharp` is not in the
   artifact"
 status: stable
-lifecycle: open
+description:
+  imago's daemon fails to start without a network because sharp is an uncached
+  native dependency; fixed by switching to Bun.Image like other spells already
+  do
+lifecycle: done
 generated: { by: unknown, at: 2026-08-30 }
 ---
 

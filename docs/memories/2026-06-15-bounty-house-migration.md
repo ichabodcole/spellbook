@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Bounty — migrated to the house daemon + cli.ts pattern (#6–#10)"
+description:
+  Bounty migrated off the old file-pump substrate onto the house daemon+cli
+  pattern, adding ownership, scoped tails, cooperative claim and task
+  dependencies with a cycle guard
+tags: [bounty, house-daemon, migration, alpine-surface]
 status: stable
 generated: { by: unknown, at: 2026-06-15 }
 ---

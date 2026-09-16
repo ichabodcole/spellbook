@@ -3,7 +3,11 @@ type: backlog
 title:
   "magpie hand-rolls scale math around a `Bun.Image` option that does exist"
 status: stable
-lifecycle: open
+description:
+  magpie reimplements scaling logic that Bun.Image already provides via
+  withoutEnlargement; resolved by deletion of the dead code during surface
+  relocation
+lifecycle: done
 generated: { by: unknown, at: 2026-08-30 }
 ---
 

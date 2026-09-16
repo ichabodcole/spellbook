@@ -2,6 +2,8 @@
 type: session
 title:
   "Mind-mapper Phase 0 spike — research to passed spike in one day — 2026-07-16"
+description:
+  Mind-mapper Phase 0 spike from research to passing spike in one day.
 status: stable
 generated: { by: unknown, at: 2026-07-16 }
 ---

@@ -4,6 +4,9 @@ title:
   "Bounty: `list` enumerates boards, not tasks — the empty result reads as
   missing cards"
 status: stable
+description:
+  Fix bounty list command to surface boards and lists as primary, not individual
+  tasks
 lifecycle: open
 generated: { by: unknown, at: 2026-08-05 }
 ---

@@ -2,6 +2,9 @@
 type: artifact
 title:
   "Proposal — the message surface (collapse capture layers into one channel)"
+description:
+  Proposal to unify multiple capture surfaces into a single message primitive
+  with different channels and attached context
 status: stable
 generated: { by: unknown, at: 2026-07-26 }
 ---

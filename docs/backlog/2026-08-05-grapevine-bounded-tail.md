@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: bounded / non-follow mode for `tail` (history backfill)"
 status: stable
+description:
+  Implement bounded tail with message limit in grapevine to prevent unbounded
+  history growth
 lifecycle: open
 generated: { by: unknown, at: 2026-08-05 }
 ---

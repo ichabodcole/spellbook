@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: extended `doctor` (`--fix` + deeper checks)"
 status: stable
+description:
+  Extend grapevine doctor command with additional diagnostics for session and
+  message health
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

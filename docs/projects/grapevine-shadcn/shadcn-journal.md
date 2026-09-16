@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine shadcn — the journal"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Step-by-step record of adding shadcn primitives to the project, with the
+  process, what was added, and the gotchas encountered."
 ---
 
 # Grapevine shadcn — the journal

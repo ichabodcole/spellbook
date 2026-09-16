@@ -4,6 +4,9 @@ title:
   "`parsePortFromSessionId` is four-way duplicated, with the same type error in
   all four"
 status: stable
+description:
+  parsePortFromSessionId is byte-identical in four spells, carrying the same
+  noUncheckedIndexedAccess error in three of them, repeating work and debt
 lifecycle: open
 generated: { by: unknown, at: 2026-09-10 }
 ---

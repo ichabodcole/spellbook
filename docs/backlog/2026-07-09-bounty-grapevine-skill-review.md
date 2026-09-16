@@ -2,6 +2,9 @@
 type: backlog
 title: "Review bounty + grapevine SKILL.md for accuracy and usefulness"
 status: stable
+description:
+  Review bounty and grapevine skills for integration completeness and
+  correctness
 lifecycle: open
 generated: { by: unknown, at: 2026-07-09 }
 ---

@@ -2,6 +2,10 @@
 type: backlog
 title: "Backlog — imago unified context / text library"
 status: stable
+description:
+  Create a unified context library for Imago to reliably fetch and serve project
+  metadata
+lifecycle: open
 generated: { by: unknown, at: 2026-06-16 }
 ---
 

@@ -3,6 +3,9 @@ type: artifact
 title: "Bounty conversion — rewrite journal"
 status: stable
 generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Step-by-step record of the rewrite phase, with the process, what was built,
+  and the gotchas encountered."
 ---
 
 # Bounty conversion — rewrite journal

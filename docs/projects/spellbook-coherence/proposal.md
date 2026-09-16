@@ -1,6 +1,10 @@
 ---
 type: proposal
 title: "Spellbook Coherence Pass — make the migrated set production-coherent"
+description:
+  Proposal for four coherence deliverables including feedback touchpoints, Bun
+  wrapper, TypeScript gate, and grimoire validation
+lifecycle: implemented
 status: stable
 generated: { by: unknown, at: 2026-05-29 }
 ---

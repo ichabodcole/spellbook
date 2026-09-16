@@ -2,6 +2,9 @@
 type: backlog
 title: "Bounty: daemon / cli robustness nits"
 status: stable
+description:
+  Collect small robustness improvements to bounty daemon and CLI from
+  house-pattern migration review
 lifecycle: open
 generated: { by: unknown, at: 2026-06-15 }
 ---

@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Sprint 02 outcome — Success-shaped lies"
+description:
+  Sprint 02 outcome showing all four lanes shipped and six issues closed, with
+  release v2.0.0 using an unearned major version bump
 status: stable
 generated: { by: unknown, at: 2026-08-07 }
 ---

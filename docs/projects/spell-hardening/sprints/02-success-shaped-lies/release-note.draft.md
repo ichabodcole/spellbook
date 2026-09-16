@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Release note — DRAFT"
+description:
+  Draft release note written before v2.0.0 shipped, later superseded by the
+  outcome document with post-release facts
 status: stable
 generated: { by: unknown, at: 2026-08-06 }
 ---

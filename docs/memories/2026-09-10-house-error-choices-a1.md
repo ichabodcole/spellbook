@@ -3,6 +3,12 @@ type: memory
 title:
   "Register A1 closed — every closed set the eight spells reject against is now
   `choices`"
+description:
+  Closed Register A1 by adding the choices field to all nineteen qualifying
+  error rejections across all eight spells, and ruled that choices is required
+  only where a closed set is in hand at the raise while hint is required only
+  where a next act exists
+tags: [error-handling, conformance, house-error-envelope, wire-contract]
 status: stable
 generated: { by: unknown, at: 2026-09-10 }
 ---

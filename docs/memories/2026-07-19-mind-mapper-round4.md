@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Memory — mind-mapper Round 4 built + gate-passed (2026-07-19)"
+description:
+  Mind-mapper Round 4 shipped action slots, ratify-anywhere, automated activity
+  ladder and doc-kind honesty, passing gate on the first drive with zero
+  wire-guess failures for the second round running
+tags: [mind-mapper, anthill, round-4, action-slots]
 status: stable
 generated: { by: unknown, at: 2026-07-19 }
 ---

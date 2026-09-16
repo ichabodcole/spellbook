@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "OKF and links between documents — the plan"
+description:
+  Plan for implementing Open Knowledge Format frontmatter and inter-document
+  link support in Scriptorium
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

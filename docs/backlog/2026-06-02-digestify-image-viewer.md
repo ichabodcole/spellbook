@@ -2,6 +2,10 @@
 type: backlog
 title: "Backlog — digestify image viewer + feedback"
 status: stable
+description:
+  Add image content support to digestify—an image viewer with per-image feedback
+  alongside text review capabilities
+lifecycle: open
 generated: { by: unknown, at: 2026-06-02 }
 ---
 

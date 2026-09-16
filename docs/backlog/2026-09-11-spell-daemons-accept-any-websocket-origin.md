@@ -3,6 +3,10 @@ type: backlog
 title:
   "Backlog — spell daemons accept a WebSocket (and a POST) from any web page"
 status: stable
+description:
+  Spell daemons on 127.0.0.1 accept WebSocket connections and POSTs from any web
+  page in the browser, bypassing CORS and trusting any origin
+lifecycle: open
 generated: { by: unknown, at: 2026-09-11 }
 ---
 

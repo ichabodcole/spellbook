@@ -2,6 +2,10 @@
 type: backlog
 title: "anthill feedback — six drafts, measured, DRAFTED AND UNFILED"
 status: stable
+description:
+  Follow up on anthill team feedback that was drafted but not yet filed as
+  backlog items
+lifecycle: open
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

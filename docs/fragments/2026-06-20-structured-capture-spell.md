@@ -4,6 +4,10 @@ title:
   "A structured-capture spell — brain dump → mapped artifact (digestify's
   inverse)"
 status: stable
+lifecycle: open
+description:
+  Brain-dump and structured capture spell that distills conversation and dumps
+  into saved, analyzed documents.
 generated: { by: unknown, at: 2026-06-20 }
 ---
 

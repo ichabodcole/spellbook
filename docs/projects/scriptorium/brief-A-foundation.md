@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scriptorium — brief A: the foundation, end to end"
+description:
+  Brief for implementing Scriptorium slice A, a co-present document editor with
+  end-to-end functionality on the house build
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

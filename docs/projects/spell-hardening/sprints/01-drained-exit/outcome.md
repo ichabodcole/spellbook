@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Sprint 01 outcome — The drained exit"
+description:
+  Sprint 01 outcome documenting what shipped and what did not, with the honest
+  headline that zero of fourteen GitHub issues were closed
 status: stable
 generated: { by: unknown, at: 2026-08-06 }
 ---

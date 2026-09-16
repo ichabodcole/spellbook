@@ -2,6 +2,9 @@
 type: artifact
 title:
   "The live-team beat — what a real session produced that a script could not"
+description:
+  Analysis of live team observations from daemon logs and concurrent multi-agent
+  sessions to identify defects that scripted fixtures cannot catch
 status: stable
 generated: { by: unknown, at: 2026-08-08 }
 ---

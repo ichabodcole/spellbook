@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Spell Hardening — roadmap"
+description:
+  Forecast roadmap for spell hardening sprints showing planned work and noting
+  that nothing past the current sprint is committed
 status: stable
 generated: { by: unknown, at: 2026-08-08 }
 ---

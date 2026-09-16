@@ -2,6 +2,9 @@
 type: session
 title:
   "Session — mind-mapper Round 3: exploration zones + drive-2 build (2026-07-18)"
+description:
+  Mind-mapper Round 3 adding exploration zones with drive-2 test
+  instrumentation.
 status: stable
 generated: { by: unknown, at: 2026-07-18 }
 ---

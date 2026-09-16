@@ -2,6 +2,8 @@
 type: backlog
 title: "Grapevine: presence events (join / leave)"
 status: stable
+description:
+  Broadcast presence events in grapevine to show agent and human activity status
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

@@ -1,7 +1,11 @@
 ---
 type: plan
 title: "Sprint 02 — Success-shaped lies"
+description:
+  Sprint 02 plan with ratified rulings, alongside the separate decision log
+  documenting options not taken
 status: stable
+lifecycle: completed
 generated: { by: unknown, at: 2026-08-06 }
 ---
 

@@ -3,6 +3,9 @@ type: backlog
 title:
   "House: a spell's response should name the desire path (the likely next act)"
 status: stable
+description:
+  Add desire path hints to spell responses to guide humans toward intended
+  interaction patterns
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

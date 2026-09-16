@@ -3,7 +3,10 @@ type: backlog
 title:
   Grapevine fails the flag-invariant ward on develop (unresolved entry point)
 status: stable
-lifecycle: open
+description:
+  The flag-invariant ward cannot resolve grapevine's CLI entry point, leaving
+  the spell's flag surface unchecked for drift
+lifecycle: done
 generated: { by: unknown, at: 2026-08-27 }
 ---
 

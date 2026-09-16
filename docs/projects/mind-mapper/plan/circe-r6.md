@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "circe — Round 6 lane (surface)"
+description:
+  Circe's Round 6 surface lane with ratified rulings and build order for three
+  zero-engine-dependency items plus deferred P2 work
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
 ---

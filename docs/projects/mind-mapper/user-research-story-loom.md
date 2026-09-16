@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Mind Mapper — User Research: story-loom interview"
+description:
+  User research with Bobbin about Story Loom's use of collaborative markdown
+  documentation and the architecture challenge of map-as-view vs map-as-store
 status: stable
 generated: { by: unknown, at: 2026-07-16 }
 ---

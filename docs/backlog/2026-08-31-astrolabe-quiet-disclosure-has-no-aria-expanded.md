@@ -2,6 +2,9 @@
 type: backlog
 title: "astrolabe's Quiet disclosure has no `aria-expanded`"
 status: stable
+description:
+  astrolabe's Quiet zone toggle button has no aria-expanded attribute, leaving
+  screen readers unable to report whether the region is open or closed
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

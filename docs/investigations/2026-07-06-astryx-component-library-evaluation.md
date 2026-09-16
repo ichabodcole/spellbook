@@ -3,6 +3,9 @@ type: investigation
 title: Astryx (Meta) as a component-library foundation for spell surfaces
 status: stable
 lifecycle: concluded
+description:
+  Astryx is agent-legible but uses StyleX instead of Tailwind and is day-zero
+  beta, so monitoring is recommended over adoption.
 generated: { by: unknown, at: 2026-07-06 }
 ---
 

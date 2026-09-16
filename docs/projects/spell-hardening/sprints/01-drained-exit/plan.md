@@ -1,8 +1,11 @@
 ---
 type: plan
 title: "Sprint 01 — The drained exit · Spell Hardening"
+description:
+  Sprint 01 frozen plan document recording what was believed at the time, with
+  the ratify round results superseding the original claims
 status: stable
-lifecycle: draft
+lifecycle: completed
 generated: { by: unknown, at: 2026-08-05 }
 ---
 

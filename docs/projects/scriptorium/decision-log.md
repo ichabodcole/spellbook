@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scriptorium — decision log"
+description:
+  Live decision log for Scriptorium, recording design choices and options not
+  taken
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

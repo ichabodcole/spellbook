@@ -1,7 +1,11 @@
 ---
 type: plan
 title: "Sprint 06 — Filed is not fixed"
+description:
+  Sprint 06 plan scaffold created before the sprint, noting that three ratify
+  rounds have falsified claims across previous sprints
 status: stable
+lifecycle: draft
 generated: { by: unknown, at: 2026-08-11 }
 ---
 

@@ -3,6 +3,9 @@ type: backlog
 title:
   "Grapevine: standalone `grapevine` CLI for humans (companion-app pattern)"
 status: stable
+description:
+  Build a standalone human CLI for grapevine to enable direct conversation
+  without spell surfaces
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

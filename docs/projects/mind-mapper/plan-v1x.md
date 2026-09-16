@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Mind Mapper V1.x — Track A build plan (skeleton)"
+description:
+  V1.x Track A plan skeleton with seam claims and cross-seat integration order,
+  covering engine wire, surface, and gate definition
 status: stable
 generated: { by: unknown, at: 2026-07-18 }
 ---

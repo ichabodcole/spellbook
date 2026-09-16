@@ -4,6 +4,9 @@ title:
   "`astrolabe close` exits 0 carrying an error envelope — wrong on both axes,
   and they cancel"
 status: stable
+description:
+  Fix astrolabe close to return non-zero exit code when returning error envelope
+lifecycle: open
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

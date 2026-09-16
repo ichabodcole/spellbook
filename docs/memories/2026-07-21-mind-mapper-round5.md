@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Memory — mind-mapper Round 5 built + gate-passed (2026-07-21)"
+description:
+  Mind-mapper Round 5 shipped subgraphs/node-anchored submaps as the headline
+  feature plus select-connected, spotlight lens and intent-composer affordances,
+  with ratify falsifying the plan's submap-scoping approach before build
+tags: [mind-mapper, anthill, round-5, subgraphs]
 status: stable
 generated: { by: unknown, at: 2026-07-21 }
 ---

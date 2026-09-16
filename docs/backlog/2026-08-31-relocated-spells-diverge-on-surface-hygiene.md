@@ -4,6 +4,10 @@ title:
   Two spells went through the same relocation and came out with different
   surface hygiene
 status: stable
+description:
+  astrolabe and imago followed the same relocation contracts but diverged on
+  surface hygiene—favicon guards and pre-boot styling—causing console errors and
+  rendering flicker
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

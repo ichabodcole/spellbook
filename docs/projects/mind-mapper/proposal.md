@@ -1,6 +1,9 @@
 ---
 type: proposal
 title: "Mind Mapper — map your thinking into a shared, source-traceable board"
+description:
+  Proposal for a spell that ingests source material and turns it into an
+  interactive, source-traceable map for co-present human-agent exploration
 status: stable
 lifecycle: draft
 generated: { by: unknown, at: 2026-06-30 }

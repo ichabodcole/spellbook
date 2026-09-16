@@ -2,6 +2,11 @@
 type: backlog
 title: The membership guard rests on an unasserted launcher
 status: stable
+description:
+  The import-boundary ward's roster derivation assumes every spell contributes
+  scripts/* to the population, but this stopped being true when Contract 3
+  enumeration became criterion
+lifecycle: open
 generated: { by: unknown, at: 2026-09-04 }
 ---
 

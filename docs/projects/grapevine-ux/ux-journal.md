@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine UX — the journal"
 status: stable
 generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Process guide for the next agent adding human parity, with what the daemon
+  needs, how the inventory was amended, and gotchas with fixes."
 ---
 
 # Grapevine UX — the journal

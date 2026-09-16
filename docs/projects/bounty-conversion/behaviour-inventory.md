@@ -3,6 +3,9 @@ type: artifact
 title: "Bounty board surface — behaviour inventory"
 status: stable
 generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Fidelity contract for the surface rewrite, row by row of what must preserve
+  behavior and which roles verify each change."
 ---
 
 # Bounty board surface — behaviour inventory

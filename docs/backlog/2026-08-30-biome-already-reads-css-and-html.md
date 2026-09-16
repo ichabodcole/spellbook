@@ -3,6 +3,10 @@ type: backlog
 title:
   "The gate's blind set is 96% self-inflicted: biome already reads CSS and HTML"
 status: stable
+description:
+  Biome can read CSS and HTML to catch syntax errors, but the gate does not
+  invoke it on those files; the blind spot is a config issue, not a tool
+  limitation
 lifecycle: open
 generated: { by: unknown, at: 2026-08-30 }
 ---

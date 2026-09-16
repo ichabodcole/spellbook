@@ -2,6 +2,10 @@
 type: backlog
 title: "Backlog — `gate` runs twice on every push, and one of the two is wasted"
 status: stable
+description:
+  CI triggers on both pull_request and push events, causing gate to run twice on
+  every push to develop when a PR is open
+lifecycle: open
 generated: { by: unknown, at: 2026-09-15 }
 ---
 

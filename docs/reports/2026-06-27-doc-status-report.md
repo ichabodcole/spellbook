@@ -1,6 +1,9 @@
 ---
 type: report
 title: Doc Status Report
+description:
+  Documentation status report assessing doc completeness and archival candidates
+  across active projects.
 status: stable
 generated: { by: unknown, at: 2026-06-27 }
 ---

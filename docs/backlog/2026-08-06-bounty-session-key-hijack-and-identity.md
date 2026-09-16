@@ -4,6 +4,9 @@ title:
   "Bounty: a session key can be hijacked, and a read cannot say which board
   answered"
 status: stable
+description:
+  Address session key hijack vulnerability and clarify session identity
+  semantics
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

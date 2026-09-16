@@ -3,6 +3,9 @@ type: fragment
 title: A Wiki-Reading Spell
 status: stable
 lifecycle: open
+description:
+  Wiki-reading spell for augmented documentation exploration and interactive
+  knowledge discovery.
 generated: { by: unknown, at: 2026-08-05 }
 ---
 

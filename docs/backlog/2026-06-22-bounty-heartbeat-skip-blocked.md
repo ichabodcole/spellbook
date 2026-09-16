@@ -2,6 +2,9 @@
 type: backlog
 title: "bounty: skip the doing-column heartbeat for blocked cards"
 status: stable
+description:
+  Skip heartbeat updates for tasks that are blocked to reduce noise in bounty
+  session logs
 lifecycle: open
 generated: { by: unknown, at: 2026-06-22 }
 ---

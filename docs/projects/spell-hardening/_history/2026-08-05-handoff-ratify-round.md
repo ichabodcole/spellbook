@@ -3,6 +3,9 @@ type: artifact
 title:
   "Handoff — ~~read this before ratifying the plan~~ **HISTORICAL. The ratify
   round is DONE.**"
+description:
+  Historical handoff document for the spell hardening ratify round, now
+  superseded by the executed plan
 status: stable
 generated: { by: unknown, at: 2026-08-05 }
 ---

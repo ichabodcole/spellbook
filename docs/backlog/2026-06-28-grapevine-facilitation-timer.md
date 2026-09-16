@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: timed announcements / facilitation timer"
 status: stable
+description:
+  Add optional conversation facilitation timer to grapevine for bounded
+  discussion windows
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Grapevine V1.7 — human as a first-class participant"
+description:
+  Grapevine V1.7 shipped human-as-participant features (identity, join/lurk,
+  threading, archive) on an Alpine-ported watch surface, validated by a live
+  human+agent soak that caught two bugs
+tags: [grapevine, alpine-surface, soak-test, identity]
 status: stable
 generated: { by: unknown, at: 2026-06-11 }
 ---

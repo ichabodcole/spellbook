@@ -2,6 +2,9 @@
 type: backlog
 title: "Bounty: daemon idle-dies mid-session (reliability, priority: high)"
 status: stable
+description:
+  Implement graceful daemon termination after idle timeout to prevent resource
+  leaks
 lifecycle: open
 generated: { by: unknown, at: 2026-07-16 }
 ---

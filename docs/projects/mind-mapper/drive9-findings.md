@@ -3,6 +3,9 @@ type: artifact
 title: "Drive #9 findings — session-8 (R10 build), 2026-07-26"
 status: stable
 generated: { by: unknown, at: 2026-07-26 }
+description:
+  "Findings from drive 9, continuing the co-presence refinement and preparing
+  for later rounds."
 ---
 
 # Drive #9 findings — session-8 (R10 build), 2026-07-26

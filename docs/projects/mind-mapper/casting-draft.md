@@ -3,6 +3,9 @@ type: artifact
 title: "Mind Mapper — casting doc (V1 draft)"
 status: stable
 generated: { by: unknown, at: 2026-07-17 }
+description:
+  "Instructions for agents casting the mind-mapper spell, including how verbs
+  work and the full casting sequence."
 ---
 
 # Mind Mapper — casting doc (V1 draft)

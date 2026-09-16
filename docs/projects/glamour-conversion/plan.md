@@ -2,8 +2,11 @@
 type: plan
 title: "Glamour conversion — plan SKELETON"
 status: stable
-lifecycle: draft
 generated: { by: unknown, at: 2026-09-02 }
+description:
+  "Ratified plan skeleton from the seat-by-seat verdict pass, showing what is
+  built vs. deferred and how errors were corrected."
+lifecycle: completed
 ---
 
 # Glamour conversion — plan SKELETON

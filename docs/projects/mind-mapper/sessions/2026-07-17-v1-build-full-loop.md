@@ -3,6 +3,9 @@ type: session
 title:
   "Mind-mapper V1 — ratified plan to passed acceptance test in one evening —
   2026-07-17"
+description:
+  Mind-mapper V1 built from ratified plan to passed acceptance test in one
+  evening.
 status: stable
 generated: { by: unknown, at: 2026-07-17 }
 ---

@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine UX — the brief"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Implementation handoff specifying the human parity work needed and the
+  measured gap between surface and daemon capabilities."
 ---
 
 # Grapevine UX — the brief

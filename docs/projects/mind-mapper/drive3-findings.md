@@ -3,6 +3,9 @@ type: artifact
 title: "Dogfood drive #3 — findings (2026-07-19)"
 status: stable
 generated: { by: unknown, at: 2026-07-19 }
+description:
+  "Findings from drive 3, with agent model refinements and surface interaction
+  patterns for co-presence."
 ---
 
 # Dogfood drive #3 — findings (2026-07-19)

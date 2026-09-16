@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Scriptorium — precursor"
+description:
+  Precursor concept for Scriptorium, a lightweight co-present document editor
+  with agent assistance and real-time text selection sharing
 status: stable
 generated: { by: unknown, at: 2026-09-11 }
 ---

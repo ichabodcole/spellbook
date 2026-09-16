@@ -1,6 +1,10 @@
 ---
 type: plan
 title: "Mind Mapper V1 — Plan Skeleton"
+description:
+  V1 plan skeleton with integration order, cross-seam contracts, and
+  verification gate based on the Phase 0 spike findings
+lifecycle: completed
 status: stable
 generated: { by: unknown, at: 2026-07-16 }
 ---

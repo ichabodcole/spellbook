@@ -3,6 +3,9 @@ type: artifact
 title: "Mind Mapper — V1.x drive #2 findings"
 status: stable
 generated: { by: unknown, at: 2026-07-18 }
+description:
+  "Findings from drive 2, with user-facing issues, agent primitives, and how the
+  agent should drive the surface."
 ---
 
 # Mind Mapper — V1.x drive #2 findings

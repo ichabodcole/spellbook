@@ -4,6 +4,9 @@ title:
   The spell discovery pointer is a machine-global singleton, and cleanup only
   runs on a graceful exit
 status: stable
+description:
+  Discovery pointer should be machine-global not project-local for cross-project
+  spell discovery
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

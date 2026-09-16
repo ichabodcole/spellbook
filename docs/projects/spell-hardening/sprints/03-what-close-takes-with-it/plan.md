@@ -1,7 +1,11 @@
 ---
 type: plan
 title: "Sprint 03 — What close takes with it"
+description:
+  Sprint 03 plan with line numbers pinned to a specific commit, noting that six
+  claims were falsified during the ratify round
 status: stable
+lifecycle: completed
 generated: { by: unknown, at: 2026-08-07 }
 ---
 

@@ -2,6 +2,10 @@
 type: fragment
 title: Publishing the ability to create spells (a shippable spell-creator)
 status: stable
+lifecycle: open
+description:
+  Shippable skill-based spell creator enabling users to make spells in any
+  project then upstream them to Spellbook.
 generated: { by: unknown, at: 2026-05-29 }
 ---
 

@@ -2,6 +2,10 @@
 type: backlog
 title: Nothing in the repo can tell a relocation from a duplication
 status: stable
+description:
+  dist-check cannot detect whether a deployed spell was relocated or duplicated;
+  extra files planted in a shipped folder pass undetected
+lifecycle: open
 generated: { by: unknown, at: 2026-09-02 }
 ---
 

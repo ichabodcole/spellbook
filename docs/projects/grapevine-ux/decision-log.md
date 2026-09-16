@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine UX — decision log"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Live record of choices made during UX alignment work, with the options not
+  taken and the reasoning."
 ---
 
 # Grapevine UX — decision log

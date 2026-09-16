@@ -4,6 +4,9 @@ title:
   '`bounty update --notes ""` cannot tell a deliberate clear from a substitution
   that produced nothing'
 status: stable
+description:
+  Clarify and fix semantics of clear versus empty substitution in bounty notes
+lifecycle: open
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "Sprint 04 outcome — The shape of nothing"
+description:
+  Sprint 04 outcome written at the convene, late relative to the sprint close,
+  documenting the shape-of-nothing thesis and shipping v2.2.0
 status: stable
 generated: { by: unknown, at: 2026-08-10 }
 ---

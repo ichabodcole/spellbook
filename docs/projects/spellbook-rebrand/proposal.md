@@ -1,6 +1,10 @@
 ---
 type: proposal
 title: "Spellbook Rebrand — unify the spells under one cute-occult aesthetic"
+description:
+  Proposal to rebrand spells under a unified cute-occult aesthetic, noting that
+  mechanical fixes are blocked by unmade aesthetic decisions
+lifecycle: deferred
 status: stable
 generated: { by: unknown, at: 2026-05-29 }
 ---

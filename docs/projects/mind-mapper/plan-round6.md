@@ -3,6 +3,9 @@ type: artifact
 title: "mind-mapper Round 6 — plan skeleton (drive-5 fixes + tooling + UX)"
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
+description:
+  "Round 6 plan for the lens mechanics, selection steering, and agent
+  co-presence through the board."
 ---
 
 # mind-mapper Round 6 — plan skeleton (drive-5 fixes + tooling + UX)

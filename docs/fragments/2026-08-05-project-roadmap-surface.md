@@ -3,6 +3,9 @@ type: fragment
 title: A Project Roadmap / Planning Surface
 status: stable
 lifecycle: open
+description:
+  Project roadmap and planning surface as a spell for visualizing and managing
+  project timelines.
 generated: { by: unknown, at: 2026-08-05 }
 ---
 

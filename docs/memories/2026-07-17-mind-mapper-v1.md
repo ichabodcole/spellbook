@@ -3,6 +3,11 @@ type: memory
 title:
   "Mind-mapper V1: ratified plan → passed acceptance test, same evening as the
   spike"
+description:
+  Mind-mapper V1 was built end-to-end via anthill (plan skeleton through P1-P4
+  verify gates) with real sqlite+markdown persistence and passed a cold-agent
+  acceptance test the same evening as the spike
+tags: [mind-mapper, anthill, v1, acceptance-test]
 status: stable
 generated: { by: unknown, at: 2026-07-17 }
 ---

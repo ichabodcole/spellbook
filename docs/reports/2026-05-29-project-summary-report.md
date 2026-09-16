@@ -1,6 +1,9 @@
 ---
 type: report
 title: Project Summary Report
+description:
+  Initial project summary discovery report establishing baseline project
+  structure and investigation methodology.
 status: stable
 generated: { by: unknown, at: 2026-05-29 }
 ---

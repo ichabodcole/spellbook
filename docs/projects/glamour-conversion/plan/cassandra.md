@@ -5,6 +5,9 @@ title:
   local-sim"
 status: stable
 generated: { by: unknown, at: 2026-09-03 }
+description:
+  "Cassandra's verify lane work including the acc characterization arm, S3/S4
+  corrections, and measurement tasks."
 ---
 
 # cassandra — verify lane: the non-author on S3 and S4, the acc arm, and the local-sim

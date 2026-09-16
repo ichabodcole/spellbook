@@ -2,6 +2,9 @@
 type: backlog
 title: "Five spells write a session pointer into a shared `tmpdir()` namespace"
 status: stable
+description:
+  Five spells write session pointers to a shared tmpdir namespace keyed by spell
+  name only, causing collision and test-induced deletion across the machine
 lifecycle: open
 generated: { by: unknown, at: 2026-09-03 }
 ---

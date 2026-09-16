@@ -1,6 +1,11 @@
 ---
 type: memory
 title: magpie reached acc L0, and the census found 289 defects L0 could not see
+description:
+  Magpie reached acc L0 conformance, and a recorded-surface census then found
+  289 accepted-not-declared flag/path pairs caused by one shared global flag
+  registry, fixed by a single VERB_SPEC table
+tags: [magpie, acc, conformance, census]
 status: stable
 generated: { by: unknown, at: 2026-08-26 }
 ---

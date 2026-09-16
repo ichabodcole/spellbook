@@ -3,6 +3,9 @@ type: backlog
 title:
   "Bounty: respawn-empty + close clobbers the snapshot (data loss, no rotation)"
 status: stable
+description:
+  Fix potential data loss when snapshot updates clobber concurrent session
+  modifications
 lifecycle: open
 generated: { by: unknown, at: 2026-08-05 }
 ---

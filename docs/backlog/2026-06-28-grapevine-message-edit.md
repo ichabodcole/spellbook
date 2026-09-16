@@ -2,6 +2,9 @@
 type: backlog
 title: 'Grapevine: message edit (`kind:"edit"`)'
 status: stable
+description:
+  Implement message editing in grapevine to allow correction and refinement of
+  sent messages
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

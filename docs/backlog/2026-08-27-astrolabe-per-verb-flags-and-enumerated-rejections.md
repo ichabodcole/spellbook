@@ -2,6 +2,9 @@
 type: backlog
 title: "Astrolabe: scope flags per verb, then enumerate them in rejections"
 status: stable
+description:
+  Scope flag definitions per verb rather than sharing a global registry, then
+  enumerate valid choices in rejection messages for just-in-time agent discovery
 lifecycle: open
 generated: { by: unknown, at: 2026-08-27 }
 ---

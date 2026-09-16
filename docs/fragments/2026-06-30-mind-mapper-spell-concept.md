@@ -2,7 +2,10 @@
 type: fragment
 title: "Mind Mapper — Spell Precursor (consolidated)"
 status: stable
-lifecycle: open
+lifecycle: promoted
+description:
+  Mind-mapper spell design as a consolidated precursor document with full
+  concept, architecture, and design documentation.
 generated: { by: unknown, at: 2026-06-30 }
 ---
 

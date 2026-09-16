@@ -2,6 +2,10 @@
 type: backlog
 title: "`mind-mapper` is undeclared in every listing and shipped in v2.2.0"
 status: stable
+description:
+  Mind mapper spell shipped without skill declaration—add declaration and update
+  manifesto
+lifecycle: open
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

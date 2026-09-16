@@ -4,6 +4,9 @@ title:
   "Grapevine: a channel-janitor path (staleness view + channel kind + bulk
   archive)"
 status: stable
+description:
+  Add channel janitor to grapevine for cleanup of orphaned channels and message
+  retention
 lifecycle: open
 generated: { by: unknown, at: 2026-08-08 }
 ---

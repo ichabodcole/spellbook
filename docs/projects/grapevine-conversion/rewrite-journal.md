@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine Conversion — the rewrite journal"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Step-by-step record of the rewrite phase, with the process, what was built,
+  and the gotchas encountered."
 ---
 
 # Grapevine Conversion — the rewrite journal

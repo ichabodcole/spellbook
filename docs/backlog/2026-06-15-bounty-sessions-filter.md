@@ -2,6 +2,8 @@
 type: backlog
 title: "Bounty: `sessions` filter / limit / recency"
 status: stable
+description:
+  Add filtering, limit, and recency options to the bounty sessions list command
 lifecycle: open
 generated: { by: unknown, at: 2026-06-15 }
 ---

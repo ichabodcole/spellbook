@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine backend — the three lifecycle-route gaps"
 status: stable
 generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Implementation handoff specifying the three daemon-side gaps to close, their
+  severity ranking, and what to test."
 ---
 
 # Grapevine backend — the three lifecycle-route gaps

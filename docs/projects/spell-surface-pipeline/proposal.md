@@ -1,8 +1,11 @@
 ---
 type: proposal
 title: Spell Surface Pipeline
+description:
+  Proposal for a standard Spell Surface Pipeline to handle increasingly complex
+  spell surfaces with real dependencies and builds
 status: stable
-lifecycle: draft
+lifecycle: implemented
 generated: { by: unknown, at: 2026-07-07 }
 ---
 

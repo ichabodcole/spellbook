@@ -3,6 +3,10 @@ type: summary
 title: Project Summary
 status: stable
 generated: { by: unknown, at: 2026-06-29 }
+description:
+  Snapshot of Spellbook's shipped spells, current direction and recent work,
+  with an explicit boundary marking what is stale since the last partial refresh
+tags: [overview, status, spells, roadmap]
 ---
 
 # Project Summary

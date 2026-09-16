@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: `rename <old> <new>` verb"
 status: stable
+description:
+  Rename grapevine verbs for clarity and consistency with house-wide command
+  conventions
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

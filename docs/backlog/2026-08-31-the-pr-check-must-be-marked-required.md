@@ -4,7 +4,10 @@ title:
   "The `develop`→`main` PR check must be marked REQUIRED — and only a human can
   do it"
 status: stable
-lifecycle: open
+description:
+  The gate check for develop→main PRs must be enforced at the repository level;
+  this requires human action in GitHub settings
+lifecycle: done
 generated: { by: unknown, at: 2026-08-31 }
 ---
 

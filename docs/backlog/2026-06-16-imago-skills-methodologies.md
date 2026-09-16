@@ -2,6 +2,10 @@
 type: backlog
 title: 'Backlog — imago "skills" / captured methodologies'
 status: stable
+description:
+  Imago should include indexed skills and methodologies to enable agent library
+  exploration
+lifecycle: open
 generated: { by: unknown, at: 2026-06-16 }
 ---
 

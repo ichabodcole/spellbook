@@ -4,6 +4,9 @@ title:
   "`sharp` is a root dependency whose only consumer in the repo is one test
   fixture"
 status: stable
+description:
+  sharp is a root-level dependency used only by one test fixture to build test
+  data, not by any shipped execution path
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

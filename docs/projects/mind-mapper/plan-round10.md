@@ -3,6 +3,9 @@ type: artifact
 title: "Round 10 plan — co-presence & discoverability paper cuts"
 status: stable
 generated: { by: unknown, at: 2026-07-24 }
+description:
+  "Round 10 plan to solve co-presence and discoverability paper cuts, with
+  focused build slices and docs work."
 ---
 
 # Round 10 plan — co-presence & discoverability paper cuts

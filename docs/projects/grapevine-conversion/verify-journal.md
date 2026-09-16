@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine Conversion — the verify journal"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Step-by-step record of the verification phase, with what was tested, the
+  findings, and the fixes required."
 ---
 
 # Grapevine Conversion — the verify journal

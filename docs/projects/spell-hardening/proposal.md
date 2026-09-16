@@ -2,6 +2,10 @@
 type: proposal
 title:
   "Spell Hardening — fix what the shipped spells are getting wrong, then release"
+description:
+  Proposal for fixing shipped spell defects across bounty and grapevine, then
+  releasing a hardened version
+lifecycle: implemented
 status: stable
 generated: { by: unknown, at: 2026-08-05 }
 ---

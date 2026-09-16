@@ -1,6 +1,9 @@
 ---
 type: report
 title: Project Summary Report
+description:
+  Project summary report at 2026-06-18 documenting project state after initial
+  development work.
 status: stable
 generated: { by: unknown, at: 2026-05-29 }
 ---

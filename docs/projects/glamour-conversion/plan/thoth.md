@@ -3,6 +3,9 @@ type: artifact
 title: "thoth's lane — canon, and the playbook as synthesis"
 status: stable
 generated: { by: unknown, at: 2026-09-03 }
+description:
+  "Thoth's orchestration and validation work including the interdependencies,
+  comms log, and seat verdicts."
 ---
 
 # thoth's lane — canon, and the playbook as synthesis

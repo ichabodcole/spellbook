@@ -5,6 +5,9 @@ title:
   what has to move"
 status: stable
 lifecycle: concluded
+description:
+  Shared code and the build boundary — census of duplication and decision on
+  when to extract.
 generated: { by: unknown, at: 2026-08-29 }
 ---
 

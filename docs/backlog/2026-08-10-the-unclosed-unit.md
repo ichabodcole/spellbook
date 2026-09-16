@@ -2,7 +2,10 @@
 type: backlog
 title: "The unclosed unit — a terminal artifact that nothing can require"
 status: stable
-lifecycle: open
+description:
+  Documenting an omission feels like discharging the obligation, but nothing can
+  verify the difference between a gap record and the missing artifact itself
+lifecycle: promoted
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

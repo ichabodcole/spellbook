@@ -2,6 +2,10 @@
 type: investigation
 title: never releasing a stale build
 status: stable
+lifecycle: concluded
+description:
+  Rebuild-and-diff check for never releasing a stale build, following the GitHub
+  Actions check-dist pattern.
 generated: { by: unknown, at: 2026-08-31 }
 ---
 

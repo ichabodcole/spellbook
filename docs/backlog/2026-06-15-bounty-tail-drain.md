@@ -2,6 +2,9 @@
 type: backlog
 title: "Bounty: one-shot `tail --drain` / `--once` for episodic consumers"
 status: stable
+description:
+  Improve graceful shutdown behavior when the bounty daemon is drained during
+  active tail session
 lifecycle: open
 generated: { by: unknown, at: 2026-06-15 }
 ---

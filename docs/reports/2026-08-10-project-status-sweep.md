@@ -1,6 +1,9 @@
 ---
 type: report
 title: Project Status Sweep
+description:
+  Comprehensive project status sweep reviewing all active folders, identifying
+  archivable projects and fixing stale GitHub issues.
 status: stable
 generated: { by: unknown, at: 2026-08-10 }
 ---

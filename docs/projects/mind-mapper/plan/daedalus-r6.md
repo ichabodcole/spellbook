@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "daedalus — Round 6 engine lane"
+description:
+  Daedalus's Round 6 engine lane with ratified decisions, build order, and
+  implementation steps for refactoring and new features
 status: stable
 generated: { by: unknown, at: 2026-07-22 }
 ---

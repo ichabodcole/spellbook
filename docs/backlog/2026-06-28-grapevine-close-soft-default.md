@@ -2,6 +2,9 @@
 type: backlog
 title: "Grapevine: `close` soft-by-default (or a confirm guard)"
 status: stable
+description:
+  Make close the soft default verb in grapevine to simplify conversation
+  finalization
 lifecycle: open
 generated: { by: unknown, at: 2026-06-28 }
 ---

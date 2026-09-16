@@ -2,6 +2,9 @@
 type: backlog
 title: "A performed `--restore` is as unannounced as a skipped one"
 status: stable
+description:
+  Restore operations should emit identical output whether restore was performed
+  or skipped
 lifecycle: open
 generated: { by: unknown, at: 2026-08-06 }
 ---

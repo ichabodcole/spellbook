@@ -1,6 +1,9 @@
 ---
 type: artifact
 title: "circe's lane — mind-mapper V1 surface"
+description:
+  Circe's V1 surface implementation lane with phased build order, wiring the
+  daemon's state and WebSocket events into React components
 status: stable
 generated: { by: unknown, at: 2026-07-17 }
 ---

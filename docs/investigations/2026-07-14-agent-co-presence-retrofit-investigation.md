@@ -3,6 +3,9 @@ type: investigation
 title: Retrofitting agent co-presence onto human-first apps
 status: stable
 lifecycle: active
+description:
+  Active exploration of adding co-presence via sidecar session daemon and
+  CLI-with-tail to retrofitto human-first apps.
 generated: { by: unknown, at: 2026-07-14 }
 ---
 

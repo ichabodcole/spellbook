@@ -2,6 +2,10 @@
 type: investigation
 title: "Artifacts with no defined death — where the loop doesn't close"
 status: stable
+lifecycle: concluded
+description:
+  Five separate gaps in artifact lifecycle conventions, showing every artifact
+  has defined birth but no defined death.
 generated: { by: unknown, at: 2026-08-06 }
 ---
 

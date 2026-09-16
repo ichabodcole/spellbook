@@ -4,6 +4,9 @@ title:
   "imago `mark.update` accepts a non-string `label`, and the surface crashes on
   it"
 status: stable
+description:
+  imago's mark.update accepts numeric labels due to a loose type check, causing
+  the surface to crash when consumers call .trim() or .split() on the number
 lifecycle: open
 generated: { by: unknown, at: 2026-09-10 }
 ---

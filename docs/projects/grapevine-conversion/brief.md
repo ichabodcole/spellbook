@@ -3,6 +3,9 @@ type: artifact
 title: "Grapevine Conversion — the brief"
 status: stable
 generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Implementation handoff specifying what to build and where the rails are, with
+  the mission, fidelity ruling, and playbook reference."
 ---
 
 # Grapevine Conversion — the brief

@@ -1,7 +1,11 @@
 ---
 type: plan
 title: "Sprint 04 — The shape of nothing"
+description:
+  Sprint 04 plan scaffold with the shape-of-nothing thesis, noting that no
+  claims past the current sprint are committed
 status: stable
+lifecycle: completed
 generated: { by: unknown, at: 2026-08-08 }
 ---
 

@@ -4,6 +4,10 @@ title:
   "Committing `dist/` puts every test in release mode — so the dev path is
   asserted nowhere"
 status: stable
+description:
+  Committing dist/ triggers release mode detection, causing all tests to run in
+  release mode and leaving the dev-only code path (serve bundling, HMR)
+  unexercised by any test
 lifecycle: open
 generated: { by: unknown, at: 2026-08-31 }
 ---

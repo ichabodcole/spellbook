@@ -1,7 +1,11 @@
 ---
 type: plan
 title: "Sprint 05 — The gate"
+description:
+  Sprint 05 plan created retroactively at finalize, documenting the scope that
+  was ruled but never formally planned
 status: stable
+lifecycle: completed
 generated: { by: unknown, at: 2026-08-10 }
 ---
 

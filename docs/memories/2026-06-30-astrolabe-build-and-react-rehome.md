@@ -1,6 +1,11 @@
 ---
 type: memory
 title: "Astrolabe built, then surface re-homed CDN → bundled React"
+description:
+  Astrolabe's cross-project observatory daemon was built and verified, then its
+  surface was re-homed from Tailwind Play CDN to a bundled React+Bun+Tailwind-v4
+  stack after discovering the CDN silently no-ops @apply
+tags: [astrolabe, react-scaffold, tailwind, surface-migration]
 status: stable
 generated: { by: unknown, at: 2026-06-30 }
 ---
