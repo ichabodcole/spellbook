@@ -1,3 +1,11 @@
+---
+type: backlog
+title: "Five spells write a session pointer into a shared `tmpdir()` namespace"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # Five spells write a session pointer into a shared `tmpdir()` namespace
 
 **Filed:** 2026-09-03 · **Found by:** circe (glamour port, cold read of her own

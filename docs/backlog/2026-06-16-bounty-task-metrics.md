@@ -1,7 +1,12 @@
-# Bounty: per-task timing / cycle-time metrics
+---
+type: backlog
+title: "Bounty: per-task timing / cycle-time metrics"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-16 }
+---
 
-**Added:** 2026-06-16 **Origin:** Cole, reviewing the Kanban feature audit (#20)
-via digestify.
+# Bounty: per-task timing / cycle-time metrics
 
 Capture **when a task enters and leaves each column** so we can answer, at the
 end of a session: how long did this take? How long did it sit in Doing? How long

@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  project-docs needs a story for sprints, releases, and maintenance-mode work
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # project-docs needs a story for sprints, releases, and maintenance-mode work
 
 **Filed:** 2026-08-10 · **Routes to:** `project-docs` (the shared plugin), not

@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "`outcome-contract.md` has no decay-ledger row, and structurally cannot get
+  one"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `outcome-contract.md` has no decay-ledger row, and structurally cannot get one
 
 **Filed:** 2026-08-10 · **Found by:** `thoth`, sprint 05 finalize (deferral D2)

@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  '`bounty update --notes ""` cannot tell a deliberate clear from a substitution
+  that produced nothing'
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `bounty update --notes ""` cannot tell a deliberate clear from a substitution that produced nothing
 
 **Filed:** 2026-08-10 · **Status:** open, unsized · **Board card:** `s5-5` ·

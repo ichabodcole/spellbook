@@ -1,3 +1,10 @@
+---
+type: session
+title: "mind-mapper acc L0 — and the census that went 0/48 → 49/49"
+status: stable
+generated: { by: unknown, at: 2026-08-27 }
+---
+
 # mind-mapper acc L0 — and the census that went 0/48 → 49/49
 
 **Session 2026-08-27 · branch `feat/mind-mapper-acc-l0` · anthill subagent mode

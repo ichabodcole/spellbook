@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "circe's lane — mind-mapper V1 surface"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
+
 # circe's lane — mind-mapper V1 surface
 
 Authored against the seams ratified on the `spellbook` vine (msgs 3–4): Claim A,

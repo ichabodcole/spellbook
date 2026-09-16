@@ -1,10 +1,12 @@
-# Investigation: Astryx (Meta) as a component-library foundation for spell surfaces
-
-**Date Started:** 2026-07-06 **Investigator:** Claude Code (merlin) **Status:**
-Concluded **Outcome:** Monitor — do not adopt now; harvest one pattern
-(agent-legible manifest/MCP)
-
 ---
+type: investigation
+title: Astryx (Meta) as a component-library foundation for spell surfaces
+status: stable
+lifecycle: concluded
+generated: { by: unknown, at: 2026-07-06 }
+---
+
+# Investigation: Astryx (Meta) as a component-library foundation for spell surfaces
 
 ## Question / Motivation
 

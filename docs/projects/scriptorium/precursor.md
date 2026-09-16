@@ -1,10 +1,11 @@
-# Scriptorium — precursor
+---
+type: artifact
+title: "Scriptorium — precursor"
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
 
-**Created:** 2026-09-11 · **Status:** named (E12) — building the foundation
-slice (E11). The spell was the "document editor" until it was named. **Source:**
-Cole's brain dump, Operator doc `document-editor-spell-idea.md` (`28a57a1e`,
-Spellbook workspace `fragments/`). **Decisions:**
-[`decision-log.md`](./decision-log.md)
+# Scriptorium — precursor
 
 ## Concept
 

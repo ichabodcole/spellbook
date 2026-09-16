@@ -1,6 +1,13 @@
-# Mind-mapper V1: ratified plan → passed acceptance test, same evening as the spike
+---
+type: memory
+title:
+  "Mind-mapper V1: ratified plan → passed acceptance test, same evening as the
+  spike"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
 
-**Date:** 2026-07-17
+# Mind-mapper V1: ratified plan → passed acceptance test, same evening as the spike
 
 Built mind-mapper V1 end-to-end via anthill (plan skeleton → seam ratify → P1–P4
 with verify gates): real sqlite+markdown persistence (map-as-view),

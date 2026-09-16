@@ -1,7 +1,11 @@
-# Spell backends — how a spell is built, shipped and spawned
+---
+type: architecture
+title: "Spell backends — how a spell is built, shipped and spawned"
+status: stable
+generated: { by: unknown, at: 2026-09-09 }
+---
 
-**Created:** 2026-09-09 · **Last Updated:** 2026-09-10 · **Status:** Current —
-prose written 2026-09-10 (§1–§7); per-spell caveats table complete (8/8)
+# Spell backends — how a spell is built, shipped and spawned
 
 > **How to read this.** §1–§3 are the picture: what a spell is, where its files
 > live, and the seam between the code you edit and the code that runs. If you

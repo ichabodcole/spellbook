@@ -1,9 +1,11 @@
-# Sprint 03 — What close takes with it
+---
+type: plan
+title: "Sprint 03 — What close takes with it"
+status: stable
+generated: { by: unknown, at: 2026-08-07 }
+---
 
-**Created:** 2026-08-07 · **Status:** 🟢 RATIFIED — scope cut and lanes open ·
-**Base sha:** `003af0d` (`develop`) · **Branch:** `fix/spell-hardening-03` ·
-**Project:** [Spell Hardening](../../README.md) ·
-[proposal.md](../../proposal.md) · **[decisions.md](./decisions.md)**
+# Sprint 03 — What close takes with it
 
 **Predecessor:** [sprint 02 outcome](../02-success-shaped-lies/outcome.md) —
 read it before this.

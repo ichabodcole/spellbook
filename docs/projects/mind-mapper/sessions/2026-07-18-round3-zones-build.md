@@ -1,3 +1,11 @@
+---
+type: session
+title:
+  "Session — mind-mapper Round 3: exploration zones + drive-2 build (2026-07-18)"
+status: stable
+generated: { by: unknown, at: 2026-07-18 }
+---
+
 # Session — mind-mapper Round 3: exploration zones + drive-2 build (2026-07-18)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

@@ -1,10 +1,11 @@
-# Digestify review page — behaviour inventory
+---
+type: artifact
+title: "Digestify review page — behaviour inventory"
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+---
 
-**Created:** 2026-09-07 · **Extracted from:**
-`plugins/spellbook/skills/digestify/scripts/template.html` at `f4ee01b` (1,505
-lines; styles 14–869, markup 871–899, script 900–1503) and from its daemon
-`plugins/spellbook/skills/digestify/scripts/review.ts` (519 lines) ·
-**Purpose:** the oracle for the React rewrite at `src/digestify/surface/`.
+# Digestify review page — behaviour inventory
 
 **⛔ THIS FILE IS THE ONLY ENUMERATION.** Grapevine and bounty were Alpine, so
 "every method on the `x-data` object" was a finite list the page handed you.

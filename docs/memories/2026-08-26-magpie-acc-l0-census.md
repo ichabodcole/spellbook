@@ -1,6 +1,11 @@
-# magpie reached acc L0, and the census found 289 defects L0 could not see
+---
+type: memory
+title: magpie reached acc L0, and the census found 289 defects L0 could not see
+status: stable
+generated: { by: unknown, at: 2026-08-26 }
+---
 
-**Date:** 2026-08-26
+# magpie reached acc L0, and the census found 289 defects L0 could not see
 
 magpie went from `NOT CONFORMANT (L0)` (3 core violated) to conformant via
 `--version`, a bare invocation that is a usage error, and a JSON error envelope

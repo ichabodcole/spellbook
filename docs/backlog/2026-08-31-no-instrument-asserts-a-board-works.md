@@ -1,9 +1,12 @@
-# Nothing in the gate can distinguish a served 200 from a working board
+---
+type: backlog
+title: Nothing in the gate can distinguish a served 200 from a working board
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `cassandra`, stated as the standing caveat
-on both of spell-kit sprint 01's local-sim drives · **Scope:** house-wide ·
-**Severity:** medium — it is the gap every surface-bearing sprint closes by hand
-and none of them closes durably
+# Nothing in the gate can distinguish a served 200 from a working board
 
 ## The claim, in her words
 

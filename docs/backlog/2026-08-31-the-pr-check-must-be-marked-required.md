@@ -1,11 +1,14 @@
-# The `develop`→`main` PR check must be marked REQUIRED — and only a human can do it
-
-**Added:** 2026-08-31 · **Raised by:** `cassandra` (release-staleness spike) ·
-**Owner: COLE. Not the team's, and not because of scope — because an agent
-cannot do it.** · **Blocked on:** the CI workflow existing at all ·
-**Severity:** medium, and **latent**
-
 ---
+type: backlog
+title:
+  "The `develop`→`main` PR check must be marked REQUIRED — and only a human can
+  do it"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
+
+# The `develop`→`main` PR check must be marked REQUIRED — and only a human can do it
 
 ## ✅ CLOSED — ALREADY DONE ON 2026-09-01, AND NOBODY NOTICED FOR TWO WEEKS
 

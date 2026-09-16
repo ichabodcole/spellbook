@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 02 — decision log"
+status: stable
+generated: { by: unknown, at: 2026-08-06 }
+---
+
 # Sprint 02 — decision log
 
 **Live document. Appended as decisions are made, not reconstructed at the end.**

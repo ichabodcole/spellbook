@@ -1,3 +1,12 @@
+---
+type: artifact
+title:
+  "cassandra — verify lane: the non-author on S3 and S4, the acc arm, and the
+  local-sim"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # cassandra — verify lane: the non-author on S3 and S4, the acc arm, and the local-sim
 
 **Seat:** cassandra (verify) · **Card:** `gc-lane-cassandra` · **Plan of

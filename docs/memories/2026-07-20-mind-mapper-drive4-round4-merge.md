@@ -1,3 +1,10 @@
+---
+type: memory
+title: "Memory — mind-mapper dogfood drive #4 + Round 4 merge (2026-07-19/20)"
+status: stable
+generated: { by: unknown, at: 2026-07-20 }
+---
+
 # Memory — mind-mapper dogfood drive #4 + Round 4 merge (2026-07-19/20)
 
 Drive #4 (board `movies-session-04`: Who Framed Roger Rabbit × Life Is

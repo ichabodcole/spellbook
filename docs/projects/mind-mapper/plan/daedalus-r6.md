@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "daedalus — Round 6 engine lane"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # daedalus — Round 6 engine lane
 
 Grounded in `plan-round6.md` (Ratified decisions + Build order are

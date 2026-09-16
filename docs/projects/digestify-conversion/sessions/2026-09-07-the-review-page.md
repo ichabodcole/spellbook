@@ -1,3 +1,10 @@
+---
+type: session
+title: "2026-09-07 — the review page becomes a surface"
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+---
+
 # 2026-09-07 — the review page becomes a surface
 
 **Agent:** Claude Opus 5 (1M context), as the implementing agent · **Branch:**

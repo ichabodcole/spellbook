@@ -1,4 +1,18 @@
+---
+type: session # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Topic] — YYYY-MM-DD"
+description: "[One sentence: what this session did.]"
+tags: [area, feature] # 2-4 kebab-case keywords
+status: stable # A session is frozen the moment it is written; it is never a draft.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 USAGE: Copy this file to your project's `sessions/` folder, replacing YYYY-MM-DD with the current date
 and renaming to describe the session topic (e.g., 2026-02-09-initial-implementation.md).
 
@@ -73,5 +87,5 @@ refactoring, etc.]
 
 - [Plan](../plan.md) (if implementing from a plan)
 - [Proposal](../proposal.md) (if relevant)
-- [Architecture](../../architecture/doc-name.md) (if relevant)
-- [Commit hash or PR](link) (if merged)
+- `[Architecture](../../architecture/doc-name.md)` (if relevant)
+- `[Commit hash or PR](link)` (if merged)

@@ -1,6 +1,12 @@
-# bounty: skip the doing-column heartbeat for blocked cards
+---
+type: backlog
+title: "bounty: skip the doing-column heartbeat for blocked cards"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-22 }
+---
 
-**Added:** 2026-06-22
+# bounty: skip the doing-column heartbeat for blocked cards
 
 The `doing`-column heartbeat ("overdue" poke) fires on cards that are correctly
 in `doing` but **legitimately waiting** on a peer, so it reads as "stuck?" when

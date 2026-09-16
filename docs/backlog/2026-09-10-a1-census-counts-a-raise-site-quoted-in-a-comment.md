@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "The A1 `choices` census counts a raise site that is only quoted in a comment"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-10 }
+---
+
 # The A1 `choices` census counts a raise site that is only quoted in a comment
 
 **Filed:** 2026-09-10 · **Found by:** type-debt Phase 4c · **Area:**

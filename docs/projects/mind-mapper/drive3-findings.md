@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Dogfood drive #3 — findings (2026-07-19)"
+status: stable
+generated: { by: unknown, at: 2026-07-19 }
+---
+
 # Dogfood drive #3 — findings (2026-07-19)
 
 ## Round-4 triage (added at drive close)

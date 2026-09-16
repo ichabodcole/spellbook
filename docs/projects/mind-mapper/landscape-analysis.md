@@ -1,8 +1,11 @@
-# Mind Mapper — Landscape Analysis
+---
+type: artifact
+title: "Mind Mapper — Landscape Analysis"
+status: stable
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Status:** Complete **Created:** 2026-07-16 **Method:** deep-research workflow
-(5 search angles, 24 sources fetched, 119 claims extracted, 25 adversarially
-verified: 23 confirmed / 2 refuted)
+# Mind Mapper — Landscape Analysis
 
 Answers the landscape-analysis step from `proposal.md` ("Next steps when
 resumed" #1) and the open call in the consolidated precursor (Operator:

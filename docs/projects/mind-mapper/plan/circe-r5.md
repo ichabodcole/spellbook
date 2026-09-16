@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "circe — Round 5 lane (surface)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # circe — Round 5 lane (surface)
 
 Owner: circe (surface). Board card: `t-r5-surface`. Authoritative ground:

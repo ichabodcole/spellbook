@@ -1,11 +1,11 @@
-# Bounty board surface — behaviour inventory
+---
+type: artifact
+title: "Bounty board surface — behaviour inventory"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+---
 
-**Created:** 2026-09-06 · **Extracted from:**
-`plugins/spellbook/skills/bounty/scripts/template.html` at `f4ee01b` (1,003
-lines; styles 18–364, markup 366–582, script 584–1001) · **Purpose:** the oracle
-for the React rewrite at `src/bounty/surface/`. One row per observable
-behaviour, with the line range that implements it and how to drive it against a
-real daemon.
+# Bounty board surface — behaviour inventory
 
 **Fidelity ruling (Cole, 2026-09-06): behaviour-faithful, restyled.** Every row
 below is a contract. The _look_ moves onto the kit token layer and shadcn

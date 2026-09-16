@@ -1,4 +1,19 @@
+---
+type: test-plan # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Feature Name] Test Plan"
+description: "[One sentence: what has to be true before this ships.]"
+tags: [area, verification] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+lifecycle: draft # where the work has got to; see docs/SCHEMA.md
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 USAGE: Copy this file to your project folder as `test-plan.md`.
 
 This template helps you define structured verification scenarios for agent-
@@ -28,8 +43,6 @@ For more guidance on test plans, see the projects README: ../README.md
 
 # Test Plan: [Feature Name]
 
-**Status:** Draft | Scenarios Complete | In Execution | Results Recorded\
-**Created:** YYYY-MM-DD\
 **Related Plan:** [Development Plan](./plan.md)\
 **Related Proposal:** [Proposal](./proposal.md)
 

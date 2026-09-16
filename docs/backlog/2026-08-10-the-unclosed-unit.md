@@ -1,3 +1,11 @@
+---
+type: backlog
+title: "The unclosed unit — a terminal artifact that nothing can require"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # The unclosed unit — a terminal artifact that nothing can require
 
 **Filed:** 2026-08-10 · **Routes to:** `project-docs`

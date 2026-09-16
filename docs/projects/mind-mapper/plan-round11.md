@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Round 11 plan — the message surface (collapse the capture layers)"
+status: stable
+generated: { by: unknown, at: 2026-07-26 }
+---
+
 # Round 11 plan — the message surface (collapse the capture layers)
 
 **Source:** [`proposal-message-surface.md`](./proposal-message-surface.md), from

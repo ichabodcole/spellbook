@@ -1,10 +1,11 @@
-# Grapevine Conversion — the rewrite-then-relocate pathfinder
-
-**Status:** Built — pending Cole's review and finalize (2026-09-05; branch
-`feat/grapevine-conversion`, verify verdict _ship with fixes_, fixes landed)
-**Created:** 2026-09-05 **Author:** Cole Reed + Claude Code (prospero)
-
 ---
+type: proposal
+title: "Grapevine Conversion — the rewrite-then-relocate pathfinder"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
+
+# Grapevine Conversion — the rewrite-then-relocate pathfinder
 
 ## Overview
 

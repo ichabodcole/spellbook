@@ -1,3 +1,11 @@
+---
+type: session
+title:
+  "Session — mind-mapper Round 6: drive-5 fixes + tooling + UX (2026-07-22)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Session — mind-mapper Round 6: drive-5 fixes + tooling + UX (2026-07-22)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

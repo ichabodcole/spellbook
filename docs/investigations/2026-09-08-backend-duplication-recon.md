@@ -1,9 +1,11 @@
-# Investigation: what the backends are independently reinventing
+---
+type: investigation
+title: what the backends are independently reinventing
+status: stable
+generated: { by: unknown, at: 2026-09-08 }
+---
 
-**Date:** 2026-09-08 · **Status:** reconnaissance closed; a narrow detailed pass
-is recommended, not yet scoped · **Run by:** one broad-read agent over the
-backend corpus, verified in part by the orchestrator · **Asked by:** Cole
-**Feeds:** the backend build-and-share project (seams Contract 3's DIRECTION)
+# Investigation: what the backends are independently reinventing
 
 ## Summary
 

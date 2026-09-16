@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Drive #9 findings — session-8 (R10 build), 2026-07-26"
+status: stable
+generated: { by: unknown, at: 2026-07-26 }
+---
+
 # Drive #9 findings — session-8 (R10 build), 2026-07-26
 
 Return-drive of the R10 stack on a fresh Carlos Niño map. Captured live via the

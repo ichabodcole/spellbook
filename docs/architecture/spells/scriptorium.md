@@ -1,8 +1,11 @@
-# scriptorium — how the document editor works
+---
+type: architecture
+title: "scriptorium — how the document editor works"
+status: stable
+generated: { by: unknown, at: 2026-09-12 }
+---
 
-**Created:** 2026-09-12 · **Updated:** 2026-09-14 · **Status:** the feature set
-is wrapped and the `SKILL.md` ships. Current through E62 · **Scope:** the
-systems, not the screens.
+# scriptorium — how the document editor works
 
 > **⛔ WHAT CHANGED SINCE THIS DOCUMENT FIRST CLAIMED TO BE CURRENT.** It said
 > "current through E41" and described chat as unbuilt and undo/redo as decided

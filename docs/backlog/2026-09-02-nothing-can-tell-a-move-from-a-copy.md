@@ -1,3 +1,10 @@
+---
+type: backlog
+title: Nothing in the repo can tell a relocation from a duplication
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # Nothing in the repo can tell a relocation from a duplication
 
 **Filed:** 2026-09-02 · **Status:** open · **Found by:** cassandra, during the

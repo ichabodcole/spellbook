@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "`.bun-version` pins the ambient Bun; a DIFFERENT Bun builds every artifact we
+  ship"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `.bun-version` pins the ambient Bun; a DIFFERENT Bun builds every artifact we ship
 
 **Filed:** 2026-09-02 · **Status:** open · **Severity:** the reproduction basis

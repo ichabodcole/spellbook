@@ -1,9 +1,11 @@
-# Sprint 04 — The shape of nothing
+---
+type: plan
+title: "Sprint 04 — The shape of nothing"
+status: stable
+generated: { by: unknown, at: 2026-08-08 }
+---
 
-**Created:** 2026-08-08 · **Status:** ✅ COMPLETE — ratified 2026-08-08, built
-on `fix/spell-hardening-04`, merged to `develop` as `c2c00a5` on 2026-08-10 ·
-**Base sha:** `e22b281` · **Project:** [Spell Hardening](../../README.md) ·
-[proposal.md](../../proposal.md)
+# Sprint 04 — The shape of nothing
 
 **Predecessor:** sprint 03 has **no `outcome.md`** — read the named merge commit
 **`88a298f`** and

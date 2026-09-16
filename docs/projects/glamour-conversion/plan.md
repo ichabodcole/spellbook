@@ -1,8 +1,12 @@
-# Glamour conversion — plan SKELETON
+---
+type: plan
+title: "Glamour conversion — plan SKELETON"
+status: stable
+lifecycle: draft
+generated: { by: unknown, at: 2026-09-02 }
+---
 
-**Status:** **RATIFIED 2026-09-02** — 5 of 7 seams falsified or materially
-corrected **Lead:** prospero **Created:** 2026-09-02 **Proposal:**
-[`proposal.md`](./proposal.md)
+# Glamour conversion — plan SKELETON
 
 > **This WAS a hypothesis. It has been ratified, and it did not survive
 > intact.** Four seats returned verdicts (comms `#1119`–`#1123`). **Five of

@@ -1,6 +1,11 @@
-# Mind-mapper Phase 0 spike: research → passed spike in one day
+---
+type: memory
+title: "Mind-mapper Phase 0 spike: research → passed spike in one day"
+status: stable
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Date:** 2026-07-16
+# Mind-mapper Phase 0 spike: research → passed spike in one day
 
 Ran the full pre-V1 arc for the mind-mapper spell — landscape analysis, user
 research (story-loom's bobbin), the map-as-view + staging-lifecycle architecture

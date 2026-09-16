@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "mind-mapper Round 7 — plan skeleton (metadata, filter & polish)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # mind-mapper Round 7 — plan skeleton (metadata, filter & polish)
 
 **Status: SKELETON — seams awaiting owner ratify.** Lead: prospero. Seats:

@@ -1,8 +1,14 @@
-# The local-sim is the only check that sees a port's real failure, and it is still prose
+---
+type: backlog
+title:
+  The local-sim is the only check that sees a port's real failure, and it is
+  still prose
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `thoth`, auditing what the port playbook
-could and could not source from the tree · **Scope:** `scripts/`, one file ·
-**Severity:** medium — **the check works; nothing makes it repeatable**
+# The local-sim is the only check that sees a port's real failure, and it is still prose
 
 ## The gap
 

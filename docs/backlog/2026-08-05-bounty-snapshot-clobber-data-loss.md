@@ -1,8 +1,13 @@
-# Bounty: respawn-empty + close clobbers the snapshot (data loss, no rotation)
+---
+type: backlog
+title:
+  "Bounty: respawn-empty + close clobbers the snapshot (data loss, no rotation)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Added:** 2026-08-05 · **Tracks:** GitHub issues
-[#73](https://github.com/ichabodcole/spellbook/issues/73) and
-[#74](https://github.com/ichabodcole/spellbook/issues/74)
+# Bounty: respawn-empty + close clobbers the snapshot (data loss, no rotation)
 
 Two independent sessions hit the **same destructive sequence**, months apart, on
 different repos. **The recovery move is what destroys the data**, which is why

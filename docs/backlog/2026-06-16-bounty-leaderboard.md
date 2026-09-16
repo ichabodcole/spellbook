@@ -1,8 +1,11 @@
-# Bounty: a (fun, on-brand) bounty leaderboard
+---
+type: backlog
+title: "Bounty: a (fun, on-brand) bounty leaderboard"
+status: stable
+generated: { by: unknown, at: 2026-06-16 }
+---
 
-**Added:** 2026-06-16 **Origin:** Cole, reviewing the Kanban feature audit (#20)
-via digestify. **Status:** future / fun — explicitly **not** for implementation
-now.
+# Bounty: a (fun, on-brand) bounty leaderboard
 
 It's a _bounty_ board — so lean into the theme: as tasks complete, track who
 (which owner) claimed the "bounty," and surface a light leaderboard. When a

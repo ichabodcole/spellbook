@@ -1,3 +1,13 @@
+---
+type: backlog
+title:
+  magpie's session discovery is a global temp file, and MAGPIE_HOME does not
+  isolate it
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
+
 # magpie's session discovery is a global temp file, and MAGPIE_HOME does not isolate it
 
 **Found:** 2026-08-31, while running magpie's daemon for a visual check during

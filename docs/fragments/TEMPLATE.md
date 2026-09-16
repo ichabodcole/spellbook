@@ -1,7 +1,23 @@
+---
+type: fragment # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "Fragment: [Brief Description]"
+description: "[One sentence: what did not feel right.]"
+tags: [area] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+lifecycle: open # where the work has got to; see docs/SCHEMA.md
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
+<!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+-->
+
 # Fragment: [Brief Description]
 
-**Date**: YYYY-MM-DD **Context**: [Where/when this observation came up -
-session, feature work, etc.]
+**Context:** [Where/when this observation came up - session, feature work, etc.]
 
 ## Observation
 
@@ -29,8 +45,7 @@ fragments actionable later. Examples:
 
 ## Related Documentation
 
-- Session:
-  [Link to project session if applicable](../projects/project-name/sessions/session-name.md)
+- Session: [Link to session doc if applicable]
 - Code: [Link to relevant files/locations]
 - Related: [Other docs that provide context]
 

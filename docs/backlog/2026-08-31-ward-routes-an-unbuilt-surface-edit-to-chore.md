@@ -1,10 +1,14 @@
-# `ward` routes an un-rebuilt surface edit to `chore(`, and the guard that should catch it passes
+---
+type: backlog
+title:
+  "`ward` routes an un-rebuilt surface edit to `chore(`, and the guard that
+  should catch it passes"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `cassandra`, during the release-staleness
-spike · **Verified by:** `prospero` against
-`.claude/skills/ward/SKILL.md:150-161` · **Scope:** the `ward` skill, one
-section · **Severity:** medium — **it misroutes real work, silently, and the
-misroute is invisible until a release**
+# `ward` routes an un-rebuilt surface edit to `chore(`, and the guard that should catch it passes
 
 ## The defect
 

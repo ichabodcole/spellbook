@@ -1,3 +1,13 @@
+---
+type: backlog
+title:
+  "Grapevine daemon — three lifecycle-route gaps found while giving the human
+  parity"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # Grapevine daemon — three lifecycle-route gaps found while giving the human parity
 
 **Filed:** 2026-09-06 · **From:** the `feat/grapevine-ux` implementing agent and

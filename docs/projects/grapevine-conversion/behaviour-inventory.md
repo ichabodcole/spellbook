@@ -1,15 +1,11 @@
-# Grapevine watch surface — behaviour inventory
+---
+type: artifact
+title: "Grapevine watch surface — behaviour inventory"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
 
-**Created:** 2026-09-05 · **Extracted from:**
-`plugins/spellbook/skills/grapevine/scripts/watch.html` at `0bceaf6` (1,000
-lines; markup 515–706, script 707–998) · **Purpose:** the oracle for the React
-rewrite at `src/grapevine/surface/`. One row per observable behaviour, with the
-line range that implements it and how to drive it against a real daemon.
-**Amended 2026-09-05 (UX branch, `feat/grapevine-ux`):** this is the surface's
-living contract, not the conversion's artefact. The rows under _Channel
-lifecycle from the surface_ (L1–L6) are new behaviour; R1 and the visible-states
-checklist are rewritten in place and marked; the `watch.html` column is `—` for
-rows the old page never had.
+# Grapevine watch surface — behaviour inventory
 
 The **Driven** column is filled by the implementing agent (dev + release) and
 re-filled by a verify agent who did not write the code. Values: `dev`,

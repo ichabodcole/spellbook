@@ -1,8 +1,12 @@
-# Bounty: board UI polish pass (size badges + wordmark)
+---
+type: backlog
+title: "Bounty: board UI polish pass (size badges + wordmark)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Added:** 2026-07-16 · **Tracks:** GitHub issues
-[#72](https://github.com/ichabodcole/spellbook/issues/72) and
-[#11](https://github.com/ichabodcole/spellbook/issues/11)
+# Bounty: board UI polish pass (size badges + wordmark)
 
 Two small board-surface items bundled for one pass:
 

@@ -1,7 +1,11 @@
-# The Wand — a mage-facing CLI/TUI over the spells
+---
+type: fragment
+title: "The Wand — a mage-facing CLI/TUI over the spells"
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Date:** 2026-05-29 **Tone:** Type 2 (curiosity / "what if we tried…") — a
-thing we'll probably build **Status:** captured spark, not yet a project
+# The Wand — a mage-facing CLI/TUI over the spells
 
 ## Context
 

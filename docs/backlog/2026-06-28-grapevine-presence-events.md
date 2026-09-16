@@ -1,9 +1,12 @@
-# Grapevine: presence events (join / leave)
+---
+type: backlog
+title: "Grapevine: presence events (join / leave)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); surfaced during the V1.7 human-participant soak. **Scope:**
-proposal-sized ("real V1.8-sized work" — touches `broadcast` + the consume
-model).
+# Grapevine: presence events (join / leave)
 
 An agent supervising a channel gets **no signal when a human or agent joins or
 leaves** — it only learns someone is present when they send a message, or by

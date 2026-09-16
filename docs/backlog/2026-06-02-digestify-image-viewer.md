@@ -1,6 +1,11 @@
-# Backlog — digestify image viewer + feedback
+---
+type: backlog
+title: "Backlog — digestify image viewer + feedback"
+status: stable
+generated: { by: unknown, at: 2026-06-02 }
+---
 
-**Status:** idea / backlog (not scheduled). Captured 2026-06-02.
+# Backlog — digestify image viewer + feedback
 
 ## The idea
 

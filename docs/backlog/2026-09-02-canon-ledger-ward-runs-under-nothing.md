@@ -1,3 +1,10 @@
+---
+type: backlog
+title: "`canon-ledger-ward.ts` guards the canon and is run by nothing"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `canon-ledger-ward.ts` guards the canon and is run by nothing
 
 **Filed:** 2026-09-02 · **Status:** open · **Found by:** the non-author audit of

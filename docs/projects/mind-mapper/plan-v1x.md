@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Mind Mapper V1.x — Track A build plan (skeleton)"
+status: stable
+generated: { by: unknown, at: 2026-07-18 }
+---
+
 # Mind Mapper V1.x — Track A build plan (skeleton)
 
 **Lead:** prospero · **Seats:** daedalus (engine), circe (surface), cassandra

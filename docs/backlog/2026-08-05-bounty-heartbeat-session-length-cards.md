@@ -1,7 +1,13 @@
-# Bounty: overrun-poke false-fires on session-length cards (card-model gap)
+---
+type: backlog
+title:
+  "Bounty: overrun-poke false-fires on session-length cards (card-model gap)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Added:** 2026-08-05 · **Tracks:** GitHub issue
-[#76](https://github.com/ichabodcole/spellbook/issues/76)
+# Bounty: overrun-poke false-fires on session-length cards (card-model gap)
 
 A card's `--size S|M|L` sets a heartbeat estimate (~5/10/20 min), and a `doing`
 card that overruns pokes its owner. That's right for **build** cards — discrete

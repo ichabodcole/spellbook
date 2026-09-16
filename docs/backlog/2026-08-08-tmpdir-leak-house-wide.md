@@ -1,6 +1,12 @@
-# House-wide: test temp dirs are never torn down
+---
+type: backlog
+title: "House-wide: test temp dirs are never torn down"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-08 }
+---
 
-**Added:** 2026-08-08
+# House-wide: test temp dirs are never torn down
 
 Found by `cassandra`, `thoth` and `daedalus` during sprint 03's ratify round,
 while chasing something else entirely — and **parked by the seat who opened the

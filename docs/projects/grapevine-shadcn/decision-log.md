@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Grapevine shadcn — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # Grapevine shadcn — decision log
 
 ## 2026-09-05 — orchestrator, with Cole

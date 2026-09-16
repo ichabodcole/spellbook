@@ -1,7 +1,11 @@
-# Dependency and Package Boundaries
+---
+type: architecture
+title: Dependency and Package Boundaries
+status: stable
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Created:** 2026-08-31 **Last Updated:** 2026-08-31 **Last Reviewed:**
-2026-08-31 @ `efab3a8`
+# Dependency and Package Boundaries
 
 ## Overview
 

@@ -1,8 +1,12 @@
-# Grapevine: extended `doctor` (`--fix` + deeper checks)
+---
+type: backlog
+title: "Grapevine: extended `doctor` (`--fix` + deeper checks)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived). The read-only `doctor` shipped (minimal version); these are
-the follow-on capabilities left on the table.
+# Grapevine: extended `doctor` (`--fix` + deeper checks)
 
 The minimal `doctor` reports authoritative daemon, other daemons, channels on
 disk, and version-mismatch hints — but takes no action. Still open:

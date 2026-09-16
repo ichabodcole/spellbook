@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "daedalus's lane — mind-mapper V1 engine"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
+
 # daedalus's lane — mind-mapper V1 engine
 
 Authored against the seams ratified on the `spellbook` vine (msgs 5–6): Claims

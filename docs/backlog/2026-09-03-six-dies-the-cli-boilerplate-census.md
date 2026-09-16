@@ -1,3 +1,10 @@
+---
+type: backlog
+title: "Six `die`s — the CLI boilerplate census"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # Six `die`s — the CLI boilerplate census
 
 **Filed:** 2026-09-03 · **Asked by:** Cole, at the end of the glamour port ·

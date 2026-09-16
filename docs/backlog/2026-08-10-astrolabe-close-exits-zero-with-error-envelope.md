@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "`astrolabe close` exits 0 carrying an error envelope — wrong on both axes,
+  and they cancel"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `astrolabe close` exits 0 carrying an error envelope — wrong on both axes, and they cancel
 
 **Filed:** 2026-08-10 · **Status:** open, unsized · **Board card:** `s5-8` ·

@@ -1,3 +1,11 @@
+---
+type: backlog
+title: The declared Bun pin is not the Bun that builds the shipped artifacts
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-08 }
+---
+
 # The declared Bun pin is not the Bun that builds the shipped artifacts
 
 > **CLOSED 2026-09-09** — Cole ruled bun **1.4.0**, and it is now a **declared

@@ -1,6 +1,12 @@
-# Review bounty + grapevine SKILL.md for accuracy and usefulness
+---
+type: backlog
+title: "Review bounty + grapevine SKILL.md for accuracy and usefulness"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-07-09 }
+---
 
-**Added:** 2026-07-09
+# Review bounty + grapevine SKILL.md for accuracy and usefulness
 
 Bounty and grapevine are the **most-used spells**, so their `SKILL.md` docs
 carry the most weight — and drift the most as the daemons/CLIs evolve. Do a

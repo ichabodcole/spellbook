@@ -1,6 +1,12 @@
-# `bounty message` reports success and leaves nothing to read back
+---
+type: backlog
+title: "`bounty message` reports success and leaves nothing to read back"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# `bounty message` reports success and leaves nothing to read back
 
 Found during `spell-hardening` sprint 01's envelope audit. **Not among the
 fourteen.** Same family as `#83`/`#84` — a write-shaped verb reporting success

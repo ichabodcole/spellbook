@@ -1,3 +1,10 @@
+---
+type: backlog
+title: The membership guard rests on an unasserted launcher
+status: stable
+generated: { by: unknown, at: 2026-09-04 }
+---
+
 # The membership guard rests on an unasserted launcher
 
 **Filed:** 2026-09-04 · **Found by:** the Contract 3 criterion sweep ·

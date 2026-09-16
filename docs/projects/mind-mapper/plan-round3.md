@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Mind Mapper Round 3 — zones + drive-2 build plan (skeleton)"
+status: stable
+generated: { by: unknown, at: 2026-07-19 }
+---
+
 # Mind Mapper Round 3 — zones + drive-2 build plan (skeleton)
 
 **Lead:** prospero · **Seats:** daedalus (engine), circe (surface), cassandra

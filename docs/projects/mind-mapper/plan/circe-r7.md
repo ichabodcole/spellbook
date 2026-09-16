@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "circe — Round 7 lane (surface)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # circe — Round 7 lane (surface)
 
 Owner: circe (surface). Branch `feature/mind-mapper-round7`. Board card

@@ -1,6 +1,11 @@
-# Bounty — migrated to the house daemon + cli.ts pattern (#6–#10)
+---
+type: memory
+title: "Bounty — migrated to the house daemon + cli.ts pattern (#6–#10)"
+status: stable
+generated: { by: unknown, at: 2026-06-15 }
+---
 
-**Date:** 2026-06-15
+# Bounty — migrated to the house daemon + cli.ts pattern (#6–#10)
 
 Migrated Bounty (the board spell, formerly Tuskboard) off the old file-pump
 substrate onto the house agent-interface pattern: a persistent Bun daemon

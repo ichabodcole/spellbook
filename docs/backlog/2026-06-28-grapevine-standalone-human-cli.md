@@ -1,9 +1,13 @@
-# Grapevine: standalone `grapevine` CLI for humans (companion-app pattern)
+---
+type: backlog
+title:
+  "Grapevine: standalone `grapevine` CLI for humans (companion-app pattern)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); post-V1.6.x retrospective on agent-vs-human ergonomics.
-**Scope:** proposal-sized — packaging/runtime/source-of-truth decisions warrant
-a project folder; likely tied to any toolbox-migration spinout.
+# Grapevine: standalone `grapevine` CLI for humans (companion-app pattern)
 
 Ship a standalone `grapevine` CLI installable on PATH (`npm i -g` / `brew`) that
 wraps the same daemon and `~/.grapevine/` data the skill uses — same primitives,

@@ -1,3 +1,11 @@
+---
+type: plan
+title: "Sprint 01 — The drained exit · Spell Hardening"
+status: stable
+lifecycle: draft
+generated: { by: unknown, at: 2026-08-05 }
+---
+
 # Sprint 01 — The drained exit · Spell Hardening
 
 > # ⛔ FROZEN 2026-08-06. This is a RECORD, not an instruction.
@@ -57,11 +65,6 @@ would be an edit to a frozen record, and the same instinct is what commit
 all five `tail` sites re-pinned to `7a32677`.**
 
 ---
-
-**Created:** 2026-08-05 **Related Proposal:** [proposal.md](../../proposal.md)
-**Status at close:** **P0 family RATIFIED 2026-08-06** by the anthill team
-(`daedalus` engine, `cassandra` verify, `thoth` grimoire; `prospero` leading).
-P1–P3 are **still unratified** and keep the caveat below.
 
 [the ratify-round handoff](../../_history/2026-08-05-handoff-ratify-round.md) is
 **historical** — it called for the ratify round that has since happened. Read it

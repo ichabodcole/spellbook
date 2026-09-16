@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "mind-mapper Round 4 — plan skeleton (action slots + drive-3 fixes)"
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # mind-mapper Round 4 — plan skeleton (action slots + drive-3 fixes)
 
 **Status: RATIFIED 2026-07-19 — all claims ruled; see "Ratified decisions & lead

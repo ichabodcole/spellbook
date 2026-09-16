@@ -1,3 +1,10 @@
+---
+type: memory
+title: "Memory — mind-mapper dogfood drive #6 + Round 6 merge (2026-07-22)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Memory — mind-mapper dogfood drive #6 + Round 6 merge (2026-07-22)
 
 Drive #6 (board `music-session-6`: Carlos Niño connections + instrumentation +

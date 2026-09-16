@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 04 outcome — The shape of nothing"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # Sprint 04 outcome — The shape of nothing
 
 **Sprint:** 04, `the shape of nothing` · **Branch:** `fix/spell-hardening-04` ·

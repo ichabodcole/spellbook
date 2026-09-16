@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Scaffolding a spell (register F1) — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-10 }
+---
+
 # Scaffolding a spell (register F1) — decision log
 
 Live record. Every choice with the options not taken. Append as you go.

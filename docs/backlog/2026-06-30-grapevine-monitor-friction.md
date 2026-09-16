@@ -1,6 +1,12 @@
-# Grapevine ↔ Monitor seam — two frictions from a long multi-agent build
+---
+type: backlog
+title: "Grapevine ↔ Monitor seam — two frictions from a long multi-agent build"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-30 }
+---
 
-**Added:** 2026-06-30
+# Grapevine ↔ Monitor seam — two frictions from a long multi-agent build
 
 Surfaced during the astrolabe multi-agent build (a lead coordinating kepler +
 galileo over the `astrolabe-build` grapevine, the lead's `tail` wrapped with

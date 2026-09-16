@@ -1,4 +1,18 @@
+---
+type: playbook # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Topic] Playbook"
+description: "[One sentence: what this gets done, and when to reach for it.]"
+tags: [process, area] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 IMPORTANT: If you haven't read the README.md in this directory, please read it first for context on when to
 create playbooks and when NOT to create them.
 
@@ -12,9 +26,6 @@ Adapt sections as needed - some playbooks might need 2 phases, others might need
 -->
 
 # [Topic] Playbook
-
-**Created:** YYYY-MM-DD **Last Updated:** YYYY-MM-DD **Status:** Draft | Active
-| Deprecated
 
 ---
 
@@ -140,7 +151,7 @@ Concrete examples of this playbook in use (add examples as they occur)
 ### Example 1: [Scenario]
 
 **Context:** [What was the situation] **Outcome:** [What happened] **Lessons:**
-[What was learned or refined from this use] **Reference:** [Link to project
+[What was learned or refined from this use] **Reference:** [Link to
 plan/session/PR]
 
 [Add more examples as this playbook gets used - they validate and refine the
@@ -150,9 +161,9 @@ approach]
 
 Links to related playbooks, architecture docs, or best practices
 
-- [Related playbook 1](./other-playbook.md)
-- [Architecture doc](../architecture/doc-name.md)
-- [External resource](URL)
+- `[Related playbook 1](./other-playbook.md)`
+- `[Architecture doc](../architecture/doc-name.md)`
+- `[External resource](URL)`
 
 ---
 

@@ -1,6 +1,14 @@
-# Bounty: a session key can be hijacked, and a read cannot say which board answered
+---
+type: backlog
+title:
+  "Bounty: a session key can be hijacked, and a read cannot say which board
+  answered"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# Bounty: a session key can be hijacked, and a read cannot say which board answered
 
 Found during the `spell-hardening` P0 ratify round, by having it happen to the
 team twice in forty minutes. **Not among the fourteen issues that project

@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Proposal — mind-mapper image / media support (Round 7)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Proposal — mind-mapper image / media support (Round 7)
 
 **Status: PROPOSAL (queued for Round 7).** Author: prospero. Origin: drive-4

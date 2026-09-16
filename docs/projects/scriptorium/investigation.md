@@ -1,9 +1,11 @@
-# Scriptorium — investigation: editor, undo, save, diff, watching
+---
+type: artifact
+title: "Scriptorium — investigation: editor, undo, save, diff, watching"
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
 
-**Date:** 2026-09-11 · **Method:** a read-only read of Operator's editor code
-(`~/Projects/Barkdown-editor/operator-mono`), sourced web research, and two
-local probes run in a scratch directory. **Decisions:**
-[`decision-log.md`](./decision-log.md) (E1–E8).
+# Scriptorium — investigation: editor, undo, save, diff, watching
 
 ## Findings
 

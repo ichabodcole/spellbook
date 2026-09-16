@@ -1,3 +1,12 @@
+---
+type: artifact
+title:
+  "Handoff — ~~read this before ratifying the plan~~ **HISTORICAL. The ratify
+  round is DONE.**"
+status: stable
+generated: { by: unknown, at: 2026-08-05 }
+---
+
 # Handoff — ~~read this before ratifying the plan~~ **HISTORICAL. The ratify round is DONE.**
 
 **Written:** 2026-08-06 **By:** the plan's author (Claude Code, this repo)

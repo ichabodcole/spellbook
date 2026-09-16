@@ -1,7 +1,11 @@
-# Scaffolding a New Spell on the Build — Playbook
+---
+type: playbook
+title: "Scaffolding a New Spell on the Build — Playbook"
+status: stable
+generated: { by: unknown, at: 2026-09-10 }
+---
 
-**Created:** 2026-09-10 · **Last Updated:** 2026-09-10 · **Status:** Active,
-**and NOT YET VALIDATED BY A SUBJECT.** This is register item **F1**.
+# Scaffolding a New Spell on the Build — Playbook
 
 > ⛔ **THIS DOCUMENT EXISTS BECAUSE THE PATH TO A NEW SPELL ENDED IN THE WRONG
 > PLACE.** Two documents tell an agent how to add a spell, and until this branch

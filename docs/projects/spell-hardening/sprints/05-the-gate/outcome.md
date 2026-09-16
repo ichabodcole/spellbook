@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 05 outcome — The gate"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # Sprint 05 outcome — The gate
 
 **Sprint:** 05, `the gate` · **Branch:** `fix/spell-hardening-05` · **Base:**

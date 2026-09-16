@@ -1,7 +1,12 @@
-# Grapevine: bounded / non-follow mode for `tail` (history backfill)
+---
+type: backlog
+title: "Grapevine: bounded / non-follow mode for `tail` (history backfill)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Added:** 2026-08-05 · **Tracks:** GitHub issue
-[#75](https://github.com/ichabodcole/spellbook/issues/75)
+# Grapevine: bounded / non-follow mode for `tail` (history backfill)
 
 `grapevine tail --from-start` streams history and then goes **live** (follows).
 A joining seat that only wants to **backfill the vine's existing history** and

@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Dogfood drive #4 — findings (2026-07-19+)"
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # Dogfood drive #4 — findings (2026-07-19+)
 
 ## Triage (at wrap — Cole closed the drive, "Sounds right!")

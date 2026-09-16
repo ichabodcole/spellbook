@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "thoth's lane — canon, and the playbook as synthesis"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # thoth's lane — canon, and the playbook as synthesis
 
 **Authored 2026-09-03, as of comms #1131, tree at `95dc287` clean.** Builds

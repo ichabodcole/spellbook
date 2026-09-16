@@ -1,3 +1,10 @@
+---
+type: artifact
+title: 'Round 9 plan — the async Job Queue ("Q edition")'
+status: stable
+generated: { by: unknown, at: 2026-07-23 }
+---
+
 # Round 9 plan — the async Job Queue ("Q edition")
 
 **Source:** drive-6 finding #3 (Cole: "very important"), the drive-6 vision +

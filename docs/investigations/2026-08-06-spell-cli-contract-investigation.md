@@ -1,8 +1,12 @@
-# Investigation: The Spell CLI Contract — what should every spell's stdout promise?
+---
+type: investigation
+title: "The Spell CLI Contract — what should every spell's stdout promise?"
+status: stable
+lifecycle: active
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Date Started:** 2026-08-06 **Investigator:** Claude Code (with Cole, and
-`anthill:maestro` across `ichabodcole/anthill`) **Status:** Active **Outcome:**
-In Progress
+# Investigation: The Spell CLI Contract — what should every spell's stdout promise?
 
 > **Arose from** a cross-team debugging session on
 > [#80](https://github.com/ichabodcole/spellbook/issues/80) /

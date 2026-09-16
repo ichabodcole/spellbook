@@ -1,3 +1,10 @@
+---
+type: manifesto
+title: The Spellbook
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
+
 <!--
 Mirrored from Operator → Spellbook project → "The Spellbook — a manifesto for
 agent-conjured apps" (doc id XNboVJINuExcvPR44SUXv). Operator remains the living

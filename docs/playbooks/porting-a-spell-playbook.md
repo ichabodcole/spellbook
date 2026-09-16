@@ -1,8 +1,11 @@
-# Porting a Spell to the Built / Shared Layout — Playbook
+---
+type: playbook
+title: "Porting a Spell to the Built / Shared Layout — Playbook"
+status: stable
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Created:** 2026-08-31 · **Last Updated:** 2026-09-10 · **Status:** Reference.
-⛔ **BOTH populations are now CLOSED**, and nothing in the roster is left to
-port.
+# Porting a Spell to the Built / Shared Layout — Playbook
 
 - **The SURFACE port CLOSED 2026-09-07** — five real runs, three of them
   rewrites (grapevine, bounty, digestify). Every spell in the roster builds; no

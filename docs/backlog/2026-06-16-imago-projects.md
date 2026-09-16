@@ -1,7 +1,11 @@
-# Backlog — imago projects (named, switchable workspaces)
+---
+type: backlog
+title: "Backlog — imago projects (named, switchable workspaces)"
+status: stable
+generated: { by: unknown, at: 2026-06-16 }
+---
 
-**Date:** 2026-06-16 · **Status:** backlog / design direction (cole) ·
-**Spell:** imago
+# Backlog — imago projects (named, switchable workspaces)
 
 ## The need
 

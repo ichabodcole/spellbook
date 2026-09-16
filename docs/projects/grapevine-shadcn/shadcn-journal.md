@@ -1,8 +1,11 @@
-# Grapevine shadcn — the journal
+---
+type: artifact
+title: "Grapevine shadcn — the journal"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
 
-**Status:** live · **Started:** 2026-09-05 · **Author:** the implementing agent
-(Claude Code, session `session_01BiZGj5ZTDSZi1mB8YtuRcx`) · **Branch:**
-`feat/grapevine-shadcn`
+# Grapevine shadcn — the journal
 
 The process, in order, for the agent who does this to bounty, digestify,
 mind-mapper, or the kit: what I had to discover and how, what the CLI did that I

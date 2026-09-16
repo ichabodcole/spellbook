@@ -1,3 +1,11 @@
+---
+type: artifact
+title:
+  "Sprint 05 → 06 carries — the cards, rescued from the board before teardown"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # Sprint 05 → 06 carries — the cards, rescued from the board before teardown
 
 **Written:** 2026-08-10, at the merge · **Source:** the live bounty board

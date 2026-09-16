@@ -1,8 +1,12 @@
-# Grapevine: `pull --as <alias>` self-echo suppression
+---
+type: backlog
+title: "Grapevine: `pull --as <alias>` self-echo suppression"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); grapevine-feedback triage (robin #8). **Priority:** Low —
-capture, don't schedule on its own.
+# Grapevine: `pull --as <alias>` self-echo suppression
 
 `tail --as <alias>` filters the caller's own messages from the stream;
 `pull --since <id>` does not. Since `pull`'s dominant use is recovering a

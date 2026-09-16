@@ -1,7 +1,11 @@
-# Publishing the ability to create spells (a shippable spell-creator)
+---
+type: fragment
+title: Publishing the ability to create spells (a shippable spell-creator)
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Date:** 2026-05-29 **Tone:** Type 2 (curiosity / "probably valuable, not ready
-yet") **Status:** captured spark, not yet a project
+# Publishing the ability to create spells (a shippable spell-creator)
 
 ## Context
 

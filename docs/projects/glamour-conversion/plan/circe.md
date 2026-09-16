@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "circe — lane: the surface half of the glamour port"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # circe — lane: the surface half of the glamour port
 
 **Owner:** circe (surface) · **Authored:** 2026-09-03 against

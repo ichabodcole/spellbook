@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Scriptorium — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
+
 # Scriptorium — decision log
 
 Series **E**. Decisions and the options not taken, logged live.

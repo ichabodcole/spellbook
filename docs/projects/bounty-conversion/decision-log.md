@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Bounty Conversion — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # Bounty Conversion — decision log
 
 Live record. Every choice, with the options not taken. Append as you go; do not

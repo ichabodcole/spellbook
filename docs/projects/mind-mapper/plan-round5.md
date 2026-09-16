@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "mind-mapper Round 5 — plan skeleton (subgraphs + drive-4 cluster)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # mind-mapper Round 5 — plan skeleton (subgraphs + drive-4 cluster)
 
 **Status: RATIFIED 2026-07-21 — see "Ratified decisions & lead rulings" (the

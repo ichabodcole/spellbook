@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "daedalus R7 lane — TAGS engine + PORT flag"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # daedalus R7 lane — TAGS engine + PORT flag
 
 Owner: daedalus (engine). Branch `feature/mind-mapper-round7`. Authoritative

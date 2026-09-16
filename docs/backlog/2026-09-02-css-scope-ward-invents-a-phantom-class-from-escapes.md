@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "`spell-css-scope-ward` invents a phantom class from a CSS hex escape, and
+  blames the wrong spell"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `spell-css-scope-ward` invents a phantom class from a CSS hex escape, and blames the wrong spell
 
 **Filed:** 2026-09-02 · **Status:** FIXED 2026-09-03 — fix landed at `1131558`

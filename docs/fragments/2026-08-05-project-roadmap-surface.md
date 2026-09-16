@@ -1,10 +1,12 @@
-# Fragment: A Project Roadmap / Planning Surface
+---
+type: fragment
+title: A Project Roadmap / Planning Surface
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Date**: 2026-08-05 **Context**: Captured by Cole in Operator
-(`fragments/project-roadmap-surface.md`, Spellbook project) and mirrored here.
-Captured minutes after
-[`2026-08-05-wiki-reading-spell.md`](./2026-08-05-wiki-reading-spell.md), which
-Cole names as the tie-in.
+# Fragment: A Project Roadmap / Planning Surface
 
 > **Operator is the canonical precursor** (doc
 > `12db4a88-95f8-44eb-9ae8-6d5924d36ee0`, v2). Keep in lockstep if it's edited

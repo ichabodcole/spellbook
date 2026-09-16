@@ -1,3 +1,10 @@
+---
+type: memory
+title: "Memory — mind-mapper Round 4 built + gate-passed (2026-07-19)"
+status: stable
+generated: { by: unknown, at: 2026-07-19 }
+---
+
 # Memory — mind-mapper Round 4 built + gate-passed (2026-07-19)
 
 Same-day arc: dogfood drive #3 (9 findings) → Round 3 merged to develop

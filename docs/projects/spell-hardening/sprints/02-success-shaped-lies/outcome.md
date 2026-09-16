@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 02 outcome — Success-shaped lies"
+status: stable
+generated: { by: unknown, at: 2026-08-07 }
+---
+
 # Sprint 02 outcome — Success-shaped lies
 
 **Sprint:** 02 · `sprints/02-success-shaped-lies/` **Ran:** 2026-08-06 (targeted

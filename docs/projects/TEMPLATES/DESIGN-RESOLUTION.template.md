@@ -1,4 +1,19 @@
+---
+type: design-resolution # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Feature Name] Design Resolution"
+description: "[One sentence: the question this resolves and how.]"
+tags: [area, decision] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+lifecycle: draft # where the work has got to; see docs/SCHEMA.md
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 USAGE: Copy this file to your project folder as `design-resolution.md`.
 
 This template helps you crystallize system-level decisions before development
@@ -24,10 +39,7 @@ For more guidance on design resolutions, see the projects README: ../README.md
 
 # [Design Resolution Title]
 
-**Status:** Draft | Under Review | Resolved | Superseded\
-**Created:** YYYY-MM-DD\
-**Related Proposal:** [Link to proposal](./proposal.md)\
-**Author:** [Name]
+**Related Proposal:** [Link to proposal](./proposal.md)
 
 ---
 
@@ -133,8 +145,8 @@ be resolved above.]
 **Related Documents:**
 
 - [Proposal](./proposal.md)
-- [Architecture docs](../../architecture/doc-name.md) (if applicable)
-- [Plan](./plan.md) (created after resolution)
+- `[Architecture docs](../../architecture/doc-name.md)` (if applicable)
+- `[Plan](./plan.md)` (created after resolution)
 
 ---
 

@@ -1,9 +1,12 @@
-# Investigation: Retrofitting agent co-presence onto human-first apps
-
-**Date Started:** 2026-07-14 **Investigator:** Cole Reed + Claude Code
-**Status:** Active **Outcome:** In Progress
-
 ---
+type: investigation
+title: Retrofitting agent co-presence onto human-first apps
+status: stable
+lifecycle: active
+generated: { by: unknown, at: 2026-07-14 }
+---
+
+# Investigation: Retrofitting agent co-presence onto human-first apps
 
 ## Question / Motivation
 

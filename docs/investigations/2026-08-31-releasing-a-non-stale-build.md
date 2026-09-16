@@ -1,9 +1,11 @@
-# Investigation: never releasing a stale build
+---
+type: investigation
+title: never releasing a stale build
+status: stable
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Date:** 2026-08-31 · **Status:** spike closed, recommendation ready to plan
-from · **Run by:** `cassandra` (verify seat) · **Ruled by:** Cole (emission),
-prospero (scope) **Supersedes nothing. Feeds:** the release-pipeline sprint, not
-yet numbered.
+# Investigation: never releasing a stale build
 
 ## Summary
 

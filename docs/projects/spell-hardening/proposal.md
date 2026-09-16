@@ -1,9 +1,12 @@
-# Spell Hardening — fix what the shipped spells are getting wrong, then release
+---
+type: proposal
+title:
+  "Spell Hardening — fix what the shipped spells are getting wrong, then release"
+status: stable
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Status:** Approved (scope + execution ratified by Cole, 2026-08-05; #80 folded
-into P0 and D3 ruled, #81 filed and D4 ruled, 2026-08-06) — **now running as a
-MULTI-SPRINT project** (promoted 2026-08-06) **Created:** 2026-08-05 **Author:**
-Cole Reed (triaged with Claude Code)
+# Spell Hardening — fix what the shipped spells are getting wrong, then release
 
 > **This document is the project's LIVING arc.** Where we are is the ledger,
 > [`./README.md`](./README.md); what each sprint planned and what it actually

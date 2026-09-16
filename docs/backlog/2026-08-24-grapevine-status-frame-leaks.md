@@ -1,3 +1,10 @@
+---
+type: backlog
+title: "grapevine: status frames leak through `wait`, and two folding papercuts"
+status: stable
+generated: { by: unknown, at: 2026-08-24 }
+---
+
 # grapevine: status frames leak through `wait`, and two folding papercuts
 
 **Found:** 2026-08-24, fresh-agent ergonomics run for the V2.0 declared-surface

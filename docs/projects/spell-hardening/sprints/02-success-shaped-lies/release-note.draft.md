@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Release note — DRAFT"
+status: stable
+generated: { by: unknown, at: 2026-08-06 }
+---
+
 # Release note — DRAFT
 
 > **✅ SHIPPED as

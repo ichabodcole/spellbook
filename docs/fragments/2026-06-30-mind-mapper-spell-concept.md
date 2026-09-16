@@ -1,3 +1,11 @@
+---
+type: fragment
+title: "Mind Mapper — Spell Precursor (consolidated)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-30 }
+---
+
 _Consolidated **best-of** concept for the "mind mapper" spell — merged from two
 fragments captured at different times, each carrying things the other lacked:
 the Operator precursor `mind-mapper-spell-concept` (graph/artifact framing) and

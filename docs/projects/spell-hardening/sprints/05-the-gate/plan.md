@@ -1,11 +1,11 @@
-# Sprint 05 — The gate
+---
+type: plan
+title: "Sprint 05 — The gate"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
 
-**Created:** 2026-08-10 (retroactively, **during** the sprint — see the warning
-below) · **Status:** ✅ COMPLETE — merged to `develop` 2026-08-10 · **No release
-cut**: held deliberately so sprints 05 and 06 ship together · **Branch:**
-`fix/spell-hardening-05` · **Base:** `e65333a` · **Project:**
-[Spell Hardening](../../README.md) · [roadmap.md](../../roadmap.md) ·
-**Predecessor:** [sprint 04 outcome](../04-the-shape-of-nothing/outcome.md)
+# Sprint 05 — The gate
 
 > **⛔ THIS SPRINT RAN WITHOUT A PLAN DOCUMENT AND THIS FILE IS NOT ONE.**
 >

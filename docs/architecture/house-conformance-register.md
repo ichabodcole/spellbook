@@ -1,9 +1,11 @@
-# The house conformance register — where the spells do not yet agree
+---
+type: architecture
+title: "The house conformance register — where the spells do not yet agree"
+status: stable
+generated: { by: unknown, at: 2026-09-09 }
+---
 
-**Created:** 2026-09-09, inside the backend convergence · **Relocated here
-2026-09-10** (D92) · **Last Updated:** 2026-09-10 · **Status:** LIVING. **Not
-acc conformance** — this is _house_ conformance: one specification the spells
-are all supposed to satisfy.
+# The house conformance register — where the spells do not yet agree
 
 > ⚠ **WHICH SPELLS, AND WHO IS MISSING — read this before trusting a count
 > below.** Every row here was written against the **eight** spells that existed

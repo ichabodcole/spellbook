@@ -1,7 +1,11 @@
-# Spellbook Coherence Pass — make the migrated set production-coherent
+---
+type: proposal
+title: "Spellbook Coherence Pass — make the migrated set production-coherent"
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Status:** In Progress — **2 of 4 deliverables** · **Created:** 2026-05-29 ·
-**Updated:** 2026-08-10 · **Author:** Cole Reed (with familiar)
+# Spellbook Coherence Pass — make the migrated set production-coherent
 
 > **⚠ THE PREVIOUS STATUS LINE WAS WRONG IN BOTH NUMBERS**, and it stood for 44
 > days. It read _"~75% — Deliverable 3 typecheck gate **blocks** completion;

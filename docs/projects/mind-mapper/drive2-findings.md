@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Mind Mapper — V1.x drive #2 findings"
+status: stable
+generated: { by: unknown, at: 2026-07-18 }
+---
+
 # Mind Mapper — V1.x drive #2 findings
 
 **Started:** 2026-07-17 · **Closed:** 2026-07-18, 15 findings · Live drive,

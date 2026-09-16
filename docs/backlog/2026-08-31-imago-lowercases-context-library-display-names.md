@@ -1,8 +1,12 @@
-# imago lowercases context-library display names on ingest
+---
+type: backlog
+title: imago lowercases context-library display names on ingest
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `cassandra`, driving imago's board during
-Sprint 01's 1c local-sim · **Scope:** imago backend, one call site ·
-**Severity:** low — cosmetic, but it destroys user input and is not recoverable
+# imago lowercases context-library display names on ingest
 
 **Pre-existing since `08ad396`. NOT a Sprint 01 regression** — the relocation
 only made it visible by putting someone in front of the board.

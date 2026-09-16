@@ -1,3 +1,10 @@
+---
+type: session
+title: "Session — mind-mapper Round 7: metadata, filter & polish (2026-07-22)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Session — mind-mapper Round 7: metadata, filter & polish (2026-07-22)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

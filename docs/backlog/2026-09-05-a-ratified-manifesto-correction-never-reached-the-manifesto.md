@@ -1,3 +1,10 @@
+---
+type: backlog
+title: A ratified manifesto correction never reached the manifesto
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # A ratified manifesto correction never reached the manifesto
 
 **Filed:** 2026-09-05 · **Found by:** the Contract 3 criterion sweep, looking

@@ -1,3 +1,11 @@
+---
+type: session
+title:
+  "Session — 2026-09-05 · human parity: the watch surface does what the CLI does"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # Session — 2026-09-05 · human parity: the watch surface does what the CLI does
 
 **Branch:** `feat/grapevine-ux` · **Shape:** orchestrator + one implementing

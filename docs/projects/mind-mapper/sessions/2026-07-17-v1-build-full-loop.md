@@ -1,3 +1,12 @@
+---
+type: session
+title:
+  "Mind-mapper V1 — ratified plan to passed acceptance test in one evening —
+  2026-07-17"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
+
 # Mind-mapper V1 — ratified plan to passed acceptance test in one evening — 2026-07-17
 
 ## Context

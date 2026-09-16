@@ -1,11 +1,12 @@
-# Fragment: A Wiki-Reading Spell
+---
+type: fragment
+title: A Wiki-Reading Spell
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Date**: 2026-08-05 **Context**: Captured by Cole in Operator
-(`fragments/wiki-reading-spell.md`, Spellbook project) and mirrored here.
-Companion to
-[`2026-08-05-project-roadmap-surface.md`](./2026-08-05-project-roadmap-surface.md),
-captured minutes apart and explicitly linked by Cole — see "Relationship to the
-roadmap surface" below.
+# Fragment: A Wiki-Reading Spell
 
 > **Operator is the canonical precursor** (doc
 > `ff0490f6-a7dc-45ec-99e9-16aed80eed5f`, v2). Keep in lockstep if it's edited

@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Scriptorium — brief A: the foundation, end to end"
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
+
 # Scriptorium — brief A: the foundation, end to end
 
 **For:** a brief-driven implementer. **From:** the lead, 2026-09-11. **Branch:**

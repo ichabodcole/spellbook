@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "mind-mapper Round 6 — plan skeleton (drive-5 fixes + tooling + UX)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # mind-mapper Round 6 — plan skeleton (drive-5 fixes + tooling + UX)
 
 **Status: SKELETON — seams awaiting owner ratify.** Lead: prospero. Seats:

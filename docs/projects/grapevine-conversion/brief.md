@@ -1,8 +1,11 @@
-# Grapevine Conversion — the brief
+---
+type: artifact
+title: "Grapevine Conversion — the brief"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
 
-**Created:** 2026-09-05 · **Author:** Cole Reed + Claude Code (orchestrator) ·
-**Mode:** loose — a brief, not a plan. The implementing agent may write its own
-plan under this folder or work straight from this document.
+# Grapevine Conversion — the brief
 
 This is the handoff to the implementing agent. The [proposal](./proposal.md)
 says why; this says what, and where the rails are. Read the proposal first.

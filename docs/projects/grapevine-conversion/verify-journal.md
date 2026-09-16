@@ -1,8 +1,11 @@
-# Grapevine Conversion — the verify journal
+---
+type: artifact
+title: "Grapevine Conversion — the verify journal"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
 
-**Status:** live · **Started:** 2026-09-05 · **Author:** the verify agent
-(Claude Code, no stake — did not write the code) · **Branch:**
-`feat/grapevine-conversion` at `81feb1a`
+# Grapevine Conversion — the verify journal
 
 A cold drive of the behaviour inventory and a read of the diff, written in the
 order it happened, for the agent who verifies the bounty or digestify conversion

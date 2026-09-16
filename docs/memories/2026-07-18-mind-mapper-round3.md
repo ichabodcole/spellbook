@@ -1,7 +1,11 @@
-# Mind-mapper Round 3: exploration zones built and gate-passed
+---
+type: memory
+title: "Mind-mapper Round 3: exploration zones built and gate-passed"
+status: stable
+generated: { by: unknown, at: 2026-07-18 }
+---
 
-**Date:** 2026-07-18 · **Branch:** `feature/mind-mapper-zones` (awaiting Cole's
-drive #3 + merge ruling)
+# Mind-mapper Round 3: exploration zones built and gate-passed
 
 One anthill round built drive-2's triage: exploration zones + promotion (sandbox
 staging scopes, move-not-duplicate promote, ratification-at-the-boundary), the

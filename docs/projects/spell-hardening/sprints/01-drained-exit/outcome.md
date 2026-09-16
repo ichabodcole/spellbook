@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 01 outcome — The drained exit"
+status: stable
+generated: { by: unknown, at: 2026-08-06 }
+---
+
 # Sprint 01 outcome — The drained exit
 
 **Sprint:** 01 · `sprints/01-drained-exit/` **Ran:** 2026-08-05 (ratify) →

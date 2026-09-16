@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "circe's lane — mind-mapper Round 4 surface"
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # circe's lane — mind-mapper Round 4 surface
 
 Authored against `plan-round4.md`'s **Ratified decisions & lead rulings** (the

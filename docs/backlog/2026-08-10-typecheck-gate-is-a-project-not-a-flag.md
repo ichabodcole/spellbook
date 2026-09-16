@@ -1,3 +1,10 @@
+---
+type: backlog
+title: The typecheck gate is a project, not a flag
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # The typecheck gate is a project, not a flag
 
 **Filed:** 2026-08-10 · **Status:** open, unsized · **Source:** measured while

@@ -1,9 +1,11 @@
-# Artifacts with no defined death — where the loop doesn't close
-
-**Created:** 2026-08-06 **Status:** Open — evidence gathered, mechanism not yet
-chosen **Author:** Claude Code (prospero), with Cole Reed
-
 ---
+type: investigation
+title: "Artifacts with no defined death — where the loop doesn't close"
+status: stable
+generated: { by: unknown, at: 2026-08-06 }
+---
+
+# Artifacts with no defined death — where the loop doesn't close
 
 ## The question
 

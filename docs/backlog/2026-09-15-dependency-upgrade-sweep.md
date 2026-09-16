@@ -1,8 +1,11 @@
-# Backlog — one dependency upgrade sweep, not nine separate bumps
+---
+type: backlog
+title: "Backlog — one dependency upgrade sweep, not nine separate bumps"
+status: stable
+generated: { by: unknown, at: 2026-09-15 }
+---
 
-**Status:** backlog (not scheduled). Captured 2026-09-15, just after
-`spellbook-v3.0.0`. **Severity:** none — nothing is broken. This is deferred
-maintenance with one item (`@base-ui/react`) that already has a reason.
+# Backlog — one dependency upgrade sweep, not nine separate bumps
 
 Cole's framing, which is why this is one item rather than a `@base-ui` ticket:
 

@@ -1,6 +1,13 @@
-# Register A1 closed — every closed set the eight spells reject against is now `choices`
+---
+type: memory
+title:
+  "Register A1 closed — every closed set the eight spells reject against is now
+  `choices`"
+status: stable
+generated: { by: unknown, at: 2026-09-10 }
+---
 
-**Date:** 2026-09-10
+# Register A1 closed — every closed set the eight spells reject against is now `choices`
 
 The house error envelope (`src/kit/wire/errors.ts`) carries `hint` (prose for a
 human) and `choices` (_what would have been accepted_ — the field an agent

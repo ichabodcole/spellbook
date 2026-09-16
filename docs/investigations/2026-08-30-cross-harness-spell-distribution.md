@@ -1,12 +1,14 @@
-# Investigation: Cross-harness spell distribution — what each channel materializes, and what a spell must become to survive it
-
-**Date Started:** 2026-08-30 **Investigator:** Claude Code **Status:** Concluded
-**Outcome:** Amends
-[`2026-08-29-shared-code-and-the-build-boundary`](2026-08-29-shared-code-and-the-build-boundary.md)
-§Q2; feeds the `spell-kit` proposal as an **emission-matrix** decision rather
-than standing up its own project
-
 ---
+type: investigation
+title:
+  "Cross-harness spell distribution — what each channel materializes, and what a
+  spell must become to survive it"
+status: stable
+lifecycle: concluded
+generated: { by: unknown, at: 2026-08-30 }
+---
+
+# Investigation: Cross-harness spell distribution — what each channel materializes, and what a spell must become to survive it
 
 ## Question / Motivation
 

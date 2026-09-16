@@ -1,9 +1,11 @@
-# Grapevine shadcn — the brief
+---
+type: artifact
+title: "Grapevine shadcn — the brief"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
 
-**Created:** 2026-09-05 · **Author:** Cole Reed + Claude Code (orchestrator) ·
-**Mode:** loose — a brief, not a plan; this file doubles as the proposal.
-**Branch:** `feat/grapevine-shadcn`, cut from develop at the grapevine
-conversion's landing (`8fe85c1`).
+# Grapevine shadcn — the brief
 
 ## Why
 

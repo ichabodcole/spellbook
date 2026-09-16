@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Drive #10 findings — session-9 (R11 build), 2026-07-26"
+status: stable
+generated: { by: unknown, at: 2026-07-26 }
+---
+
 # Drive #10 findings — session-9 (R11 build), 2026-07-26
 
 Return-drive of the **R11 message-surface refactor** on a fresh music map (Rich

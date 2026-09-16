@@ -1,3 +1,11 @@
+---
+type: backlog
+title: Five seats have each written their own resolve sweep
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # Five seats have each written their own resolve sweep
 
 **Filed:** 2026-09-03 · **Found by:** thoth (glamour port, B3 playbook edit) ·

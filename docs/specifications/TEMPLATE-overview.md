@@ -1,4 +1,18 @@
+---
+type: specification # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Application Name] Specification Overview"
+description: "[One sentence: what the application is, in the whole.]"
+tags: [overview, product] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 IMPORTANT: If you haven't read the README.md in this directory, please read it first for context on when to
 create specifications and what to include.
 

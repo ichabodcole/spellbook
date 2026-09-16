@@ -1,3 +1,13 @@
+---
+type: backlog
+title:
+  "imago `mark.update` accepts a non-string `label`, and the surface crashes on
+  it"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-10 }
+---
+
 # imago `mark.update` accepts a non-string `label`, and the surface crashes on it
 
 **Filed:** 2026-09-10 · **Found by:** the type-debt Phase 4a verify pass ·

@@ -1,0 +1,30 @@
+{
+  "docsRoot": "docs",
+  "lint": {
+    "workbench": [
+      "backlog",
+      "fragments",
+      "briefs",
+      "investigations",
+      "cycles",
+      "reports",
+      "projects",
+      "releases"
+    ],
+    "types": {
+      "releases": "release"
+    },
+    "adopting": true,
+    "exclude": [],
+    "durable": [
+      "architecture",
+      "specifications",
+      "interaction-design",
+      "playbooks",
+      "lessons-learned",
+      "memories"
+    ],
+    "skip": ["_archive", "superpowers"]
+  },
+  "version": "8.1.0"
+}

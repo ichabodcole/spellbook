@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Round 12 plan — agent ergonomics, node edit, orphan visibility"
+status: stable
+generated: { by: unknown, at: 2026-07-26 }
+---
+
 # Round 12 plan — agent ergonomics, node edit, orphan visibility
 
 **Source:** [`drive10-findings.md`](./drive10-findings.md) F5 (agent-DX,

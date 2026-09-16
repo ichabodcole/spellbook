@@ -1,7 +1,11 @@
-# Backlog — imago "skills" / captured methodologies
+---
+type: backlog
+title: 'Backlog — imago "skills" / captured methodologies'
+status: stable
+generated: { by: unknown, at: 2026-06-16 }
+---
 
-**Date:** 2026-06-16 · **Status:** backlog / design idea (cole) · **Spell:**
-imago
+# Backlog — imago "skills" / captured methodologies
 
 ## The idea
 

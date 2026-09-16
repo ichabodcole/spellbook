@@ -1,3 +1,9 @@
+---
+type: release
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 <!-- ⛔ SUPERSEDED — DO NOT READ THIS AS THE RELEASE NOTE.
 
      This draft was reconstructed 2026-09-09 and then went 186 COMMITS STALE,

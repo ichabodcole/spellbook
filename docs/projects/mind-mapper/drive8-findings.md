@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Drive #8 findings — the R8 + R9 stack (monsters-session-7)"
+status: stable
+generated: { by: unknown, at: 2026-07-24 }
+---
+
 # Drive #8 findings — the R8 + R9 stack (monsters-session-7)
 
 **Build under test:** R8 (surface polish) + R9 (async job queue), stacked on

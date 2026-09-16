@@ -1,6 +1,12 @@
-# Astrolabe: scope flags per verb, then enumerate them in rejections
+---
+type: backlog
+title: "Astrolabe: scope flags per verb, then enumerate them in rejections"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-27 }
+---
 
-**Added:** 2026-08-27
+# Astrolabe: scope flags per verb, then enumerate them in rejections
 
 Adopt the acc guidance astrolabe doesn't yet follow: when the CLI rejects an
 unknown flag or verb, the rejection should name the valid set (`choices`) —

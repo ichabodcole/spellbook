@@ -1,9 +1,11 @@
-# Spellbook aesthetic + thematic rebrand
+---
+type: fragment
+title: "Spellbook aesthetic + thematic rebrand"
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Date:** 2026-05-29 **Tone:** Type 2 (curiosity / "probably want this") — a
-pre-release consideration **Status:** graduated to
-`docs/projects/spellbook-rebrand/` (2026-05-29) — this fragment holds the fuller
-aesthetic exploration the proposal references
+# Spellbook aesthetic + thematic rebrand
 
 ## Context
 

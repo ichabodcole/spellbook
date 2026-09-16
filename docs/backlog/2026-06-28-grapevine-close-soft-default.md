@@ -1,8 +1,12 @@
-# Grapevine: `close` soft-by-default (or a confirm guard)
+---
+type: backlog
+title: "Grapevine: `close` soft-by-default (or a confirm guard)"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); grapevine-feedback triage (robin lost a shipped feature's
-design dialogue to a `close`). **This is a decision, not just a task.**
+# Grapevine: `close` soft-by-default (or a confirm guard)
 
 `close` deletes the message log. V1.7 shipped `archive`/`unarchive` as the
 non-destructive path, which mitigates this — but `close` is still

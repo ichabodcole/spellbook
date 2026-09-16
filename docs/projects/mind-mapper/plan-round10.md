@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Round 10 plan — co-presence & discoverability paper cuts"
+status: stable
+generated: { by: unknown, at: 2026-07-24 }
+---
+
 # Round 10 plan — co-presence & discoverability paper cuts
 
 **Source:** `drive8-findings.md` (F1–F5), the return-drive of the R8+R9 stack.

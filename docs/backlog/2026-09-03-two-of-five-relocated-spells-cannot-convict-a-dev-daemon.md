@@ -1,3 +1,11 @@
+---
+type: backlog
+title: 2 of 5 relocated spells cannot convict a dev-mode daemon
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # 2 of 5 relocated spells cannot convict a dev-mode daemon
 
 **Filed:** 2026-09-03 · **Measured by:** cassandra at the glamour ratify (comms

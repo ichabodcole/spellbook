@@ -1,3 +1,10 @@
+---
+type: session
+title: "Session — mind-mapper Round 5: subgraphs + drive-4 cluster (2026-07-21)"
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # Session — mind-mapper Round 5: subgraphs + drive-4 cluster (2026-07-21)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

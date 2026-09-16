@@ -1,6 +1,12 @@
-# Bounty: `sessions` filter / limit / recency
+---
+type: backlog
+title: "Bounty: `sessions` filter / limit / recency"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-06-15 }
+---
 
-**Added:** 2026-06-15
+# Bounty: `sessions` filter / limit / recency
 
 `cli.ts sessions` lists every snapshot under `$BOUNTY_HOME` with no cap — a
 haystack for `--restore` once a few sessions accumulate. (The worst contributor,

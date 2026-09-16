@@ -1,6 +1,13 @@
-# glamour CLI: acc L0, then per-verb sets + census, then one table drives everything
+---
+type: memory
+title:
+  "glamour CLI: acc L0, then per-verb sets + census, then one table drives
+  everything"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
 
-**Date:** 2026-09-03
+# glamour CLI: acc L0, then per-verb sets + census, then one table drives everything
 
 Against acc v0.1.11 (pin bumped from v0.1.7 once Cole reported the kit release
 landed), glamour's `cli.ts` went NOT CONFORMANT → CONFORMANT (L0): one JSON

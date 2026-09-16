@@ -1,8 +1,11 @@
-# Backlog — `gate` runs twice on every push, and one of the two is wasted
+---
+type: backlog
+title: "Backlog — `gate` runs twice on every push, and one of the two is wasted"
+status: stable
+generated: { by: unknown, at: 2026-09-15 }
+---
 
-**Status:** backlog (not scheduled). Captured 2026-09-15 while landing
-`spellbook-v3.0.0`. **Severity:** none functionally — **cost only**, and it is
-paid on every push. The required check is satisfied by either run.
+# Backlog — `gate` runs twice on every push, and one of the two is wasted
 
 ## Measured
 

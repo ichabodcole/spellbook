@@ -1,8 +1,11 @@
-# Backlog — `flag-invariant`'s half B may predate the CLIs it guards
+---
+type: backlog
+title: "Backlog — `flag-invariant`'s half B may predate the CLIs it guards"
+status: stable
+generated: { by: unknown, at: 2026-09-14 }
+---
 
-**Status:** backlog (not scheduled). Captured 2026-09-14 while shipping
-scriptorium's `SKILL.md`. **Severity:** none — nothing is broken. This is a
-question about whether a ward still buys what it cost when it was written.
+# Backlog — `flag-invariant`'s half B may predate the CLIs it guards
 
 ## The question
 

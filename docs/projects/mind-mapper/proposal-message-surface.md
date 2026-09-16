@@ -1,9 +1,12 @@
-# Proposal — the message surface (collapse capture layers into one channel)
+---
+type: artifact
+title:
+  "Proposal — the message surface (collapse capture layers into one channel)"
+status: stable
+generated: { by: unknown, at: 2026-07-26 }
+---
 
-**Status:** proposed · **Origin:** drive #9 (session-8, 2026-07-26), see
-[`drive9-findings.md`](./drive9-findings.md) F1–F3 · **Author:** prospero, from
-a design conversation with Cole · **Precedes:** the next anthill build round;
-likely reorders ahead of `proposal-images.md` and coalescence.
+# Proposal — the message surface (collapse capture layers into one channel)
 
 ## The problem
 

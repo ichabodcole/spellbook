@@ -1,6 +1,11 @@
-# Astrolabe built, then surface re-homed CDN → bundled React
+---
+type: memory
+title: "Astrolabe built, then surface re-homed CDN → bundled React"
+status: stable
+generated: { by: unknown, at: 2026-06-30 }
+---
 
-**Date:** 2026-06-30
+# Astrolabe built, then surface re-homed CDN → bundled React
 
 Built the **astrolabe** spell — a cross-project observatory conjuration
 (singleton Bun daemon + thin cli + browser surface; layers = durable registry /

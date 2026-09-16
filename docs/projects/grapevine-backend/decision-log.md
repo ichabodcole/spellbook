@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Grapevine backend — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # Grapevine backend — decision log
 
 ## 2026-09-06 — orchestrator, with Cole

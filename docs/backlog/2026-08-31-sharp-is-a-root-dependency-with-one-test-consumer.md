@@ -1,8 +1,14 @@
-# `sharp` is a root dependency whose only consumer in the repo is one test fixture
+---
+type: backlog
+title:
+  "`sharp` is a root dependency whose only consumer in the repo is one test
+  fixture"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `daedalus` while swapping imago off
-`sharp` · **Scope:** root `package.json`, one test file · **Severity:** low —
-**not** a shipped-artifact problem
+# `sharp` is a root dependency whose only consumer in the repo is one test fixture
 
 ## The measurement
 

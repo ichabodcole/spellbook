@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Spell Hardening — roadmap"
+status: stable
+generated: { by: unknown, at: 2026-08-08 }
+---
+
 # Spell Hardening — roadmap
 
 **Updated:** 2026-08-11 (the `Now` section; **everything below "Superseded" is

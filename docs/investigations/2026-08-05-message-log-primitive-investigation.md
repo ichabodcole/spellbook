@@ -1,7 +1,12 @@
-# Investigation: The Communication Log as a First-Class Primitive
+---
+type: investigation
+title: The Communication Log as a First-Class Primitive
+status: stable
+lifecycle: active
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Date Started:** 2026-08-05 **Investigator:** Claude Code (with Cole)
-**Status:** Active **Outcome:** In Progress
+# Investigation: The Communication Log as a First-Class Primitive
 
 > **Companion to
 > [the context primitive investigation](./2026-08-05-context-primitive-investigation.md).**

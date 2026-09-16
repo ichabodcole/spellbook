@@ -1,3 +1,11 @@
+---
+type: backlog
+title: "A test file under `surface/` changes the shipped stylesheet"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # A test file under `surface/` changes the shipped stylesheet
 
 **Filed:** 2026-09-06 · **Found by:** the bounty conversion's implementing agent

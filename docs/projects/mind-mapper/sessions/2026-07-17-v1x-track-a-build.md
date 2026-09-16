@@ -1,3 +1,10 @@
+---
+type: session
+title: "Session — mind-mapper V1.x Track A build round (2026-07-17)"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
+
 # Session — mind-mapper V1.x Track A build round (2026-07-17)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

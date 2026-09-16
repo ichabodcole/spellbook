@@ -1,10 +1,14 @@
-# mind-mapper: the flag rejection that an agent actually hits is the one without `choices`
+---
+type: backlog
+title:
+  "mind-mapper: the flag rejection that an agent actually hits is the one
+  without `choices`"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-30 }
+---
 
-**Added:** 2026-08-30 · **Found by:** a fresh-agent usability drive of the
-**installed v2.2.0 artifact** (spell-kit session), then re-verified at HEAD ·
-**Scope:** mind-mapper. Same rule as
-[`astrolabe-per-verb-flags-and-enumerated-rejections`](./2026-08-27-astrolabe-per-verb-flags-and-enumerated-rejections.md),
-**different spell and a different cause** — see _Not a duplicate_.
+# mind-mapper: the flag rejection that an agent actually hits is the one without `choices`
 
 > ## The enumeration is already written, and it is gated behind knowing the answer
 

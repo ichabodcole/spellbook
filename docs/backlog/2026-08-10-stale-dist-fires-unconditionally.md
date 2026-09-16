@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "`STALE DIST` fires unconditionally, because mtime is not a content property"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `STALE DIST` fires unconditionally, because mtime is not a content property
 
 **Filed:** 2026-08-10 · **Status:** **CLOSED 2026-08-31 — RESOLVED BY DELETION,

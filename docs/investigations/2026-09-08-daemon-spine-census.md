@@ -1,9 +1,11 @@
-# Census: the daemon spine, eight concerns across eight daemons
+---
+type: investigation
+title: "Census: the daemon spine, eight concerns across eight daemons"
+status: stable
+generated: { by: unknown, at: 2026-09-08 }
+---
 
-**Date:** 2026-09-08 · **Status:** census closed; feeds the backend convergence
-project · **Scope:** every backend file that calls `Bun.serve` **Follows:**
-[the duplication recon](./2026-09-08-backend-duplication-recon.md), whose
-recommendation defined this scope
+# Census: the daemon spine, eight concerns across eight daemons
 
 ## Why this exists
 

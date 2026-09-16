@@ -1,3 +1,10 @@
+---
+type: memory
+title: "Memory — mind-mapper Round 5 built + gate-passed (2026-07-21)"
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # Memory — mind-mapper Round 5 built + gate-passed (2026-07-21)
 
 Same-day as drive #4 + the Round 4 merge: Round 5 convened, built, and cold-gate

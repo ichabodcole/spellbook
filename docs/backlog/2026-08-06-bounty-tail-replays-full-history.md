@@ -1,6 +1,12 @@
-# `bounty tail` replays its entire event history with no default anchor
+---
+type: backlog
+title: "`bounty tail` replays its entire event history with no default anchor"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# `bounty tail` replays its entire event history with no default anchor
 
 Found during `spell-hardening` sprint 01 while building fixtures. **Not among
 the fourteen.**

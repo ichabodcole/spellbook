@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Sprint 05 — the cold reconstruction, in full"
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # Sprint 05 — the cold reconstruction, in full
 
 **Run:** 2026-08-10, at the merge · **Method:** a fresh agent given **the branch

@@ -1,3 +1,10 @@
+---
+type: artifact
+title: "Bounty conversion — rewrite journal"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # Bounty conversion — rewrite journal
 
 **A falsification record, not a discovery record.** The playbook

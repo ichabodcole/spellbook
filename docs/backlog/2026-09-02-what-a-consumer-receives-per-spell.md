@@ -1,3 +1,12 @@
+---
+type: backlog
+title:
+  "What does a consumer receive, per spell, now that four spells ship built
+  artifacts?"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # What does a consumer receive, per spell, now that four spells ship built artifacts?
 
 **Filed:** 2026-09-02 · **Status:** open · **Owner: COLE** — this is a product

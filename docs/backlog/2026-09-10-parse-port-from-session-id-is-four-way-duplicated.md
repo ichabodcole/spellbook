@@ -1,7 +1,14 @@
-# `parsePortFromSessionId` is four-way duplicated, with the same type error in all four
+---
+type: backlog
+title:
+  "`parsePortFromSessionId` is four-way duplicated, with the same type error in
+  all four"
+status: stable
+lifecycle: open
+generated: { by: unknown, at: 2026-09-10 }
+---
 
-**Added:** 2026-09-10 · **Found by:** type-debt Phase 2 (digestify) ·
-**Decisions:** `docs/projects/_archive/type-debt/decision-log.md` **T22**
+# `parsePortFromSessionId` is four-way duplicated, with the same type error in all four
 
 `parsePortFromSessionId` is **byte-identical** in four spells:
 
