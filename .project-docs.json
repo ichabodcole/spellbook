@@ -15,7 +15,7 @@
       "releases": "release"
     },
     "adopting": true,
-    "exclude": [],
+    "exclude": ["docs/projects/scriptorium/SKILL.draft.md"],
     "durable": [
       "architecture",
       "specifications",
