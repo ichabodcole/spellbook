@@ -178,8 +178,8 @@ External maturity is genuinely unproven; internal validation is strong.
 
 - Spells as Interface Layer thesis (fragment since removed) — the
   portability/ownership design center
-- [media-buffet:library spell proposal](../../../dreamwood/media-buffet/docs/projects/media-manager-spell/proposal.md)
-  — the pilot distributed spell
+- media-buffet's library-spell proposal (`dreamwood/media-buffet`, a separate
+  repository) — the pilot distributed spell
 - Memory: `react-scaffold-investigation`, `spell-deps-resolution-in-host-repo`
   (pre-compiled-surface model), `spell-surface-stack`
 - Source: <https://astryx.atmeta.com/> · `github.com/facebook/astryx`

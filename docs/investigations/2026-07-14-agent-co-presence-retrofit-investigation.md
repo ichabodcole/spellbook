@@ -40,11 +40,11 @@ Sub-questions that motivated this:
 
 **Pilot candidates (deliberately contrasting):**
 
-- [dream-flute](/Users/colereed/Projects/dreamwood/dream-flute) — a
-  browser-based generative-soundscape studio (Nuxt/Vue, client-side only,
-  Rust→WASM DSP engine). Built entirely human-first; **no backend, no agent
-  affordances** today.
-- [story-loom](/Users/colereed/Projects/dreamwood/story-loom) — a generative
+- dream-flute (`dreamwood/dream-flute`, a separate repository) — a browser-based
+  generative-soundscape studio (Nuxt/Vue, client-side only, Rust→WASM DSP
+  engine). Built entirely human-first; **no backend, no agent affordances**
+  today.
+- story-loom (`dreamwood/story-loom`, a separate repository) — a generative
   story app (Nuxt studio + Elysia API + Postgres/Redis, auth). **Already has a
   substantial MCP layer** (`apps/api/src/features/mcp/` — ~10 tool modules over
   stories/storylines/context/library/structure, stateless per-request,
