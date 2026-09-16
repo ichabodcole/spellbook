@@ -1,16 +1,16 @@
 ---
 type: backlog
-title: "Twelve dead cross-references, surfaced the day the docs lint arrived"
+title: "Sixteen dead references, surfaced the day the docs lint arrived"
 description:
-  Twelve markdown links in docs/ point at files that do not exist, found by the
-  frontmatter lint rather than by any reader — five targets merely moved into
-  _archive, three name a path that appears never to have existed
+  Sixteen references in docs/ resolve to nothing — twelve links to missing files
+  and four to missing anchors — found by the lint rather than by any reader, and
+  they are what stands between this repo and turning the docs gate on
 status: stable
 lifecycle: open
 generated: { by: unknown, at: 2026-09-15 }
 ---
 
-# Twelve dead cross-references, surfaced the day the docs lint arrived
+# Sixteen dead references, surfaced the day the docs lint arrived
 
 **Severity:** low — nothing is broken at runtime. **Found:** 2026-09-15, by
 `pdocs check`'s `MISSING FILE` rule on its first run, during the `docs_version`
@@ -72,6 +72,37 @@ editing at the time.
 name the sprint that was meant, or delete the sentence — and for the
 `.anthill/retro.md` case, the target is deliberately outside the tree, so the
 honest fix may be to stop linking it at all.
+
+## ⛔ And four MISSING ANCHOR problems, which the first pass of this item missed
+
+It claimed twelve. It is sixteen. The first survey grepped only for
+`MISSING FILE`, so four `MISSING ANCHOR` problems — links to a `#section` that
+is not a heading — went uncounted. They are one cluster, in a single sprint
+folder, and read like headings that were renamed after the links were written:
+
+- `projects/spell-hardening/sprints/03-what-close-takes-with-it/decisions.md` →
+  `#a5`, `#a7`, `#b`
+- `projects/spell-hardening/sprints/03-what-close-takes-with-it/plan.md` →
+  `./decisions.md#b`
+
+⚠ **The lesson is the same one this item is about, turned on itself:** a survey
+that greps for one problem kind reports one problem kind. The authoritative
+population is what the tool prints, not what a reader thought to look for.
+
+## What this actually blocks, measured
+
+`lint.adopting: true` is the only reason the gate exits 0 today. Tested by
+flipping it locally and reverting:
+
+```
+lint.adopting: false  →  pdocs check exits 9, 16 problem(s)
+                         12 MISSING FILE · 4 MISSING ANCHOR
+```
+
+So these sixteen are precisely what stands between this repository and a docs
+gate that can fail. Until they are fixed, `adopting` stays on and the wired
+check runs without teeth — which is deliberate and is the migration guide's own
+advice, but should not be mistaken for the gate being live.
 
 ## Related
 
