@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.0.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.0.0...spellbook-v3.0.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **build:** pin NODE_ENV, so a surface stops killing its own tab while idle ([ad99526](https://github.com/ichabodcole/spellbook/commit/ad9952653631c99d12e7f289433ace68c43455b4))
+* **docs:** three links that resolved on one machine, and a gate pushed red ([eb012b7](https://github.com/ichabodcole/spellbook/commit/eb012b7f6bb6ed2ff606a468c83571bb28bd4c2b))
+
 ## [3.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v2.2.0...spellbook-v3.0.0) (2026-09-15)
 
 
