@@ -1,3 +1,14 @@
+---
+type: backlog
+title: "The unclosed unit — a terminal artifact that nothing can require"
+status: stable
+description:
+  Documenting an omission feels like discharging the obligation, but nothing can
+  verify the difference between a gap record and the missing artifact itself
+lifecycle: promoted
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # The unclosed unit — a terminal artifact that nothing can require
 
 **Filed:** 2026-08-10 · **Routes to:** `project-docs`

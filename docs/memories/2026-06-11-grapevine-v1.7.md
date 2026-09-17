@@ -1,6 +1,16 @@
-# Grapevine V1.7 — human as a first-class participant
+---
+type: memory
+title: "Grapevine V1.7 — human as a first-class participant"
+description:
+  Grapevine V1.7 shipped human-as-participant features (identity, join/lurk,
+  threading, archive) on an Alpine-ported watch surface, validated by a live
+  human+agent soak that caught two bugs
+tags: [grapevine, alpine-surface, soak-test, identity]
+status: stable
+generated: { by: unknown, at: 2026-06-11 }
+---
 
-**Date:** 2026-06-11
+# Grapevine V1.7 — human as a first-class participant
 
 Shipped grapevine V1.7: the human is now a real participant from the browser
 watch surface — named identity (per-HOME `alias` config + `GET /identity`), a

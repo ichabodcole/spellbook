@@ -1,6 +1,16 @@
-# Astrolabe built, then surface re-homed CDN → bundled React
+---
+type: memory
+title: "Astrolabe built, then surface re-homed CDN → bundled React"
+description:
+  Astrolabe's cross-project observatory daemon was built and verified, then its
+  surface was re-homed from Tailwind Play CDN to a bundled React+Bun+Tailwind-v4
+  stack after discovering the CDN silently no-ops @apply
+tags: [astrolabe, react-scaffold, tailwind, surface-migration]
+status: stable
+generated: { by: unknown, at: 2026-06-30 }
+---
 
-**Date:** 2026-06-30
+# Astrolabe built, then surface re-homed CDN → bundled React
 
 Built the **astrolabe** spell — a cross-project observatory conjuration
 (singleton Bun daemon + thin cli + browser surface; layers = durable registry /
@@ -18,7 +28,7 @@ unchanged in re-home), `.../astrolabe/surface/**` (React surface),
 `.../astrolabe/{bunfig.toml,tsconfig.json,SKILL.md}`
 
 **Docs:**
-[Session](../projects/cross-project-observatory/sessions/2026-06-30-astrolabe-build-and-react-rehome.md)
-· [Proposal](../projects/cross-project-observatory/proposal.md) ·
+[Session](../projects/_archive/cross-project-observatory/sessions/2026-06-30-astrolabe-build-and-react-rehome.md)
+· [Proposal](../projects/_archive/cross-project-observatory/proposal.md) ·
 [Scaffold investigation](../backlog/2026-06-30-react-scaffold-as-default-investigation.md)
 (the re-home is its active pilot)

@@ -1,7 +1,14 @@
-# Grapevine Conversion — the rewrite journal
+---
+type: artifact
+title: "Grapevine Conversion — the rewrite journal"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Step-by-step record of the rewrite phase, with the process, what was built,
+  and the gotchas encountered."
+---
 
-**Status:** live · **Started:** 2026-09-05 · **Author:** the implementing agent
-(Claude Code, session `session_01BiZGj5ZTDSZi1mB8YtuRcx`)
+# Grapevine Conversion — the rewrite journal
 
 The raw material for the porting playbook's rewrite phase. Written in the order
 the work actually happened, for the agent who converts bounty or digestify next

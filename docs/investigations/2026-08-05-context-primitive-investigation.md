@@ -1,7 +1,15 @@
-# Investigation: Context as a First-Class Primitive Across Spells
+---
+type: investigation
+title: Context as a First-Class Primitive Across Spells
+status: stable
+lifecycle: active
+description:
+  Evaluating context as a shared, first-class primitive across spell surfaces
+  for improved collaboration.
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Date Started:** 2026-08-05 **Investigator:** Claude Code (with Cole)
-**Status:** Active **Outcome:** In Progress
+# Investigation: Context as a First-Class Primitive Across Spells
 
 > **Companion to
 > [the communication-log primitive investigation](./2026-08-05-message-log-primitive-investigation.md).**

@@ -1,11 +1,14 @@
-# OKF and links between documents — the plan
+---
+type: artifact
+title: "OKF and links between documents — the plan"
+description:
+  Plan for implementing Open Knowledge Format frontmatter and inter-document
+  link support in Scriptorium
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
 
-**Status:** proposed, nothing built. Written 2026-09-11 after Cole asked for it
-before the chat slice: "we would have a sort of standard we support … maybe we
-can show a graph of the documents, we could render different things that are in
-that markdown as different statuses in the UI … and if you bring in a document
-that doesn't have it, there should probably be some sort of option to maybe
-automatically add it or help you add it."
+# OKF and links between documents — the plan
 
 Sources read: the spec
 ([OKF 0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)),

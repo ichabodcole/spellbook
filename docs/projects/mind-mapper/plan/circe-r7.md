@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "circe — Round 7 lane (surface)"
+description:
+  Circe's Round 7 surface lane with four zero-engine-dependency items and
+  deferred P2 work pending the tags wire from daedalus
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # circe — Round 7 lane (surface)
 
 Owner: circe (surface). Branch `feature/mind-mapper-round7`. Board card

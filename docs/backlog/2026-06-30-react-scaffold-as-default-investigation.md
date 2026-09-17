@@ -1,6 +1,16 @@
-# Investigate: move to a React-based scaffold as the default for all spells
+---
+type: backlog
+title:
+  "Investigate: move to a React-based scaffold as the default for all spells"
+status: stable
+description:
+  Investigate whether React should become the default scaffold for all spells
+  instead of light/heavy divide
+lifecycle: open
+generated: { by: unknown, at: 2026-06-30 }
+---
 
-**Added:** 2026-06-30
+# Investigate: move to a React-based scaffold as the default for all spells
 
 **Type:** Investigation (not a build task — produces a recommendation, and if
 favorable, a scaffold proposal). Pick up **after the astrolabe work wraps.**

@@ -1,12 +1,16 @@
-# Backlog — spell daemons accept a WebSocket (and a POST) from any web page
+---
+type: backlog
+title:
+  "Backlog — spell daemons accept a WebSocket (and a POST) from any web page"
+status: stable
+description:
+  Spell daemons on 127.0.0.1 accept WebSocket connections and POSTs from any web
+  page in the browser, bypassing CORS and trusting any origin
+lifecycle: open
+generated: { by: unknown, at: 2026-09-11 }
+---
 
-**Status:** ✅ **CLOSED 2026-09-14 — `c010f80e`.** Captured 2026-09-11 by
-scriptorium's slice-A verify pass; closed at the release that would have changed
-who was exposed. The guard is `src/kit/wire/origin.ts`, called by all nine
-servers and held there by `grimoire/origin-guard-ward.test.ts`, with real
-over-the-wire 403s in the four spells that own a spawn harness and a browser
-drive against bounty (attacker page on a foreign origin: WebSocket refused,
-`/state` and `/cmd` unreadable).
+# Backlog — spell daemons accept a WebSocket (and a POST) from any web page
 
 ⚠ **THE SEVERITY LINE BELOW WAS NEVER EVIDENCED, and a cold reader caught it.**
 It read _"state tampering, not file writes — for every spell except the one

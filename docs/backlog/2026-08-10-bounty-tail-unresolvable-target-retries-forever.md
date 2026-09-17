@@ -1,3 +1,15 @@
+---
+type: backlog
+title:
+  "`bounty tail` retries forever at exit 0 when its target can never resolve"
+status: stable
+description:
+  Fix bounty tail infinite retry loop when target board or list becomes
+  unresolvable
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `bounty tail` retries forever at exit 0 when its target can never resolve
 
 **Filed:** 2026-08-10 · **Status:** open, unsized · **Board card:** `s5-6` ·

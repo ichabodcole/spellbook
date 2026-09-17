@@ -1,9 +1,14 @@
-# Bounty — Idiomatic Kanban Feature Audit
-
-**Created:** 2026-06-16 **Status:** Current **Spell:** `spellbook/bounty`
-**Source:** board task `kanban-audit` (#20)
-
 ---
+type: report
+title: "Bounty — Idiomatic Kanban Feature Audit"
+description:
+  Bounty kanban feature audit evaluating existing capabilities and planned
+  features against intentional design boundaries.
+status: stable
+generated: { by: unknown, at: 2026-06-16 }
+---
+
+# Bounty — Idiomatic Kanban Feature Audit
 
 ## Overview
 

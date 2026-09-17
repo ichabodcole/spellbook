@@ -1,8 +1,14 @@
-# Bounty Conversion — the brief
+---
+type: artifact
+title: "Bounty Conversion — the brief"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Implementation handoff specifying what to build and where the rails are, with
+  the mission, fidelity ruling, and playbook reference."
+---
 
-**Created:** 2026-09-06 · **Author:** Cole Reed (rulings) + Claude Code
-(orchestrator) · **Mode:** loose — a brief, not a plan. Write your own plan
-under this folder if you want one, or work straight from this document.
+# Bounty Conversion — the brief
 
 **There is no proposal for this branch, and that is deliberate.** Grapevine's
 conversion needed one because nobody had done a rewrite yet. That question is

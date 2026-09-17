@@ -1,8 +1,15 @@
-# Project Summary
+---
+type: summary
+title: Project Summary
+status: stable
+generated: { by: unknown, at: 2026-06-29 }
+description:
+  Snapshot of Spellbook's shipped spells, current direction and recent work,
+  with an explicit boundary marking what is stale since the last partial refresh
+tags: [overview, status, spells, roadmap]
+---
 
-**Last Updated:** 2026-06-29 · **"Current Direction" refreshed 2026-08-10** ·
-**Project Status:** Active Development (hardening + coherence toward a public
-release)
+# Project Summary
 
 > ⚠ **Partially refreshed, and the boundary matters.** The 2026-08-10 sweep
 > rewrote **"Current Direction"** only, because archiving four projects

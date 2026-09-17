@@ -1,9 +1,15 @@
-# Investigation: Retrofitting agent co-presence onto human-first apps
-
-**Date Started:** 2026-07-14 **Investigator:** Cole Reed + Claude Code
-**Status:** Active **Outcome:** In Progress
-
 ---
+type: investigation
+title: Retrofitting agent co-presence onto human-first apps
+status: stable
+lifecycle: active
+description:
+  Active exploration of adding co-presence via sidecar session daemon and
+  CLI-with-tail to retrofitto human-first apps.
+generated: { by: unknown, at: 2026-07-14 }
+---
+
+# Investigation: Retrofitting agent co-presence onto human-first apps
 
 ## Question / Motivation
 
@@ -34,11 +40,11 @@ Sub-questions that motivated this:
 
 **Pilot candidates (deliberately contrasting):**
 
-- [dream-flute](/Users/colereed/Projects/dreamwood/dream-flute) — a
-  browser-based generative-soundscape studio (Nuxt/Vue, client-side only,
-  Rust→WASM DSP engine). Built entirely human-first; **no backend, no agent
-  affordances** today.
-- [story-loom](/Users/colereed/Projects/dreamwood/story-loom) — a generative
+- dream-flute (`dreamwood/dream-flute`, a separate repository) — a browser-based
+  generative-soundscape studio (Nuxt/Vue, client-side only, Rust→WASM DSP
+  engine). Built entirely human-first; **no backend, no agent affordances**
+  today.
+- story-loom (`dreamwood/story-loom`, a separate repository) — a generative
   story app (Nuxt studio + Elysia API + Postgres/Redis, auth). **Already has a
   substantial MCP layer** (`apps/api/src/features/mcp/` — ~10 tool modules over
   stories/storylines/context/library/structure, stateless per-request,

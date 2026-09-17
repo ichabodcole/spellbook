@@ -1,10 +1,15 @@
-# glamour acc L0 — the characterization harness for the port
+---
+type: proposal
+title: "glamour acc L0 — the characterization harness for the port"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+description:
+  "Why we are building the acc characterization harness now before the glamour
+  port, what it blocks, and the phased approach."
+lifecycle: implemented
+---
 
-**Status:** **CONFORMANT (L0) as of 2026-09-03, acc 0.1.11** — the before-run
-and the fix are in
-[`sessions/2026-09-03-glamour-acc-l0.md`](./sessions/2026-09-03-glamour-acc-l0.md);
-criterion 2 (the after-port re-run) and criterion 3 (the gate ruling) remain
-open · **Created:** 2026-09-02 **Author:** Cole Reed + Claude Code
+# glamour acc L0 — the characterization harness for the port
 
 > **Deliberately thin, and deliberately has no `plan.md`.** The `acc` kit
 > carries the instructions — `STANDARD.md`, `CHARTER.md`, and `acc check`

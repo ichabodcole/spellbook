@@ -1,3 +1,12 @@
+---
+type: memory
+title: "Memory — mind-mapper dogfood drive #6 + Round 6 merge (2026-07-22)"
+description: Mind-mapper's dogfood drive #6 verified delete, propose-batch at scale and the read verb live, served as Round 6's human gate, and surfaced the async job-queue idea Cole called very important for the future multi-agent runtime
+tags: [mind-mapper, dogfood, round-6, merge, job-queue]
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Memory — mind-mapper dogfood drive #6 + Round 6 merge (2026-07-22)
 
 Drive #6 (board `music-session-6`: Carlos Niño connections + instrumentation +

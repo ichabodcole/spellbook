@@ -1,3 +1,15 @@
+---
+type: backlog
+title:
+  "`bounty update --stdin` writes the TITLE, and `valuesIgnored: null` reports a
+  false negative on a data-destroying path"
+status: stable
+description:
+  Fix bounty update command to correctly route stdin to body not title field
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # `bounty update --stdin` writes the TITLE, and `valuesIgnored: null` reports a false negative on a data-destroying path
 
 **Filed:** 2026-08-10 · **Status:** **open — the CODE defect is untouched**; a

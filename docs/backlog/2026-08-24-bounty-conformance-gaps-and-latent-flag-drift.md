@@ -1,3 +1,16 @@
+---
+type: backlog
+title:
+  "bounty: conformance gaps grapevine just fixed, plus a latent
+  declared-vs-accepted drift"
+status: stable
+description:
+  bounty's CLI violates three core conformance rules and has a version-skew
+  hazard similar to grapevine, discovered when grapevine was being fixed
+lifecycle: open
+generated: { by: unknown, at: 2026-08-24 }
+---
+
 # bounty: conformance gaps grapevine just fixed, plus a latent declared-vs-accepted drift
 
 **Found:** 2026-08-24, during the standard-grapevine working session (acc +

@@ -1,8 +1,14 @@
-# Grapevine UX — the journal
+---
+type: artifact
+title: "Grapevine UX — the journal"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Process guide for the next agent adding human parity, with what the daemon
+  needs, how the inventory was amended, and gotchas with fixes."
+---
 
-**Status:** live · **Started:** 2026-09-05 · **Author:** the implementing agent
-(Claude Code, session `session_01BiZGj5ZTDSZi1mB8YtuRcx`) · **Branch:**
-`feat/grapevine-ux`
+# Grapevine UX — the journal
 
 The process, in order, for the agent who adds human parity to bounty or
 digestify next: what a "same as the agent" action needs from the daemon, how the

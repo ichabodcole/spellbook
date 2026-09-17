@@ -1,3 +1,16 @@
+---
+type: backlog
+title:
+  "`.bun-version` pins the ambient Bun; a DIFFERENT Bun builds every artifact we
+  ship"
+status: stable
+description:
+  .bun-version pins the CLI's Bun version, but each spell's dist is built by
+  whatever Bun version is installed, creating undeclared transitive dependencies
+lifecycle: open
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `.bun-version` pins the ambient Bun; a DIFFERENT Bun builds every artifact we ship
 
 **Filed:** 2026-09-02 · **Status:** open · **Severity:** the reproduction basis

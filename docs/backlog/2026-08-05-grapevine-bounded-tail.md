@@ -1,7 +1,15 @@
-# Grapevine: bounded / non-follow mode for `tail` (history backfill)
+---
+type: backlog
+title: "Grapevine: bounded / non-follow mode for `tail` (history backfill)"
+status: stable
+description:
+  Implement bounded tail with message limit in grapevine to prevent unbounded
+  history growth
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Added:** 2026-08-05 · **Tracks:** GitHub issue
-[#75](https://github.com/ichabodcole/spellbook/issues/75)
+# Grapevine: bounded / non-follow mode for `tail` (history backfill)
 
 `grapevine tail --from-start` streams history and then goes **live** (follows).
 A joining seat that only wants to **backfill the vine's existing history** and
@@ -40,7 +48,7 @@ The consume-mode story it completes: **push = Monitor, episodic = drain.**
 - Context: anthill multi-seat session (Operator monorepo); the join-history
   backfill hit this repeatedly
 - ⚠ Coordinate with
-  [`2026-08-05-cli-stdout-truncation-on-pipe.md`](./2026-08-05-cli-stdout-truncation-on-pipe.md)
+  [`2026-08-05-cli-stdout-truncation-on-pipe.md`](./_archive/2026-08-05-cli-stdout-truncation-on-pipe.md)
   — a bounded dump that exits is **exactly** the shape that loses its tail to
   the `process.exit` truncation bug. Fix the drain first, or this ships a new
   way to silently lose history.

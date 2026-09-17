@@ -1,7 +1,15 @@
-# Spellbook Rebrand — unify the spells under one cute-occult aesthetic
+---
+type: proposal
+title: "Spellbook Rebrand — unify the spells under one cute-occult aesthetic"
+description:
+  Proposal to rebrand spells under a unified cute-occult aesthetic, noting that
+  mechanical fixes are blocked by unmade aesthetic decisions
+lifecycle: deferred
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Status:** In Progress — naming complete, visual front open · **Created:**
-2026-05-29 · **Updated:** 2026-08-10 · **Author:** Cole Reed (with familiar)
+# Spellbook Rebrand — unify the spells under one cute-occult aesthetic
 
 > **The 2026-08-10 sweep confirmed this status line and sharpened the
 > sequencing** — the one status line in the repo that turned out to be right.

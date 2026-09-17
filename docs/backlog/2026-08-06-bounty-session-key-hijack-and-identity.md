@@ -1,6 +1,17 @@
-# Bounty: a session key can be hijacked, and a read cannot say which board answered
+---
+type: backlog
+title:
+  "Bounty: a session key can be hijacked, and a read cannot say which board
+  answered"
+status: stable
+description:
+  Address session key hijack vulnerability and clarify session identity
+  semantics
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# Bounty: a session key can be hijacked, and a read cannot say which board answered
 
 Found during the `spell-hardening` P0 ratify round, by having it happen to the
 team twice in forty minutes. **Not among the fourteen issues that project
@@ -41,7 +52,7 @@ exactly like a right one, exit 0.**
 - Team board `k-spellbook-f4249899` died twice on 2026-08-06 (`daemon.log`,
   `reason:"close"`, `subscribers:3` then `subscribers:0`). The first is fully
   explained by the test-suite hijack — see
-  [`spell-hardening` Phase 0e](../projects/spell-hardening/plan.md). **The
+  [`spell-hardening` Phase 0e](../projects/spell-hardening/roadmap.md). **The
   second is unexplained and deliberately left unattributed**, because two wrong
   attributions-from-proximity were made and retracted the same evening.
 - The stranger-board read and the misleading `no such task` were found

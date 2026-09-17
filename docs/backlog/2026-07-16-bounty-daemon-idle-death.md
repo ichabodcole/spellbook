@@ -1,8 +1,15 @@
-# Bounty: daemon idle-dies mid-session (reliability, priority: high)
+---
+type: backlog
+title: "Bounty: daemon idle-dies mid-session (reliability, priority: high)"
+status: stable
+description:
+  Implement graceful daemon termination after idle timeout to prevent resource
+  leaks
+lifecycle: open
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Added:** 2026-07-16 · **Tracks:** GitHub issue
-[#64](https://github.com/ichabodcole/spellbook/issues/64) (bug, area: board,
-priority: high)
+# Bounty: daemon idle-dies mid-session (reliability, priority: high)
 
 The board daemon **dies during active sessions** — 4 times in one dream-flute
 anthill session, **even with a host keep-alive tail running** — forcing teams to

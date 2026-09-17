@@ -28,3 +28,7 @@ bun.lock
 
 # Copied in verbatim from the acc kit by `bunx skills add`; keep byte-identical to the pin
 .claude/skills/acc/
+
+# Installed verbatim by project-docs' migration; SCHEMA.md classes it OWNED
+# ("overwrites, every time"), so formatting it guarantees a future conflict
+scripts/pdocs/

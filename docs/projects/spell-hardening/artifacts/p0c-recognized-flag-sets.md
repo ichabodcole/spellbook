@@ -1,3 +1,14 @@
+---
+type: artifact
+title:
+  "P0c prerequisite — the recognized-flag sets for the five accumulator parsers"
+description:
+  Enumeration of recognized flag sets for the five accumulator CLI parsers,
+  extracted from consumption sites across the codebase
+status: stable
+generated: { by: unknown, at: 2026-08-06 }
+---
+
 # P0c prerequisite — the recognized-flag sets for the five accumulator parsers
 
 **Owner:** `thoth` · **Ruled** a P0c prerequisite at comms #235 · **Card**

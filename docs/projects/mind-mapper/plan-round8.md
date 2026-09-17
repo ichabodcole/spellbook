@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Round 8 plan — surface polish: shadcn overlays + unified action model"
+description:
+  Round 8 plan with six surface-only findings from drive 7, focused on porting
+  overlay UI to shadcn primitives and unifying the action model
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Round 8 plan — surface polish: shadcn overlays + unified action model
 
 **Source:** `drive7-findings.md` (drive #7, human gate on the R7 build). Six

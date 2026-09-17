@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Sprint 05 outcome — The gate"
+description:
+  Sprint 05 outcome written at the merge, documenting rule enforcement work that
+  closed no issues and shipped no spell behavior
+status: stable
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # Sprint 05 outcome — The gate
 
 **Sprint:** 05, `the gate` · **Branch:** `fix/spell-hardening-05` · **Base:**

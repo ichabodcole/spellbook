@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Dogfood drive #7 — findings (2026-07-22)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+description:
+  "Findings from drive 7, with insights into the node/edge model and
+  relationship representation."
+---
+
 # Dogfood drive #7 — findings (2026-07-22)
 
 Casting agent: prospero. Build under test: Round 7, `feature/mind-mapper-round7`

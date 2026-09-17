@@ -1,3 +1,14 @@
+---
+type: backlog
+title: Ward 1a pins dynamic escapes by STRING and never checks the target exists
+status: stable
+description:
+  Ward 1a validates dynamic imports by string comparison alone, accepting pinned
+  escapes that point to non-existent files
+lifecycle: open
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # Ward 1a pins dynamic escapes by STRING and never checks the target exists
 
 **Filed:** 2026-09-02 · **Status:** open · **Found by:** cassandra, during the

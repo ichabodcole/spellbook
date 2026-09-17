@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Grapevine Conversion — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Live record of choices made during the conversion, with the options not taken
+  and the reasoning."
+---
+
 # Grapevine Conversion — decision log
 
 Live log of choices and the options not taken. Append; never reconstruct.

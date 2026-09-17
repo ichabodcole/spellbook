@@ -1,7 +1,17 @@
-# Mind-mapper V1.x (Track A) built and gate-passed
+---
+type: memory
+title: Mind-mapper V1.x (Track A) built and gate-passed
+description:
+  Mind-mapper Track A shipped nine dogfood-driven findings in one anthill round
+  (disconnect banner, self-healing tail, doc context menu, stigmergic status
+  marks) and surfaced the lesson that subagent re-dispatches must be verified by
+  thread not seat
+tags: [mind-mapper, anthill, track-a, dogfood]
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+---
 
-**Date:** 2026-07-17 · **Branch:** `feature/mind-mapper-v1x` (awaiting Cole's
-look + merge)
+# Mind-mapper V1.x (Track A) built and gate-passed
 
 One anthill round (prospero/daedalus/circe/cassandra, subagent mode) built all
 nine Track A drive findings from dogfood drive #1: disconnect banner,

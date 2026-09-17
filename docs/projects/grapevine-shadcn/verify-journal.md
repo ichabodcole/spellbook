@@ -1,9 +1,14 @@
-# Grapevine shadcn — the verify journal
+---
+type: artifact
+title: "Grapevine shadcn — the verify journal"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Step-by-step record of the verification phase, with what was tested, the
+  findings, and the fixes required."
+---
 
-**Status:** done · **Date:** 2026-09-05 · **Author:** the verify agent (Claude
-Code, no stake — did not write the code) · **Branch:** `feat/grapevine-shadcn`
-at `21b1b5c` (develop..HEAD = brief `1420490`, config `f271257`, primitives
-`d0510ec`, rules `a186b0d`, wards `21b1b5c`)
+# Grapevine shadcn — the verify journal
 
 A cold run of the branch's claims, a cold drive of the behaviour inventory, and
 a read of the diff — in the order it happened, for whoever verifies the shadcn

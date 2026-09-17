@@ -1,9 +1,18 @@
-# Committing `dist/` puts every test in release mode — so the dev path is asserted nowhere
+---
+type: backlog
+title:
+  "Committing `dist/` puts every test in release mode — so the dev path is
+  asserted nowhere"
+status: stable
+description:
+  Committing dist/ triggers release mode detection, causing all tests to run in
+  release mode and leaving the dev-only code path (serve bundling, HMR)
+  unexercised by any test
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `daedalus` during spell-kit sprint 01's
-1a, stated again as an honest limit at 1c · **Scope:** astrolabe, imago,
-mind-mapper — **all three relocated spells** · **Severity:** medium — no defect
-today, but a whole branch of Contract 1 has no cell
+# Committing `dist/` puts every test in release mode — so the dev path is asserted nowhere
 
 ## The mechanism
 

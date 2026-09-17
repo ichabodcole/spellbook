@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Dogfood drive #6 — findings (2026-07-22)"
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+description:
+  "Findings from drive 6, with discoveries about the casting agent role and its
+  interaction with the board."
+---
+
 # Dogfood drive #6 — findings (2026-07-22)
 
 ## Triage (at wrap — Cole "close out and implement the updates")

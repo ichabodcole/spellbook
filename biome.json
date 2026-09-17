@@ -11,7 +11,8 @@
       "!!**/out",
       "!!**/coverage",
       "!!**/target",
-      "!!**/.anthill"
+      "!!**/.anthill",
+      "!!**/scripts/pdocs"
     ]
   },
   "formatter": {

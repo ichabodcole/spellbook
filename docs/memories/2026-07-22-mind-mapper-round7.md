@@ -1,3 +1,15 @@
+---
+type: memory
+title: "Memory — mind-mapper Round 7 built + gate-passed (2026-07-22)"
+description:
+  Mind-mapper Round 7 shipped the controlled-folksonomy tags system, faceted
+  filtering, directional select and backlinks, with gate catching a real silent
+  bug where propose --stdin dropped top-level tags
+tags: [mind-mapper, anthill, round-7, tags]
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Memory — mind-mapper Round 7 built + gate-passed (2026-07-22)
 
 Same day as drive #6 + the Round 6 merge: Round 7 convened, built, cold-gate

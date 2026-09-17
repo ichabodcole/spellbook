@@ -1,9 +1,13 @@
-# CLI: a FAILED read and a legitimate EMPTY result are the same output
+---
+type: backlog
+title: "CLI: a FAILED read and a legitimate EMPTY result are the same output"
+status: stable
+description: Disambiguate between empty read and failed read in CLI output
+lifecycle: open
+generated: { by: unknown, at: 2026-08-08 }
+---
 
-**Added:** 2026-08-08 · **Found by:** the P1c/`#79` drive, sprint 03
-(`t-991ab386`) · **Scope:** house-wide — **7 sites across 3 spells**, with 2
-further spells already carrying the correct shape (see _Denominator_ for why
-this is stated by site rather than by verb name)
+# CLI: a FAILED read and a legitimate EMPTY result are the same output
 
 > ## ⚠ A known success-shaped lie is shipping unfixed
 >

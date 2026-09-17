@@ -1,10 +1,17 @@
-# magpie hand-rolls scale math around a `Bun.Image` option that does exist
+---
+type: backlog
+title:
+  "magpie hand-rolls scale math around a `Bun.Image` option that does exist"
+status: stable
+description:
+  magpie reimplements scaling logic that Bun.Image already provides via
+  withoutEnlargement; resolved by deletion of the dead code during surface
+  relocation
+lifecycle: done
+generated: { by: unknown, at: 2026-08-30 }
+---
 
-**Added:** 2026-08-30 · **Status:** **CLOSED 2026-08-31 — RESOLVED BY DELETION,
-NOT BY FIX** · **Found by:** settling the census's image-optimize contradiction
-by running it · **Scope:** magpie, ~10 lines · **Severity:** low — **no
-behavioural defect**, the code is correct; it is just unnecessary, and the
-comment justifying it is false
+# magpie hand-rolls scale math around a `Bun.Image` option that does exist
 
 ## CLOSED — the file was deleted, not corrected (spell-kit sprint 03, magpie's surface port)
 

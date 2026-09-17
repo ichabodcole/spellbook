@@ -1,9 +1,15 @@
-# Sprint 03 — What close takes with it
+---
+type: plan
+title: "Sprint 03 — What close takes with it"
+description:
+  Sprint 03 plan with line numbers pinned to a specific commit, noting that six
+  claims were falsified during the ratify round
+status: stable
+lifecycle: completed
+generated: { by: unknown, at: 2026-08-07 }
+---
 
-**Created:** 2026-08-07 · **Status:** 🟢 RATIFIED — scope cut and lanes open ·
-**Base sha:** `003af0d` (`develop`) · **Branch:** `fix/spell-hardening-03` ·
-**Project:** [Spell Hardening](../../README.md) ·
-[proposal.md](../../proposal.md) · **[decisions.md](./decisions.md)**
+# Sprint 03 — What close takes with it
 
 **Predecessor:** [sprint 02 outcome](../02-success-shaped-lies/outcome.md) —
 read it before this.
@@ -26,10 +32,10 @@ read it before this.
 >
 > **⛔ Six claims in this document were falsified by measurement. They are
 > marked `⛔ FALSIFIED` inline and indexed in
-> [`decisions.md` §B](./decisions.md#b). Where a falsified claim and a ratified
-> one disagree, the ratified one wins — and the falsified text is kept rather
-> than deleted, because a plan that quietly heals looks like one that was
-> right.**
+> [`decisions.md` §B](./decisions.md#b-corrections-and-falsifications). Where a
+> falsified claim and a ratified one disagree, the ratified one wins — and the
+> falsified text is kept rather than deleted, because a plan that quietly heals
+> looks like one that was right.**
 >
 > **Base sha corrected:** the header said `e582150` while the branch was cut at
 > `003af0d` — two commits ahead, **and both were this document's own rulings.**

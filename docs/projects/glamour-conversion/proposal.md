@@ -1,6 +1,15 @@
-# Glamour conversion — the fifth spell builds, surface and backend
+---
+type: proposal
+title: "Glamour conversion — the fifth spell builds, surface and backend"
+status: stable
+generated: { by: unknown, at: 2026-09-02 }
+description:
+  "Why glamour should be the fifth spell to build, why it goes first among the
+  remaining spells, and the port strategy."
+lifecycle: implemented
+---
 
-**Status:** Draft **Created:** 2026-09-02 **Author:** Cole Reed + Claude Code
+# Glamour conversion — the fifth spell builds, surface and backend
 
 > **This is the first port that runs entirely on the playbook.** spell-kit built
 > the pipeline and proved it on four spells; magpie was the playbook's first

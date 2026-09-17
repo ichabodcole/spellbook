@@ -1,9 +1,17 @@
+---
+type: backlog
+title:
+  The tail loop's stream reader is never cancelled, so the P0f fix cannot land
+  as a shape fix
+status: stable
+description: Unblock P0F fix by resolving tail reader lifecycle blocking issue
+lifecycle: open
+generated: { by: unknown, at: 2026-08-08 }
+---
+
 # The tail loop's stream reader is never cancelled, so the P0f fix cannot land as a shape fix
 
 **Found:** 2026-08-08, spell-hardening sprint 03, card `t-df17accf` (thoth).
-**Status:** measured, not fixed. Deferred with evidence rather than attempted.
-**Blocks:** the P0f remediation at `glamour/scripts/cli.ts:484`,
-`imago/scripts/cli.ts:254`, `magpie/scripts/cli.ts:254`.
 
 ## The one-line fix replaces a truncation with a hang
 

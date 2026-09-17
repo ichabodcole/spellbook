@@ -1,10 +1,14 @@
-# Investigation: Bounty board daemon "idle-dies" mid-session (#64)
+---
+type: investigation
+title: 'Bounty board daemon "idle-dies" mid-session (#64)'
+status: stable
+lifecycle: concluded
+description:
+  Bounty board daemon was crashing mid-session when idle, the fix and analysis.
+generated: { by: unknown, at: 2026-08-07 }
+---
 
-**Date Started:** 2026-08-07 **Investigator:** Claude Code (investigator seat)
-**Status:** Concluded **Outcome:** **Proposal Recommended — but for a different
-defect than the one #64 names.** The reported failure is **not reproducible and
-never was observed**; two adjacent, fully-reproduced defects explain its
-symptom. **#64's title is a hypothesis the evidence does not support.**
+# Investigation: Bounty board daemon "idle-dies" mid-session (#64)
 
 **Measured at:** `d8e5b6f` (`develop`). `plugins/spellbook/skills/bounty/` was
 **clean for the whole session** — verified with

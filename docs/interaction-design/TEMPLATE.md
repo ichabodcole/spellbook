@@ -1,4 +1,18 @@
+---
+type: interaction # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Flow or Feature Name]"
+description: "[One sentence: what this flow lets someone do.]"
+tags: [surface, flow] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 IMPORTANT: If you haven't read the README.md in this directory, please read it first for context on when to
 create interaction design docs and what to include.
 
@@ -15,9 +29,6 @@ If your doc feels exhausting to read, you've gone too deep - focus on the journe
 -->
 
 # [Flow/Feature Name]
-
-**Created:** YYYY-MM-DD **Last Updated:** YYYY-MM-DD **Last Reviewed:**
-YYYY-MM-DD **Status:** Current | Deprecated
 
 ---
 
@@ -72,9 +83,9 @@ considered]
 
 ## Related Documentation
 
-- [Related flow](./other-flow.md)
-- [Technical architecture](../architecture/feature-architecture.md)
-- [Original proposal](../projects/project-name/proposal.md)
+- `[Related flow](./other-flow.md)`
+- `[Technical architecture](../architecture/feature-architecture.md)`
+- `[Original proposal](../projects/project-name/proposal.md)`
 
 ---
 

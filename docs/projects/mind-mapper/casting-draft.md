@@ -1,10 +1,14 @@
-# Mind Mapper — casting doc (V1 draft)
+---
+type: artifact
+title: "Mind Mapper — casting doc (V1 draft)"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+description:
+  "Instructions for agents casting the mind-mapper spell, including how verbs
+  work and the full casting sequence."
+---
 
-**Status:** Working draft (prospero, 2026-07-16). This is the minimal "how the
-casting agent runs the spell" doc the P2/P3 gates need. It is deliberately NOT
-the shipped SKILL.md — coalescence (naming, invocation phrasing, feedback
-touchpoints, subtraction pass) is thoth's work later. No seat builds against
-this wording; it drives the _cold agent_ in cassandra's gate drives.
+# Mind Mapper — casting doc (V1 draft)
 
 ## The shape (Claim A, restated once)
 

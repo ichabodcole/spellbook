@@ -1,3 +1,13 @@
+---
+type: session
+title: "2026-09-07 — the review page becomes a surface"
+description:
+  Digestify spell ported to React surface, completing the eighth and final spell
+  conversion with 138 row inventory and verification pass.
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+---
+
 # 2026-09-07 — the review page becomes a surface
 
 **Agent:** Claude Opus 5 (1M context), as the implementing agent · **Branch:**

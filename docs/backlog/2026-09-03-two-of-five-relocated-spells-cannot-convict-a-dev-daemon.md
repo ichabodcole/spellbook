@@ -1,3 +1,14 @@
+---
+type: backlog
+title: 2 of 5 relocated spells cannot convict a dev-mode daemon
+status: stable
+description:
+  Two relocated spells lack forced-dev test cells to verify their daemons fail
+  properly when the surface entry is missing in dev mode
+lifecycle: open
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # 2 of 5 relocated spells cannot convict a dev-mode daemon
 
 **Filed:** 2026-09-03 · **Measured by:** cassandra at the glamour ratify (comms

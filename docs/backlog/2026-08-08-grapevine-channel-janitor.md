@@ -1,8 +1,17 @@
-# Grapevine: a channel-janitor path (staleness view + channel kind + bulk archive)
+---
+type: backlog
+title:
+  "Grapevine: a channel-janitor path (staleness view + channel kind + bulk
+  archive)"
+status: stable
+description:
+  Add channel janitor to grapevine for cleanup of orphaned channels and message
+  retention
+lifecycle: open
+generated: { by: unknown, at: 2026-08-08 }
+---
 
-**Added:** 2026-08-08 · **Origin:** a real cleanup pass — 62 channels, 54 open,
-46 archived in one sitting. Every step below is friction actually hit, not
-speculation.
+# Grapevine: a channel-janitor path (staleness view + channel kind + bulk archive)
 
 Channels accumulate. A session opens one, the session ends, the channel stays
 `open` forever. After a few months `list` is 62 entries of which ~8 matter, and

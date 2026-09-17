@@ -1,9 +1,14 @@
-# Grapevine UX — the verify journal
+---
+type: artifact
+title: "Grapevine UX — the verify journal"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Step-by-step record of the verification phase, with what was tested, the
+  findings, and the fixes required."
+---
 
-**Status:** done · **Date:** 2026-09-06 · **Author:** the verify agent (Claude
-Code, no stake — did not write the code) · **Branch:** `feat/grapevine-ux` at
-`5fac515` (develop..HEAD = brief `024c613`, primitives + rules `c392f73`, the
-six additions `19232fd`, records + wards `5fac515`)
+# Grapevine UX — the verify journal
 
 A cold run of the branch's claims, a cold drive of the twelve new inventory rows
 (plus the two rewritten ones and a fifteen-row sample of the old contract), the

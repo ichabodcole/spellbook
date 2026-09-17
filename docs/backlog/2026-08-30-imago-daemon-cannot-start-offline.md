@@ -1,3 +1,17 @@
+---
+type: backlog
+title:
+  "imago's shipped daemon cannot start without a network: `sharp` is not in the
+  artifact"
+status: stable
+description:
+  imago's daemon fails to start without a network because sharp is an uncached
+  native dependency; fixed by switching to Bun.Image like other spells already
+  do
+lifecycle: done
+generated: { by: unknown, at: 2026-08-30 }
+---
+
 <!-- CLOSED 2026-09-02. `sharp` no longer appears on ANY shipped imago path
      (measured: 0 files under plugins/spellbook/skills/imago/ import it; the one
      remaining consumer is tests/imageOptimize.test.ts). The daemon boots at an

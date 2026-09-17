@@ -1,3 +1,12 @@
+---
+type: session
+title: "Session — mind-mapper Round 5: subgraphs + drive-4 cluster (2026-07-21)"
+description:
+  Mind-mapper Round 5 adding subgraph support with drive-4 cluster tests.
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # Session — mind-mapper Round 5: subgraphs + drive-4 cluster (2026-07-21)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

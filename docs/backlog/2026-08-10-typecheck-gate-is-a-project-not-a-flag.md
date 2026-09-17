@@ -1,3 +1,14 @@
+---
+type: backlog
+title: The typecheck gate is a project, not a flag
+status: stable
+description:
+  Running tsc reveals 436 unchecked indexing errors from a never-enforced
+  strictness setting; fixing requires choosing between three trade-off paths
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # The typecheck gate is a project, not a flag
 
 **Filed:** 2026-08-10 · **Status:** open, unsized · **Source:** measured while

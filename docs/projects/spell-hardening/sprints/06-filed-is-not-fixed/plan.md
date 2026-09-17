@@ -1,10 +1,15 @@
-# Sprint 06 — Filed is not fixed
+---
+type: plan
+title: "Sprint 06 — Filed is not fixed"
+description:
+  Sprint 06 plan scaffold created before the sprint, noting that three ratify
+  rounds have falsified claims across previous sprints
+status: stable
+lifecycle: draft
+generated: { by: unknown, at: 2026-08-11 }
+---
 
-**Created:** 2026-08-11, **before the convene** · **Status:** 🟡 **SCAFFOLD —
-argued, NOT ratified, NOT buildable** · **Branch:** not cut · **Project:**
-[Spell Hardening](../../README.md) · [roadmap.md](../../roadmap.md) ·
-**Predecessor:** [sprint 05 outcome](../05-the-gate/outcome.md) ·
-[carries](../05-the-gate/carries.md) · [cold read](../05-the-gate/cold-read.md)
+# Sprint 06 — Filed is not fixed
 
 > **✅ THIS FILE EXISTS BEFORE THE SPRINT, WHICH IS THE ONE THING SPRINT 05
 > COULD NOT SAY.** Sprint 05 was convened, scoped and built to 33 commits with

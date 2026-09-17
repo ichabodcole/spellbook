@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "daedalus's lane — mind-mapper Round 5 engine (SW1 · CLI1 · SG1 · IC-c)"
+description:
+  Daedalus's Round 5 engine implementation with four major subsystems including
+  split stall TTL, CLI commands, subgraph, and intelligence chain
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # daedalus's lane — mind-mapper Round 5 engine (SW1 · CLI1 · SG1 · IC-c)
 
 Authored against `plan-round5.md`'s **Ratified decisions & lead rulings** (the

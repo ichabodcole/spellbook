@@ -1,3 +1,13 @@
+---
+type: session
+title:
+  "Session — mind-mapper Round 4: action slots + drive-3 fixes (2026-07-19)"
+description:
+  Mind-mapper Round 4 implementing action slots with drive-3 test fixes.
+status: stable
+generated: { by: unknown, at: 2026-07-19 }
+---
+
 # Session — mind-mapper Round 4: action slots + drive-3 fixes (2026-07-19)
 
 **Team:** prospero (lead), daedalus (engine), circe (surface), cassandra (gate)

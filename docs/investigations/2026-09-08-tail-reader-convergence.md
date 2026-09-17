@@ -1,8 +1,16 @@
-# Convergence design: the SSE tail reader, seven implementations of one client
+---
+type: investigation
+title:
+  "Convergence design: the SSE tail reader, seven implementations of one client"
+status: stable
+lifecycle: concluded
+description:
+  Tail reader convergence identifying two decisions that would unify the four
+  incompatible discovery and client designs.
+generated: { by: unknown, at: 2026-09-08 }
+---
 
-**Date:** 2026-09-08 · **Status:** design closed; feeds the backend convergence
-project · **Follows:**
-[the duplication recon](./2026-09-08-backend-duplication-recon.md)
+# Convergence design: the SSE tail reader, seven implementations of one client
 
 ## Correction to the recon
 

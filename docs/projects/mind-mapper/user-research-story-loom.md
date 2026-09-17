@@ -1,9 +1,14 @@
-# Mind Mapper — User Research: story-loom interview
+---
+type: artifact
+title: "Mind Mapper — User Research: story-loom interview"
+description:
+  User research with Bobbin about Story Loom's use of collaborative markdown
+  documentation and the architecture challenge of map-as-view vs map-as-store
+status: stable
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Status:** Complete **Created:** 2026-07-16 **Method:** grapevine interview
-(channel `loom-mapper`, cartographer ↔ bobbin, the story-loom story-development
-agent; full transcript in the channel log /
-`~/.grapevine/channels/loom-mapper.jsonl`)
+# Mind Mapper — User Research: story-loom interview
 
 Bobbin co-develops the Hollowbrook story world with Cole: a Bible in Operator
 (per-entity canon docs, a Threads registry for unsettled material, story

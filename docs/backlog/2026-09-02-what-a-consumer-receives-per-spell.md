@@ -1,3 +1,16 @@
+---
+type: backlog
+title:
+  "What does a consumer receive, per spell, now that four spells ship built
+  artifacts?"
+status: stable
+description:
+  With four spells shipping built artifacts, product and cost rules need
+  restating about what consumers receive per spell
+lifecycle: open
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # What does a consumer receive, per spell, now that four spells ship built artifacts?
 
 **Filed:** 2026-09-02 · **Status:** open · **Owner: COLE** — this is a product

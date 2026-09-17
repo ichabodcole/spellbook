@@ -1,12 +1,22 @@
+---
+type: fragment
+title:
+  "A structured-capture spell — brain dump → mapped artifact (digestify's
+  inverse)"
+status: stable
+lifecycle: open
+description:
+  Brain-dump and structured capture spell that distills conversation and dumps
+  into saved, analyzed documents.
+generated: { by: unknown, at: 2026-06-20 }
+---
+
 # A structured-capture spell — brain dump → mapped artifact (digestify's inverse)
 
 > **Merged → `2026-06-30-mind-mapper-spell-concept.md`** (the consolidated
 > best-of for this spell). Kept as the origin spark — its provenance/source-span
 > mechanic, the digestify-inverse framing, and the consulting field-precedent
 > were folded into the merged doc. Same concept, captured at a different time.
-
-**Date:** 2026-06-20 **Tone:** Type 2 (curiosity / "what if we tried…") — a
-thing we'll probably build **Status:** captured spark, not yet a project
 
 ## Context
 

@@ -1,3 +1,15 @@
+---
+type: backlog
+title: "Six `die`s — the CLI boilerplate census"
+status: stable
+description:
+  Survey of six CLI utilities (CliError, sleep, session paths, etc.) that have
+  been independently reimplemented across CLIs; output scheduled as its own
+  project after glamour port
+lifecycle: open
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # Six `die`s — the CLI boilerplate census
 
 **Filed:** 2026-09-03 · **Asked by:** Cole, at the end of the glamour port ·

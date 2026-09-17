@@ -1,3 +1,13 @@
+---
+type: session
+title: "Session — 2026-09-06 · the three lifecycle routes that lied about state"
+description:
+  Three grapevine lifecycle routes fixed to correctly report channel state
+  across open, close, archive, and unarchive operations.
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # Session — 2026-09-06 · the three lifecycle routes that lied about state
 
 **Branch:** `fix/grapevine-lifecycle-routes`, cut from develop at `bf182bd` ·

@@ -1,10 +1,15 @@
-# astrolabe's Quiet disclosure has no `aria-expanded`
+---
+type: backlog
+title: "astrolabe's Quiet disclosure has no `aria-expanded`"
+status: stable
+description:
+  astrolabe's Quiet zone toggle button has no aria-expanded attribute, leaving
+  screen readers unable to report whether the region is open or closed
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `cassandra`, driving the board in a
-browser during Phase 1a's local-sim (`sk-1a-sim`) · **Scope:** astrolabe
-surface, one attribute · **Severity:** low — **no functional defect**, the
-control works in both directions; the state is simply invisible to assistive
-technology
+# astrolabe's Quiet disclosure has no `aria-expanded`
 
 ## The measurement
 

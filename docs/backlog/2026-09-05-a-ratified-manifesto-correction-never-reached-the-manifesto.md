@@ -1,3 +1,14 @@
+---
+type: backlog
+title: A ratified manifesto correction never reached the manifesto
+status: stable
+description:
+  A ratified correction to Seam C (reversing the build-feeling boundary for
+  release builds) was documented in the plan but never updated in the manifesto
+lifecycle: open
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # A ratified manifesto correction never reached the manifesto
 
 **Filed:** 2026-09-05 · **Found by:** the Contract 3 criterion sweep, looking

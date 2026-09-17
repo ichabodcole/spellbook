@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Digestify conversion — rewrite journal"
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+description:
+  "Step-by-step record of the rewrite phase, with the process, what was built,
+  and the gotchas encountered."
+---
+
 # Digestify conversion — rewrite journal
 
 **A falsification record, not a discovery record.** The playbook

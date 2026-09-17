@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Digestify Conversion — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+description:
+  "Live record of choices made during the project, with the options not taken
+  and the reasoning."
+---
+
 # Digestify Conversion — decision log
 
 Live record. Every choice, with the options not taken. Append as you go; do not

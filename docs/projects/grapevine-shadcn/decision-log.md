@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Grapevine shadcn — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Live record of choices made during shadcn primitives work, with the options
+  not taken and the reasoning."
+---
+
 # Grapevine shadcn — decision log
 
 ## 2026-09-05 — orchestrator, with Cole

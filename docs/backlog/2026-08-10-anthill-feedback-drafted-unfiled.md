@@ -1,3 +1,14 @@
+---
+type: backlog
+title: "anthill feedback — six drafts, measured, DRAFTED AND UNFILED"
+status: stable
+description:
+  Follow up on anthill team feedback that was drafted but not yet filed as
+  backlog items
+lifecycle: open
+generated: { by: unknown, at: 2026-08-10 }
+---
+
 # anthill feedback — six drafts, measured, DRAFTED AND UNFILED
 
 **Filed:** 2026-08-10 · **Source:** spell-hardening sprint 05 finalize, step 5

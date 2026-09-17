@@ -1,6 +1,15 @@
-# Glamour: `open` prints a URL and port for a daemon that is already gone
+---
+type: backlog
+title: "Glamour: `open` prints a URL and port for a daemon that is already gone"
+status: stable
+description:
+  Fix glamour open to gracefully handle and report dead daemon instead of
+  hanging
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# Glamour: `open` prints a URL and port for a daemon that is already gone
 
 Found during the `spell-hardening` P0 ratify round while fixturing a different
 defect. **Not among the fourteen**, and out of P0's scope. Same defect class as

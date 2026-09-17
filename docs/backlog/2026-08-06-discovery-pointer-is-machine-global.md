@@ -1,6 +1,17 @@
-# The spell discovery pointer is a machine-global singleton, and cleanup only runs on a graceful exit
+---
+type: backlog
+title:
+  The spell discovery pointer is a machine-global singleton, and cleanup only
+  runs on a graceful exit
+status: stable
+description:
+  Discovery pointer should be machine-global not project-local for cross-project
+  spell discovery
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# The spell discovery pointer is a machine-global singleton, and cleanup only runs on a graceful exit
 
 Found during `spell-hardening` sprint 01 by three seats independently. **Cole
 ruled 2026-08-06: file, don't fix** — the test-side harm is already closed and

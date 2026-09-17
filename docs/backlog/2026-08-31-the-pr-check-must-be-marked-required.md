@@ -1,9 +1,57 @@
+---
+type: backlog
+title:
+  "The `develop`→`main` PR check must be marked REQUIRED — and only a human can
+  do it"
+status: stable
+description:
+  The gate check for develop→main PRs must be enforced at the repository level;
+  this requires human action in GitHub settings
+lifecycle: done
+generated: { by: unknown, at: 2026-08-31 }
+---
+
 # The `develop`→`main` PR check must be marked REQUIRED — and only a human can do it
 
-**Added:** 2026-08-31 · **Raised by:** `cassandra` (release-staleness spike) ·
-**Owner: COLE. Not the team's, and not because of scope — because an agent
-cannot do it.** · **Blocked on:** the CI workflow existing at all ·
-**Severity:** medium, and **latent**
+## ✅ CLOSED — ALREADY DONE ON 2026-09-01, AND NOBODY NOTICED FOR TWO WEEKS
+
+Repository ruleset **"Main Gate"** (id `22059514`) was created
+**2026-09-01T18:39:36-07:00** — the day after this item was filed — is
+`enforcement: active`, targets `~DEFAULT_BRANCH`, and carries
+`required_status_checks` with exactly `{"context": "gate"}` alongside
+`deletion`, `non_fast_forward` and `pull_request` rules.
+
+Verified 2026-09-15, and not by reading:
+
+```
+gh api repos/ichabodcole/spellbook/rulesets/22059514
+gh pr checks 104   # gate  pass  4m38s   — the release PR into main
+gh pr checks 105   # gate  pass  4m25s
+```
+
+⛔ **THE COST OF NOT CLOSING IT WAS A FALSE CLAIM IN A PUBLISHED RELEASE NOTE.**
+The 3.0.0 note lists as a standing limit that _"`gate` has to be marked required
+in GitHub's settings, and no agent can do that. Until a human does, a red `gate`
+does not block a merge"_, and adds that a check which caught two real defects on
+its first outings _"is not yet allowed to block a merge."_ **Both sentences are
+wrong**, and they are frozen in the `develop`→`main` merge commit body. This
+file is the pointer that note gives for the detail, so a reader who follows it
+lands here — which is the only correction available once a merge commit is
+published.
+
+⚠ **AND THE REASONING ERROR IS THE PART WORTH KEEPING.** The note said, of the
+workflow header's assertion that a ruleset requires `gate`: _"nothing in this
+tree can confirm it — treat that sentence as an instruction to a human, not a
+statement of fact."_ The first half was true. The conclusion was not: the tree
+was never the only available source. `gh api` was one call away for the entire
+session, and the same agent used `gh` freely for PRs, runs and logs. **"Not
+verifiable from the tree" was silently upgraded to "not verifiable",** and a
+stale backlog item was taken as current state because nothing contradicted it.
+Repo configuration is observable; ask GitHub rather than inferring from a file
+that was written before the configuration existed.
+
+The workflow header's claim in `.github/workflows/ci.yml` was **correct** and
+needs no change.
 
 ## The claim this exists to stop
 

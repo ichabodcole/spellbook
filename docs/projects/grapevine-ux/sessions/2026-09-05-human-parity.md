@@ -1,3 +1,14 @@
+---
+type: session
+title:
+  "Session — 2026-09-05 · human parity: the watch surface does what the CLI does"
+description:
+  Grapevine UI enhanced to achieve feature parity with daemon capabilities
+  through additions and fixes after verify pass.
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # Session — 2026-09-05 · human parity: the watch surface does what the CLI does
 
 **Branch:** `feat/grapevine-ux` · **Shape:** orchestrator + one implementing

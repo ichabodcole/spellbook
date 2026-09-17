@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Mind Mapper — V1 drive findings (Cole's first real session)"
+status: stable
+generated: { by: unknown, at: 2026-07-17 }
+description:
+  "Findings from Cole's first real session with the spell, covering bugs,
+  hardening needs, and UX/design rulings."
+---
+
 # Mind Mapper — V1 drive findings (Cole's first real session)
 
 **Started:** 2026-07-17 · **Closed:** 2026-07-17, 15 findings · Live drive with

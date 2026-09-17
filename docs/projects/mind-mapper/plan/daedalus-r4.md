@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "daedalus's lane — mind-mapper Round 4 engine (K1 · A1 · ACT1 · B1 · R1)"
+description:
+  Daedalus's Round 4 engine lane with ratified decisions and detailed
+  implementation steps for five subsystems against Contract 9
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # daedalus's lane — mind-mapper Round 4 engine (K1 · A1 · ACT1 · B1 · R1)
 
 Authored against `plan-round4.md`'s **Ratified decisions & lead rulings** (the

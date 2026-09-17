@@ -1,7 +1,14 @@
-# Digestify Conversion — the brief
+---
+type: artifact
+title: "Digestify Conversion — the brief"
+status: stable
+generated: { by: unknown, at: 2026-09-07 }
+description:
+  "Implementation handoff specifying what to build and where the rails are, with
+  the mission, fidelity ruling, and playbook reference."
+---
 
-**Created:** 2026-09-07 · **Author:** Cole Reed (rulings) + Claude Code
-(orchestrator) · **Mode:** loose — a brief, not a plan.
+# Digestify Conversion — the brief
 
 **This is the last one.** Digestify is the eighth and final spell to port. When
 it lands, the playbook's Applicability population is closed and every spell in

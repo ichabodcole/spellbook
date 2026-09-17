@@ -1,3 +1,13 @@
+---
+type: session
+title: "glamour acc L0 — the before-run, the fix, and the after-run"
+description:
+  Glamour CLI verified for acc conformance L0 after kit release, capturing
+  before and after error envelope changes.
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+---
+
 # glamour acc L0 — the before-run, the fix, and the after-run
 
 **Session 2026-09-03 · branch `feat/glamour-acc-l0` · solo implementation with a

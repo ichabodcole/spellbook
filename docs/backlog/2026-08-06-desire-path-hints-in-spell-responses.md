@@ -1,6 +1,16 @@
-# House: a spell's response should name the desire path (the likely next act)
+---
+type: backlog
+title:
+  "House: a spell's response should name the desire path (the likely next act)"
+status: stable
+description:
+  Add desire path hints to spell responses to guide humans toward intended
+  interaction patterns
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# House: a spell's response should name the desire path (the likely next act)
 
 Cole's principle, sharpened during the `spell-hardening` ratify round:
 

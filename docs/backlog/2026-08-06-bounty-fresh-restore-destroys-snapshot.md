@@ -1,6 +1,15 @@
-# Bounty: `--fresh --restore` destroys the snapshot it is meant to restore from
+---
+type: backlog
+title:
+  "Bounty: `--fresh --restore` destroys the snapshot it is meant to restore from"
+status: stable
+description:
+  Fix bug where fresh restore in bounty overwrites snapshot with incomplete data
+lifecycle: open
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Added:** 2026-08-06
+# Bounty: `--fresh --restore` destroys the snapshot it is meant to restore from
 
 **This is a data-loss defect and it arguably outranks #80.1.** Found during the
 `spell-hardening` P0 ratify round, on the one claim the project's HANDOFF had

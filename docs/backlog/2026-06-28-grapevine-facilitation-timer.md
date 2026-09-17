@@ -1,9 +1,15 @@
-# Grapevine: timed announcements / facilitation timer
+---
+type: backlog
+title: "Grapevine: timed announcements / facilitation timer"
+status: stable
+description:
+  Add optional conversation facilitation timer to grapevine for bounded
+  discussion windows
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); V1.7 design conversation. **Scope:** proposal-sized — the
-durability/recovery open questions warrant a project folder when promoted, not a
-one-shot backlog task.
+# Grapevine: timed announcements / facilitation timer
 
 A timer primitive that fires a deferred `announce`-style message after a delay —
 for facilitating timed activities ("five-minute brainstorm — pencils down at the

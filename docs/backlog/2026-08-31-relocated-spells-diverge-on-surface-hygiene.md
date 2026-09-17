@@ -1,9 +1,18 @@
-# Two spells went through the same relocation and came out with different surface hygiene
+---
+type: backlog
+title:
+  Two spells went through the same relocation and came out with different
+  surface hygiene
+status: stable
+description:
+  astrolabe and imago followed the same relocation contracts but diverged on
+  surface hygiene—favicon guards and pre-boot styling—causing console errors and
+  rendering flicker
+lifecycle: open
+generated: { by: unknown, at: 2026-08-31 }
+---
 
-**Added:** 2026-08-31 · **Found by:** `cassandra`, driving imago's board during
-Sprint 01's 1c local-sim · **Scope:** imago surface, ~4 lines — but the finding
-is about the **scaffold**, not imago · **Severity:** low individually,
-**structural collectively**
+# Two spells went through the same relocation and came out with different surface hygiene
 
 ## The measurement
 

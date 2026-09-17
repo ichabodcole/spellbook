@@ -1,11 +1,15 @@
-# Sprint 02 — Success-shaped lies
+---
+type: plan
+title: "Sprint 02 — Success-shaped lies"
+description:
+  Sprint 02 plan with ratified rulings, alongside the separate decision log
+  documenting options not taken
+status: stable
+lifecycle: completed
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Created:** 2026-08-06 **Status:** ACTIVE, building **Project:**
-[Spell Hardening](../../README.md) · [proposal.md](../../proposal.md)
-**Predecessor:** [sprint 01 outcome](../01-drained-exit/outcome.md) — read it
-before this **Frozen predecessor plan:**
-[`../01-drained-exit/plan.md`](../01-drained-exit/plan.md) — **a record, not an
-instruction. Do not act on it.**
+# Sprint 02 — Success-shaped lies
 
 > ### 📋 Decisions live in [`decisions.md`](./decisions.md), beside this file
 >

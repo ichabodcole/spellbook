@@ -1,8 +1,15 @@
-# Grapevine: message edit (`kind:"edit"`)
+---
+type: backlog
+title: 'Grapevine: message edit (`kind:"edit"`)'
+status: stable
+description:
+  Implement message editing in grapevine to allow correction and refinement of
+  sent messages
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); V1.7 design conversation. **Scope:** proposal-sized —
-field-naming and render decisions warrant a project folder when promoted.
+# Grapevine: message edit (`kind:"edit"`)
 
 Let a message's sender post a corrected/updated version; renderers show the
 edited content with an "edited" indicator. The self-correction case (complements

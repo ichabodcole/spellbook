@@ -1,3 +1,17 @@
+---
+type: backlog
+title:
+  "Grapevine watch — human parity on channel actions, and hiding archived
+  channels"
+status: stable
+description:
+  grapevine watch surface needs human parity with agent channel actions
+  (archive, unarchive, delete, create, edit topic) and should hide archived
+  channels to reduce clutter
+lifecycle: open
+generated: { by: unknown, at: 2026-09-05 }
+---
+
 # Grapevine watch — human parity on channel actions, and hiding archived channels
 
 **Filed:** 2026-09-05 · **From:** Cole, while poking the rewritten watch surface

@@ -1,11 +1,14 @@
-# Grapevine backend — the three lifecycle-route gaps
+---
+type: artifact
+title: "Grapevine backend — the three lifecycle-route gaps"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Implementation handoff specifying the three daemon-side gaps to close, their
+  severity ranking, and what to test."
+---
 
-**Created:** 2026-09-06 · **Author:** Cole Reed + Claude Code (orchestrator) ·
-**Mode:** loose — a brief, not a plan; this file doubles as the proposal.
-**Branch:** `fix/grapevine-lifecycle-routes`, cut from develop at `bf182bd`.
-**Source:**
-[the backlog item](../../backlog/2026-09-06-grapevine-lifecycle-route-gaps.md),
-filed by the UX branch's implementing agent and its cold read.
+# Grapevine backend — the three lifecycle-route gaps
 
 ## Why
 

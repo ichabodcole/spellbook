@@ -1,8 +1,15 @@
-# Investigation: The Spell CLI Contract — what should every spell's stdout promise?
+---
+type: investigation
+title: "The Spell CLI Contract — what should every spell's stdout promise?"
+status: stable
+lifecycle: active
+description:
+  Spell CLI contract establishing what every spell's stdout should promise for
+  predictable integration.
+generated: { by: unknown, at: 2026-08-06 }
+---
 
-**Date Started:** 2026-08-06 **Investigator:** Claude Code (with Cole, and
-`anthill:maestro` across `ichabodcole/anthill`) **Status:** Active **Outcome:**
-In Progress
+# Investigation: The Spell CLI Contract — what should every spell's stdout promise?
 
 > **Arose from** a cross-team debugging session on
 > [#80](https://github.com/ichabodcole/spellbook/issues/80) /
@@ -325,7 +332,7 @@ document is not.
 **Related Documents:**
 
 - [spell-hardening proposal](../projects/spell-hardening/proposal.md) and
-  [plan](../projects/spell-hardening/plan.md) — fixes the instances
+  [roadmap](../projects/spell-hardening/roadmap.md) — fixes the instances
 - Issues: [#82](https://github.com/ichabodcole/spellbook/issues/82) (the naming
   question that outgrew itself), #83–#88 (defects found by the audit),
   #77/#78/#80/#81 (the defect class)

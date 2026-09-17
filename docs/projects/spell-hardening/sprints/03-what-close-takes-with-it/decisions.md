@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Sprint 03 — decision log"
+description:
+  Sprint 03 decision log written live at the convene, recording all decisions as
+  they were made
+status: stable
+generated: { by: unknown, at: 2026-08-08 }
+---
+
 # Sprint 03 — decision log
 
 **Live document. Appended as decisions are made, not reconstructed at the end.**
@@ -42,10 +52,12 @@ this file does not become a second source of truth for them.
 **Taken:** full ratify round, explicitly empowered to cut scope.
 
 **Outcome: vindicated, and not narrowly.** The round killed the predicate every
-lane was about to be built on ([A5](#a5)), falsified two scaffold lane claims
-outright ([§B](#b-corrections-and-falsifications)), and returned a scope cut its
-own author called _"yes, and this is the cut."_ **Building first would have
-shipped a guard that does not guard.**
+lane was about to be built on
+([A5](#a5--the-guards-predicate-emptiness-vs-shrinkage--ruled-by-prospero-on-daedaluss-measurement)),
+falsified two scaffold lane claims outright
+([§B](#b-corrections-and-falsifications)), and returned a scope cut its own
+author called _"yes, and this is the cut."_ **Building first would have shipped
+a guard that does not guard.**
 
 ### A2 — Seats: circe's fourth consecutive unseating · **RULED BY COLE** · at convene
 
@@ -79,9 +91,10 @@ plainly that it was decided without her and invites the argument.**
 | ✅ **Terminal seats (tmux)** | Heavier on the machine; real concurrency and real timing                    |
 | Subagents                    | Cheaper and quieter, but the live-team beat becomes unrunnable as specified |
 
-**Taken:** terminal seats. **Note the interaction with [A7](#a7): the beat that
-justified this choice was subsequently cut down**, so the justification did not
-survive the session. The choice still paid, for a reason nobody predicted —
+**Taken:** terminal seats. **Note the interaction with
+[A7](#a7--the-live-team-beat--ruled-by-cassandra-accepted-by-prospero): the beat
+that justified this choice was subsequently cut down**, so the justification did
+not survive the session. The choice still paid, for a reason nobody predicted —
 **the uncontrolled-concurrency findings came from the seats simply working**,
 not from a designed experiment.
 
@@ -197,7 +210,7 @@ funnel, one seat, one land — guard first.**
 `restoreSkipped` — honour what you can, say what you did not.
 
 **Note this is a different, smaller thing than the scaffold's P1d, which is
-falsified** — see [§B3](#b).
+falsified** — see [§B3](#b-corrections-and-falsifications).
 
 ### A10 — The tmpdir-leak thread · **SCOPE CALL BY CASSANDRA, ruled by PROSPERO**
 

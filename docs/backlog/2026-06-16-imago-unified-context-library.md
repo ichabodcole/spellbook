@@ -1,8 +1,15 @@
-# Backlog — imago unified context / text library
+---
+type: backlog
+title: "Backlog — imago unified context / text library"
+status: stable
+description:
+  Create a unified context library for Imago to reliably fetch and serve project
+  metadata
+lifecycle: open
+generated: { by: unknown, at: 2026-06-16 }
+---
 
-**Date:** 2026-06-16 · **Status:** backlog / design direction (cole) ·
-**Spell:** imago · Extends
-[unified-image-model](../projects/imago/unified-image-model-investigation.md)
+# Backlog — imago unified context / text library
 
 - subsumes [skills/methodologies](./2026-06-16-imago-skills-methodologies.md).
 

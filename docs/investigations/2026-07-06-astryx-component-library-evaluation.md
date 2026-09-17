@@ -1,10 +1,15 @@
-# Investigation: Astryx (Meta) as a component-library foundation for spell surfaces
-
-**Date Started:** 2026-07-06 **Investigator:** Claude Code (merlin) **Status:**
-Concluded **Outcome:** Monitor — do not adopt now; harvest one pattern
-(agent-legible manifest/MCP)
-
 ---
+type: investigation
+title: Astryx (Meta) as a component-library foundation for spell surfaces
+status: stable
+lifecycle: concluded
+description:
+  Astryx is agent-legible but uses StyleX instead of Tailwind and is day-zero
+  beta, so monitoring is recommended over adoption.
+generated: { by: unknown, at: 2026-07-06 }
+---
+
+# Investigation: Astryx (Meta) as a component-library foundation for spell surfaces
 
 ## Question / Motivation
 
@@ -171,10 +176,10 @@ External maturity is genuinely unproven; internal validation is strong.
 
 **Related Documents:**
 
-- [Spells as Interface Layer thesis](../fragments/spells-as-interface-layer-decomposing-software.md)
-  — the portability/ownership design center
-- [media-buffet:library spell proposal](../../../dreamwood/media-buffet/docs/projects/media-manager-spell/proposal.md)
-  — the pilot distributed spell
+- Spells as Interface Layer thesis (fragment since removed) — the
+  portability/ownership design center
+- media-buffet's library-spell proposal (`dreamwood/media-buffet`, a separate
+  repository) — the pilot distributed spell
 - Memory: `react-scaffold-investigation`, `spell-deps-resolution-in-host-repo`
   (pre-compiled-surface model), `spell-surface-stack`
 - Source: <https://astryx.atmeta.com/> · `github.com/facebook/astryx`

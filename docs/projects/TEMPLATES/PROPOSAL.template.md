@@ -1,4 +1,19 @@
+---
+type: proposal # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Proposal Title]"
+description: "[One sentence: what this proposes and why.]"
+tags: [area, feature] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+lifecycle: draft # where the work has got to; see docs/SCHEMA.md
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 USAGE: Copy this file to your project folder as `proposal.md`.
 
 This template helps you tell the story of what you're proposing and why.
@@ -12,11 +27,6 @@ For more guidance on proposals, see the projects README: ../README.md
 -->
 
 # [Proposal Title]
-
-**Status:** Draft | Under Review | Approved | Rejected | Superseded **Created:**
-YYYY-MM-DD **Author:** [Name]
-
----
 
 ## Overview
 
@@ -80,8 +90,8 @@ code - that belongs in implementation plans]
 
 **Related Documents:**
 
-- [Investigation](../../investigations/investigation-name.md) (if applicable)
-- [Architecture docs](../../architecture/doc-name.md) (if applicable)
+- `[Investigation](../../investigations/investigation-name.md)` (if applicable)
+- `[Architecture docs](../../architecture/doc-name.md)` (if applicable)
 
 ---
 

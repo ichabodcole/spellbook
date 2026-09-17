@@ -1,3 +1,17 @@
+---
+type: backlog
+title:
+  "`spell-css-scope-ward`'s `walkText` counts `.css` as scanned text — and the
+  item is unowned"
+status: stable
+description:
+  The spell-css-scope ward's text walker counts .css files as scanned by
+  Tailwind, but Tailwind never scans .css—making the allowlist incorrect and
+  unowned
+lifecycle: open
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `spell-css-scope-ward`'s `walkText` counts `.css` as scanned text — and the item is unowned
 
 **Filed:** 2026-09-02 · **Status:** open · **Owner: NONE — that is the point of

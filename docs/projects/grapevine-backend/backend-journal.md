@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Backend journal — the three lifecycle routes"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Record of the three daemon-side lifecycle-route gaps found and closed, with
+  the fix process and verification."
+---
+
 # Backend journal — the three lifecycle routes
 
 Written as the work happened, for the agent who does this to another daemon. `⚠`

@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "mind-mapper Round 7 — plan skeleton (metadata, filter & polish)"
+description:
+  Plan skeleton and ratified seam claims for Round 7, adding controlled metadata
+  tags and faceted filter to the mind-mapper surface
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # mind-mapper Round 7 — plan skeleton (metadata, filter & polish)
 
 **Status: SKELETON — seams awaiting owner ratify.** Lead: prospero. Seats:

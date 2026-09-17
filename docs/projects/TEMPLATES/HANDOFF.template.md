@@ -1,4 +1,18 @@
+---
+type: handoff # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Feature Name] Development Kickoff"
+description: "[One sentence: what the next developer is picking up.]"
+tags: [area, feature] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 USAGE: Copy this file to your project folder as `handoff.md` when the work
 requires specific deployment or integration steps to ship successfully.
 

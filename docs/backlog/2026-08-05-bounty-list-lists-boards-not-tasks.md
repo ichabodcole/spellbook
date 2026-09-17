@@ -1,7 +1,17 @@
-# Bounty: `list` enumerates boards, not tasks — the empty result reads as missing cards
+---
+type: backlog
+title:
+  "Bounty: `list` enumerates boards, not tasks — the empty result reads as
+  missing cards"
+status: stable
+description:
+  Fix bounty list command to surface boards and lists as primary, not individual
+  tasks
+lifecycle: open
+generated: { by: unknown, at: 2026-08-05 }
+---
 
-**Added:** 2026-08-05 · **Tracks:** GitHub issue
-[#79](https://github.com/ichabodcole/spellbook/issues/79)
+# Bounty: `list` enumerates boards, not tasks — the empty result reads as missing cards
 
 `bounty list` lists **boards**, not tasks. `list` is the verb a caller reaches
 for when they want to see what's on the board — the verb is right, the noun is a

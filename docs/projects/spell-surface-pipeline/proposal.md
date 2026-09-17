@@ -1,7 +1,15 @@
-# Spell Surface Pipeline
+---
+type: proposal
+title: Spell Surface Pipeline
+description:
+  Proposal for a standard Spell Surface Pipeline to handle increasingly complex
+  spell surfaces with real dependencies and builds
+status: stable
+lifecycle: implemented
+generated: { by: unknown, at: 2026-07-07 }
+---
 
-**Status:** Draft **Created:** 2026-07-07 **Author:** Cole Reed + Claude Code
-(merlin)
+# Spell Surface Pipeline
 
 _Reconciled 2026-09-04 @ `e3d80dc` — "Backend ships as Bun-native source, no
 build": **FALSIFIED**, superseded by Contract 3's build criterion (§1 amended in

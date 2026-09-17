@@ -1,3 +1,15 @@
+---
+type: artifact
+title:
+  "daedalus lane — glamour conversion: the backend half (S1 daemon side · S2 ·
+  S3)"
+status: stable
+generated: { by: unknown, at: 2026-09-03 }
+description:
+  "Daedalus's backend and engine work including bundling, mode routing, and the
+  deps-free layout proof."
+---
+
 # daedalus lane — glamour conversion: the backend half (S1 daemon side · S2 · S3)
 
 Owner: daedalus (engine). Branch `feat/glamour-conversion`. Plan of record

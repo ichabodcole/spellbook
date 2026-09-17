@@ -1,7 +1,14 @@
-# Grapevine: `list` reports `message_count: 0` for every unloaded channel
+---
+type: backlog
+title: "Grapevine: `list` reports `message_count: 0` for every unloaded channel"
+status: stable
+description:
+  Fix grapevine list to show accurate message counts for unloaded messages
+lifecycle: open
+generated: { by: unknown, at: 2026-08-08 }
+---
 
-**Added:** 2026-08-08 · **Origin:** channel-cleanup pass — nearly led to
-hard-`close`ing channels that were not empty.
+# Grapevine: `list` reports `message_count: 0` for every unloaded channel
 
 `grapevine list` reports `message_count` from the daemon's **in-memory** view. A
 channel that exists on disk but has not been loaded this session

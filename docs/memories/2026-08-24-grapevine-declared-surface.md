@@ -1,6 +1,17 @@
-# grapevine declares its own surface (acc-standard working session)
+---
+type: memory
+title: grapevine declares its own surface (acc-standard working session)
+description:
+  Grapevine's CLI gained a schema verb that emits its interface as acc
+  declaration format v0 from a new COMMANDS registry, moving it from 3 core
+  violations to CONFORMANT L0 and producing the first outside evidence for acc's
+  drift-check thesis
+tags: [grapevine, acc, conformance, schema]
+status: stable
+generated: { by: unknown, at: 2026-08-24 }
+---
 
-**Date:** 2026-08-24
+# grapevine declares its own surface (acc-standard working session)
 
 grapevine's CLI gained a `schema` verb emitting its interface as acc declaration
 format v0, generated from a new COMMANDS registry that also drives dispatch,

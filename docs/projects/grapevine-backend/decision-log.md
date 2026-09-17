@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "Grapevine backend — decision log"
+status: stable
+generated: { by: unknown, at: 2026-09-06 }
+description:
+  "Live record of choices made during the backend gap closure, with the options
+  not taken and the reasoning."
+---
+
 # Grapevine backend — decision log
 
 ## 2026-09-06 — orchestrator, with Cole

@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "circe — Round 5 lane (surface)"
+description:
+  Circe's surface implementation for Round 5, split into two phases with
+  detailed task descriptions for building UI components
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # circe — Round 5 lane (surface)
 
 Owner: circe (surface). Board card: `t-r5-surface`. Authoritative ground:

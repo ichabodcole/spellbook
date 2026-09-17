@@ -1,8 +1,15 @@
-# Mind Mapper V1 — Plan Skeleton
+---
+type: plan
+title: "Mind Mapper V1 — Plan Skeleton"
+description:
+  V1 plan skeleton with integration order, cross-seam contracts, and
+  verification gate based on the Phase 0 spike findings
+lifecycle: completed
+status: stable
+generated: { by: unknown, at: 2026-07-16 }
+---
 
-**Status:** Seams RATIFIED (2026-07-16) — lanes authoring **Created:**
-2026-07-16 **Lead:** prospero · **Owners:** daedalus (engine), circe (surface) ·
-**Verify:** cassandra engages at the phase gates (not end-of-line)
+# Mind Mapper V1 — Plan Skeleton
 
 From `proposal.md` (V1 scope + "Phase 0 Spike — Findings" roadmap). The spike is
 merged to develop; V1 builds on its skeleton, wire baseline (seams Contract 7),

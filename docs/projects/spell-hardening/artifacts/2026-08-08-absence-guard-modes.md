@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "The absence guard is not one failure — it is three"
+description:
+  Analysis of three distinct absence guard test failures that were
+  mutation-verified but require different fixes
+status: stable
+generated: { by: unknown, at: 2026-08-08 }
+---
+
 # The absence guard is not one failure — it is three
 
 **Sprint 04 · card `g6` part 1 · cassandra · 2026-08-08**

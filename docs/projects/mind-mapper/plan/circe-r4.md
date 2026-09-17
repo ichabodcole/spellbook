@@ -1,3 +1,13 @@
+---
+type: artifact
+title: "circe's lane — mind-mapper Round 4 surface"
+description:
+  Circe's surface implementation lane for Round 4, detailing the build of UI
+  components against ratified seam contracts
+status: stable
+generated: { by: unknown, at: 2026-07-21 }
+---
+
 # circe's lane — mind-mapper Round 4 surface
 
 Authored against `plan-round4.md`'s **Ratified decisions & lead rulings** (the

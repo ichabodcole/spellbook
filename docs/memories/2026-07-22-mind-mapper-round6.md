@@ -1,3 +1,15 @@
+---
+type: memory
+title: "Memory — mind-mapper Round 6 built + gate-passed (2026-07-22)"
+description:
+  Mind-mapper Round 6 shipped ratify-batch, node/proposal deletion with
+  cited-guard cascades, and the proposal.rejected event fix, passing gate on the
+  first cold drive with zero wire-guess failures for the fourth round running
+tags: [mind-mapper, anthill, round-6, deletion]
+status: stable
+generated: { by: unknown, at: 2026-07-22 }
+---
+
 # Memory — mind-mapper Round 6 built + gate-passed (2026-07-22)
 
 Same day as drive #5 + the Round 5 merge: Round 6 convened, built, and cold-gate

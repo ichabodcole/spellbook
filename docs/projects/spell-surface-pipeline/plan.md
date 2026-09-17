@@ -1,8 +1,15 @@
-# Spell Surface Pipeline — dev plan (skeleton)
+---
+type: plan
+title: "Spell Surface Pipeline — dev plan (skeleton)"
+description:
+  Development plan skeleton for the Spell Surface Pipeline, with the hypothesis
+  validated by the mind-mapper pilot in v2.2.0
+status: stable
+lifecycle: completed
+generated: { by: unknown, at: 2026-07-08 }
+---
 
-**Status:** **BUILT AND SHIPPED — on `mind-mapper`, not on astrolabe** ·
-**Lead:** prospero · **Proposal:** [proposal.md](./proposal.md) (`7701a07`) ·
-**Status corrected:** 2026-08-10
+# Spell Surface Pipeline — dev plan (skeleton)
 
 > **✅ THE HYPOTHESIS IS VALIDATED. The pilot changed spells, and this plan was
 > never updated to say so.**

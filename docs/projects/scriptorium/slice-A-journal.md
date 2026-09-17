@@ -1,9 +1,14 @@
-# Scriptorium — slice A journal (the foundation)
+---
+type: artifact
+title: "Scriptorium — slice A journal (the foundation)"
+description:
+  Journal of slice A development, recording scope changes and the split of work
+  between the lead and implementer
+status: stable
+generated: { by: unknown, at: 2026-09-11 }
+---
 
-**Date:** 2026-09-11 · **Branch:** `feat/scriptorium-foundation` · **Brief:**
-[`brief-A-foundation.md`](./brief-A-foundation.md), as amended during the
-session by E15–E18 and the lead's surface split (below). **Author:** the
-brief-driven implementer. Not merged, not pushed.
+# Scriptorium — slice A journal (the foundation)
 
 ## The split, recorded
 

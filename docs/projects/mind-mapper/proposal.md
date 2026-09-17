@@ -1,8 +1,15 @@
-# Mind Mapper — map your thinking into a shared, source-traceable board
+---
+type: proposal
+title: "Mind Mapper — map your thinking into a shared, source-traceable board"
+description:
+  Proposal for a spell that ingests source material and turns it into an
+  interactive, source-traceable map for co-present human-agent exploration
+status: stable
+lifecycle: draft
+generated: { by: unknown, at: 2026-06-30 }
+---
 
-**Status:** Draft **Created:** 2026-06-30 **Updated:** 2026-07-16 (absorbed the
-collaborative-knowledge brain dump + landscape analysis) **Author:** Cole Reed
-(brainstormed with Claude)
+# Mind Mapper — map your thinking into a shared, source-traceable board
 
 > Working handle is **"mind mapper."** The spell's real name + kind reserve at
 > coalescence per `grimoire/trigger-registry.md`, not here.

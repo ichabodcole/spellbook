@@ -1,8 +1,17 @@
-# The gate's blind set is 96% self-inflicted: biome already reads CSS and HTML
+---
+type: backlog
+title:
+  "The gate's blind set is 96% self-inflicted: biome already reads CSS and HTML"
+status: stable
+description:
+  Biome can read CSS and HTML to catch syntax errors, but the gate does not
+  invoke it on those files; the blind spot is a config issue, not a tool
+  limitation
+lifecycle: open
+generated: { by: unknown, at: 2026-08-30 }
+---
 
-**Added:** 2026-08-30 · **Found by:** measuring the checker question raised
-while ruling [spell-kit R5](../projects/_archive/spell-kit/design-resolution.md)
-· **Scope:** repo tooling (`biome.json`), house-wide
+# The gate's blind set is 96% self-inflicted: biome already reads CSS and HTML
 
 > ## The exact failure `gate-honesty.test.ts` documents is closable by a config change
 

@@ -1,4 +1,18 @@
+---
+type: lesson # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Brief Lesson Title]"
+description: "[One sentence: the lesson itself, stated so it transfers.]"
+tags: [area, cause] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
 <!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
 IMPORTANT: If you haven't read the README.md in this directory, please read it first for context on when to
 create lessons learned and what makes a good lesson.
 
@@ -17,8 +31,7 @@ Keep it concise and actionable. Lead with the takeaway - don't bury the lesson i
 
 # [Brief Lesson Title]
 
-**Date:** YYYY-MM-DD **Tags:** `#tag1` `#tag2` `#tag3` **Type:** [Pattern |
-Bug/Issue | Configuration | Integration]
+**Kind:** [Pattern | Bug/Issue | Configuration | Integration]
 
 ---
 
@@ -80,8 +93,8 @@ self-evident.]
 
 ## Related Resources
 
-- [Related lesson learned](./other-lesson.md)
-- [Session where this was encountered](../projects/project-name/sessions/session-name.md)
-- [GitHub issue](URL)
-- [Official docs](URL)
-- [Stack Overflow answer](URL)
+- `[Related lesson learned](./other-lesson.md)`
+- `[Session where this was encountered](../projects/project-name/sessions/session-name.md)`
+- `[GitHub issue](URL)`
+- `[Official docs](URL)`
+- `[Stack Overflow answer](URL)`

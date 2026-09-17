@@ -1,3 +1,14 @@
+---
+type: session
+title:
+  "The census found what L0 could not — the acc session on magpie — 2026-08-26"
+description:
+  Magpie acc L0 session where the census discovered defects that static L0
+  checks could not find.
+status: stable
+generated: { by: unknown, at: 2026-08-26 }
+---
+
 # The census found what L0 could not — the acc session on magpie — 2026-08-26
 
 **Branch:** `feat/magpie-acc-l0` (base `develop`) · **Channel:** `acc-magpie`

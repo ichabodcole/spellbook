@@ -337,8 +337,8 @@ silently and break the rule, or leave a known-wrong document standing. Neither
 is acceptable, so there is a third:
 
 > **⚠ ERRATUM 2026-08-14:** the mechanism claimed in Phase 2 step 3 is wrong —
-> `parseArgs` never sees the `=` form. Corrected in
-> [sprint 03's plan](../03-flag-parsing/plan.md).
+> `parseArgs` never sees the `=` form. Corrected in sprint 03's plan
+> (`spell-hardening/sprints/03-.../plan.md`).
 
 Append-only, at the top, dated, and it **points at where the truth now lives**.
 Never a body edit. The body stays exactly as it was written, because the body is

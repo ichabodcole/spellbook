@@ -1,7 +1,15 @@
-# Spellbook Coherence Pass — make the migrated set production-coherent
+---
+type: proposal
+title: "Spellbook Coherence Pass — make the migrated set production-coherent"
+description:
+  Proposal for four coherence deliverables including feedback touchpoints, Bun
+  wrapper, TypeScript gate, and grimoire validation
+lifecycle: implemented
+status: stable
+generated: { by: unknown, at: 2026-05-29 }
+---
 
-**Status:** In Progress — **2 of 4 deliverables** · **Created:** 2026-05-29 ·
-**Updated:** 2026-08-10 · **Author:** Cole Reed (with familiar)
+# Spellbook Coherence Pass — make the migrated set production-coherent
 
 > **⚠ THE PREVIOUS STATUS LINE WAS WRONG IN BOTH NUMBERS**, and it stood for 44
 > days. It read _"~75% — Deliverable 3 typecheck gate **blocks** completion;
@@ -38,8 +46,8 @@
 ## Overview
 
 The four spells are migrated, typed, and green (see
-[spellbook-extraction](../spellbook-extraction/proposal.md)). But they were
-brought over as-is, and the migration + the fresh-agent dogfood
+[spellbook-extraction](../_archive/spellbook-extraction/proposal.md)). But they
+were brought over as-is, and the migration + the fresh-agent dogfood
 ([findings](../../../grimoire/fresh-agent/2026-05-29-inscribe-ward-findings.md))
 surfaced gaps between "the code runs" and "the set feels coherent and meets the
 standards we've since written." This project closes those gaps before a release.
@@ -104,6 +112,6 @@ decisions).
 
 **Related Documents:**
 
-- [spellbook-extraction proposal](../spellbook-extraction/proposal.md)
+- [spellbook-extraction proposal](../_archive/spellbook-extraction/proposal.md)
 - [fresh-agent findings (inscribe + ward)](../../../grimoire/fresh-agent/2026-05-29-inscribe-ward-findings.md)
 - `grimoire/house-style.md`, `grimoire/decay-ledger.md`

@@ -1,0 +1,26 @@
+{
+  "version": "8.1.0",
+  "files": {
+    "architecture/TEMPLATE.md": "8c15da6659577c7ba485b9085a7aff475b9c1818d5f2447a162fe38de23982ca",
+    "backlog/TEMPLATE.md": "b611a9a29d62d835772084687a32615f45ed19e26513da108ed6534c2db4bb7a",
+    "briefs/TEMPLATES/BRIEF.template.md": "dec0163ec6310f26570904c7ab368d9eb622d927611264a5f149f2f88f58f8c8",
+    "cycles/TEMPLATE.md": "3762a1fd0393f5156bb8490f3422d908e2b93213eb79fa42277ee5d69b1254f8",
+    "fragments/TEMPLATE.md": "dc17c6c2580e794a95e9f2874aafabfdbfa856c504d2cee85b191d31250355b4",
+    "interaction-design/TEMPLATE.md": "ae13434f248164296fce67b0c3507faba6ab7e0fbcae3066f00e5b41ef5343ba",
+    "investigations/YYYY-MM-DD-TEMPLATE-investigation.md": "eaa76a038c37c0c0488593001f3701bd1b4df757c84a6b4243398f4216257955",
+    "lessons-learned/TEMPLATE.md": "1f78c13d12a1b9f76afba1e52c310031fa16dce09e0d4884d237123ce9fbb5d8",
+    "memories/TEMPLATE.md": "b9d534aa427aaf6cf6592451769a1cfcafee5d695b5c3239a3ec86d21c8ccd0b",
+    "playbooks/TEMPLATE.md": "0fedfda743f52bbdf2d63ee2b444a6b464d68f5fe23e3b425c23502ed9b54345",
+    "projects/TEMPLATES/DESIGN-RESOLUTION.template.md": "5f9bafedd2a0f419d7dee9c6e45a04a65e478d455f7a909cc60e9ebfd458f0df",
+    "projects/TEMPLATES/HANDOFF.template.md": "3bd4f4a807e41df44d22077885398d9355714dfc72aaec3f6e130b26cacd78d1",
+    "projects/TEMPLATES/PLAN.template.md": "26b80a019b92f3b1215e0ad950c0426ebe9c42d7db72da16feb40c12db02a499",
+    "projects/TEMPLATES/PROJECT-LEDGER.template.md": "ed484fcba7f49aa0d9db1e02e0adc5387ccd6d835b12a1000f248108f1eea2d5",
+    "projects/TEMPLATES/PROPOSAL.template.md": "d73d2b17122969c3fa60cc5ec03ac0594080611eed9572803797a8d858b1d511",
+    "projects/TEMPLATES/SPRINT-OUTCOME.template.md": "8895525ac0e5a876f71a2203c106ea641f5c369217ba879c00b569360ef9c67c",
+    "projects/TEMPLATES/TEST-PLAN.template.md": "32cc1e89991194f0fa4890ca502a104122a628f0568ef718bec8ccb664990800",
+    "projects/TEMPLATES/YYYY-MM-DD-SESSION.template.md": "0f3d5a3f12d126924c687d28718c283e438fff2a0e12573f317419714db2ed7c",
+    "reports/YYYY-MM-DD-TEMPLATE-report.md": "d7e2e00d32714d2ebb1f7e0ec9615a24060fae7342c4af3ab3adf860c1b23eb5",
+    "specifications/TEMPLATE-domain.md": "f7eee3319edca54be303978509679d59bb4293bcb1aaa5de4f3ef1a76d43a281",
+    "specifications/TEMPLATE-overview.md": "11b66a5a9a236a4432e4099f273058c8bbdc31f45dc4ce208ca1675d4c71d857"
+  }
+}

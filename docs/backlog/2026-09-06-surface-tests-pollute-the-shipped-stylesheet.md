@@ -1,3 +1,14 @@
+---
+type: backlog
+title: "A test file under `surface/` changes the shipped stylesheet"
+status: stable
+description:
+  Test files living under surface/ are scanned by the CSS @source directive,
+  polluting the shipped stylesheet's content hash
+lifecycle: open
+generated: { by: unknown, at: 2026-09-06 }
+---
+
 # A test file under `surface/` changes the shipped stylesheet
 
 **Filed:** 2026-09-06 · **Found by:** the bounty conversion's implementing agent

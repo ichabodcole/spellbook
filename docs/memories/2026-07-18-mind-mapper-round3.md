@@ -1,7 +1,17 @@
-# Mind-mapper Round 3: exploration zones built and gate-passed
+---
+type: memory
+title: "Mind-mapper Round 3: exploration zones built and gate-passed"
+description:
+  Mind-mapper Round 3 built exploration zones and promotion, the
+  no-default-project landing flow, doc-lens, card grid view and grapevine's send
+  body-chain fix, with both owners independently catching the same
+  zone-event-scoping bug at ratify
+tags: [mind-mapper, anthill, round-3, exploration-zones]
+status: stable
+generated: { by: unknown, at: 2026-07-18 }
+---
 
-**Date:** 2026-07-18 · **Branch:** `feature/mind-mapper-zones` (awaiting Cole's
-drive #3 + merge ruling)
+# Mind-mapper Round 3: exploration zones built and gate-passed
 
 One anthill round built drive-2's triage: exploration zones + promotion (sandbox
 staging scopes, move-not-duplicate promote, ratification-at-the-boundary), the

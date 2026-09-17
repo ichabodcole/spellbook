@@ -1,10 +1,14 @@
-# Grapevine UX — the brief
+---
+type: artifact
+title: "Grapevine UX — the brief"
+status: stable
+generated: { by: unknown, at: 2026-09-05 }
+description:
+  "Implementation handoff specifying the human parity work needed and the
+  measured gap between surface and daemon capabilities."
+---
 
-**Created:** 2026-09-05 · **Author:** Cole Reed + Claude Code (orchestrator) ·
-**Mode:** loose — a brief, not a plan; this file doubles as the proposal.
-**Branch:** `feat/grapevine-ux`, cut from develop at the shadcn landing
-(`de4de84`). **Source:**
-[the backlog item](../../backlog/2026-09-05-grapevine-watch-human-parity-and-archive-hiding.md).
+# Grapevine UX — the brief
 
 ## Why
 

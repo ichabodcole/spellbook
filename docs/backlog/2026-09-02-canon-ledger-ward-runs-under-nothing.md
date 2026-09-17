@@ -1,3 +1,14 @@
+---
+type: backlog
+title: "`canon-ledger-ward.ts` guards the canon and is run by nothing"
+status: stable
+description:
+  canon-ledger-ward checks that house-style rules pair with decay-ledger rows,
+  but is excluded from tests and CI with no owner to run it manually
+lifecycle: open
+generated: { by: unknown, at: 2026-09-02 }
+---
+
 # `canon-ledger-ward.ts` guards the canon and is run by nothing
 
 **Filed:** 2026-09-02 · **Status:** open · **Found by:** the non-author audit of

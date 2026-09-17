@@ -1,11 +1,17 @@
-# Investigation: Shared code and the build boundary — what eight spells are duplicating, and what has to move
-
-**Date Started:** 2026-08-29 **Investigator:** Claude Code **Status:** Concluded
-**Outcome:** Project recommended — this trips the **Approach-B ratchet** already
-written into
-[`spell-surface-pipeline`](../projects/spell-surface-pipeline/proposal.md) §6
-
 ---
+type: investigation
+title:
+  "Shared code and the build boundary — what eight spells are duplicating, and
+  what has to move"
+status: stable
+lifecycle: concluded
+description:
+  Shared code and the build boundary — census of duplication and decision on
+  when to extract.
+generated: { by: unknown, at: 2026-08-29 }
+---
+
+# Investigation: Shared code and the build boundary — what eight spells are duplicating, and what has to move
 
 ## Question / Motivation
 

@@ -1,7 +1,17 @@
-# Backlog — grapevine's error envelope is prose, on a CLI that is JSON everywhere else
+---
+type: backlog
+title:
+  "Backlog — grapevine's error envelope is prose, on a CLI that is JSON
+  everywhere else"
+status: stable
+description:
+  grapevine emits JSON for success paths but prose errors on stderr, breaking
+  agent parsability on a CLI designed for machine-to-machine coordination
+lifecycle: open
+generated: { by: unknown, at: 2026-08-21 }
+---
 
-**Status:** idea / backlog (not scheduled). Captured 2026-08-21. Measured, not
-suspected.
+# Backlog — grapevine's error envelope is prose, on a CLI that is JSON everywhere else
 
 ## The finding
 

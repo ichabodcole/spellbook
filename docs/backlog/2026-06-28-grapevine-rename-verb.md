@@ -1,8 +1,15 @@
-# Grapevine: `rename <old> <new>` verb
+---
+type: backlog
+title: "Grapevine: `rename <old> <new>` verb"
+status: stable
+description:
+  Rename grapevine verbs for clarity and consistency with house-wide command
+  conventions
+lifecycle: open
+generated: { by: unknown, at: 2026-06-28 }
+---
 
-**Added:** 2026-06-28 **Origin:** extracted from the grapevine-backlog living
-doc (now archived); surfaced during the V1.6.1 rollout (had to hand-write a
-script to rename `grapevine-v17` → `grapevine-v1.7`).
+# Grapevine: `rename <old> <new>` verb
 
 A daemon-aware channel rename. Today a rename means manually checking whether
 the channel is loaded, renaming the JSONL file, and rewriting the `channel`

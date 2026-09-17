@@ -1,7 +1,15 @@
-# Dependency and Package Boundaries
+---
+type: architecture
+title: Dependency and Package Boundaries
+status: stable
+generated: { by: unknown, at: 2026-08-31 }
+description:
+  Explains why Spellbook uses one root package.json with no per-spell manifests,
+  and the signals that would mean that decision has stopped being correct
+tags: [dependencies, package-json, monorepo, build, architecture]
+---
 
-**Created:** 2026-08-31 **Last Updated:** 2026-08-31 **Last Reviewed:**
-2026-08-31 @ `efab3a8`
+# Dependency and Package Boundaries
 
 ## Overview
 
