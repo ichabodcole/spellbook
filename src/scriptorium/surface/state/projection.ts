@@ -258,33 +258,75 @@ export function toPlain(
  * wrong: micromark puts a newline between block tags, so `<p>a</p>\n<p>b</p>`
  * contributes a `"\n"` text node the projection wrote as `"\n\n"`, and every
  * offset after the first block is then off by one and drifting. Matching each
- * run forwards from a cursor instead cannot drift — the runs appear in `plain`
- * in document order, so a run is always found at or after the last one, and
- * inter-tag whitespace simply fails to match and is skipped.
+ * run forwards from a cursor instead keeps the runs in document order.
+ *
+ * ⛔ BUT A FORWARD SEARCH IS ONLY AS GOOD AS ITS WORST MATCH, because the
+ * cursor never comes back. Two rules keep one bad match from stranding every
+ * run after it — which is what Cole hit on house-style (2026-09-22): past a
+ * blockquote, rendered selections landed pages away or not at all.
+ *
+ * 1. INTER-TAG WHITESPACE IS PLACED ONLY WHERE THE CURSOR ALREADY IS. micromark
+ *    wrote three newline nodes between a quote's last word and the next list's
+ *    first; the projection wrote two. Searched for, the third matched the soft
+ *    line break INSIDE the list item and moved the cursor past real text. A
+ *    whitespace-only run that is not sitting at the cursor is `null` and moves
+ *    nothing — it has no text a selection could be about anyway.
+ * 2. A MATCH THAT SKIPS TEXT MUST BE CONFIRMED BY THE NEXT RUN. Normally the
+ *    gap between the cursor and the match is whitespace (a block separator).
+ *    When it is not, either an earlier run failed to place (and its text is the
+ *    gap), or this run is text the projection never wrote — a footnote's "1" —
+ *    that happens to occur later. The next run tells them apart: it follows the
+ *    real match directly, and not the accidental one.
+ *
+ * A run is matched on its TRIMMED text, and its start is backed off by the
+ * whitespace it trimmed. micromark puts a block of raw HTML (a `<!-- rule-id -->`
+ * comment) in one text node together with the newlines around it, and the
+ * projection carries the comment without them.
  *
  * A run that cannot be placed gets `null` rather than a guess: it is either
  * whitespace the projection did not write, or text from something the
- * projection deliberately skipped (an image's alt attribute is not a text node,
- * but a future construct might be), and a wrong offset there would silently
+ * projection deliberately skipped, and a wrong offset there would silently
  * anchor a note onto unrelated words.
  */
 export function alignRuns(plain: string, runs: readonly string[]): (number | null)[] {
+  const cores = runs.map((r) => r.trim());
   const out: (number | null)[] = [];
   let cursor = 0;
-  for (const run of runs) {
-    if (run === "") {
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i] as string;
+    const core = cores[i] as string;
+    if (core === "") {
+      // Rule 1: whitespace is placed where it stands, or not at all.
+      if (run !== "" && plain.startsWith(run, cursor)) {
+        out.push(cursor);
+        cursor += run.length;
+      } else out.push(null);
+      continue;
+    }
+    const at = plain.indexOf(core, cursor);
+    if (
+      at === -1 ||
+      (/\S/.test(plain.slice(cursor, at)) && !confirmed(plain, at + core.length, cores, i))
+    ) {
       out.push(null);
       continue;
     }
-    const at = plain.indexOf(run, cursor);
-    if (at === -1) {
-      out.push(null);
-      continue;
-    }
-    out.push(at);
-    cursor = at + run.length;
+    out.push(Math.max(0, at - (run.length - run.trimStart().length)));
+    cursor = at + core.length;
   }
   return out;
+}
+
+/** Rule 2: does the next run with text in it begin right after `end`? */
+function confirmed(plain: string, end: number, cores: readonly string[], i: number): boolean {
+  let j = i + 1;
+  while (j < cores.length && cores[j] === "") j++;
+  const next = cores[j];
+  // The last run has nothing to be confirmed by; take the match.
+  if (next === undefined) return true;
+  let k = end;
+  while (k < plain.length && /\s/.test(plain[k] as string)) k++;
+  return plain.startsWith(next, k);
 }
 
 /**

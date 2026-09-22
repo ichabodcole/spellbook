@@ -1,6 +1,67 @@
 // E51: the rendered text of a document, and the round trip back to source.
 import { describe, expect, test } from "bun:test";
+import { renderMarkdown } from "./markdown";
 import { alignRuns, lineAt, project, toPlain, toSource } from "./projection";
+
+/**
+ * The text nodes a browser would build from `renderMarkdown`'s output, in
+ * document order — what `renderedRange.align` hands to `alignRuns`. Splitting
+ * on tags and decoding micromark's five entities is enough, because every tag
+ * in that output was minted by the renderer (state/markdown.ts).
+ */
+function domRuns(html: string): string[] {
+  const decode = (s: string) =>
+    s
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;|&#39;/g, "'")
+      .replace(/&amp;/g, "&");
+  return html
+    .split(/<[^>]*>/)
+    .map(decode)
+    .filter((r) => r !== "");
+}
+
+/**
+ * An extract of `grimoire/house-style.md` (2026-09-22) — the document Cole
+ * reproduced the drift on. The blockquote followed by a list is the shape that
+ * broke it: micromark writes THREE newline text nodes between the quote's last
+ * word and the list's first, the projection writes two, and the third was
+ * searched for forwards and matched the soft line break inside the list item,
+ * past "must never derive". Everything after that aligned late or not at all.
+ */
+const HOUSE_STYLE_EXTRACT = `### Carry the frame, not just the value.
+
+<!-- rule-id: carry-frame-just-value -->
+
+Three rules with one family resemblance and **three different mechanisms**. The
+family name is how you recognise a fourth one; it is **not** a derivation, and
+none of these follows from the others.
+
+> **⚠ Siblings, not a hierarchy.** A response can state its window perfectly and
+> still never carry the fact, because a response only answers questions that
+> were asked — and the missing fact is one nobody can ask for. _(The subsumption
+> was claimed, tested, and refuted at sprint 04's ratify round, by constructing
+> the case where one holds and the other fails.)_
+
+- **Boundary check:** the theme **organises** and must never **derive**. Before
+  claiming one clause subsumes another, construct the case where the first holds
+  and the second fails — a subsumption dies to a single counterexample, so
+  attempting the counterexample _is_ the test. If you cannot build one, you have
+  found a genuine overlap; if you can, they are siblings and stay separate.
+- **Repeal when:** a mechanism is found that genuinely generates all three, at
+  which point this becomes one rule with three corollaries rather than three
+  rules under a heading. **Nobody has found one; two attempts were refuted the
+  day the family was written.**
+
+#### A response states the conditions it was produced under.
+
+<!-- rule-id: carry-frame-just-value.response-states-conditions-was -->
+
+An answer that cannot say what question it answered can be misread as the answer
+to a different question. The theme organises; it does not derive.
+`;
 
 describe("project", () => {
   test("markup leaves the text, and the text keeps its source", () => {
@@ -171,6 +232,73 @@ describe("alignRuns", () => {
     const from = starts[1] as number;
     const range = toSource(p, from, from + label.length);
     expect(src.slice(range.from, range.to)).toBe("Maren's Bakery");
+  });
+});
+
+describe("alignRuns on a real document (house-style)", () => {
+  const src = HOUSE_STYLE_EXTRACT;
+  const p = project(src);
+  const runs = domRuns(renderMarkdown(src));
+  const starts = alignRuns(p.plain, runs);
+
+  test("every run with text in it is placed, and placed where its text is", () => {
+    runs.forEach((run, i) => {
+      const core = run.trim();
+      if (core === "") return;
+      const at = starts[i];
+      expect({ run: core, placed: at !== null }).toEqual({ run: core, placed: true });
+      const s = (at as number) + (run.length - run.trimStart().length);
+      expect(p.plain.slice(s, s + core.length)).toBe(core);
+    });
+  });
+
+  test("placements never go backwards", () => {
+    let prev = -1;
+    for (const at of starts) {
+      if (at === null) continue;
+      expect(at).toBeGreaterThanOrEqual(prev);
+      prev = at;
+    }
+  });
+
+  test("a heading directly after a block is placed (it was skipped by a stray newline)", () => {
+    const i = runs.indexOf("A response states the conditions it was produced under.");
+    expect(starts[i]).toBe(p.plain.indexOf("A response states"));
+  });
+
+  test("the rule-id comment is placed, though its text node carries the newlines around it", () => {
+    const i = runs.findIndex((r) => r.includes("rule-id: carry-frame-just-value -->"));
+    expect(i).toBeGreaterThan(-1);
+    expect(starts[i]).not.toBeNull();
+  });
+
+  test("a selection past the blockquote reports the lines it is on", () => {
+    // Double-click "derive" in the list item: the text node is the <strong>'s.
+    const i = runs.indexOf("derive");
+    const at = starts[i] as number;
+    const { from, to } = toSource(p, at, at + "derive".length);
+    expect(src.slice(from, to)).toBe("derive");
+    const line = src.split("\n").findIndex((l) => l.includes("must never **derive**")) + 1;
+    expect(lineAt(src, from)).toBe(line);
+    expect(lineAt(src, to)).toBe(line);
+  });
+});
+
+describe("alignRuns — one bad run does not poison the rest", () => {
+  test("a whitespace run with no whitespace at the cursor is null, and moves nothing", () => {
+    // Three newlines in the DOM where the projection wrote two: the third must
+    // not go looking for the next newline, which is a soft break in "b\nc".
+    const plain = "a\n\nb\nc";
+    expect(alignRuns(plain, ["a", "\n", "\n", "\n", "b\nc"])).toEqual([0, 1, 2, null, 3]);
+  });
+
+  test("a run the projection never wrote does not jump to a later copy of itself", () => {
+    // A footnote marker "1" is rendered text the projection does not carry; the
+    // next "1" in the document is pages away. Taking it would strand every run
+    // between here and there.
+    const plain = "See the note. Then more text.\n\nChapter 1 begins.";
+    const runs = ["See the note", "1", ". Then more text.", "\n", "Chapter 1 begins."];
+    expect(alignRuns(plain, runs)).toEqual([0, null, 12, 29, 31]);
   });
 });
 

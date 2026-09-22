@@ -58193,22 +58193,41 @@ function toPlain(p, srcFrom, srcTo) {
   return { from: Math.min(from, to), to: Math.max(from, to) };
 }
 function alignRuns(plain, runs) {
+  const cores = runs.map((r2) => r2.trim());
   const out = [];
   let cursor = 0;
-  for (const run of runs) {
-    if (run === "") {
+  for (let i2 = 0;i2 < runs.length; i2++) {
+    const run = runs[i2];
+    const core = cores[i2];
+    if (core === "") {
+      if (run !== "" && plain.startsWith(run, cursor)) {
+        out.push(cursor);
+        cursor += run.length;
+      } else
+        out.push(null);
+      continue;
+    }
+    const at2 = plain.indexOf(core, cursor);
+    if (at2 === -1 || /\S/.test(plain.slice(cursor, at2)) && !confirmed(plain, at2 + core.length, cores, i2)) {
       out.push(null);
       continue;
     }
-    const at2 = plain.indexOf(run, cursor);
-    if (at2 === -1) {
-      out.push(null);
-      continue;
-    }
-    out.push(at2);
-    cursor = at2 + run.length;
+    out.push(Math.max(0, at2 - (run.length - run.trimStart().length)));
+    cursor = at2 + core.length;
   }
   return out;
+}
+function confirmed(plain, end, cores, i2) {
+  let j2 = i2 + 1;
+  while (j2 < cores.length && cores[j2] === "")
+    j2++;
+  const next = cores[j2];
+  if (next === undefined)
+    return true;
+  let k = end;
+  while (k < plain.length && /\s/.test(plain[k]))
+    k++;
+  return plain.startsWith(next, k);
 }
 function lineAt(text4, offset4) {
   const at2 = Math.max(0, Math.min(offset4, text4.length));
