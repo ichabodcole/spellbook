@@ -41,12 +41,37 @@ remembered "last selection this pane resolved" (so the context menu survives a
 click that collapses the DOM selection), and the `selectionchange` handler at
 `:141` may not report a _collapse_ as a clear. Check both before choosing.
 
+## Found (2026-09-22, branch `fix/scriptorium-selection-context`)
+
+Both reproduced in a real browser, and a third: after the X, re-selecting the
+**same** passage reported nothing, because the rendered pane deduped against its
+own memory of the last range it resolved — memory the clear never reached. That
+is Cole's "rendered selection stops working until you switch to raw and back":
+switching modes remounts the pane and wipes the memory.
+
+- **A** was `ChatComposer`'s `dropped` flag, as read. The fix is not to reset
+  it: the X now **clears the held selection itself**, so the daemon is told
+  (`select`, `selection: null`) and the chip has no second state to drift from.
+  Confirmed with `scriptorium state` after an X: `"selection": null`.
+- **B** was the rendered pane never speaking on a collapse (the raw view clears
+  because CodeMirror reports the empty range). It now reports a collapse as a
+  clear — **except** a right-click over the selection, which is the note menu
+  collapsing the passage it is about to act on. A right-click elsewhere is an
+  ordinary click and clears. The note card still opens over a selection and
+  still does not open where there is neither selection nor note.
+
+The rules are now `surface/state/selection.ts` (`heldAfter`,
+`renderedSelectionAct`) with cells, rather than three components each holding
+their own idea of what is selected.
+
+Commit: `645a52c2`.
+
 ## Acceptance Criteria
 
-- [ ] A: after dismissing, a new selection re-attaches, in both modes
-- [ ] B: a click that collapses the selection clears the chip in rendered mode,
+- [x] A: after dismissing, a new selection re-attaches, in both modes
+- [x] B: a click that collapses the selection clears the chip in rendered mode,
       and the context menu still works over a remembered selection
-- [ ] The daemon's held selection (`App.tsx:257`) is cleared too — `say`
+- [x] The daemon's held selection (`App.tsx:257`) is cleared too — `say`
       attaches what the **daemon** holds, so a surface-only fix would still send
       the stale passage
 
