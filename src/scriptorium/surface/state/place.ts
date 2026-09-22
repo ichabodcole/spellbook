@@ -26,8 +26,30 @@
 // through it does not drift, and puts the error at "somewhere inside the right
 // block" rather than "the right pixel". A block is the unit a human looks for
 // when they switch views, so that is the bar Cole set and the bar this meets.
-// MEASURED on `grimoire/house-style.md` (668 lines) at 24 scroll positions: the
-// pane that follows lands within ONE source line of the pane that led.
+//
+// MEASURED on `grimoire/house-style.md` (668 lines), Chromium 2026-09-22, with
+// an oracle that reads both panes out of the DOM and locates the text in the
+// file — no code from here on either side:
+//
+//   · WHEN A BLOCK BEGINS AT THE TOP EDGE — the case a human aims at — the
+//     other pane's top line is that block's own line, EXACTLY: 25 of 27
+//     headings. Both exceptions are the bottom clamp below.
+//   · AT 42 ARBITRARY POSITIONS — mid-paragraph, mid-fence, anywhere — the two
+//     are within THREE source lines (exact at 20 of 37 locatable, within one at
+//     32, within two at 34). The oracle looks DOWN from the top edge for enough
+//     text to locate, so it reads late by up to two rendered lines; the figure
+//     is therefore an upper bound on the error, not the error.
+//   · AT THE VERY BOTTOM the follower is already at its maximum scroll and
+//     CANNOT put the leader's line at the top — the residue is the distance
+//     from the last anchor to the last line (six lines here). That is a
+//     structural floor of scrolling, not a fault in the mapping, and no
+//     anchoring scheme removes it.
+//
+// ⚠ An earlier version of this file claimed "within one source line" on the
+// strength of a 24-position sweep whose probe flattered it. It did not
+// reproduce. A number in the tree that nobody can reproduce is a defect of its
+// own, so the shape above — what was measured, how, and where it stops — is the
+// form these claims take from here.
 //
 // DOM-free on purpose: the node walking and the rects are `renderedRange.ts`'s,
 // the same split E51 already draws.
@@ -97,71 +119,117 @@ export function lineAtTop(anchors: readonly Anchor[], top: number): number {
   return last.line;
 }
 
-/**
- * How long a programmatic scroll is given to settle before the pane it moved is
- * believed again. A scroll event is asynchronous and a smooth one arrives in
- * pieces, so the guard cannot be lifted on the next tick; this is long enough
- * for an instant scroll's events to have landed and short enough that a human
- * who grabs the other pane immediately afterwards is not ignored.
- */
-export const SETTLE_MS = 150;
+/** What the place needs a pane to be able to do. */
+export type Pane = {
+  /** Scroll so source line N is at the top of this pane. */
+  to(line: number): void;
+  /** Where this pane is scrolled to now — the number its own scroll events carry. */
+  at(): number;
+};
 
 /**
  * The shared place — one per open document.
  *
  * ⛔ THE GUARD LIVES HERE, NOT IN THE PANES, because forgetting it is the
  * classic split-view failure: pane A's scroll drives pane B, B's scroll handler
- * reports back, A moves again, and the two ratchet down the document. A caller
- * that has to remember to suppress its own handler is a caller that will
- * forget, so `follow` is only ever invoked from inside a drive, and a report
- * from a pane that is being driven is dropped.
+ * reports back, A moves again, and the two ratchet down the document. A pane
+ * can only take part through `join`, and `join` is what arms the guard.
+ *
+ * ⛔ AND THE GUARD IS AN EVENT, NOT A DURATION. It was a 150 ms window first,
+ * and a window is a guess about WHICH scroll a report came from: a human scroll
+ * that landed inside it was thrown away with nothing to catch it up — measured
+ * at FIFTY LINES apart and staying there — while two windows overlapping during
+ * a fast wheel let one expire under the other and left the follower stranded
+ * twelve lines behind. Both are the same mistake. A programmatic scroll
+ * produces exactly ONE scroll event, so the arm is one-shot: the first report
+ * after a drive is that drive, and every later one is the human's. Nothing is
+ * suppressed for any length of time, so nothing can be lost inside a window.
+ *
+ * ⚠ THE ONE ORDERING FACT THIS RESTS ON: a scroll event is dispatched in the
+ * rendering update's scroll steps, which run BEFORE that frame's animation-frame
+ * callbacks. So a drive's own event always reaches `report` before `afterFrame`
+ * could disarm it. (Measured for CodeMirror, whose `scrollIntoView` is applied
+ * a frame late: immediately after the dispatch `scrollTop` is unchanged, and by
+ * the next frame it has landed.)
  */
 export type Place = {
   /** The source line last reported at the top of a pane. */
   line(): number;
-  /** A pane saying where its top now is. Ignored while that pane is being driven. */
+  /** A pane saying which source line is at its top now. */
   report(pane: string, line: number): void;
-  /** Scroll `pane` programmatically: its own reports are dropped until settled. */
-  driven(pane: string, run: () => void): void;
-  /** Be moved when another pane reports. Returns the unsubscribe. */
-  follow(pane: string, fn: (line: number) => void): () => void;
+  /**
+   * Take part: the pane is put where the place already is, and follows it from
+   * now on. Returns the leave.
+   */
+  join(pane: string, controls: Pane): () => void;
 };
 
 export function createPlace(
   opts: {
     line?: number;
-    /** Injected so the guard can be hand-run in a test. */
-    schedule?: (fn: () => void, ms: number) => void;
-    settleMs?: number;
+    /** Injected so the one-frame disarm can be hand-run in a cell. */
+    afterFrame?: (fn: () => void) => void;
   } = {},
 ): Place {
-  const schedule = opts.schedule ?? ((fn, ms) => void setTimeout(fn, ms));
-  const settleMs = opts.settleMs ?? SETTLE_MS;
+  const afterFrame = opts.afterFrame ?? ((fn) => void requestAnimationFrame(fn));
   let current = opts.line ?? 1;
-  const driving = new Set<string>();
-  const followers = new Map<string, (line: number) => void>();
+  const panes = new Map<string, Pane>();
+  /** Panes whose next report will be the scroll this place just asked them for. */
+  const armed = new Set<string>();
+  /** Where each drive left its pane, once it had settled. */
+  const left = new Map<string, number>();
 
-  const driven = (pane: string, run: () => void) => {
-    driving.add(pane);
-    try {
-      run();
-    } finally {
-      schedule(() => driving.delete(pane), settleMs);
-    }
+  const drive = (id: string) => {
+    const pane = panes.get(id);
+    if (!pane) return;
+    const before = pane.at();
+    armed.add(id);
+    left.delete(id);
+    pane.to(current);
+    afterFrame(() => {
+      if (!armed.has(id)) return;
+      const now = pane.at();
+      // ⛔ A SCROLL THAT MOVED NOTHING SENDS NO EVENT, so nothing would ever
+      // consume the arm and the human's next scroll would be eaten in its
+      // place. A frame later the pane has settled (CodeMirror's scroll lands
+      // then), so an unchanged position means no event is coming.
+      if (now === before) armed.delete(id);
+      else left.set(id, now);
+    });
   };
 
   return {
     line: () => current,
-    driven,
-    report(pane, line) {
-      if (driving.has(pane) || line === current) return;
+    report(id, line) {
+      if (armed.delete(id)) {
+        const pane = panes.get(id);
+        const where = left.get(id);
+        left.delete(id);
+        // ⛔ UNLESS THE PANE IS NOT WHERE THE DRIVE LEFT IT. A human scroll in
+        // the same frame as ours is COALESCED into one event carrying their
+        // position, and swallowing that is the fifty-line defect in miniature.
+        // Where the drive left the pane is known by then (it is recorded a
+        // frame after the drive, and a scroll event is dispatched a frame
+        // later still), so the two cases are told apart exactly rather than by
+        // a tolerance. Otherwise this is the drive we asked for arriving: not
+        // news, and above all not a reason to move anybody — it is the only
+        // thing that stops the panes chasing each other, and it means a
+        // FOLLOWER never reports at all.
+        if (!pane || where === undefined || pane.at() === where) return;
+      }
+      if (line === current) return;
       current = line;
-      for (const [id, fn] of followers) if (id !== pane) driven(id, () => fn(line));
+      for (const other of panes.keys()) if (other !== id) drive(other);
     },
-    follow(pane, fn) {
-      followers.set(pane, fn);
+    join(id, controls) {
+      panes.set(id, controls);
+      // Arriving from the other view, or mounting beside it: land where the
+      // place already is. Same path as a follow, so the same arm covers it.
+      drive(id);
       return () => {
-        if (followers.get(pane) === fn) followers.delete(pane);
+        if (panes.get(id) !== controls) return;
+        panes.delete(id);
+        armed.delete(id);
       };
     },
   };

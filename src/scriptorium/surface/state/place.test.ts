@@ -1,7 +1,7 @@
 // E63: keeping your place — the source line at the top of a pane, and what it
 // takes to put another pane at the same line without the two chasing each other.
 import { describe, expect, test } from "bun:test";
-import { createPlace, lineAtTop, sourceLine, topForLine } from "./place";
+import { createPlace, lineAtTop, type Place, sourceLine, topForLine } from "./place";
 import { project } from "./projection";
 
 /**
@@ -99,6 +99,17 @@ describe("topForLine / lineAtTop", () => {
     expect(lineAtTop(anchors, 200)).toBe(16);
   });
 
+  // ⚠ THE ROUNDING DIRECTION, which nothing exercised while every cell landed
+  // on a whole line: `Math.round` → `Math.floor` survived mutation. Halfway
+  // between two source lines, the line whose text is actually at the top edge
+  // is the NEARER one, so a scroll 45% of the way from line 1 to line 11 reads
+  // as 6 and not as 5.
+  test("a position between two source lines reads as the nearer one", () => {
+    expect(lineAtTop(anchors, 45)).toBe(6);
+    expect(lineAtTop(anchors, 55)).toBe(7);
+    expect(lineAtTop(anchors, 44)).toBe(5);
+  });
+
   test("a scroll position outside the anchors clamps to the end lines", () => {
     expect(lineAtTop(anchors, -40)).toBe(1);
     expect(lineAtTop(anchors, 9999)).toBe(21);
@@ -124,92 +135,218 @@ describe("topForLine / lineAtTop", () => {
 });
 
 describe("createPlace", () => {
-  /** A hand-run clock: the drive guard releases only when the test says so. */
-  function manual() {
+  /**
+   * A pane as the store sees one, plus the browser's half of the contract: a
+   * scroll changes the position and then sends ONE scroll event, in a later
+   * frame. `flush` is the browser delivering it; `frame` is the rendering
+   * update's animation callbacks, which run AFTER any scroll event.
+   */
+  function fakePane(place: () => Place, id: string, map: (line: number) => number) {
+    const pane = {
+      at: () => pane.position,
+      to: (line: number) => {
+        const next = map(line);
+        if (next === pane.position) return;
+        pane.position = next;
+        pane.queued = true;
+      },
+      position: 0,
+      queued: false,
+      /** The line this pane would report from where it is now. */
+      read: () => Math.round(pane.position / 10) + 1,
+      /** Deliver the pending scroll event, if the browser has one. */
+      flush() {
+        if (!pane.queued) return;
+        pane.queued = false;
+        place().report(id, pane.read());
+      },
+      /**
+       * The human scrolls before the browser has delivered our own scroll's
+       * event: the two COALESCE into one event carrying the human's position.
+       */
+      coalesce(position: number) {
+        pane.position = position;
+        pane.queued = false;
+        place().report(id, pane.read());
+      },
+      /** The human scrolls this pane: position changes, event follows. */
+      human(position: number) {
+        pane.position = position;
+        place().report(id, pane.read());
+      },
+    };
+    return pane;
+  }
+
+  /** The deferred one-frame disarms, run by hand. */
+  function clock() {
     const queued: (() => void)[] = [];
     return {
-      schedule: (fn: () => void) => {
+      afterFrame: (fn: () => void) => {
         queued.push(fn);
       },
-      settle: () => {
-        const run = queued.splice(0);
-        for (const fn of run) fn();
+      frame: () => {
+        for (const fn of queued.splice(0)) fn();
       },
     };
   }
 
-  test("a pane's report reaches the other pane, not itself", () => {
-    const place = createPlace();
-    const heard: string[] = [];
-    place.follow("raw", (n) => heard.push(`raw:${n}`));
-    place.follow("rendered", (n) => heard.push(`rendered:${n}`));
-    place.report("raw", 42);
-    expect(heard).toEqual(["rendered:42"]);
-    expect(place.line()).toBe(42);
+  /** Two panes, ten pixels to the line, joined to one place. */
+  function pair(line = 1) {
+    const c = clock();
+    let place: Place;
+    const get = () => place;
+    const raw = fakePane(get, "raw", (n) => (n - 1) * 10);
+    const rendered = fakePane(get, "rendered", (n) => (n - 1) * 10);
+    place = createPlace({ line, afterFrame: c.afterFrame });
+    place.join("raw", raw);
+    place.join("rendered", rendered);
+    raw.flush();
+    rendered.flush();
+    c.frame();
+    return { place, raw, rendered, frame: c.frame };
+  }
+
+  test("a pane's scroll moves the other one to the same line", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(400);
+    expect(place.line()).toBe(41);
+    expect(rendered.position).toBe(400);
+    rendered.flush();
+    frame();
+    expect(place.line()).toBe(41);
   });
 
-  test("the pane being driven does not report back — the feedback loop", () => {
-    const clock = manual();
-    const place = createPlace({ schedule: clock.schedule });
-    const heard: string[] = [];
-    place.follow("raw", (n) => {
-      heard.push(`raw:${n}`);
-      // What a real pane does: the programmatic scroll fires its own handler.
-      place.report("raw", n + 1);
-    });
-    place.follow("rendered", (n) => {
-      heard.push(`rendered:${n}`);
-      place.report("rendered", n + 1);
-    });
-    place.report("raw", 40);
-    expect(heard).toEqual(["rendered:40"]);
-    expect(place.line()).toBe(40);
+  test("⛔ the follower does not report back — the panes cannot chase each other", () => {
+    // The follower's own scroll event is the drive arriving. If it were news,
+    // each pane's read-back would move the other and the two would ratchet.
+    const { place, raw, rendered, frame } = pair();
+    const moved: number[] = [];
+    raw.human(400);
+    // The follower reads back one line late, as a real mapping does.
+    rendered.position = 406;
+    rendered.flush();
+    frame();
+    expect(place.line()).toBe(41);
+    expect(raw.position).toBe(400);
+    expect(moved).toEqual([]);
   });
 
-  test("the guard lifts once the scroll has settled", () => {
-    const clock = manual();
-    const place = createPlace({ schedule: clock.schedule });
-    const heard: number[] = [];
-    place.follow("raw", (n) => heard.push(n));
-    place.follow("rendered", () => {});
-    place.report("raw", 40);
-    place.report("rendered", 41);
-    expect(heard).toEqual([]);
-    clock.settle();
-    place.report("rendered", 41);
-    expect(heard).toEqual([41]);
+  /**
+   * ⛔ THE INVARIANT, and the defect that made it a cell: a real scroll of the
+   * pane that was JUST driven used to be discarded by the settle window, with
+   * nothing to catch it up — measured in the browser at fifty lines apart, and
+   * still fifty lines apart four seconds later. Settled means agreed.
+   */
+  test("a human scroll of the pane that was just driven is heard, and the panes agree", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(1500);
+    expect(rendered.position).toBe(1500);
+    // The drive's own event arrives a frame later, as the browser delivers it.
+    rendered.flush();
+    frame();
+    // NOW the human grabs the pane that was just driven — the 60 ms case, well
+    // inside any settle window anyone might have chosen.
+    rendered.human(3000);
+    expect(place.line()).toBe(301);
+    expect(raw.position).toBe(3000);
+    raw.flush();
+    frame();
+    expect(raw.read()).toBe(rendered.read());
+    expect(place.line()).toBe(301);
   });
 
-  test("a restore is a drive too: the pane reading the place does not re-report it", () => {
-    const clock = manual();
-    const place = createPlace({ line: 120, schedule: clock.schedule });
-    const heard: number[] = [];
-    place.follow("rendered", (n) => heard.push(n));
-    place.driven("raw", () => {
-      // Mounting: read the place, scroll there, and the scroll handler fires.
-      expect(place.line()).toBe(120);
-      place.report("raw", 118);
-    });
-    expect(heard).toEqual([]);
+  /**
+   * The sub-frame case: the human scrolls before the browser has delivered our
+   * drive's own event, so the two arrive as ONE event carrying their position.
+   * Told apart by WHERE the pane is, not by how long ago the drive was.
+   */
+  test("a human scroll coalesced with the drive's own event is still heard", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(1500);
+    frame();
+    rendered.coalesce(3000);
+    expect(place.line()).toBe(301);
+    expect(raw.position).toBe(3000);
+  });
+
+  test("a burst of scrolls down one pane leaves both at the same line", () => {
+    const { place, raw, rendered, frame } = pair();
+    for (let px = 100; px <= 2000; px += 100) {
+      raw.human(px);
+      rendered.flush();
+      frame();
+    }
+    expect(place.line()).toBe(201);
+    expect(rendered.read()).toBe(raw.read());
+  });
+
+  test("scrolls alternating between the two panes still settle agreed", () => {
+    const { place, raw, rendered, frame } = pair();
+    const panes = [raw, rendered];
+    for (let i = 0; i < 12; i++) {
+      const lead = panes[i % 2] as typeof raw;
+      const follow = panes[(i + 1) % 2] as typeof raw;
+      lead.human(500 + i * 130);
+      follow.flush();
+      frame();
+    }
+    expect(raw.read()).toBe(rendered.read());
+    expect(place.line()).toBe(raw.read());
+  });
+
+  /**
+   * ⛔ A DRIVE THAT MOVED NOTHING SENDS NO EVENT. Without the one-frame disarm
+   * the arm would sit there and eat the human's next scroll instead — the same
+   * defect as the settle window, just waiting longer for its victim.
+   */
+  test("a drive that moves nothing does not eat the next real scroll", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(400);
+    rendered.flush();
+    frame();
+    // Both are already at line 41; reporting it again drives nothing.
+    raw.human(400);
+    frame();
+    rendered.human(900);
+    expect(place.line()).toBe(91);
+    expect(raw.position).toBe(900);
+  });
+
+  test("joining puts the pane where the place already is", () => {
+    const c = clock();
+    let place: Place;
+    const late = fakePane(
+      () => place,
+      "rendered",
+      (n) => (n - 1) * 10,
+    );
+    place = createPlace({ line: 120, afterFrame: c.afterFrame });
+    place.join("rendered", late);
+    expect(late.position).toBe(1190);
+    late.flush();
+    c.frame();
     expect(place.line()).toBe(120);
   });
 
-  test("the same line twice is not news", () => {
-    const place = createPlace();
-    const heard: number[] = [];
-    place.follow("rendered", (n) => heard.push(n));
-    place.report("raw", 7);
-    place.report("raw", 7);
-    expect(heard).toEqual([7]);
+  test("a pane that has left is neither driven nor heard", () => {
+    const { place, raw, rendered, frame } = pair();
+    const leave = place.join("rendered", rendered);
+    rendered.flush();
+    frame();
+    leave();
+    raw.human(400);
+    expect(rendered.position).toBe(0);
+    expect(place.line()).toBe(41);
   });
 
-  test("an unfollowed pane hears nothing", () => {
-    const place = createPlace();
-    const heard: number[] = [];
-    const stop = place.follow("rendered", (n) => heard.push(n));
-    stop();
-    place.report("raw", 9);
-    expect(heard).toEqual([]);
-    expect(place.line()).toBe(9);
+  test("the same line twice is not news", () => {
+    const { raw, rendered, frame } = pair();
+    raw.human(400);
+    rendered.flush();
+    frame();
+    const was = rendered.position;
+    raw.human(404);
+    expect(rendered.position).toBe(was);
   });
 });

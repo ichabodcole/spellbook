@@ -41347,37 +41347,55 @@ function lineAtTop(anchors, top) {
   }
   return last.line;
 }
-var SETTLE_MS = 150;
 function createPlace(opts = {}) {
-  const schedule = opts.schedule ?? ((fn, ms) => void setTimeout(fn, ms));
-  const settleMs = opts.settleMs ?? SETTLE_MS;
+  const afterFrame = opts.afterFrame ?? ((fn) => void requestAnimationFrame(fn));
   let current = opts.line ?? 1;
-  const driving = new Set;
-  const followers = new Map;
-  const driven = (pane, run) => {
-    driving.add(pane);
-    try {
-      run();
-    } finally {
-      schedule(() => driving.delete(pane), settleMs);
-    }
+  const panes = new Map;
+  const armed = new Set;
+  const left = new Map;
+  const drive = (id) => {
+    const pane = panes.get(id);
+    if (!pane)
+      return;
+    const before = pane.at();
+    armed.add(id);
+    left.delete(id);
+    pane.to(current);
+    afterFrame(() => {
+      if (!armed.has(id))
+        return;
+      const now3 = pane.at();
+      if (now3 === before)
+        armed.delete(id);
+      else
+        left.set(id, now3);
+    });
   };
   return {
     line: () => current,
-    driven,
-    report(pane, line) {
-      if (driving.has(pane) || line === current)
+    report(id, line) {
+      if (armed.delete(id)) {
+        const pane = panes.get(id);
+        const where = left.get(id);
+        left.delete(id);
+        if (!pane || where === undefined || pane.at() === where)
+          return;
+      }
+      if (line === current)
         return;
       current = line;
-      for (const [id, fn] of followers)
-        if (id !== pane)
-          driven(id, () => fn(line));
+      for (const other of panes.keys())
+        if (other !== id)
+          drive(other);
     },
-    follow(pane, fn) {
-      followers.set(pane, fn);
+    join(id, controls) {
+      panes.set(id, controls);
+      drive(id);
       return () => {
-        if (followers.get(pane) === fn)
-          followers.delete(pane);
+        if (panes.get(id) !== controls)
+          return;
+        panes.delete(id);
+        armed.delete(id);
       };
     }
   };
@@ -58340,23 +58358,12 @@ function DocumentView({
       const line = v.state.doc.line(Math.max(1, Math.min(n, v.state.doc.lines)));
       v.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "start" }) });
     };
-    let frame2 = 0;
-    const onScroll = () => {
-      if (frame2)
-        return;
-      frame2 = requestAnimationFrame(() => {
-        frame2 = 0;
-        place.report("raw", topLine());
-      });
-    };
+    const onScroll = () => place.report("raw", topLine());
     scroller.addEventListener("scroll", onScroll, { passive: true });
-    const stop = place.follow("raw", toLine);
-    place.driven("raw", () => toLine(place.line()));
+    const leave = place.join("raw", { to: toLine, at: () => scroller.scrollTop });
     return () => {
       scroller.removeEventListener("scroll", onScroll);
-      if (frame2)
-        cancelAnimationFrame(frame2);
-      stop();
+      leave();
     };
   }, [place]);
   import_react19.useEffect(() => {
@@ -58763,30 +58770,17 @@ function MarkdownView({
     const sc = scroller.current;
     if (!sc || !place)
       return;
-    let frame2 = 0;
-    const onScroll = () => {
-      if (frame2)
-        return;
-      frame2 = requestAnimationFrame(() => {
-        frame2 = 0;
-        place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
-      });
-    };
+    const onScroll = () => place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
     sc.addEventListener("scroll", onScroll, { passive: true });
-    const stop = place.follow("rendered", (line) => {
-      sc.scrollTop = topForLine(measureRef.current(), line);
-    });
-    const mounted = requestAnimationFrame(() => {
-      place.driven("rendered", () => {
-        sc.scrollTop = topForLine(measureRef.current(), place.line());
-      });
+    const leave = place.join("rendered", {
+      to: (line) => {
+        sc.scrollTop = topForLine(measureRef.current(), line);
+      },
+      at: () => sc.scrollTop
     });
     return () => {
       sc.removeEventListener("scroll", onScroll);
-      if (frame2)
-        cancelAnimationFrame(frame2);
-      cancelAnimationFrame(mounted);
-      stop();
+      leave();
     };
   }, [place]);
   const selectedRange = import_react20.useCallback(() => {

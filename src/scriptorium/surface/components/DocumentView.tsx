@@ -450,21 +450,15 @@ export function DocumentView({
       const line = v.state.doc.line(Math.max(1, Math.min(n, v.state.doc.lines)));
       v.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "start" }) });
     };
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        place.report("raw", topLine());
-      });
-    };
+    // Synchronous, like the rendered pane's: the place reads a drive's own
+    // event by ORDER against the animation frame, and a deferred report would
+    // arrive on the wrong side of it.
+    const onScroll = () => place.report("raw", topLine());
     scroller.addEventListener("scroll", onScroll, { passive: true });
-    const stop = place.follow("raw", toLine);
-    place.driven("raw", () => toLine(place.line()));
+    const leave = place.join("raw", { to: toLine, at: () => scroller.scrollTop });
     return () => {
       scroller.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-      stop();
+      leave();
     };
   }, [place]);
 

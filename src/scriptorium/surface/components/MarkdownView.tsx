@@ -172,36 +172,26 @@ export function MarkdownView({
     return () => ro.disconnect();
   }, [html, projection]);
 
-  // ⛔ THE REPORT IS THROTTLED TO A FRAME AND THE FOLLOW IS NOT. A scroll fires
-  // far more often than it paints, and `lineAtTop` is a scan; the follow is
-  // already rate-limited by the other pane's own reports.
+  // ⛔ REPORTED SYNCHRONOUSLY, NOT THROTTLED TO A FRAME. The place tells a
+  // drive's own scroll event apart from the human's by ORDER — a scroll event
+  // is dispatched before that frame's animation callbacks — and deferring the
+  // report into a `requestAnimationFrame` puts it on the wrong side of that
+  // line. `lineAtTop` is a scan of a few hundred cached anchors, so there is
+  // nothing to throttle.
   useEffect(() => {
     const sc = scroller.current;
     if (!sc || !place) return;
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
-      });
-    };
+    const onScroll = () => place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
     sc.addEventListener("scroll", onScroll, { passive: true });
-    const stop = place.follow("rendered", (line) => {
-      sc.scrollTop = topForLine(measureRef.current(), line);
-    });
-    // Arriving from the other view: one frame for the html to have been laid
-    // out, then land where the pane we came from was.
-    const mounted = requestAnimationFrame(() => {
-      place.driven("rendered", () => {
-        sc.scrollTop = topForLine(measureRef.current(), place.line());
-      });
+    const leave = place.join("rendered", {
+      to: (line) => {
+        sc.scrollTop = topForLine(measureRef.current(), line);
+      },
+      at: () => sc.scrollTop,
     });
     return () => {
       sc.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-      cancelAnimationFrame(mounted);
-      stop();
+      leave();
     };
   }, [place]);
 

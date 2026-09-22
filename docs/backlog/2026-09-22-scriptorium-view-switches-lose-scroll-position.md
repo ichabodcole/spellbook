@@ -52,24 +52,57 @@ whether or not anything is selected. Compare is **out of scope** — CodeMirror'
 merge view does its own scrolling.
 
 The primitive is `surface/state/place.ts`: a source line is the currency both
-views can name, and one `Place` per open document holds it. A pane `report`s the
-line at its top and `follow`s another pane's; the drive guard lives in the store
-rather than in the panes, so the feedback loop cannot be reintroduced by
-forgetting to suppress a handler. The raw pane needs no mapping — CodeMirror's
-`posAtCoords` / `scrollIntoView` are exact. The rendered pane is described by
-ANCHORS (the source line each rendered block begins on and where it sits in the
-scroller, built by `renderedRange.lineAnchors` over E51's projection), with
-linear interpolation between them; `topForLine` and `lineAtTop` are inverses, so
-a round trip does not drift. That is the definition of "close": the error is
-bounded by the block, not by the pixel.
+views can name, and one `Place` per open document holds it. A pane `join`s the
+place — which puts it where the place already is and makes it follow — and
+`report`s the line at its top. The guard lives in the store rather than in the
+panes, so the feedback loop cannot be reintroduced by forgetting to suppress a
+handler, and it is an EVENT rather than a duration: a programmatic scroll
+produces exactly one scroll event, so the first report after a drive is that
+drive. (It was a 150 ms window first; see the defects below.) The raw pane needs
+no mapping — CodeMirror's `posAtCoords` / `scrollIntoView` are exact. The
+rendered pane is described by ANCHORS (the source line each rendered block
+begins on and where it sits in the scroller, built by
+`renderedRange.lineAnchors` over E51's projection), with linear interpolation
+between them; `topForLine` and `lineAtTop` are inverses, so a round trip does
+not drift. That is the definition of "close": the error is bounded by the block,
+not by the pixel.
 
-**Measured** on `grimoire/house-style.md` (668 lines) in Chromium: at 24 scroll
-positions the followed pane's top line was within **1 line** (median 1, max 1,
-and the 1 is the probe counting a partly visible line); raw→rendered was exact
-at four positions. No drift after settling, wheel or programmatic. Every mode
-switch — split→raw→rendered→raw→split — kept the same passage at the top.
+**Measured** on `grimoire/house-style.md` (668 lines) in Chromium, with an
+oracle that reads both panes out of the DOM and locates the text in the file:
+when a block begins at the top edge — the case a human aims at — the other
+pane's top line is that block's own line **exactly, at 25 of 27 headings**; at
+**42 arbitrary positions** the two are **within three source lines** (exact at
+20 of 37 locatable, within one at 32, within two at 34), and that oracle reads
+late by up to two rendered lines, so it is an upper bound. At the very bottom
+the follower is at its maximum scroll and cannot put the leader's line at the
+top at all: the residue is the distance from the last anchor to the last line
+(six lines here), a structural floor of scrolling rather than a fault in the
+mapping. No drift after settling, wheel or programmatic. Every mode switch —
+split→raw→rendered→raw→split — kept the same passage at the top.
 
-Two defects found by driving it, both now fixed and commented at the site:
+⚠ **A first pass claimed "within one source line"** on a 24-position sweep whose
+probe flattered it, and an independent verifier could not reproduce it. The
+number above is the reproduction, and the claim is now written with its method
+and its limit attached.
+
+**Two defects an independent verifier found in the first pass, both fixed
+here:**
+
+- **A real scroll inside the settle window was discarded, and nothing reconciled
+  it.** Scroll rendered, then scroll raw 60 ms later: the panes ended up **fifty
+  lines apart and stayed there**. The cell asserted that a driven pane's report
+  is dropped — the mechanism — and nothing asserted the consequence, which is
+  where the defect lived.
+- **A fast wheel over the rendered pane left the follower up to twelve lines
+  behind, frozen**, because two settle windows overlapped and one expired under
+  the other.
+
+Both are the same mistake, so both got the same fix: the window is gone. The
+invariant is now the one the verifier named — **settled means agreed** — and it
+is what the cells assert. Reproduced after the fix: the 60 ms case leaves both
+panes on line 71, and eight fast-wheel bursts settle within one line.
+
+Two more found by driving it here, both fixed and commented at the site:
 
 - A container's **leading whitespace text node** is placed where the cursor
   already stands, i.e. at the END of the previous block, so a `<blockquote>`

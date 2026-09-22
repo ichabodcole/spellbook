@@ -2092,7 +2092,18 @@ is defined rather than hoped for: the rendered pane is described by ANCHORS (the
 source line each rendered block begins on, and where it sits in the scroller)
 and anything between two anchors is interpolated. The error is bounded by the
 BLOCK, which is the unit a human looks for when they switch views. **Measured on
-`grimoire/house-style.md` (668 lines): within one line at 24 scroll positions.**
+`grimoire/house-style.md` (668 lines): when a block begins at the top edge, the
+other pane's top line is that block's line EXACTLY (25 of 27 headings); at 42
+arbitrary positions the two are within three source lines.** At the very bottom
+the follower is already at maximum scroll and cannot put the leader's line at
+the top at all — the residue is the distance from the last anchor to the last
+line, a structural floor of scrolling, named here rather than papered over.
+
+**⚠ A first pass claimed "within one source line"**, on a 24-position sweep
+whose probe flattered it, and it did not reproduce for the verifier. Recorded
+because the lesson is the general one: a number in the tree is a claim, and a
+claim nobody else can reproduce is a defect in its own right. Measurements here
+now carry their method and their limit.
 
 **One primitive, two callers** (`surface/state/place.ts`). The source line is
 the only coordinate both views can name: the raw half gets it exactly from
@@ -2104,4 +2115,35 @@ different heights, and a second mapping beside E51's.
 **⛔ THE FEEDBACK GUARD LIVES IN THE STORE, NOT IN THE PANES.** A pane that must
 remember to suppress its own scroll handler while being driven is a pane that
 will forget, and the failure — each pane re-triggering the other down the
-document — is the classic one. `follow` is only ever called from inside a drive.
+document — is the classic one. A pane can only take part through `join`, and
+`join` is what arms the guard.
+
+**⛔ AND THE GUARD IS AN EVENT, NOT A DURATION — ruled after it was built the
+other way.** The first version suppressed a pane's reports for 150 ms after
+driving it. A window is a GUESS about which scroll a report came from, and an
+independent verifier convicted both halves of the guess: a real scroll that
+landed inside the window was thrown away with nothing to catch it up (**fifty
+lines apart, and still fifty lines apart four seconds later**), and during a
+fast wheel two windows overlapped so that one expired under the other and left
+the follower **twelve lines behind, frozen there** until the next tick nudged
+it. **Not taken:** widening or narrowing the window, which only moves which
+scrolls are lost; and a tolerance on the line numbers, which would have made the
+bottom clamp indistinguishable from a real move.
+
+What replaced it is exact. A programmatic scroll produces exactly ONE scroll
+event, so the arm is one-shot: the first report after a drive IS that drive. Two
+facts make it airtight. A scroll event is dispatched in the rendering update's
+scroll steps, which run BEFORE that frame's animation-frame callbacks — so a
+one-frame disarm can clear an arm that will never be consumed (a drive that
+moved nothing sends no event) without ever racing the event itself. And a human
+scroll COALESCED into the same event as ours is told apart by WHERE THE PANE IS
+against where the drive left it, so nothing is lost even inside a single frame.
+
+_Measured, and the reason the ordering is written down rather than assumed:
+CodeMirror's `scrollIntoView` is applied a frame late — immediately after the
+dispatch `scrollTop` is unchanged; by the next frame it has landed._
+
+**The invariant the cells now hold is the one the verifier named: when
+everything settles, the two panes agree.** Asserting that the follower's report
+is dropped was not enough — it asserted the mechanism and not the consequence,
+and the defect lived in the gap between them.
