@@ -166,3 +166,8 @@ _No pages yet._
   error rejections across all eight spells, and ruled that choices is required
   only where a closed set is in hand at the raise while hint is required only
   where a next act exists
+
+- [Scriptorium's chip: a forward cursor that never came back, and a flag that outlived its passage](./memories/2026-09-22-scriptorium-selection-and-the-chip.md)
+  — Rendered-mode selections drifted because one whitespace run moved alignRuns'
+  cursor past real text, and the chip kept a second piece of state the selection
+  did not — fixed, with the ruling that clearing the chip clears the selection

@@ -7,7 +7,7 @@ description:
   sticks for new selections, and a click-to-deselect in rendered mode leaves it
 tags: [scriptorium, selection, chat, bug]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 

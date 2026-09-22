@@ -8,7 +8,7 @@ description:
   other lines than the ones highlighted; seen on long real documents
 tags: [scriptorium, selection, rendered-mode, bug]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 

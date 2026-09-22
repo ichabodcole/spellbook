@@ -87,4 +87,4 @@ _Written at close, not before._
 
 ## Sessions
 
-- fix/scriptorium-selection-context (open)
+- fix/scriptorium-selection-context (landed 2026-09-22)
