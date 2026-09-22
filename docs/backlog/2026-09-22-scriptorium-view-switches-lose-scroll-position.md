@@ -8,7 +8,7 @@ description:
   two panes do not scroll together
 tags: [scriptorium, view-modes, scroll, ux]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 

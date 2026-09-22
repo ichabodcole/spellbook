@@ -171,3 +171,8 @@ _No pages yet._
   — Rendered-mode selections drifted because one whitespace run moved alignRuns'
   cursor past real text, and the chip kept a second piece of state the selection
   did not — fixed, with the ruling that clearing the chip clears the selection
+
+- [A time window is a guess about which scroll a report came from](./memories/2026-09-22-a-time-window-is-a-guess.md)
+  — Scriptorium's split-view sync suppressed reports for a time window after
+  driving a pane, which discarded real scrolls; replacing the guess with an
+  exact position test fixed both symptoms and left two pinned sub-frame holes
