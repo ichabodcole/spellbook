@@ -58229,6 +58229,9 @@ function toPlain(p, srcFrom, srcTo) {
   const to = last2.exact ? last2.plainFrom + Math.min(last2.plainTo - last2.plainFrom, Math.max(0, srcTo - last2.srcFrom)) : last2.plainTo;
   return { from: Math.min(from, to), to: Math.max(from, to) };
 }
+function runOffset(placement, within) {
+  return placement.at + Math.max(0, within - placement.lead);
+}
 function alignRuns(plain, runs) {
   const cores = runs.map((r2) => r2.trim());
   const out = [];
@@ -58238,19 +58241,23 @@ function alignRuns(plain, runs) {
     const core = cores[i2];
     if (core === "") {
       if (run !== "" && plain.startsWith(run, cursor)) {
-        out.push(cursor);
+        out.push({ at: cursor, lead: 0 });
         cursor += run.length;
       } else
         out.push(null);
       continue;
     }
-    const at2 = plain.indexOf(core, cursor);
-    if (at2 === -1 || /\S/.test(plain.slice(cursor, at2)) && !confirmed(plain, at2 + core.length, cores, i2)) {
+    const found = plain.indexOf(core, cursor);
+    if (found === -1 || /\S/.test(plain.slice(cursor, found)) && !confirmed(plain, found + core.length, cores, i2)) {
       out.push(null);
       continue;
     }
-    out.push(Math.max(0, at2 - (run.length - run.trimStart().length)));
-    cursor = at2 + core.length;
+    const wanted = run.length - run.trimStart().length;
+    let back = 0;
+    while (back < wanted && plain[found - back - 1] === run[wanted - back - 1])
+      back++;
+    out.push({ at: found - back, lead: wanted - back });
+    cursor = found + core.length;
   }
   return out;
 }
@@ -58309,20 +58316,20 @@ function plainAt(a2, container, offset4, dir) {
   if (i2 === -1)
     return null;
   const own3 = a2.starts[i2];
-  if (own3 !== null && own3 !== undefined)
-    return own3 + Math.min(within, node2.data.length);
+  if (own3)
+    return runOffset(own3, Math.min(within, node2.data.length));
   if (dir === "start") {
     for (let j2 = i2 + 1;j2 < a2.starts.length; j2++) {
       const s = a2.starts[j2];
-      if (s !== null && s !== undefined)
-        return s;
+      if (s)
+        return s.at;
     }
     return null;
   }
   for (let j2 = i2 - 1;j2 >= 0; j2--) {
     const s = a2.starts[j2];
-    if (s !== null && s !== undefined)
-      return s + (a2.nodes[j2]?.data.length ?? 0);
+    if (s)
+      return runOffset(s, a2.nodes[j2]?.data.length ?? 0);
   }
   return null;
 }
@@ -58344,13 +58351,13 @@ function paintRange(a2, p, srcFrom, srcTo) {
   for (let i2 = 0;i2 < a2.nodes.length; i2++) {
     const s = a2.starts[i2];
     const node2 = a2.nodes[i2];
-    if (s === null || s === undefined || !node2)
+    if (!s || !node2)
       continue;
-    const e = s + node2.data.length;
+    const e = runOffset(s, node2.data.length);
     if (!start && plain.from < e)
-      start = { node: node2, offset: Math.max(0, plain.from - s) };
-    if (plain.to > s && plain.to <= e)
-      end = { node: node2, offset: plain.to - s };
+      start = { node: node2, offset: s.lead + Math.max(0, plain.from - s.at) };
+    if (plain.to > s.at && plain.to <= e)
+      end = { node: node2, offset: s.lead + (plain.to - s.at) };
     else if (plain.to > e)
       end = { node: node2, offset: node2.data.length };
   }

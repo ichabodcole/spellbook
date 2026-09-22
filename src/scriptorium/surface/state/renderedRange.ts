@@ -6,7 +6,14 @@
 // `projection.ts` and has cells; this file only walks nodes and builds Ranges,
 // because that is the part a unit test cannot reach. If a rule starts forming
 // here, it belongs next door.
-import { alignRuns, type Projection, toPlain, toSource } from "./projection";
+import {
+  alignRuns,
+  type Projection,
+  type RunPlacement,
+  runOffset,
+  toPlain,
+  toSource,
+} from "./projection";
 
 /** Every text node under `root`, in document order. */
 export function textNodes(root: Node): Text[] {
@@ -17,7 +24,7 @@ export function textNodes(root: Node): Text[] {
 }
 
 /** The rendered text nodes, each with where it begins in the projection. */
-export type Aligned = { nodes: Text[]; starts: (number | null)[] };
+export type Aligned = { nodes: Text[]; starts: (RunPlacement | null)[] };
 
 export function align(root: Node, p: Projection): Aligned {
   const nodes = textNodes(root);
@@ -60,19 +67,19 @@ function plainAt(a: Aligned, container: Node, offset: number, dir: "start" | "en
   const i = a.nodes.indexOf(node);
   if (i === -1) return null;
   const own = a.starts[i];
-  if (own !== null && own !== undefined) return own + Math.min(within, node.data.length);
+  if (own) return runOffset(own, Math.min(within, node.data.length));
 
   // This run is not in the projection. Take the nearest one that is.
   if (dir === "start") {
     for (let j = i + 1; j < a.starts.length; j++) {
       const s = a.starts[j];
-      if (s !== null && s !== undefined) return s;
+      if (s) return s.at;
     }
     return null;
   }
   for (let j = i - 1; j >= 0; j--) {
     const s = a.starts[j];
-    if (s !== null && s !== undefined) return s + (a.nodes[j]?.data.length ?? 0);
+    if (s) return runOffset(s, a.nodes[j]?.data.length ?? 0);
   }
   return null;
 }
@@ -111,10 +118,12 @@ export function paintRange(
   for (let i = 0; i < a.nodes.length; i++) {
     const s = a.starts[i];
     const node = a.nodes[i];
-    if (s === null || s === undefined || !node) continue;
-    const e = s + node.data.length;
-    if (!start && plain.from < e) start = { node, offset: Math.max(0, plain.from - s) };
-    if (plain.to > s && plain.to <= e) end = { node, offset: plain.to - s };
+    if (!s || !node) continue;
+    // The node's own span in `plain`, which excludes the leading characters it
+    // has and the projection does not.
+    const e = runOffset(s, node.data.length);
+    if (!start && plain.from < e) start = { node, offset: s.lead + Math.max(0, plain.from - s.at) };
+    if (plain.to > s.at && plain.to <= e) end = { node, offset: s.lead + (plain.to - s.at) };
     else if (plain.to > e) end = { node, offset: node.data.length };
   }
   if (!start || !end) return null;

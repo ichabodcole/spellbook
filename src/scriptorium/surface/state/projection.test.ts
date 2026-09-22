@@ -1,7 +1,7 @@
 // E51: the rendered text of a document, and the round trip back to source.
 import { describe, expect, test } from "bun:test";
 import { renderMarkdown } from "./markdown";
-import { alignRuns, lineAt, project, toPlain, toSource } from "./projection";
+import { alignRuns, lineAt, project, runOffset, toPlain, toSource } from "./projection";
 
 /**
  * The text nodes a browser would build from `renderMarkdown`'s output, in
@@ -21,6 +21,11 @@ function domRuns(html: string): string[] {
     .split(/<[^>]*>/)
     .map(decode)
     .filter((r) => r !== "");
+}
+
+/** A run placed with nothing of its own left over — the ordinary case. */
+function at(offset: number): { at: number; lead: number } {
+  return { at: offset, lead: 0 };
 }
 
 /**
@@ -204,20 +209,20 @@ describe("alignRuns", () => {
     // What the DOM actually offers: micromark writes ONE newline between the
     // block tags; the projection wrote two.
     const runs = ["One.", "\n", "Two."];
-    expect(alignRuns(p.plain, runs)).toEqual([0, 4, 6]);
+    expect(alignRuns(p.plain, runs)).toEqual([at(0), at(4), at(6)]);
   });
 
   test("a run the projection never wrote is null, not a guess", () => {
     const p = project("Hello.\n");
-    expect(alignRuns(p.plain, ["Hello.", "alt words"])).toEqual([0, null]);
+    expect(alignRuns(p.plain, ["Hello.", "alt words"])).toEqual([at(0), null]);
   });
 
   test("a repeated run takes the LATER occurrence, because the cursor advances", () => {
     const p = project("the gate and the gate\n");
     const runs = ["the gate", " and ", "the gate"];
     const got = alignRuns(p.plain, runs);
-    expect(got[0]).toBe(0);
-    expect(got[2]).toBe(p.plain.lastIndexOf("the gate"));
+    expect(got[0]).toEqual(at(0));
+    expect(got[2]).toEqual(at(p.plain.lastIndexOf("the gate")));
   });
 
   test("the Hollowbrook row: a DOM selection resolves to the right source", () => {
@@ -229,7 +234,7 @@ describe("alignRuns", () => {
     const runs = ["→ ", label, " (Locations) — her place."];
     const starts = alignRuns(p.plain, runs);
     // The human selects the whole label by double-clicking it.
-    const from = starts[1] as number;
+    const from = (starts[1] as { at: number }).at;
     const range = toSource(p, from, from + label.length);
     expect(src.slice(range.from, range.to)).toBe("Maren's Bakery");
   });
@@ -245,25 +250,28 @@ describe("alignRuns on a real document (house-style)", () => {
     runs.forEach((run, i) => {
       const core = run.trim();
       if (core === "") return;
-      const at = starts[i];
-      expect({ run: core, placed: at !== null }).toEqual({ run: core, placed: true });
-      const s = (at as number) + (run.length - run.trimStart().length);
+      const placed = starts[i];
+      expect({ run: core, placed: placed !== null }).toEqual({ run: core, placed: true });
+      const s = runOffset(
+        placed as NonNullable<typeof placed>,
+        run.length - run.trimStart().length,
+      );
       expect(p.plain.slice(s, s + core.length)).toBe(core);
     });
   });
 
   test("placements never go backwards", () => {
     let prev = -1;
-    for (const at of starts) {
-      if (at === null) continue;
-      expect(at).toBeGreaterThanOrEqual(prev);
-      prev = at;
+    for (const placed of starts) {
+      if (placed === null) continue;
+      expect(placed.at).toBeGreaterThanOrEqual(prev);
+      prev = placed.at;
     }
   });
 
   test("a heading directly after a block is placed (it was skipped by a stray newline)", () => {
     const i = runs.indexOf("A response states the conditions it was produced under.");
-    expect(starts[i]).toBe(p.plain.indexOf("A response states"));
+    expect(starts[i]).toEqual(at(p.plain.indexOf("A response states")));
   });
 
   test("the rule-id comment is placed, though its text node carries the newlines around it", () => {
@@ -275,8 +283,8 @@ describe("alignRuns on a real document (house-style)", () => {
   test("a selection past the blockquote reports the lines it is on", () => {
     // Double-click "derive" in the list item: the text node is the <strong>'s.
     const i = runs.indexOf("derive");
-    const at = starts[i] as number;
-    const { from, to } = toSource(p, at, at + "derive".length);
+    const where = (starts[i] as { at: number }).at;
+    const { from, to } = toSource(p, where, where + "derive".length);
     expect(src.slice(from, to)).toBe("derive");
     const line = src.split("\n").findIndex((l) => l.includes("must never **derive**")) + 1;
     expect(lineAt(src, from)).toBe(line);
@@ -318,12 +326,51 @@ describe("wrapped lines inside a list item or a quote", () => {
   });
 });
 
+describe("a run whose leading space the projection does not carry", () => {
+  // A GFM task list is the plain case: the checkbox is an <input>, so the
+  // item's text node STARTS with the space after it, and the projection
+  // (which reads the mdast text node) has no space there at all.
+  const src = "- [ ] first task item\n- [ ] second task item\n";
+  const p = project(src);
+  const runs = domRuns(renderMarkdown(src));
+  const starts = alignRuns(p.plain, runs);
+  /** Where character `within` of run `i` is in the source — the whole trip. */
+  const source = (i: number, within: number, length: number) => {
+    const at = runOffset(starts[i] as NonNullable<(typeof starts)[number]>, within);
+    const { from, to } = toSource(p, at, runOffset(starts[i] as never, within + length));
+    return src.slice(from, to);
+  };
+
+  test("the FIRST run in the document is not clamped onto its own text", () => {
+    // ⛔ The bug this is written against resolved every offset in this node one
+    // character early — invisible to a test that re-derives the offset the same
+    // way the code does, so this asks the SOURCE what is there.
+    const i = runs.findIndex((r) => r.endsWith("first task item"));
+    expect(source(i, 1, 5)).toBe("first");
+    expect(source(i, 7, 4)).toBe("task");
+  });
+
+  test("a selection anchored at a run's very first character starts at its text", () => {
+    const i = runs.findIndex((r) => r.endsWith("second task item"));
+    // Character 0 is the space that only the DOM has: it must resolve to the
+    // start of "second", not one character back into the previous item.
+    expect(source(i, 0, 7)).toBe("second");
+    expect(source(i, 1, 6)).toBe("second");
+  });
+});
+
 describe("alignRuns — one bad run does not poison the rest", () => {
   test("a whitespace run with no whitespace at the cursor is null, and moves nothing", () => {
     // Three newlines in the DOM where the projection wrote two: the third must
     // not go looking for the next newline, which is a soft break in "b\nc".
     const plain = "a\n\nb\nc";
-    expect(alignRuns(plain, ["a", "\n", "\n", "\n", "b\nc"])).toEqual([0, 1, 2, null, 3]);
+    expect(alignRuns(plain, ["a", "\n", "\n", "\n", "b\nc"])).toEqual([
+      at(0),
+      at(1),
+      at(2),
+      null,
+      at(3),
+    ]);
   });
 
   test("a run the projection never wrote does not jump to a later copy of itself", () => {
@@ -332,7 +379,7 @@ describe("alignRuns — one bad run does not poison the rest", () => {
     // between here and there.
     const plain = "See the note. Then more text.\n\nChapter 1 begins.";
     const runs = ["See the note", "1", ". Then more text.", "\n", "Chapter 1 begins."];
-    expect(alignRuns(plain, runs)).toEqual([0, null, 12, 29, 31]);
+    expect(alignRuns(plain, runs)).toEqual([at(0), null, at(12), at(29), at(31)]);
   });
 });
 

@@ -328,19 +328,40 @@ export function toPlain(
  *    that happens to occur later. The next run tells them apart: it follows the
  *    real match directly, and not the accidental one.
  *
- * A run is matched on its TRIMMED text, and its start is backed off by the
- * whitespace it trimmed. micromark puts a block of raw HTML (a `<!-- rule-id -->`
- * comment) in one text node together with the newlines around it, and the
- * projection carries the comment without them.
+ * A run is matched on its TRIMMED text, and what it is placed at is the first
+ * character of that text. micromark puts a block of raw HTML (a
+ * `<!-- rule-id -->` comment) in one text node together with the newlines
+ * around it, and a GFM task item's text node starts with the space after the
+ * checkbox — whitespace the projection never wrote.
+ *
+ * ⛔ WHICH IS WHY A PLACEMENT IS A PAIR, NOT AN OFFSET. Leading whitespace the
+ * projection DID write is part of the run and the placement covers it; leading
+ * whitespace it did not is `lead`, and every one of those characters resolves
+ * to where the run's text starts (`runOffset`). One number cannot say both: it
+ * either put the run's text one character late, or — at the very start of a
+ * document, where backing off clamps at zero — put EVERY character of the node
+ * one character early.
  *
  * A run that cannot be placed gets `null` rather than a guess: it is either
  * whitespace the projection did not write, or text from something the
  * projection deliberately skipped, and a wrong offset there would silently
  * anchor a note onto unrelated words.
  */
-export function alignRuns(plain: string, runs: readonly string[]): (number | null)[] {
+export type RunPlacement = {
+  /** Where the run's first PROJECTED character is in `plain`. */
+  at: number;
+  /** How many of the run's leading characters have no place in `plain`. */
+  lead: number;
+};
+
+/** Where character `within` of a placed run is in `plain`. */
+export function runOffset(placement: RunPlacement, within: number): number {
+  return placement.at + Math.max(0, within - placement.lead);
+}
+
+export function alignRuns(plain: string, runs: readonly string[]): (RunPlacement | null)[] {
   const cores = runs.map((r) => r.trim());
-  const out: (number | null)[] = [];
+  const out: (RunPlacement | null)[] = [];
   let cursor = 0;
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i] as string;
@@ -348,21 +369,26 @@ export function alignRuns(plain: string, runs: readonly string[]): (number | nul
     if (core === "") {
       // Rule 1: whitespace is placed where it stands, or not at all.
       if (run !== "" && plain.startsWith(run, cursor)) {
-        out.push(cursor);
+        out.push({ at: cursor, lead: 0 });
         cursor += run.length;
       } else out.push(null);
       continue;
     }
-    const at = plain.indexOf(core, cursor);
+    const found = plain.indexOf(core, cursor);
     if (
-      at === -1 ||
-      (/\S/.test(plain.slice(cursor, at)) && !confirmed(plain, at + core.length, cores, i))
+      found === -1 ||
+      (/\S/.test(plain.slice(cursor, found)) && !confirmed(plain, found + core.length, cores, i))
     ) {
       out.push(null);
       continue;
     }
-    out.push(Math.max(0, at - (run.length - run.trimStart().length)));
-    cursor = at + core.length;
+    // Back off over the leading whitespace `plain` actually has; the rest is
+    // the DOM's alone and resolves to where the text begins.
+    const wanted = run.length - run.trimStart().length;
+    let back = 0;
+    while (back < wanted && plain[found - back - 1] === run[wanted - back - 1]) back++;
+    out.push({ at: found - back, lead: wanted - back });
+    cursor = found + core.length;
   }
   return out;
 }
