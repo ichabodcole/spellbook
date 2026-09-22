@@ -3,6 +3,7 @@
 // actually selected").
 import { describe, expect, test } from "bun:test";
 import {
+  applySelectionEvent,
   contextPressAfter,
   type HeldSelection,
   heldAfter,
@@ -35,6 +36,45 @@ describe("heldAfter — what the surface (and so the daemon) holds", () => {
     const dropped = heldAfter(A, { type: "drop" });
     expect(heldAfter(dropped, { type: "report", selection: B })).toEqual(B);
     expect(heldAfter(dropped, { type: "report", selection: { ...A } })).toEqual(A);
+  });
+});
+
+describe("applySelectionEvent — what the panes are told to unpaint", () => {
+  // Cole, 2026-09-22: "clicking in either clears the selection, it's the
+  // simpler ux pattern". A click in the RENDERED half clears a selection the
+  // RAW half is holding — and CodeMirror only reports on a selection change of
+  // its own, so without this it kept its range and its blurred grey highlight.
+  test("a clear reaches both panes' paint, wherever the click was", () => {
+    expect(applySelectionEvent(A, { type: "report", selection: { ...B, to: B.from } })).toEqual({
+      held: null,
+      clearPaint: true,
+    });
+  });
+
+  test("so does the chip's X", () => {
+    expect(applySelectionEvent(A, { type: "drop" })).toEqual({ held: null, clearPaint: true });
+  });
+
+  test("a selection REPLACING another paints nothing away", () => {
+    expect(applySelectionEvent(A, { type: "report", selection: B })).toEqual({
+      held: B,
+      clearPaint: false,
+    });
+  });
+
+  test("⛔ a clear when nothing is held does NOT echo", () => {
+    // The pane told to unpaint collapses its own selection, which it reports as
+    // an empty range. That second clear must not send the panes round again.
+    expect(applySelectionEvent(null, { type: "report", selection: { ...B, to: B.from } })).toEqual({
+      held: null,
+      clearPaint: false,
+    });
+  });
+
+  test("the same selection again is no news at all", () => {
+    const again = applySelectionEvent(A, { type: "report", selection: { ...A } });
+    expect(again.held).toBe(A);
+    expect(again.clearPaint).toBe(false);
   });
 });
 

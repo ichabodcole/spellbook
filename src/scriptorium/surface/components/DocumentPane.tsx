@@ -101,7 +101,7 @@ export function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
-  dropSeq,
+  clearSeq,
   focusedNote,
   onAddNote,
   onShowNote,
@@ -130,8 +130,8 @@ export function DocumentPane({
   /** E45/E48: the editor's selection — offsets for notes, lines for the wire. */
   onSelect: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   reveal: { from: number; to: number; seq: number } | null;
-  /** Bumped when the held selection is dropped: collapse this pane's own. */
-  dropSeq: number;
+  /** Bumped when the held selection goes away: collapse this pane's own. */
+  clearSeq: number;
   /** E47: the note the panel has focused — the rendered view paints it apart. */
   focusedNote: string | null;
   onAddNote: (from: number, to: number, body: string) => void;
@@ -393,7 +393,7 @@ export function DocumentPane({
           onSave={onSave}
           onSelect={onSelect}
           reveal={reveal}
-          dropSeq={dropSeq}
+          clearSeq={clearSeq}
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onContextMenu={setNoteAt}
         />
@@ -406,7 +406,7 @@ export function DocumentPane({
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onFollowLink={onFollowLink}
           onSelect={onSelect}
-          dropSeq={dropSeq}
+          clearSeq={clearSeq}
           onContextMenu={setNoteAt}
         />
       ) : (
@@ -426,7 +426,7 @@ export function DocumentPane({
               onSave={onSave}
               onSelect={onSelect}
               reveal={reveal}
-              dropSeq={dropSeq}
+              clearSeq={clearSeq}
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onContextMenu={setNoteAt}
             />
@@ -446,7 +446,7 @@ export function DocumentPane({
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onFollowLink={onFollowLink}
               onSelect={onSelect}
-              dropSeq={dropSeq}
+              clearSeq={clearSeq}
               onContextMenu={setNoteAt}
             />
           </ResizablePanel>

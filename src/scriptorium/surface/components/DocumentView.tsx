@@ -244,7 +244,7 @@ export function DocumentView({
   onSave,
   onSelect,
   reveal,
-  dropSeq,
+  clearSeq,
   pendingNote,
   onContextMenu,
 }: {
@@ -266,8 +266,8 @@ export function DocumentView({
   onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
-  /** Bumped when the held selection is dropped — the editor's goes with it. */
-  dropSeq?: number;
+  /** Bumped when the held selection goes away — the editor's goes with it. */
+  clearSeq?: number;
   /** The passage a note is being written about — painted while the composer is open. */
   pendingNote?: { from: number; to: number } | null;
   /**
@@ -428,15 +428,16 @@ export function DocumentView({
     v.focus();
   }, [reveal]);
 
-  // A DROP CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): the chip and the
-  // editor cannot disagree about what is chosen. Collapsing to the head fires
-  // the update listener, which reports the empty range — the same path a click
-  // takes, so nothing here has to know what was held.
-  const dropped = useRef(dropSeq);
+  // A CLEAR CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): the chip and the
+  // editor cannot disagree about what is chosen, and a click in the OTHER pane
+  // is a clear as much as the chip's X is. Collapsing to the head fires the
+  // update listener, which reports the empty range — the same path a click
+  // takes, and nothing is held by then, so it does not come round again.
+  const unpainted = useRef(clearSeq);
   useEffect(() => {
     const v = view.current;
-    if (!v || dropSeq === undefined || dropSeq === dropped.current) return;
-    dropped.current = dropSeq;
+    if (!v || clearSeq === undefined || clearSeq === unpainted.current) return;
+    unpainted.current = clearSeq;
     v.dispatch({ selection: { anchor: v.state.selection.main.head } });
     // ⛔ AND THE BROWSER'S OWN, because the X is clicked OUTSIDE the editor:
     // CodeMirror syncs the DOM selection from its state only while focused, so
@@ -446,7 +447,7 @@ export function DocumentView({
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
-  }, [dropSeq]);
+  }, [clearSeq]);
 
   useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });

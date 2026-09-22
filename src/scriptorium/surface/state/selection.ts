@@ -68,6 +68,30 @@ export function renderedSelectionAct(s: {
 }
 
 /**
+ * The whole answer to one selection event: what is held, and whether the panes
+ * must unpaint.
+ *
+ * ⛔ A CLEAR IS A CLEAR WHEREVER IT CAME FROM (Cole, 2026-09-22: "clicking in
+ * either clears the selection, it's the simpler ux pattern"). In split view a
+ * click in the RENDERED half clears a selection the RAW half is holding — and
+ * CodeMirror reports only its own selection changes, so it went on holding the
+ * range and painting the blurred grey highlight over a passage nothing had.
+ * The same is true of the chip's X. Both are one thing: the held selection
+ * went to null, so both panes drop the paint they own.
+ *
+ * ⚠ AND IT MUST NOT ECHO. The pane that unpaints collapses its own selection,
+ * which it reports as an empty range — a second clear. It finds nothing held,
+ * so it asks for no paint, and the round stops there.
+ */
+export function applySelectionEvent(
+  held: HeldSelection | null,
+  event: SelectionEvent,
+): { held: HeldSelection | null; clearPaint: boolean } {
+  const next = heldAfter(held, event);
+  return { held: next, clearPaint: held !== null && next === null };
+}
+
+/**
  * Whether, after `event`, a context press is the reason for the next collapse.
  *
  * ⛔ A CONTEXT PRESS IS SPENT BY THE NEXT INPUT, whatever it is. Held until the
