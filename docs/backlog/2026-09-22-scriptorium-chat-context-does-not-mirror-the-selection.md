@@ -76,6 +76,15 @@ And the context-press flag that excuses the note menu's collapse was only
 recomputed on a pointer press, so after one right-click a keyboard collapse left
 the chip behind; a key now ends it (`contextPressAfter`, `ee8b97be`).
 
+**Third pass.** A reviewer found the inverse: in split view a click in the
+rendered half cleared the chip but left CodeMirror holding its range and
+painting it. Cole ruled — "clicking in either clears the selection, it's the
+simpler ux pattern" — so a clear reaches both panes' paint however it arrives,
+not only on a drop (`applySelectionEvent`, `0f0a75c5`). The X's label, which
+still read "Send without this selection" from the old per-message semantics, now
+says it clears the selection (`11bc993f`), so the repro step above names a
+button that no longer goes by that name.
+
 ## Acceptance Criteria
 
 - [x] A: after dismissing, a new selection re-attaches, in both modes

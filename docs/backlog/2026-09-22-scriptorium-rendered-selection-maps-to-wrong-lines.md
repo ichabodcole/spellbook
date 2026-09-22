@@ -79,6 +79,10 @@ A placement is now a pair (`at`, `lead`) read through `runOffset`. The cell that
 missed it re-derived the offset with the arithmetic it was checking; the new
 ones ask the source what is actually there (`0049de03`).
 
+**Third pass:** the back-off that makes a placement a pair at all had no cell —
+removing it left every one of them green. It has one now, source-asserting, and
+it was confirmed by running the suite with the loop removed (`39d43033`).
+
 ## Acceptance Criteria
 
 - [x] Reproduced first, on one of Cole's documents, and the failing document (or
