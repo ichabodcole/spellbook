@@ -50498,6 +50498,7 @@ function DocumentView({
   onSave,
   onSelect,
   reveal,
+  dropSeq,
   pendingNote,
   onContextMenu
 }) {
@@ -50616,6 +50617,17 @@ function DocumentView({
     });
     v.focus();
   }, [reveal]);
+  const dropped = import_react19.useRef(dropSeq);
+  import_react19.useEffect(() => {
+    const v = view.current;
+    if (!v || dropSeq === undefined || dropSeq === dropped.current)
+      return;
+    dropped.current = dropSeq;
+    v.dispatch({ selection: { anchor: v.state.selection.main.head } });
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [dropSeq]);
   import_react19.useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
   }, [pendingNote]);
@@ -58551,6 +58563,7 @@ function MarkdownView({
   pendingNote,
   onFollowLink,
   onSelect,
+  dropSeq,
   onContextMenu
 }) {
   const html = import_react20.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
@@ -58602,6 +58615,19 @@ function MarkdownView({
       document.removeEventListener("keydown", keyed, true);
     };
   }, [onSelect, selectedRange, text4]);
+  const dropped = import_react20.useRef(dropSeq);
+  import_react20.useEffect(() => {
+    if (dropSeq === undefined || dropSeq === dropped.current)
+      return;
+    dropped.current = dropSeq;
+    lastRange.current = null;
+    const root2 = body.current;
+    const sel = window.getSelection();
+    if (!root2 || !sel || sel.rangeCount === 0)
+      return;
+    if (root2.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [dropSeq]);
   import_react20.useEffect(() => {
     const reg = registry();
     const root2 = body.current;
@@ -59470,6 +59496,7 @@ function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  dropSeq,
   focusedNote,
   onAddNote,
   onShowNote,
@@ -59692,6 +59719,7 @@ function DocumentPane({
         onSave,
         onSelect,
         reveal,
+        dropSeq,
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onContextMenu: setNoteAt
       }) : showing === "rendered" ? /* @__PURE__ */ jsx_runtime24.jsx(MarkdownView, {
@@ -59702,6 +59730,7 @@ function DocumentPane({
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onFollowLink,
         onSelect,
+        dropSeq,
         onContextMenu: setNoteAt
       }) : /* @__PURE__ */ jsx_runtime24.jsxs(ResizablePanelGroup, {
         orientation: "horizontal",
@@ -59723,6 +59752,7 @@ function DocumentPane({
               onSave,
               onSelect,
               reveal,
+              dropSeq,
               pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
               onContextMenu: setNoteAt
             })
@@ -59743,6 +59773,7 @@ function DocumentPane({
               pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
               onFollowLink,
               onSelect,
+              dropSeq,
               onContextMenu: setNoteAt
             })
           })
@@ -60899,6 +60930,11 @@ function Workspace({
   const [against, setAgainst] = import_react31.useState("original");
   const { toasts, announce, dismiss } = useToasts();
   const [selection, setSelection] = import_react31.useState(null);
+  const [dropSeq, setDropSeq] = import_react31.useState(0);
+  const dropSelection = import_react31.useCallback(() => {
+    setSelection((held) => heldAfter(held, { type: "drop" }));
+    setDropSeq((n) => n + 1);
+  }, []);
   const [rightPane, setRightPane] = import_react31.useState("conversation");
   const [reveal, setReveal] = import_react31.useState(null);
   const [focusedNote, setFocusedNote] = import_react31.useState(null);
@@ -61094,11 +61130,12 @@ function Workspace({
                 selection: { from, to, fromLine, toLine, text: sel }
               })),
               reveal,
+              dropSeq,
               focusedNote,
               onAddNote: (from, to, body) => {
                 if (open)
                   send({ type: "note.add", doc: open.slug, from, to, body });
-                setSelection(null);
+                dropSelection();
               },
               onDeleteNote: (id) => {
                 if (open)
@@ -61221,7 +61258,7 @@ function Workspace({
                       toLine: selection.toLine,
                       text: selection.text
                     } : null,
-                    onDrop: () => setSelection((held) => heldAfter(held, { type: "drop" })),
+                    onDrop: dropSelection,
                     onSend: (text5, withSelection) => send({ type: "say", text: text5, withSelection })
                   })
                 ]

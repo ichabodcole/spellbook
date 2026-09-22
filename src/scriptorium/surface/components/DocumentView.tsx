@@ -244,6 +244,7 @@ export function DocumentView({
   onSave,
   onSelect,
   reveal,
+  dropSeq,
   pendingNote,
   onContextMenu,
 }: {
@@ -265,6 +266,8 @@ export function DocumentView({
   onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
+  /** Bumped when the held selection is dropped — the editor's goes with it. */
+  dropSeq?: number;
   /** The passage a note is being written about — painted while the composer is open. */
   pendingNote?: { from: number; to: number } | null;
   /**
@@ -424,6 +427,26 @@ export function DocumentView({
     });
     v.focus();
   }, [reveal]);
+
+  // A DROP CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): the chip and the
+  // editor cannot disagree about what is chosen. Collapsing to the head fires
+  // the update listener, which reports the empty range — the same path a click
+  // takes, so nothing here has to know what was held.
+  const dropped = useRef(dropSeq);
+  useEffect(() => {
+    const v = view.current;
+    if (!v || dropSeq === undefined || dropSeq === dropped.current) return;
+    dropped.current = dropSeq;
+    v.dispatch({ selection: { anchor: v.state.selection.main.head } });
+    // ⛔ AND THE BROWSER'S OWN, because the X is clicked OUTSIDE the editor:
+    // CodeMirror syncs the DOM selection from its state only while focused, so
+    // collapsing the model alone left the grey blurred highlight painted over a
+    // passage nothing was holding. MEASURED — `getSelection()` still read the
+    // passage after the drop, and read empty once focus returned.
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [dropSeq]);
 
   useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });

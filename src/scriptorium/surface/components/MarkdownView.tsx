@@ -58,6 +58,7 @@ export function MarkdownView({
   pendingNote,
   onFollowLink,
   onSelect,
+  dropSeq,
   onContextMenu,
 }: {
   text: string;
@@ -78,6 +79,8 @@ export function MarkdownView({
   onFollowLink?: (target: string) => void;
   /** E51: the same five values the raw view reports, in source coordinates. */
   onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
+  /** Bumped when the held selection is dropped — the highlight goes with it. */
+  dropSeq?: number;
   /** E46's composer, reached from the rendered view too. */
   onContextMenu?: (at: {
     x: number;
@@ -194,6 +197,22 @@ export function MarkdownView({
       document.removeEventListener("keydown", keyed, true);
     };
   }, [onSelect, selectedRange, text]);
+
+  // A DROP CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): dropping the chip is
+  // dropping the selection, so the browser's own must not stay painted over a
+  // passage nothing is holding. Removing the range fires `selectionchange` with
+  // no range at all, which the handler above ignores — there is nothing to
+  // report and nothing left to clear.
+  const dropped = useRef(dropSeq);
+  useEffect(() => {
+    if (dropSeq === undefined || dropSeq === dropped.current) return;
+    dropped.current = dropSeq;
+    lastRange.current = null;
+    const root = body.current;
+    const sel = window.getSelection();
+    if (!root || !sel || sel.rangeCount === 0) return;
+    if (root.contains(sel.getRangeAt(0).commonAncestorContainer)) sel.removeAllRanges();
+  }, [dropSeq]);
 
   // The notes, painted over the rendered text. Re-runs when the HTML changes,
   // because every text node it aligned against has been replaced.

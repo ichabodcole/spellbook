@@ -212,6 +212,23 @@ function Workspace({
   // acts on it and it lives in the other pane (E45).
   // The chat's chip mirrors it, and the daemon is told of every change (below).
   const [selection, setSelection] = useState<HeldSelection | null>(null);
+  /**
+   * Bumped when the selection is DROPPED rather than replaced — the chip's X,
+   * or a note consuming the passage (E57).
+   *
+   * ⛔ CLEARING IT HAS TO REACH THE HIGHLIGHT. Cole's ruling (2026-09-22):
+   * "if you clear the context from the chat, that should basically be treated
+   * as clearing the selection" — one state, one meaning, so neither the human
+   * nor the agent has to work out which copy is live. The panes own their own
+   * selection (the browser's in the rendered half, CodeMirror's in the raw
+   * one), so the drop reaches them as a seq they act on, NOT as a second copy
+   * of what is selected.
+   */
+  const [dropSeq, setDropSeq] = useState(0);
+  const dropSelection = useCallback(() => {
+    setSelection((held) => heldAfter(held, { type: "drop" }));
+    setDropSeq((n) => n + 1);
+  }, []);
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
@@ -444,6 +461,7 @@ function Workspace({
               )
             }
             reveal={reveal}
+            dropSeq={dropSeq}
             focusedNote={focusedNote}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
@@ -453,8 +471,9 @@ function Workspace({
               // again — "I've made some notes, take a look" arriving with the
               // very passage the note is about. Clearing it here also reaches
               // the daemon, because the effect below reports `selection` as it
-              // changes, so the agent's view and the composer's chip agree.
-              setSelection(null);
+              // changes, so the agent's view and the composer's chip agree — and
+              // the highlight goes with it, like any other drop.
+              dropSelection();
             }}
             onDeleteNote={(id) => {
               if (open) send({ type: "note.remove", doc: open.slug, id });
@@ -603,7 +622,7 @@ function Workspace({
                       }
                     : null
                 }
-                onDrop={() => setSelection((held) => heldAfter(held, { type: "drop" }))}
+                onDrop={dropSelection}
                 onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
               />
             </>
