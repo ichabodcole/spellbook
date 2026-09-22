@@ -69,6 +69,16 @@ Roughly one run per thousand on the repo's own documents.
 
 Commits: `b6a3ea82`, `df0af6e5`.
 
+**Third cause, found on the verifier's second pass:** a run was placed at one
+offset, backed off by the whitespace it had trimmed — right only when the
+projection wrote that whitespace too. A GFM task item's text node begins with
+the space after the checkbox, which it never does, so a selection anchored at
+the run's first character resolved one character early, and when the run's text
+sat at plain offset 0 the back-off clamped and EVERY character of the node did.
+A placement is now a pair (`at`, `lead`) read through `runOffset`. The cell that
+missed it re-derived the offset with the arithmetic it was checking; the new
+ones ask the source what is actually there (`0049de03`).
+
 ## Acceptance Criteria
 
 - [x] Reproduced first, on one of Cole's documents, and the failing document (or

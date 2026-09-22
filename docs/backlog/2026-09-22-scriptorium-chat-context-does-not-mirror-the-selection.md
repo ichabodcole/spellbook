@@ -66,6 +66,16 @@ their own idea of what is selected.
 
 Commit: `645a52c2`.
 
+**Second pass.** Cole ruled on the residual: "if you clear the context from the
+chat, that to me should basically be treated as clearing the selection." A drop
+(the X, or a note consuming the passage) now collapses the pane's own selection
+too — the browser's in the rendered half, CodeMirror's in the raw one, where it
+takes both the model and the browser's, since CodeMirror only syncs the DOM
+selection while focused and the X is a button outside the editor (`dff26fda`).
+And the context-press flag that excuses the note menu's collapse was only
+recomputed on a pointer press, so after one right-click a keyboard collapse left
+the chip behind; a key now ends it (`contextPressAfter`, `ee8b97be`).
+
 ## Acceptance Criteria
 
 - [x] A: after dismissing, a new selection re-attaches, in both modes
