@@ -86,3 +86,5 @@ Out of scope, deliberately:
 _Written at close, not before._
 
 ## Sessions
+
+- fix/scriptorium-selection-context (open)
