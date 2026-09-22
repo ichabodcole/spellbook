@@ -284,6 +284,40 @@ describe("alignRuns on a real document (house-style)", () => {
   });
 });
 
+describe("wrapped lines inside a list item or a quote", () => {
+  // The source of a wrapped list item or quote carries markup on every line
+  // (the indent, the "> ") that the rendered text does not, so the text node is
+  // longer in source than on screen. Treated as one non-exact run, a word on
+  // its third line reported every line of the paragraph.
+  test("a word on a list item's continuation line reports that line only", () => {
+    const src = HOUSE_STYLE_EXTRACT;
+    const p = project(src);
+    const word = "attempting the counterexample";
+    const at = p.plain.indexOf(word);
+    const { from, to } = toSource(p, at, at + word.length);
+    expect(src.slice(from, to)).toBe(word);
+    const line = src.split("\n").findIndex((l) => l.includes(word)) + 1;
+    expect([lineAt(src, from), lineAt(src, to)]).toEqual([line, line]);
+  });
+
+  test("a word on a quote's continuation line reports that line only", () => {
+    const src = "> First line of the quote\n> second line here\n> third line.\n";
+    const p = project(src);
+    const at = p.plain.indexOf("second line");
+    const { from, to } = toSource(p, at, at + "second line".length);
+    expect(src.slice(from, to)).toBe("second line");
+    expect([lineAt(src, from), lineAt(src, to)]).toEqual([2, 2]);
+  });
+
+  test("a selection across the wrap covers the markup between, in source", () => {
+    const src = "- one two\n  three four\n";
+    const p = project(src);
+    const at = p.plain.indexOf("two");
+    const { from, to } = toSource(p, at, p.plain.indexOf("three") + "three".length);
+    expect(src.slice(from, to)).toBe("two\n  three");
+  });
+});
+
 describe("alignRuns — one bad run does not poison the rest", () => {
   test("a whitespace run with no whitespace at the cursor is null, and moves nothing", () => {
     // Three newlines in the DOM where the projection wrote two: the third must

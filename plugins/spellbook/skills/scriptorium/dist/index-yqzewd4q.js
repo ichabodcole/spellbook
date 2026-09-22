@@ -58122,6 +58122,46 @@ function project(text4) {
     });
     plain += value;
   };
+  const emitText = (value, node2) => {
+    const s = node2.position?.start.offset;
+    const e = node2.position?.end.offset;
+    if (s === undefined || e === undefined || e - s === value.length || !value.includes(`
+`)) {
+      emit(value, node2);
+      return;
+    }
+    const pieces = [];
+    let cursor = s;
+    const lines = value.split(`
+`);
+    for (let i2 = 0;i2 < lines.length; i2++) {
+      const line = lines[i2];
+      const at2 = line === "" ? cursor : body.indexOf(line, cursor);
+      if (at2 === -1 || at2 + line.length > e || i2 === 0 && at2 !== s) {
+        emit(value, node2);
+        return;
+      }
+      if (line !== "")
+        pieces.push({ value: line, at: at2 });
+      cursor = at2 + line.length;
+      if (i2 < lines.length - 1) {
+        const nl = body.indexOf(`
+`, cursor);
+        if (nl === -1 || nl >= e) {
+          emit(value, node2);
+          return;
+        }
+        pieces.push({ value: `
+`, at: nl });
+        cursor = nl + 1;
+      }
+    }
+    for (const piece of pieces)
+      emit(piece.value, {
+        type: "text",
+        position: { start: { offset: piece.at }, end: { offset: piece.at + piece.value.length } }
+      });
+  };
   const walk = (node2) => {
     if (BLOCKS.has(node2.type) && plain !== "" && pendingBoundary === null) {
       pendingBoundary = {
@@ -58134,6 +58174,8 @@ function project(text4) {
     }
     switch (node2.type) {
       case "text":
+        emitText(node2.value ?? "", node2);
+        return;
       case "inlineCode":
       case "code":
       case "html":

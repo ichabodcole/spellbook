@@ -153,6 +153,54 @@ export function project(text: string): Projection {
     plain += value;
   };
 
+  /**
+   * Prose, split at its line breaks when the source carries markup on each line.
+   *
+   * ⛔ A WRAPPED LIST ITEM OR QUOTE IS NOT ONE RUN. Its source repeats the
+   * indent or the `> ` on every line and its rendered text does not, so the
+   * text node is longer in source than on screen — which made the whole node
+   * non-exact, and a word on its third line resolved to every line of the
+   * paragraph (house-style, 2026-09-22). Each line of the value is found in
+   * the source in turn and emitted exactly, the line break with it; if any line
+   * cannot be found (an escape, an entity), the node falls back to one
+   * non-exact run rather than a partial guess.
+   */
+  const emitText = (value: string, node: Node) => {
+    const s = node.position?.start.offset;
+    const e = node.position?.end.offset;
+    if (s === undefined || e === undefined || e - s === value.length || !value.includes("\n")) {
+      emit(value, node);
+      return;
+    }
+    const pieces: { value: string; at: number }[] = [];
+    let cursor = s;
+    const lines = value.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] as string;
+      const at = line === "" ? cursor : body.indexOf(line, cursor);
+      if (at === -1 || at + line.length > e || (i === 0 && at !== s)) {
+        emit(value, node);
+        return;
+      }
+      if (line !== "") pieces.push({ value: line, at });
+      cursor = at + line.length;
+      if (i < lines.length - 1) {
+        const nl = body.indexOf("\n", cursor);
+        if (nl === -1 || nl >= e) {
+          emit(value, node);
+          return;
+        }
+        pieces.push({ value: "\n", at: nl });
+        cursor = nl + 1;
+      }
+    }
+    for (const piece of pieces)
+      emit(piece.value, {
+        type: "text",
+        position: { start: { offset: piece.at }, end: { offset: piece.at + piece.value.length } },
+      });
+  };
+
   const walk = (node: Node) => {
     // ⛔ THE OUTERMOST BOUNDARY WINS, which is why this only sets when none is
     // pending. A list item holds a paragraph, so walking `- a` fires `listItem`
@@ -167,6 +215,8 @@ export function project(text: string): Projection {
     }
     switch (node.type) {
       case "text":
+        emitText(node.value ?? "", node);
+        return;
       case "inlineCode":
       case "code":
       case "html":
