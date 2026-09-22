@@ -88,3 +88,5 @@ _Written at close, not before._
 ## Sessions
 
 - fix/scriptorium-selection-context (landed 2026-09-22)
+
+- feat/scriptorium-keep-your-place (open)
