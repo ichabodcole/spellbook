@@ -8,6 +8,10 @@ import { alignRuns, lineAt, project, runOffset, toPlain, toSource } from "./proj
  * document order — what `renderedRange.align` hands to `alignRuns`. Splitting
  * on tags and decoding micromark's five entities is enough, because every tag
  * in that output was minted by the renderer (state/markdown.ts).
+ *
+ * ⚠ IT IS A SECOND, PARTIAL HTML READER, and it lives in a test for that
+ * reason: it stands in for the browser, and anything it decides matters is
+ * confirmed by driving the real DOM. Do not promote it to the surface.
  */
 function domRuns(html: string): string[] {
   const decode = (s: string) =>
@@ -246,17 +250,30 @@ describe("alignRuns on a real document (house-style)", () => {
   const runs = domRuns(renderMarkdown(src));
   const starts = alignRuns(p.plain, runs);
 
-  test("every run with text in it is placed, and placed where its text is", () => {
+  test("every run with text in it is placed, and the SOURCE under it is its text", () => {
     runs.forEach((run, i) => {
       const core = run.trim();
       if (core === "") return;
       const placed = starts[i];
       expect({ run: core, placed: placed !== null }).toEqual({ run: core, placed: true });
-      const s = runOffset(
-        placed as NonNullable<typeof placed>,
-        run.length - run.trimStart().length,
+      // ⛔ ASKED OF THE SOURCE, NOT OF THE PLACEMENT. Reading `plain` back at
+      // an offset `runOffset` just produced is true by construction — it
+      // cannot fail, whatever the placement is. The round trip through
+      // `toSource` can. A wrapped line's source carries the `> ` or the indent
+      // the rendered text does not, so those line prefixes come off first.
+      const flat = (t: string) =>
+        t
+          .split("\n")
+          .map((line) => line.replace(/^[\t ]*>?[\t ]?/u, ""))
+          .join(" ")
+          .replace(/\s+/gu, " ")
+          .trim();
+      const { from, to } = toSource(
+        p,
+        runOffset(placed as NonNullable<typeof placed>, run.length - run.trimStart().length),
+        runOffset(placed as NonNullable<typeof placed>, run.trimEnd().length),
       );
-      expect(p.plain.slice(s, s + core.length)).toBe(core);
+      expect(flat(src.slice(from, to))).toContain(flat(core));
     });
   });
 
@@ -356,6 +373,33 @@ describe("a run whose leading space the projection does not carry", () => {
     // start of "second", not one character back into the previous item.
     expect(source(i, 0, 7)).toBe("second");
     expect(source(i, 1, 6)).toBe("second");
+  });
+});
+
+describe("leading whitespace the projection DID write belongs to the run", () => {
+  // The text node after a `<strong>` starts with the space before the next
+  // word, and the projection wrote that space too — so it is part of this run
+  // and the placement covers it. (The task-list cells above are the other
+  // half: whitespace the projection never wrote, which is `lead`.)
+  //
+  // ⛔ THIS IS THE ONLY CELL THAT FAILS IF THE BACK-OFF IS REMOVED. Without
+  // it every such run is placed one character late, its leading space treated
+  // as `lead` — and a selection that starts at the space, which is what
+  // dragging from the end of a bold word gives you, silently loses it.
+  const src = "A **bold** and more text.\n";
+  const p = project(src);
+  const runs = domRuns(renderMarkdown(src));
+  const starts = alignRuns(p.plain, runs);
+  const i = runs.findIndex((r) => r.startsWith(" and"));
+
+  test("the run is placed ON its space, not on the word after it", () => {
+    const from = runOffset(starts[i] as NonNullable<(typeof starts)[number]>, 0);
+    const to = runOffset(starts[i] as NonNullable<(typeof starts)[number]>, 4);
+    expect(src.slice(toSource(p, from, to).from, toSource(p, from, to).to)).toBe(" and");
+  });
+
+  test("and nothing of it is left over", () => {
+    expect(starts[i]).toEqual({ at: p.plain.indexOf(" and"), lead: 0 });
   });
 });
 
