@@ -272,10 +272,51 @@ describe("createPlace", () => {
   test("a human scroll coalesced with the drive's own event is still heard", () => {
     const { place, raw, rendered, frame } = pair();
     raw.human(1500);
+    // The drive's frame first: this is CODEMIRROR's ordering, where the scroll
+    // lands a frame late and its event follows in the frame after that.
     frame();
     rendered.coalesce(3000);
     expect(place.line()).toBe(301);
     expect(raw.position).toBe(3000);
+  });
+
+  /**
+   * ⚠ A KNOWN HOLE, PINNED RATHER THAN FIXED — see
+   * `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
+   *
+   * The cell above is CodeMirror's ordering. The RENDERED pane has the other
+   * one: its `to` sets `scrollTop` synchronously, so its scroll event can be
+   * dispatched BEFORE the drive's `afterFrame` has run. `left` is then still
+   * undefined, `report` has nothing to compare the pane's position against, and
+   * it takes the conservative branch and swallows — including when the event
+   * carries a HUMAN scroll coalesced with ours. The panes are left disagreeing.
+   *
+   * ⛔ THIS ASSERTS WHAT THE CODE DOES TODAY, NOT WHAT IT SHOULD DO. It is here
+   * so that a later change to the guard cannot move this behaviour silently: if
+   * this cell starts failing, the hole has been closed (or widened) and the
+   * backlog item wants updating either way. Cole ruled it filed rather than
+   * fixed, on the measurements in that item — reaching it needs a synthetic
+   * injection, real alternating wheel input could not provoke worse than three
+   * lines, and it self-heals completely on the next scroll tick, which the
+   * second half of this cell is.
+   */
+  test("PINNED: in the rendered pane's ordering a coalesced scroll is lost, then self-heals", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(1500);
+    // No frame() — the event beats `afterFrame`, which is the rendered pane's
+    // real ordering and the whole of the hole.
+    rendered.coalesce(3000);
+    expect(place.line()).toBe(151);
+    expect(raw.position).toBe(1500);
+    expect(rendered.position).toBe(3000);
+
+    // And the next tick puts it right: the arm is spent, so the following
+    // report is heard and both panes agree again.
+    frame();
+    rendered.human(3000);
+    expect(place.line()).toBe(301);
+    expect(raw.position).toBe(3000);
+    expect(raw.read()).toBe(rendered.read());
   });
 
   test("a burst of scrolls down one pane leaves both at the same line", () => {
