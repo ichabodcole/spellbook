@@ -15942,24 +15942,22 @@ function linesLabel(a) {
 function ChatComposer({
   attachable,
   connected,
+  onDrop,
   onSend
 }) {
   const [text, setText] = import_react7.useState("");
-  const [dropped, setDropped] = import_react7.useState(false);
-  const attached = attachable && !dropped ? attachable : null;
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim() || !connected)
       return;
-    onSend(text, attached !== null);
+    onSend(text, attachable !== null);
     setText("");
-    setDropped(false);
   };
   return /* @__PURE__ */ jsx_runtime4.jsxs("form", {
     onSubmit: submit,
     className: "shrink-0 border-t border-edge p-2",
     children: [
-      attached && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+      attachable && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
         className: "mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
         children: [
           /* @__PURE__ */ jsx_runtime4.jsxs("div", {
@@ -15968,24 +15966,24 @@ function ChatComposer({
               /* @__PURE__ */ jsx_runtime4.jsxs("p", {
                 className: "text-[10px] text-ink-faint",
                 children: [
-                  attached.name,
+                  attachable.name,
                   " · v",
-                  attached.version,
+                  attachable.version,
                   " · ",
-                  linesLabel(attached)
+                  linesLabel(attachable)
                 ]
               }),
               /* @__PURE__ */ jsx_runtime4.jsx("p", {
                 className: "truncate font-mono text-[11px] text-ink-dim",
-                children: attached.text.replace(/\s+/gu, " ").trim()
+                children: attachable.text.replace(/\s+/gu, " ").trim()
               })
             ]
           }),
           /* @__PURE__ */ jsx_runtime4.jsx("button", {
             type: "button",
-            onClick: () => setDropped(true),
-            "aria-label": "Send without this selection",
-            title: "Send without this selection",
+            onClick: onDrop,
+            "aria-label": "Clear the selection",
+            title: "Clear the selection — it stops riding along, and stops being highlighted",
             className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
             children: /* @__PURE__ */ jsx_runtime4.jsx(X, {
               "aria-hidden": true,
@@ -16009,12 +16007,9 @@ function ChatComposer({
       /* @__PURE__ */ jsx_runtime4.jsxs("div", {
         className: "mt-1 flex items-center gap-2",
         children: [
-          /* @__PURE__ */ jsx_runtime4.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime4.jsx("span", {
             className: "text-[10px] text-ink-faint",
-            children: [
-              attachable && dropped ? "selection dropped · " : "",
-              "⌘↩ to send"
-            ]
+            children: "⌘↩ to send"
           }),
           /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
             type: "submit",
@@ -50503,6 +50498,7 @@ function DocumentView({
   onSave,
   onSelect,
   reveal,
+  clearSeq,
   pendingNote,
   onContextMenu
 }) {
@@ -50621,6 +50617,17 @@ function DocumentView({
     });
     v.focus();
   }, [reveal]);
+  const unpainted = import_react19.useRef(clearSeq);
+  import_react19.useEffect(() => {
+    const v = view.current;
+    if (!v || clearSeq === undefined || clearSeq === unpainted.current)
+      return;
+    unpainted.current = clearSeq;
+    v.dispatch({ selection: { anchor: v.state.selection.main.head } });
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [clearSeq]);
   import_react19.useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
   }, [pendingNote]);
@@ -58122,6 +58129,46 @@ function project(text4) {
     });
     plain += value;
   };
+  const emitText = (value, node2) => {
+    const s = node2.position?.start.offset;
+    const e = node2.position?.end.offset;
+    if (s === undefined || e === undefined || e - s === value.length || !value.includes(`
+`)) {
+      emit(value, node2);
+      return;
+    }
+    const pieces = [];
+    let cursor = s;
+    const lines = value.split(`
+`);
+    for (let i2 = 0;i2 < lines.length; i2++) {
+      const line = lines[i2];
+      const at2 = line === "" ? cursor : body.indexOf(line, cursor);
+      if (at2 === -1 || at2 + line.length > e || i2 === 0 && at2 !== s) {
+        emit(value, node2);
+        return;
+      }
+      if (line !== "")
+        pieces.push({ value: line, at: at2 });
+      cursor = at2 + line.length;
+      if (i2 < lines.length - 1) {
+        const nl = body.indexOf(`
+`, cursor);
+        if (nl === -1 || nl >= e) {
+          emit(value, node2);
+          return;
+        }
+        pieces.push({ value: `
+`, at: nl });
+        cursor = nl + 1;
+      }
+    }
+    for (const piece of pieces)
+      emit(piece.value, {
+        type: "text",
+        position: { start: { offset: piece.at }, end: { offset: piece.at + piece.value.length } }
+      });
+  };
   const walk = (node2) => {
     if (BLOCKS.has(node2.type) && plain !== "" && pendingBoundary === null) {
       pendingBoundary = {
@@ -58134,6 +58181,8 @@ function project(text4) {
     }
     switch (node2.type) {
       case "text":
+        emitText(node2.value ?? "", node2);
+        return;
       case "inlineCode":
       case "code":
       case "html":
@@ -58192,23 +58241,49 @@ function toPlain(p, srcFrom, srcTo) {
   const to = last2.exact ? last2.plainFrom + Math.min(last2.plainTo - last2.plainFrom, Math.max(0, srcTo - last2.srcFrom)) : last2.plainTo;
   return { from: Math.min(from, to), to: Math.max(from, to) };
 }
+function runOffset(placement, within) {
+  return placement.at + Math.max(0, within - placement.lead);
+}
 function alignRuns(plain, runs) {
+  const cores = runs.map((r2) => r2.trim());
   const out = [];
   let cursor = 0;
-  for (const run of runs) {
-    if (run === "") {
+  for (let i2 = 0;i2 < runs.length; i2++) {
+    const run = runs[i2];
+    const core = cores[i2];
+    if (core === "") {
+      if (run !== "" && plain.startsWith(run, cursor)) {
+        out.push({ at: cursor, lead: 0 });
+        cursor += run.length;
+      } else
+        out.push(null);
+      continue;
+    }
+    const found = plain.indexOf(core, cursor);
+    if (found === -1 || /\S/.test(plain.slice(cursor, found)) && !confirmed(plain, found + core.length, cores, i2)) {
       out.push(null);
       continue;
     }
-    const at2 = plain.indexOf(run, cursor);
-    if (at2 === -1) {
-      out.push(null);
-      continue;
-    }
-    out.push(at2);
-    cursor = at2 + run.length;
+    const wanted = run.length - run.trimStart().length;
+    let back = 0;
+    while (back < wanted && plain[found - back - 1] === run[wanted - back - 1])
+      back++;
+    out.push({ at: found - back, lead: wanted - back });
+    cursor = found + core.length;
   }
   return out;
+}
+function confirmed(plain, end, cores, i2) {
+  let j2 = i2 + 1;
+  while (j2 < cores.length && cores[j2] === "")
+    j2++;
+  const next = cores[j2];
+  if (next === undefined)
+    return true;
+  let k = end;
+  while (k < plain.length && /\s/.test(plain[k]))
+    k++;
+  return plain.startsWith(next, k);
 }
 function lineAt(text4, offset4) {
   const at2 = Math.max(0, Math.min(offset4, text4.length));
@@ -58253,20 +58328,20 @@ function plainAt(a2, container, offset4, dir) {
   if (i2 === -1)
     return null;
   const own3 = a2.starts[i2];
-  if (own3 !== null && own3 !== undefined)
-    return own3 + Math.min(within, node2.data.length);
+  if (own3)
+    return runOffset(own3, Math.min(within, node2.data.length));
   if (dir === "start") {
     for (let j2 = i2 + 1;j2 < a2.starts.length; j2++) {
       const s = a2.starts[j2];
-      if (s !== null && s !== undefined)
-        return s;
+      if (s)
+        return s.at;
     }
     return null;
   }
   for (let j2 = i2 - 1;j2 >= 0; j2--) {
     const s = a2.starts[j2];
-    if (s !== null && s !== undefined)
-      return s + (a2.nodes[j2]?.data.length ?? 0);
+    if (s)
+      return runOffset(s, a2.nodes[j2]?.data.length ?? 0);
   }
   return null;
 }
@@ -58288,13 +58363,13 @@ function paintRange(a2, p, srcFrom, srcTo) {
   for (let i2 = 0;i2 < a2.nodes.length; i2++) {
     const s = a2.starts[i2];
     const node2 = a2.nodes[i2];
-    if (s === null || s === undefined || !node2)
+    if (!s || !node2)
       continue;
-    const e = s + node2.data.length;
+    const e = runOffset(s, node2.data.length);
     if (!start && plain.from < e)
-      start = { node: node2, offset: Math.max(0, plain.from - s) };
-    if (plain.to > s && plain.to <= e)
-      end = { node: node2, offset: plain.to - s };
+      start = { node: node2, offset: s.lead + Math.max(0, plain.from - s.at) };
+    if (plain.to > s.at && plain.to <= e)
+      end = { node: node2, offset: s.lead + (plain.to - s.at) };
     else if (plain.to > e)
       end = { node: node2, offset: node2.data.length };
   }
@@ -58308,6 +58383,32 @@ function paintRange(a2, p, srcFrom, srcTo) {
     return null;
   }
   return range.collapsed ? null : range;
+}
+
+// src/scriptorium/surface/state/selection.ts
+function heldAfter(held, event) {
+  if (event.type === "drop")
+    return null;
+  const s = event.selection;
+  if (s.from === s.to)
+    return null;
+  if (held && held.from === s.from && held.to === s.to && held.text === s.text)
+    return held;
+  return s;
+}
+function renderedSelectionAct(s) {
+  if (!s.ours)
+    return "ignore";
+  if (s.collapsed)
+    return s.contextClick ? "keep" : "clear";
+  return s.resolved ? "report" : "ignore";
+}
+function applySelectionEvent(held, event) {
+  const next = heldAfter(held, event);
+  return { held: next, clearPaint: held !== null && next === null };
+}
+function contextPressAfter(event) {
+  return event.kind === "pointerdown" ? event.context : false;
 }
 
 // src/scriptorium/surface/components/MetaHeader.tsx
@@ -58466,6 +58567,7 @@ function MarkdownView({
   pendingNote,
   onFollowLink,
   onSelect,
+  clearSeq,
   onContextMenu
 }) {
   const html = import_react20.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
@@ -58483,28 +58585,53 @@ function MarkdownView({
       return null;
     return resolveRange(root2, projection, range);
   }, [projection]);
+  const contextPress = import_react20.useRef(false);
   import_react20.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
       const root2 = body.current;
       const sel = window.getSelection();
-      if (!root2 || !sel)
+      if (!root2 || !sel || sel.rangeCount === 0)
         return;
-      if (sel.rangeCount > 0 && !root2.contains(sel.getRangeAt(0).commonAncestorContainer))
-        return;
-      const r2 = selectedRange();
-      if (!r2)
-        return;
-      const was = lastRange.current;
-      if (was && was.from === r2.from && was.to === r2.to)
-        return;
-      lastRange.current = r2;
-      onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
+      const r2 = sel.isCollapsed ? null : selectedRange();
+      const act = renderedSelectionAct({
+        ours: root2.contains(sel.getRangeAt(0).commonAncestorContainer),
+        collapsed: sel.isCollapsed,
+        resolved: r2,
+        contextClick: contextPress.current
+      });
+      if (act === "report" && r2) {
+        lastRange.current = r2;
+        onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
+      } else if (act === "clear") {
+        lastRange.current = null;
+        onSelect(0, 0, 1, 1, "");
+      }
+    };
+    const keyed = () => {
+      contextPress.current = contextPressAfter({ kind: "keydown" });
     };
     document.addEventListener("selectionchange", handler);
-    return () => document.removeEventListener("selectionchange", handler);
+    document.addEventListener("keydown", keyed, true);
+    return () => {
+      document.removeEventListener("selectionchange", handler);
+      document.removeEventListener("keydown", keyed, true);
+    };
   }, [onSelect, selectedRange, text4]);
+  const unpainted = import_react20.useRef(clearSeq);
+  import_react20.useEffect(() => {
+    if (clearSeq === undefined || clearSeq === unpainted.current)
+      return;
+    unpainted.current = clearSeq;
+    lastRange.current = null;
+    const root2 = body.current;
+    const sel = window.getSelection();
+    if (!root2 || !sel || sel.rangeCount === 0)
+      return;
+    if (root2.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [clearSeq]);
   import_react20.useEffect(() => {
     const reg = registry();
     const root2 = body.current;
@@ -58562,6 +58689,16 @@ function MarkdownView({
             return;
           }
           onFollowLink?.(href);
+        },
+        onPointerDown: (e) => {
+          const isContext = e.button === 2 || e.button === 0 && e.ctrlKey;
+          const root2 = body.current;
+          const held = lastRange.current;
+          const point3 = isContext && root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
+          contextPress.current = contextPressAfter({
+            kind: "pointerdown",
+            context: isContext && held !== null && point3 !== null && point3 >= held.from && point3 <= held.to
+          });
         },
         onContextMenu: (e) => {
           if (!onContextMenu)
@@ -59363,6 +59500,7 @@ function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  clearSeq,
   focusedNote,
   onAddNote,
   onShowNote,
@@ -59585,6 +59723,7 @@ function DocumentPane({
         onSave,
         onSelect,
         reveal,
+        clearSeq,
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onContextMenu: setNoteAt
       }) : showing === "rendered" ? /* @__PURE__ */ jsx_runtime24.jsx(MarkdownView, {
@@ -59595,6 +59734,7 @@ function DocumentPane({
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onFollowLink,
         onSelect,
+        clearSeq,
         onContextMenu: setNoteAt
       }) : /* @__PURE__ */ jsx_runtime24.jsxs(ResizablePanelGroup, {
         orientation: "horizontal",
@@ -59616,6 +59756,7 @@ function DocumentPane({
               onSave,
               onSelect,
               reveal,
+              clearSeq,
               pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
               onContextMenu: setNoteAt
             })
@@ -59636,6 +59777,7 @@ function DocumentPane({
               pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
               onFollowLink,
               onSelect,
+              clearSeq,
               onContextMenu: setNoteAt
             })
           })
@@ -60792,6 +60934,14 @@ function Workspace({
   const [against, setAgainst] = import_react31.useState("original");
   const { toasts, announce, dismiss } = useToasts();
   const [selection, setSelection] = import_react31.useState(null);
+  const [clearSeq, setClearSeq] = import_react31.useState(0);
+  const onSelectionEvent = import_react31.useCallback((event) => {
+    const next = applySelectionEvent(selection, event);
+    if (next.held !== selection)
+      setSelection(next.held);
+    if (next.clearPaint)
+      setClearSeq((n) => n + 1);
+  }, [selection]);
   const [rightPane, setRightPane] = import_react31.useState("conversation");
   const [reveal, setReveal] = import_react31.useState(null);
   const [focusedNote, setFocusedNote] = import_react31.useState(null);
@@ -60982,13 +61132,17 @@ function Workspace({
                 if (open)
                   send({ type: "reveal.version", doc: open.slug, version: version3 });
               },
-              onSelect: (from, to, fromLine, toLine, sel) => setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel }),
+              onSelect: (from, to, fromLine, toLine, sel) => onSelectionEvent({
+                type: "report",
+                selection: { from, to, fromLine, toLine, text: sel }
+              }),
               reveal,
+              clearSeq,
               focusedNote,
               onAddNote: (from, to, body) => {
                 if (open)
                   send({ type: "note.add", doc: open.slug, from, to, body });
-                setSelection(null);
+                onSelectionEvent({ type: "drop" });
               },
               onDeleteNote: (id) => {
                 if (open)
@@ -61111,6 +61265,7 @@ function Workspace({
                       toLine: selection.toLine,
                       text: selection.text
                     } : null,
+                    onDrop: () => onSelectionEvent({ type: "drop" }),
                     onSend: (text5, withSelection) => send({ type: "say", text: text5, withSelection })
                   })
                 ]

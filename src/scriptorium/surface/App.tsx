@@ -31,6 +31,7 @@ import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
 import { WaitingBadge } from "./components/WaitingBadge";
+import { applySelectionEvent, type HeldSelection, type SelectionEvent } from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -209,13 +210,31 @@ function Workspace({
   const { toasts, announce, dismiss } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
-  const [selection, setSelection] = useState<{
-    from: number;
-    to: number;
-    fromLine: number;
-    toLine: number;
-    text: string;
-  } | null>(null);
+  // The chat's chip mirrors it, and the daemon is told of every change (below).
+  const [selection, setSelection] = useState<HeldSelection | null>(null);
+  /**
+   * Bumped when the held selection goes away — the chip's X, a note consuming
+   * the passage (E57), or a click that clears it in EITHER pane.
+   *
+   * ⛔ CLEARING IT HAS TO REACH THE HIGHLIGHT. Cole's ruling (2026-09-22):
+   * "if you clear the context from the chat, that should basically be treated
+   * as clearing the selection", and "clicking in either clears the selection,
+   * it's the simpler ux pattern". One state, one meaning, so neither the human
+   * nor the agent has to work out which copy is live. The panes own their own
+   * selection (the browser's in the rendered half, CodeMirror's in the raw
+   * one), so a clear reaches them as a seq they act on, NOT as a second copy
+   * of what is selected. `applySelectionEvent` decides when it is bumped.
+   */
+  const [clearSeq, setClearSeq] = useState(0);
+  const onSelectionEvent = useCallback(
+    (event: SelectionEvent) => {
+      const next = applySelectionEvent(selection, event);
+      if (next.held !== selection) setSelection(next.held);
+      if (next.clearPaint) setClearSeq((n) => n + 1);
+    },
+    [selection],
+  );
+
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
@@ -440,9 +459,13 @@ function Workspace({
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
             onSelect={(from, to, fromLine, toLine, sel) =>
-              setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel })
+              onSelectionEvent({
+                type: "report",
+                selection: { from, to, fromLine, toLine, text: sel },
+              })
             }
             reveal={reveal}
+            clearSeq={clearSeq}
             focusedNote={focusedNote}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
@@ -452,8 +475,9 @@ function Workspace({
               // again — "I've made some notes, take a look" arriving with the
               // very passage the note is about. Clearing it here also reaches
               // the daemon, because the effect below reports `selection` as it
-              // changes, so the agent's view and the composer's chip agree.
-              setSelection(null);
+              // changes, so the agent's view and the composer's chip agree — and
+              // the highlight goes with it, like any other drop.
+              onSelectionEvent({ type: "drop" });
             }}
             onDeleteNote={(id) => {
               if (open) send({ type: "note.remove", doc: open.slug, id });
@@ -602,6 +626,7 @@ function Workspace({
                       }
                     : null
                 }
+                onDrop={() => onSelectionEvent({ type: "drop" })}
                 onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
               />
             </>
