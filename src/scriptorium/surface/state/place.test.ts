@@ -169,6 +169,14 @@ describe("createPlace", () => {
         pane.queued = false;
         place().report(id, pane.read());
       },
+      /**
+       * The human moves the pane while our own scroll's event is still pending,
+       * so the one event the browser finally sends carries THEIR position.
+       */
+      yank(position: number) {
+        pane.position = position;
+        pane.queued = true;
+      },
       /** The human scrolls this pane: position changes, event follows. */
       human(position: number) {
         pane.position = position;
@@ -311,6 +319,61 @@ describe("createPlace", () => {
     rendered.human(900);
     expect(place.line()).toBe(91);
     expect(raw.position).toBe(900);
+  });
+
+  /**
+   * ⛔ THE BOTTOM CLAMP, which is where a drive really does move nothing: the
+   * follower is already at its maximum scroll and cannot go further, so the
+   * browser sends no scroll event and the arm would sit there — and then eat
+   * the human's next scroll of that pane. The one-frame disarm is what spends
+   * it. (Without it every cell above still passes; this is the one that
+   * convicts.)
+   */
+  test("a drive the follower cannot honour does not eat its next real scroll", () => {
+    const c = clock();
+    let place: Place;
+    const get = () => place;
+    const raw = fakePane(get, "raw", (n) => (n - 1) * 10);
+    // A shorter pane: it runs out at 500px however far down the place goes.
+    const rendered = fakePane(get, "rendered", (n) => Math.min((n - 1) * 10, 500));
+    place = createPlace({ afterFrame: c.afterFrame });
+    place.join("raw", raw);
+    place.join("rendered", rendered);
+    raw.flush();
+    rendered.flush();
+    c.frame();
+
+    raw.human(5000);
+    rendered.flush();
+    c.frame();
+    expect(rendered.position).toBe(500);
+    // Further still: the follower is pinned, so its `to` moves nothing at all.
+    raw.human(6000);
+    expect(rendered.position).toBe(500);
+    c.frame();
+    // The human now grabs the pinned pane. This must be heard.
+    rendered.human(200);
+    expect(place.line()).toBe(21);
+    expect(raw.position).toBe(200);
+  });
+
+  /**
+   * ⛔ AND THE PANE MAY BE YANKED BACK TO WHERE IT STARTED. Then the drive and
+   * the human cancel out in POSITION — the pane is where the drive found it —
+   * so "is it where the drive left it" cannot tell them apart. What can is that
+   * the drive achieved nothing: a frame later the pane has not moved, so no
+   * event of ours is coming and the arm is spent. Without that the human's yank
+   * is swallowed and the two panes are left disagreeing.
+   */
+  test("the follower yanked back to where it started is still heard", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(400);
+    expect(rendered.position).toBe(400);
+    rendered.yank(0);
+    frame();
+    rendered.flush();
+    expect(place.line()).toBe(1);
+    expect(raw.position).toBe(0);
   });
 
   test("joining puts the pane where the place already is", () => {

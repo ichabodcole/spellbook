@@ -189,10 +189,14 @@ export function createPlace(
     afterFrame(() => {
       if (!armed.has(id)) return;
       const now = pane.at();
-      // ⛔ A SCROLL THAT MOVED NOTHING SENDS NO EVENT, so nothing would ever
-      // consume the arm and the human's next scroll would be eaten in its
-      // place. A frame later the pane has settled (CodeMirror's scroll lands
-      // then), so an unchanged position means no event is coming.
+      // ⛔ A DRIVE THAT ACHIEVED NOTHING HAS NO EVENT COMING, so the arm has to
+      // be spent here or it eats the human's next scroll instead. A frame later
+      // the pane has settled (CodeMirror's scroll lands then), so an unchanged
+      // position is the test. Two ways to get one: the follower was already
+      // where it was asked to go (the bottom clamp), or the human yanked it
+      // back to where it started while our event was still pending — and that
+      // second one is why this cannot be left to the `left` comparison below,
+      // which by then sees the pane exactly where the drive found it.
       if (now === before) armed.delete(id);
       else left.set(id, now);
     });
