@@ -10,13 +10,14 @@ import {
   SaveIcon,
   UndoDotIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
 import { Separator } from "@/ui/separator";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
 import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
+import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
@@ -170,6 +171,16 @@ export function DocumentPane({
   const active = doc?.versions.find((v) => v.n === doc.active);
   const [naming, setNaming] = useState<VersionIntent | null>(null);
   const { confirm, dialog } = useConfirm();
+  /**
+   * E63: where the human is in THIS document, shared by whichever panes are
+   * mounted. It lives here because the panes do not outlive a mode switch —
+   * raw and rendered are different subtrees, so anything held inside one is
+   * gone by the time the other renders, which is the whole of the bug. Keyed
+   * to the document: your place in one says nothing about your place in
+   * another. ⛔ Compare is deliberately not a caller (Cole) — CodeMirror's
+   * merge view does its own scrolling.
+   */
+  const place = useMemo(() => createPlace(), [doc?.slug]);
   /** Where the human right-clicked a passage, and which passage (E46). */
   const [noteAt, setNoteAt] = useState<At | null>(null);
 
@@ -394,6 +405,7 @@ export function DocumentPane({
           onSelect={onSelect}
           reveal={reveal}
           clearSeq={clearSeq}
+          place={place}
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onContextMenu={setNoteAt}
         />
@@ -407,6 +419,7 @@ export function DocumentPane({
           onFollowLink={onFollowLink}
           onSelect={onSelect}
           clearSeq={clearSeq}
+          place={place}
           onContextMenu={setNoteAt}
         />
       ) : (
@@ -427,6 +440,7 @@ export function DocumentPane({
               onSelect={onSelect}
               reveal={reveal}
               clearSeq={clearSeq}
+              place={place}
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onContextMenu={setNoteAt}
             />
@@ -447,6 +461,7 @@ export function DocumentPane({
               onFollowLink={onFollowLink}
               onSelect={onSelect}
               clearSeq={clearSeq}
+              place={place}
               onContextMenu={setNoteAt}
             />
           </ResizablePanel>

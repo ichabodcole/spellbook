@@ -25,8 +25,9 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { DocMeta, PlacedNote } from "../../backend/protocol";
 import { renderMarkdown, splitFrontmatter } from "../state/markdown";
+import { type Anchor, lineAtTop, type Place, topForLine } from "../state/place";
 import { lineAt, project } from "../state/projection";
-import { align, paintRange, resolveRange } from "../state/renderedRange";
+import { align, lineAnchors, paintRange, resolveRange } from "../state/renderedRange";
 import { contextPressAfter, renderedSelectionAct } from "../state/selection";
 import { MetaHeader } from "./MetaHeader";
 
@@ -60,6 +61,7 @@ export function MarkdownView({
   onSelect,
   clearSeq,
   onContextMenu,
+  place,
 }: {
   text: string;
   meta?: DocMeta | null;
@@ -89,6 +91,8 @@ export function MarkdownView({
     to: number;
     noteIds: string[];
   }) => void;
+  /** E63: the source line at the top of this pane, shared with the raw one. */
+  place?: Place;
 }) {
   // The frontmatter is METADATA, so it leaves the rendered body and becomes the
   // header above it (E32). The raw view still shows it: there, it IS the file.
@@ -130,6 +134,76 @@ export function MarkdownView({
    * right-click elsewhere would silently offer a note on the previous passage.
    */
   const lastRange = useRef<{ from: number; to: number } | null>(null);
+
+  // ── keeping your place (E63) ───────────────────────────────────────────────
+  const scroller = useRef<HTMLDivElement>(null);
+  /**
+   * The block anchors, measured once and kept until the rendering changes.
+   *
+   * ⛔ NOT ON EVERY SCROLL. Measuring walks every element and reads a rect from
+   * each, which forces layout; doing that per scroll event in a split would
+   * make the pane the human is dragging stutter. The rendering only moves when
+   * the html or the pane's width does, so those are what clear it.
+   */
+  const anchors = useRef<Anchor[] | null>(null);
+  /**
+   * Read through a ref rather than a dependency, so a keystroke — which makes a
+   * new projection every 250 ms — does not tear down and re-arm the scroll
+   * listeners, and above all does not re-run the arrival scroll: that would
+   * jump the reader to the remembered line every time they typed.
+   */
+  const measureRef = useRef<() => Anchor[]>(() => []);
+  measureRef.current = () => {
+    const root = body.current;
+    const sc = scroller.current;
+    if (!root || !sc) return [];
+    if (!anchors.current) anchors.current = lineAnchors(root, sc, projection, text);
+    return anchors.current;
+  };
+
+  useEffect(() => {
+    anchors.current = null;
+    const sc = scroller.current;
+    if (!sc) return;
+    const ro = new ResizeObserver(() => {
+      anchors.current = null;
+    });
+    ro.observe(sc);
+    return () => ro.disconnect();
+  }, [html, projection]);
+
+  // ⛔ THE REPORT IS THROTTLED TO A FRAME AND THE FOLLOW IS NOT. A scroll fires
+  // far more often than it paints, and `lineAtTop` is a scan; the follow is
+  // already rate-limited by the other pane's own reports.
+  useEffect(() => {
+    const sc = scroller.current;
+    if (!sc || !place) return;
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
+      });
+    };
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    const stop = place.follow("rendered", (line) => {
+      sc.scrollTop = topForLine(measureRef.current(), line);
+    });
+    // Arriving from the other view: one frame for the html to have been laid
+    // out, then land where the pane we came from was.
+    const mounted = requestAnimationFrame(() => {
+      place.driven("rendered", () => {
+        sc.scrollTop = topForLine(measureRef.current(), place.line());
+      });
+    });
+    return () => {
+      sc.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+      cancelAnimationFrame(mounted);
+      stop();
+    };
+  }, [place]);
 
   /** The current DOM selection as source offsets, or null. */
   const selectedRange = useCallback((): { from: number; to: number } | null => {
@@ -247,7 +321,7 @@ export function MarkdownView({
   }, [notes, projection, focusedNote, pendingNote, html]);
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto" data-slot="markdown-view">
+    <div ref={scroller} className="min-h-0 flex-1 overflow-auto" data-slot="markdown-view">
       <div className="mx-auto max-w-[76ch] px-8 pt-7">{meta && <MetaHeader meta={meta} />}</div>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the handler exists to intercept clicks on ANCHORS inside rendered markdown, and an anchor already fires click on Enter — a keyboard handler here would double-handle it. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: same reason — the interactive elements are the anchors the renderer minted inside this container, each already focusable. */}

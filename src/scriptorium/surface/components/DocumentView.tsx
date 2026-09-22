@@ -31,6 +31,7 @@ import {
 import { Decoration, type DecorationSet, EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import type { PlacedNote } from "../../backend/protocol";
+import type { Place } from "../state/place";
 import { markdownHighlighting } from "./markdownMode";
 
 /** A change that came FROM the daemon, so the listener does not send it back. */
@@ -247,6 +248,7 @@ export function DocumentView({
   clearSeq,
   pendingNote,
   onContextMenu,
+  place,
 }: {
   docKey: string;
   text: string;
@@ -281,6 +283,8 @@ export function DocumentView({
     to: number;
     noteIds: string[];
   }) => void;
+  /** E63: the source line at the top of this pane, shared with the rendered one. */
+  place?: Place;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -413,6 +417,56 @@ export function DocumentView({
       view.current = null;
     };
   }, [docKey, editable]);
+
+  // ── keeping your place (E63) ───────────────────────────────────────────────
+  //
+  // This side needs no anchor table: CodeMirror already knows both directions
+  // exactly — `posAtCoords` for the line under the top edge of the scroller,
+  // and `scrollIntoView` for the reverse — because the raw view's coordinate
+  // IS the source. The rendered view is the half that has to interpolate
+  // (`state/place.ts`), and the line number is what the two agree on.
+  //
+  // Declared AFTER the view effect so `view.current` is set when it runs; both
+  // re-run together, since a new document brings both a new view and a new place.
+  useEffect(() => {
+    const v = view.current;
+    if (!v || !place) return;
+    const scroller = v.scrollDOM;
+    const topLine = () => {
+      const r = scroller.getBoundingClientRect();
+      // `precise: false` always answers, which is what a scroll position needs:
+      // the top edge often falls in the content's padding, not on a character.
+      const pos = v.posAtCoords({ x: r.left + r.width / 2, y: r.top + 1 }, false);
+      return v.state.doc.lineAt(Math.max(0, Math.min(pos, v.state.doc.length))).number;
+    };
+    const toLine = (n: number) => {
+      // The first line is the TOP, not a line to align to: `scrollIntoView`
+      // would scroll the editor's own top padding away, so arriving from a
+      // rendered pane that was at the top left the raw one looking clipped.
+      if (n <= 1) {
+        scroller.scrollTop = 0;
+        return;
+      }
+      const line = v.state.doc.line(Math.max(1, Math.min(n, v.state.doc.lines)));
+      v.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "start" }) });
+    };
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        place.report("raw", topLine());
+      });
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    const stop = place.follow("raw", toLine);
+    place.driven("raw", () => toLine(place.line()));
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+      stop();
+    };
+  }, [place]);
 
   // Clicking a note's quote brings it into view and selects it — `seq` is what
   // lets the same note be asked for twice in a row.

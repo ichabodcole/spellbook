@@ -2069,3 +2069,39 @@ kind of small wrongness that makes a tool read as careless._
 
 Driven against a session carrying all three at once, and the startup line
 reported them in one sentence.
+
+## E63 — Keeping your place: the top-visible line, and one primitive for both halves
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real editing produced
+(switching raw ↔ rendered returned to the top; split's panes scrolled apart).
+
+**⛔ THE ANCHOR IS THE TOP-VISIBLE LINE, NOT THE SELECTION.** Whatever sits at
+the top of the pane you leave sits at the top of the pane you arrive in. **Not
+taken:** "the selection when there is one, the scroll offset otherwise", which
+the backlog item itself proposed. Cole chose the single rule for the same reason
+he chose one meaning for the chip's X the day before — one rule is less to
+juggle for the human _and_ the agent than two that disagree at the edges.
+
+**⛔ COMPARE IS OUT OF SCOPE**, decided rather than forgotten.
+`@codemirror/merge` does its own scrolling, and only raw, rendered and split
+take part.
+
+**⚠ CLOSE, NOT PIXEL-PERFECT** (Cole). Rendered height and source height have no
+common measure — a fenced block is twenty source lines and one box. So "close"
+is defined rather than hoped for: the rendered pane is described by ANCHORS (the
+source line each rendered block begins on, and where it sits in the scroller)
+and anything between two anchors is interpolated. The error is bounded by the
+BLOCK, which is the unit a human looks for when they switch views. **Measured on
+`grimoire/house-style.md` (668 lines): within one line at 24 scroll positions.**
+
+**One primitive, two callers** (`surface/state/place.ts`). The source line is
+the only coordinate both views can name: the raw half gets it exactly from
+CodeMirror, the rendered half derives it through E51's projection, and a mode
+switch and a split are then the same mechanism rather than two that drift. **Not
+taken:** a scroll-fraction, which is wrong the moment the two documents have
+different heights, and a second mapping beside E51's.
+
+**⛔ THE FEEDBACK GUARD LIVES IN THE STORE, NOT IN THE PANES.** A pane that must
+remember to suppress its own scroll handler while being driven is a pane that
+will forget, and the failure — each pane re-triggering the other down the
+document — is the classic one. `follow` is only ever called from inside a drive.

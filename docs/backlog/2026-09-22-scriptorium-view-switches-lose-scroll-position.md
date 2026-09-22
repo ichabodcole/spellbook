@@ -39,11 +39,50 @@ callers.
 
 ## Acceptance Criteria
 
-- [ ] raw ↔ rendered keeps the top-visible section (or the selection) in view
-- [ ] split: scrolling either pane keeps the other roughly aligned, without a
+- [x] raw ↔ rendered keeps the top-visible section in view
+- [x] split: scrolling either pane keeps the other roughly aligned, without a
       feedback loop between the two scroll handlers
-- [ ] compare mode is explicitly in or out of scope, decided rather than
-      forgotten
+- [x] compare mode is explicitly in or out of scope, decided rather than
+      forgotten — **out** (Cole)
+
+## What was built (`feat/scriptorium-keep-your-place`, 2026-09-22)
+
+Cole ruled the anchor is the **top-visible line**, not the selection: one rule,
+whether or not anything is selected. Compare is **out of scope** — CodeMirror's
+merge view does its own scrolling.
+
+The primitive is `surface/state/place.ts`: a source line is the currency both
+views can name, and one `Place` per open document holds it. A pane `report`s the
+line at its top and `follow`s another pane's; the drive guard lives in the store
+rather than in the panes, so the feedback loop cannot be reintroduced by
+forgetting to suppress a handler. The raw pane needs no mapping — CodeMirror's
+`posAtCoords` / `scrollIntoView` are exact. The rendered pane is described by
+ANCHORS (the source line each rendered block begins on and where it sits in the
+scroller, built by `renderedRange.lineAnchors` over E51's projection), with
+linear interpolation between them; `topForLine` and `lineAtTop` are inverses, so
+a round trip does not drift. That is the definition of "close": the error is
+bounded by the block, not by the pixel.
+
+**Measured** on `grimoire/house-style.md` (668 lines) in Chromium: at 24 scroll
+positions the followed pane's top line was within **1 line** (median 1, max 1,
+and the 1 is the probe counting a partly visible line); raw→rendered was exact
+at four positions. No drift after settling, wheel or programmatic. Every mode
+switch — split→raw→rendered→raw→split — kept the same passage at the top.
+
+Two defects found by driving it, both now fixed and commented at the site:
+
+- A container's **leading whitespace text node** is placed where the cursor
+  already stands, i.e. at the END of the previous block, so a `<blockquote>`
+  claimed the line above it and the paragraph that knew the real line was
+  dropped as out of order. Cost eight lines on the porting section before it was
+  found. `lineAnchors` now ignores whitespace-only runs.
+- `scrollIntoView(line 1, y: "start")` scrolls the editor's own top padding
+  away, so arriving at the top of the document from the rendered pane looked
+  clipped. Line 1 now means `scrollTop = 0`.
+
+**A cost note this answers:** `align()` on `house-style.md` measures **0.2 ms**
+(rects 0.2 ms, tree walk 0.02 ms). Its per-`selectionchange` cost, filed as a
+possible problem in the selection review, is not one at this size.
 
 ## References
 
