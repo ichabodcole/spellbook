@@ -66,3 +66,18 @@ export function renderedSelectionAct(s: {
   if (s.collapsed) return s.contextClick ? "keep" : "clear";
   return s.resolved ? "report" : "ignore";
 }
+
+/**
+ * Whether, after `event`, a context press is the reason for the next collapse.
+ *
+ * ⛔ A CONTEXT PRESS IS SPENT BY THE NEXT INPUT, whatever it is. Held until the
+ * next POINTER press instead, one right-click made every later keyboard
+ * collapse — a caret key, shift-arrow, Escape — look like a menu about to
+ * open, and the chip sat on the old passage until the human happened to click
+ * something. The menu it excuses opens on the press it came with.
+ */
+export function contextPressAfter(
+  event: { kind: "pointerdown"; context: boolean } | { kind: "keydown" },
+): boolean {
+  return event.kind === "pointerdown" ? event.context : false;
+}

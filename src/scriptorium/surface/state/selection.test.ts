@@ -2,7 +2,12 @@
 // `selectionchange` (Cole, 2026-09-20: "the context chip should mirror what is
 // actually selected").
 import { describe, expect, test } from "bun:test";
-import { type HeldSelection, heldAfter, renderedSelectionAct } from "./selection";
+import {
+  contextPressAfter,
+  type HeldSelection,
+  heldAfter,
+  renderedSelectionAct,
+} from "./selection";
 
 const A: HeldSelection = { from: 10, to: 20, fromLine: 2, toLine: 2, text: "0123456789" };
 const B: HeldSelection = { from: 30, to: 35, fromLine: 4, toLine: 4, text: "abcde" };
@@ -69,5 +74,23 @@ describe("renderedSelectionAct — one selectionchange in the rendered pane", ()
 
   test("a selection that cannot be placed says nothing rather than something wrong", () => {
     expect(renderedSelectionAct({ ...base, resolved: null })).toBe("ignore");
+  });
+});
+
+describe("contextPressAfter — how long a context press excuses a collapse", () => {
+  test("a context press over the selection is live", () => {
+    expect(contextPressAfter({ kind: "pointerdown", context: true })).toBe(true);
+  });
+
+  test("an ordinary press ends it", () => {
+    expect(contextPressAfter({ kind: "pointerdown", context: false })).toBe(false);
+  });
+
+  test("a KEY ends it — a caret move is not a menu", () => {
+    // ⛔ It used to be recomputed only on a pointer press, so after one
+    // right-click every later collapse with no pointer — shift-arrow, an arrow
+    // key, Escape — was read as "the menu is about to open" and the chip stayed
+    // on the old passage until the next ordinary click.
+    expect(contextPressAfter({ kind: "keydown" })).toBe(false);
   });
 });

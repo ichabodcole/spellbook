@@ -27,7 +27,7 @@ import type { DocMeta, PlacedNote } from "../../backend/protocol";
 import { renderMarkdown, splitFrontmatter } from "../state/markdown";
 import { lineAt, project } from "../state/projection";
 import { align, paintRange, resolveRange } from "../state/renderedRange";
-import { renderedSelectionAct } from "../state/selection";
+import { contextPressAfter, renderedSelectionAct } from "../state/selection";
 import { MetaHeader } from "./MetaHeader";
 
 /** http(s) and mailto open outward; everything else is inert for now. */
@@ -182,8 +182,17 @@ export function MarkdownView({
         onSelect(0, 0, 1, 1, "");
       }
     };
+    // A key ends a context press: the collapse it is about to cause is a caret
+    // move, not the note menu (`contextPressAfter`).
+    const keyed = () => {
+      contextPress.current = contextPressAfter({ kind: "keydown" });
+    };
     document.addEventListener("selectionchange", handler);
-    return () => document.removeEventListener("selectionchange", handler);
+    document.addEventListener("keydown", keyed, true);
+    return () => {
+      document.removeEventListener("selectionchange", handler);
+      document.removeEventListener("keydown", keyed, true);
+    };
   }, [onSelect, selectedRange, text]);
 
   // The notes, painted over the rendered text. Re-runs when the HTML changes,
@@ -247,8 +256,15 @@ export function MarkdownView({
           const held = lastRange.current;
           const point =
             isContext && root ? pointOffset(root, projection, e.clientX, e.clientY) : null;
-          contextPress.current =
-            isContext && held !== null && point !== null && point >= held.from && point <= held.to;
+          contextPress.current = contextPressAfter({
+            kind: "pointerdown",
+            context:
+              isContext &&
+              held !== null &&
+              point !== null &&
+              point >= held.from &&
+              point <= held.to,
+          });
         }}
         onContextMenu={(e) => {
           if (!onContextMenu) return;

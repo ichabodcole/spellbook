@@ -58391,6 +58391,9 @@ function renderedSelectionAct(s) {
     return s.contextClick ? "keep" : "clear";
   return s.resolved ? "report" : "ignore";
 }
+function contextPressAfter(event) {
+  return event.kind === "pointerdown" ? event.context : false;
+}
 
 // src/scriptorium/surface/components/MetaHeader.tsx
 var jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
@@ -58589,8 +58592,15 @@ function MarkdownView({
         onSelect(0, 0, 1, 1, "");
       }
     };
+    const keyed = () => {
+      contextPress.current = contextPressAfter({ kind: "keydown" });
+    };
     document.addEventListener("selectionchange", handler);
-    return () => document.removeEventListener("selectionchange", handler);
+    document.addEventListener("keydown", keyed, true);
+    return () => {
+      document.removeEventListener("selectionchange", handler);
+      document.removeEventListener("keydown", keyed, true);
+    };
   }, [onSelect, selectedRange, text4]);
   import_react20.useEffect(() => {
     const reg = registry();
@@ -58655,7 +58665,10 @@ function MarkdownView({
           const root2 = body.current;
           const held = lastRange.current;
           const point3 = isContext && root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
-          contextPress.current = isContext && held !== null && point3 !== null && point3 >= held.from && point3 <= held.to;
+          contextPress.current = contextPressAfter({
+            kind: "pointerdown",
+            context: isContext && held !== null && point3 !== null && point3 >= held.from && point3 <= held.to
+          });
         },
         onContextMenu: (e) => {
           if (!onContextMenu)
