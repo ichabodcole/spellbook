@@ -15982,8 +15982,8 @@ function ChatComposer({
           /* @__PURE__ */ jsx_runtime4.jsx("button", {
             type: "button",
             onClick: onDrop,
-            "aria-label": "Send without this selection",
-            title: "Send without this selection",
+            "aria-label": "Clear the selection",
+            title: "Clear the selection — it stops riding along, and stops being highlighted",
             className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
             children: /* @__PURE__ */ jsx_runtime4.jsx(X, {
               "aria-hidden": true,
