@@ -31,6 +31,7 @@ import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
 import { WaitingBadge } from "./components/WaitingBadge";
+import { type HeldSelection, heldAfter } from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -209,13 +210,8 @@ function Workspace({
   const { toasts, announce, dismiss } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
-  const [selection, setSelection] = useState<{
-    from: number;
-    to: number;
-    fromLine: number;
-    toLine: number;
-    text: string;
-  } | null>(null);
+  // The chat's chip mirrors it, and the daemon is told of every change (below).
+  const [selection, setSelection] = useState<HeldSelection | null>(null);
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
@@ -440,7 +436,12 @@ function Workspace({
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
             onSelect={(from, to, fromLine, toLine, sel) =>
-              setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel })
+              setSelection((held) =>
+                heldAfter(held, {
+                  type: "report",
+                  selection: { from, to, fromLine, toLine, text: sel },
+                }),
+              )
             }
             reveal={reveal}
             focusedNote={focusedNote}
@@ -602,6 +603,7 @@ function Workspace({
                       }
                     : null
                 }
+                onDrop={() => setSelection((held) => heldAfter(held, { type: "drop" }))}
                 onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
               />
             </>

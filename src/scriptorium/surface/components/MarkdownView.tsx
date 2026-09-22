@@ -27,6 +27,7 @@ import type { DocMeta, PlacedNote } from "../../backend/protocol";
 import { renderMarkdown, splitFrontmatter } from "../state/markdown";
 import { lineAt, project } from "../state/projection";
 import { align, paintRange, resolveRange } from "../state/renderedRange";
+import { renderedSelectionAct } from "../state/selection";
 import { MetaHeader } from "./MetaHeader";
 
 /** http(s) and mailto open outward; everything else is inert for now. */
@@ -138,26 +139,48 @@ export function MarkdownView({
     return resolveRange(root, projection, range);
   }, [projection]);
 
+  /**
+   * Whether the last press in this pane was a context-menu press OVER the
+   * selection. A right-click collapses the selection before `contextmenu`
+   * fires (browser-dependent), and that collapse must not clear the passage the
+   * menu is about to offer a note on. A context press ANYWHERE ELSE is an
+   * ordinary click as far as the selection goes, and clears it.
+   */
+  const contextPress = useRef(false);
+
   // ⛔ REPORTED ON `selectionchange`, NOT ON `mouseup`. A keyboard selection
   // (shift-arrow) and a double-click both land here, and mouseup misses the
   // first. The document-level listener is the only one the API offers.
+  //
+  // ⛔ AND A COLLAPSE IS NEWS TOO. Clicking in the text clears the selection,
+  // so it has to clear the chip — the raw view gets this for free, because
+  // CodeMirror reports the empty range. `renderedSelectionAct` holds the rules.
+  //
+  // ⚠ NO DEDUPE HERE. This pane used to skip a range equal to `lastRange`, and
+  // that memory went stale whenever the selection was cleared from outside (the
+  // chip's X, a note consuming it): re-selecting the same passage then reported
+  // nothing and selection "stopped working" until the pane remounted. App's
+  // `heldAfter` dedupes against what is actually held.
   useEffect(() => {
     if (!onSelect) return;
     const handler = () => {
       const root = body.current;
       const sel = window.getSelection();
-      if (!root || !sel) return;
-      // Only speak when the selection is in THIS pane; a selection in the chat
-      // or the raw half must not clear or overwrite what the editor reported.
-      if (sel.rangeCount > 0 && !root.contains(sel.getRangeAt(0).commonAncestorContainer)) return;
-      const r = selectedRange();
-      if (!r) return;
-      // Nothing has changed — a `selectionchange` for the same range is not
-      // news, and each report costs a render.
-      const was = lastRange.current;
-      if (was && was.from === r.from && was.to === r.to) return;
-      lastRange.current = r;
-      onSelect(r.from, r.to, lineAt(text, r.from), lineAt(text, r.to), text.slice(r.from, r.to));
+      if (!root || !sel || sel.rangeCount === 0) return;
+      const r = sel.isCollapsed ? null : selectedRange();
+      const act = renderedSelectionAct({
+        ours: root.contains(sel.getRangeAt(0).commonAncestorContainer),
+        collapsed: sel.isCollapsed,
+        resolved: r,
+        contextClick: contextPress.current,
+      });
+      if (act === "report" && r) {
+        lastRange.current = r;
+        onSelect(r.from, r.to, lineAt(text, r.from), lineAt(text, r.to), text.slice(r.from, r.to));
+      } else if (act === "clear") {
+        lastRange.current = null;
+        onSelect(0, 0, 1, 1, "");
+      }
     };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);
@@ -216,6 +239,16 @@ export function MarkdownView({
           // E33: an internal link is a document reference. The DAEMON resolves
           // it — only it knows the bundle, and only it may open a file.
           onFollowLink?.(href);
+        }}
+        onPointerDown={(e) => {
+          // A right button, or macOS's ctrl-click, is a context-menu press.
+          const isContext = e.button === 2 || (e.button === 0 && e.ctrlKey);
+          const root = body.current;
+          const held = lastRange.current;
+          const point =
+            isContext && root ? pointOffset(root, projection, e.clientX, e.clientY) : null;
+          contextPress.current =
+            isContext && held !== null && point !== null && point >= held.from && point <= held.to;
         }}
         onContextMenu={(e) => {
           if (!onContextMenu) return;

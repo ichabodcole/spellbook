@@ -33,43 +33,46 @@ export function linesLabel(a: Attachable): string {
 export function ChatComposer({
   attachable,
   connected,
+  onDrop,
   onSend,
 }: {
   /** The current selection, or null — what would ride along. */
   attachable: Attachable | null;
   connected: boolean;
+  /**
+   * The chip's X. ⛔ IT DROPS THE SELECTION, NOT THE CHIP: this used to be a
+   * local `dropped` flag reset only on send, so after one X every new
+   * selection was hidden too, and the daemon — whose held selection is what
+   * `say` attaches — never heard about it. The chip is the selection; there
+   * is no second piece of state for it to drift from (`state/selection.ts`).
+   */
+  onDrop: () => void;
   onSend: (text: string, withSelection: boolean) => void;
 }) {
   const [text, setText] = useState("");
-  // Dropping the selection is per-message: the next one starts attached again,
-  // because carrying the passage is the common case and remembering a refusal
-  // would silently stop doing the useful thing.
-  const [dropped, setDropped] = useState(false);
-  const attached = attachable && !dropped ? attachable : null;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !connected) return;
-    onSend(text, attached !== null);
+    onSend(text, attachable !== null);
     setText("");
-    setDropped(false);
   };
 
   return (
     <form onSubmit={submit} className="shrink-0 border-t border-edge p-2">
-      {attached && (
+      {attachable && (
         <div className="mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-ink-faint">
-              {attached.name} · v{attached.version} · {linesLabel(attached)}
+              {attachable.name} · v{attachable.version} · {linesLabel(attachable)}
             </p>
             <p className="truncate font-mono text-[11px] text-ink-dim">
-              {attached.text.replace(/\s+/gu, " ").trim()}
+              {attachable.text.replace(/\s+/gu, " ").trim()}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => setDropped(true)}
+            onClick={onDrop}
             aria-label="Send without this selection"
             title="Send without this selection"
             className="shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink"
@@ -96,9 +99,7 @@ export function ChatComposer({
         }}
       />
       <div className="mt-1 flex items-center gap-2">
-        <span className="text-[10px] text-ink-faint">
-          {attachable && dropped ? "selection dropped · " : ""}⌘↩ to send
-        </span>
+        <span className="text-[10px] text-ink-faint">⌘↩ to send</span>
         <Button
           type="submit"
           size="sm"

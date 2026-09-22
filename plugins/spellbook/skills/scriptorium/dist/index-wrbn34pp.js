@@ -15942,24 +15942,22 @@ function linesLabel(a) {
 function ChatComposer({
   attachable,
   connected,
+  onDrop,
   onSend
 }) {
   const [text, setText] = import_react7.useState("");
-  const [dropped, setDropped] = import_react7.useState(false);
-  const attached = attachable && !dropped ? attachable : null;
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim() || !connected)
       return;
-    onSend(text, attached !== null);
+    onSend(text, attachable !== null);
     setText("");
-    setDropped(false);
   };
   return /* @__PURE__ */ jsx_runtime4.jsxs("form", {
     onSubmit: submit,
     className: "shrink-0 border-t border-edge p-2",
     children: [
-      attached && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+      attachable && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
         className: "mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
         children: [
           /* @__PURE__ */ jsx_runtime4.jsxs("div", {
@@ -15968,22 +15966,22 @@ function ChatComposer({
               /* @__PURE__ */ jsx_runtime4.jsxs("p", {
                 className: "text-[10px] text-ink-faint",
                 children: [
-                  attached.name,
+                  attachable.name,
                   " · v",
-                  attached.version,
+                  attachable.version,
                   " · ",
-                  linesLabel(attached)
+                  linesLabel(attachable)
                 ]
               }),
               /* @__PURE__ */ jsx_runtime4.jsx("p", {
                 className: "truncate font-mono text-[11px] text-ink-dim",
-                children: attached.text.replace(/\s+/gu, " ").trim()
+                children: attachable.text.replace(/\s+/gu, " ").trim()
               })
             ]
           }),
           /* @__PURE__ */ jsx_runtime4.jsx("button", {
             type: "button",
-            onClick: () => setDropped(true),
+            onClick: onDrop,
             "aria-label": "Send without this selection",
             title: "Send without this selection",
             className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
@@ -16009,12 +16007,9 @@ function ChatComposer({
       /* @__PURE__ */ jsx_runtime4.jsxs("div", {
         className: "mt-1 flex items-center gap-2",
         children: [
-          /* @__PURE__ */ jsx_runtime4.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime4.jsx("span", {
             className: "text-[10px] text-ink-faint",
-            children: [
-              attachable && dropped ? "selection dropped · " : "",
-              "⌘↩ to send"
-            ]
+            children: "⌘↩ to send"
           }),
           /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
             type: "submit",
@@ -58371,6 +58366,25 @@ function paintRange(a2, p, srcFrom, srcTo) {
   return range.collapsed ? null : range;
 }
 
+// src/scriptorium/surface/state/selection.ts
+function heldAfter(held, event) {
+  if (event.type === "drop")
+    return null;
+  const s = event.selection;
+  if (s.from === s.to)
+    return null;
+  if (held && held.from === s.from && held.to === s.to && held.text === s.text)
+    return held;
+  return s;
+}
+function renderedSelectionAct(s) {
+  if (!s.ours)
+    return "ignore";
+  if (s.collapsed)
+    return s.contextClick ? "keep" : "clear";
+  return s.resolved ? "report" : "ignore";
+}
+
 // src/scriptorium/surface/components/MetaHeader.tsx
 var jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 var STATUS_TONE = {
@@ -58544,24 +58558,29 @@ function MarkdownView({
       return null;
     return resolveRange(root2, projection, range);
   }, [projection]);
+  const contextPress = import_react20.useRef(false);
   import_react20.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
       const root2 = body.current;
       const sel = window.getSelection();
-      if (!root2 || !sel)
+      if (!root2 || !sel || sel.rangeCount === 0)
         return;
-      if (sel.rangeCount > 0 && !root2.contains(sel.getRangeAt(0).commonAncestorContainer))
-        return;
-      const r2 = selectedRange();
-      if (!r2)
-        return;
-      const was = lastRange.current;
-      if (was && was.from === r2.from && was.to === r2.to)
-        return;
-      lastRange.current = r2;
-      onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
+      const r2 = sel.isCollapsed ? null : selectedRange();
+      const act = renderedSelectionAct({
+        ours: root2.contains(sel.getRangeAt(0).commonAncestorContainer),
+        collapsed: sel.isCollapsed,
+        resolved: r2,
+        contextClick: contextPress.current
+      });
+      if (act === "report" && r2) {
+        lastRange.current = r2;
+        onSelect(r2.from, r2.to, lineAt(text4, r2.from), lineAt(text4, r2.to), text4.slice(r2.from, r2.to));
+      } else if (act === "clear") {
+        lastRange.current = null;
+        onSelect(0, 0, 1, 1, "");
+      }
     };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);
@@ -58623,6 +58642,13 @@ function MarkdownView({
             return;
           }
           onFollowLink?.(href);
+        },
+        onPointerDown: (e) => {
+          const isContext = e.button === 2 || e.button === 0 && e.ctrlKey;
+          const root2 = body.current;
+          const held = lastRange.current;
+          const point3 = isContext && root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
+          contextPress.current = isContext && held !== null && point3 !== null && point3 >= held.from && point3 <= held.to;
         },
         onContextMenu: (e) => {
           if (!onContextMenu)
@@ -61043,7 +61069,10 @@ function Workspace({
                 if (open)
                   send({ type: "reveal.version", doc: open.slug, version: version3 });
               },
-              onSelect: (from, to, fromLine, toLine, sel) => setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel }),
+              onSelect: (from, to, fromLine, toLine, sel) => setSelection((held) => heldAfter(held, {
+                type: "report",
+                selection: { from, to, fromLine, toLine, text: sel }
+              })),
               reveal,
               focusedNote,
               onAddNote: (from, to, body) => {
@@ -61172,6 +61201,7 @@ function Workspace({
                       toLine: selection.toLine,
                       text: selection.text
                     } : null,
+                    onDrop: () => setSelection((held) => heldAfter(held, { type: "drop" })),
                     onSend: (text5, withSelection) => send({ type: "say", text: text5, withSelection })
                   })
                 ]
