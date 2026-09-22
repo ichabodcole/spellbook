@@ -300,22 +300,61 @@ describe("createPlace", () => {
    * lines, and it self-heals completely on the next scroll tick, which the
    * second half of this cell is.
    */
-  test("PINNED: in the rendered pane's ordering a coalesced scroll is lost, then self-heals", () => {
+  test("PINNED 1/2: the event beats `afterFrame`, so there is nothing to compare against", () => {
     const { place, raw, rendered, frame } = pair();
     raw.human(1500);
     // No frame() — the event beats `afterFrame`, which is the rendered pane's
-    // real ordering and the whole of the hole.
+    // ordering, and `left` is still undefined when the report arrives.
     rendered.coalesce(3000);
     expect(place.line()).toBe(151);
     expect(raw.position).toBe(1500);
     expect(rendered.position).toBe(3000);
 
     // And the next tick puts it right: the arm is spent, so the following
-    // report is heard and both panes agree again.
+    // report is heard and both panes agree again. ⚠ A REAL SCROLL TO A NEW
+    // PLACE, because a browser sends no event for a scroll that moves nothing
+    // — asking the fake to report from where it already sits would be a
+    // gesture the thing being modelled cannot make.
     frame();
-    rendered.human(3000);
-    expect(place.line()).toBe(301);
-    expect(raw.position).toBe(3000);
+    rendered.human(3200);
+    expect(place.line()).toBe(321);
+    expect(raw.position).toBe(3200);
+    expect(raw.read()).toBe(rendered.read());
+  });
+
+  /**
+   * ⚠ THE SECOND HALF OF THE SAME HOLE, and the one that falsified the first
+   * telling of it. `left` is recorded a frame AFTER the drive, so a human
+   * scroll landing in the window BETWEEN the drive and `afterFrame` is folded
+   * into `left` itself: the comparison then asks "is the pane where the drive
+   * left it", is told yes, and swallows the human's scroll. This needs no
+   * special ordering — the event here arrives after `afterFrame`, which is
+   * CodeMirror's — so the hole is in BOTH panes, not only the rendered one.
+   *
+   * ⛔ ASSERTS WHAT THE CODE DOES TODAY, like its neighbour, and for the same
+   * reason: see
+   * `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
+   * The "yanked back to where it started" cell above is the special case of
+   * this one where the yank lands exactly on `before`, which is why the
+   * one-frame disarm rescues that one and not this.
+   */
+  test("PINNED 2/2: a scroll inside the drive→afterFrame window is folded into `left`", () => {
+    const { place, raw, rendered, frame } = pair();
+    raw.human(1500);
+    // The human grabs the follower before the frame that records where the
+    // drive left it, and to somewhere it was NOT before (0) — so the disarm
+    // cannot spend the arm and the comparison absorbs their position instead.
+    rendered.yank(700);
+    frame();
+    rendered.flush();
+    expect(place.line()).toBe(151);
+    expect(raw.position).toBe(1500);
+    expect(rendered.position).toBe(700);
+
+    // Self-heals on the next tick, exactly as its neighbour does.
+    rendered.human(900);
+    expect(place.line()).toBe(91);
+    expect(raw.position).toBe(900);
     expect(raw.read()).toBe(rendered.read());
   });
 

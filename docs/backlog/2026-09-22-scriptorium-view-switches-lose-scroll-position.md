@@ -70,20 +70,36 @@ not by the pixel.
 **Measured** on `grimoire/house-style.md` (668 lines) in Chromium, with an
 oracle that reads both panes out of the DOM and locates the text in the file:
 when a block begins at the top edge — the case a human aims at — the other
-pane's top line is that block's own line **exactly, at 25 of 27 headings**; at
-**42 arbitrary positions** the two are **within three source lines** (exact at
-20 of 37 locatable, within one at 32, within two at 34), and that oracle reads
-late by up to two rendered lines, so it is an upper bound. At the very bottom
-the follower is at its maximum scroll and cannot put the leader's line at the
-top at all: the residue is the distance from the last anchor to the last line
-(six lines here), a structural floor of scrolling rather than a fault in the
-mapping. No drift after settling, wheel or programmatic. Every mode switch —
+pane's top line is that block's own line **exactly, at 25 of the 27 `h2`–`h4`
+headings the probe queried** (it did not query the `h1` title). Of **42
+arbitrary positions**, 37 were measurable — one was the bottom clamp, and at
+four the oracle could not find enough text at the top edge to locate it in the
+file — and all 37 are **within three source lines**: exact at 20, within one at
+32, within two at 34. That oracle reads late by up to two rendered lines, so it
+is an upper bound.
+
+These are kept because they are what a later change gets compared against: they
+are the evidence behind Cole's "close is the bar", and a sync that degrades
+shows up as this sweep moving. That is also why each carries its population — a
+figure without one cannot be compared to anything. At the very bottom the
+follower is at its maximum scroll and cannot put the leader's line at the top at
+all: the residue is the distance from the last anchor to the last line (six
+lines here), a structural floor of scrolling rather than a fault in the mapping.
+No drift after settling, wheel or programmatic. Every mode switch —
 split→raw→rendered→raw→split — kept the same passage at the top.
 
 ⚠ **A first pass claimed "within one source line"** on a 24-position sweep whose
 probe flattered it, and an independent verifier could not reproduce it. The
 number above is the reproduction, and the claim is now written with its method
-and its limit attached.
+and its limit attached. ⛔ **Its second pass then reported details out of 37
+under a headline of 42** without saying where the other five went — the
+ask-the-tool-for-its-population trap, twice on one branch, which is why the
+denominators above are spelled out rather than summarised.
+
+⚠ **The guard this rests on has a known hole**, pinned rather than fixed by
+Cole's ruling — a coalesced human scroll can be swallowed in two sub-frame
+windows. See
+[the coalesced-scroll item](./2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md).
 
 **Two defects an independent verifier found in the first pass, both fixed
 here:**

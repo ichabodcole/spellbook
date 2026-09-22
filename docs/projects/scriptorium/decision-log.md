@@ -2093,8 +2093,26 @@ source line each rendered block begins on, and where it sits in the scroller)
 and anything between two anchors is interpolated. The error is bounded by the
 BLOCK, which is the unit a human looks for when they switch views. **Measured on
 `grimoire/house-style.md` (668 lines): when a block begins at the top edge, the
-other pane's top line is that block's line EXACTLY (25 of 27 headings); at 42
-arbitrary positions the two are within three source lines.** At the very bottom
+other pane's top line is that block's line EXACTLY (25 of the 27 `h2`–`h4`
+headings the probe queried); of 42 arbitrary positions, 37 were measurable — one
+bottom clamp, four where the oracle could not locate the text — and all 37 are
+within three source lines.** Those figures are kept because a later change that
+degrades the sync is caught by re-running that sweep and comparing; they carry
+their population for the same reason.
+
+**⛔ AND THAT IS THE TEST FOR WRITING A NUMBER DOWN AT ALL (Cole, 2026-09-22):
+what is it for, who is it for, and what will they do with it?** A number that
+has to stay true, or that a later reader will compare against to see whether
+something degraded, earns its place — and then it owes its method, its
+population and its limit, because without those there is nothing to compare
+against. A number that merely records what was true on the day — how many cells
+a branch added, how many anchors there were before and after a fix — is nobody's
+to act on and is a hostage to the next person who measures it. **Not taken:**
+reconciling every figure on the branch for accuracy's sake, which was the
+instruction until this rule replaced it; accuracy is the second question, and
+asking it first keeps figures alive that should have been cut. _Ruled while
+correcting a denominator that did not match itself — the third numeric claim on
+this branch to be corrected by someone else's instrument._ At the very bottom
 the follower is already at maximum scroll and cannot put the leader's line at
 the top at all — the residue is the distance from the last anchor to the last
 line, a structural floor of scrolling, named here rather than papered over.
@@ -2130,14 +2148,32 @@ it. **Not taken:** widening or narrowing the window, which only moves which
 scrolls are lost; and a tolerance on the line numbers, which would have made the
 bottom clamp indistinguishable from a real move.
 
-What replaced it is exact. A programmatic scroll produces exactly ONE scroll
-event, so the arm is one-shot: the first report after a drive IS that drive. Two
-facts make it airtight. A scroll event is dispatched in the rendering update's
-scroll steps, which run BEFORE that frame's animation-frame callbacks — so a
-one-frame disarm can clear an arm that will never be consumed (a drive that
+What replaced it works on events rather than clocks. A programmatic scroll
+produces exactly ONE scroll event, so the arm is one-shot: the first report
+after a drive IS that drive. A scroll event is dispatched in the rendering
+update's scroll steps, which run BEFORE that frame's animation-frame callbacks —
+so a one-frame disarm can clear an arm that will never be consumed (a drive that
 moved nothing sends no event) without ever racing the event itself. And a human
 scroll COALESCED into the same event as ours is told apart by WHERE THE PANE IS
-against where the drive left it, so nothing is lost even inside a single frame.
+against where the drive left it.
+
+**⚠ IT IS NOT AIRTIGHT, AND THIS ENTRY SAID IT WAS.** The comparison can only
+speak once `left` has been recorded, which is a frame after the drive. Two
+windows are therefore uncovered: a report that arrives BEFORE `afterFrame` has
+nothing to compare against, and a human scroll landing BETWEEN the drive and
+`afterFrame` is folded into `left` itself and reads as the drive. Both swallow a
+real scroll and leave the panes disagreeing until the next tick, which corrects
+it completely. **Cole ruled it filed rather than fixed** — reaching either needs
+a synthetic injection, and real alternating wheel input could not provoke worse
+than three lines. Pinned by two cells in `place.test.ts` (`PINNED 1/2`,
+`PINNED 2/2`) that assert TODAY'S behaviour so a later change cannot move it
+silently, and filed as
+[the coalesced-scroll item](../../backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md).
+
+_The word "airtight" stood here for exactly one round of review. It was written
+in the same breath as this branch's own lesson — that an unreproducible claim in
+the tree is a defect — and it is the third claim on this branch to be corrected
+by someone else's instrument rather than by its author's._
 
 _Measured, and the reason the ordering is written down rather than assumed:
 CodeMirror's `scrollIntoView` is applied a frame late — immediately after the

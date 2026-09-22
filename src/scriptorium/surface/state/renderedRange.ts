@@ -158,11 +158,13 @@ export function paintRange(
  * above the one before it) is dropped rather than reconciled.
  *
  * ⚠ MEASURED AT ~12.5 ms FOR `grimoire/house-style.md` (668 lines, 545 elements,
- * 987 runs, Chromium 2026-09-22), which is why the caller caches the result and
- * rebuilds it only when the html or the pane's width changes — never per scroll
- * event. Almost none of that is the DOM: the element rects are 0.2 ms and
- * `align` is 0.2 ms; the rest is the per-anchor `toSource` + `lineAt`, both of
- * which scan from the start of the document.
+ * 987 runs, Chromium 2026-09-22). That figure is here to be compared against:
+ * it is the whole reason the caller caches this and rebuilds it only when the
+ * html or the pane's width changes, so if a change ever puts it back on the
+ * scroll path, this is the measurement that says what that costs. Almost none
+ * of it is the DOM — the element rects are 0.2 ms and `align` is 0.2 ms; the
+ * rest is the per-anchor `toSource` + `lineAt`, both of which scan from the
+ * start of the document, and that is where to look first if it needs to shrink.
  */
 export function lineAnchors(
   root: HTMLElement,

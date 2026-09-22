@@ -29,14 +29,24 @@
 //
 // MEASURED on `grimoire/house-style.md` (668 lines), Chromium 2026-09-22, with
 // an oracle that reads both panes out of the DOM and locates the text in the
-// file — no code from here on either side:
+// file — no code from here on either side.
+//
+// ⚠ THESE NUMBERS ARE HERE TO BE RE-MEASURED AGAINST, which is the only reason
+// they are worth keeping: they are the evidence behind "close is the bar", so a
+// change to the anchors or the interpolation that makes the sync worse is
+// caught by running the same sweep and comparing. Stated with their method,
+// their population and their limit, because a figure without those cannot be
+// compared against anything.
 //
 //   · WHEN A BLOCK BEGINS AT THE TOP EDGE — the case a human aims at — the
-//     other pane's top line is that block's own line, EXACTLY: 25 of 27
-//     headings. Both exceptions are the bottom clamp below.
-//   · AT 42 ARBITRARY POSITIONS — mid-paragraph, mid-fence, anywhere — the two
-//     are within THREE source lines (exact at 20 of 37 locatable, within one at
-//     32, within two at 34). The oracle looks DOWN from the top edge for enough
+//     other pane's top line is that block's own line, EXACTLY: 25 of the 27
+//     `h2`–`h4` headings the probe queried (it did not query the `h1` title).
+//     Both exceptions are the bottom clamp below.
+//   · AT 42 ARBITRARY POSITIONS — mid-paragraph, mid-fence, anywhere — 37 were
+//     measurable: one was the bottom clamp, and at four the oracle could not
+//     find enough text at the top edge to locate it in the file. Of those 37
+//     the two panes are within THREE source lines — exact at 20, within one at
+//     32, within two at 34. The oracle looks DOWN from the top edge for enough
 //     text to locate, so it reads late by up to two rendered lines; the figure
 //     is therefore an upper bound on the error, not the error.
 //   · AT THE VERY BOTTOM the follower is already at its maximum scroll and
@@ -49,7 +59,21 @@
 // strength of a 24-position sweep whose probe flattered it. It did not
 // reproduce. A number in the tree that nobody can reproduce is a defect of its
 // own, so the shape above — what was measured, how, and where it stops — is the
-// form these claims take from here.
+// form these claims take from here. ⛔ INCLUDING THE DENOMINATOR: the sentence
+// above said "42 positions" and then reported every detail out of 37 without
+// saying what happened to the other five. Same trap, one branch later.
+//
+// ⛔ AND THE PRIOR QUESTION IS WHAT A NUMBER IS FOR (Cole). One that has to stay
+// true, or that a later reader will compare against to see whether something
+// degraded, earns its place and then owes its method, its population and its
+// limit. One that merely records what was true on the day — how many cells were
+// added, how many anchors there were before and after — is nobody's to act on
+// and is a hostage to the next person who measures. Those are not written down.
+//
+// ⚠ AND THE GUARD BELOW HAS A KNOWN HOLE, pinned rather than fixed. A coalesced
+// human scroll can be swallowed in two sub-frame windows — see `createPlace`,
+// the `PINNED` cells in `place.test.ts`, and
+// `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
 //
 // DOM-free on purpose: the node walking and the rects are `renderedRange.ts`'s,
 // the same split E51 already draws.
@@ -119,7 +143,18 @@ export function lineAtTop(anchors: readonly Anchor[], top: number): number {
   return last.line;
 }
 
-/** What the place needs a pane to be able to do. */
+/**
+ * What the place needs a pane to be able to do.
+ *
+ * ⚠ AND THE ONE THING IT ASSUMES ABOUT THEM: that `to` scrolls INSTANTLY. The
+ * guard below is one-shot because an instant scroll produces exactly one scroll
+ * event. A scroller with `scroll-behavior: smooth` emits a stream of them — the
+ * first would spend the arm and every one after it would read as the human
+ * moving the pane, which is the ratchet this whole mechanism exists to prevent.
+ * Neither pane sets it today (nor does anything they inherit from); if one ever
+ * does, the arm has to become "until this pane stops moving" rather than "the
+ * next event", and these cells will not notice on their own.
+ */
 export type Pane = {
   /** Scroll so source line N is at the top of this pane. */
   to(line: number): void;

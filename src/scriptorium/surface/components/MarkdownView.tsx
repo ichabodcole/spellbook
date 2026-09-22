@@ -169,6 +169,12 @@ export function MarkdownView({
       anchors.current = null;
     });
     ro.observe(sc);
+    // ⛔ AND THE CONTENT, NOT JUST THE SCROLLER. The scroller's own border box
+    // does not change when what is inside it grows, so a late font swap or an
+    // image finishing would move every block and leave the table describing
+    // where they used to be. The prose div's box does change, so it is the one
+    // that notices.
+    if (body.current) ro.observe(body.current);
     return () => ro.disconnect();
   }, [html, projection]);
 
@@ -251,6 +257,13 @@ export function MarkdownView({
       // the selected text, so the one gesture most likely to mean "never mind"
       // was the one gesture that reported nothing: the paint went and the chip
       // stayed. `renderedSelectionAct` holds what an emptied selection means.
+      // ⚠ WIDER THAN "THE HUMAN CLICKED": anything that destroys the selection
+      // lands here, including this subtree being replaced when the daemon
+      // pushes a new version of the document. That now reports a clear where it
+      // used to report nothing, which is the right answer — the passage the
+      // chip named is gone with the text it pointed into — but it is a
+      // behaviour change beyond the defect, so it is written down rather than
+      // discovered.
       const gone = sel.rangeCount === 0;
       const r = gone || sel.isCollapsed ? null : selectedRange();
       const act = renderedSelectionAct({

@@ -58365,7 +58365,7 @@ function DocumentView({
       scroller.removeEventListener("scroll", onScroll);
       leave();
     };
-  }, [place]);
+  }, [place, docKey, editable2]);
   import_react19.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
@@ -58769,6 +58769,8 @@ function MarkdownView({
       anchors.current = null;
     });
     ro.observe(sc);
+    if (body.current)
+      ro.observe(body.current);
     return () => ro.disconnect();
   }, [html, projection]);
   import_react20.useEffect(() => {

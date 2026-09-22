@@ -137,7 +137,12 @@ describe("renderedSelectionAct — one selectionchange in the rendered pane", ()
   });
 
   test("an emptied selection reaches the same act a collapsed one does", () => {
+    // ⚠ PIN THE VALUE, not just the agreement: comparing the two calls to each
+    // other passes just as happily when both have regressed to "ignore", which
+    // is precisely the defect this cell is here to catch.
     const collapsed = { ...base, collapsed: true, resolved: null };
+    expect(renderedSelectionAct(collapsed)).toBe("clear");
+    expect(renderedSelectionAct(emptied)).toBe("clear");
     expect(renderedSelectionAct(emptied)).toBe(renderedSelectionAct(collapsed));
   });
 

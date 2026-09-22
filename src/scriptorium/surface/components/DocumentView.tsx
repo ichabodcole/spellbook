@@ -426,8 +426,14 @@ export function DocumentView({
   // IS the source. The rendered view is the half that has to interpolate
   // (`state/place.ts`), and the line number is what the two agree on.
   //
-  // Declared AFTER the view effect so `view.current` is set when it runs; both
-  // re-run together, since a new document brings both a new view and a new place.
+  // Declared AFTER the view effect so `view.current` is set when it runs, and
+  // keyed on EVERYTHING THE VIEW IS KEYED ON as well as the place. `place`
+  // alone was not enough: it happens to change with `docKey` today, but
+  // `editable` is in the view's key too, and only the call sites that pass a
+  // place hard-code it to true. This file's own contract says only the ACTIVE
+  // version is editable (E2), so the day that becomes dynamic the view would be
+  // rebuilt underneath a listener still attached to the destroyed view's
+  // `scrollDOM`, and the new view would never join the place at all.
   useEffect(() => {
     const v = view.current;
     if (!v || !place) return;
@@ -460,7 +466,7 @@ export function DocumentView({
       scroller.removeEventListener("scroll", onScroll);
       leave();
     };
-  }, [place]);
+  }, [place, docKey, editable]);
 
   // Clicking a note's quote brings it into view and selects it — `seq` is what
   // lets the same note be asked for twice in a row.
