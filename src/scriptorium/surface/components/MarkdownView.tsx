@@ -215,6 +215,18 @@ export function MarkdownView({
    */
   const contextPress = useRef(false);
 
+  /**
+   * Whether the last pointer press in the document landed inside this pane.
+   *
+   * ⛔ THE ATTRIBUTION FOR A SELECTION THAT IS GONE, and nothing else. When
+   * Chrome empties the selection there is no node left to ask whose it was, so
+   * without this a click into the chat composer would read exactly like a click
+   * in the text and clear the passage the human is about to write about.
+   * Transient, like `contextPress` above — a fact about the last INPUT, not a
+   * second copy of the selection.
+   */
+  const pressedHere = useRef(false);
+
   // ⛔ REPORTED ON `selectionchange`, NOT ON `mouseup`. A keyboard selection
   // (shift-arrow) and a double-click both land here, and mouseup misses the
   // first. The document-level listener is the only one the API offers.
@@ -233,13 +245,21 @@ export function MarkdownView({
     const handler = () => {
       const root = body.current;
       const sel = window.getSelection();
-      if (!root || !sel || sel.rangeCount === 0) return;
-      const r = sel.isCollapsed ? null : selectedRange();
+      if (!root || !sel) return;
+      // ⛔ NO RANGE AT ALL IS NEWS TOO — this used to return here. Chrome EMPTIES
+      // the selection, rather than collapsing it, when the click lands inside
+      // the selected text, so the one gesture most likely to mean "never mind"
+      // was the one gesture that reported nothing: the paint went and the chip
+      // stayed. `renderedSelectionAct` holds what an emptied selection means.
+      const gone = sel.rangeCount === 0;
+      const r = gone || sel.isCollapsed ? null : selectedRange();
       const act = renderedSelectionAct({
-        ours: root.contains(sel.getRangeAt(0).commonAncestorContainer),
-        collapsed: sel.isCollapsed,
+        gone,
+        ours: !gone && root.contains(sel.getRangeAt(0).commonAncestorContainer),
+        collapsed: gone || sel.isCollapsed,
         resolved: r,
         contextClick: contextPress.current,
+        pressedHere: pressedHere.current,
       });
       if (act === "report" && r) {
         lastRange.current = r;
@@ -254,11 +274,25 @@ export function MarkdownView({
     const keyed = () => {
       contextPress.current = contextPressAfter({ kind: "keydown" });
     };
+    // ⛔ ON THE DOCUMENT, NOT THE PANE, because the fact needed is where the
+    // press LANDED — and the press that must NOT clear the passage (into the
+    // chat composer, to write about it) lands outside this pane, so the pane's
+    // own handler would never hear it and the flag would stay stale.
+    const pressed = (e: PointerEvent) => {
+      // The whole PANE, not just the prose: a press on the metadata header or
+      // in the margin beside the text is still a press in this half, and
+      // dismissing a selection by clicking the white space is exactly the
+      // gesture this has to attribute.
+      const pane = scroller.current;
+      pressedHere.current = !!pane && pane.contains(e.target as Node);
+    };
     document.addEventListener("selectionchange", handler);
     document.addEventListener("keydown", keyed, true);
+    document.addEventListener("pointerdown", pressed, true);
     return () => {
       document.removeEventListener("selectionchange", handler);
       document.removeEventListener("keydown", keyed, true);
+      document.removeEventListener("pointerdown", pressed, true);
     };
   }, [onSelect, selectedRange, text]);
 

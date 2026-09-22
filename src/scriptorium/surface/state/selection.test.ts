@@ -79,7 +79,14 @@ describe("applySelectionEvent — what the panes are told to unpaint", () => {
 });
 
 describe("renderedSelectionAct — one selectionchange in the rendered pane", () => {
-  const base = { ours: true, collapsed: false, resolved: { from: 1, to: 5 }, contextClick: false };
+  const base = {
+    ours: true,
+    collapsed: false,
+    gone: false,
+    resolved: { from: 1, to: 5 },
+    contextClick: false,
+    pressedHere: true,
+  };
 
   test("a selection in this pane that resolves is reported", () => {
     expect(renderedSelectionAct(base)).toBe("report");
@@ -114,6 +121,35 @@ describe("renderedSelectionAct — one selectionchange in the rendered pane", ()
 
   test("a selection that cannot be placed says nothing rather than something wrong", () => {
     expect(renderedSelectionAct({ ...base, resolved: null })).toBe("ignore");
+  });
+
+  // ⛔ MEASURED IN CHROME, twice: a click landing INSIDE the selected text
+  // EMPTIES the selection rather than collapsing it, so there is no range at
+  // all. The handler gave up on `rangeCount === 0`, so no clear was ever
+  // reported: the paint went and the chip stayed reading `line 262`, on a
+  // passage nothing was holding — Cole's "the chip mirrors the selection" rule
+  // broken in the one case nobody had tested. The two readings of the DOM are
+  // the same event and must reach the same act.
+  const emptied = { ...base, gone: true, collapsed: true, ours: false, resolved: null };
+
+  test("a click inside the selection, which the browser EMPTIES, clears it", () => {
+    expect(renderedSelectionAct(emptied)).toBe("clear");
+  });
+
+  test("an emptied selection reaches the same act a collapsed one does", () => {
+    const collapsed = { ...base, collapsed: true, resolved: null };
+    expect(renderedSelectionAct(emptied)).toBe(renderedSelectionAct(collapsed));
+  });
+
+  // ⛔ AND THE PRESS IS WHAT MAKES IT OURS. Clicking into the chat composer to
+  // WRITE ABOUT the passage must not clear it — that is the entire point of the
+  // chip — and an emptied selection has no node to say where it went.
+  test("an emptied selection with no press in this pane is not ours to clear", () => {
+    expect(renderedSelectionAct({ ...emptied, pressedHere: false })).toBe("ignore");
+  });
+
+  test("a right-click over the selection still keeps it, emptied or collapsed", () => {
+    expect(renderedSelectionAct({ ...emptied, contextClick: true })).toBe("keep");
   });
 });
 

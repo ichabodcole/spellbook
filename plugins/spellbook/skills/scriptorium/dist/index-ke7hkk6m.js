@@ -58564,6 +58564,11 @@ function heldAfter(held, event) {
   return s;
 }
 function renderedSelectionAct(s) {
+  if (s.gone) {
+    if (!s.pressedHere)
+      return "ignore";
+    return s.contextClick ? "keep" : "clear";
+  }
   if (!s.ours)
     return "ignore";
   if (s.collapsed)
@@ -58794,20 +58799,24 @@ function MarkdownView({
     return resolveRange(root2, projection, range);
   }, [projection]);
   const contextPress = import_react20.useRef(false);
+  const pressedHere = import_react20.useRef(false);
   import_react20.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
       const root2 = body.current;
       const sel = window.getSelection();
-      if (!root2 || !sel || sel.rangeCount === 0)
+      if (!root2 || !sel)
         return;
-      const r2 = sel.isCollapsed ? null : selectedRange();
+      const gone = sel.rangeCount === 0;
+      const r2 = gone || sel.isCollapsed ? null : selectedRange();
       const act = renderedSelectionAct({
-        ours: root2.contains(sel.getRangeAt(0).commonAncestorContainer),
-        collapsed: sel.isCollapsed,
+        gone,
+        ours: !gone && root2.contains(sel.getRangeAt(0).commonAncestorContainer),
+        collapsed: gone || sel.isCollapsed,
         resolved: r2,
-        contextClick: contextPress.current
+        contextClick: contextPress.current,
+        pressedHere: pressedHere.current
       });
       if (act === "report" && r2) {
         lastRange.current = r2;
@@ -58820,11 +58829,17 @@ function MarkdownView({
     const keyed = () => {
       contextPress.current = contextPressAfter({ kind: "keydown" });
     };
+    const pressed = (e) => {
+      const pane = scroller.current;
+      pressedHere.current = !!pane && pane.contains(e.target);
+    };
     document.addEventListener("selectionchange", handler);
     document.addEventListener("keydown", keyed, true);
+    document.addEventListener("pointerdown", pressed, true);
     return () => {
       document.removeEventListener("selectionchange", handler);
       document.removeEventListener("keydown", keyed, true);
+      document.removeEventListener("pointerdown", pressed, true);
     };
   }, [onSelect, selectedRange, text4]);
   const unpainted = import_react20.useRef(clearSeq);

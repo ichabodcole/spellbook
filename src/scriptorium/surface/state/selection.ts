@@ -52,16 +52,40 @@ export function heldAfter(held: HeldSelection | null, event: SelectionEvent): He
  *   A right-click anywhere else is an ordinary click and clears.
  * - `ignore` — the selection is somewhere else (the chat, the raw half), or it
  *   cannot be placed; saying nothing beats saying something wrong.
+ *
+ * ⛔ AND A SELECTION THE BROWSER EMPTIED IS A COLLAPSE BY ANOTHER NAME. Chrome
+ * does not always collapse: a click landing INSIDE the selected text removes
+ * the range entirely, so `rangeCount` is 0 and there is no range to ask whose
+ * it was. The handler used to give up there, and the result was Cole's rule
+ * broken in the case nobody tested — the paint went, the chip stayed on a
+ * passage nothing was holding, and it survived every later selection. **Both
+ * readings of the DOM have to reach the same act**, so an emptied selection is
+ * a clear exactly when a collapsed one would have been.
+ *
+ * ⚠ WHICH NEEDS THE PRESS, because an emptied selection carries no node to
+ * attribute it with. `pressedHere` is that attribution and nothing more — a
+ * transient fact about the last INPUT, like `contextClick` beside it, not a
+ * second copy of the selection. It is what keeps clicking into the chat
+ * composer from clearing the passage you are about to write about, which is the
+ * whole point of the chip.
  */
 export function renderedSelectionAct(s: {
   /** The selection is inside this pane. */
   ours: boolean;
   collapsed: boolean;
+  /** The document has NO selection at all — `rangeCount === 0`. */
+  gone: boolean;
   /** What it resolved to in source, when it is not collapsed. */
   resolved: { from: number; to: number } | null;
   /** The last pointer press in this pane was a context press over the selection. */
   contextClick: boolean;
+  /** The last pointer press in the document landed inside this pane. */
+  pressedHere: boolean;
 }): "report" | "clear" | "keep" | "ignore" {
+  if (s.gone) {
+    if (!s.pressedHere) return "ignore";
+    return s.contextClick ? "keep" : "clear";
+  }
   if (!s.ours) return "ignore";
   if (s.collapsed) return s.contextClick ? "keep" : "clear";
   return s.resolved ? "report" : "ignore";
