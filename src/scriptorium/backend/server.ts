@@ -76,6 +76,7 @@ import type {
   ServerMsg,
   StructureOp,
 } from "./protocol";
+import { type Screen, selectionOnScreen } from "./selection";
 import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
 import {
@@ -134,6 +135,24 @@ export async function startDaemon(opts: StartOpts) {
     : Session.create(home, undefined, opts.workspace);
   const sessionId = session.id;
   let selection: Selection | null = null;
+  /** The document text on screen — the open document at its active version. */
+  const screen = (): Screen | null => {
+    const d = session.openDocSlug ? session.findDoc(session.openDocSlug) : undefined;
+    return d ? { doc: d.slug, version: d.active } : null;
+  };
+  /**
+   * The held selection, once the text it was made in is still the text on
+   * screen (E66). ⛔ READ THROUGH THIS, NEVER `selection` DIRECTLY: the open
+   * document moves under it from many places (the surface's `open` and
+   * `open.doc`, the agent, a version activated, a document removed), and a
+   * check at each of them is a check some future path forgets. Dropping it
+   * here, on the next read, is why going back to the first document does not
+   * revive it — every one of those paths broadcasts, and the broadcast reads.
+   */
+  const heldSelection = (): Selection | null => {
+    selection = selectionOnScreen(selection, screen());
+    return selection;
+  };
 
   // --- prefs: per-viewer conveniences that outlive a session's port ------------
   // Browser storage is keyed by origin, port included, and every session gets a
@@ -191,7 +210,7 @@ export async function startDaemon(opts: StartOpts) {
   const history = new History();
 
   const viewState = (): PublicState => {
-    const base = { ...session.view(mode, selection), prefs: readPrefs(), userHome };
+    const base = { ...session.view(mode, heldSelection()), prefs: readPrefs(), userHome };
     const now = Date.now();
     return {
       ...base,
@@ -649,12 +668,14 @@ export async function startDaemon(opts: StartOpts) {
       }
       case "select":
         // AMBIENT state: stored and shown, never pushed onto the agent's tail.
-        selection = msg.selection;
+        // ⛔ One naming a document that is not on screen is a stale echo from
+        // before a switch (E66), and is not held.
+        selection = selectionOnScreen(msg.selection, screen());
         return;
       case "say": {
         const text = msg.text.trim();
         if (!text) return;
-        const sel = msg.withSelection ? selection : null;
+        const sel = msg.withSelection ? heldSelection() : null;
         const activePath = sel ? session.activePath(sel.doc) : session.activePath();
         // E65's "Ask the agent": the message carries the note it is about, so
         // the agent can act on it and resolve it by id rather than by matching

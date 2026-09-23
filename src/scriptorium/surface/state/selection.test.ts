@@ -10,8 +10,24 @@ import {
   renderedSelectionAct,
 } from "./selection";
 
-const A: HeldSelection = { from: 10, to: 20, fromLine: 2, toLine: 2, text: "0123456789" };
-const B: HeldSelection = { from: 30, to: 35, fromLine: 4, toLine: 4, text: "abcde" };
+const A: HeldSelection = {
+  doc: "alpha",
+  version: 1,
+  from: 10,
+  to: 20,
+  fromLine: 2,
+  toLine: 2,
+  text: "0123456789",
+};
+const B: HeldSelection = {
+  doc: "alpha",
+  version: 1,
+  from: 30,
+  to: 35,
+  fromLine: 4,
+  toLine: 4,
+  text: "abcde",
+};
 
 describe("heldAfter — what the surface (and so the daemon) holds", () => {
   test("a report replaces what was held", () => {
@@ -75,6 +91,50 @@ describe("applySelectionEvent — what the panes are told to unpaint", () => {
     const again = applySelectionEvent(A, { type: "report", selection: { ...A } });
     expect(again.held).toBe(A);
     expect(again.clearPaint).toBe(false);
+  });
+});
+
+describe("E66 — the open document changing is a clear", () => {
+  // The reviewer's repro: select in alpha, click beta in the context list, and
+  // the chip read `beta.md · v1 · line 2` over alpha's words — and so did the
+  // daemon, so a `say` would have sent alpha's text attributed to beta.
+  test("⛔ another document shown: the selection goes, and so does its paint", () => {
+    expect(applySelectionEvent(A, { type: "shown", doc: "beta", version: 1 })).toEqual({
+      held: null,
+      clearPaint: true,
+    });
+  });
+
+  test("another version of the same document shown: the same clear", () => {
+    expect(applySelectionEvent(A, { type: "shown", doc: "alpha", version: 2 })).toEqual({
+      held: null,
+      clearPaint: true,
+    });
+  });
+
+  test("no document shown at all: the same clear", () => {
+    expect(applySelectionEvent(A, { type: "shown", doc: null, version: null })).toEqual({
+      held: null,
+      clearPaint: true,
+    });
+  });
+
+  test("the document it was made in, still shown: no news", () => {
+    const same = applySelectionEvent(A, { type: "shown", doc: "alpha", version: 1 });
+    expect(same.held).toBe(A);
+    expect(same.clearPaint).toBe(false);
+  });
+
+  test("nothing held: nothing to unpaint", () => {
+    expect(applySelectionEvent(null, { type: "shown", doc: "beta", version: 1 })).toEqual({
+      held: null,
+      clearPaint: false,
+    });
+  });
+
+  test("the same range in ANOTHER document is a new selection, not the one held", () => {
+    const onBeta = { ...A, doc: "beta" };
+    expect(heldAfter(A, { type: "report", selection: onBeta })).toBe(onBeta);
   });
 });
 

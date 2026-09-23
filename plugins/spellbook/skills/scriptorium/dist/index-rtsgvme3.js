@@ -15963,6 +15963,13 @@ function ResizableHandle({
   });
 }
 
+// src/scriptorium/backend/selection.ts
+function selectionOnScreen(sel, screen) {
+  if (!sel || !screen)
+    return null;
+  return sel.doc === screen.doc && sel.version === screen.version ? sel : null;
+}
+
 // src/scriptorium/surface/components/ActiveVersionToast.tsx
 var import_react6 = __toESM(require_react(), 1);
 function name(doc, n) {
@@ -58712,10 +58719,12 @@ function lineAnchors(root2, scroller, p, text4) {
 function heldAfter(held, event) {
   if (event.type === "drop")
     return null;
+  if (event.type === "shown")
+    return selectionOnScreen(held, event.doc !== null && event.version !== null ? { doc: event.doc, version: event.version } : null);
   const s = event.selection;
   if (s.from === s.to)
     return null;
-  if (held && held.from === s.from && held.to === s.to && held.text === s.text)
+  if (held && held.doc === s.doc && held.version === s.version && held.from === s.from && held.to === s.to && held.text === s.text)
     return held;
   return s;
 }
@@ -61653,29 +61662,25 @@ function Workspace({
   const openSlug = open?.slug ?? null;
   const activeVersion = open?.active ?? null;
   const original = open?.original ?? null;
+  const shown = selectionOnScreen(selection, openSlug !== null && activeVersion !== null ? { doc: openSlug, version: activeVersion } : null);
+  import_react30.useEffect(() => {
+    onSelectionEvent({ type: "shown", doc: openSlug, version: activeVersion });
+  }, [openSlug, activeVersion, onSelectionEvent]);
   import_react30.useEffect(() => {
     if (!openSlug || activeVersion === null || original === null)
       return;
     send({
       type: "select",
-      selection: selection ? {
-        doc: openSlug,
-        version: activeVersion,
+      selection: shown ? {
+        doc: shown.doc,
+        version: shown.version,
         path: original,
-        fromLine: selection.fromLine,
-        toLine: selection.toLine,
-        text: selection.text
+        fromLine: shown.fromLine,
+        toLine: shown.toLine,
+        text: shown.text
       } : null
     });
-  }, [
-    openSlug,
-    activeVersion,
-    original,
-    selection?.fromLine,
-    selection?.toLine,
-    selection?.text,
-    send
-  ]);
+  }, [openSlug, activeVersion, original, shown?.fromLine, shown?.toLine, shown?.text, send]);
   import_react30.useEffect(() => {
     if (mode !== "compare" || !open)
       return;
@@ -61703,13 +61708,13 @@ function Workspace({
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
   const composer = {
     connected: connection === "open",
-    attachable: open && selection ? {
+    attachable: open && shown ? {
       doc: open.slug,
       name: open.name,
       version: open.active,
-      fromLine: selection.fromLine,
-      toLine: selection.toLine,
-      text: selection.text
+      fromLine: shown.fromLine,
+      toLine: shown.toLine,
+      text: shown.text
     } : null,
     draft,
     onDraft: setDraft,
@@ -61886,10 +61891,22 @@ function Workspace({
                 if (open)
                   send({ type: "reveal.version", doc: open.slug, version: version3 });
               },
-              onSelect: (from, to, fromLine, toLine, sel) => onSelectionEvent({
-                type: "report",
-                selection: { from, to, fromLine, toLine, text: sel }
-              }),
+              onSelect: (from, to, fromLine, toLine, sel) => {
+                if (!open)
+                  return;
+                onSelectionEvent({
+                  type: "report",
+                  selection: {
+                    doc: open.slug,
+                    version: open.active,
+                    from,
+                    to,
+                    fromLine,
+                    toLine,
+                    text: sel
+                  }
+                });
+              },
               reveal,
               clearSeq,
               focusedNote,
@@ -62001,7 +62018,7 @@ function Workspace({
                 others: notesOthers,
                 onOpenDoc: (doc2) => send({ type: "open.doc", doc: doc2 }),
                 onAsk: (n) => open && askAbout(n, open),
-                selection: open && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
+                selection: open && shown && text4 !== undefined ? { ...shown, text: text4.slice(shown.from, shown.to) } : null,
                 onAdd: (from, to, body) => {
                   if (open)
                     send({ type: "note.add", doc: open.slug, from, to, body });

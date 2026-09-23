@@ -29,6 +29,7 @@ import type {
   PublicState,
   Waiting,
 } from "../backend/protocol";
+import { selectionOnScreen } from "../backend/selection";
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ChatComposer } from "./components/ChatComposer";
 import { ContextSidebar } from "./components/context/ContextSidebar";
@@ -504,30 +505,41 @@ function Workspace({
   const openSlug = open?.slug ?? null;
   const activeVersion = open?.active ?? null;
   const original = open?.original ?? null;
+  /**
+   * The held selection, if it is about the text on screen (E66) — what the
+   * chip, the Notes panel and the daemon are given. ⛔ NOT A SECOND COPY: it is
+   * `selection` or null, and the effect below makes `selection` itself null
+   * one render later. It exists for that one render, in which the document has
+   * already changed and `selection` has not — the render that used to send the
+   * daemon alpha's words stamped with beta's name.
+   */
+  const shown = selectionOnScreen(
+    selection,
+    openSlug !== null && activeVersion !== null ? { doc: openSlug, version: activeVersion } : null,
+  );
+  // ⛔ SWITCHING THE DOCUMENT IS A CLEAR (E66), like the chip's X: the held
+  // selection goes, and so does any paint of it. Whatever moved the document —
+  // the context list, a search result, a note's "open", the agent, the history
+  // arrows, a version made active — reaches here as the same two values.
+  useEffect(() => {
+    onSelectionEvent({ type: "shown", doc: openSlug, version: activeVersion });
+  }, [openSlug, activeVersion, onSelectionEvent]);
   useEffect(() => {
     if (!openSlug || activeVersion === null || original === null) return;
     send({
       type: "select",
-      selection: selection
+      selection: shown
         ? {
-            doc: openSlug,
-            version: activeVersion,
+            doc: shown.doc,
+            version: shown.version,
             path: original,
-            fromLine: selection.fromLine,
-            toLine: selection.toLine,
-            text: selection.text,
+            fromLine: shown.fromLine,
+            toLine: shown.toLine,
+            text: shown.text,
           }
         : null,
     });
-  }, [
-    openSlug,
-    activeVersion,
-    original,
-    selection?.fromLine,
-    selection?.toLine,
-    selection?.text,
-    send,
-  ]);
+  }, [openSlug, activeVersion, original, shown?.fromLine, shown?.toLine, shown?.text, send]);
 
   // Ask for the comparison whenever anything it depends on moves — the
   // document, the active version, the chosen side, or the text itself. A merge
@@ -578,14 +590,14 @@ function Workspace({
   const composer = {
     connected: connection === "open",
     attachable:
-      open && selection
+      open && shown
         ? {
             doc: open.slug,
             name: open.name,
             version: open.active,
-            fromLine: selection.fromLine,
-            toLine: selection.toLine,
-            text: selection.text,
+            fromLine: shown.fromLine,
+            toLine: shown.toLine,
+            text: shown.text,
           }
         : null,
     draft,
@@ -778,12 +790,21 @@ function Workspace({
             onRevealVersion={(version) => {
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
-            onSelect={(from, to, fromLine, toLine, sel) =>
+            onSelect={(from, to, fromLine, toLine, sel) => {
+              if (!open) return;
               onSelectionEvent({
                 type: "report",
-                selection: { from, to, fromLine, toLine, text: sel },
-              })
-            }
+                selection: {
+                  doc: open.slug,
+                  version: open.active,
+                  from,
+                  to,
+                  fromLine,
+                  toLine,
+                  text: sel,
+                },
+              });
+            }}
             reveal={reveal}
             clearSeq={clearSeq}
             focusedNote={focusedNote}
@@ -927,8 +948,8 @@ function Workspace({
               onOpenDoc={(doc) => send({ type: "open.doc", doc })}
               onAsk={(n) => open && askAbout(n, open)}
               selection={
-                open && selection && text !== undefined
-                  ? { ...selection, text: text.slice(selection.from, selection.to) }
+                open && shown && text !== undefined
+                  ? { ...shown, text: text.slice(shown.from, shown.to) }
                   : null
               }
               onAdd={(from, to, body) => {

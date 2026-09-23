@@ -431,6 +431,54 @@ describe("a session, end to end through the launchers", () => {
     expect(JSON.parse(r.err).error.choices).toEqual(["a"]);
   });
 
+  // ⚠ LATE ON PURPOSE: it opens a second document, and the cells above count
+  // the session's documents.
+  test("E66 — another document or version on screen clears the held selection; it is never re-labelled or revived", async () => {
+    const stateNow = async () => JSON.parse((await cli("state")).out) as PublicState;
+    const heldNow = async () => (await stateNow()).selection ?? null;
+    const a = (await stateNow()).docs[0];
+    expect(a?.slug).toBe("a");
+    const onA = {
+      doc: "a",
+      version: a?.active ?? 0,
+      path: a?.original ?? "",
+      fromLine: 3,
+      toLine: 3,
+      text: "line two, edited",
+    };
+    surface.send({ type: "select", selection: onA });
+    await Bun.sleep(100);
+    expect(await heldNow()).toEqual(onA);
+
+    // The agent makes another version active: the selection was about text
+    // that is no longer on screen.
+    expect((await cli("activate", "v1")).code).toBe(0);
+    expect(await heldNow()).toBeNull();
+    expect((await cli("activate", `v${onA.version}`)).code).toBe(0);
+
+    // The reviewer's repro, daemon half: the open document changes under a
+    // held selection. It used to stay, and the surface re-sent it stamped with
+    // the NEW document, so `say` attached a's text to solo's path.
+    surface.send({ type: "select", selection: onA });
+    await Bun.sleep(100);
+    expect(await heldNow()).toEqual(onA);
+    surface.send({ type: "open", path: join(docs, "solo.md") });
+    await surface.waitFor((m) => m.type === "state" && m.state.openDoc === "solo");
+    expect(await heldNow()).toBeNull();
+
+    // A selection that arrives naming a document not on screen is that stale
+    // echo itself, and is not held — so going back does not revive it. ⚠ No
+    // read between the two: a read would drop it on its own, and the guard on
+    // `select` would go unconvicted.
+    surface.send({ type: "select", selection: onA });
+    const before = surface.frames.length;
+    surface.send({ type: "open.doc", doc: "a" });
+    await surface.waitFor(
+      (m) => m.type === "state" && m.state.openDoc === "a" && surface.frames.indexOf(m) >= before,
+    );
+    expect(await heldNow()).toBeNull();
+  });
+
   test("say reaches the chat; close ends the tail at 0, unlinks discovery, and the manifest stays", async () => {
     const body = join(root, "say.txt");
     writeFileSync(body, "Done — v2 is `tighter`.\n");

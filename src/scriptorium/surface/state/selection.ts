@@ -9,8 +9,15 @@
 // was a surface-only answer to a daemon-side question. Now the X clears the
 // held selection itself, which App reports to the daemon like any other change.
 
-/** A selection in SOURCE coordinates — the same five values from either pane. */
+import { selectionOnScreen } from "../../backend/selection";
+
+/**
+ * A selection in SOURCE coordinates — the same five values from either pane —
+ * and the document text it was made in (E66), which App stamps on a report.
+ */
 export type HeldSelection = {
+  doc: string;
+  version: number;
   from: number;
   to: number;
   fromLine: number;
@@ -22,7 +29,12 @@ export type SelectionEvent =
   /** A pane reported its selection; an empty range means it has none. */
   | { type: "report"; selection: HeldSelection }
   /** The chip's X: send without this passage. */
-  | { type: "drop" };
+  | { type: "drop" }
+  /**
+   * The document text on screen, whenever it may have changed (E66). Another
+   * document or version is a clear: the selection was about text that is gone.
+   */
+  | { type: "shown"; doc: string | null; version: number | null };
 
 /**
  * What is held after `event`. A report of the range already held returns the
@@ -33,9 +45,24 @@ export type SelectionEvent =
  */
 export function heldAfter(held: HeldSelection | null, event: SelectionEvent): HeldSelection | null {
   if (event.type === "drop") return null;
+  if (event.type === "shown")
+    return selectionOnScreen(
+      held,
+      event.doc !== null && event.version !== null
+        ? { doc: event.doc, version: event.version }
+        : null,
+    );
   const s = event.selection;
   if (s.from === s.to) return null;
-  if (held && held.from === s.from && held.to === s.to && held.text === s.text) return held;
+  if (
+    held &&
+    held.doc === s.doc &&
+    held.version === s.version &&
+    held.from === s.from &&
+    held.to === s.to &&
+    held.text === s.text
+  )
+    return held;
   return s;
 }
 
