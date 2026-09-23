@@ -5,8 +5,9 @@ title:
   alone"
 description:
   A stale chip when a rendered selection cannot be placed, ctrl+click read as a
-  right-click off macOS, a chip that outlives an Escape-dismissed note menu, and
-  a Notes-panel note that does not consume the selection
+  right-click off macOS, a chip that outlives an Escape-dismissed note menu, a
+  Notes-panel note that does not consume the selection, and (most serious) a
+  chip that survives a document switch under the new document's name
 tags: [scriptorium, selection, edge-cases]
 status: draft
 lifecycle: open
@@ -19,6 +20,29 @@ Raised by the independent review of `fix/scriptorium-selection-context`
 (2026-09-22) and deliberately left out of that branch. None reproduces the
 defect the branch fixed; each is the same _shape_ — the chip saying something
 the document does not.
+
+## 0. ⛔ The chip survives a document switch, and names the wrong document (most serious)
+
+Reproduced with real mouse input by the reviewer of record of
+`feat/scriptorium-note-in-progress` (2026-09-22). `develop`'s `dist/` behaves
+the same, so it predates that branch. **This is the most serious edge here,
+because it sends the agent wrong context.** It also breaks this cycle's
+appetite: "the context chip always matches the selection".
+
+**Repro:**
+
+1. In rendered view, drag-select a passage in `alpha.md`.
+2. Click `beta.md` in the context list.
+3. The chip reads `beta.md · v1 · line 5 / "<alpha's text>"`.
+4. The daemon's `/state` selection holds
+   `{doc: "beta", path: …/beta.md, fromLine: 5, text: <alpha's text>}`.
+
+A `say` now would send the agent alpha's text attributed to beta, at a line
+number that means nothing there. The held selection outlives the switch and is
+re-labelled with the new document instead of being dropped.
+
+The fix probably follows branch 1's rule: switching the open document is a
+clear, like the chip's X.
 
 ## 1. An unplaceable selection keeps the previous passage on the chip
 

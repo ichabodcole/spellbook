@@ -8,7 +8,7 @@ description:
   note.added, and the surface shows no sign work has started
 tags: [scriptorium, notes, co-presence, design]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 

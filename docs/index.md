@@ -182,3 +182,8 @@ _No pages yet._
   ResizeObserver, but a scroll event caused by the same resize is dispatched
   first and read the stale cache; keying the cache on the width it measured made
   staleness exact
+
+- [The rule was pinned; the wiring around it was not](./memories/2026-09-22-the-rule-was-pinned-the-wiring-was-not.md)
+  — Two Scriptorium branches in a row kept their rule in a pure, well-tested
+  function and left the code that feeds and carries it untested; mutation is
+  what found it both times

@@ -92,3 +92,5 @@ _Written at close, not before._
 - feat/scriptorium-keep-your-place (landed 2026-09-22)
 
 - feat/scriptorium-collapsible-sidebars (landed 2026-09-22)
+
+- feat/scriptorium-note-in-progress (landed 2026-09-22)
