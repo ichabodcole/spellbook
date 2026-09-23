@@ -70,6 +70,13 @@ every spell.
      ruling. If the cause is the Monitor pattern the other skills share, the fix
      may leave this cycle as its own item.
 
+Unplanned addition:
+
+- **`fix/scriptorium-chip-across-documents`**: edge 0 of
+  `backlog/2026-09-22-scriptorium-selection-edges-the-review-found`. The chip
+  survived a document switch under the new document's name, which breaks this
+  cycle's appetite. Cole ruled it fixed in-cycle.
+
 Out of scope, deliberately:
 
 - **Eager vs. lazy versioning**
@@ -94,3 +101,5 @@ _Written at close, not before._
 - feat/scriptorium-collapsible-sidebars (landed 2026-09-22)
 
 - feat/scriptorium-note-in-progress (landed 2026-09-22)
+
+- fix/scriptorium-chip-across-documents (landed 2026-09-22)

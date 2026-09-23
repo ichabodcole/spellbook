@@ -187,3 +187,8 @@ _No pages yet._
   — Two Scriptorium branches in a row kept their rule in a pure, well-tested
   function and left the code that feeds and carries it untested; mutation is
   what found it both times
+
+- [A place in a document must name its document](./memories/2026-09-22-a-place-in-a-document-names-its-document.md)
+  — Scriptorium's selection and its reveal range were bare offsets, so a
+  document switch applied them to the wrong text; both now carry the document
+  and version they name, checked through one rule

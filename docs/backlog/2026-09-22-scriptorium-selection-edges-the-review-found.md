@@ -6,8 +6,10 @@ title:
 description:
   A stale chip when a rendered selection cannot be placed, ctrl+click read as a
   right-click off macOS, a chip that outlives an Escape-dismissed note menu, a
-  Notes-panel note that does not consume the selection, and (fixed, E66) a chip
-  that survived a document switch under the new document's name
+  Notes-panel note that does not consume the selection, (fixed, E66) a chip that
+  survived a document switch under the new document's name, a second tab wiping
+  the daemon's selection, a highlight lost to the version menu, and a tree row
+  that does not follow a link
 tags: [scriptorium, selection, edge-cases]
 status: draft
 lifecycle: open
@@ -104,6 +106,51 @@ sends `note.add`.
 
 Probable fix: have the panel's `onAdd` drop the selection as the right-click
 path does, so there is one act and one rule.
+
+## 5. A second tab on the same session wipes the daemon's selection
+
+Found by the no-stake verifier of `fix/scriptorium-chip-across-documents`
+(2026-09-22). It predates that branch.
+
+**Repro:**
+
+1. In tab 1, select a passage. The chip and `/state` both hold it.
+2. Open the same session's URL in a second tab.
+3. Tab 2 mounts with no selection and sends `select: null`.
+4. `/state` now holds no selection, while tab 1's chip still shows the passage.
+   A `say` from tab 1 sends no passage, although its chip shows one.
+
+The daemon holds one selection per session, and every viewer writes to it. Which
+viewer's selection wins is a question for real use with two tabs open.
+
+## 6. After the version menu, the chip keeps its text with nothing highlighted
+
+Found by the same verifier. It predates the branch.
+
+**Repro:**
+
+1. Select a passage in rendered view.
+2. Open the version menu and choose the version that is already active.
+3. The chip and `/state` still hold the passage, but the document shows no
+   highlight (`getSelection()` reads empty). The press was outside the pane, so
+   the pane does not count the emptied selection as its own. Closing the menu
+   with Escape keeps the highlight; choosing another version clears both, as E66
+   says.
+
+The same shape as edge 3: a press outside the pane empties the paint and nothing
+reports it.
+
+## 7. After following a link, the context tree still highlights the previous document
+
+Found by the same verifier. It predates the branch, and it is not a selection
+edge but lives here because the same drive found it.
+
+**Repro:**
+
+1. Open a document with a link to another document in the same set.
+2. In rendered view, click the link.
+3. The linked document opens, and the chip and `/state` are right, but the
+   context tree's highlighted row is still the document you came from.
 
 ## References
 
