@@ -60398,6 +60398,15 @@ function elsewhere(waiting, open) {
   }
   return [...by.values()].sort((a2, b) => a2.since - b.since).map(({ doc: doc2, count, badge }) => ({ doc: doc2, count, badge }));
 }
+function owedLabel(waiting) {
+  const stuck = waiting.filter((n) => n.badge === "stalled").length;
+  const owed = `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
+  if (stuck === 0)
+    return owed;
+  if (waiting.length === 1)
+    return `${owed} — it may be stuck`;
+  return `${owed} — ${stuck} may be stuck`;
+}
 
 // src/scriptorium/surface/components/NotesPanel.tsx
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
@@ -61954,7 +61963,7 @@ function Workspace({
                           notesLoudest && /* @__PURE__ */ jsx_runtime31.jsx(WaitingDot, {
                             badge: notesLoudest,
                             of: "note",
-                            label: `${state.notesWaiting.length} ${state.notesWaiting.length === 1 ? "note" : "notes"} owed an answer${notesLoudest === "stalled" ? " — one may be stuck" : ""}`
+                            label: owedLabel(state.notesWaiting)
                           })
                         ]
                       }) : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {

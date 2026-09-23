@@ -54,7 +54,7 @@ import {
   reopenSize,
   type Side,
 } from "./state/columns";
-import { askAboutNote, badgesOn, elsewhere, loudest, waitingOf } from "./state/notes";
+import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
 import { applySelectionEvent, type HeldSelection, type SelectionEvent } from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
@@ -884,7 +884,7 @@ function Workspace({
                         <WaitingDot
                           badge={notesLoudest}
                           of="note"
-                          label={`${state.notesWaiting.length} ${state.notesWaiting.length === 1 ? "note" : "notes"} owed an answer${notesLoudest === "stalled" ? " — one may be stuck" : ""}`}
+                          label={owedLabel(state.notesWaiting)}
                         />
                       )}
                     </span>

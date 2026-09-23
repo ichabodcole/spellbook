@@ -165,11 +165,11 @@ You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
 
 **A note of theirs shows the same thing** — a pulse on the note until you say
-something in the app or resolve it, then "may be stuck" after 30 seconds.
-`working` covers notes too. There is no nudge for a note. When one looks stuck,
-they have a button that asks you about it, and it arrives as an ordinary
-`message` carrying the note's id (`note`) and `doc`, so you can `note-resolve`
-it directly once it is dealt with.
+something in the app, resolve it, or rewrite it (`note-edit`), then "may be
+stuck" after 30 seconds. `working` covers notes too. There is no nudge for a
+note. When one looks stuck, they have a button that asks you about it, and it
+arrives as an ordinary `message` carrying the note's id (`note`) and `doc`, so
+you can `note-resolve` it directly once it is dealt with.
 
 ## The four words that mean something specific
 

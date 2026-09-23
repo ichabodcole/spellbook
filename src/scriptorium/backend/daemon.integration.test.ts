@@ -309,6 +309,46 @@ describe("a session, end to end through the launchers", () => {
     expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
   });
 
+  test("E65 (reviewer) — who rewrote or reopened a note is recorded, and decides whether it is owed", async () => {
+    const owed = async () => (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    const before = JSON.parse((await cli("state")).out) as PublicState;
+    const note = before.docs[0]?.notes.find((n) => n.body === "and this");
+    if (!note) throw new Error("the previous cell's note is missing");
+    expect(await owed()).toEqual([]);
+
+    // The HUMAN rewrites it: owed again, timed from the rewrite, and the tail
+    // is told what it now says.
+    const rewroteAfter = Date.now();
+    surface.send({ type: "note.edit", doc: "a", id: note.id, body: "and this, rewritten" });
+    const edited = await waitTail((l) => l.type === "note.edited" && l.by === "human");
+    expect(edited).toMatchObject({ note: note.id, body: "and this, rewritten", quote: "line" });
+    const again = await owed();
+    expect(again.map((n) => n.noteId)).toEqual([note.id]);
+    expect(again[0]?.since).toBeGreaterThanOrEqual(rewroteAfter);
+
+    // The AGENT rewrites it: that answers it.
+    expect((await cli("note-edit", note.id, "--doc", "a", "agreed — cut")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // The AGENT resolving and then reopening it is an act on it, not a new ask.
+    expect((await cli("note-resolve", note.id, "--doc", "a")).code).toBe(0);
+    expect((await cli("note-resolve", note.id, "--doc", "a", "--reopen")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // An ask about a note that does not exist is refused, and nothing is sent.
+    surface.send({
+      type: "say",
+      text: "About a note that is not there",
+      withSelection: false,
+      note: { doc: "a", id: "n-nope" },
+    });
+    await surface.waitFor((m) => m.type === "error" && m.message.includes("n-nope"));
+    surface.send({ type: "say", text: "marker two", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker two");
+    expect(tailLines().some((l) => l.type === "message" && l.note === "n-nope")).toBe(false);
+    expect((await cli("say", "noted")).code).toBe(0);
+  });
+
   test("version-new → the agent edits that file → the surface receives the text", async () => {
     const r = await cli("version-new", "--label", "tighter");
     expect(r.code).toBe(0);

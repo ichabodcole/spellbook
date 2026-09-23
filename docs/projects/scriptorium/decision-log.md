@@ -2492,8 +2492,9 @@ only once the column was shut. Now:
   attention colour, so a "stuck" tint would not be told apart, and a badge in
   the text would move the words.
 
-**Reload and restart.** Nothing new is stored except `editedBy`, and the state
-is re-derived from the persisted notes and conversation, so it survives both.
+**Reload and restart.** What is stored is `editedBy`, `reopenedAt`/`reopenedBy`
+and the ask's `note` reference; `notesWaiting` is not stored, and the state is
+re-derived from the persisted notes and conversation, so it survives both.
 Driven in the browser: a note pulsed, then cleared on a CLI `say`. A second note
 went to "may be stuck" at 30 s. After a page reload it was still stuck, on the
 tab and on the floating composer. After `close` and `open --restore` it was
@@ -2519,7 +2520,7 @@ left as built, and stated plainly here so real use knows what to watch for.
 
 1. **Any agent reply clears pending on every earlier note, across documents.**
    The verifier's repro: an unrelated question and answer in the chat silenced a
-   note nobody had touched, and one `say` cleared five stuck notes across two
+   note nobody had touched, and one `say` cleared every stuck note across two
    documents. The notes stay open (unresolved), but the "may be stuck" signal is
    gone.
 2. **An agent that works on the noted passage without speaking still reads as

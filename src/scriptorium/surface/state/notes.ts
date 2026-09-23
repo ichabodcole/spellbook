@@ -85,3 +85,16 @@ export function elsewhere(
     .sort((a, b) => a.since - b.since)
     .map(({ doc, count, badge }) => ({ doc, count, badge }));
 }
+
+/**
+ * The words behind the Notes tab's one dot, for a screen reader and on hover —
+ * counted, so "may be stuck" never speaks for more notes, or fewer, than it
+ * is true of (reviewer).
+ */
+export function owedLabel(waiting: readonly NoteWaiting[]): string {
+  const stuck = waiting.filter((n) => n.badge === "stalled").length;
+  const owed = `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
+  if (stuck === 0) return owed;
+  if (waiting.length === 1) return `${owed} — it may be stuck`;
+  return `${owed} — ${stuck} may be stuck`;
+}

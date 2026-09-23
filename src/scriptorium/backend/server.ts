@@ -78,7 +78,13 @@ import type {
 } from "./protocol";
 import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
-import { DEFAULT_SNOOZE_MS, noteEventFacts, notesWaiting, waitingOn } from "./waiting";
+import {
+  attentionKey,
+  DEFAULT_SNOOZE_MS,
+  noteEventFacts,
+  notesWaiting,
+  waitingOn,
+} from "./waiting";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
@@ -1580,10 +1586,7 @@ export async function startDaemon(opts: StartOpts) {
     const notes = notesWaiting(session.noteFacts(), session.messages(), now, {
       acknowledgedUntil,
     });
-    const key = [
-      w ? `${w.messageId}:${w.badge}` : "-",
-      ...notes.map((n) => `${n.noteId}:${n.badge}`),
-    ].join("|");
+    const key = attentionKey(w, notes);
     if (key === lastWaiting) return;
     lastWaiting = key;
     // The badge changed, so the surface needs the new snapshot.

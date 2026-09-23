@@ -197,6 +197,20 @@ export function notesWaiting(
 }
 
 /**
+ * What E53's attention tick compares to decide whether the surface needs a new
+ * snapshot: the message wait and every owed note, with their badges. ⛔ A note
+ * flipping to "may be stuck" happens with nothing else changing — no message,
+ * no act — so if this key could not see notes, the pulse would run on over a
+ * stuck note until something unrelated re-sent the state.
+ */
+export function attentionKey(w: Waiting | null, notes: readonly NoteWaiting[]): string {
+  return [
+    w ? `${w.messageId}:${w.badge}` : "-",
+    ...notes.map((n) => `${n.doc}/${n.noteId}:${n.badge}${n.askedIn ? `@${n.askedIn}` : ""}`),
+  ].join("|");
+}
+
+/**
  * How much of a note `note.added` carries: the quote and the body together, in
  * characters. A paragraph's worth. Notes are made mid-read, on a phrase or a
  * sentence, and those travel whole so the agent can act without a round trip.

@@ -1,6 +1,7 @@
 // E53: the human is waiting, and how that reads.
 import { describe, expect, test } from "bun:test";
 import {
+  attentionKey,
   DEFAULT_SNOOZE_MS,
   NOTE_TEXT_MAX,
   noteEventFacts,
@@ -387,5 +388,35 @@ describe("noteEventFacts (E65) — what `note.added` tells the agent", () => {
       passage: "gone",
       hint: "too long to carry, and its passage is no longer in the active version — read it with `notes --doc maren`, act on it, then `note-resolve n1 --doc maren`",
     });
+  });
+});
+
+describe("attentionKey (E65, reviewer) — what makes the tick re-broadcast", () => {
+  // ⛔ The note's flip to "may be stuck" reaches the surface ONLY because the
+  // tick sees this key change; a key blind to notes leaves the pulse running.
+  const nw = (badge: "working" | "stalled", askedIn?: string) => ({
+    doc: "a",
+    noteId: "n1",
+    since: 0,
+    badge,
+    ...(askedIn ? { askedIn } : {}),
+  });
+
+  test("a note going from pulse to stalled changes it, with no message waiting", () => {
+    expect(attentionKey(null, [nw("working")])).not.toBe(attentionKey(null, [nw("stalled")]));
+  });
+  test("a note being asked about changes it", () => {
+    expect(attentionKey(null, [nw("working")])).not.toBe(attentionKey(null, [nw("working", "m1")]));
+  });
+  test("a note appearing or going changes it", () => {
+    expect(attentionKey(null, [])).not.toBe(attentionKey(null, [nw("working")]));
+  });
+  test("a message's badge changing still changes it (E53)", () => {
+    const m = (badge: "working" | "stalled") => ({ messageId: "m1", since: 0, badge });
+    expect(attentionKey(m("working"), [])).not.toBe(attentionKey(m("stalled"), []));
+    expect(attentionKey(null, [])).not.toBe(attentionKey(m("working"), []));
+  });
+  test("the same state gives the same key, so nothing is re-sent", () => {
+    expect(attentionKey(null, [nw("stalled")])).toBe(attentionKey(null, [nw("stalled")]));
   });
 });

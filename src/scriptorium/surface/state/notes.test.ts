@@ -1,6 +1,6 @@
 // E65: a note owed an answer, as the surface reads it.
 import { describe, expect, test } from "bun:test";
-import { askAboutNote, badgesOn, elsewhere, loudest, waitingOf } from "./notes";
+import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./notes";
 
 const w = (doc: string, noteId: string, badge: "working" | "stalled") => ({
   doc,
@@ -42,14 +42,20 @@ describe("askAboutNote — the act that answers 'may be stuck'", () => {
     const got = askAboutNote({ quote: "q".repeat(100), body: "b".repeat(300) }, "x.md");
     expect(got).toBe(`About my note on “${"q".repeat(59)}…” in x.md: “${"b".repeat(119)}…”`);
   });
+  test("the cut falls between CHARACTERS, never inside an emoji", () => {
+    const got = askAboutNote({ quote: "mill", body: "🌊".repeat(130) }, "x.md");
+    expect(got).toBe(`About my note on “mill” in x.md: “${"🌊".repeat(119)}…”`);
+  });
 });
 
 describe("elsewhere — owed notes on documents other than the open one (verifier D3)", () => {
   test("grouped by document, oldest document first, stuck if any of its notes is", () => {
     const got = elsewhere(
       [
-        { ...w("b", "n2", "working"), since: 5 },
+        // c arrives FIRST but is the younger document, so the order is the
+        // sort's, not the input's.
         { ...w("c", "n3", "working"), since: 3 },
+        { ...w("b", "n2", "working"), since: 5 },
         // b's OLDER note comes second in the list: b is still the older document.
         { ...w("b", "n4", "stalled"), since: 2 },
         { ...w("a", "n1", "stalled"), since: 0 },
@@ -72,5 +78,21 @@ describe("waitingOf — which words a waiting note gets", () => {
   test("asked about in the conversation reads as asked; otherwise as a note", () => {
     expect(waitingOf({ ...w("a", "n1", "working"), askedIn: "m1" })).toBe("asked");
     expect(waitingOf(w("a", "n1", "working"))).toBe("note");
+  });
+});
+
+describe("owedLabel — the tab dot's words", () => {
+  test("counts the stuck ones rather than saying 'one'", () => {
+    expect(
+      owedLabel([w("a", "n1", "stalled"), w("b", "n2", "stalled"), w("a", "n3", "working")]),
+    ).toBe("3 notes owed an answer — 2 may be stuck");
+  });
+  test("a single stuck note is 'it'", () => {
+    expect(owedLabel([w("a", "n1", "stalled")])).toBe("1 note owed an answer — it may be stuck");
+  });
+  test("none stuck, no claim of it", () => {
+    expect(owedLabel([w("a", "n1", "working"), w("a", "n2", "working")])).toBe(
+      "2 notes owed an answer",
+    );
   });
 });
