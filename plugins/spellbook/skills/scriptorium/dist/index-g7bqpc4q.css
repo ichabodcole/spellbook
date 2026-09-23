@@ -12,6 +12,7 @@
     --container-xs: 20rem;
     --container-sm: 24rem;
     --container-md: 28rem;
+    --container-2xl: 42rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
     --text-sm: .875rem;
@@ -782,6 +783,10 @@
 
   .w-px {
     width: 1px;
+  }
+
+  .max-w-2xl {
+    max-width: var(--container-2xl);
   }
 
   .max-w-64 {
@@ -1858,6 +1863,10 @@
     opacity: 0;
   }
 
+  .opacity-40 {
+    opacity: .4;
+  }
+
   .opacity-60 {
     opacity: .6;
   }
@@ -2008,6 +2017,11 @@
   .duration-100 {
     --tw-duration: .1s;
     transition-duration: .1s;
+  }
+
+  .duration-300 {
+    --tw-duration: .3s;
+    transition-duration: .3s;
   }
 
   .outline-none {
@@ -2270,6 +2284,12 @@
     }
   }
 
+  @media (hover: hover) {
+    .hover\:opacity-100:hover {
+      opacity: 1;
+    }
+  }
+
   .focus\:bg-accent:focus {
     background-color: var(--color-accent);
   }
@@ -2445,6 +2465,10 @@
 
   .has-data-\[slot\=kbd\]\:pr-1\.5:has([data-slot="kbd"]) {
     padding-right: calc(var(--spacing) * 1.5);
+  }
+
+  .has-\[\:focus-visible\]\:opacity-100:has(:focus-visible) {
+    opacity: 1;
   }
 
   .aria-expanded\:bg-muted[aria-expanded="true"] {
@@ -2874,6 +2898,11 @@
 
   .\[\&_svg\]\:pointer-events-none svg {
     pointer-events: none;
+  }
+
+  .\[\&_svg\]\:size-3\.5 svg {
+    width: calc(var(--spacing) * 3.5);
+    height: calc(var(--spacing) * 3.5);
   }
 
   .\[\&_svg\]\:shrink-0 svg {

@@ -10989,12 +10989,12 @@ var require_use_sync_external_store_shim_production = __commonJS(function(export
     return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
   }
   var objectIs2 = typeof Object.is === "function" ? Object.is : is2;
-  var useState10 = React43.useState;
+  var useState9 = React43.useState;
   var useEffect10 = React43.useEffect;
   var useLayoutEffect3 = React43.useLayoutEffect;
   var useDebugValue = React43.useDebugValue;
   function useSyncExternalStore$2(subscribe, getSnapshot) {
-    var value = getSnapshot(), _useState = useState10({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
+    var value = getSnapshot(), _useState = useState9({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
     useLayoutEffect3(function() {
       inst.value = value;
       inst.getSnapshot = getSnapshot;
@@ -12464,8 +12464,22 @@ var __iconNode3 = [
   ]
 ];
 var House = createLucideIcon("house", __iconNode3);
-// node_modules/lucide-react/dist/esm/icons/sparkles.mjs
+// node_modules/lucide-react/dist/esm/icons/panel-left-close.mjs
 var __iconNode4 = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M9 3v18", key: "fh3hqa" }],
+  ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
+];
+var PanelLeftClose = createLucideIcon("panel-left-close", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/panel-left-open.mjs
+var __iconNode5 = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M9 3v18", key: "fh3hqa" }],
+  ["path", { d: "m14 9 3 3-3 3", key: "8010ee" }]
+];
+var PanelLeftOpen = createLucideIcon("panel-left-open", __iconNode5);
+// node_modules/lucide-react/dist/esm/icons/sparkles.mjs
+var __iconNode6 = [
   [
     "path",
     {
@@ -12477,9 +12491,9 @@ var __iconNode4 = [
   ["path", { d: "M22 4h-4", key: "gwowj6" }],
   ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
 ];
-var Sparkles = createLucideIcon("sparkles", __iconNode4);
+var Sparkles = createLucideIcon("sparkles", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/square-pen.mjs
-var __iconNode5 = [
+var __iconNode7 = [
   ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
   [
     "path",
@@ -12489,9 +12503,9 @@ var __iconNode5 = [
     }
   ]
 ];
-var SquarePen = createLucideIcon("square-pen", __iconNode5);
+var SquarePen = createLucideIcon("square-pen", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
-var __iconNode6 = [
+var __iconNode8 = [
   [
     "path",
     {
@@ -12502,15 +12516,15 @@ var __iconNode6 = [
   ["path", { d: "M12 9v4", key: "juzpu7" }],
   ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-var TriangleAlert = createLucideIcon("triangle-alert", __iconNode6);
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode7 = [
+var __iconNode9 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode7);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode8 = [
+var __iconNode10 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -12520,9 +12534,9 @@ var __iconNode8 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode8);
+var BookOpen = createLucideIcon("book-open", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/bookmark-plus.mjs
-var __iconNode9 = [
+var __iconNode11 = [
   ["path", { d: "M12 7v6", key: "lw1j43" }],
   ["path", { d: "M15 10H9", key: "o6yqo3" }],
   [
@@ -12533,30 +12547,30 @@ var __iconNode9 = [
     }
   ]
 ];
-var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode9);
+var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode10 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode10);
+var __iconNode12 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/chevron-down.mjs
-var __iconNode11 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-var ChevronDown = createLucideIcon("chevron-down", __iconNode11);
+var __iconNode13 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+var ChevronDown = createLucideIcon("chevron-down", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode12 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode12);
+var __iconNode14 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/clock.mjs
-var __iconNode13 = [
+var __iconNode15 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode13);
+var Clock = createLucideIcon("clock", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode14 = [
+var __iconNode16 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode14);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode15 = [
+var __iconNode17 = [
   [
     "path",
     {
@@ -12566,9 +12580,9 @@ var __iconNode15 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode15);
+var Eye = createLucideIcon("eye", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode16 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -12580,9 +12594,9 @@ var __iconNode16 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode16);
+var FileCode = createLucideIcon("file-code", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode17 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -12594,9 +12608,9 @@ var __iconNode17 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode17);
+var FilePlus = createLucideIcon("file-plus", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode18 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -12609,9 +12623,9 @@ var __iconNode18 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode18);
+var FileText = createLucideIcon("file-text", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode19 = [
+var __iconNode21 = [
   [
     "path",
     {
@@ -12622,9 +12636,9 @@ var __iconNode19 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode19);
+var FolderInput = createLucideIcon("folder-input", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode20 = [
+var __iconNode22 = [
   [
     "path",
     {
@@ -12633,9 +12647,9 @@ var __iconNode20 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode20);
+var FolderOpen = createLucideIcon("folder-open", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode21 = [
+var __iconNode23 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -12646,9 +12660,9 @@ var __iconNode21 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode21);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode22 = [
+var __iconNode24 = [
   [
     "path",
     {
@@ -12659,9 +12673,9 @@ var __iconNode22 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode22);
+var FolderSearch = createLucideIcon("folder-search", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode23 = [
+var __iconNode25 = [
   [
     "path",
     {
@@ -12679,9 +12693,9 @@ var __iconNode23 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode23);
+var FolderTree = createLucideIcon("folder-tree", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode24 = [
+var __iconNode26 = [
   [
     "path",
     {
@@ -12690,24 +12704,33 @@ var __iconNode24 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode24);
+var Folder = createLucideIcon("folder", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode25 = [
+var __iconNode27 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode25);
+var GitBranch = createLucideIcon("git-branch", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode26 = [
+var __iconNode28 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode26);
+var GitCompare = createLucideIcon("git-compare", __iconNode28);
+// node_modules/lucide-react/dist/esm/icons/glasses.mjs
+var __iconNode29 = [
+  ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
+  ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
+  ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
+  ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
+  ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
+];
+var Glasses = createLucideIcon("glasses", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode27 = [
+var __iconNode30 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12717,9 +12740,9 @@ var __iconNode27 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode27);
+var Loader = createLucideIcon("loader", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode28 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -12730,9 +12753,9 @@ var __iconNode28 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode28);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode29 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -12748,9 +12771,9 @@ var __iconNode29 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode29);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode30 = [
+var __iconNode33 = [
   [
     "path",
     {
@@ -12759,18 +12782,32 @@ var __iconNode30 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode30);
+var Moon = createLucideIcon("moon", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode31 = [
+var __iconNode34 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode31);
+var Network = createLucideIcon("network", __iconNode34);
+// node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
+var __iconNode35 = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M15 3v18", key: "14nvp0" }],
+  ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
+];
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode35);
+// node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
+var __iconNode36 = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M15 3v18", key: "14nvp0" }],
+  ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
+];
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode32 = [
+var __iconNode37 = [
   [
     "path",
     {
@@ -12780,15 +12817,15 @@ var __iconNode32 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode32);
+var Pencil = createLucideIcon("pencil", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode33 = [
+var __iconNode38 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode33);
+var Redo2 = createLucideIcon("redo-2", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode34 = [
+var __iconNode39 = [
   [
     "path",
     {
@@ -12799,15 +12836,15 @@ var __iconNode34 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode34);
+var Save = createLucideIcon("save", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode35 = [
+var __iconNode40 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode35);
+var Search = createLucideIcon("search", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode36 = [
+var __iconNode41 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12818,50 +12855,50 @@ var __iconNode36 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode36);
+var Sun = createLucideIcon("sun", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode37 = [
+var __iconNode42 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode37);
+var Trash2 = createLucideIcon("trash-2", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode38 = [
+var __iconNode43 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode38);
+var Undo2 = createLucideIcon("undo-2", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode39 = [
+var __iconNode44 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode39);
+var UndoDot = createLucideIcon("undo-dot", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode40 = [
+var __iconNode45 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode40);
+var UserCheck = createLucideIcon("user-check", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode41 = [
+var __iconNode46 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode41);
+var User = createLucideIcon("user", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode42 = [
+var __iconNode47 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode42);
+var X = createLucideIcon("x", __iconNode47);
 // src/scriptorium/surface/App.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react30 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -14730,6 +14767,9 @@ var en = {
   padding: 0,
   margin: 0
 };
+function fn() {
+  return import_react4.useRef(null);
+}
 function tn({
   layout: e,
   panelConstraints: t,
@@ -15036,7 +15076,7 @@ function useRefWithInit(init, initArg) {
 // node_modules/@base-ui/utils/useStableCallback.mjs
 "use client";
 var useInsertionEffect = SafeReact.useInsertionEffect;
-var useSafeInsertionEffect = useInsertionEffect && useInsertionEffect !== SafeReact.useLayoutEffect ? useInsertionEffect : (fn) => fn();
+var useSafeInsertionEffect = useInsertionEffect && useInsertionEffect !== SafeReact.useLayoutEffect ? useInsertionEffect : (fn2) => fn2();
 function useStableCallback(callback) {
   const stable = useRefWithInit(createStableCallback).current;
   stable.next = callback;
@@ -15934,7 +15974,6 @@ function ActiveVersionToast({
 }
 
 // src/scriptorium/surface/components/ChatComposer.tsx
-var import_react7 = __toESM(require_react(), 1);
 var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 function linesLabel(a) {
   return a.fromLine === a.toLine ? `line ${a.fromLine}` : `lines ${a.fromLine}–${a.toLine}`;
@@ -15942,20 +15981,24 @@ function linesLabel(a) {
 function ChatComposer({
   attachable,
   connected,
+  draft,
+  onDraft,
   onDrop,
-  onSend
+  onSend,
+  floating = false
 }) {
-  const [text, setText] = import_react7.useState("");
+  const text = draft;
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim() || !connected)
       return;
     onSend(text, attachable !== null);
-    setText("");
+    onDraft("");
   };
   return /* @__PURE__ */ jsx_runtime4.jsxs("form", {
     onSubmit: submit,
-    className: "shrink-0 border-t border-edge p-2",
+    "aria-label": floating ? "Message the agent" : undefined,
+    className: cn("shrink-0", floating ? "mx-auto w-full max-w-2xl rounded-lg border border-edge bg-surface p-2 shadow-lg" : "border-t border-edge p-2"),
     children: [
       attachable && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
         className: "mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
@@ -15994,8 +16037,8 @@ function ChatComposer({
       }),
       /* @__PURE__ */ jsx_runtime4.jsx("textarea", {
         value: text,
-        onChange: (e) => setText(e.target.value),
-        rows: 3,
+        onChange: (e) => onDraft(e.target.value),
+        rows: floating ? 2 : 3,
         disabled: !connected,
         placeholder: connected ? "Ask the agent…" : "Waiting for the daemon…",
         className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none", "disabled:cursor-not-allowed disabled:opacity-60"),
@@ -16031,7 +16074,7 @@ function ChatComposer({
 }
 
 // src/scriptorium/surface/components/context/ContextSidebar.tsx
-var import_react17 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/context-menu/index.parts.mjs
 var exports_index_parts2 = {};
@@ -16885,8 +16928,8 @@ var React27 = __toESM(require_react(), 1);
 var React26 = __toESM(require_react(), 1);
 "use client";
 var EMPTY = [];
-function useOnMount(fn) {
-  React26.useEffect(fn, EMPTY);
+function useOnMount(fn2) {
+  React26.useEffect(fn2, EMPTY);
 }
 
 // node_modules/@base-ui/utils/useAnimationFrame.mjs
@@ -16913,10 +16956,10 @@ class Scheduler2 {
       }
     }
   };
-  request(fn) {
+  request(fn2) {
     const id = this.nextId;
     this.nextId += 1;
-    this.callbacks.push(fn);
+    this.callbacks.push(fn2);
     this.callbacksCount += 1;
     const didRAFChange = false;
     if (!this.isScheduled || didRAFChange) {
@@ -16940,18 +16983,18 @@ class AnimationFrame {
   static create() {
     return new AnimationFrame;
   }
-  static request(fn) {
-    return scheduler.request(fn);
+  static request(fn2) {
+    return scheduler.request(fn2);
   }
   static cancel(id) {
     return scheduler.cancel(id);
   }
   currentId = EMPTY2;
-  request(fn) {
+  request(fn2) {
     this.cancel();
     this.currentId = scheduler.request(() => {
       this.currentId = EMPTY2;
-      fn();
+      fn2();
     });
   }
   cancel = () => {
@@ -17403,11 +17446,11 @@ class Timeout {
     return new Timeout;
   }
   currentId = EMPTY3;
-  start(delay, fn) {
+  start(delay, fn2) {
     this.clear();
     this.currentId = setTimeout(() => {
       this.currentId = EMPTY3;
-      fn();
+      fn2();
     }, delay);
   }
   isStarted() {
@@ -19580,14 +19623,14 @@ var computePosition = async (reference, floating, config) => {
     }
     const {
       name: name2,
-      fn
+      fn: fn2
     } = currentMiddleware;
     const {
       x: nextX,
       y: nextY,
       data,
       reset
-    } = await fn({
+    } = await fn2({
       x,
       y,
       initialPlacement: placement,
@@ -20684,11 +20727,11 @@ var computePosition2 = (reference, floating, options2) => {
 
 // node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs
 var React41 = __toESM(require_react(), 1);
-var import_react8 = __toESM(require_react(), 1);
+var import_react7 = __toESM(require_react(), 1);
 var ReactDOM4 = __toESM(require_react_dom(), 1);
 var isClient = typeof document !== "undefined";
 var noop5 = function noop6() {};
-var index3 = isClient ? import_react8.useLayoutEffect : noop5;
+var index3 = isClient ? import_react7.useLayoutEffect : noop5;
 function deepEqual(a, b) {
   if (a === b) {
     return true;
@@ -20959,11 +21002,11 @@ var ReactDOM5 = __toESM(require_react_dom(), 1);
 // node_modules/@base-ui/utils/useOnFirstRender.mjs
 var React42 = __toESM(require_react(), 1);
 "use client";
-function useOnFirstRender(fn) {
+function useOnFirstRender(fn2) {
   const ref = React42.useRef(true);
   if (ref.current) {
     ref.current = false;
-    fn();
+    fn2();
   }
 }
 
@@ -21034,7 +21077,7 @@ function getInstance() {
 function register(hook) {
   hooks.push(hook);
 }
-function fastComponent(fn) {
+function fastComponent(fn2) {
   const FastComponent = (props, forwardedRef) => {
     const instance2 = useRefWithInit(createInstance).current;
     let result;
@@ -21043,7 +21086,7 @@ function fastComponent(fn) {
       for (const hook of hooks) {
         hook.before(instance2);
       }
-      result = fn(props, forwardedRef);
+      result = fn2(props, forwardedRef);
       for (const hook of hooks) {
         hook.after(instance2);
       }
@@ -21053,11 +21096,11 @@ function fastComponent(fn) {
     }
     return result;
   };
-  FastComponent.displayName = fn.displayName || fn.name;
+  FastComponent.displayName = fn2.displayName || fn2.name;
   return FastComponent;
 }
-function fastComponentRef(fn) {
-  return /* @__PURE__ */ React43.forwardRef(fastComponent(fn));
+function fastComponentRef(fn2) {
+  return /* @__PURE__ */ React43.forwardRef(fastComponent(fn2));
 }
 function createInstance() {
   return {
@@ -21168,10 +21211,10 @@ class Store {
     this.listeners = new Set;
     this.updateTick = 0;
   }
-  subscribe = (fn) => {
-    this.listeners.add(fn);
+  subscribe = (fn2) => {
+    this.listeners.add(fn2);
     return () => {
-      this.listeners.delete(fn);
+      this.listeners.delete(fn2);
     };
   };
   getSnapshot = () => {
@@ -21281,9 +21324,9 @@ class ReactStore extends Store {
     React45.useDebugValue(key);
     return useStore(this, this.selectors[key], a1, a2, a3);
   }
-  useContextCallback(key, fn) {
+  useContextCallback(key, fn2) {
     React45.useDebugValue(key);
-    const stableFunction = useStableCallback(fn ?? NOOP);
+    const stableFunction = useStableCallback(fn2 ?? NOOP);
     this.context[key] = stableFunction;
   }
   useStateSetter(key) {
@@ -23264,7 +23307,7 @@ function safePolygon(options2 = {}) {
     blockPointerEvents = false
   } = options2;
   const timeout = new Timeout;
-  const fn = ({
+  const fn2 = ({
     x,
     y,
     placement,
@@ -23435,11 +23478,11 @@ function safePolygon(options2 = {}) {
       return;
     };
   };
-  fn.__options = {
+  fn2.__options = {
     ...options2,
     blockPointerEvents
   };
-  return fn;
+  return fn2;
 }
 // node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
 var React54 = __toESM(require_react(), 1);
@@ -24267,10 +24310,10 @@ function CompositeList(props) {
       }
     };
   }, [labelsRef]);
-  const subscribeMapChange = useStableCallback((fn) => {
-    listeners.add(fn);
+  const subscribeMapChange = useStableCallback((fn2) => {
+    listeners.add(fn2);
     return () => {
-      listeners.delete(fn);
+      listeners.delete(fn2);
     };
   });
   useIsoLayoutEffect(() => {
@@ -27709,7 +27752,7 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/kit/ui/ConfirmDialog.tsx
-var import_react9 = __toESM(require_react(), 1);
+var import_react8 = __toESM(require_react(), 1);
 
 // src/kit/lib/cn.ts
 function cn2(...inputs) {
@@ -27781,15 +27824,15 @@ function ConfirmDialog({
   });
 }
 function useConfirm() {
-  const [pending, setPending] = import_react9.useState(null);
-  const answer = import_react9.useRef(null);
-  const settle = import_react9.useCallback((ok) => {
+  const [pending, setPending] = import_react8.useState(null);
+  const answer = import_react8.useRef(null);
+  const settle = import_react8.useCallback((ok) => {
     const reply = answer.current;
     answer.current = null;
     setPending(null);
     reply?.(ok);
   }, []);
-  const confirm = import_react9.useCallback((request) => new Promise((resolve) => {
+  const confirm = import_react8.useCallback((request) => new Promise((resolve) => {
     answer.current?.(false);
     answer.current = resolve;
     setPending(request);
@@ -27807,7 +27850,7 @@ function useConfirm() {
 }
 
 // src/scriptorium/surface/components/context/AddPath.tsx
-var import_react10 = __toESM(require_react(), 1);
+var import_react9 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/input/Input.mjs
 var React120 = __toESM(require_react(), 1);
@@ -29202,17 +29245,17 @@ function AddPath({
   onPick,
   openDown = false
 }) {
-  const [value, setValue] = import_react10.useState(initialValue);
-  const [listed, setListed] = import_react10.useState({
+  const [value, setValue] = import_react9.useState(initialValue);
+  const [listed, setListed] = import_react9.useState({
     forValue: "",
     entries: []
   });
   const suggestions = listed.forValue === value ? listed.entries : [];
-  const [error, setError] = import_react10.useState(null);
-  const [highlight, setHighlight] = import_react10.useState(-1);
-  const listId = import_react10.useId();
-  const seq = import_react10.useRef(0);
-  import_react10.useEffect(() => {
+  const [error, setError] = import_react9.useState(null);
+  const [highlight, setHighlight] = import_react9.useState(-1);
+  const listId = import_react9.useId();
+  const seq = import_react9.useRef(0);
+  import_react9.useEffect(() => {
     const split = splitForCompletion(value);
     if (!split) {
       setListed({ forValue: value, entries: [] });
@@ -29409,13 +29452,13 @@ var __async = (__this, __arguments, generator) => {
     step((generator = generator.apply(__this, __arguments)).next());
   });
 };
-var memo2 = (deps, fn) => {
+var memo2 = (deps, fn2) => {
   let value;
   let oldDeps = null;
   return (...a) => {
     const newDeps = deps(...a);
     if (!value) {
-      value = fn(...newDeps);
+      value = fn2(...newDeps);
       oldDeps = newDeps;
       return value;
     }
@@ -29423,7 +29466,7 @@ var memo2 = (deps, fn) => {
     if (match) {
       return value;
     }
-    value = fn(...newDeps);
+    value = fn2(...newDeps);
     oldDeps = newDeps;
     return value;
   };
@@ -29440,10 +29483,10 @@ function makeStateUpdater(key, instance2) {
     });
   };
 }
-var poll = (fn, interval = 100, timeout = 1000) => new Promise((resolve) => {
+var poll = (fn2, interval = 100, timeout = 1000) => new Promise((resolve) => {
   let clear;
   const i = setInterval(() => {
-    if (fn()) {
+    if (fn2()) {
       resolve();
       clearInterval(i);
       clearTimeout(clear);
@@ -29824,9 +29867,9 @@ var createTree = (initialConfig) => {
     }
     rebuildScheduled = false;
   };
-  const eachFeature = (fn) => {
+  const eachFeature = (fn2) => {
     for (const feature of additionalFeatures) {
-      fn(feature);
+      fn2(feature);
     }
   };
   const mainFeature = {
@@ -30921,12 +30964,12 @@ var __spreadValues2 = (a, b) => {
 var __spreadProps2 = (a, b) => __defProps2(a, __getOwnPropDescs2(b));
 
 // node_modules/@headless-tree/react/dist/index.mjs
+var import_react10 = __toESM(require_react(), 1);
 var import_react11 = __toESM(require_react(), 1);
-var import_react12 = __toESM(require_react(), 1);
 var useTree = (config) => {
-  const [tree] = import_react12.useState(() => ({ current: createTree(config) }));
-  const [state, setState] = import_react12.useState(() => tree.current.getState());
-  import_react12.useEffect(() => {
+  const [tree] = import_react11.useState(() => ({ current: createTree(config) }));
+  const [state, setState] = import_react11.useState(() => tree.current.getState());
+  import_react11.useEffect(() => {
     tree.current.setMounted(true);
     tree.current.rebuildTree();
     return () => {
@@ -30945,7 +30988,7 @@ var useTree = (config) => {
 };
 
 // src/scriptorium/surface/components/context/EntryTree.tsx
-var import_react14 = __toESM(require_react(), 1);
+var import_react13 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/components/context/menus.tsx
 var jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
@@ -31143,8 +31186,8 @@ function EntryTree({
   onReveal,
   metaFor
 }) {
-  const index4 = import_react14.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
-  const indexRef = import_react14.useRef(index4);
+  const index4 = import_react13.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
+  const indexRef = import_react13.useRef(index4);
   indexRef.current = index4;
   const pathOf = (id) => id === ROOT_ID ? entry.root : joinPath(entry.root, id);
   const dirFor = (id) => {
@@ -31194,10 +31237,10 @@ function EntryTree({
       renamingFeature
     ]
   });
-  import_react14.useEffect(() => {
+  import_react13.useEffect(() => {
     tree.rebuildTree();
   }, [index4, tree]);
-  import_react14.useEffect(() => {
+  import_react13.useEffect(() => {
     if (!renamePath?.startsWith(`${entry.root}/`))
       return;
     const rel = renamePath.slice(entry.root.length + 1);
@@ -31208,8 +31251,8 @@ function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index4, entry.root, tree, onRenameStarted]);
-  const [menuFor, setMenuFor] = import_react14.useState(null);
-  const [bgDrop, setBgDrop] = import_react14.useState(false);
+  const [menuFor, setMenuFor] = import_react13.useState(null);
+  const [bgDrop, setBgDrop] = import_react13.useState(false);
   const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
   const hiddenCount = entry.hidden?.length ?? 0;
   const onBgDragOver = (e) => {
@@ -31480,7 +31523,7 @@ function DialogRoot(props) {
   return useRenderDialogRoot(props, mode);
 }
 // src/scriptorium/surface/components/context/MapOverlay.tsx
-var import_react16 = __toESM(require_react(), 1);
+var import_react15 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -32454,14 +32497,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/components/context/forceLayout.ts
-var import_react15 = __toESM(require_react(), 1);
+var import_react14 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size4, enabled) {
-  const [positions, setPositions] = import_react15.useState(new Map);
-  const sim = import_react15.useRef(null);
-  const bodies = import_react15.useRef(new Map);
-  const [dragging, setDragging] = import_react15.useState(null);
-  import_react15.useEffect(() => {
+  const [positions, setPositions] = import_react14.useState(new Map);
+  const sim = import_react14.useRef(null);
+  const bodies = import_react14.useRef(new Map);
+  const [dragging, setDragging] = import_react14.useState(null);
+  import_react14.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -32484,7 +32527,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size4.width, size4.height, enabled]);
-  const onDragStart = import_react15.useCallback((path, at2) => {
+  const onDragStart = import_react14.useCallback((path, at2) => {
     const body = bodies.current.get(path);
     if (!body)
       return;
@@ -32493,7 +32536,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fy = at2.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react15.useCallback((at2) => {
+  const onDragMove = import_react14.useCallback((at2) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -32502,7 +32545,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fx = at2.x;
     body.fy = at2.y;
   }, [dragging]);
-  const onDragEnd = import_react15.useCallback(() => {
+  const onDragEnd = import_react14.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -32572,16 +32615,16 @@ function MapOverlay({
   onOpenChange,
   onOpenDoc
 }) {
-  const [hover, setHover] = import_react16.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react16.useState(null);
-  const [mode, setMode] = import_react16.useState("columns");
-  const { placed, width, height } = import_react16.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0 }, [graph]);
-  const at2 = import_react16.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react16.useMemo(() => (graph?.edges ?? []).filter((e) => e.state === "in-bundle" && at2.has(e.from) && at2.has(e.to)), [graph, at2]);
+  const [hover, setHover] = import_react15.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react15.useState(null);
+  const [mode, setMode] = import_react15.useState("columns");
+  const { placed, width, height } = import_react15.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0 }, [graph]);
+  const at2 = import_react15.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react15.useMemo(() => (graph?.edges ?? []).filter((e) => e.state === "in-bundle" && at2.has(e.from) && at2.has(e.to)), [graph, at2]);
   const leaving = (graph?.edges ?? []).filter((e) => e.state === "outside").length;
   const dense = drawn.length > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react16.useMemo(() => {
+  const connected = import_react15.useMemo(() => {
     if (!hover)
       return null;
     const set2 = new Set([hover]);
@@ -32595,7 +32638,7 @@ function MapOverlay({
   }, [hover, drawn]);
   const lit = (path) => connected === null || connected.has(path);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react16.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react16.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force" && open);
+  const force = useForceLayout(import_react15.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react15.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force" && open);
   const openAndClose = (path) => {
     onOpenDoc(path);
     onOpenChange(false);
@@ -32863,7 +32906,7 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react16.useRef(null);
+  const svg = import_react15.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at2 = (e) => {
     const box = svg.current?.getBoundingClientRect();
@@ -33009,18 +33052,18 @@ function ContextSidebar({
   notice,
   onDismissNotice
 }) {
-  const [drilled, setDrilled] = import_react17.useState(null);
+  const [drilled, setDrilled] = import_react16.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
-  const [renamePath, setRenamePath] = import_react17.useState(null);
-  const [localNotice, setLocalNotice] = import_react17.useState(null);
-  const [editingWorkspace, setEditingWorkspace] = import_react17.useState(false);
-  import_react17.useEffect(() => {
+  const [renamePath, setRenamePath] = import_react16.useState(null);
+  const [localNotice, setLocalNotice] = import_react16.useState(null);
+  const [editingWorkspace, setEditingWorkspace] = import_react16.useState(false);
+  import_react16.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  const entriesRef = import_react17.useRef(entries);
+  const entriesRef = import_react16.useRef(entries);
   entriesRef.current = entries;
-  import_react17.useEffect(() => {
+  import_react16.useEffect(() => {
     if (!created)
       return;
     const all = entriesRef.current;
@@ -33031,9 +33074,9 @@ function ContextSidebar({
       setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
-  const renameStarted = import_react17.useCallback(() => setRenamePath(null), []);
-  const moveTargetsFor = import_react17.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
-  const importFiles = import_react17.useCallback((dt, into) => {
+  const renameStarted = import_react16.useCallback(() => setRenamePath(null), []);
+  const moveTargetsFor = import_react16.useCallback((path) => moveTargets(entries, workspace, path, userHome), [entries, workspace, userHome]);
+  const importFiles = import_react16.useCallback((dt, into) => {
     const { files, folders } = droppedFiles(dt);
     const { docs, skipped } = splitDropped(files);
     for (const i of docs) {
@@ -33047,8 +33090,8 @@ function ContextSidebar({
       said.push(`Folders are not copied (${folders.join(", ")}) — add a folder by path below to link it.`);
     setLocalNotice(said.length ? said.join(" ") : null);
   }, [onStructure]);
-  const [mapping, setMapping] = import_react17.useState(null);
-  const showMap = import_react17.useCallback(async (entry) => {
+  const [mapping, setMapping] = import_react16.useState(null);
+  const showMap = import_react16.useCallback(async (entry) => {
     setMapping({ entry, graph: null });
     const result = await mapOf(entry.id);
     setMapping((current) => current?.entry.id === entry.id ? { entry, graph: result } : current);
@@ -33056,7 +33099,7 @@ function ContextSidebar({
       setLocalNotice(result.error);
   }, [mapOf]);
   const { confirm, dialog } = useConfirm();
-  const requestMove = import_react17.useCallback(async (path, into) => {
+  const requestMove = import_react16.useCallback(async (path, into) => {
     const { plan, error } = await planMove(path, into);
     if (!plan) {
       setLocalNotice(error ?? "that move could not be checked");
@@ -33236,7 +33279,7 @@ function RenameBox({
   initial: initial2,
   onDone
 }) {
-  const [value, setValue] = import_react17.useState(initial2);
+  const [value, setValue] = import_react16.useState(initial2);
   return /* @__PURE__ */ jsx_runtime12.jsx("input", {
     value,
     onChange: (e) => setValue(e.target.value),
@@ -33275,10 +33318,10 @@ function ListView({
   metaFor,
   onShowMap
 }) {
-  const [menuFor, setMenuFor] = import_react17.useState(null);
-  const [renaming, setRenaming] = import_react17.useState(null);
-  const [dropOn, setDropOn] = import_react17.useState(null);
-  import_react17.useEffect(() => {
+  const [menuFor, setMenuFor] = import_react16.useState(null);
+  const [renaming, setRenaming] = import_react16.useState(null);
+  const [dropOn, setDropOn] = import_react16.useState(null);
+  import_react16.useEffect(() => {
     if (!renamePath)
       return;
     if (entries.some((e) => entryPath(e) === renamePath)) {
@@ -33655,7 +33698,7 @@ function SetView({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var import_react25 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/separator.tsx
 var jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
@@ -33665,6 +33708,75 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
     ...props
   });
+}
+
+// src/scriptorium/surface/state/columns.ts
+var SIDES = ["context", "chat"];
+var DEFAULT_SIZE = { context: 22, chat: 28 };
+var MIN_SIZE = { context: 12, chat: 15 };
+var OPEN_PREF = "panes:open";
+var COLLAPSED_BELOW = 1;
+function collapsedSides(layout2) {
+  const at2 = (side) => {
+    const size4 = layout2?.[side];
+    return typeof size4 === "number" && size4 < COLLAPSED_BELOW;
+  };
+  return { context: at2("context"), chat: at2("chat") };
+}
+function rememberOpen(prev, layout2) {
+  const collapsed = collapsedSides(layout2);
+  let next = prev;
+  for (const side of SIDES) {
+    const size4 = layout2[side];
+    if (collapsed[side] || typeof size4 !== "number" || prev[side] === size4)
+      continue;
+    next = { ...next, [side]: size4 };
+  }
+  return next;
+}
+function reopenSize(open, side) {
+  return open[side] ?? DEFAULT_SIZE[side];
+}
+function encodeOpenSizes(open) {
+  return JSON.stringify(open);
+}
+function decodeOpenSizes(raw) {
+  if (!raw)
+    return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  if (!parsed || typeof parsed !== "object")
+    return {};
+  const out = {};
+  for (const side of SIDES) {
+    const v = parsed[side];
+    if (typeof v === "number" && Number.isFinite(v) && v >= COLLAPSED_BELOW && v < 100)
+      out[side] = v;
+  }
+  return out;
+}
+var SPLIT_MIN_PX = 720;
+function splitRoom(paneWidth, docPercent) {
+  const now3 = paneWidth === 0 || paneWidth >= SPLIT_MIN_PX;
+  if (now3 || docPercent <= 0 || docPercent >= 100 - COLLAPSED_BELOW)
+    return { now: now3, ifCollapsed: false };
+  return { now: now3, ifCollapsed: paneWidth * 100 / docPercent >= SPLIT_MIN_PX };
+}
+function isReader(mode, collapsed) {
+  return mode === "rendered" && collapsed.context && collapsed.chat;
+}
+function readerAct(mode, collapsed) {
+  if (isReader(mode, collapsed))
+    return { expand: [...SIDES], collapse: [] };
+  return {
+    mode: "rendered",
+    collapse: SIDES.filter((s) => !collapsed[s]),
+    expand: []
+  };
 }
 
 // node_modules/mdast-util-to-string/lib/index.js
@@ -41348,7 +41460,7 @@ function lineAtTop(anchors, top) {
   return last.line;
 }
 function createPlace(opts = {}) {
-  const afterFrame = opts.afterFrame ?? ((fn) => void requestAnimationFrame(fn));
+  const afterFrame = opts.afterFrame ?? ((fn2) => void requestAnimationFrame(fn2));
   let current = opts.line ?? 1;
   const panes = new Map;
   const armed = new Set;
@@ -41420,7 +41532,7 @@ function relativeTime(ts, now3) {
 }
 
 // src/scriptorium/surface/components/CompareView.tsx
-var import_react18 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 var jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
 function fileLabel(name2, max2 = 22) {
   if (name2.length <= max2)
@@ -41587,7 +41699,7 @@ function CompareView({
           children: rows.map((row, i) => {
             const key = `${i}-${row.kind}`;
             if (row.kind === "same")
-              return /* @__PURE__ */ jsx_runtime14.jsxs(import_react18.Fragment, {
+              return /* @__PURE__ */ jsx_runtime14.jsxs(import_react17.Fragment, {
                 children: [
                   /* @__PURE__ */ jsx_runtime14.jsx(Cell, {
                     line: row.line,
@@ -41601,7 +41713,7 @@ function CompareView({
                   })
                 ]
               }, key);
-            return /* @__PURE__ */ jsx_runtime14.jsxs(import_react18.Fragment, {
+            return /* @__PURE__ */ jsx_runtime14.jsxs(import_react17.Fragment, {
               children: [
                 /* @__PURE__ */ jsx_runtime14.jsx(Cell, {
                   line: row.del,
@@ -58003,7 +58115,7 @@ var searchExtensions = [
 ];
 
 // src/scriptorium/surface/components/DocumentView.tsx
-var import_react19 = __toESM(require_react(), 1);
+var import_react18 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/components/markdownMode.ts
 var TOKEN_TAGS = {
@@ -58237,17 +58349,17 @@ function DocumentView({
   onContextMenu,
   place
 }) {
-  const host = import_react19.useRef(null);
-  const view = import_react19.useRef(null);
-  const initial2 = import_react19.useRef(text4);
+  const host = import_react18.useRef(null);
+  const view = import_react18.useRef(null);
+  const initial2 = import_react18.useRef(text4);
   initial2.current = text4;
-  const handlers2 = import_react19.useRef({ onChange, onSave, onSelect, onContextMenu });
+  const handlers2 = import_react18.useRef({ onChange, onSave, onSelect, onContextMenu });
   handlers2.current = { onChange, onSave, onSelect, onContextMenu };
-  const pending = import_react19.useRef(null);
-  const lastRemote = import_react19.useRef(text4);
-  const notesRef = import_react19.useRef(notes);
+  const pending = import_react18.useRef(null);
+  const lastRemote = import_react18.useRef(text4);
+  const notesRef = import_react18.useRef(notes);
   notesRef.current = notes;
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     if (!host.current)
       return;
     const send = (value) => {
@@ -58340,7 +58452,7 @@ function DocumentView({
       view.current = null;
     };
   }, [docKey, editable2]);
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     const v = view.current;
     if (!v || !place)
       return;
@@ -58366,7 +58478,7 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
       return;
@@ -58378,8 +58490,8 @@ function DocumentView({
     });
     v.focus();
   }, [reveal]);
-  const unpainted = import_react19.useRef(clearSeq);
-  import_react19.useEffect(() => {
+  const unpainted = import_react18.useRef(clearSeq);
+  import_react18.useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current)
       return;
@@ -58389,16 +58501,16 @@ function DocumentView({
     if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
   }, [pendingNote]);
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
     v.dispatch({ effects: setNotes.of(notes ?? []) });
   }, [notes]);
-  import_react19.useEffect(() => {
+  import_react18.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
@@ -58425,7 +58537,7 @@ function DocumentView({
 }
 
 // src/scriptorium/surface/components/MarkdownView.tsx
-var import_react20 = __toESM(require_react(), 1);
+var import_react19 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/state/renderedRange.ts
 function textNodes(root2) {
@@ -58743,24 +58855,27 @@ function MarkdownView({
   onContextMenu,
   place
 }) {
-  const html = import_react20.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
-  const htmlProp = import_react20.useMemo(() => ({ __html: html }), [html]);
-  const projection = import_react20.useMemo(() => project(text4), [text4]);
-  const body = import_react20.useRef(null);
-  const lastRange = import_react20.useRef(null);
-  const scroller = import_react20.useRef(null);
-  const anchors = import_react20.useRef(null);
-  const measureRef = import_react20.useRef(() => []);
+  const html = import_react19.useMemo(() => renderMarkdown(splitFrontmatter(text4).body), [text4]);
+  const htmlProp = import_react19.useMemo(() => ({ __html: html }), [html]);
+  const projection = import_react19.useMemo(() => project(text4), [text4]);
+  const body = import_react19.useRef(null);
+  const lastRange = import_react19.useRef(null);
+  const scroller = import_react19.useRef(null);
+  const anchors = import_react19.useRef(null);
+  const measureRef = import_react19.useRef(() => []);
+  const measuredWidth = import_react19.useRef(-1);
   measureRef.current = () => {
     const root2 = body.current;
     const sc = scroller.current;
     if (!root2 || !sc)
       return [];
-    if (!anchors.current)
+    if (!anchors.current || measuredWidth.current !== sc.clientWidth) {
       anchors.current = lineAnchors(root2, sc, projection, text4);
+      measuredWidth.current = sc.clientWidth;
+    }
     return anchors.current;
   };
-  import_react20.useEffect(() => {
+  import_react19.useEffect(() => {
     anchors.current = null;
     const sc = scroller.current;
     if (!sc)
@@ -58773,7 +58888,7 @@ function MarkdownView({
       ro.observe(body.current);
     return () => ro.disconnect();
   }, [html, projection]);
-  import_react20.useEffect(() => {
+  import_react19.useEffect(() => {
     const sc = scroller.current;
     if (!sc || !place)
       return;
@@ -58790,7 +58905,7 @@ function MarkdownView({
       leave();
     };
   }, [place]);
-  const selectedRange = import_react20.useCallback(() => {
+  const selectedRange = import_react19.useCallback(() => {
     const root2 = body.current;
     const sel = window.getSelection();
     if (!root2 || !sel || sel.rangeCount === 0 || sel.isCollapsed)
@@ -58800,9 +58915,9 @@ function MarkdownView({
       return null;
     return resolveRange(root2, projection, range);
   }, [projection]);
-  const contextPress = import_react20.useRef(false);
-  const pressedHere = import_react20.useRef(false);
-  import_react20.useEffect(() => {
+  const contextPress = import_react19.useRef(false);
+  const pressedHere = import_react19.useRef(false);
+  import_react19.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
@@ -58844,8 +58959,8 @@ function MarkdownView({
       document.removeEventListener("pointerdown", pressed, true);
     };
   }, [onSelect, selectedRange, text4]);
-  const unpainted = import_react20.useRef(clearSeq);
-  import_react20.useEffect(() => {
+  const unpainted = import_react19.useRef(clearSeq);
+  import_react19.useEffect(() => {
     if (clearSeq === undefined || clearSeq === unpainted.current)
       return;
     unpainted.current = clearSeq;
@@ -58857,7 +58972,7 @@ function MarkdownView({
     if (root2.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react20.useEffect(() => {
+  import_react19.useEffect(() => {
     const reg = registry();
     const root2 = body.current;
     if (!reg || !root2)
@@ -58975,7 +59090,7 @@ function pointOffset(root2, projection, x3, y3) {
 }
 
 // src/scriptorium/surface/components/NewVersionDialog.tsx
-var import_react21 = __toESM(require_react(), 1);
+var import_react20 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/ui/dialog.tsx
 var jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
@@ -59088,9 +59203,9 @@ function NewVersionDialog({
   onCreate
 }) {
   const branching = intent === "branch";
-  const [label, setLabel] = import_react21.useState("");
-  const field = import_react21.useRef(null);
-  import_react21.useEffect(() => {
+  const [label, setLabel] = import_react20.useState("");
+  const field = import_react20.useRef(null);
+  import_react20.useEffect(() => {
     if (open)
       setLabel("");
   }, [open]);
@@ -59204,7 +59319,7 @@ function NewVersionDialog({
 }
 
 // src/scriptorium/surface/components/NoteAtSelection.tsx
-var import_react22 = __toESM(require_react(), 1);
+var import_react21 = __toESM(require_react(), 1);
 var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 var CARD_W = 320;
 var MARGIN = 12;
@@ -59223,27 +59338,27 @@ function NoteAtSelection({
   onShowNote,
   onDeleteNote
 }) {
-  const [writing, setWriting] = import_react22.useState(false);
-  const [body, setBody] = import_react22.useState("");
-  const card = import_react22.useRef(null);
-  const field = import_react22.useRef(null);
-  const [pos, setPos] = import_react22.useState(null);
-  import_react22.useEffect(() => {
+  const [writing, setWriting] = import_react21.useState(false);
+  const [body, setBody] = import_react21.useState("");
+  const card = import_react21.useRef(null);
+  const field = import_react21.useRef(null);
+  const [pos, setPos] = import_react21.useState(null);
+  import_react21.useEffect(() => {
     if (!at2) {
       setWriting(false);
       setBody("");
     }
   }, [at2]);
-  import_react22.useLayoutEffect(() => {
+  import_react21.useLayoutEffect(() => {
     if (!at2 || !card.current)
       return;
     setPos(place(at2, card.current.offsetHeight));
   }, [at2]);
-  import_react22.useEffect(() => {
+  import_react21.useEffect(() => {
     if (writing)
       field.current?.focus();
   }, [writing]);
-  import_react22.useEffect(() => {
+  import_react21.useEffect(() => {
     if (!at2)
       return;
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -59370,13 +59485,13 @@ function NoteAtSelection({
 }
 
 // src/scriptorium/surface/components/StatusStrip.tsx
-var import_react23 = __toESM(require_react(), 1);
+var import_react22 = __toESM(require_react(), 1);
 var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 function StatusStrip({ segments }) {
   return /* @__PURE__ */ jsx_runtime21.jsx("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_runtime21.jsxs(import_react23.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_runtime21.jsxs(import_react22.Fragment, {
       children: [
         i2 > 0 && /* @__PURE__ */ jsx_runtime21.jsx(Separator2, {
           orientation: "vertical",
@@ -59403,7 +59518,7 @@ function StatusStrip({ segments }) {
 }
 
 // src/scriptorium/surface/components/VersionMenu.tsx
-var import_react24 = __toESM(require_react(), 1);
+var import_react23 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/ui/dropdown-menu.tsx
 var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
@@ -59497,7 +59612,7 @@ function VersionMenu({
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
-  const [open, setOpen] = import_react24.useState(false);
+  const [open, setOpen] = import_react23.useState(false);
   return /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
@@ -59538,7 +59653,7 @@ function VersionMenu({
           }),
           /* @__PURE__ */ jsx_runtime23.jsx("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime23.jsxs(import_react24.Fragment, {
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime23.jsxs(import_react23.Fragment, {
               children: [
                 i2 > 0 && /* @__PURE__ */ jsx_runtime23.jsx(DropdownMenuSeparator, {}),
                 /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuItem, {
@@ -59676,11 +59791,10 @@ function VersionMenu({
 // src/scriptorium/surface/components/DocumentPane.tsx
 var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split", "compare"];
-var SPLIT_MIN_PX = 720;
 function useWidth() {
-  const ref = import_react25.useRef(null);
-  const [width, setWidth] = import_react25.useState(0);
-  import_react25.useEffect(() => {
+  const ref = import_react24.useRef(null);
+  const [width, setWidth] = import_react24.useState(0);
+  import_react24.useEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -59697,16 +59811,16 @@ var MODE_BUTTONS = [
   { mode: "compare", label: "Compare with another version", icon: GitCompare }
 ];
 function useDebouncedStats(text4, ms = 300) {
-  const [stats, setStats] = import_react25.useState(() => contentStats(text4 ?? ""));
-  import_react25.useEffect(() => {
+  const [stats, setStats] = import_react24.useState(() => contentStats(text4 ?? ""));
+  import_react24.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats;
 }
 function useNow(everyMs = 30000) {
-  const [now3, setNow] = import_react25.useState(() => Date.now());
-  import_react25.useEffect(() => {
+  const [now3, setNow] = import_react24.useState(() => Date.now());
+  import_react24.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
@@ -59736,22 +59850,28 @@ function DocumentPane({
   onSave,
   onRevert,
   onFollowLink,
-  onAddFrontmatter
+  onAddFrontmatter,
+  docPercent = 100,
+  headingStart,
+  headingEnd,
+  dock,
+  quiet = false
 }) {
-  const lastShown = import_react25.useRef(null);
+  const lastShown = import_react24.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown = text4 ?? (doc2 && lastShown.current?.slug === doc2.slug ? lastShown.current.text : undefined);
   const stats = useDebouncedStats(shown);
   const now3 = useNow();
   const [paneRef, width] = useWidth();
-  const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
+  const room = splitRoom(width, docPercent);
+  const roomToSplit = room.now;
   const showing = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc2?.versions.find((v) => v.n === doc2.active);
-  const [naming, setNaming] = import_react25.useState(null);
+  const [naming, setNaming] = import_react24.useState(null);
   const { confirm, dialog } = useConfirm();
-  const place2 = import_react25.useMemo(() => createPlace(), [doc2?.slug]);
-  const [noteAt, setNoteAt] = import_react25.useState(null);
+  const place2 = import_react24.useMemo(() => createPlace(), [doc2?.slug]);
+  const [noteAt, setNoteAt] = import_react24.useState(null);
   const segments = doc2 ? [
     { label: "Version", value: versionSummary(active, doc2.active) },
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
@@ -59766,107 +59886,115 @@ function DocumentPane({
   ] : [];
   return /* @__PURE__ */ jsx_runtime24.jsxs("div", {
     ref: paneRef,
+    "data-reader": quiet || undefined,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime24.jsx("div", {
-        className: "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
-        children: doc2 ? /* @__PURE__ */ jsx_runtime24.jsxs(jsx_runtime24.Fragment, {
-          children: [
-            /* @__PURE__ */ jsx_runtime24.jsx(VersionMenu, {
-              versions: doc2.versions,
-              active: doc2.active,
-              onActivate,
-              onCompare: (n) => {
-                onAgainst(n);
-                onMode("compare");
-              },
-              onNewVersion: setNaming,
-              onReveal: onRevealVersion,
-              onDelete: async (n) => {
-                const v = doc2.versions.find((x3) => x3.n === n);
-                const ok3 = await confirm({
-                  title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
-                  message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
-                  warning: "Anything written only in this version is lost.",
-                  confirmLabel: "Delete",
-                  confirmClassName: "bg-danger text-bg hover:bg-danger/90"
-                });
-                if (ok3)
-                  onDeleteVersion(n);
-              }
-            }),
-            /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
-              orientation: "vertical",
-              className: "my-2 shrink-0"
-            }),
-            /* @__PURE__ */ jsx_runtime24.jsx(FileText, {
-              "aria-hidden": true,
-              className: "size-3.5 shrink-0 text-ink-faint"
-            }),
-            /* @__PURE__ */ jsx_runtime24.jsx("span", {
-              className: "truncate text-sm text-ink",
-              title: doc2.original,
-              children: doc2.name
-            }),
-            /* @__PURE__ */ jsx_runtime24.jsxs("div", {
-              className: "ml-auto flex shrink-0 items-center gap-1",
-              children: [
-                /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
-                  variant: "ghost",
-                  size: "sm",
-                  onClick: onRevert,
-                  disabled: !doc2.dirty && !doc2.outsideChanged,
-                  title: "Take the file on disk back over your edits",
-                  className: "h-7 gap-1.5 px-2 text-xs",
-                  children: [
-                    /* @__PURE__ */ jsx_runtime24.jsx(UndoDot, {
-                      className: "size-3.5"
-                    }),
-                    "Revert"
-                  ]
-                }),
-                /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
-                  variant: "ghost",
-                  size: "sm",
-                  onClick: onSave,
-                  disabled: !doc2.dirty,
-                  title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
-                  className: "h-7 gap-1.5 px-2 text-xs",
-                  children: [
-                    /* @__PURE__ */ jsx_runtime24.jsx(Save, {
-                      className: "size-3.5"
-                    }),
-                    "Save"
-                  ]
-                }),
-                /* @__PURE__ */ jsx_runtime24.jsx("div", {
-                  role: "toolbar",
-                  "aria-label": "How to show this document",
-                  className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
-                  children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
-                    const unavailable = m2 === "split" && !roomToSplit;
-                    return /* @__PURE__ */ jsx_runtime24.jsx("button", {
-                      type: "button",
-                      onClick: () => onMode(m2),
-                      disabled: unavailable,
-                      "aria-pressed": showing === m2,
-                      "aria-label": label,
-                      title: unavailable ? `${label} — the pane is too narrow` : label,
-                      className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
-                      children: /* @__PURE__ */ jsx_runtime24.jsx(Icon2, {
-                        "aria-hidden": true,
+      /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+        className: cn("flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3", quiet && "border-transparent", quiet && "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100"),
+        children: [
+          headingStart,
+          doc2 ? /* @__PURE__ */ jsx_runtime24.jsxs(jsx_runtime24.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime24.jsx(VersionMenu, {
+                versions: doc2.versions,
+                active: doc2.active,
+                onActivate,
+                onCompare: (n) => {
+                  onAgainst(n);
+                  onMode("compare");
+                },
+                onNewVersion: setNaming,
+                onReveal: onRevealVersion,
+                onDelete: async (n) => {
+                  const v = doc2.versions.find((x3) => x3.n === n);
+                  const ok3 = await confirm({
+                    title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
+                    message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
+                    warning: "Anything written only in this version is lost.",
+                    confirmLabel: "Delete",
+                    confirmClassName: "bg-danger text-bg hover:bg-danger/90"
+                  });
+                  if (ok3)
+                    onDeleteVersion(n);
+                }
+              }),
+              /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
+                orientation: "vertical",
+                className: "my-2 shrink-0"
+              }),
+              /* @__PURE__ */ jsx_runtime24.jsx(FileText, {
+                "aria-hidden": true,
+                className: "size-3.5 shrink-0 text-ink-faint"
+              }),
+              /* @__PURE__ */ jsx_runtime24.jsx("span", {
+                className: "truncate text-sm text-ink",
+                title: doc2.original,
+                children: doc2.name
+              }),
+              /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+                className: "ml-auto flex shrink-0 items-center gap-1",
+                children: [
+                  /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
+                    variant: "ghost",
+                    size: "sm",
+                    onClick: onRevert,
+                    disabled: !doc2.dirty && !doc2.outsideChanged,
+                    title: "Take the file on disk back over your edits",
+                    className: "h-7 gap-1.5 px-2 text-xs",
+                    children: [
+                      /* @__PURE__ */ jsx_runtime24.jsx(UndoDot, {
                         className: "size-3.5"
-                      })
-                    }, m2);
+                      }),
+                      "Revert"
+                    ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
+                    variant: "ghost",
+                    size: "sm",
+                    onClick: onSave,
+                    disabled: !doc2.dirty,
+                    title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
+                    className: "h-7 gap-1.5 px-2 text-xs",
+                    children: [
+                      /* @__PURE__ */ jsx_runtime24.jsx(Save, {
+                        className: "size-3.5"
+                      }),
+                      "Save"
+                    ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime24.jsx("div", {
+                    role: "toolbar",
+                    "aria-label": "How to show this document",
+                    className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
+                    children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
+                      const unavailable = m2 === "split" && !roomToSplit;
+                      return /* @__PURE__ */ jsx_runtime24.jsx("button", {
+                        type: "button",
+                        onClick: () => onMode(m2),
+                        disabled: unavailable,
+                        "aria-pressed": showing === m2,
+                        "aria-label": label,
+                        title: !unavailable ? label : room.ifCollapsed ? `${label} — the pane is too narrow; collapse a side column to make room` : `${label} — the pane is too narrow`,
+                        className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
+                        children: /* @__PURE__ */ jsx_runtime24.jsx(Icon2, {
+                          "aria-hidden": true,
+                          className: "size-3.5"
+                        })
+                      }, m2);
+                    })
                   })
-                })
-              ]
-            })
-          ]
-        }) : /* @__PURE__ */ jsx_runtime24.jsx("span", {
-          className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
-          children: "Document"
-        })
+                ]
+              })
+            ]
+          }) : /* @__PURE__ */ jsx_runtime24.jsx("span", {
+            className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
+            children: "Document"
+          }),
+          headingEnd && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+            className: cn("flex shrink-0 items-center gap-0.5", !doc2 && "ml-auto"),
+            children: headingEnd
+          })
+        ]
       }),
       doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_runtime24.jsxs("div", {
         className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
@@ -60014,8 +60142,15 @@ function DocumentPane({
           })
         ]
       }),
-      doc2 && /* @__PURE__ */ jsx_runtime24.jsx(StatusStrip, {
-        segments
+      dock && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+        className: "shrink-0 px-3 py-2",
+        children: dock
+      }),
+      doc2 && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+        className: cn("shrink-0", quiet && "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100"),
+        children: /* @__PURE__ */ jsx_runtime24.jsx(StatusStrip, {
+          segments
+        })
       }),
       dialog,
       /* @__PURE__ */ jsx_runtime24.jsx(NoteAtSelection, {
@@ -60102,7 +60237,7 @@ function HistoryArrows({
 }
 
 // src/scriptorium/surface/components/NotesPanel.tsx
-var import_react26 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 var UNCERTAIN = {
   nearest: {
@@ -60124,9 +60259,9 @@ function Note({
 }) {
   const uncertain = UNCERTAIN[note.how];
   const anchored = note.from !== null;
-  const [draft, setDraft] = import_react26.useState(null);
-  const row = import_react26.useRef(null);
-  import_react26.useEffect(() => {
+  const [draft, setDraft] = import_react25.useState(null);
+  const row = import_react25.useRef(null);
+  import_react25.useEffect(() => {
     if (focused)
       row.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [focused]);
@@ -60278,8 +60413,8 @@ function NotesPanel({
   onResolve,
   onRemove
 }) {
-  const [body, setBody] = import_react26.useState("");
-  const [showResolved, setShowResolved] = import_react26.useState(false);
+  const [body, setBody] = import_react25.useState("");
+  const [showResolved, setShowResolved] = import_react25.useState(false);
   const resolved = notes.filter((n) => n.resolved);
   const shown = showResolved ? notes : notes.filter((n) => !n.resolved || n.id === focusedId);
   const submit = (e) => {
@@ -60371,7 +60506,7 @@ function NotesPanel({
 }
 
 // src/scriptorium/surface/components/SearchBar.tsx
-var import_react27 = __toESM(require_react(), 1);
+var import_react26 = __toESM(require_react(), 1);
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 var DEBOUNCE_MS = 140;
 function SearchBar({
@@ -60379,11 +60514,11 @@ function SearchBar({
   onQuery,
   onOpen
 }) {
-  const [query, setQuery] = import_react27.useState("");
-  const [open, setOpen] = import_react27.useState(false);
-  const box = import_react27.useRef(null);
-  const field = import_react27.useRef(null);
-  import_react27.useEffect(() => {
+  const [query, setQuery] = import_react26.useState("");
+  const [open, setOpen] = import_react26.useState(false);
+  const box = import_react26.useRef(null);
+  const field = import_react26.useRef(null);
+  import_react26.useEffect(() => {
     const q3 = query.trim();
     if (q3 === "") {
       onQuery("");
@@ -60392,7 +60527,7 @@ function SearchBar({
     const t2 = setTimeout(() => onQuery(q3), DEBOUNCE_MS);
     return () => clearTimeout(t2);
   }, [query, onQuery]);
-  import_react27.useEffect(() => {
+  import_react26.useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -60406,7 +60541,7 @@ function SearchBar({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-  import_react27.useEffect(() => {
+  import_react26.useEffect(() => {
     const onDown = (e) => {
       if (box.current && !box.current.contains(e.target))
         setOpen(false);
@@ -60683,13 +60818,13 @@ function TasksPanel({
 }
 
 // src/scriptorium/surface/components/TaskToasts.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react27 = __toESM(require_react(), 1);
 function TaskToasts({
   tasks,
   announce
 }) {
-  const seen = import_react28.useRef(null);
-  import_react28.useEffect(() => {
+  const seen = import_react27.useRef(null);
+  import_react27.useEffect(() => {
     const done = new Set(tasks.filter((t2) => t2.doneAt !== undefined).map((t2) => t2.id));
     if (seen.current === null) {
       seen.current = done;
@@ -60706,26 +60841,26 @@ function TaskToasts({
 }
 
 // src/scriptorium/surface/components/Toasts.tsx
-var import_react29 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
 var TOAST_MS = 6000;
 function useToasts() {
-  const [toasts, setToasts] = import_react29.useState([]);
-  const next = import_react29.useRef(1);
-  const timers = import_react29.useRef(new Map);
-  const dismiss = import_react29.useCallback((id) => {
+  const [toasts, setToasts] = import_react28.useState([]);
+  const next = import_react28.useRef(1);
+  const timers = import_react28.useRef(new Map);
+  const dismiss = import_react28.useCallback((id) => {
     const timer2 = timers.current.get(id);
     if (timer2)
       clearTimeout(timer2);
     timers.current.delete(id);
     setToasts((prev) => prev.filter((t2) => t2.id !== id));
   }, []);
-  const announce = import_react29.useCallback((title, description) => {
+  const announce = import_react28.useCallback((title, description) => {
     const id = next.current++;
     setToasts((prev) => [...prev, { id, title, ...description ? { description } : {} }]);
     timers.current.set(id, setTimeout(() => dismiss(id), TOAST_MS));
   }, [dismiss]);
-  import_react29.useEffect(() => {
+  import_react28.useEffect(() => {
     const pending = timers.current;
     return () => {
       for (const timer2 of pending.values())
@@ -60824,22 +60959,22 @@ function readAppliedTheme() {
 }
 
 // src/scriptorium/surface/state/useDaemon.ts
-var import_react30 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
-  const [state, setState] = import_react30.useState(null);
-  const [connection, setConnection] = import_react30.useState("connecting");
-  const [lastError, setLastError] = import_react30.useState(null);
-  const [texts, setTexts] = import_react30.useState(() => new Map);
-  const [done, setDone] = import_react30.useState(null);
-  const [diff, setDiff] = import_react30.useState(null);
-  const [search3, setSearch] = import_react30.useState(null);
-  const wsRef = import_react30.useRef(null);
-  const pending = import_react30.useRef(new Map);
-  const plans = import_react30.useRef(new Map);
-  const maps = import_react30.useRef(new Map);
-  const suggestions = import_react30.useRef(new Map);
-  import_react30.useEffect(() => {
+  const [state, setState] = import_react29.useState(null);
+  const [connection, setConnection] = import_react29.useState("connecting");
+  const [lastError, setLastError] = import_react29.useState(null);
+  const [texts, setTexts] = import_react29.useState(() => new Map);
+  const [done, setDone] = import_react29.useState(null);
+  const [diff, setDiff] = import_react29.useState(null);
+  const [search3, setSearch] = import_react29.useState(null);
+  const wsRef = import_react29.useRef(null);
+  const pending = import_react29.useRef(new Map);
+  const plans = import_react29.useRef(new Map);
+  const maps = import_react29.useRef(new Map);
+  const suggestions = import_react29.useRef(new Map);
+  import_react29.useEffect(() => {
     let stopped = false;
     let delay = 250;
     let timer2;
@@ -60938,12 +61073,12 @@ function useDaemon() {
       wsRef.current?.close();
     };
   }, []);
-  const send = import_react30.useCallback((msg) => {
+  const send = import_react29.useCallback((msg) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
   }, []);
-  const listDir = import_react30.useCallback((path2) => new Promise((resolve) => {
+  const listDir = import_react29.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ entries: [], error: "disconnected" });
@@ -60957,7 +61092,7 @@ function useDaemon() {
     pending.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "fs.list", path: path2 }));
   }), []);
-  const planMove = import_react30.useCallback((path2, into) => new Promise((resolve) => {
+  const planMove = import_react29.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -60972,7 +61107,7 @@ function useDaemon() {
     plans.current.set(key, [resolve]);
     ws.send(JSON.stringify({ type: "move.plan", path: path2, into }));
   }), []);
-  const mapOf = import_react30.useCallback((entry) => new Promise((resolve) => {
+  const mapOf = import_react29.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -60986,7 +61121,7 @@ function useDaemon() {
     maps.current.set(entry, [resolve]);
     ws.send(JSON.stringify({ type: "graph", entry }));
   }), []);
-  const suggestMeta = import_react30.useCallback((path2) => new Promise((resolve) => {
+  const suggestMeta = import_react29.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       resolve({ error: "disconnected" });
@@ -61000,7 +61135,7 @@ function useDaemon() {
     suggestions.current.set(path2, [resolve]);
     ws.send(JSON.stringify({ type: "meta.suggest", path: path2 }));
   }), []);
-  const noteText = import_react30.useCallback((doc2, version3, text4) => {
+  const noteText = import_react29.useCallback((doc2, version3, text4) => {
     setTexts((prev) => {
       const key = textKey(doc2, version3);
       if (prev.get(key) === text4)
@@ -61010,7 +61145,7 @@ function useDaemon() {
       return next;
     });
   }, []);
-  const clearError = import_react30.useCallback(() => setLastError(null), []);
+  const clearError = import_react29.useCallback(() => setLastError(null), []);
   return {
     state,
     connection,
@@ -61041,6 +61176,22 @@ var CONNECTION_LABEL = {
   open: "connected",
   closed: "daemon unreachable — retrying"
 };
+function ColumnButton({
+  label,
+  onClick,
+  pressed,
+  children
+}) {
+  return /* @__PURE__ */ jsx_runtime31.jsx("button", {
+    type: "button",
+    onClick,
+    "aria-label": label,
+    "aria-pressed": pressed,
+    title: label,
+    className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "[&_svg]:size-3.5", pressed && "bg-surface-raised text-ink"),
+    children
+  });
+}
 function PaneHeading({ children, actions }) {
   return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
     className: "flex h-9 shrink-0 items-center gap-1 border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
@@ -61057,10 +61208,10 @@ var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0
 function App() {
   const daemon = useDaemon();
   const { state, connection, send } = daemon;
-  const [theme2, setTheme] = import_react31.useState(readAppliedTheme);
-  const [jump, setJump] = import_react31.useState(null);
+  const [theme2, setTheme] = import_react30.useState(readAppliedTheme);
+  const [jump, setJump] = import_react30.useState(null);
   const savedTheme = state?.prefs.theme;
-  import_react31.useEffect(() => {
+  import_react30.useEffect(() => {
     if ((savedTheme === "dark" || savedTheme === "light") && savedTheme !== readAppliedTheme()) {
       applyTheme(savedTheme);
       setTheme(savedTheme);
@@ -61148,13 +61299,35 @@ function Workspace({
     clearError,
     done
   } = daemon;
-  const prefsRef = import_react31.useRef(state.prefs);
+  const prefsRef = import_react30.useRef(state.prefs);
   prefsRef.current = state.prefs;
-  const storage = import_react31.useMemo(() => ({
+  const storage = import_react30.useMemo(() => ({
     getItem: (key) => prefsRef.current[prefKey(key)] ?? null,
     setItem: (key, value) => send({ type: "prefs.set", key: prefKey(key), value })
   }), [send]);
   const layout2 = an({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+  const [layoutNow, setLayoutNow] = import_react30.useState(layout2.defaultLayout);
+  const collapsed = collapsedSides(layoutNow);
+  const openSizes = decodeOpenSizes(state.prefs[OPEN_PREF]);
+  const openSizesRef = import_react30.useRef(openSizes);
+  openSizesRef.current = openSizes;
+  const contextPanel = fn();
+  const chatPanel = fn();
+  const panelFor = import_react30.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
+  const collapse = import_react30.useCallback((side) => panelFor(side)?.collapse(), [panelFor]);
+  const expand2 = import_react30.useCallback((side) => {
+    const panel = panelFor(side);
+    if (panel?.isCollapsed())
+      panel.resize(`${reopenSize(openSizesRef.current, side)}%`);
+  }, [panelFor]);
+  const onLayoutChanged = import_react30.useCallback((next, meta2) => {
+    layout2.onLayoutChanged(next, meta2);
+    setLayoutNow(next);
+    const remembered = rememberOpen(openSizesRef.current, next);
+    if (remembered !== openSizesRef.current)
+      send({ type: "prefs.set", key: OPEN_PREF, value: encodeOpenSizes(remembered) });
+  }, [layout2.onLayoutChanged, send]);
+  const [draft, setDraft] = import_react30.useState("");
   const splitLayout = an({
     id: SPLIT_LAYOUT_ID,
     panelIds: [...SPLIT_PANES],
@@ -61162,27 +61335,38 @@ function Workspace({
   });
   const saved = state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const [against, setAgainst] = import_react31.useState("original");
+  const setMode = import_react30.useCallback((next) => send({ type: "prefs.set", key: VIEW_PREF, value: next }), [send]);
+  const reader = isReader(mode, collapsed);
+  const toggleReader = () => {
+    const act = readerAct(mode, collapsed);
+    if (act.mode)
+      setMode(act.mode);
+    for (const side of act.collapse)
+      collapse(side);
+    for (const side of act.expand)
+      expand2(side);
+  };
+  const [against, setAgainst] = import_react30.useState("original");
   const { toasts, announce, dismiss } = useToasts();
-  const [selection, setSelection] = import_react31.useState(null);
-  const [clearSeq, setClearSeq] = import_react31.useState(0);
-  const onSelectionEvent = import_react31.useCallback((event) => {
+  const [selection, setSelection] = import_react30.useState(null);
+  const [clearSeq, setClearSeq] = import_react30.useState(0);
+  const onSelectionEvent = import_react30.useCallback((event) => {
     const next = applySelectionEvent(selection, event);
     if (next.held !== selection)
       setSelection(next.held);
     if (next.clearPaint)
       setClearSeq((n) => n + 1);
   }, [selection]);
-  const [rightPane, setRightPane] = import_react31.useState("conversation");
-  const [reveal, setReveal] = import_react31.useState(null);
-  const [focusedNote, setFocusedNote] = import_react31.useState(null);
+  const [rightPane, setRightPane] = import_react30.useState("conversation");
+  const [reveal, setReveal] = import_react30.useState(null);
+  const [focusedNote, setFocusedNote] = import_react30.useState(null);
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
   const openTasks = state.tasks.filter((t2) => t2.doneAt === undefined);
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text4 = open ? texts.get(textKey(open.slug, open.active)) : undefined;
-  const jumped = import_react31.useRef(0);
-  import_react31.useEffect(() => {
+  const jumped = import_react30.useRef(0);
+  import_react30.useEffect(() => {
     if (!jump?.at || jump.seq === jumped.current)
       return;
     if (!open || open.original !== jump.path)
@@ -61190,8 +61374,8 @@ function Workspace({
     jumped.current = jump.seq;
     setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
   }, [jump, open]);
-  const asked = import_react31.useRef(new Set);
-  import_react31.useEffect(() => {
+  const asked = import_react30.useRef(new Set);
+  import_react30.useEffect(() => {
     if (!open || text4 !== undefined)
       return;
     const key = textKey(open.slug, open.active);
@@ -61203,7 +61387,7 @@ function Workspace({
   const openSlug = open?.slug ?? null;
   const activeVersion = open?.active ?? null;
   const original = open?.original ?? null;
-  import_react31.useEffect(() => {
+  import_react30.useEffect(() => {
     if (!openSlug || activeVersion === null || original === null)
       return;
     send({
@@ -61226,7 +61410,7 @@ function Workspace({
     selection?.text,
     send
   ]);
-  import_react31.useEffect(() => {
+  import_react30.useEffect(() => {
     if (mode !== "compare" || !open)
       return;
     if (against === open.active || typeof against === "number" && !open.versions.some((v) => v.n === against)) {
@@ -61235,9 +61419,9 @@ function Workspace({
     }
     send({ type: "diff", doc: open.slug, against });
   }, [mode, open, against, text4, send]);
-  const openRef = import_react31.useRef(open);
+  const openRef = import_react30.useRef(open);
   openRef.current = open;
-  import_react31.useEffect(() => {
+  import_react30.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey)
         return;
@@ -61249,9 +61433,24 @@ function Workspace({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
-  const onOpenDoc = import_react31.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
+  const onOpenDoc = import_react30.useCallback((entry, rel) => send({ type: "open", path: joinPath(entry.root, rel) }), [send]);
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
-  import_react31.useEffect(() => {
+  const composer = {
+    connected: connection === "open",
+    attachable: open && selection ? {
+      doc: open.slug,
+      name: open.name,
+      version: open.active,
+      fromLine: selection.fromLine,
+      toLine: selection.toLine,
+      text: selection.text
+    } : null,
+    draft,
+    onDraft: setDraft,
+    onDrop: () => onSelectionEvent({ type: "drop" }),
+    onSend: (text5, withSelection) => send({ type: "say", text: text5, withSelection })
+  };
+  import_react30.useEffect(() => {
     if (created?.op === "doc.create")
       send({ type: "open", path: created.path });
   }, [created, send]);
@@ -61273,12 +61472,15 @@ function Workspace({
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: layout2.defaultLayout,
-        onLayoutChanged: layout2.onLayoutChanged,
+        onLayoutChanged,
         children: [
           /* @__PURE__ */ jsx_runtime31.jsxs(ResizablePanel, {
             id: "context",
-            defaultSize: "22",
-            minSize: "12",
+            panelRef: contextPanel,
+            collapsible: true,
+            defaultSize: `${DEFAULT_SIZE.context}`,
+            minSize: `${MIN_SIZE.context}`,
+            inert: collapsed.context,
             className: "flex flex-col bg-surface",
             onKeyDown: (e) => {
               if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z")
@@ -61294,11 +61496,22 @@ function Workspace({
             },
             children: [
               /* @__PURE__ */ jsx_runtime31.jsx(PaneHeading, {
-                actions: /* @__PURE__ */ jsx_runtime31.jsx(HistoryArrows, {
-                  history: state.history,
-                  display: (p) => shortPath(p, state.userHome, 2),
-                  onUndo: (confirmDelete) => send(confirmDelete ? { type: "history.undo", confirmDelete } : { type: "history.undo" }),
-                  onRedo: () => send({ type: "history.redo" })
+                actions: /* @__PURE__ */ jsx_runtime31.jsxs(jsx_runtime31.Fragment, {
+                  children: [
+                    /* @__PURE__ */ jsx_runtime31.jsx(HistoryArrows, {
+                      history: state.history,
+                      display: (p) => shortPath(p, state.userHome, 2),
+                      onUndo: (confirmDelete) => send(confirmDelete ? { type: "history.undo", confirmDelete } : { type: "history.undo" }),
+                      onRedo: () => send({ type: "history.redo" })
+                    }),
+                    /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                      label: "Collapse the context column",
+                      onClick: () => collapse("context"),
+                      children: /* @__PURE__ */ jsx_runtime31.jsx(PanelLeftClose, {
+                        "aria-hidden": true
+                      })
+                    })
+                  ]
                 }),
                 children: "Context"
               }),
@@ -61335,7 +61548,47 @@ function Workspace({
               doc: open,
               text: text4,
               mode,
-              onMode: (next) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+              onMode: setMode,
+              docPercent: layoutNow?.document ?? 100,
+              quiet: reader,
+              headingStart: collapsed.context && /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                label: "Show the context column",
+                onClick: () => expand2("context"),
+                children: /* @__PURE__ */ jsx_runtime31.jsx(PanelLeftOpen, {
+                  "aria-hidden": true
+                })
+              }),
+              headingEnd: /* @__PURE__ */ jsx_runtime31.jsxs(jsx_runtime31.Fragment, {
+                children: [
+                  /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                    label: reader ? "Leave reader mode — bring the columns back" : "Reader mode — rendered, with both columns out of the way",
+                    pressed: reader,
+                    onClick: toggleReader,
+                    children: /* @__PURE__ */ jsx_runtime31.jsx(Glasses, {
+                      "aria-hidden": true
+                    })
+                  }),
+                  collapsed.chat && /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                    label: "Show the conversation column",
+                    onClick: () => expand2("chat"),
+                    children: /* @__PURE__ */ jsx_runtime31.jsx(PanelRightOpen, {
+                      "aria-hidden": true
+                    })
+                  })
+                ]
+              }),
+              dock: collapsed.chat && /* @__PURE__ */ jsx_runtime31.jsx(FloatingComposer, {
+                chat: state.chat,
+                waiting: state.waiting,
+                onOpen: () => {
+                  setRightPane("conversation");
+                  expand2("chat");
+                },
+                children: /* @__PURE__ */ jsx_runtime31.jsx(ChatComposer, {
+                  floating: true,
+                  ...composer
+                })
+              }),
               diff,
               onAgainst: setAgainst,
               onTake: (hunks) => {
@@ -61381,6 +61634,7 @@ function Workspace({
               },
               onShowNote: (id) => {
                 setRightPane("notes");
+                expand2("chat");
                 setFocusedNote(id);
               },
               splitLayout,
@@ -61413,27 +61667,42 @@ function Workspace({
           }),
           /* @__PURE__ */ jsx_runtime31.jsxs(ResizablePanel, {
             id: "chat",
-            defaultSize: "28",
-            minSize: "15",
+            panelRef: chatPanel,
+            collapsible: true,
+            defaultSize: `${DEFAULT_SIZE.chat}`,
+            minSize: `${MIN_SIZE.chat}`,
+            inert: collapsed.chat,
             className: "flex flex-col bg-surface",
             children: [
-              /* @__PURE__ */ jsx_runtime31.jsx("div", {
+              /* @__PURE__ */ jsx_runtime31.jsxs("div", {
                 className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
-                children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_runtime31.jsx("button", {
-                  type: "button",
-                  onClick: () => setRightPane(which),
-                  "aria-pressed": rightPane === which,
-                  className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                  children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
-                    className: "flex items-center gap-1",
-                    children: [
-                      /* @__PURE__ */ jsx_runtime31.jsx(Spinner, {
-                        className: "text-ink-dim"
-                      }),
-                      `Tasks (${openTasks.length})`
-                    ]
-                  }) : which
-                }, which))
+                children: [
+                  ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_runtime31.jsx("button", {
+                    type: "button",
+                    onClick: () => setRightPane(which),
+                    "aria-pressed": rightPane === which,
+                    className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
+                    children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                      className: "flex items-center gap-1",
+                      children: [
+                        /* @__PURE__ */ jsx_runtime31.jsx(Spinner, {
+                          className: "text-ink-dim"
+                        }),
+                        `Tasks (${openTasks.length})`
+                      ]
+                    }) : which
+                  }, which)),
+                  /* @__PURE__ */ jsx_runtime31.jsx("div", {
+                    className: "ml-auto",
+                    children: /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                      label: "Collapse the conversation column",
+                      onClick: () => collapse("chat"),
+                      children: /* @__PURE__ */ jsx_runtime31.jsx(PanelRightClose, {
+                        "aria-hidden": true
+                      })
+                    })
+                  })
+                ]
               }),
               rightPane === "tasks" ? /* @__PURE__ */ jsx_runtime31.jsx(TasksPanel, {
                 tasks: state.tasks,
@@ -61486,18 +61755,8 @@ function Workspace({
                     chat: state.chat,
                     waiting: state.waiting
                   }),
-                  /* @__PURE__ */ jsx_runtime31.jsx(ChatComposer, {
-                    connected: connection === "open",
-                    attachable: open && selection ? {
-                      doc: open.slug,
-                      name: open.name,
-                      version: open.active,
-                      fromLine: selection.fromLine,
-                      toLine: selection.toLine,
-                      text: selection.text
-                    } : null,
-                    onDrop: () => onSelectionEvent({ type: "drop" }),
-                    onSend: (text5, withSelection) => send({ type: "say", text: text5, withSelection })
+                  !collapsed.chat && /* @__PURE__ */ jsx_runtime31.jsx(ChatComposer, {
+                    ...composer
                   })
                 ]
               })
@@ -61508,13 +61767,52 @@ function Workspace({
     ]
   });
 }
+function FloatingComposer({
+  chat,
+  waiting,
+  onOpen,
+  children
+}) {
+  const last2 = chat.findLast((m2) => m2.who !== "system");
+  return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
+    className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
+    children: [
+      last2 && /* @__PURE__ */ jsx_runtime31.jsxs("div", {
+        className: "flex items-center gap-2 px-1 text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+            className: "min-w-0 flex-1 truncate",
+            title: last2.text,
+            children: [
+              /* @__PURE__ */ jsx_runtime31.jsx("span", {
+                className: "mr-1.5 font-medium text-ink-faint",
+                children: last2.who === "agent" ? "Agent" : "You"
+              }),
+              last2.text
+            ]
+          }),
+          waiting?.messageId === last2.id && /* @__PURE__ */ jsx_runtime31.jsx(WaitingBadge, {
+            badge: waiting.badge
+          }),
+          /* @__PURE__ */ jsx_runtime31.jsx("button", {
+            type: "button",
+            onClick: onOpen,
+            className: "shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline",
+            children: "Open the conversation"
+          })
+        ]
+      }),
+      children
+    ]
+  });
+}
 function ActivityLog({
   chat,
   waiting
 }) {
-  const end = import_react31.useRef(null);
+  const end = import_react30.useRef(null);
   const last2 = chat.at(-1)?.id;
-  import_react31.useEffect(() => {
+  import_react30.useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [last2, waiting?.badge]);
   return /* @__PURE__ */ jsx_runtime31.jsxs("div", {

@@ -11,9 +11,18 @@
 // version, the line range and the active version's PATH — so the agent reads
 // the file rather than trusting a quotation that was true a moment ago. The
 // quoted text travels too, but as what the human SAW, not as the source.
+//
+// ⛔ ONE COMPOSER'S WORTH OF STATE, DRAWN IN ONE OF TWO PLACES (E64, Cole). With
+// the conversation column open it sits at the foot of the column; with that
+// column collapsed it floats at the foot of the document pane, because talking
+// to the agent must never require reopening anything. The DRAFT is therefore
+// not this component's: it is held by `App` and passed in, so moving the
+// composer between the column and the float — a remount — cannot drop what the
+// human was typing, and there is never a second draft to disagree with the
+// first. The chip is the held selection, not a copy of it
+// (`state/selection.ts`), so it follows for free.
 import { cn } from "cn";
 import { CornerDownLeftIcon, XIcon } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/ui/button";
 
 export type Attachable = {
@@ -33,8 +42,11 @@ export function linesLabel(a: Attachable): string {
 export function ChatComposer({
   attachable,
   connected,
+  draft,
+  onDraft,
   onDrop,
   onSend,
+  floating = false,
 }: {
   /** The current selection, or null — what would ride along. */
   attachable: Attachable | null;
@@ -48,18 +60,32 @@ export function ChatComposer({
    */
   onDrop: () => void;
   onSend: (text: string, withSelection: boolean) => void;
+  /** What the human has typed so far — held by the caller, see the header. */
+  draft: string;
+  onDraft: (text: string) => void;
+  /** Docked over the document while the conversation column is collapsed. */
+  floating?: boolean;
 }) {
-  const [text, setText] = useState("");
+  const text = draft;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !connected) return;
     onSend(text, attachable !== null);
-    setText("");
+    onDraft("");
   };
 
   return (
-    <form onSubmit={submit} className="shrink-0 border-t border-edge p-2">
+    <form
+      onSubmit={submit}
+      aria-label={floating ? "Message the agent" : undefined}
+      className={cn(
+        "shrink-0",
+        floating
+          ? "mx-auto w-full max-w-2xl rounded-lg border border-edge bg-surface p-2 shadow-lg"
+          : "border-t border-edge p-2",
+      )}
+    >
       {attachable && (
         <div className="mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1">
           <div className="min-w-0 flex-1">
@@ -83,8 +109,10 @@ export function ChatComposer({
       )}
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={3}
+        onChange={(e) => onDraft(e.target.value)}
+        // The float is two rows: it shares the pane with the document it is
+        // about, and a question that grows past two lines scrolls in place.
+        rows={floating ? 2 : 3}
         disabled={!connected}
         placeholder={connected ? "Ask the agent…" : "Waiting for the daemon…"}
         className={cn(

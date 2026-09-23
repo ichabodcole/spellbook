@@ -153,11 +153,28 @@ export function MarkdownView({
    * jump the reader to the remembered line every time they typed.
    */
   const measureRef = useRef<() => Anchor[]>(() => []);
+  /**
+   * The scroller width the anchors were measured at.
+   *
+   * ⛔ THE RESIZE OBSERVER BELOW IS TOO LATE FOR ONE EVENT (E64). A column
+   * collapsing widens this pane in a single layout, the browser's scroll
+   * anchoring moves `scrollTop` to keep the same text at the top, and that
+   * scroll event is dispatched BEFORE the observer's callback runs — so it was
+   * reported through anchors measured at the OLD width, which named a line
+   * dozens above the real one (measured: a heading at the top reported as the
+   * section before it), and the split that the extra width then mounted landed
+   * there. A width that differs from the one measured at is exact evidence the
+   * table is stale; no timing is involved.
+   */
+  const measuredWidth = useRef(-1);
   measureRef.current = () => {
     const root = body.current;
     const sc = scroller.current;
     if (!root || !sc) return [];
-    if (!anchors.current) anchors.current = lineAnchors(root, sc, projection, text);
+    if (!anchors.current || measuredWidth.current !== sc.clientWidth) {
+      anchors.current = lineAnchors(root, sc, projection, text);
+      measuredWidth.current = sc.clientWidth;
+    }
     return anchors.current;
   };
 

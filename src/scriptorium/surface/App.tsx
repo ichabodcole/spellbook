@@ -2,12 +2,21 @@
 // the context sidebar on the left (E16 — built first, props-only so it can move
 // to the kit), the open document read-only in the centre with the status strip
 // under it (E18), and the conversation placeholder on the right (chat is a later
-// piece, E16).
+// piece, E16). Either side column collapses out of the way (E64).
 
 import { cn } from "cn";
-import { MessagesSquareIcon, MoonIcon, SunIcon } from "lucide-react";
+import {
+  GlassesIcon,
+  MessagesSquareIcon,
+  MoonIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PanelRightCloseIcon,
+  PanelRightOpenIcon,
+  SunIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useDefaultLayout } from "react-resizable-panels";
+import { type Layout, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
@@ -31,6 +40,19 @@ import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
 import { WaitingBadge } from "./components/WaitingBadge";
+import {
+  collapsedSides,
+  DEFAULT_SIZE,
+  decodeOpenSizes,
+  encodeOpenSizes,
+  isReader,
+  MIN_SIZE,
+  OPEN_PREF,
+  readerAct,
+  rememberOpen,
+  reopenSize,
+  type Side,
+} from "./state/columns";
 import { applySelectionEvent, type HeldSelection, type SelectionEvent } from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
@@ -49,6 +71,37 @@ const CONNECTION_LABEL: Record<Connection, string> = {
   open: "connected",
   closed: "daemon unreachable — retrying",
 };
+
+/** A small icon button for the columns' own chrome — collapse, reopen, reader. */
+function ColumnButton({
+  label,
+  onClick,
+  pressed,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      className={cn(
+        "flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none",
+        "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+        "[&_svg]:size-3.5",
+        pressed && "bg-surface-raised text-ink",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 function PaneHeading({ children, actions }: { children: string; actions?: React.ReactNode }) {
   return (
@@ -192,6 +245,53 @@ function Workspace({
     [send],
   );
   const layout = useDefaultLayout({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+
+  // ── the side columns (E64) ─────────────────────────────────────────────────
+  // ⛔ COLLAPSED IS READ OFF THE LAYOUT (`state/columns.ts`): a collapsed column
+  // is a panel at width 0, persisted by the same layout pref as every other
+  // size, so the button, a drag shut and a reload all agree by construction.
+  // This copy of the layout exists only so React re-renders when it changes;
+  // it is set from the library's own callback and never written back.
+  const [layoutNow, setLayoutNow] = useState<Layout | undefined>(layout.defaultLayout);
+  const collapsed = collapsedSides(layoutNow);
+  const openSizes = decodeOpenSizes(state.prefs[OPEN_PREF]);
+  const openSizesRef = useRef(openSizes);
+  openSizesRef.current = openSizes;
+  const contextPanel = usePanelRef();
+  const chatPanel = usePanelRef();
+  const panelFor = useCallback(
+    (side: Side) => (side === "context" ? contextPanel : chatPanel).current,
+    [contextPanel, chatPanel],
+  );
+  const collapse = useCallback((side: Side) => panelFor(side)?.collapse(), [panelFor]);
+  // ⚠ NOT the library's `expand()`: it reopens to a width it keeps in memory,
+  // so after a reload a column came back at its minimum. The width it reopens
+  // to is the home's (`panes:open`), like the rest of the layout.
+  const expand = useCallback(
+    (side: Side) => {
+      const panel = panelFor(side);
+      if (panel?.isCollapsed()) panel.resize(`${reopenSize(openSizesRef.current, side)}%`);
+    },
+    [panelFor],
+  );
+  const onLayoutChanged = useCallback(
+    (next: Layout, meta: Parameters<typeof layout.onLayoutChanged>[1]) => {
+      layout.onLayoutChanged(next, meta);
+      setLayoutNow(next);
+      const remembered = rememberOpen(openSizesRef.current, next);
+      if (remembered !== openSizesRef.current)
+        send({ type: "prefs.set", key: OPEN_PREF, value: encodeOpenSizes(remembered) });
+    },
+    [layout.onLayoutChanged, send],
+  );
+  /**
+   * What the human is typing to the agent. ⛔ HELD HERE, NOT IN THE COMPOSER
+   * (E64): the composer is drawn in the conversation column or floating under
+   * the document depending on whether that column is collapsed, and a draft
+   * living inside it would be lost — or, drawn twice, duplicated — every time
+   * it moved. One draft, one meaning, wherever it is shown.
+   */
+  const [draft, setDraft] = useState("");
   const splitLayout = useDefaultLayout({
     id: SPLIT_LAYOUT_ID,
     panelIds: [...SPLIT_PANES],
@@ -202,6 +302,18 @@ function Workspace({
   const mode: ViewMode = (VIEW_MODES as readonly string[]).includes(saved ?? "")
     ? (saved as ViewMode)
     : "rendered";
+  const setMode = useCallback(
+    (next: ViewMode) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+    [send],
+  );
+  /** E64: rendered with both columns shut — derived, never stored (`isReader`). */
+  const reader = isReader(mode, collapsed);
+  const toggleReader = () => {
+    const act = readerAct(mode, collapsed);
+    if (act.mode) setMode(act.mode);
+    for (const side of act.collapse) collapse(side);
+    for (const side of act.expand) expand(side);
+  };
 
   // What the comparison is against (E36). Deliberately NOT persisted: which
   // version you wanted to look at last session says nothing about this one,
@@ -349,6 +461,26 @@ function Workspace({
   // A new document this viewer made opens at once (and the sidebar puts it in
   // rename mode); a new folder only renames.
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
+
+  /** The one composer's props, whichever place it is drawn in (E64). */
+  const composer = {
+    connected: connection === "open",
+    attachable:
+      open && selection
+        ? {
+            doc: open.slug,
+            name: open.name,
+            version: open.active,
+            fromLine: selection.fromLine,
+            toLine: selection.toLine,
+            text: selection.text,
+          }
+        : null,
+    draft,
+    onDraft: setDraft,
+    onDrop: () => onSelectionEvent({ type: "drop" }),
+    onSend: (text: string, withSelection: boolean) => send({ type: "say", text, withSelection }),
+  };
   useEffect(() => {
     if (created?.op === "doc.create") send({ type: "open", path: created.path });
   }, [created, send]);
@@ -362,12 +494,18 @@ function Workspace({
         orientation="horizontal"
         className="min-h-0 flex-1"
         defaultLayout={layout.defaultLayout}
-        onLayoutChanged={layout.onLayoutChanged}
+        onLayoutChanged={onLayoutChanged}
       >
         <ResizablePanel
           id="context"
-          defaultSize="22"
-          minSize="12"
+          panelRef={contextPanel}
+          collapsible
+          defaultSize={`${DEFAULT_SIZE.context}`}
+          minSize={`${MIN_SIZE.context}`}
+          // ⚠ Kept MOUNTED while collapsed, and inert: the tree's open folders
+          // and any rename in progress are the sidebar's own state, and
+          // unmounting it would forget them every time it was put away.
+          inert={collapsed.context}
           className="flex flex-col bg-surface"
           // ⛔ ⌘Z HERE MEANS THE CONTEXT, AND ONLY WHILE THE FOCUS IS IN HERE
           // (Cole: "if you've got that area focused, shortcuts could do it").
@@ -392,18 +530,26 @@ function Workspace({
         >
           <PaneHeading
             actions={
-              <HistoryArrows
-                history={state.history}
-                display={(p) => shortPath(p, state.userHome, 2)}
-                onUndo={(confirmDelete) =>
-                  send(
-                    confirmDelete
-                      ? { type: "history.undo", confirmDelete }
-                      : { type: "history.undo" },
-                  )
-                }
-                onRedo={() => send({ type: "history.redo" })}
-              />
+              <>
+                <HistoryArrows
+                  history={state.history}
+                  display={(p) => shortPath(p, state.userHome, 2)}
+                  onUndo={(confirmDelete) =>
+                    send(
+                      confirmDelete
+                        ? { type: "history.undo", confirmDelete }
+                        : { type: "history.undo" },
+                    )
+                  }
+                  onRedo={() => send({ type: "history.redo" })}
+                />
+                <ColumnButton
+                  label="Collapse the context column"
+                  onClick={() => collapse("context")}
+                >
+                  <PanelLeftCloseIcon aria-hidden />
+                </ColumnButton>
+              </>
             }
           >
             Context
@@ -434,7 +580,56 @@ function Workspace({
             doc={open}
             text={text}
             mode={mode}
-            onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
+            onMode={setMode}
+            docPercent={layoutNow?.document ?? 100}
+            quiet={reader}
+            // ⛔ A COLLAPSED COLUMN IS REOPENED FROM THE EDGE IT WENT TO (E64).
+            // The button sits at that end of the document's heading, where the
+            // column was, so the way back is where the eye goes looking for it.
+            headingStart={
+              collapsed.context && (
+                <ColumnButton label="Show the context column" onClick={() => expand("context")}>
+                  <PanelLeftOpenIcon aria-hidden />
+                </ColumnButton>
+              )
+            }
+            headingEnd={
+              <>
+                <ColumnButton
+                  label={
+                    reader
+                      ? "Leave reader mode — bring the columns back"
+                      : "Reader mode — rendered, with both columns out of the way"
+                  }
+                  pressed={reader}
+                  onClick={toggleReader}
+                >
+                  <GlassesIcon aria-hidden />
+                </ColumnButton>
+                {collapsed.chat && (
+                  <ColumnButton label="Show the conversation column" onClick={() => expand("chat")}>
+                    <PanelRightOpenIcon aria-hidden />
+                  </ColumnButton>
+                )}
+              </>
+            }
+            // ⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (E64, Cole —
+            // conversation-primary). With the conversation collapsed, the SAME
+            // composer floats under the document: same draft, same chip.
+            dock={
+              collapsed.chat && (
+                <FloatingComposer
+                  chat={state.chat}
+                  waiting={state.waiting}
+                  onOpen={() => {
+                    setRightPane("conversation");
+                    expand("chat");
+                  }}
+                >
+                  <ChatComposer floating {...composer} />
+                </FloatingComposer>
+              )
+            }
             diff={diff}
             onAgainst={setAgainst}
             onTake={(hunks) => {
@@ -484,9 +679,10 @@ function Workspace({
             }}
             onShowNote={(id) => {
               // Pointing at a note has to OPEN the notes — the panel may be
-              // showing the conversation, in which case a border nobody can
-              // see is not an answer.
+              // showing the conversation, or be collapsed (E64), and either
+              // way a border nobody can see is not an answer.
               setRightPane("notes");
+              expand("chat");
               setFocusedNote(id);
             }}
             splitLayout={splitLayout}
@@ -518,8 +714,11 @@ function Workspace({
         <ResizableHandle withHandle />
         <ResizablePanel
           id="chat"
-          defaultSize="28"
-          minSize="15"
+          panelRef={chatPanel}
+          collapsible
+          defaultSize={`${DEFAULT_SIZE.chat}`}
+          minSize={`${MIN_SIZE.chat}`}
+          inert={collapsed.chat}
           className="flex flex-col bg-surface"
         >
           {/* ⛔ TWO THINGS, ONE PANE (E45). A fourth resizable pane would make
@@ -557,6 +756,14 @@ function Workspace({
                 )}
               </button>
             ))}
+            <div className="ml-auto">
+              <ColumnButton
+                label="Collapse the conversation column"
+                onClick={() => collapse("chat")}
+              >
+                <PanelRightCloseIcon aria-hidden />
+              </ColumnButton>
+            </div>
           </div>
           {rightPane === "tasks" ? (
             <TasksPanel
@@ -612,28 +819,57 @@ function Workspace({
               ) : (
                 <ActivityLog chat={state.chat} waiting={state.waiting} />
               )}
-              <ChatComposer
-                connected={connection === "open"}
-                attachable={
-                  open && selection
-                    ? {
-                        doc: open.slug,
-                        name: open.name,
-                        version: open.active,
-                        fromLine: selection.fromLine,
-                        toLine: selection.toLine,
-                        text: selection.text,
-                      }
-                    : null
-                }
-                onDrop={() => onSelectionEvent({ type: "drop" })}
-                onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
-              />
+              {/* ⛔ DRAWN IN ONE PLACE AT A TIME: here while the column is
+                  open, floating under the document while it is collapsed. */}
+              {!collapsed.chat && <ChatComposer {...composer} />}
             </>
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </>
+  );
+}
+
+/**
+ * The composer, floating under the document while the conversation column is
+ * collapsed (E64) — with the one line of the conversation a human needs so as
+ * not to have to open it: the agent's latest word, or that it is still working
+ * on yours. Anything more is a click away, and the click reopens the column.
+ */
+function FloatingComposer({
+  chat,
+  waiting,
+  onOpen,
+  children,
+}: {
+  chat: readonly ChatMessage[];
+  waiting: Waiting | null;
+  onOpen: () => void;
+  children: React.ReactNode;
+}) {
+  const last = chat.findLast((m) => m.who !== "system");
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-1">
+      {last && (
+        <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
+          <span className="min-w-0 flex-1 truncate" title={last.text}>
+            <span className="mr-1.5 font-medium text-ink-faint">
+              {last.who === "agent" ? "Agent" : "You"}
+            </span>
+            {last.text}
+          </span>
+          {waiting?.messageId === last.id && <WaitingBadge badge={waiting.badge} />}
+          <button
+            type="button"
+            onClick={onOpen}
+            className="shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+          >
+            Open the conversation
+          </button>
+        </div>
+      )}
+      {children}
+    </div>
   );
 }
 

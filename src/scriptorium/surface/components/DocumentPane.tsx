@@ -17,6 +17,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resiz
 import { Separator } from "@/ui/separator";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
 import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
+import { splitRoom } from "../state/columns";
 import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
@@ -37,15 +38,12 @@ import { VersionMenu, versionSummary } from "./VersionMenu";
 export const VIEW_MODES = ["raw", "rendered", "split", "compare"] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
-/**
- * Below this the pane cannot hold two readable columns: the raw view's measure
- * is 76ch and the rendered view's the same, so a split narrower than this is
- * two columns of broken lines rather than a comparison. Split is then not
- * offered, and a SAVED split falls back to rendered until there is room again —
- * the pane is resizable and the chat pane is beside it, so "enough room" is a
- * thing the human changes minute to minute (E11).
- */
-const SPLIT_MIN_PX = 720;
+// ⚠ SPLIT'S FLOOR (`SPLIT_MIN_PX`, 720 px) LIVES IN `state/columns.ts` NOW
+// (E64): below it split is not offered, and a SAVED split falls back to
+// rendered until there is room again — the pane is resizable and the side
+// columns collapse, so "enough room" is a thing the human changes minute to
+// minute (E11). Collapsing them is also what makes split AVAILABLE on a
+// smaller screen, which is why the disabled button says so.
 
 /** The pane's own width, watched — a container query cannot change a MODE. */
 function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
@@ -113,6 +111,11 @@ export function DocumentPane({
   onRevert,
   onFollowLink,
   onAddFrontmatter,
+  docPercent = 100,
+  headingStart,
+  headingEnd,
+  dock,
+  quiet = false,
 }: {
   doc: DocView | null;
   text: string | undefined;
@@ -149,6 +152,18 @@ export function DocumentPane({
   onFollowLink: (target: string) => void;
   /** Offer a frontmatter block for a document that has none (E35). */
   onAddFrontmatter: () => void;
+  /**
+   * E64: this pane's share of the window, so a split that does not fit can say
+   * whether collapsing the side columns would make it fit.
+   */
+  docPercent?: number;
+  /** E64: controls at either end of the heading — reopening a collapsed column. */
+  headingStart?: React.ReactNode;
+  headingEnd?: React.ReactNode;
+  /** E64: the floating composer, docked under the document. */
+  dock?: React.ReactNode;
+  /** E64: reader mode — the chrome steps back until it is reached for. */
+  quiet?: boolean;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -165,8 +180,9 @@ export function DocumentPane({
   const now = useNow();
   const [paneRef, width] = useWidth();
   // Width 0 is "not measured yet", not "too narrow": a saved split must not
-  // flicker through rendered on the first frame.
-  const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
+  // flicker through rendered on the first frame (`splitRoom`).
+  const room = splitRoom(width, docPercent);
+  const roomToSplit = room.now;
   const showing: ViewMode = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc?.versions.find((v) => v.n === doc.active);
   const [naming, setNaming] = useState<VersionIntent | null>(null);
@@ -203,8 +219,22 @@ export function DocumentPane({
     : [];
 
   return (
-    <div ref={paneRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3">
+    <div ref={paneRef} data-reader={quiet || undefined} className="flex min-h-0 flex-1 flex-col">
+      {/* ⛔ QUIETER, NOT GONE (E64 reader mode). The heading and the status
+          strip fade back until the pointer or the KEYBOARD focus reaches them
+          (a mouse click on a control leaves focus behind, and would keep them
+          loud). Hiding them would take Save, the version and "Unsaved" out of
+          reach, and a reader mode that loses an edit is worse than one that
+          shows a bar. */}
+      <div
+        className={cn(
+          "flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3",
+          quiet && "border-transparent",
+          quiet &&
+            "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100",
+        )}
+      >
+        {headingStart}
         {doc ? (
           <>
             {/* ⛔ LEFT OF THE TITLE, AND THAT IS THE POINT (Cole, E38). The
@@ -282,7 +312,13 @@ export function DocumentPane({
                       disabled={unavailable}
                       aria-pressed={showing === m}
                       aria-label={label}
-                      title={unavailable ? `${label} — the pane is too narrow` : label}
+                      title={
+                        !unavailable
+                          ? label
+                          : room.ifCollapsed
+                            ? `${label} — the pane is too narrow; collapse a side column to make room`
+                            : `${label} — the pane is too narrow`
+                      }
                       className={cn(
                         "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
                         "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
@@ -299,6 +335,11 @@ export function DocumentPane({
           </>
         ) : (
           <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">Document</span>
+        )}
+        {headingEnd && (
+          <div className={cn("flex shrink-0 items-center gap-0.5", !doc && "ml-auto")}>
+            {headingEnd}
+          </div>
         )}
       </div>
       {doc && shown !== undefined && doc.meta === null && (
@@ -467,7 +508,21 @@ export function DocumentPane({
           </ResizablePanel>
         </ResizablePanelGroup>
       )}
-      {doc && <StatusStrip segments={segments} />}
+      {/* The float sits IN the flow rather than over the text: it never covers
+          the last lines of the document, and the scrollers — which keeping your
+          place (E63) measures — need no padding to make room for it. */}
+      {dock && <div className="shrink-0 px-3 py-2">{dock}</div>}
+      {doc && (
+        <div
+          className={cn(
+            "shrink-0",
+            quiet &&
+              "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100",
+          )}
+        >
+          <StatusStrip segments={segments} />
+        </div>
+      )}
       {dialog}
       <NoteAtSelection
         at={noteAt}
