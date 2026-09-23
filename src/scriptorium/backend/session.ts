@@ -79,6 +79,7 @@ import type {
   MetaFilter,
   MovePlan,
   Note,
+  NoteRef,
   PlacedNote,
   PublicState,
   Selection,
@@ -970,12 +971,18 @@ export class Session {
     return { slug: d.slug, note };
   }
 
-  resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
+  resolveNote(opts: { doc?: string; id: string; resolved: boolean; who: VersionAuthor }): {
     slug: string;
     note: Note;
   } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
+    // E65: a REOPEN is a write — a human reopening asks again, and the wait is
+    // timed from here; the agent reopening is an act on the note.
+    if (note.resolved && !opts.resolved) {
+      note.reopenedAt = Date.now();
+      note.reopenedBy = opts.who;
+    }
     note.resolved = opts.resolved;
     this.persist();
     return { slug: d.slug, note };
@@ -1855,7 +1862,7 @@ export class Session {
   addMessage(
     who: ChatWho,
     text: string,
-    extra: { selection?: Selection | null; activePath?: string | null } = {},
+    extra: { selection?: Selection | null; activePath?: string | null; note?: NoteRef } = {},
   ): ChatMessage {
     const msg: ChatMessage = { id: `m-${randHex(4)}`, who, text, ts: Date.now(), ...extra };
     this.m.chat.push(msg);

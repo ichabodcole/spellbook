@@ -211,6 +211,12 @@ export type Note = {
    * answer, from the agent's, which is one. Absent on edits made before E65.
    */
   editedBy?: VersionAuthor;
+  /**
+   * When it was last reopened, and by whom (E65) — a human reopening a note is
+   * asking again, so the wait is timed from here.
+   */
+  reopenedAt?: number;
+  reopenedBy?: VersionAuthor;
   resolved: boolean;
 };
 
@@ -311,7 +317,16 @@ export type NoteWaiting = {
   noteId: string;
   since: number;
   badge: Waiting["badge"];
+  /**
+   * Set while the human has asked about this note in the conversation and that
+   * message is unanswered: the id of the message. `badge` is then E53's badge
+   * for the conversation, so the two cannot disagree.
+   */
+  askedIn?: string;
 };
+
+/** A message ABOUT a note (E65's "Ask the agent") — how the agent finds it. */
+export type NoteRef = { doc: string; id: string };
 
 export type ChatMessage = {
   id: string;
@@ -321,6 +336,8 @@ export type ChatMessage = {
   selection?: Selection | null;
   /** The active version's path at send time — so the agent knows what to read. */
   activePath?: string | null;
+  /** E65: the note this message asks about, when it was sent by "Ask the agent". */
+  note?: NoteRef;
 };
 
 /** The snapshot the surface renders and `state --full` prints. */
@@ -499,7 +516,11 @@ export type ClientMsg =
    */
   | { type: "history.undo"; confirmDelete?: boolean }
   | { type: "history.redo" }
-  | { type: "say"; text: string; withSelection: boolean }
+  /**
+   * `note` (E65): the message asks about that note — "Ask the agent". The
+   * daemon refuses a second ask while one about the same note is unanswered.
+   */
+  | { type: "say"; text: string; withSelection: boolean; note?: NoteRef }
   | { type: "activate"; doc: string; version: number }
   /**
    * E37: the HUMAN makes a version. The agent has had `version.new` since E1;

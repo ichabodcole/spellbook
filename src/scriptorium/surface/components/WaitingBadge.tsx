@@ -16,7 +16,7 @@ import type { Waiting } from "../../backend/protocol";
  * (E65): the daemon knows the note was delivered, not that it was read, so the
  * note's words claim no more than "with the agent".
  */
-const LABEL: Record<"message" | "note", Record<Waiting["badge"], string>> = {
+const LABEL: Record<"message" | "note" | "asked", Record<Waiting["badge"], string>> = {
   message: {
     working: "working on this…",
     stalled: "took this in, then went quiet — may be stuck",
@@ -25,7 +25,15 @@ const LABEL: Record<"message" | "note", Record<Waiting["badge"], string>> = {
     working: "with the agent…",
     stalled: "no word from the agent — may be stuck",
   },
+  // A note the human has asked about (E65, verifier D1): it now waits on that
+  // message, and reads E53's badge for it.
+  asked: {
+    working: "asked in the conversation…",
+    stalled: "asked, and still no word — may be stuck",
+  },
 };
+
+export type WaitingOf = keyof typeof LABEL;
 
 export function WaitingBadge({
   badge,
@@ -34,7 +42,7 @@ export function WaitingBadge({
 }: {
   badge: Waiting["badge"];
   /** What is waiting — a message (E53) or a note (E65). Same rule, own words. */
-  of?: "message" | "note";
+  of?: WaitingOf;
   className?: string;
 }) {
   const working = badge === "working";
@@ -65,13 +73,22 @@ export function WaitingBadge({
  * The same state as a dot, for where there is no room for words — a tab. Its
  * words are still there for a screen reader, and on hover.
  */
-export function WaitingDot({ badge, of }: { badge: Waiting["badge"]; of: "message" | "note" }) {
+export function WaitingDot({
+  badge,
+  of,
+  label,
+}: {
+  badge: Waiting["badge"];
+  of: WaitingOf;
+  /** Words to use instead of the badge's own — e.g. what a session-wide dot counts. */
+  label?: string;
+}) {
   const working = badge === "working";
   return (
     <span
       role="img"
-      aria-label={LABEL[of][badge]}
-      title={LABEL[of][badge]}
+      aria-label={label ?? LABEL[of][badge]}
+      title={label ?? LABEL[of][badge]}
       className={cn(
         "inline-block size-1.5 shrink-0 rounded-full",
         working ? "animate-pulse bg-rubric" : "bg-attention",

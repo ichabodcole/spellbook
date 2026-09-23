@@ -10,11 +10,17 @@ import type { NoteWaiting, Waiting } from "../../backend/protocol";
 type Badge = Waiting["badge"];
 
 /** The open document's waiting notes, by note id. */
-export function badgesOn(waiting: readonly NoteWaiting[], doc: string | null): Map<string, Badge> {
-  const out = new Map<string, Badge>();
-  for (const n of waiting) if (n.doc === doc) out.set(n.noteId, n.badge);
+export function badgesOn(
+  waiting: readonly NoteWaiting[],
+  doc: string | null,
+): Map<string, NoteWaiting> {
+  const out = new Map<string, NoteWaiting>();
+  for (const n of waiting) if (n.doc === doc) out.set(n.noteId, n);
   return out;
 }
+
+/** Which words a waiting note gets: asked about in the conversation, or not. */
+export const waitingOf = (n: NoteWaiting): "note" | "asked" => (n.askedIn ? "asked" : "note");
 
 /**
  * One mark standing for several notes: stuck if any is. A pulse over a set that
@@ -29,17 +35,53 @@ export function loudest(badges: Iterable<Badge>): Badge | null {
   return got;
 }
 
-/** A one-line label for a passage — the note's own text is never shortened. */
-function label(quote: string, max = 60): string {
-  const flat = quote.replace(/\s+/gu, " ").trim();
-  return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
+/** A one-line excerpt, cut at a character boundary rather than mid-emoji. */
+function label(text: string, max: number): string {
+  const flat = [...text.replace(/\s+/gu, " ").trim()];
+  return flat.length <= max
+    ? flat.join("")
+    : `${flat
+        .slice(0, max - 1)
+        .join("")
+        .trimEnd()}…`;
 }
 
 /**
- * What "Ask the agent" sends when a note may be stuck (E65). A message in the
- * human's own conversation, so it gets everything a message gets — E53's badge,
- * its one nudge — and the agent's answer to it answers the note too.
+ * What "Ask the agent" says when a note may be stuck (E65). A message in the
+ * human's own conversation, so it gets everything a message gets — E53's
+ * badge, its one nudge — and the agent's answer to it answers the note too.
+ *
+ * ⛔ AN EXCERPT, NOT THE NOTE. The message carries the note's REFERENCE (id and
+ * document), which is how the agent finds and resolves it; the words are for
+ * the human reading the conversation back, and a long note pasted whole would
+ * bury it (verifier D4).
  */
 export function askAboutNote(note: { quote: string; body: string }, docName: string): string {
-  return `About my note on “${label(note.quote)}” in ${docName}: ${note.body}`;
+  return `About my note on “${label(note.quote, 60)}” in ${docName}: “${label(note.body, 120)}”`;
+}
+
+/**
+ * The documents OTHER than the open one with notes owed an answer, oldest
+ * first (verifier D3). The panel lists the open document's notes; this is the
+ * pointer to the rest, so something owed anywhere is visible without closing a
+ * column.
+ */
+export function elsewhere(
+  waiting: readonly NoteWaiting[],
+  open: string | null,
+): { doc: string; count: number; badge: Badge }[] {
+  const by = new Map<string, { doc: string; count: number; badge: Badge; since: number }>();
+  for (const n of waiting) {
+    if (n.doc === open) continue;
+    const got = by.get(n.doc);
+    if (!got) by.set(n.doc, { doc: n.doc, count: 1, badge: n.badge, since: n.since });
+    else {
+      got.count++;
+      if (n.badge === "stalled") got.badge = "stalled";
+      got.since = Math.min(got.since, n.since);
+    }
+  }
+  return [...by.values()]
+    .sort((a, b) => a.since - b.since)
+    .map(({ doc, count, badge }) => ({ doc, count, badge }));
 }

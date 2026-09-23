@@ -650,7 +650,31 @@ export async function startDaemon(opts: StartOpts) {
         if (!text) return;
         const sel = msg.withSelection ? selection : null;
         const activePath = sel ? session.activePath(sel.doc) : session.activePath();
-        const m = session.addMessage("human", text, { selection: sel, activePath });
+        // E65's "Ask the agent": the message carries the note it is about, so
+        // the agent can act on it and resolve it by id rather than by matching
+        // prose. ⛔ ONE ASK AT A TIME: while a message about this note is
+        // unanswered the note already says it was asked, so a second is a
+        // double-click, not a new question — dropped, and derived rather than
+        // flagged: it is the same fact the note's own badge reads.
+        let note: { doc: string; id: string } | undefined;
+        if (msg.note) {
+          const d = session.noteFacts().find((x) => x.slug === msg.note?.doc);
+          if (!d?.notes.some((n) => n.id === msg.note?.id)) {
+            reply(ws, { type: "error", message: `No note ${msg.note.id} on ${msg.note.doc}.` });
+            return;
+          }
+          const owed = notesWaiting(session.noteFacts(), session.messages(), Date.now(), {
+            acknowledgedUntil,
+          });
+          if (owed.some((w) => w.doc === msg.note?.doc && w.noteId === msg.note.id && w.askedIn))
+            return;
+          note = { doc: msg.note.doc, id: msg.note.id };
+        }
+        const m = session.addMessage("human", text, {
+          selection: sel,
+          activePath,
+          ...(note ? { note } : {}),
+        });
         log.emit({
           type: "message",
           message_id: m.id,
@@ -658,6 +682,13 @@ export async function startDaemon(opts: StartOpts) {
           selection: sel,
           active: activeOf(sel?.doc),
           ts: m.ts,
+          ...(note
+            ? {
+                note: note.id,
+                doc: note.doc,
+                hint: `about note ${note.id} — \`notes --doc ${note.doc}\` has it whole; answer here, and \`note-resolve ${note.id} --doc ${note.doc}\` when it is dealt with`,
+              }
+            : {}),
         });
         broadcastState();
         return;
@@ -719,12 +750,22 @@ export async function startDaemon(opts: StartOpts) {
         return;
       }
       case "note.resolve": {
-        const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
+        const r = session.resolveNote({
+          doc: msg.doc,
+          id: msg.id,
+          resolved: msg.resolved,
+          who: "human",
+        });
         log.emit({
           type: msg.resolved ? "note.resolved" : "note.reopened",
           doc: r.slug,
           note: r.note.id,
           by: "human",
+          // A human reopening a note is asking again (E65), so it carries what
+          // `note.added` carries.
+          ...(msg.resolved
+            ? {}
+            : noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note))),
         });
         broadcastState();
         return;
@@ -1208,7 +1249,12 @@ export async function startDaemon(opts: StartOpts) {
         return { doc: r.slug, note: r.note.id };
       }
       case "note.resolve": {
-        const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });
+        const r = session.resolveNote({
+          doc: cmd.doc,
+          id: cmd.id,
+          resolved: cmd.resolved,
+          who: "agent",
+        });
         announce(
           `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`,
           { fact: "note.resolved", doc: r.slug, note: r.note.id, by: "agent" },

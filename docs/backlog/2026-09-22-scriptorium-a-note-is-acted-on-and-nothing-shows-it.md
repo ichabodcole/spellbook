@@ -81,6 +81,11 @@ Recorded with the options not taken in
   menu on the passage. It survives a reload and a daemon restart, because it is
   derived.
 - `SKILL.md` no longer says "a note is not a request".
+- After the verifier's pass: an asked note waits on the message it was asked in
+  (no duplicate ask), the ask carries the note's id and document to the tail,
+  every place reads session-wide, a note whose passage is gone says so, the cap
+  counts characters, and a human reopen re-arms the note from the reopen. The
+  known limits Cole left to real use are listed at the end of E65.
 
 Batch review (option 4) was out of scope and is untouched.
 

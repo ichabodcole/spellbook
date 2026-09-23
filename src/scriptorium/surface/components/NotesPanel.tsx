@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
-import type { PlacedNote, Waiting } from "../../backend/protocol";
-import { WaitingBadge } from "./WaitingBadge";
+import type { NoteWaiting, PlacedNote, Waiting } from "../../backend/protocol";
+import { waitingOf } from "../state/notes";
+import { WaitingBadge, WaitingDot } from "./WaitingBadge";
 
 /** How a note found its place, said plainly — or nothing, when it is certain. */
 const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: string }>> = {
@@ -51,7 +52,7 @@ function Note({
   /** Pointed at from the document (E47) — bordered, and scrolled to. */
   focused: boolean;
   /** E65: owed an answer, and how long — absent when it is not. */
-  waiting: Waiting["badge"] | undefined;
+  waiting: NoteWaiting | undefined;
   onAsk: (n: PlacedNote) => void;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
@@ -153,11 +154,13 @@ function Note({
       )}
       {/* E65: E53's badge, on the note it is about. ⛔ "MAY BE STUCK" CARRIES
           ITS ACT: ask the agent in the conversation, where the answer lands
-          and where E53 takes over. Resolving (✓ below) is the other way out. */}
+          and where E53 takes over. Resolving (✓ below) is the other way out.
+          ⛔ ONCE ASKED, NOT OFFERED AGAIN (verifier D1): the note then waits on
+          that message and says so, and a second ask would be a duplicate. */}
       {waiting && (
         <div className="flex flex-wrap items-center gap-x-2">
-          <WaitingBadge badge={waiting} of="note" />
-          {waiting === "stalled" && (
+          <WaitingBadge badge={waiting.badge} of={waitingOf(waiting)} />
+          {waiting.badge === "stalled" && !waiting.askedIn && (
             <button
               type="button"
               onClick={() => onAsk(note)}
@@ -217,6 +220,8 @@ export function NotesPanel({
   notes,
   focusedId,
   waiting,
+  others,
+  onOpenDoc,
   selection,
   onAdd,
   onGoTo,
@@ -227,7 +232,13 @@ export function NotesPanel({
 }: {
   notes: PlacedNote[];
   /** E65: which of these notes are owed an answer, by id. */
-  waiting: ReadonlyMap<string, Waiting["badge"]>;
+  waiting: ReadonlyMap<string, NoteWaiting>;
+  /**
+   * E65 (verifier D3): documents OTHER than this one with notes owed an answer
+   * — the pointer that keeps them visible here without a second list.
+   */
+  others: { doc: string; name: string; count: number; badge: Waiting["badge"] }[];
+  onOpenDoc: (doc: string) => void;
   /** E65: "may be stuck" → ask the agent about it in the conversation. */
   onAsk: (n: PlacedNote) => void;
   /** The note the document pointed at, if any (E47). */
@@ -258,6 +269,24 @@ export function NotesPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-auto p-3">
+        {others.length > 0 && (
+          <div className="mb-2 flex flex-col gap-0.5 rounded-md border border-edge px-2 py-1 text-[11px] text-ink-dim">
+            {others.map((o) => (
+              <button
+                key={o.doc}
+                type="button"
+                onClick={() => onOpenDoc(o.doc)}
+                title={`Open ${o.name} to see its notes`}
+                className="flex items-center gap-1.5 rounded-sm text-left hover:text-ink hover:underline"
+              >
+                <WaitingDot badge={o.badge} of="note" />
+                <span className="min-w-0 truncate">
+                  {o.count === 1 ? "A note" : `${o.count} notes`} owed an answer on {o.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         {shown.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-ink-faint">
             Select some text in the document and write a note about it.

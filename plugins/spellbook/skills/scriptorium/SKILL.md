@@ -138,8 +138,9 @@ Facts, not chatter. The ones worth acting on:
   and its `lines`; a long one says to read it with `notes --doc <slug>`. Answer
   it or propose a version, then **resolve it** (`note-resolve <id>`): resolving
   is what tells them it is dealt with, and the event's `hint` names the exact
-  command. A `note.edited` from them carries the same fields and is owed the
-  same.
+  command. If the passage is no longer in the active version, the event says
+  `passage: "gone"` instead of giving `lines`. A `note.edited` or
+  `note.reopened` from them is owed an answer in the same way.
 - **`doctor`** — at startup, anything worth looking at in the session, each
   finding carrying the verb that fixes it. Offer; do not silently repair. **It
   says nothing when there is nothing wrong**, so its absence is good news rather
@@ -165,9 +166,10 @@ genuinely need longer; use `say` when you have something to tell them.
 
 **A note of theirs shows the same thing** — a pulse on the note until you say
 something in the app or resolve it, then "may be stuck" after 30 seconds.
-`working` covers notes too. There is no nudge for a note: when one looks stuck,
+`working` covers notes too. There is no nudge for a note. When one looks stuck,
 they have a button that asks you about it, and it arrives as an ordinary
-`message`.
+`message` carrying the note's id (`note`) and `doc`, so you can `note-resolve`
+it directly once it is dealt with.
 
 ## The four words that mean something specific
 

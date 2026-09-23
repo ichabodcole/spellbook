@@ -275,6 +275,38 @@ describe("a session, end to end through the launchers", () => {
     ).toEqual([String(second.note)]);
     expect((await cli("note-resolve", String(second.note), "--doc", "a")).code).toBe(0);
     expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+
+    // Reopened by the human, it is owed again — timed from the REOPEN.
+    const reopenedAfter = Date.now();
+    surface.send({ type: "note.resolve", doc: "a", id: String(second.note), resolved: false });
+    const reopened = await waitTail((l) => l.type === "note.reopened");
+    expect(reopened).toMatchObject({ body: "and this", lines: { from: 4, to: 4 } });
+    const again = (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    expect(again.map((n) => n.noteId)).toEqual([String(second.note)]);
+    expect(again[0]?.since).toBeGreaterThanOrEqual(reopenedAfter);
+
+    // "Ask the agent": the message carries the note's reference to the tail,
+    // the note then waits ON that message, and a second ask is dropped.
+    const ask = {
+      type: "say" as const,
+      text: "About my note",
+      withSelection: false,
+      note: { doc: "a", id: String(second.note) },
+    };
+    surface.send(ask);
+    const asked = await waitTail((l) => l.type === "message" && l.note === second.note);
+    expect(asked).toMatchObject({ doc: "a", note: second.note });
+    expect(String(asked.hint)).toContain(`note-resolve ${second.note} --doc a`);
+    const owedNow = (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    expect(owedNow[0]?.askedIn).toBe(String(asked.message_id));
+    surface.send(ask);
+    surface.send({ type: "say", text: "marker", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker");
+    expect(tailLines().filter((l) => l.type === "message" && l.note === second.note)).toHaveLength(
+      1,
+    );
+    expect((await cli("say", "the map is wrong")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
   });
 
   test("version-new → the agent edits that file → the surface receives the text", async () => {

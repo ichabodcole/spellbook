@@ -602,10 +602,6 @@
     margin-bottom: calc(var(--spacing) * 6);
   }
 
-  .ml-1\.5 {
-    margin-left: calc(var(--spacing) * 1.5);
-  }
-
   .ml-auto {
     margin-left: auto;
   }

@@ -38,7 +38,13 @@ export const DEFAULT_SNOOZE_MS = 120_000;
 // animation claims "something is happening" when the honest answer is "I cannot
 // tell any more". mind-mapper separates these two for the same reason.
 
-type Msg = { id: string; who: ChatWho; ts: number };
+type Msg = {
+  id: string;
+  who: ChatWho;
+  ts: number;
+  /** E65: the note a message is ABOUT — set by "Ask the agent". */
+  note?: { doc: string; id: string };
+};
 
 /**
  * The human message nothing has answered yet, or null.
@@ -125,20 +131,38 @@ function badgeFor(
 // about B.
 
 /** What the rule reads off a note — the stored fields, nothing placed. */
-type NoteFacts = Pick<Note, "id" | "who" | "createdAt" | "editedAt" | "editedBy" | "resolved">;
+type NoteFacts = Pick<
+  Note,
+  "id" | "who" | "createdAt" | "editedAt" | "editedBy" | "reopenedAt" | "reopenedBy" | "resolved"
+>;
 
 /**
- * When the human last wrote into this note, or null if they never did. An edit
- * whose author was not recorded (before E65) is not evidence either way, so the
- * note counts from when it was made.
+ * When the human last wrote into this note, or null if they never did or the
+ * agent has acted on it since. A write is making it, rewriting it, or
+ * REOPENING it — each one a human putting the note in front of the agent
+ * (verifier: a reopen used to come back timed from when the note was made, so
+ * it could reappear already "may be stuck"). The agent rewriting or reopening
+ * it is an act on this note, and answers it. An edit whose author was not
+ * recorded (before E65) is not evidence either way.
  */
 function humanWroteAt(n: NoteFacts): number | null {
-  if (n.editedAt !== undefined && n.editedBy === "human") return n.editedAt;
-  if (n.editedAt !== undefined && n.editedBy === "agent") return null;
-  return n.who === "human" ? n.createdAt : null;
+  const acts: { at: number; by: "human" | "agent" }[] = [{ at: n.createdAt, by: n.who }];
+  if (n.editedAt !== undefined && n.editedBy) acts.push({ at: n.editedAt, by: n.editedBy });
+  if (n.reopenedAt !== undefined && n.reopenedBy) acts.push({ at: n.reopenedAt, by: n.reopenedBy });
+  let last = acts[0] as { at: number; by: "human" | "agent" };
+  for (const a of acts) if (a.at >= last.at) last = a;
+  return last.by === "human" ? last.at : null;
 }
 
-/** Every note owed an answer, oldest first. */
+/**
+ * Every note owed an answer, oldest first.
+ *
+ * ⛔ A NOTE THE HUMAN HAS ASKED ABOUT waits ON THAT MESSAGE (verifier D1). "Ask
+ * the agent" posts a message carrying the note's reference; while that message
+ * is unanswered, the note says it was asked, and its badge IS E53's badge for
+ * the conversation — not a second clock that could disagree with it. There is
+ * no "asked" flag: it is read off the conversation like everything else here.
+ */
 export function notesWaiting(
   docs: readonly { slug: string; notes: readonly NoteFacts[] }[],
   chat: readonly Msg[],
@@ -147,6 +171,7 @@ export function notesWaiting(
 ): NoteWaiting[] {
   let lastAgent = Number.NEGATIVE_INFINITY;
   for (const m of chat) if (m.who === "agent" && m.ts > lastAgent) lastAgent = m.ts;
+  const wait = waitingOn(chat, now, opts);
   const out: NoteWaiting[] = [];
   for (const d of docs)
     for (const n of d.notes) {
@@ -154,7 +179,19 @@ export function notesWaiting(
       const since = humanWroteAt(n);
       // ⚠ STRICTLY after: a reply in the same millisecond cannot have read it.
       if (since === null || lastAgent > since) continue;
-      out.push({ doc: d.slug, noteId: n.id, since, badge: badgeFor(since, now, opts) });
+      // Any ask after the note's last write is unanswered by construction: a
+      // reply after it would be after the note too, and cleared it above.
+      const asked = wait
+        ? chat.findLast(
+            (m) =>
+              m.who === "human" && m.ts >= since && m.note?.doc === d.slug && m.note.id === n.id,
+          )
+        : undefined;
+      out.push(
+        asked && wait
+          ? { doc: d.slug, noteId: n.id, since, badge: wait.badge, askedIn: asked.id }
+          : { doc: d.slug, noteId: n.id, since, badge: badgeFor(since, now, opts) },
+      );
     }
   return out.sort((a, b) => a.since - b.since);
 }
@@ -181,19 +218,32 @@ export function noteEventFacts(
   slug: string,
   note: { id: string; quote: string; body: string },
   lines: { from: number; to: number } | null,
-): { lines?: { from: number; to: number }; quote?: string; body?: string; hint: string } {
+): {
+  lines?: { from: number; to: number };
+  quote?: string;
+  body?: string;
+  passage?: "gone";
+  hint: string;
+} {
   const close = `note-resolve ${note.id} --doc ${slug}`;
-  const at = lines ? { lines } : {};
-  if (note.quote.length + note.body.length <= NOTE_TEXT_MAX)
+  // ⚠ A note whose passage is no longer in the active version has no lines, and
+  // must SAY so (verifier D5) — otherwise "act on it" sends the agent looking
+  // for text that is not there.
+  const at = lines ? { lines } : { passage: "gone" as const };
+  // CHARACTERS, not UTF-16 units: an emoji is one character to whoever wrote it.
+  const size = [...note.quote].length + [...note.body].length;
+  if (size <= NOTE_TEXT_MAX)
     return {
       ...at,
       quote: note.quote,
       body: note.body,
-      hint: `act on it, then \`${close}\` when it is dealt with`,
+      hint: lines
+        ? `act on it, then \`${close}\` when it is dealt with`
+        : `its passage is no longer in the active version — see \`notes --doc ${slug}\`, then act on it and \`${close}\` when it is dealt with`,
     };
   return {
     ...at,
-    hint: `too long to carry — read it with \`notes --doc ${slug}\`, act on it, then \`${close}\``,
+    hint: `too long to carry${lines ? "" : ", and its passage is no longer in the active version"} — read it with \`notes --doc ${slug}\`, act on it, then \`${close}\``,
   };
 }
 

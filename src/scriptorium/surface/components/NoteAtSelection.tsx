@@ -46,7 +46,7 @@ export function NoteAtSelection({
    * The notes under the pointer, labelled — usually none or one (E47) — and
    * whether each is still owed an answer (E65), so the passage says so too.
    */
-  existing: { id: string; label: string; waiting?: Waiting["badge"] }[];
+  existing: { id: string; label: string; waiting?: { badge: Waiting["badge"]; asked: boolean } }[];
   onClose: () => void;
   onAdd: (from: number, to: number, body: string) => void;
   onShowNote: (id: string) => void;
@@ -162,7 +162,9 @@ export function NoteAtSelection({
               >
                 <MessagesSquareIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
                 <span className="min-w-0 flex-1 truncate">{n.label}</span>
-                {n.waiting && <WaitingDot badge={n.waiting} of="note" />}
+                {n.waiting && (
+                  <WaitingDot badge={n.waiting.badge} of={n.waiting.asked ? "asked" : "note"} />
+                )}
               </button>
               {/* ⛔ IMMEDIATE, LIKE THE PANEL'S. Deleting a note asks nowhere
                   else, and one delete that confirms while its twin does not is

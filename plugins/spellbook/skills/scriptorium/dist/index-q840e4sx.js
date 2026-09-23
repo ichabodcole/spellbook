@@ -59374,6 +59374,10 @@ var LABEL = {
   note: {
     working: "with the agent…",
     stalled: "no word from the agent — may be stuck"
+  },
+  asked: {
+    working: "asked in the conversation…",
+    stalled: "asked, and still no word — may be stuck"
   }
 };
 function WaitingBadge({
@@ -59394,12 +59398,16 @@ function WaitingBadge({
     ]
   });
 }
-function WaitingDot({ badge, of }) {
+function WaitingDot({
+  badge,
+  of,
+  label
+}) {
   const working = badge === "working";
   return /* @__PURE__ */ jsx_runtime20.jsx("span", {
     role: "img",
-    "aria-label": LABEL[of][badge],
-    title: LABEL[of][badge],
+    "aria-label": label ?? LABEL[of][badge],
+    title: label ?? LABEL[of][badge],
     className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
   });
 }
@@ -59531,8 +59539,8 @@ function NoteAtSelection({
                   children: n.label
                 }),
                 n.waiting && /* @__PURE__ */ jsx_runtime21.jsx(WaitingDot, {
-                  badge: n.waiting,
-                  of: "note"
+                  badge: n.waiting.badge,
+                  of: n.waiting.asked ? "asked" : "note"
                 })
               ]
             }),
@@ -60265,7 +60273,8 @@ function DocumentPane({
         quote: noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : "",
         existing: (noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc2?.notes.find((x3) => x3.id === id);
-          const waiting = notesWaiting.get(id);
+          const w = notesWaiting.get(id);
+          const waiting = w ? { badge: w.badge, asked: w.askedIn !== undefined } : undefined;
           return n ? [{ id, label: n.body, ...waiting ? { waiting } : {} }] : [];
         }),
         onClose: () => setNoteAt(null),
@@ -60346,6 +60355,51 @@ function HistoryArrows({
 
 // src/scriptorium/surface/components/NotesPanel.tsx
 var import_react25 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/state/notes.ts
+function badgesOn(waiting, doc2) {
+  const out = new Map;
+  for (const n of waiting)
+    if (n.doc === doc2)
+      out.set(n.noteId, n);
+  return out;
+}
+var waitingOf = (n) => n.askedIn ? "asked" : "note";
+function loudest(badges) {
+  let got = null;
+  for (const b of badges) {
+    if (b === "stalled")
+      return "stalled";
+    got = "working";
+  }
+  return got;
+}
+function label(text4, max2) {
+  const flat = [...text4.replace(/\s+/gu, " ").trim()];
+  return flat.length <= max2 ? flat.join("") : `${flat.slice(0, max2 - 1).join("").trimEnd()}…`;
+}
+function askAboutNote(note, docName) {
+  return `About my note on “${label(note.quote, 60)}” in ${docName}: “${label(note.body, 120)}”`;
+}
+function elsewhere(waiting, open) {
+  const by = new Map;
+  for (const n of waiting) {
+    if (n.doc === open)
+      continue;
+    const got = by.get(n.doc);
+    if (!got)
+      by.set(n.doc, { doc: n.doc, count: 1, badge: n.badge, since: n.since });
+    else {
+      got.count++;
+      if (n.badge === "stalled")
+        got.badge = "stalled";
+      got.since = Math.min(got.since, n.since);
+    }
+  }
+  return [...by.values()].sort((a2, b) => a2.since - b.since).map(({ doc: doc2, count, badge }) => ({ doc: doc2, count, badge }));
+}
+
+// src/scriptorium/surface/components/NotesPanel.tsx
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 var UNCERTAIN = {
   nearest: {
@@ -60452,10 +60506,10 @@ function Note({
         className: "flex flex-wrap items-center gap-x-2",
         children: [
           /* @__PURE__ */ jsx_runtime27.jsx(WaitingBadge, {
-            badge: waiting,
-            of: "note"
+            badge: waiting.badge,
+            of: waitingOf(waiting)
           }),
-          waiting === "stalled" && /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+          waiting.badge === "stalled" && !waiting.askedIn && /* @__PURE__ */ jsx_runtime27.jsxs("button", {
             type: "button",
             onClick: () => onAsk(note),
             title: "Send this note to the agent as a message in the conversation",
@@ -60539,6 +60593,8 @@ function NotesPanel({
   notes,
   focusedId,
   waiting,
+  others,
+  onOpenDoc,
   selection,
   onAdd,
   onGoTo,
@@ -60564,6 +60620,29 @@ function NotesPanel({
       /* @__PURE__ */ jsx_runtime27.jsxs("div", {
         className: "min-h-0 flex-1 overflow-auto p-3",
         children: [
+          others.length > 0 && /* @__PURE__ */ jsx_runtime27.jsx("div", {
+            className: "mb-2 flex flex-col gap-0.5 rounded-md border border-edge px-2 py-1 text-[11px] text-ink-dim",
+            children: others.map((o) => /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+              type: "button",
+              onClick: () => onOpenDoc(o.doc),
+              title: `Open ${o.name} to see its notes`,
+              className: "flex items-center gap-1.5 rounded-sm text-left hover:text-ink hover:underline",
+              children: [
+                /* @__PURE__ */ jsx_runtime27.jsx(WaitingDot, {
+                  badge: o.badge,
+                  of: "note"
+                }),
+                /* @__PURE__ */ jsx_runtime27.jsxs("span", {
+                  className: "min-w-0 truncate",
+                  children: [
+                    o.count === 1 ? "A note" : `${o.count} notes`,
+                    " owed an answer on ",
+                    o.name
+                  ]
+                })
+              ]
+            }, o.doc))
+          }),
           shown.length === 0 ? /* @__PURE__ */ jsx_runtime27.jsx("p", {
             className: "px-1 py-6 text-center text-xs text-ink-faint",
             children: "Select some text in the document and write a note about it."
@@ -61047,31 +61126,6 @@ function Toasts({
   });
 }
 
-// src/scriptorium/surface/state/notes.ts
-function badgesOn(waiting, doc2) {
-  const out = new Map;
-  for (const n of waiting)
-    if (n.doc === doc2)
-      out.set(n.noteId, n.badge);
-  return out;
-}
-function loudest(badges) {
-  let got = null;
-  for (const b of badges) {
-    if (b === "stalled")
-      return "stalled";
-    got = "working";
-  }
-  return got;
-}
-function label(quote, max2 = 60) {
-  const flat = quote.replace(/\s+/gu, " ").trim();
-  return flat.length <= max2 ? flat : `${flat.slice(0, max2 - 1).trimEnd()}…`;
-}
-function askAboutNote(note, docName) {
-  return `About my note on “${label(note.quote)}” in ${docName}: ${note.body}`;
-}
-
 // src/scriptorium/surface/state/storage.ts
 var safeStorage = {
   getItem(key) {
@@ -61551,9 +61605,18 @@ function Workspace({
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
   const noteBadges = import_react30.useMemo(() => badgesOn(state.notesWaiting, open?.slug ?? null), [state.notesWaiting, open?.slug]);
-  const notesLoudest = loudest(noteBadges.values());
-  const askAbout = (note, docName) => {
-    send({ type: "say", text: askAboutNote(note, docName), withSelection: false });
+  const notesLoudest = loudest(state.notesWaiting.map((n) => n.badge));
+  const notesOthers = elsewhere(state.notesWaiting, open?.slug ?? null).map((o) => ({
+    ...o,
+    name: state.docs.find((d) => d.slug === o.doc)?.name ?? o.doc
+  }));
+  const askAbout = (note, doc2) => {
+    send({
+      type: "say",
+      text: askAboutNote(note, doc2.name),
+      withSelection: false,
+      note: { doc: doc2.slug, id: note.id }
+    });
     setRightPane("conversation");
   };
   const openTasks = state.tasks.filter((t2) => t2.doneAt === undefined);
@@ -61776,6 +61839,7 @@ function Workspace({
                 waiting: state.waiting,
                 notesWaiting: state.notesWaiting,
                 docs: state.docs,
+                openDoc: open?.slug ?? null,
                 onAsk: askAbout,
                 onOpen: () => {
                   setRightPane("conversation");
@@ -61883,13 +61947,14 @@ function Workspace({
                       onClick: () => setRightPane(which),
                       "aria-pressed": rightPane === which,
                       className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                      children: which === "notes" && openNotes.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                      children: which === "notes" && (openNotes.length > 0 || notesLoudest) ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
                         className: "flex items-center gap-1",
                         children: [
-                          `Notes (${openNotes.length})`,
+                          openNotes.length > 0 ? `Notes (${openNotes.length})` : "notes",
                           notesLoudest && /* @__PURE__ */ jsx_runtime31.jsx(WaitingDot, {
                             badge: notesLoudest,
-                            of: "note"
+                            of: "note",
+                            label: `${state.notesWaiting.length} ${state.notesWaiting.length === 1 ? "note" : "notes"} owed an answer${notesLoudest === "stalled" ? " — one may be stuck" : ""}`
                           })
                         ]
                       }) : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
@@ -61924,7 +61989,9 @@ function Workspace({
                 notes: open?.notes ?? [],
                 focusedId: focusedNote,
                 waiting: noteBadges,
-                onAsk: (n) => open && askAbout(n, open.name),
+                others: notesOthers,
+                onOpenDoc: (doc2) => send({ type: "open.doc", doc: doc2 }),
+                onAsk: (n) => open && askAbout(n, open),
                 selection: open && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
                 onAdd: (from, to, body) => {
                   if (open)
@@ -61986,48 +62053,51 @@ function FloatingComposer({
   waiting,
   notesWaiting,
   docs,
+  openDoc,
   onAsk,
   onOpen,
   children
 }) {
   const last2 = chat.findLast((m2) => m2.who !== "system");
-  const first = notesWaiting[0];
+  const first = notesWaiting.find((n) => !n.askedIn) ?? notesWaiting[0];
   const firstDoc = first ? docs.find((d) => d.slug === first.doc) : undefined;
   const firstNote = firstDoc?.notes.find((n) => n.id === first?.noteId);
-  const badge = loudest(notesWaiting.map((n) => n.badge));
   return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
     className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
     children: [
-      firstDoc && firstNote && badge && /* @__PURE__ */ jsx_runtime31.jsxs("div", {
+      first && firstDoc && firstNote && /* @__PURE__ */ jsx_runtime31.jsxs("div", {
         className: "flex items-center gap-2 px-1 text-[11px] text-ink-dim",
         children: [
           /* @__PURE__ */ jsx_runtime31.jsxs("span", {
             className: "min-w-0 flex-1 truncate",
             title: firstNote.body,
             children: [
-              /* @__PURE__ */ jsx_runtime31.jsx("span", {
+              /* @__PURE__ */ jsx_runtime31.jsxs("span", {
                 className: "mr-1.5 font-medium text-ink-faint",
-                children: "Your note"
-              }),
-              firstNote.body,
-              notesWaiting.length > 1 && /* @__PURE__ */ jsx_runtime31.jsxs("span", {
-                className: "ml-1.5 text-ink-faint",
                 children: [
-                  "+",
-                  notesWaiting.length - 1,
-                  " more"
+                  "Your note",
+                  firstDoc.slug !== openDoc ? ` on ${firstDoc.name}` : ""
                 ]
-              })
+              }),
+              firstNote.body
+            ]
+          }),
+          notesWaiting.length > 1 && /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+            className: "shrink-0 text-ink-faint",
+            children: [
+              "+",
+              notesWaiting.length - 1,
+              " more"
             ]
           }),
           /* @__PURE__ */ jsx_runtime31.jsx(WaitingBadge, {
-            badge,
-            of: "note",
+            badge: first.badge,
+            of: waitingOf(first),
             className: "mt-0 shrink-0"
           }),
-          badge === "stalled" && /* @__PURE__ */ jsx_runtime31.jsx("button", {
+          first.badge === "stalled" && !first.askedIn && /* @__PURE__ */ jsx_runtime31.jsx("button", {
             type: "button",
-            onClick: () => onAsk(firstNote, firstDoc.name),
+            onClick: () => onAsk(firstNote, firstDoc),
             title: "Send this note to the agent as a message in the conversation",
             className: "shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline",
             children: "Ask the agent"

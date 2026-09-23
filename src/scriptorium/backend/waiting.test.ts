@@ -109,6 +109,8 @@ type NoteFact = {
   createdAt: number;
   editedAt?: number;
   editedBy?: "human" | "agent";
+  reopenedAt?: number;
+  reopenedBy?: "human" | "agent";
   resolved: boolean;
 };
 const note = (id: string, createdAt: number, more: Partial<NoteFact> = {}): NoteFact => ({
@@ -239,6 +241,86 @@ describe("notesWaiting (E65)", () => {
   });
 });
 
+describe("notesWaiting — reopening (E65, verifier)", () => {
+  test("a note resolved before any reply and REOPENED is owed from the reopen, not from when it was made", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 50_000, reopenedBy: "human" }));
+    expect(notesWaiting(docs, [], 55_000)).toEqual([
+      { doc: "maren", noteId: "n1", since: 50_000, badge: "working" },
+    ]);
+  });
+
+  test("…and one rule for the answered case: reopening an answered note asks again", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 20_000, reopenedBy: "human" }));
+    expect(notesWaiting(docs, [msg("agent", 10_000)], 25_000)).toEqual([
+      { doc: "maren", noteId: "n1", since: 20_000, badge: "working" },
+    ]);
+  });
+
+  test("the AGENT reopening a note is an act on it, and answers it", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 20_000, reopenedBy: "agent" }));
+    expect(notesWaiting(docs, [], 99_000)).toEqual([]);
+  });
+
+  test("the latest write wins: a human rewrite after the agent's reopen is owed again", () => {
+    const docs = inDoc(
+      note("n1", 0, {
+        reopenedAt: 20_000,
+        reopenedBy: "agent",
+        editedAt: 30_000,
+        editedBy: "human",
+      }),
+    );
+    expect(notesWaiting(docs, [], 31_000)[0]?.since).toBe(30_000);
+  });
+});
+
+describe("notesWaiting — a note the human has ASKED about (E65, verifier D1)", () => {
+  const ask = (ts: number, noteId: string, doc = "maren") => ({
+    id: `ask-${ts}`,
+    who: "human" as const,
+    ts,
+    note: { doc, id: noteId },
+  });
+
+  test("an unanswered message about the note makes it waiting ON THAT MESSAGE", () => {
+    const docs = inDoc(note("n1", 0));
+    expect(notesWaiting(docs, [ask(40_000, "n1")], 45_000)).toEqual([
+      { doc: "maren", noteId: "n1", since: 0, badge: "working", askedIn: "ask-40000" },
+    ]);
+  });
+
+  test("…and reads exactly as E53 reads that message — its badge, not a second clock", () => {
+    const docs = inDoc(note("n1", 0));
+    // An unrelated question at 35 s starts E53's wait; the ask at 40 s joins
+    // that run, so E53 says stalled at 65 s and the note must say the same.
+    const chat = [msg("human", 35_000), ask(40_000, "n1")];
+    expect(notesWaiting(docs, chat, 64_999)[0]?.badge).toBe("working");
+    expect(notesWaiting(docs, chat, 65_000)[0]).toEqual({
+      doc: "maren",
+      noteId: "n1",
+      since: 0,
+      badge: "stalled",
+      askedIn: "ask-40000",
+    });
+  });
+
+  test("a message about ANOTHER note does not count as asking about this one", () => {
+    const docs = inDoc(note("n1", 0));
+    expect(notesWaiting(docs, [ask(40_000, "n2")], 45_000)[0]?.askedIn).toBeUndefined();
+    expect(notesWaiting(docs, [ask(40_000, "n1", "other")], 45_000)[0]?.askedIn).toBeUndefined();
+  });
+
+  test("an ask from BEFORE a human rewrite is about the old note — it is owed afresh", () => {
+    const docs = inDoc(note("n1", 0, { editedAt: 50_000, editedBy: "human" }));
+    expect(notesWaiting(docs, [ask(40_000, "n1")], 55_000)[0]?.askedIn).toBeUndefined();
+  });
+
+  test("the agent's reply answers the ask and the note together", () => {
+    const docs = inDoc(note("n1", 0));
+    expect(notesWaiting(docs, [ask(40_000, "n1"), msg("agent", 41_000)], 99_000)).toEqual([]);
+  });
+});
+
 describe("noteEventFacts (E65) — what `note.added` tells the agent", () => {
   const n = { id: "n1", quote: "the old mill", body: "is this still standing?" };
   const lines = { from: 3, to: 3 };
@@ -271,6 +353,24 @@ describe("noteEventFacts (E65) — what `note.added` tells the agent", () => {
     });
   });
 
+  test("the cap counts CHARACTERS (code points), not UTF-16 units", () => {
+    // 400 emoji are 800 UTF-16 units but 400 characters: 1000 in all, so whole.
+    const quote = "😀".repeat(400);
+    const got = noteEventFacts("maren", { id: "n1", quote, body: "b".repeat(600) }, lines);
+    expect(got.quote).toBe(quote);
+    const over = noteEventFacts("maren", { id: "n1", quote, body: "b".repeat(601) }, lines);
+    expect(over.quote).toBeUndefined();
+  });
+
+  test("a note whose passage is GONE says so, and points at `notes`", () => {
+    expect(noteEventFacts("maren", n, null)).toEqual({
+      quote: "the old mill",
+      body: "is this still standing?",
+      passage: "gone",
+      hint: "its passage is no longer in the active version — see `notes --doc maren`, then act on it and `note-resolve n1 --doc maren` when it is dealt with",
+    });
+  });
+
   test("the cap is a paragraph's worth, not a page's", () => {
     expect(NOTE_TEXT_MAX).toBe(1000);
   });
@@ -279,5 +379,13 @@ describe("noteEventFacts (E65) — what `note.added` tells the agent", () => {
     const long = { id: "n1", quote: "q".repeat(2000), body: "b" };
     expect(noteEventFacts("maren", long, { from: 5, to: 9 }).lines).toEqual({ from: 5, to: 9 });
     expect("lines" in noteEventFacts("maren", n, null)).toBe(false);
+  });
+
+  test("a LONG orphan says both: gone, and too long to carry", () => {
+    const long = { id: "n1", quote: "q".repeat(2000), body: "b" };
+    expect(noteEventFacts("maren", long, null)).toEqual({
+      passage: "gone",
+      hint: "too long to carry, and its passage is no longer in the active version — read it with `notes --doc maren`, act on it, then `note-resolve n1 --doc maren`",
+    });
   });
 });

@@ -2409,13 +2409,22 @@ close).** Every part is a fact the daemon already holds:
   never writes the active version (E2), so its edits land in a version the note
   is not anchored in. "Near" is a guess, and a new version is announced as a
   system line.
-- **Reopening re-arms the note.** Reopening stores no time. A human who wants an
-  answer writes, and a rewrite does re-arm.
+
+- **A human reopening a note re-arms it, timed from the reopen** (verifier). It
+  was first left out ("reopening stores no time"), and that left two cases
+  disagreeing. A note resolved before any reply and then reopened came back owed
+  but timed from its creation, so it could reappear already "may be stuck". An
+  answered note, reopened, was not owed at all. Now there is one rule: making,
+  rewriting and reopening are all the human putting the note in front of the
+  agent, and the latest of them starts the clock. The agent reopening or
+  rewriting a note is an act on it, and answers it. This needed two more stored
+  fields, `reopenedAt` and `reopenedBy`. A human's `note.reopened` carries the
+  same fields as `note.added`.
 
 **⛔ "MAY BE STUCK" HAS AN ACT: "Ask the agent" (ours).** On the stuck note in
 the notes panel, and on the floating composer's line. It sends one ordinary
 message in the human's conversation, _About my note on “‹passage›” in ‹file›:
-‹the note›_, and brings the conversation forward so they see it go. Being a
+“‹excerpt›”_, and brings the conversation forward so they see it go. Being a
 message, it gets everything a message gets: E53's badge on it, and E53's one
 nudge if the agent stays quiet. The agent's reply to it answers the note as
 well. The other way out is the existing ✓: resolving it yourself. **Not taken:**
@@ -2423,6 +2432,25 @@ a daemon nudge per stalled note on the agent's tail. The `note.added` that
 delivered it already carried it, and routing the human's "are you there?"
 through the conversation keeps one nudging mechanism, not two. Also not taken: a
 "dismiss" flag. That would be a second record of what `resolved` already says.
+
+**⛔ AND ONCE ASKED, THE NOTE WAITS ON THAT MESSAGE (verifier D1).** The first
+version left the note reading "may be stuck" with the button still offered, so a
+second click sent the same message again. The message now carries the note's
+reference (`note: {doc, id}`, stored on the message). While a human message
+about the note, sent after its latest human write, is unanswered, the note's
+entry carries `askedIn` and reads "asked in the conversation…". Its badge **is**
+E53's badge for the conversation, not a second clock that could disagree with
+it. The button is not offered while the note is asked. The daemon drops a second
+ask about a note that is already asked, which is the same derived fact, so a
+double-click sends one message (driven: one `message` on the tail). There is no
+"asked" flag; it is read off the conversation.
+
+**⛔ THE ASK NAMES THE NOTE, NOT JUST ITS WORDS (verifier D4).** On the tail the
+message carries `note` (the id), `doc`, and a `hint` naming
+`note-resolve <id> --doc <slug>`, so the agent can act on it and resolve it
+without matching prose. The message's text quotes only a short excerpt of the
+note (120 characters). A long note pasted whole would bury the conversation, and
+the reference is what the agent uses.
 
 **`note.added` carries the note when it is short, and names the close (Cole).**
 It carries the passage (`quote`), the `body` and the `lines` it covers (1-based,
@@ -2434,16 +2462,35 @@ trip. A note over a whole section is where the round trip pays, because `notes`
 also says whether the passage still stands and where it is now. The agent
 reading its tail is the one who acts on this number. **⛔ Whole or not at all,
 never truncated.** A clipped quote reads as the whole passage. Over the cap, the
-event keeps `lines` and its `hint` says to read the note with `notes --doc`.
+event keeps `lines` and its `hint` says to read the note with `notes --doc`. The
+cap counts **characters (code points)**, not UTF-16 units, so an emoji counts as
+one (verifier D6). **A note whose passage is gone** from the active version has
+no `lines`. The event then says `passage: "gone"`, and its hint says so and
+points at `notes`, where the long-note path already sent the agent (verifier
+D5). Before this, a rewrite of such a note said "act on it" with nothing to
+find.
 
-**Where the signal shows: one derived list, drawn in four places.** The notes
-panel (the badge on the note, plus the act); the Notes tab (one dot, stuck if
-any note is, so it is seen from the conversation); the floating composer while
-the conversation column is collapsed (the oldest owed note, "+N more", the badge
-and the act); and the note menu on the passage itself (a dot beside the note).
-**Not taken:** marking the passage in the running text. Notes are already
-painted in the attention colour, so a "stuck" tint would not be told apart, and
-a badge in the text would move the words.
+**Where the signal shows: one derived list, drawn in four places, over ONE
+scope: the session.** The rule it meets (verifier D3): if something is owed
+anywhere in the session, the human can see it without collapsing a column. The
+first version disagreed with itself. The tab and panel read the open document
+while the composer read the session, so a stuck note on another document showed
+only once the column was shut. Now:
+
+- **The Notes tab** has one dot for every owed note in the session, stuck if any
+  is. The count stays the open document's, like the list.
+- **The notes panel** lists the open document's notes with their badges and act,
+  and above them one line per other document with owed notes ("2 notes owed an
+  answer on harbour.md", stuck if any is). Clicking the line opens that
+  document.
+- **The floating composer**, while the column is collapsed, shows the oldest
+  note the human can still act on (not yet asked about), naming its document
+  when it is not the open one. It has that note's own badge and act, and "+N
+  more" is kept **outside** the truncated text so it never clips (verifier D2).
+- **The note menu** on a passage has a dot beside each owed note. **Not taken:**
+  marking the passage in the running text. Notes are already painted in the
+  attention colour, so a "stuck" tint would not be told apart, and a badge in
+  the text would move the words.
 
 **Reload and restart.** Nothing new is stored except `editedBy`, and the state
 is re-derived from the persisted notes and conversation, so it survives both.
@@ -2454,3 +2501,35 @@ still stuck. "Ask the agent" sent the message, and the tail carried it. Then
 `note-resolve` from the CLI cleared the note, and the message kept its own E53
 pulse until a `say`. The one thing that does not survive a restart is
 `working`'s snooze, which is in memory, as in E53.
+
+Re-driven after the verifier's fixes, with two documents: two notes stalled on
+harbour.md while maren.md was open with the column open. The tab dot and the
+panel's "2 notes owed an answer on harbour.md" showed them. With the column
+collapsed, the composer line read "Your note on harbour.md … +1 more", and the
+count was not clipped (checked with `elementFromPoint`). A double-click on "Ask
+the agent" sent one message carrying `note`, `doc` and the hint. The asked note
+then read "asked in the conversation…" with no button, and it still did after a
+reload. A rewrite of a note whose passage had been deleted emitted
+`passage: "gone"`.
+
+### Known limits, left to real use (Cole)
+
+Cole ruled these trade-offs are to be learned in use, not theorised. They are
+left as built, and stated plainly here so real use knows what to watch for.
+
+1. **Any agent reply clears pending on every earlier note, across documents.**
+   The verifier's repro: an unrelated question and answer in the chat silenced a
+   note nobody had touched, and one `say` cleared five stuck notes across two
+   documents. The notes stay open (unresolved), but the "may be stuck" signal is
+   gone.
+2. **An agent that works on the noted passage without speaking still reads as
+   "may be stuck".** The agent writes a new version (E2 forbids the active one),
+   changes the passage the note is about, and says nothing. At 30 s the note
+   shows "may be stuck" although work visibly happened. Only a reply, a resolve
+   or a rewrite of the note answers it.
+3. **`working`'s snooze covers notes added after it.** A note made during a
+   snooze pulses until the snooze ends instead of stalling at 30 s, as a message
+   sent during a snooze does in E53.
+
+Also as documented above: a note edited before `editedBy` existed counts from
+when it was made.
