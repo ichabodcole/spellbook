@@ -2183,3 +2183,108 @@ dispatch `scrollTop` is unchanged; by the next frame it has landed._
 everything settles, the two panes agree.** Asserting that the follower's report
 is dropped was not enough — it asserted the mechanism and not the consequence,
 and the defect lived in the gap between them.
+
+## E64 — The side columns get out of the way
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real use produced (more
+room, above all in split and compare). Either column — the context on the left,
+the conversation on the right — collapses on its own or with the other, and the
+view mode does not change.
+
+**⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (Cole).** While the
+conversation column is collapsed, a floating composer is docked at the foot of
+the document pane, and the selection chip rides on it exactly as it does in the
+column. Conversation-primary: collapsing the chat must not remove the human's
+way to talk to the agent.
+
+**⛔ ONE COMPOSER'S WORTH OF STATE (Cole, applying the one-state rule from this
+cycle's first branch —
+[the memory](../../memories/2026-09-22-scriptorium-selection-and-the-chip.md)).**
+The draft moved OUT of `ChatComposer` and into `App`, and the composer is drawn
+in exactly one place at a time — the column while it is open, the float while it
+is shut. A draft living inside the component would be lost on every move (the
+move is a remount), and drawing it in both places would make two drafts that can
+disagree. The chip has been the held selection's, not the component's, since
+that branch, so it follows for free. **Not taken:** keeping the column's
+composer mounted and hidden while the float shows a second one; that is the
+two-copies defect by construction. _A side effect worth knowing: switching the
+right pane to Notes or Tasks and back no longer loses a half-written message
+either._
+
+**⛔ COLLAPSED IS A WIDTH, NOT A FLAG.** `react-resizable-panels` already has
+collapsible panels, and a collapsed panel is a panel at its collapsed size (0).
+The layout that records that is the one `useDefaultLayout` already persists in
+the home's prefs beside every other pane size, so the collapsed state persists
+with no new mechanism, and "is the chat collapsed?" is read off the layout
+(`state/columns.ts`, `collapsedSides`). Clicking the button, dragging the column
+shut and restoring a saved layout all land on the same fact. **Not taken:** a
+`panes:collapsed` pref beside the layout — a second record of what the layout
+already says, which would disagree the first time someone dragged a column shut.
+
+**⚠ WHAT THE LAYOUT CANNOT HOLD is the width a column reopens to.** The library
+keeps that in memory only, so after a reload `expand()` reopened a column at its
+minimum. That is a different fact — "how wide I like it", not "is it open" — so
+it gets its own small pref, `panes:open`, and reopening uses `resize` to that
+width (default 22% / 28%) instead of the library's `expand()`.
+
+**The affordance (ours; Cole had not ruled).** A collapse button at the end of
+each column's own heading, and a reopen button at the matching END of the
+document's heading — where the column went, which is where the eye looks for it.
+The resize handle stays at the window edge, so a column can also be dragged shut
+or dragged back out, and the library's own separator keyboard (Enter on the left
+handle) collapses and reopens the context column; the right handle's Enter acts
+on the document, which does not collapse, so it does nothing. **Not taken:** a
+keyboard shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and
+forward, ⌘B is bold to anyone who has used an editor), and a shortcut is the
+least discoverable of the options; it can come when real use asks for it.
+
+**⚠ THE FLOAT IS IN THE FLOW, NOT OVER THE TEXT.** It reserves its own height at
+the foot of the pane, so it never covers the last lines of the document and the
+scrollers — which E63's keeping-your-place measures — need no padding to make
+room for it. It carries one line of the conversation: the latest message, with
+its waiting badge while the agent is on it, and "Open the conversation". _Our
+ruling:_ without it, a message sent from the float got its answer somewhere the
+human could not see.
+
+**Split becomes available when collapsing gives it room.** The document pane
+already measured its own width against split's floor (720 px, now `SPLIT_MIN_PX`
+in `state/columns.ts`), so collapsing a column makes split available with no
+further wiring, and reopening one falls back to rendered exactly as a narrow
+drag always did. The disabled split button now says "collapse a side column to
+make room" when collapsing WOULD make room (`splitRoom`), and only then — a
+refusal that names the act that answers it. Compare gets the width and nothing
+else, as ruled.
+
+**⛔ READER MODE IS A PRESET, AND IT IS DERIVED (Cole: build only if cheap — it
+was).** Reader mode is rendered + both columns collapsed + quieter chrome, so
+`isReader` is true exactly when the view is rendered and both columns are shut,
+however that came about. One toggle (the glasses, in the document's heading)
+enters it — rendered, collapse whatever is open — and leaves it by reopening
+both columns; the view stays rendered. There is no reader flag to fall out of
+step with the columns it describes, and it is not a fifth entry in `VIEW_MODES`.
+"Quieter" means the document's heading and status strip fade back until the
+pointer or the keyboard focus reaches them. **Not taken:** hiding them — that
+would take Save, the version and "Unsaved" out of reach. **Not taken:**
+remembering the view you entered from and restoring it on leave, which would be
+the second piece of state the preset exists to avoid.
+
+**⚠ A HOLE IN E63 THAT COLLAPSING EXPOSED, CLOSED.** The rendered pane caches
+its block anchors and clears them from a `ResizeObserver`. A collapse widens the
+pane in ONE layout, the browser's scroll anchoring moves `scrollTop` to keep the
+same text at the top, and that scroll event is dispatched before the observer's
+callback — so it was reported through anchors measured at the OLD width. Driven
+on `grimoire/house-style.md`, 1280 × 800, with a saved split falling back to
+rendered: a heading at the top of the pane was reported as a line in the section
+before it, and the split that the widening then mounted opened there. A drag
+reaches the same widths in small steps, and did not show it. The anchors now
+record the width they were measured at, and a different width re-measures them —
+exact evidence the table is stale, with no timing in it. Re-driven after the
+fix, the same collapse landed both halves of the split on the heading at each of
+four headings tried.
+
+**Keeping your place across a collapse, as observed** (same document and
+viewport): the rendered pane keeps its top block through a collapse and a
+reopen, because the browser's scroll anchoring holds it; the raw pane moved by
+one source line on collapse and returned exactly on reopen. E63's deferred item
+— a resize does not re-place a pane — is unchanged and still Cole's to rule on
+after use.
