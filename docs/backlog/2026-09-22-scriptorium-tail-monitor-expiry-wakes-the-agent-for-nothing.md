@@ -61,6 +61,30 @@ turn and tokens every 30 minutes for as long as the human is away.
 `tail` in Monitor (grapevine, bounty, mind-mapper, …) should hit the same 30-min
 cadence. Check the roster before fixing one skill.
 
+## Findings (spike, 2026-09-22)
+
+Full write-up:
+[the Monitor-expiry investigation](../investigations/2026-09-22-monitor-expiry-and-the-tail.md).
+The ruling is pending, so this item stays open.
+
+- **Cause confirmed.** The wake is the Monitor's 1,800,000 ms cap (per the
+  tool's schema; a 3,600,000 ms request came back as "expires in 30m"). It is
+  not Scriptorium's idle close, which cannot fire while a tail is connected.
+  Reproduced: an 8 s idle close did not fire under a 20 s Monitor, which ended
+  with an expiry notice and no `closed` event.
+- **The re-arm replays the session.** `tail` with no `--since` replays the whole
+  event buffer (up to 1000 frames), including human messages already answered.
+  That invites duplicate replies. `--since <last id>` fixes it, but no skill
+  says so.
+- **House-wide.** Seven skills (plus mind-mapper's CLI help) wrap a tail in
+  Monitor, and all hit the cap. Every tail except grapevine's replays on a bare
+  re-arm. Bounty's example passes `--since 0`, plus a `timeout_ms` and
+  `persistent` that don't do what they imply.
+- **Recommendation:** fix the replay everywhere (cursor on re-arm). Pilot a
+  one-shot background wait on Scriptorium for zero idle wakes. Avoid the
+  deliberate lapse. **Cole rules** whether 2 idle wakes an hour are acceptable,
+  and whether zero is worth a re-arm after every event.
+
 ## References
 
 - `plugins/spellbook/skills/scriptorium/SKILL.md:86`
