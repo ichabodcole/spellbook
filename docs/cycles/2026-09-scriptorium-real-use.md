@@ -90,3 +90,5 @@ _Written at close, not before._
 - fix/scriptorium-selection-context (landed 2026-09-22)
 
 - feat/scriptorium-keep-your-place (landed 2026-09-22)
+
+- feat/scriptorium-collapsible-sidebars (landed 2026-09-22)

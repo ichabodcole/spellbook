@@ -6,7 +6,7 @@ description:
   that collapse either or both side columns for split and compare views
 tags: [scriptorium, layout, reader-mode, ux]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 

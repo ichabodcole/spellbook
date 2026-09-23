@@ -176,3 +176,9 @@ _No pages yet._
   — Scriptorium's split-view sync suppressed reports for a time window after
   driving a pane, which discarded real scrolls; replacing the guess with an
   exact position test fixed both symptoms and left two pinned sub-frame holes
+
+- [An observer is late for the event that beats it](./memories/2026-09-22-an-observer-is-late-for-the-event-that-beats-it.md)
+  — Scriptorium cached layout measurements and cleared them from a
+  ResizeObserver, but a scroll event caused by the same resize is dispatched
+  first and read the stale cache; keying the cache on the width it measured made
+  staleness exact
