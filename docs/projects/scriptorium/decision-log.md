@@ -2348,3 +2348,109 @@ reopen, because the browser's scroll anchoring holds it; the raw pane moved by
 one source line on collapse and returned exactly on reopen. E63's deferred item
 — a resize does not re-place a pane — is unchanged and still Cole's to rule on
 after use.
+
+## E65 — A note shows that it is with the agent
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real use produced. Agents
+act on nearly every `note.added`, although the skill said "a note is not a
+request", and he thinks acting is the right instinct. So the behaviour stays,
+and what changes is everything around it. Between adding a note and the agent's
+answer, the surface used to show nothing. Messages had E53's signal and notes
+had none.
+
+**⛔ DERIVED, LIKE E53, AND NO NEW AGENT DUTY (Cole).** A note the human wrote
+shows a pulse ("with the agent…") until the agent answers it in a way the daemon
+can see. After E53's 30 s with no answer it turns into a static "no word from
+the agent — may be stuck" in the attention colour. It does not pulse, because an
+animation over a wedged agent would be false liveness. Nothing asks the agent to
+announce anything. The derivation is `notesWaiting` in `backend/waiting.ts`,
+beside `waitingOn`, and the two share one `badgeFor`, so a note and a message
+that have waited equally long cannot read differently. It rides in
+`PublicState.notesWaiting` and is computed where `waiting` is (in the daemon, on
+E53's 1 s tick, broadcast only on change). `working`'s snooze covers notes too.
+
+**⛔ WHAT ANSWERS A NOTE (ours, after Cole's steer that resolving is the
+close).** Every part is a fact the daemon already holds:
+
+- **Resolved.** Resolving is the act that closes a note, whoever does it (Cole),
+  so a resolved note is owed nothing. It is the note's own stored `resolved`, so
+  there is no second record of it.
+- **An agent message after it** (strictly after: one in the same millisecond
+  cannot have read it). That is what the human is waiting for, and it is the
+  same reason one reply answers E53's run of messages. So **two notes and then
+  one reply clears both**, and a note added after that reply stays owed. The
+  claim is "the agent has said something since", never "the agent dealt with
+  this". The pending mark goes away and the note stays **open**. "Dealt with" is
+  `resolved`.
+- **The agent rewriting that note** (`note-edit`), an act on this note that the
+  human sees on this note. It needed one new stored field, `editedBy`. A
+  **human** rewrite makes the note owed again, timed from the rewrite, so a
+  human's `note.edited` now carries the same fields as `note.added`. An edit
+  made before `editedBy` existed is not evidence either way, so the note counts
+  from when it was made.
+- **⚠ A system line is still not a reply.** The agent resolving note A is
+  narrated as a system line. It closes A and says nothing about B.
+
+**Not taken:**
+
+- **Only `resolved` counts.** This was Cole's suggested shape, weighed as he
+  asked. An agent visibly working on a note, which has replied or started a
+  task, would flip it to "may be stuck" at 30 s whenever it forgot to resolve,
+  and E53's whole premise is that it forgets. That is a false alarm that teaches
+  the human to ignore the mark.
+- **A drawn "acknowledged" state between pending and resolved.** The daemon
+  cannot tell that a reply was about this note, so a mark saying "the agent has
+  this one" would claim more than it knows. Once answered, the note looks as it
+  always did. Resolved is the existing dimmed, hidden-by-default state.
+- **A ✓ once answered.** It would be a third look, with a lifetime of its own
+  (when does it go?), and it would claim "handled" where the rule knows only
+  "spoken since".
+- **An agent version, an agent note nearby, or an edit to the lines.** The agent
+  never writes the active version (E2), so its edits land in a version the note
+  is not anchored in. "Near" is a guess, and a new version is announced as a
+  system line.
+- **Reopening re-arms the note.** Reopening stores no time. A human who wants an
+  answer writes, and a rewrite does re-arm.
+
+**⛔ "MAY BE STUCK" HAS AN ACT: "Ask the agent" (ours).** On the stuck note in
+the notes panel, and on the floating composer's line. It sends one ordinary
+message in the human's conversation, _About my note on “‹passage›” in ‹file›:
+‹the note›_, and brings the conversation forward so they see it go. Being a
+message, it gets everything a message gets: E53's badge on it, and E53's one
+nudge if the agent stays quiet. The agent's reply to it answers the note as
+well. The other way out is the existing ✓: resolving it yourself. **Not taken:**
+a daemon nudge per stalled note on the agent's tail. The `note.added` that
+delivered it already carried it, and routing the human's "are you there?"
+through the conversation keeps one nudging mechanism, not two. Also not taken: a
+"dismiss" flag. That would be a second record of what `resolved` already says.
+
+**`note.added` carries the note when it is short, and names the close (Cole).**
+It carries the passage (`quote`), the `body` and the `lines` it covers (1-based,
+in the active version; a range that ends on a newline ends on that line). Its
+`hint` names `note-resolve <id> --doc <slug>`. **The cap is 1000 characters of
+quote plus body** (`NOTE_TEXT_MAX`). Notes are made mid-read, on a phrase or a
+sentence, and those should reach the agent whole so it can act without a round
+trip. A note over a whole section is where the round trip pays, because `notes`
+also says whether the passage still stands and where it is now. The agent
+reading its tail is the one who acts on this number. **⛔ Whole or not at all,
+never truncated.** A clipped quote reads as the whole passage. Over the cap, the
+event keeps `lines` and its `hint` says to read the note with `notes --doc`.
+
+**Where the signal shows: one derived list, drawn in four places.** The notes
+panel (the badge on the note, plus the act); the Notes tab (one dot, stuck if
+any note is, so it is seen from the conversation); the floating composer while
+the conversation column is collapsed (the oldest owed note, "+N more", the badge
+and the act); and the note menu on the passage itself (a dot beside the note).
+**Not taken:** marking the passage in the running text. Notes are already
+painted in the attention colour, so a "stuck" tint would not be told apart, and
+a badge in the text would move the words.
+
+**Reload and restart.** Nothing new is stored except `editedBy`, and the state
+is re-derived from the persisted notes and conversation, so it survives both.
+Driven in the browser: a note pulsed, then cleared on a CLI `say`. A second note
+went to "may be stuck" at 30 s. After a page reload it was still stuck, on the
+tab and on the floating composer. After `close` and `open --restore` it was
+still stuck. "Ask the agent" sent the message, and the tail carried it. Then
+`note-resolve` from the CLI cleared the note, and the message kept its own E53
+pulse until a `say`. The one thing that does not survive a restart is
+`working`'s snooze, which is in memory, as in E53.

@@ -60,6 +60,30 @@ note and the agent's reply the human sees no sign anything is underway.
 Also: rewrite `SKILL.md:136` to match what agents actually do, whichever option
 lands.
 
+## What was built (branch `feat/scriptorium-note-in-progress`, E65)
+
+Options 1 and 3, with option 2's closing act borrowed and made optional.
+Recorded with the options not taken in
+[E65](../projects/scriptorium/decision-log.md).
+
+- **A note shows it is with the agent**, derived like E53 with no new agent
+  duty. It pulses until the agent answers, then shows a static "may be stuck" at
+  the same 30 s. It is answered when it is **resolved** (the close, by either
+  party), when the agent **says anything after it**, or when the agent
+  **rewrites** it. A system line never answers it. `notesWaiting` in
+  `backend/waiting.ts`, beside `waitingOn`.
+- **"May be stuck" has an act:** "Ask the agent" sends one ordinary message in
+  the conversation, which E53 then carries. The other way out is resolving it.
+- **`note.added` carries the note** (quote, body, lines) up to 1000 characters,
+  whole or not at all, and its `hint` names `note-resolve`. A human's
+  `note.edited` carries the same, because a rewrite is owed an answer again.
+- Drawn in the notes panel, the Notes tab, the floating composer and the note
+  menu on the passage. It survives a reload and a daemon restart, because it is
+  derived.
+- `SKILL.md` no longer says "a note is not a request".
+
+Batch review (option 4) was out of scope and is untouched.
+
 ## References
 
 - `plugins/spellbook/skills/scriptorium/SKILL.md:136`, `:149`
