@@ -78,7 +78,7 @@ import type {
 } from "./protocol";
 import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
-import { DEFAULT_SNOOZE_MS, waitingOn } from "./waiting";
+import { DEFAULT_SNOOZE_MS, noteEventFacts, notesWaiting, waitingOn } from "./waiting";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
@@ -186,9 +186,11 @@ export async function startDaemon(opts: StartOpts) {
 
   const viewState = (): PublicState => {
     const base = { ...session.view(mode, selection), prefs: readPrefs(), userHome };
+    const now = Date.now();
     return {
       ...base,
-      waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil }),
+      waiting: waitingOn(base.chat, now, { acknowledgedUntil }),
+      notesWaiting: notesWaiting(session.noteFacts(), base.chat, now, { acknowledgedUntil }),
       history: history.view(),
     };
   };
@@ -670,7 +672,16 @@ export async function startDaemon(opts: StartOpts) {
           who: "human",
           range: { from: msg.from, to: msg.to },
         });
-        log.emit({ type: "note.added", doc: r.slug, note: r.note.id, by: "human" });
+        // E65: the event carries the note itself when it is short, and names
+        // the act that closes it — an agent should not have to go and ask
+        // what just arrived before it can start.
+        log.emit({
+          type: "note.added",
+          doc: r.slug,
+          note: r.note.id,
+          by: "human",
+          ...noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note)),
+        });
         broadcastState();
         return;
       }
@@ -694,8 +705,16 @@ export async function startDaemon(opts: StartOpts) {
         return;
       }
       case "note.edit": {
-        const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
-        log.emit({ type: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
+        const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body, who: "human" });
+        // A human's rewrite is owed an answer again (E65), so it says what
+        // the note now says, exactly as `note.added` does.
+        log.emit({
+          type: "note.edited",
+          doc: r.slug,
+          note: r.note.id,
+          by: "human",
+          ...noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note)),
+        });
         broadcastState();
         return;
       }
@@ -1179,7 +1198,7 @@ export async function startDaemon(opts: StartOpts) {
         return { task: r.task.id, already: r.already };
       }
       case "note.edit": {
-        const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body });
+        const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body, who: "agent" });
         announce(`Agent rewrote a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`, {
           fact: "note.edited",
           doc: r.slug,
@@ -1507,8 +1526,18 @@ export async function startDaemon(opts: StartOpts) {
    */
   let lastWaiting: string | null = null;
   const attentionTimer = setInterval(() => {
-    const w = waitingOn(session.messages(), Date.now(), { acknowledgedUntil });
-    const key = w ? `${w.messageId}:${w.badge}` : null;
+    const now = Date.now();
+    const w = waitingOn(session.messages(), now, { acknowledgedUntil });
+    // E65: a note flipping to stalled is a change the surface must see too.
+    // ⚠ NOT a nudge: see E65 in the decision log — the note's act is the
+    // human's, and the event that delivered it already carried it.
+    const notes = notesWaiting(session.noteFacts(), session.messages(), now, {
+      acknowledgedUntil,
+    });
+    const key = [
+      w ? `${w.messageId}:${w.badge}` : "-",
+      ...notes.map((n) => `${n.noteId}:${n.badge}`),
+    ].join("|");
     if (key === lastWaiting) return;
     lastWaiting = key;
     // The badge changed, so the surface needs the new snapshot.

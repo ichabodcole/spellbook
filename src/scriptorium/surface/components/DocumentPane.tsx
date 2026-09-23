@@ -16,7 +16,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
 import { Separator } from "@/ui/separator";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
-import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
+import type { DiffPayload, DiffSide, DocView, Waiting } from "../../backend/protocol";
 import { readerStaysLoud, splitRoom } from "../state/columns";
 import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
@@ -112,6 +112,7 @@ export function DocumentPane({
   reveal,
   clearSeq,
   focusedNote,
+  notesWaiting,
   onAddNote,
   onShowNote,
   onDeleteNote,
@@ -148,6 +149,8 @@ export function DocumentPane({
   clearSeq: number;
   /** E47: the note the panel has focused — the rendered view paints it apart. */
   focusedNote: string | null;
+  /** E65: this document's notes still owed an answer, by id — for the note menu. */
+  notesWaiting: ReadonlyMap<string, Waiting["badge"]>;
   onAddNote: (from: number, to: number, body: string) => void;
   /** E47: the document pointing at a note — the panel borders it. */
   onShowNote: (id: string) => void;
@@ -544,7 +547,8 @@ export function DocumentPane({
         quote={noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : ""}
         existing={(noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc?.notes.find((x) => x.id === id);
-          return n ? [{ id, label: n.body }] : [];
+          const waiting = notesWaiting.get(id);
+          return n ? [{ id, label: n.body, ...(waiting ? { waiting } : {}) }] : [];
         })}
         onClose={() => setNoteAt(null)}
         onAdd={onAddNote}

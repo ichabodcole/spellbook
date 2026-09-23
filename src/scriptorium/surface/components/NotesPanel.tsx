@@ -13,6 +13,7 @@
 import { cn } from "cn";
 import {
   CheckIcon,
+  MessageCircleQuestionIcon,
   MessageSquarePlusIcon,
   PencilIcon,
   Trash2Icon,
@@ -20,7 +21,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
-import type { PlacedNote } from "../../backend/protocol";
+import type { PlacedNote, Waiting } from "../../backend/protocol";
+import { WaitingBadge } from "./WaitingBadge";
 
 /** How a note found its place, said plainly — or nothing, when it is certain. */
 const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: string }>> = {
@@ -38,14 +40,19 @@ const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: strin
 function Note({
   note,
   focused,
+  waiting,
   onGoTo,
   onEdit,
   onResolve,
   onRemove,
+  onAsk,
 }: {
   note: PlacedNote;
   /** Pointed at from the document (E47) — bordered, and scrolled to. */
   focused: boolean;
+  /** E65: owed an answer, and how long — absent when it is not. */
+  waiting: Waiting["badge"] | undefined;
+  onAsk: (n: PlacedNote) => void;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
   onResolve: (id: string, resolved: boolean) => void;
@@ -144,6 +151,25 @@ function Note({
           </div>
         </form>
       )}
+      {/* E65: E53's badge, on the note it is about. ⛔ "MAY BE STUCK" CARRIES
+          ITS ACT: ask the agent in the conversation, where the answer lands
+          and where E53 takes over. Resolving (✓ below) is the other way out. */}
+      {waiting && (
+        <div className="flex flex-wrap items-center gap-x-2">
+          <WaitingBadge badge={waiting} of="note" />
+          {waiting === "stalled" && (
+            <button
+              type="button"
+              onClick={() => onAsk(note)}
+              title="Send this note to the agent as a message in the conversation"
+              className="mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline"
+            >
+              <MessageCircleQuestionIcon aria-hidden className="size-3" />
+              Ask the agent
+            </button>
+          )}
+        </div>
+      )}
       <div className="mt-1 flex items-center gap-1 text-[10px] text-ink-faint">
         <span>{note.who === "agent" ? "Agent" : "You"}</span>
         <span>·</span>
@@ -190,14 +216,20 @@ function Note({
 export function NotesPanel({
   notes,
   focusedId,
+  waiting,
   selection,
   onAdd,
   onGoTo,
   onEdit,
   onResolve,
   onRemove,
+  onAsk,
 }: {
   notes: PlacedNote[];
+  /** E65: which of these notes are owed an answer, by id. */
+  waiting: ReadonlyMap<string, Waiting["badge"]>;
+  /** E65: "may be stuck" → ask the agent about it in the conversation. */
+  onAsk: (n: PlacedNote) => void;
   /** The note the document pointed at, if any (E47). */
   focusedId: string | null;
   /** The editor's current selection, or null — what a new note would be about. */
@@ -237,6 +269,8 @@ export function NotesPanel({
                 key={n.id}
                 note={n}
                 focused={n.id === focusedId}
+                waiting={waiting.get(n.id)}
+                onAsk={onAsk}
                 onGoTo={onGoTo}
                 onEdit={onEdit}
                 onResolve={onResolve}

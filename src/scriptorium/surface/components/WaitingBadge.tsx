@@ -11,13 +11,32 @@
 import { cn } from "cn";
 import type { Waiting } from "../../backend/protocol";
 
-/** The words, kept next to the thing that shows them. */
-const LABEL: Record<Waiting["badge"], string> = {
-  working: "working on this…",
-  stalled: "took this in, then went quiet — may be stuck",
+/**
+ * The words, kept next to the thing that shows them. A note's are its own
+ * (E65): the daemon knows the note was delivered, not that it was read, so the
+ * note's words claim no more than "with the agent".
+ */
+const LABEL: Record<"message" | "note", Record<Waiting["badge"], string>> = {
+  message: {
+    working: "working on this…",
+    stalled: "took this in, then went quiet — may be stuck",
+  },
+  note: {
+    working: "with the agent…",
+    stalled: "no word from the agent — may be stuck",
+  },
 };
 
-export function WaitingBadge({ badge }: { badge: Waiting["badge"] }) {
+export function WaitingBadge({
+  badge,
+  of = "message",
+  className,
+}: {
+  badge: Waiting["badge"];
+  /** What is waiting — a message (E53) or a note (E65). Same rule, own words. */
+  of?: "message" | "note";
+  className?: string;
+}) {
   const working = badge === "working";
   return (
     <p
@@ -27,6 +46,7 @@ export function WaitingBadge({ badge }: { badge: Waiting["badge"] }) {
       className={cn(
         "mt-1 flex items-center gap-1.5 text-[11px]",
         working ? "text-ink-dim" : "text-attention",
+        className,
       )}
     >
       <span
@@ -36,7 +56,26 @@ export function WaitingBadge({ badge }: { badge: Waiting["badge"] }) {
           working ? "animate-pulse bg-rubric" : "bg-attention",
         )}
       />
-      {LABEL[badge]}
+      {LABEL[of][badge]}
     </p>
+  );
+}
+
+/**
+ * The same state as a dot, for where there is no room for words — a tab. Its
+ * words are still there for a screen reader, and on hover.
+ */
+export function WaitingDot({ badge, of }: { badge: Waiting["badge"]; of: "message" | "note" }) {
+  const working = badge === "working";
+  return (
+    <span
+      role="img"
+      aria-label={LABEL[of][badge]}
+      title={LABEL[of][badge]}
+      className={cn(
+        "inline-block size-1.5 shrink-0 rounded-full",
+        working ? "animate-pulse bg-rubric" : "bg-attention",
+      )}
+    />
   );
 }

@@ -25,6 +25,7 @@ import type {
   ContextEntry,
   DiffSide,
   DocView,
+  NoteWaiting,
   PublicState,
   Waiting,
 } from "../backend/protocol";
@@ -39,7 +40,7 @@ import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
-import { WaitingBadge } from "./components/WaitingBadge";
+import { WaitingBadge, WaitingDot } from "./components/WaitingBadge";
 import {
   collapsedSides,
   DEFAULT_SIZE,
@@ -53,6 +54,7 @@ import {
   reopenSize,
   type Side,
 } from "./state/columns";
+import { askAboutNote, badgesOn, loudest } from "./state/notes";
 import { applySelectionEvent, type HeldSelection, type SelectionEvent } from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
@@ -430,6 +432,22 @@ function Workspace({
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
+  /** E65: the open document's notes still owed an answer — drawn, never decided, here. */
+  const noteBadges = useMemo(
+    () => badgesOn(state.notesWaiting, open?.slug ?? null),
+    [state.notesWaiting, open?.slug],
+  );
+  const notesLoudest = loudest(noteBadges.values());
+  /**
+   * E65: "may be stuck" → ask the agent, in the conversation. It is the human's
+   * message, so the agent's answer to it answers the note as well, and while it
+   * waits it carries E53's own badge. The conversation comes forward so the
+   * human sees it go.
+   */
+  const askAbout = (note: { quote: string; body: string }, docName: string) => {
+    send({ type: "say", text: askAboutNote(note, docName), withSelection: false });
+    setRightPane("conversation");
+  };
   const openTasks = state.tasks.filter((t) => t.doneAt === undefined);
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
@@ -704,6 +722,9 @@ function Workspace({
                 <FloatingComposer
                   chat={state.chat}
                   waiting={state.waiting}
+                  notesWaiting={state.notesWaiting}
+                  docs={state.docs}
+                  onAsk={askAbout}
                   onOpen={() => {
                     setRightPane("conversation");
                     toggleFrom("chat", "expand");
@@ -745,6 +766,7 @@ function Workspace({
             reveal={reveal}
             clearSeq={clearSeq}
             focusedNote={focusedNote}
+            notesWaiting={noteBadges}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
               // ⛔ THE NOTE CONSUMES THE SELECTION (E57, Cole). Making a note is
@@ -831,7 +853,13 @@ function Workspace({
                   {/* Parenthesised so the number reads as a COUNT rather than
                     part of the tab's name (Cole). */}
                   {which === "notes" && openNotes.length > 0 ? (
-                    `Notes (${openNotes.length})`
+                    // E65: a note owed an answer shows on the tab, so it is
+                    // seen from the conversation too — one dot for all of
+                    // them, stuck if any is.
+                    <span className="flex items-center gap-1">
+                      {`Notes (${openNotes.length})`}
+                      {notesLoudest && <WaitingDot badge={notesLoudest} of="note" />}
+                    </span>
                   ) : which === "tasks" && openTasks.length > 0 ? (
                     // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
                     // the point of a queue is knowing work is outstanding while
@@ -866,6 +894,8 @@ function Workspace({
             <NotesPanel
               notes={open?.notes ?? []}
               focusedId={focusedNote}
+              waiting={noteBadges}
+              onAsk={(n) => open && askAbout(n, open.name)}
               selection={
                 open && selection && text !== undefined
                   ? { ...selection, text: text.slice(selection.from, selection.to) }
@@ -930,17 +960,52 @@ function Workspace({
 function FloatingComposer({
   chat,
   waiting,
+  notesWaiting,
+  docs,
+  onAsk,
   onOpen,
   children,
 }: {
   chat: readonly ChatMessage[];
   waiting: Waiting | null;
+  /** E65: with the column shut, a note owed an answer has to show somewhere. */
+  notesWaiting: readonly NoteWaiting[];
+  docs: readonly DocView[];
+  onAsk: (note: { quote: string; body: string }, docName: string) => void;
   onOpen: () => void;
   children: React.ReactNode;
 }) {
   const last = chat.findLast((m) => m.who !== "system");
+  // The OLDEST note owed an answer — the one that has waited longest — and a
+  // count of the rest. Stuck if any of them is, as on the tab.
+  const first = notesWaiting[0];
+  const firstDoc = first ? docs.find((d) => d.slug === first.doc) : undefined;
+  const firstNote = firstDoc?.notes.find((n) => n.id === first?.noteId);
+  const badge = loudest(notesWaiting.map((n) => n.badge));
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-1">
+      {firstDoc && firstNote && badge && (
+        <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
+          <span className="min-w-0 flex-1 truncate" title={firstNote.body}>
+            <span className="mr-1.5 font-medium text-ink-faint">Your note</span>
+            {firstNote.body}
+            {notesWaiting.length > 1 && (
+              <span className="ml-1.5 text-ink-faint">+{notesWaiting.length - 1} more</span>
+            )}
+          </span>
+          <WaitingBadge badge={badge} of="note" className="mt-0 shrink-0" />
+          {badge === "stalled" && (
+            <button
+              type="button"
+              onClick={() => onAsk(firstNote, firstDoc.name)}
+              title="Send this note to the agent as a message in the conversation"
+              className="shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+            >
+              Ask the agent
+            </button>
+          )}
+        </div>
+      )}
       {last && (
         <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
           <span className="min-w-0 flex-1 truncate" title={last.text}>

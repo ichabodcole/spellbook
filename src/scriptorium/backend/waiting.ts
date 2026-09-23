@@ -20,7 +20,7 @@
 // person waiting. Counting it would silence the signal precisely in the case
 // this exists for: an agent that is busy doing things and has not said a word
 // to the human. Only `who === "agent"` clears.
-import type { ChatWho, Waiting } from "./protocol";
+import type { ChatWho, Note, NoteWaiting, Waiting } from "./protocol";
 
 /**
  * How long a human waits before the wait is worth reporting. 30 s, Cole's
@@ -55,7 +55,6 @@ export function waitingOn(
   now: number,
   opts: { stallMs?: number; acknowledgedUntil?: number } = {},
 ): Waiting | null {
-  const stallMs = opts.stallMs ?? STALL_MS;
   // Walk back to the last thing that was not narration. A human there means
   // nobody has answered them.
   let pending: Msg | null = null;
@@ -82,9 +81,120 @@ export function waitingOn(
     messageId = m.id;
   }
 
+  return { messageId, since, badge: badgeFor(since, now, opts) };
+}
+
+/**
+ * Pulse or stalled, for anything owed an answer since `since`. ONE place, so a
+ * note and a message waiting equally long can never read differently.
+ */
+function badgeFor(
+  since: number,
+  now: number,
+  opts: { stallMs?: number; acknowledgedUntil?: number },
+): Waiting["badge"] {
+  const stallMs = opts.stallMs ?? STALL_MS;
   const acknowledged = opts.acknowledgedUntil !== undefined && now < opts.acknowledgedUntil;
-  const stalled = now - since >= stallMs && !acknowledged;
-  return { messageId, since, badge: stalled ? "stalled" : "working" };
+  return now - since >= stallMs && !acknowledged ? "stalled" : "working";
+}
+
+// ── E65: the same question, asked of a note ──────────────────────────────────
+//
+// Agents act on nearly every note, and Cole ruled that the right instinct; what
+// was missing was any sign, between adding a note and the agent's answer, that
+// something was happening. So a note gets E53's treatment WHOLE: derived, never
+// declared; a pulse, then a static "may be stuck" at the same 30 s; the same
+// snooze. Nothing here asks the agent for anything new.
+//
+// ⛔ WHAT ANSWERS A NOTE — the rule, and each part is a fact the daemon already
+// holds:
+//   · RESOLVED. Resolving is the act that closes a note (Cole), by either party,
+//     so a resolved note is owed nothing. It is the note's own stored state,
+//     not a copy of it.
+//   · AN AGENT MESSAGE AFTER IT. The agent spoke to the human after the note
+//     was written, which is what the human is waiting for — the same reason
+//     one reply answers E53's run of messages. It claims "the agent has said
+//     something since", never "the agent dealt with this", so it clears the
+//     pending mark and leaves the note OPEN: dealt with is `resolved`.
+//     Counting only `resolved` was the option not taken — an agent visibly
+//     working on a note would flip it to "may be stuck" whenever it forgot to
+//     resolve, and E53's whole premise is that it forgets.
+//   · THE AGENT REWRITING THIS NOTE. An act on this note, seen on this note.
+// ⚠ AND A SYSTEM LINE IS STILL NOT A REPLY. The agent resolving note A is
+// narrated as a system line; it answers A (A is resolved) and says nothing
+// about B.
+
+/** What the rule reads off a note — the stored fields, nothing placed. */
+type NoteFacts = Pick<Note, "id" | "who" | "createdAt" | "editedAt" | "editedBy" | "resolved">;
+
+/**
+ * When the human last wrote into this note, or null if they never did. An edit
+ * whose author was not recorded (before E65) is not evidence either way, so the
+ * note counts from when it was made.
+ */
+function humanWroteAt(n: NoteFacts): number | null {
+  if (n.editedAt !== undefined && n.editedBy === "human") return n.editedAt;
+  if (n.editedAt !== undefined && n.editedBy === "agent") return null;
+  return n.who === "human" ? n.createdAt : null;
+}
+
+/** Every note owed an answer, oldest first. */
+export function notesWaiting(
+  docs: readonly { slug: string; notes: readonly NoteFacts[] }[],
+  chat: readonly Msg[],
+  now: number,
+  opts: { stallMs?: number; acknowledgedUntil?: number } = {},
+): NoteWaiting[] {
+  let lastAgent = Number.NEGATIVE_INFINITY;
+  for (const m of chat) if (m.who === "agent" && m.ts > lastAgent) lastAgent = m.ts;
+  const out: NoteWaiting[] = [];
+  for (const d of docs)
+    for (const n of d.notes) {
+      if (n.resolved) continue;
+      const since = humanWroteAt(n);
+      // ⚠ STRICTLY after: a reply in the same millisecond cannot have read it.
+      if (since === null || lastAgent > since) continue;
+      out.push({ doc: d.slug, noteId: n.id, since, badge: badgeFor(since, now, opts) });
+    }
+  return out.sort((a, b) => a.since - b.since);
+}
+
+/**
+ * How much of a note `note.added` carries: the quote and the body together, in
+ * characters. A paragraph's worth. Notes are made mid-read, on a phrase or a
+ * sentence, and those travel whole so the agent can act without a round trip.
+ * A note over a whole section is where the round trip pays: `notes` also says
+ * whether the passage still stands and where it is now. The one who acts on
+ * this number is the agent reading its tail.
+ */
+export const NOTE_TEXT_MAX = 1000;
+
+/**
+ * What `note.added` (and a human's `note.edited`) tells the agent beyond the ids
+ * (E65). The event names its next act, because an agent that must go and ask
+ * what arrived is an agent one step further from doing it.
+ *
+ * ⛔ WHOLE OR NOT AT ALL, never truncated. A clipped quote reads as the whole
+ * passage, which is worse than no quote.
+ */
+export function noteEventFacts(
+  slug: string,
+  note: { id: string; quote: string; body: string },
+  lines: { from: number; to: number } | null,
+): { lines?: { from: number; to: number }; quote?: string; body?: string; hint: string } {
+  const close = `note-resolve ${note.id} --doc ${slug}`;
+  const at = lines ? { lines } : {};
+  if (note.quote.length + note.body.length <= NOTE_TEXT_MAX)
+    return {
+      ...at,
+      quote: note.quote,
+      body: note.body,
+      hint: `act on it, then \`${close}\` when it is dealt with`,
+    };
+  return {
+    ...at,
+    hint: `too long to carry — read it with \`notes --doc ${slug}\`, act on it, then \`${close}\``,
+  };
 }
 
 /** What the conversation shows, per badge. mind-mapper's words, near enough. */

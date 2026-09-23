@@ -244,6 +244,39 @@ describe("a session, end to end through the launchers", () => {
     expect(typeof line.epoch).toBe("string");
   });
 
+  test("E65 — a note reaches the tail with its text and lines, is owed an answer, and a reply or a resolve closes it", async () => {
+    const before = JSON.parse((await cli("state")).out) as PublicState;
+    const path = before.docs[0]?.versions[0]?.path ?? "";
+    const text = readFileSync(path, "utf8");
+    const at = text.indexOf("line three");
+    surface.send({ type: "note.add", doc: "a", from: at, to: at + 10, body: "cut this?" });
+    const added = await waitTail((l) => l.type === "note.added" && l.by === "human");
+    expect(added).toMatchObject({
+      doc: "a",
+      quote: "line three",
+      body: "cut this?",
+      lines: { from: 4, to: 4 },
+    });
+    expect(String(added.hint)).toContain(`note-resolve ${added.note} --doc a`);
+
+    // Owed an answer, until the agent says something.
+    const owed = JSON.parse((await cli("state")).out) as PublicState;
+    expect(owed.notesWaiting).toEqual([
+      expect.objectContaining({ doc: "a", noteId: added.note, badge: "working" }),
+    ]);
+    expect((await cli("say", "on it")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+
+    // A second note, closed by RESOLVING it, with nothing said.
+    surface.send({ type: "note.add", doc: "a", from: at, to: at + 4, body: "and this" });
+    const second = await waitTail((l) => l.type === "note.added" && l.note !== added.note);
+    expect(
+      (JSON.parse((await cli("state")).out) as PublicState).notesWaiting.map((n) => n.noteId),
+    ).toEqual([String(second.note)]);
+    expect((await cli("note-resolve", String(second.note), "--doc", "a")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+  });
+
   test("version-new → the agent edits that file → the surface receives the text", async () => {
     const r = await cli("version-new", "--label", "tighter");
     expect(r.code).toBe(0);

@@ -12464,22 +12464,35 @@ var __iconNode3 = [
   ]
 ];
 var House = createLucideIcon("house", __iconNode3);
-// node_modules/lucide-react/dist/esm/icons/panel-left-close.mjs
+// node_modules/lucide-react/dist/esm/icons/message-circle-question-mark.mjs
 var __iconNode4 = [
+  [
+    "path",
+    {
+      d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
+      key: "1sd12s"
+    }
+  ],
+  ["path", { d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3", key: "1u773s" }],
+  ["path", { d: "M12 17h.01", key: "p32p05" }]
+];
+var MessageCircleQuestionMark = createLucideIcon("message-circle-question-mark", __iconNode4);
+// node_modules/lucide-react/dist/esm/icons/panel-left-close.mjs
+var __iconNode5 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M9 3v18", key: "fh3hqa" }],
   ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
 ];
-var PanelLeftClose = createLucideIcon("panel-left-close", __iconNode4);
+var PanelLeftClose = createLucideIcon("panel-left-close", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/panel-left-open.mjs
-var __iconNode5 = [
+var __iconNode6 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M9 3v18", key: "fh3hqa" }],
   ["path", { d: "m14 9 3 3-3 3", key: "8010ee" }]
 ];
-var PanelLeftOpen = createLucideIcon("panel-left-open", __iconNode5);
+var PanelLeftOpen = createLucideIcon("panel-left-open", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/sparkles.mjs
-var __iconNode6 = [
+var __iconNode7 = [
   [
     "path",
     {
@@ -12491,9 +12504,9 @@ var __iconNode6 = [
   ["path", { d: "M22 4h-4", key: "gwowj6" }],
   ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
 ];
-var Sparkles = createLucideIcon("sparkles", __iconNode6);
+var Sparkles = createLucideIcon("sparkles", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/square-pen.mjs
-var __iconNode7 = [
+var __iconNode8 = [
   ["path", { d: "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", key: "1m0v6g" }],
   [
     "path",
@@ -12503,9 +12516,9 @@ var __iconNode7 = [
     }
   ]
 ];
-var SquarePen = createLucideIcon("square-pen", __iconNode7);
+var SquarePen = createLucideIcon("square-pen", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
-var __iconNode8 = [
+var __iconNode9 = [
   [
     "path",
     {
@@ -12516,15 +12529,15 @@ var __iconNode8 = [
   ["path", { d: "M12 9v4", key: "juzpu7" }],
   ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-var TriangleAlert = createLucideIcon("triangle-alert", __iconNode8);
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode9 = [
+var __iconNode10 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode9);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode10 = [
+var __iconNode11 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -12534,9 +12547,9 @@ var __iconNode10 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode10);
+var BookOpen = createLucideIcon("book-open", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/bookmark-plus.mjs
-var __iconNode11 = [
+var __iconNode12 = [
   ["path", { d: "M12 7v6", key: "lw1j43" }],
   ["path", { d: "M15 10H9", key: "o6yqo3" }],
   [
@@ -12547,30 +12560,30 @@ var __iconNode11 = [
     }
   ]
 ];
-var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode11);
+var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode12 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode12);
+var __iconNode13 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/chevron-down.mjs
-var __iconNode13 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-var ChevronDown = createLucideIcon("chevron-down", __iconNode13);
+var __iconNode14 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+var ChevronDown = createLucideIcon("chevron-down", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode14 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode14);
+var __iconNode15 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/clock.mjs
-var __iconNode15 = [
+var __iconNode16 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode15);
+var Clock = createLucideIcon("clock", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode16 = [
+var __iconNode17 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode16);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode17 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -12580,9 +12593,9 @@ var __iconNode17 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode17);
+var Eye = createLucideIcon("eye", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode18 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -12594,9 +12607,9 @@ var __iconNode18 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode18);
+var FileCode = createLucideIcon("file-code", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode19 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -12608,9 +12621,9 @@ var __iconNode19 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode19);
+var FilePlus = createLucideIcon("file-plus", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode20 = [
+var __iconNode21 = [
   [
     "path",
     {
@@ -12623,9 +12636,9 @@ var __iconNode20 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode20);
+var FileText = createLucideIcon("file-text", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode21 = [
+var __iconNode22 = [
   [
     "path",
     {
@@ -12636,9 +12649,9 @@ var __iconNode21 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode21);
+var FolderInput = createLucideIcon("folder-input", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode22 = [
+var __iconNode23 = [
   [
     "path",
     {
@@ -12647,9 +12660,9 @@ var __iconNode22 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode22);
+var FolderOpen = createLucideIcon("folder-open", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode23 = [
+var __iconNode24 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -12660,9 +12673,9 @@ var __iconNode23 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode23);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode24 = [
+var __iconNode25 = [
   [
     "path",
     {
@@ -12673,9 +12686,9 @@ var __iconNode24 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode24);
+var FolderSearch = createLucideIcon("folder-search", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode25 = [
+var __iconNode26 = [
   [
     "path",
     {
@@ -12693,9 +12706,9 @@ var __iconNode25 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode25);
+var FolderTree = createLucideIcon("folder-tree", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode26 = [
+var __iconNode27 = [
   [
     "path",
     {
@@ -12704,33 +12717,33 @@ var __iconNode26 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode26);
+var Folder = createLucideIcon("folder", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode27 = [
+var __iconNode28 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode27);
+var GitBranch = createLucideIcon("git-branch", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode28 = [
+var __iconNode29 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode28);
+var GitCompare = createLucideIcon("git-compare", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/glasses.mjs
-var __iconNode29 = [
+var __iconNode30 = [
   ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
   ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
   ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
   ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
   ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
 ];
-var Glasses = createLucideIcon("glasses", __iconNode29);
+var Glasses = createLucideIcon("glasses", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode30 = [
+var __iconNode31 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12740,9 +12753,9 @@ var __iconNode30 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode30);
+var Loader = createLucideIcon("loader", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode31 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -12753,9 +12766,9 @@ var __iconNode31 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode31);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode32 = [
+var __iconNode33 = [
   [
     "path",
     {
@@ -12771,9 +12784,9 @@ var __iconNode32 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode32);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   [
     "path",
     {
@@ -12782,32 +12795,32 @@ var __iconNode33 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode33);
+var Moon = createLucideIcon("moon", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode34);
+var Network = createLucideIcon("network", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode35);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode36);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   [
     "path",
     {
@@ -12817,15 +12830,15 @@ var __iconNode37 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode37);
+var Pencil = createLucideIcon("pencil", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode38 = [
+var __iconNode39 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode38);
+var Redo2 = createLucideIcon("redo-2", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   [
     "path",
     {
@@ -12836,15 +12849,15 @@ var __iconNode39 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode39);
+var Save = createLucideIcon("save", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode40);
+var Search = createLucideIcon("search", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12855,48 +12868,48 @@ var __iconNode41 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode41);
+var Sun = createLucideIcon("sun", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode42);
+var Trash2 = createLucideIcon("trash-2", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode43);
+var Undo2 = createLucideIcon("undo-2", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode44);
+var UndoDot = createLucideIcon("undo-dot", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode45);
+var UserCheck = createLucideIcon("user-check", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode46);
+var User = createLucideIcon("user", __iconNode47);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode47 = [
+var __iconNode48 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode47);
+var X = createLucideIcon("x", __iconNode48);
 // src/scriptorium/surface/App.tsx
 var import_react30 = __toESM(require_react(), 1);
 
@@ -59350,7 +59363,49 @@ function NewVersionDialog({
 
 // src/scriptorium/surface/components/NoteAtSelection.tsx
 var import_react21 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/components/WaitingBadge.tsx
 var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+var LABEL = {
+  message: {
+    working: "working on this…",
+    stalled: "took this in, then went quiet — may be stuck"
+  },
+  note: {
+    working: "with the agent…",
+    stalled: "no word from the agent — may be stuck"
+  }
+};
+function WaitingBadge({
+  badge,
+  of = "message",
+  className
+}) {
+  const working = badge === "working";
+  return /* @__PURE__ */ jsx_runtime20.jsxs("p", {
+    "aria-live": "polite",
+    className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention", className),
+    children: [
+      /* @__PURE__ */ jsx_runtime20.jsx("span", {
+        "aria-hidden": true,
+        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
+      }),
+      LABEL[of][badge]
+    ]
+  });
+}
+function WaitingDot({ badge, of }) {
+  const working = badge === "working";
+  return /* @__PURE__ */ jsx_runtime20.jsx("span", {
+    role: "img",
+    "aria-label": LABEL[of][badge],
+    title: LABEL[of][badge],
+    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
+  });
+}
+
+// src/scriptorium/surface/components/NoteAtSelection.tsx
+var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 var CARD_W = 320;
 var MARGIN = 12;
 function place(at2, height) {
@@ -59412,19 +59467,19 @@ function NoteAtSelection({
     onAdd(at2.from, at2.to, body);
     onClose();
   };
-  return /* @__PURE__ */ jsx_runtime20.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime21.jsx("div", {
     ref: card,
     style: { left: pos?.left ?? at2.x, top: pos?.top ?? at2.y, width: CARD_W },
     className: cn("fixed z-50 rounded-md border border-edge bg-surface-raised shadow-lg", pos ? "opacity-100" : "opacity-0"),
-    children: writing ? /* @__PURE__ */ jsx_runtime20.jsxs("form", {
+    children: writing ? /* @__PURE__ */ jsx_runtime21.jsxs("form", {
       onSubmit: submit,
       className: "flex flex-col gap-1.5 p-2",
       children: [
-        /* @__PURE__ */ jsx_runtime20.jsx("p", {
+        /* @__PURE__ */ jsx_runtime21.jsx("p", {
           className: "truncate font-mono text-[11px] text-ink-faint",
           children: quote.replace(/\s+/gu, " ").trim()
         }),
-        /* @__PURE__ */ jsx_runtime20.jsx("textarea", {
+        /* @__PURE__ */ jsx_runtime21.jsx("textarea", {
           ref: field,
           value: body,
           onChange: (e) => setBody(e.target.value),
@@ -59436,14 +59491,14 @@ function NoteAtSelection({
               submit(e);
           }
         }),
-        /* @__PURE__ */ jsx_runtime20.jsxs("div", {
+        /* @__PURE__ */ jsx_runtime21.jsxs("div", {
           className: "flex items-center gap-2",
           children: [
-            /* @__PURE__ */ jsx_runtime20.jsx("span", {
+            /* @__PURE__ */ jsx_runtime21.jsx("span", {
               className: "text-[10px] text-ink-faint",
               children: "⌘↩ to add · esc to close"
             }),
-            /* @__PURE__ */ jsx_runtime20.jsx(Button3, {
+            /* @__PURE__ */ jsx_runtime21.jsx(Button3, {
               type: "submit",
               size: "sm",
               disabled: !body.trim(),
@@ -59453,13 +59508,13 @@ function NoteAtSelection({
           ]
         })
       ]
-    }) : /* @__PURE__ */ jsx_runtime20.jsxs("div", {
+    }) : /* @__PURE__ */ jsx_runtime21.jsxs("div", {
       className: "flex flex-col p-1",
       children: [
-        existing.map((n) => /* @__PURE__ */ jsx_runtime20.jsxs("div", {
+        existing.map((n) => /* @__PURE__ */ jsx_runtime21.jsxs("div", {
           className: "flex items-center gap-0.5",
           children: [
-            /* @__PURE__ */ jsx_runtime20.jsxs("button", {
+            /* @__PURE__ */ jsx_runtime21.jsxs("button", {
               type: "button",
               onClick: () => {
                 onShowNote(n.id);
@@ -59467,17 +59522,21 @@ function NoteAtSelection({
               },
               className: cn("flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
               children: [
-                /* @__PURE__ */ jsx_runtime20.jsx(MessagesSquare, {
+                /* @__PURE__ */ jsx_runtime21.jsx(MessagesSquare, {
                   "aria-hidden": true,
                   className: "size-3.5 shrink-0 text-ink-faint"
                 }),
-                /* @__PURE__ */ jsx_runtime20.jsx("span", {
+                /* @__PURE__ */ jsx_runtime21.jsx("span", {
                   className: "min-w-0 flex-1 truncate",
                   children: n.label
+                }),
+                n.waiting && /* @__PURE__ */ jsx_runtime21.jsx(WaitingDot, {
+                  badge: n.waiting,
+                  of: "note"
                 })
               ]
             }),
-            /* @__PURE__ */ jsx_runtime20.jsx("button", {
+            /* @__PURE__ */ jsx_runtime21.jsx("button", {
               type: "button",
               onClick: () => {
                 onDeleteNote(n.id);
@@ -59486,23 +59545,23 @@ function NoteAtSelection({
               "aria-label": `Delete note: ${n.label}`,
               title: "Delete this note",
               className: cn("shrink-0 rounded-sm p-1.5 text-ink-faint", "hover:bg-bg hover:text-danger focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
-              children: /* @__PURE__ */ jsx_runtime20.jsx(Trash2, {
+              children: /* @__PURE__ */ jsx_runtime21.jsx(Trash2, {
                 "aria-hidden": true,
                 className: "size-3.5"
               })
             })
           ]
         }, n.id)),
-        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_runtime20.jsx("div", {
+        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_runtime21.jsx("div", {
           className: "my-1 h-px bg-edge",
           "aria-hidden": true
         }),
-        at2.from < at2.to && /* @__PURE__ */ jsx_runtime20.jsxs("button", {
+        at2.from < at2.to && /* @__PURE__ */ jsx_runtime21.jsxs("button", {
           type: "button",
           onClick: () => setWriting(true),
           className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
           children: [
-            /* @__PURE__ */ jsx_runtime20.jsx(MessageSquarePlus, {
+            /* @__PURE__ */ jsx_runtime21.jsx(MessageSquarePlus, {
               "aria-hidden": true,
               className: "size-3.5 text-ink-faint"
             }),
@@ -59516,30 +59575,30 @@ function NoteAtSelection({
 
 // src/scriptorium/surface/components/StatusStrip.tsx
 var import_react22 = __toESM(require_react(), 1);
-var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 function StatusStrip({
   segments,
   fade
 }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime22.jsx("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i2) => /* @__PURE__ */ jsx_runtime21.jsxs(import_react22.Fragment, {
+    children: segments.map((s, i2) => /* @__PURE__ */ jsx_runtime22.jsxs(import_react22.Fragment, {
       children: [
-        i2 > 0 && /* @__PURE__ */ jsx_runtime21.jsx(Separator2, {
+        i2 > 0 && /* @__PURE__ */ jsx_runtime22.jsx(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block", fade)
         }),
-        /* @__PURE__ */ jsx_runtime21.jsxs("span", {
+        /* @__PURE__ */ jsx_runtime22.jsxs("span", {
           className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex", !s.loud && fade),
           children: [
-            s.label && /* @__PURE__ */ jsx_runtime21.jsxs("span", {
+            s.label && /* @__PURE__ */ jsx_runtime22.jsxs("span", {
               children: [
                 s.label,
                 ":"
               ]
             }),
-            /* @__PURE__ */ jsx_runtime21.jsx("span", {
+            /* @__PURE__ */ jsx_runtime22.jsx("span", {
               className: "text-ink tabular-nums",
               children: s.value
             })
@@ -59554,15 +59613,15 @@ function StatusStrip({
 var import_react23 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/ui/dropdown-menu.tsx
-var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 function DropdownMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Root, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Root, {
     "data-slot": "dropdown-menu",
     ...props
   });
 }
 function DropdownMenuTrigger({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Trigger, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Trigger, {
     "data-slot": "dropdown-menu-trigger",
     ...props
   });
@@ -59575,14 +59634,14 @@ function DropdownMenuContent({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Portal, {
-    children: /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Positioner, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Portal, {
+    children: /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Positioner, {
       className: "isolate z-50 outline-none",
       align: align2,
       alignOffset,
       side,
       sideOffset,
-      children: /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Popup, {
+      children: /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Popup, {
         "data-slot": "dropdown-menu-content",
         className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -59596,7 +59655,7 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Item, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Item, {
     "data-slot": "dropdown-menu-item",
     "data-inset": inset,
     "data-variant": variant,
@@ -59605,7 +59664,7 @@ function DropdownMenuItem({
   });
 }
 function DropdownMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts.Separator, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(exports_index_parts.Separator, {
     "data-slot": "dropdown-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
@@ -59613,7 +59672,7 @@ function DropdownMenuSeparator({ className, ...props }) {
 }
 
 // src/scriptorium/surface/components/VersionMenu.tsx
-var jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 function versionLabel(v) {
   const label = v.label?.trim();
   return label && label.length > 0 ? label : `v${v.n}`;
@@ -59646,69 +59705,69 @@ function VersionMenu({
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
   const [open, setOpen] = import_react23.useState(false);
-  return /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenu, {
+  return /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuTrigger, {
+      /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenuTrigger, {
         className: cn("flex h-7 shrink-0 items-center gap-1 rounded-md border border-edge px-2", "text-xs text-ink outline-none hover:bg-surface-raised", "focus-visible:ring-2 focus-visible:ring-ring/60"),
         "aria-label": `Version ${active}${current?.label ? ` — ${current.label}` : ""}: ${versions.length} version${versions.length === 1 ? "" : "s"}`,
         children: [
-          /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime24.jsxs("span", {
             className: "font-medium tabular-nums",
             children: [
               "v",
               active
             ]
           }),
-          /* @__PURE__ */ jsx_runtime23.jsx(ChevronDown, {
+          /* @__PURE__ */ jsx_runtime24.jsx(ChevronDown, {
             "aria-hidden": true,
             className: "size-3 shrink-0 text-ink-faint"
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuContent, {
+      /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenuContent, {
         align: "start",
         className: "w-80",
         children: [
-          /* @__PURE__ */ jsx_runtime23.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime24.jsxs("div", {
             className: "border-b border-edge px-2 py-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime23.jsx("p", {
+              /* @__PURE__ */ jsx_runtime24.jsx("p", {
                 className: "text-sm font-medium text-ink",
                 children: "Versions"
               }),
-              /* @__PURE__ */ jsx_runtime23.jsx("p", {
+              /* @__PURE__ */ jsx_runtime24.jsx("p", {
                 className: "text-xs text-ink-faint",
                 children: "Choosing one makes it the version you edit and Save writes."
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime23.jsx("div", {
+          /* @__PURE__ */ jsx_runtime24.jsx("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime23.jsxs(import_react23.Fragment, {
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime24.jsxs(import_react23.Fragment, {
               children: [
-                i2 > 0 && /* @__PURE__ */ jsx_runtime23.jsx(DropdownMenuSeparator, {}),
-                /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuItem, {
+                i2 > 0 && /* @__PURE__ */ jsx_runtime24.jsx(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenuItem, {
                   onClick: () => v.n !== active && onActivate(v.n),
                   "aria-current": v.n === active ? "true" : undefined,
                   className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
                   children: [
-                    /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime24.jsxs("span", {
                       className: "flex w-full items-center gap-1.5",
                       children: [
-                        v.n === active ? /* @__PURE__ */ jsx_runtime23.jsx(BadgeCheck, {
+                        v.n === active ? /* @__PURE__ */ jsx_runtime24.jsx(BadgeCheck, {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0 text-selected"
-                        }) : /* @__PURE__ */ jsx_runtime23.jsx("span", {
+                        }) : /* @__PURE__ */ jsx_runtime24.jsx("span", {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0"
                         }),
-                        /* @__PURE__ */ jsx_runtime23.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime24.jsx("span", {
                           className: "min-w-0 flex-1 truncate font-medium text-ink",
                           children: versionLabel(v)
                         }),
-                        v.label && /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+                        v.label && /* @__PURE__ */ jsx_runtime24.jsxs("span", {
                           className: "shrink-0 text-[11px] text-ink-faint",
                           children: [
                             "v",
@@ -59717,21 +59776,21 @@ function VersionMenu({
                         })
                       ]
                     }),
-                    /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime24.jsxs("span", {
                       className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
                       children: [
-                        v.author === "agent" ? /* @__PURE__ */ jsx_runtime23.jsx(Sparkles, {
+                        v.author === "agent" ? /* @__PURE__ */ jsx_runtime24.jsx(Sparkles, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
-                        }) : /* @__PURE__ */ jsx_runtime23.jsx(User, {
+                        }) : /* @__PURE__ */ jsx_runtime24.jsx(User, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
                         }),
-                        /* @__PURE__ */ jsx_runtime23.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime24.jsx("span", {
                           className: "whitespace-nowrap",
                           children: when(v.createdAt)
                         }),
-                        /* @__PURE__ */ jsx_runtime23.jsx("button", {
+                        /* @__PURE__ */ jsx_runtime24.jsx("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -59741,12 +59800,12 @@ function VersionMenu({
                           "aria-label": `Show ${versionLabel(v)} in the file manager`,
                           title: `Show v${v.n}.md in the file manager`,
                           className: cn("flex items-center rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink", v.n === active && "ml-auto"),
-                          children: /* @__PURE__ */ jsx_runtime23.jsx(FolderOpen, {
+                          children: /* @__PURE__ */ jsx_runtime24.jsx(FolderOpen, {
                             "aria-hidden": true,
                             className: "size-3"
                           })
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime23.jsxs("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_runtime24.jsxs("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -59755,14 +59814,14 @@ function VersionMenu({
                           },
                           className: "flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
                           children: [
-                            /* @__PURE__ */ jsx_runtime23.jsx(GitCompare, {
+                            /* @__PURE__ */ jsx_runtime24.jsx(GitCompare, {
                               "aria-hidden": true,
                               className: "size-3"
                             }),
                             "Compare"
                           ]
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime23.jsx("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_runtime24.jsx("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -59772,7 +59831,7 @@ function VersionMenu({
                           "aria-label": `Delete ${versionLabel(v)}`,
                           title: `Delete ${versionLabel(v)}`,
                           className: "flex items-center rounded-sm px-1 py-0.5 text-ink-faint hover:bg-bg hover:text-danger",
-                          children: /* @__PURE__ */ jsx_runtime23.jsx(Trash2, {
+                          children: /* @__PURE__ */ jsx_runtime24.jsx(Trash2, {
                             "aria-hidden": true,
                             className: "size-3"
                           })
@@ -59784,14 +59843,14 @@ function VersionMenu({
               ]
             }, v.n))
           }),
-          /* @__PURE__ */ jsx_runtime23.jsx(DropdownMenuSeparator, {}),
-          /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_runtime24.jsx(DropdownMenuSeparator, {}),
+          /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("branch");
             },
             children: [
-              /* @__PURE__ */ jsx_runtime23.jsx(GitBranch, {
+              /* @__PURE__ */ jsx_runtime24.jsx(GitBranch, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }),
@@ -59800,13 +59859,13 @@ function VersionMenu({
               " and edit it…"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime23.jsxs(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_runtime24.jsxs(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("snapshot");
             },
             children: [
-              /* @__PURE__ */ jsx_runtime23.jsx(BookmarkPlus, {
+              /* @__PURE__ */ jsx_runtime24.jsx(BookmarkPlus, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }),
@@ -59822,7 +59881,7 @@ function VersionMenu({
 }
 
 // src/scriptorium/surface/components/DocumentPane.tsx
-var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 var VIEW_MODES = ["raw", "rendered", "split", "compare"];
 function useWidth() {
   const ref = import_react24.useRef(null);
@@ -59876,6 +59935,7 @@ function DocumentPane({
   reveal,
   clearSeq,
   focusedNote,
+  notesWaiting,
   onAddNote,
   onShowNote,
   onDeleteNote,
@@ -59922,24 +59982,24 @@ function DocumentPane({
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
-  return /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime25.jsxs("div", {
     ref: paneRef,
     "data-reader": quiet || undefined,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime25.jsxs("div", {
         className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-edge px-3 py-1", quiet && "group/chrome border-transparent"),
         children: [
-          headingStart && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+          headingStart && /* @__PURE__ */ jsx_runtime25.jsx("div", {
             className: cn("flex shrink-0", fade),
             children: headingStart
           }),
-          doc2 ? /* @__PURE__ */ jsx_runtime24.jsxs(jsx_runtime24.Fragment, {
+          doc2 ? /* @__PURE__ */ jsx_runtime25.jsxs(jsx_runtime25.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+              /* @__PURE__ */ jsx_runtime25.jsxs("div", {
                 className: cn("flex min-w-0 items-center gap-2", fade),
                 children: [
-                  /* @__PURE__ */ jsx_runtime24.jsx(VersionMenu, {
+                  /* @__PURE__ */ jsx_runtime25.jsx(VersionMenu, {
                     versions: doc2.versions,
                     active: doc2.active,
                     onActivate,
@@ -59962,25 +60022,25 @@ function DocumentPane({
                         onDeleteVersion(n);
                     }
                   }),
-                  /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
+                  /* @__PURE__ */ jsx_runtime25.jsx(Separator2, {
                     orientation: "vertical",
                     className: "my-2 shrink-0"
                   }),
-                  /* @__PURE__ */ jsx_runtime24.jsx(FileText, {
+                  /* @__PURE__ */ jsx_runtime25.jsx(FileText, {
                     "aria-hidden": true,
                     className: "size-3.5 shrink-0 text-ink-faint"
                   }),
-                  /* @__PURE__ */ jsx_runtime24.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime25.jsx("span", {
                     className: "truncate text-sm text-ink",
                     title: doc2.original,
                     children: doc2.name
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+              /* @__PURE__ */ jsx_runtime25.jsxs("div", {
                 className: "ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1",
                 children: [
-                  /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
+                  /* @__PURE__ */ jsx_runtime25.jsxs(Button3, {
                     variant: "ghost",
                     size: "sm",
                     onClick: onRevert,
@@ -59988,13 +60048,13 @@ function DocumentPane({
                     title: "Take the file on disk back over your edits",
                     className: cn("h-7 gap-1.5 px-2 text-xs", fade),
                     children: [
-                      /* @__PURE__ */ jsx_runtime24.jsx(UndoDot, {
+                      /* @__PURE__ */ jsx_runtime25.jsx(UndoDot, {
                         className: "size-3.5"
                       }),
                       "Revert"
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
+                  /* @__PURE__ */ jsx_runtime25.jsxs(Button3, {
                     variant: "ghost",
                     size: "sm",
                     onClick: onSave,
@@ -60002,19 +60062,19 @@ function DocumentPane({
                     title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
                     className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2) && fade),
                     children: [
-                      /* @__PURE__ */ jsx_runtime24.jsx(Save, {
+                      /* @__PURE__ */ jsx_runtime25.jsx(Save, {
                         className: "size-3.5"
                       }),
                       "Save"
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime24.jsx("div", {
+                  /* @__PURE__ */ jsx_runtime25.jsx("div", {
                     role: "toolbar",
                     "aria-label": "How to show this document",
                     className: cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade),
                     children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
                       const unavailable = m2 === "split" && !roomToSplit;
-                      return /* @__PURE__ */ jsx_runtime24.jsx("button", {
+                      return /* @__PURE__ */ jsx_runtime25.jsx("button", {
                         type: "button",
                         onClick: () => onMode(m2),
                         disabled: unavailable,
@@ -60022,7 +60082,7 @@ function DocumentPane({
                         "aria-label": label,
                         title: !unavailable ? label : room.ifCollapsed ? `${label} — the pane is too narrow; collapse the side columns to make room` : `${label} — the pane is too narrow`,
                         className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
-                        children: /* @__PURE__ */ jsx_runtime24.jsx(Icon2, {
+                        children: /* @__PURE__ */ jsx_runtime25.jsx(Icon2, {
                           "aria-hidden": true,
                           className: "size-3.5"
                         })
@@ -60032,23 +60092,23 @@ function DocumentPane({
                 ]
               })
             ]
-          }) : /* @__PURE__ */ jsx_runtime24.jsx("span", {
+          }) : /* @__PURE__ */ jsx_runtime25.jsx("span", {
             className: cn("text-xs font-medium tracking-wide text-ink-dim uppercase", fade),
             children: "Document"
           }),
-          headingEnd && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+          headingEnd && /* @__PURE__ */ jsx_runtime25.jsx("div", {
             className: cn("flex shrink-0 items-center gap-0.5", !doc2 && "ml-auto", fade),
             children: headingEnd
           })
         ]
       }),
-      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+      doc2 && shown !== undefined && doc2.meta === null && /* @__PURE__ */ jsx_runtime25.jsxs("div", {
         className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime24.jsx("span", {
+          /* @__PURE__ */ jsx_runtime25.jsx("span", {
             children: "This document has no frontmatter."
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx("button", {
+          /* @__PURE__ */ jsx_runtime25.jsx("button", {
             type: "button",
             onClick: onAddFrontmatter,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -60056,15 +60116,15 @@ function DocumentPane({
           })
         ]
       }),
-      doc2?.outsideChanged && /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+      doc2?.outsideChanged && /* @__PURE__ */ jsx_runtime25.jsxs("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime24.jsx("span", {
+          /* @__PURE__ */ jsx_runtime25.jsx("span", {
             className: "min-w-0 flex-1",
             children: doc2.dirty ? "This file changed on disk while you have unsaved edits." : "This file changed on disk since this version was made."
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx("button", {
+          /* @__PURE__ */ jsx_runtime25.jsx("button", {
             type: "button",
             onClick: () => {
               onAgainst("original");
@@ -60073,13 +60133,13 @@ function DocumentPane({
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "See the difference"
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx("button", {
+          /* @__PURE__ */ jsx_runtime25.jsx("button", {
             type: "button",
             onClick: onSave,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "Keep mine"
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx("button", {
+          /* @__PURE__ */ jsx_runtime25.jsx("button", {
             type: "button",
             onClick: onRevert,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -60087,35 +60147,35 @@ function DocumentPane({
           })
         ]
       }),
-      !doc2 ? /* @__PURE__ */ jsx_runtime24.jsx(Empty, {
+      !doc2 ? /* @__PURE__ */ jsx_runtime25.jsx(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_runtime24.jsxs(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_runtime25.jsxs(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_runtime24.jsx(EmptyMedia, {
+            /* @__PURE__ */ jsx_runtime25.jsx(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_runtime24.jsx(FileText, {})
+              children: /* @__PURE__ */ jsx_runtime25.jsx(FileText, {})
             }),
-            /* @__PURE__ */ jsx_runtime24.jsx(EmptyTitle, {
+            /* @__PURE__ */ jsx_runtime25.jsx(EmptyTitle, {
               children: "No document open"
             }),
-            /* @__PURE__ */ jsx_runtime24.jsx(EmptyDescription, {
+            /* @__PURE__ */ jsx_runtime25.jsx(EmptyDescription, {
               children: "Pick a document from the context pane to read it here."
             })
           ]
         })
-      }) : shown === undefined ? /* @__PURE__ */ jsx_runtime24.jsx("div", {
+      }) : shown === undefined ? /* @__PURE__ */ jsx_runtime25.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime24.jsx(CompareView, {
+      }) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime25.jsx(CompareView, {
         payload: diff,
         file: doc2.name,
         versions: doc2.versions,
         onAgainst,
         onTake
-      }) : /* @__PURE__ */ jsx_runtime24.jsx("div", {
+      }) : /* @__PURE__ */ jsx_runtime25.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }) : showing === "raw" ? /* @__PURE__ */ jsx_runtime24.jsx(DocumentView, {
+      }) : showing === "raw" ? /* @__PURE__ */ jsx_runtime25.jsx(DocumentView, {
         docKey: doc2.slug,
         text: shown,
         editable: true,
@@ -60128,7 +60188,7 @@ function DocumentPane({
         place: place2,
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
         onContextMenu: setNoteAt
-      }) : showing === "rendered" ? /* @__PURE__ */ jsx_runtime24.jsx(MarkdownView, {
+      }) : showing === "rendered" ? /* @__PURE__ */ jsx_runtime25.jsx(MarkdownView, {
         text: shown,
         meta: doc2.meta,
         notes: doc2.notes,
@@ -60139,18 +60199,18 @@ function DocumentPane({
         clearSeq,
         place: place2,
         onContextMenu: setNoteAt
-      }) : /* @__PURE__ */ jsx_runtime24.jsxs(ResizablePanelGroup, {
+      }) : /* @__PURE__ */ jsx_runtime25.jsxs(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
         defaultLayout: splitLayout.defaultLayout,
         onLayoutChanged: splitLayout.onLayoutChanged,
         children: [
-          /* @__PURE__ */ jsx_runtime24.jsx(ResizablePanel, {
+          /* @__PURE__ */ jsx_runtime25.jsx(ResizablePanel, {
             id: "doc-raw",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col",
-            children: /* @__PURE__ */ jsx_runtime24.jsx(DocumentView, {
+            children: /* @__PURE__ */ jsx_runtime25.jsx(DocumentView, {
               docKey: doc2.slug,
               text: shown,
               editable: true,
@@ -60165,15 +60225,15 @@ function DocumentPane({
               onContextMenu: setNoteAt
             })
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx(ResizableHandle, {
+          /* @__PURE__ */ jsx_runtime25.jsx(ResizableHandle, {
             withHandle: true
           }),
-          /* @__PURE__ */ jsx_runtime24.jsx(ResizablePanel, {
+          /* @__PURE__ */ jsx_runtime25.jsx(ResizablePanel, {
             id: "doc-rendered",
             defaultSize: "50",
             minSize: "25",
             className: "flex flex-col border-l border-edge",
-            children: /* @__PURE__ */ jsx_runtime24.jsx(MarkdownView, {
+            children: /* @__PURE__ */ jsx_runtime25.jsx(MarkdownView, {
               text: shown,
               meta: doc2.meta,
               notes: doc2.notes,
@@ -60188,31 +60248,32 @@ function DocumentPane({
           })
         ]
       }),
-      dock && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+      dock && /* @__PURE__ */ jsx_runtime25.jsx("div", {
         className: "shrink-0 px-3 py-2",
         children: dock
       }),
-      doc2 && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+      doc2 && /* @__PURE__ */ jsx_runtime25.jsx("div", {
         className: cn("shrink-0", quiet && "group/chrome"),
-        children: /* @__PURE__ */ jsx_runtime24.jsx(StatusStrip, {
+        children: /* @__PURE__ */ jsx_runtime25.jsx(StatusStrip, {
           segments,
           fade
         })
       }),
       dialog,
-      /* @__PURE__ */ jsx_runtime24.jsx(NoteAtSelection, {
+      /* @__PURE__ */ jsx_runtime25.jsx(NoteAtSelection, {
         at: noteAt,
         quote: noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : "",
         existing: (noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc2?.notes.find((x3) => x3.id === id);
-          return n ? [{ id, label: n.body }] : [];
+          const waiting = notesWaiting.get(id);
+          return n ? [{ id, label: n.body, ...waiting ? { waiting } : {} }] : [];
         }),
         onClose: () => setNoteAt(null),
         onAdd: onAddNote,
         onShowNote,
         onDeleteNote
       }),
-      doc2 && /* @__PURE__ */ jsx_runtime24.jsx(NewVersionDialog, {
+      doc2 && /* @__PURE__ */ jsx_runtime25.jsx(NewVersionDialog, {
         open: naming !== null,
         intent: naming ?? "branch",
         from: doc2.active,
@@ -60228,7 +60289,7 @@ function DocumentPane({
 }
 
 // src/scriptorium/surface/components/HistoryArrows.tsx
-var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 function HistoryArrows({
   history: history2,
   display,
@@ -60238,9 +60299,9 @@ function HistoryArrows({
   const { confirm, dialog } = useConfirm();
   const deletes = history2.undoDeletes;
   const undoTitle = history2.canUndo ? deletes ? `Undo: ${history2.undoLabel} — this deletes ${display(deletes.path)}` : `Undo: ${history2.undoLabel}` : "Nothing to undo in the context";
-  return /* @__PURE__ */ jsx_runtime25.jsxs(jsx_runtime25.Fragment, {
+  return /* @__PURE__ */ jsx_runtime26.jsxs(jsx_runtime26.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime25.jsx("button", {
+      /* @__PURE__ */ jsx_runtime26.jsx("button", {
         type: "button",
         "aria-label": undoTitle,
         title: undoTitle,
@@ -60261,19 +60322,19 @@ function HistoryArrows({
             onUndo(true);
         },
         className: cn("flex size-6 items-center justify-center rounded-sm outline-none", "text-ink-faint hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:text-ink-faint", deletes && history2.canUndo && "text-attention hover:text-attention"),
-        children: /* @__PURE__ */ jsx_runtime25.jsx(Undo2, {
+        children: /* @__PURE__ */ jsx_runtime26.jsx(Undo2, {
           "aria-hidden": true,
           className: "size-3.5"
         })
       }),
-      /* @__PURE__ */ jsx_runtime25.jsx("button", {
+      /* @__PURE__ */ jsx_runtime26.jsx("button", {
         type: "button",
         "aria-label": history2.canRedo ? `Redo: ${history2.redoLabel}` : "Nothing to redo in the context",
         title: history2.canRedo ? `Redo: ${history2.redoLabel}` : "Nothing to redo in the context",
         disabled: !history2.canRedo,
         onClick: () => onRedo(),
         className: cn("flex size-6 items-center justify-center rounded-sm outline-none", "text-ink-faint hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:text-ink-faint"),
-        children: /* @__PURE__ */ jsx_runtime25.jsx(Redo2, {
+        children: /* @__PURE__ */ jsx_runtime26.jsx(Redo2, {
           "aria-hidden": true,
           className: "size-3.5"
         })
@@ -60285,7 +60346,7 @@ function HistoryArrows({
 
 // src/scriptorium/surface/components/NotesPanel.tsx
 var import_react25 = __toESM(require_react(), 1);
-var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 var UNCERTAIN = {
   nearest: {
     label: "moved?",
@@ -60299,10 +60360,12 @@ var UNCERTAIN = {
 function Note({
   note,
   focused,
+  waiting,
   onGoTo,
   onEdit,
   onResolve,
-  onRemove
+  onRemove,
+  onAsk
 }) {
   const uncertain = UNCERTAIN[note.how];
   const anchored = note.from !== null;
@@ -60312,14 +60375,14 @@ function Note({
     if (focused)
       row.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [focused]);
-  return /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime27.jsxs("div", {
     ref: row,
     className: cn("group/note rounded-md border border-edge bg-bg px-2 py-1.5 text-xs transition-colors", note.resolved && "opacity-60", focused && "border-selected bg-selected/10 ring-1 ring-selected/40"),
     children: [
-      /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime27.jsxs("div", {
         className: "flex items-start gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsx("button", {
+          /* @__PURE__ */ jsx_runtime27.jsx("button", {
             type: "button",
             onClick: () => onGoTo(note),
             disabled: !anchored,
@@ -60327,17 +60390,17 @@ function Note({
             className: cn("min-w-0 flex-1 truncate text-left font-mono text-[11px] text-ink-dim", anchored && "hover:text-ink hover:underline", !anchored && "cursor-default line-through"),
             children: note.quote.replace(/\s+/gu, " ").trim() || "—"
           }),
-          uncertain && /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          uncertain && /* @__PURE__ */ jsx_runtime27.jsx("span", {
             title: uncertain.title,
             className: "shrink-0 rounded-sm bg-attention/15 px-1 text-[10px] text-attention",
             children: uncertain.label
           })
         ]
       }),
-      draft === null ? /* @__PURE__ */ jsx_runtime26.jsx("p", {
+      draft === null ? /* @__PURE__ */ jsx_runtime27.jsx("p", {
         className: "mt-1 whitespace-pre-wrap text-ink",
         children: note.body
-      }) : /* @__PURE__ */ jsx_runtime26.jsxs("form", {
+      }) : /* @__PURE__ */ jsx_runtime27.jsxs("form", {
         className: "mt-1 flex flex-col gap-1",
         onSubmit: (e) => {
           e.preventDefault();
@@ -60346,7 +60409,7 @@ function Note({
           setDraft(null);
         },
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsx("textarea", {
+          /* @__PURE__ */ jsx_runtime27.jsx("textarea", {
             autoFocus: true,
             value: draft,
             onChange: (e) => setDraft(e.target.value),
@@ -60359,14 +60422,14 @@ function Note({
                 e.currentTarget.form?.requestSubmit();
             }
           }),
-          /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("div", {
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx_runtime26.jsx("span", {
+              /* @__PURE__ */ jsx_runtime27.jsx("span", {
                 className: "text-[10px] text-ink-faint",
                 children: "⌘↩ to save · esc to cancel"
               }),
-              /* @__PURE__ */ jsx_runtime26.jsx(Button3, {
+              /* @__PURE__ */ jsx_runtime27.jsx(Button3, {
                 type: "button",
                 variant: "ghost",
                 size: "sm",
@@ -60374,7 +60437,7 @@ function Note({
                 className: "ml-auto h-5 px-1.5 text-[11px]",
                 children: "Cancel"
               }),
-              /* @__PURE__ */ jsx_runtime26.jsx(Button3, {
+              /* @__PURE__ */ jsx_runtime27.jsx(Button3, {
                 type: "submit",
                 size: "sm",
                 disabled: !draft.trim(),
@@ -60385,60 +60448,82 @@ function Note({
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+      waiting && /* @__PURE__ */ jsx_runtime27.jsxs("div", {
+        className: "flex flex-wrap items-center gap-x-2",
+        children: [
+          /* @__PURE__ */ jsx_runtime27.jsx(WaitingBadge, {
+            badge: waiting,
+            of: "note"
+          }),
+          waiting === "stalled" && /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+            type: "button",
+            onClick: () => onAsk(note),
+            title: "Send this note to the agent as a message in the conversation",
+            className: "mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline",
+            children: [
+              /* @__PURE__ */ jsx_runtime27.jsx(MessageCircleQuestionMark, {
+                "aria-hidden": true,
+                className: "size-3"
+              }),
+              "Ask the agent"
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime27.jsxs("div", {
         className: "mt-1 flex items-center gap-1 text-[10px] text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          /* @__PURE__ */ jsx_runtime27.jsx("span", {
             children: note.who === "agent" ? "Agent" : "You"
           }),
-          /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          /* @__PURE__ */ jsx_runtime27.jsx("span", {
             children: "·"
           }),
-          /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("span", {
             children: [
               "v",
               note.version
             ]
           }),
-          note.editedAt !== undefined && /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          note.editedAt !== undefined && /* @__PURE__ */ jsx_runtime27.jsx("span", {
             title: "This note was rewritten",
             children: "· edited"
           }),
-          /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("span", {
             className: "ml-auto flex items-center gap-0.5 opacity-0 group-hover/note:opacity-100 focus-within:opacity-100",
             children: [
-              /* @__PURE__ */ jsx_runtime26.jsx("button", {
+              /* @__PURE__ */ jsx_runtime27.jsx("button", {
                 type: "button",
                 onClick: () => setDraft(note.body),
                 title: "Rewrite this note",
                 "aria-label": "Edit note",
                 className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-ink",
-                children: /* @__PURE__ */ jsx_runtime26.jsx(Pencil, {
+                children: /* @__PURE__ */ jsx_runtime27.jsx(Pencil, {
                   "aria-hidden": true,
                   className: "size-3"
                 })
               }),
-              /* @__PURE__ */ jsx_runtime26.jsx("button", {
+              /* @__PURE__ */ jsx_runtime27.jsx("button", {
                 type: "button",
                 onClick: () => onResolve(note.id, !note.resolved),
                 title: note.resolved ? "Put this note back" : "Mark this note dealt with",
                 "aria-label": note.resolved ? "Reopen note" : "Resolve note",
                 className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-ink",
-                children: note.resolved ? /* @__PURE__ */ jsx_runtime26.jsx(UndoDot, {
+                children: note.resolved ? /* @__PURE__ */ jsx_runtime27.jsx(UndoDot, {
                   "aria-hidden": true,
                   className: "size-3"
-                }) : /* @__PURE__ */ jsx_runtime26.jsx(Check, {
+                }) : /* @__PURE__ */ jsx_runtime27.jsx(Check, {
                   "aria-hidden": true,
                   className: "size-3"
                 })
               }),
-              /* @__PURE__ */ jsx_runtime26.jsx("button", {
+              /* @__PURE__ */ jsx_runtime27.jsx("button", {
                 type: "button",
                 onClick: () => onRemove(note.id),
                 title: "Delete this note",
                 "aria-label": "Delete note",
                 className: "rounded-sm p-0.5 hover:bg-surface-raised hover:text-danger",
-                children: /* @__PURE__ */ jsx_runtime26.jsx(Trash2, {
+                children: /* @__PURE__ */ jsx_runtime27.jsx(Trash2, {
                   "aria-hidden": true,
                   className: "size-3"
                 })
@@ -60453,12 +60538,14 @@ function Note({
 function NotesPanel({
   notes,
   focusedId,
+  waiting,
   selection,
   onAdd,
   onGoTo,
   onEdit,
   onResolve,
-  onRemove
+  onRemove,
+  onAsk
 }) {
   const [body, setBody] = import_react25.useState("");
   const [showResolved, setShowResolved] = import_react25.useState(false);
@@ -60471,27 +60558,29 @@ function NotesPanel({
     onAdd(selection.from, selection.to, body);
     setBody("");
   };
-  return /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime27.jsxs("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime27.jsxs("div", {
         className: "min-h-0 flex-1 overflow-auto p-3",
         children: [
-          shown.length === 0 ? /* @__PURE__ */ jsx_runtime26.jsx("p", {
+          shown.length === 0 ? /* @__PURE__ */ jsx_runtime27.jsx("p", {
             className: "px-1 py-6 text-center text-xs text-ink-faint",
             children: "Select some text in the document and write a note about it."
-          }) : /* @__PURE__ */ jsx_runtime26.jsx("div", {
+          }) : /* @__PURE__ */ jsx_runtime27.jsx("div", {
             className: "flex flex-col gap-2",
-            children: shown.map((n) => /* @__PURE__ */ jsx_runtime26.jsx(Note, {
+            children: shown.map((n) => /* @__PURE__ */ jsx_runtime27.jsx(Note, {
               note: n,
               focused: n.id === focusedId,
+              waiting: waiting.get(n.id),
+              onAsk,
               onGoTo,
               onEdit,
               onResolve,
               onRemove
             }, n.id))
           }),
-          resolved.length > 0 && /* @__PURE__ */ jsx_runtime26.jsxs("button", {
+          resolved.length > 0 && /* @__PURE__ */ jsx_runtime27.jsxs("button", {
             type: "button",
             onClick: () => setShowResolved((v) => !v),
             className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink",
@@ -60504,15 +60593,15 @@ function NotesPanel({
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime26.jsxs("form", {
+      /* @__PURE__ */ jsx_runtime27.jsxs("form", {
         onSubmit: submit,
         className: "shrink-0 border-t border-edge p-2",
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsx("p", {
+          /* @__PURE__ */ jsx_runtime27.jsx("p", {
             className: "mb-1 truncate font-mono text-[11px] text-ink-faint",
             children: selection ? selection.text.replace(/\s+/gu, " ").trim() : "No selection"
           }),
-          /* @__PURE__ */ jsx_runtime26.jsx("textarea", {
+          /* @__PURE__ */ jsx_runtime27.jsx("textarea", {
             value: body,
             onChange: (e) => setBody(e.target.value),
             disabled: !selection,
@@ -60524,20 +60613,20 @@ function NotesPanel({
                 submit(e);
             }
           }),
-          /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("div", {
             className: "mt-1 flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx_runtime26.jsx("span", {
+              /* @__PURE__ */ jsx_runtime27.jsx("span", {
                 className: "text-[10px] text-ink-faint",
                 children: "⌘↩ to add"
               }),
-              /* @__PURE__ */ jsx_runtime26.jsxs(Button3, {
+              /* @__PURE__ */ jsx_runtime27.jsxs(Button3, {
                 type: "submit",
                 size: "sm",
                 disabled: !selection || !body.trim(),
                 className: "ml-auto h-6 px-2 text-xs",
                 children: [
-                  /* @__PURE__ */ jsx_runtime26.jsx(MessageSquarePlus, {
+                  /* @__PURE__ */ jsx_runtime27.jsx(MessageSquarePlus, {
                     "aria-hidden": true,
                     className: "size-3"
                   }),
@@ -60554,7 +60643,7 @@ function NotesPanel({
 
 // src/scriptorium/surface/components/SearchBar.tsx
 var import_react26 = __toESM(require_react(), 1);
-var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
 var DEBOUNCE_MS = 140;
 function SearchBar({
   report,
@@ -60600,18 +60689,18 @@ function SearchBar({
   const fresh = report && report.query === q2 ? report : null;
   const showing = open && q2 !== "";
   const nothing = fresh !== null && fresh.documents.length === 0 && fresh.text.length === 0;
-  return /* @__PURE__ */ jsx_runtime27.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime28.jsxs("div", {
     ref: box,
     className: "relative w-full max-w-md",
     children: [
-      /* @__PURE__ */ jsx_runtime27.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime28.jsxs("div", {
         className: "flex items-center gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
         children: [
-          /* @__PURE__ */ jsx_runtime27.jsx(Search, {
+          /* @__PURE__ */ jsx_runtime28.jsx(Search, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0 text-ink-faint"
           }),
-          /* @__PURE__ */ jsx_runtime27.jsx("input", {
+          /* @__PURE__ */ jsx_runtime28.jsx("input", {
             ref: field,
             value: query,
             onChange: (e) => {
@@ -60624,7 +60713,7 @@ function SearchBar({
             spellCheck: false,
             className: cn("min-w-0 flex-1 bg-transparent text-xs text-ink outline-none", "placeholder:text-ink-faint")
           }),
-          q2 !== "" && /* @__PURE__ */ jsx_runtime27.jsx("button", {
+          q2 !== "" && /* @__PURE__ */ jsx_runtime28.jsx("button", {
             type: "button",
             "aria-label": "Clear the search",
             onClick: () => {
@@ -60633,36 +60722,36 @@ function SearchBar({
               field.current?.focus();
             },
             className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime27.jsx(X, {
+            children: /* @__PURE__ */ jsx_runtime28.jsx(X, {
               className: "size-3"
             })
           })
         ]
       }),
-      showing && /* @__PURE__ */ jsx_runtime27.jsx("div", {
+      showing && /* @__PURE__ */ jsx_runtime28.jsx("div", {
         className: cn("absolute top-full right-0 left-0 z-50 mt-1 max-h-[60vh] overflow-auto", "rounded-md border border-edge bg-surface-raised shadow-lg"),
-        children: fresh === null ? /* @__PURE__ */ jsx_runtime27.jsx("p", {
+        children: fresh === null ? /* @__PURE__ */ jsx_runtime28.jsx("p", {
           className: "px-3 py-2 text-xs text-ink-faint",
           children: "Searching…"
-        }) : nothing ? /* @__PURE__ */ jsx_runtime27.jsxs("p", {
+        }) : nothing ? /* @__PURE__ */ jsx_runtime28.jsxs("p", {
           className: "px-3 py-2 text-xs text-ink-dim",
           children: [
             "Nothing matches ",
-            /* @__PURE__ */ jsx_runtime27.jsx("span", {
+            /* @__PURE__ */ jsx_runtime28.jsx("span", {
               className: "font-mono text-ink",
               children: q2
             }),
             "."
           ]
-        }) : /* @__PURE__ */ jsx_runtime27.jsxs(jsx_runtime27.Fragment, {
+        }) : /* @__PURE__ */ jsx_runtime28.jsxs(jsx_runtime28.Fragment, {
           children: [
-            fresh.documents.length > 0 && /* @__PURE__ */ jsx_runtime27.jsxs("section", {
+            fresh.documents.length > 0 && /* @__PURE__ */ jsx_runtime28.jsxs("section", {
               children: [
-                /* @__PURE__ */ jsx_runtime27.jsx("h2", {
+                /* @__PURE__ */ jsx_runtime28.jsx("h2", {
                   className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
                   children: "Documents"
                 }),
-                fresh.documents.map((d) => /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+                fresh.documents.map((d) => /* @__PURE__ */ jsx_runtime28.jsxs("button", {
                   type: "button",
                   onClick: () => {
                     onOpen({ path: d.path, ...d.slug ? { slug: d.slug } : {} });
@@ -60670,15 +60759,15 @@ function SearchBar({
                   },
                   className: "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-bg",
                   children: [
-                    /* @__PURE__ */ jsx_runtime27.jsx(FileText, {
+                    /* @__PURE__ */ jsx_runtime28.jsx(FileText, {
                       "aria-hidden": true,
                       className: "size-3.5 shrink-0 text-ink-faint"
                     }),
-                    /* @__PURE__ */ jsx_runtime27.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime28.jsx("span", {
                       className: "truncate text-ink",
                       children: d.name
                     }),
-                    d.title && d.title !== d.name && /* @__PURE__ */ jsx_runtime27.jsx("span", {
+                    d.title && d.title !== d.name && /* @__PURE__ */ jsx_runtime28.jsx("span", {
                       className: "truncate text-ink-faint",
                       children: d.title
                     })
@@ -60686,10 +60775,10 @@ function SearchBar({
                 }, `name:${d.path}`))
               ]
             }),
-            fresh.text.length > 0 && /* @__PURE__ */ jsx_runtime27.jsxs("section", {
+            fresh.text.length > 0 && /* @__PURE__ */ jsx_runtime28.jsxs("section", {
               className: "border-t border-edge",
               children: [
-                /* @__PURE__ */ jsx_runtime27.jsxs("h2", {
+                /* @__PURE__ */ jsx_runtime28.jsxs("h2", {
                   className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
                   children: [
                     "In text (",
@@ -60698,13 +60787,13 @@ function SearchBar({
                     ")"
                   ]
                 }),
-                fresh.text.map((t2) => /* @__PURE__ */ jsx_runtime27.jsxs("div", {
+                fresh.text.map((t2) => /* @__PURE__ */ jsx_runtime28.jsxs("div", {
                   children: [
-                    /* @__PURE__ */ jsx_runtime27.jsxs("p", {
+                    /* @__PURE__ */ jsx_runtime28.jsxs("p", {
                       className: "truncate px-3 pt-1.5 text-[11px] text-ink-dim",
                       children: [
                         t2.name,
-                        t2.version !== undefined && /* @__PURE__ */ jsx_runtime27.jsxs("span", {
+                        t2.version !== undefined && /* @__PURE__ */ jsx_runtime28.jsxs("span", {
                           className: "text-ink-faint",
                           children: [
                             " · v",
@@ -60713,7 +60802,7 @@ function SearchBar({
                         })
                       ]
                     }),
-                    t2.hits.map((h) => /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+                    t2.hits.map((h) => /* @__PURE__ */ jsx_runtime28.jsxs("button", {
                       type: "button",
                       onClick: () => {
                         onOpen({
@@ -60725,11 +60814,11 @@ function SearchBar({
                       },
                       className: "flex w-full items-baseline gap-2 px-3 py-1 text-left hover:bg-bg",
                       children: [
-                        /* @__PURE__ */ jsx_runtime27.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime28.jsx("span", {
                           className: "shrink-0 font-mono text-[10px] text-ink-faint",
                           children: h.line
                         }),
-                        /* @__PURE__ */ jsx_runtime27.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime28.jsx("span", {
                           className: "truncate font-mono text-[11px] text-ink",
                           children: h.text.trim()
                         })
@@ -60747,61 +60836,61 @@ function SearchBar({
 }
 
 // src/scriptorium/surface/components/TasksPanel.tsx
-var jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
 var when2 = (ms) => new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(new Date(ms));
 function Spinner({ className }) {
-  return /* @__PURE__ */ jsx_runtime28.jsx(Loader, {
+  return /* @__PURE__ */ jsx_runtime29.jsx(Loader, {
     "aria-hidden": true,
     className: cn("size-3 animate-spin", className)
   });
 }
 function Row2({ task, onDone }) {
   const open = task.doneAt === undefined;
-  return /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime29.jsxs("div", {
     className: cn("group/task rounded-md border border-edge bg-bg px-2 py-1.5 text-xs", !open && "opacity-60"),
     children: [
-      /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime29.jsxs("div", {
         className: "flex items-start gap-1.5",
         children: [
-          open ? /* @__PURE__ */ jsx_runtime28.jsx(Spinner, {
+          open ? /* @__PURE__ */ jsx_runtime29.jsx(Spinner, {
             className: "mt-0.5 shrink-0 text-ink-faint"
-          }) : /* @__PURE__ */ jsx_runtime28.jsx(Check, {
+          }) : /* @__PURE__ */ jsx_runtime29.jsx(Check, {
             "aria-hidden": true,
             className: "mt-0.5 size-3 shrink-0 text-added"
           }),
-          /* @__PURE__ */ jsx_runtime28.jsx("p", {
+          /* @__PURE__ */ jsx_runtime29.jsx("p", {
             className: "min-w-0 flex-1 whitespace-pre-wrap text-ink",
             children: task.text
           })
         ]
       }),
-      task.status && /* @__PURE__ */ jsx_runtime28.jsx("p", {
+      task.status && /* @__PURE__ */ jsx_runtime29.jsx("p", {
         className: "mt-0.5 pl-4.5 text-[11px] text-ink-dim italic",
         children: task.status
       }),
-      task.outcome && /* @__PURE__ */ jsx_runtime28.jsx("p", {
+      task.outcome && /* @__PURE__ */ jsx_runtime29.jsx("p", {
         className: "mt-0.5 pl-4.5 text-[11px] text-ink-dim",
         children: task.outcome
       }),
-      /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime29.jsxs("div", {
         className: "mt-1 flex items-center gap-1.5 pl-4.5 text-[10px] text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_runtime28.jsx("span", {
+          /* @__PURE__ */ jsx_runtime29.jsx("span", {
             children: task.who === "agent" ? "Agent" : "You"
           }),
-          /* @__PURE__ */ jsx_runtime28.jsx("span", {
+          /* @__PURE__ */ jsx_runtime29.jsx("span", {
             children: "·"
           }),
-          /* @__PURE__ */ jsx_runtime28.jsx("span", {
+          /* @__PURE__ */ jsx_runtime29.jsx("span", {
             children: when2(task.createdAt)
           }),
-          !open && task.doneAt !== undefined && /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+          !open && task.doneAt !== undefined && /* @__PURE__ */ jsx_runtime29.jsxs("span", {
             children: [
               "· done ",
               when2(task.doneAt)
             ]
           }),
-          open && /* @__PURE__ */ jsx_runtime28.jsx(Button3, {
+          open && /* @__PURE__ */ jsx_runtime29.jsx(Button3, {
             type: "button",
             variant: "ghost",
             size: "sm",
@@ -60821,26 +60910,26 @@ function TasksPanel({
 }) {
   const open = tasks.filter((t2) => t2.doneAt === undefined);
   const done = tasks.filter((t2) => t2.doneAt !== undefined);
-  return /* @__PURE__ */ jsx_runtime28.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime29.jsx("div", {
     className: "min-h-0 flex-1 overflow-auto p-3",
-    children: tasks.length === 0 ? /* @__PURE__ */ jsx_runtime28.jsx("p", {
+    children: tasks.length === 0 ? /* @__PURE__ */ jsx_runtime29.jsx("p", {
       className: "px-1 py-6 text-center text-xs text-ink-faint",
       children: "Work the agent has started shows up here, and clears when it finishes."
-    }) : /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+    }) : /* @__PURE__ */ jsx_runtime29.jsxs("div", {
       className: "flex flex-col gap-2",
       children: [
-        open.map((t2) => /* @__PURE__ */ jsx_runtime28.jsx(Row2, {
+        open.map((t2) => /* @__PURE__ */ jsx_runtime29.jsx(Row2, {
           task: t2,
           onDone
         }, t2.id)),
-        done.length > 0 && /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+        done.length > 0 && /* @__PURE__ */ jsx_runtime29.jsxs("div", {
           className: "mt-1 flex items-center gap-2",
           children: [
-            /* @__PURE__ */ jsx_runtime28.jsx("p", {
+            /* @__PURE__ */ jsx_runtime29.jsx("p", {
               className: "text-[10px] tracking-wide text-ink-faint uppercase",
               children: "Done"
             }),
-            /* @__PURE__ */ jsx_runtime28.jsxs(Button3, {
+            /* @__PURE__ */ jsx_runtime29.jsxs(Button3, {
               type: "button",
               variant: "ghost",
               size: "sm",
@@ -60855,7 +60944,7 @@ function TasksPanel({
             })
           ]
         }),
-        done.slice(0, 20).map((t2) => /* @__PURE__ */ jsx_runtime28.jsx(Row2, {
+        done.slice(0, 20).map((t2) => /* @__PURE__ */ jsx_runtime29.jsx(Row2, {
           task: t2,
           onDone
         }, t2.id))
@@ -60889,7 +60978,7 @@ function TaskToasts({
 
 // src/scriptorium/surface/components/Toasts.tsx
 var import_react28 = __toESM(require_react(), 1);
-var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
 var TOAST_MS = 6000;
 function useToasts() {
   const [toasts, setToasts] = import_react28.useState([]);
@@ -60923,32 +61012,32 @@ function Toasts({
 }) {
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_runtime29.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime30.jsx("div", {
     role: "status",
     "aria-live": "polite",
     className: "pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2",
-    children: toasts.map((t2) => /* @__PURE__ */ jsx_runtime29.jsxs("div", {
+    children: toasts.map((t2) => /* @__PURE__ */ jsx_runtime30.jsxs("div", {
       className: cn("pointer-events-auto flex items-start gap-2 rounded-md border border-edge", "bg-surface-raised px-3 py-2 text-sm text-ink shadow-lg"),
       children: [
-        /* @__PURE__ */ jsx_runtime29.jsxs("div", {
+        /* @__PURE__ */ jsx_runtime30.jsxs("div", {
           className: "min-w-0 flex-1",
           children: [
-            /* @__PURE__ */ jsx_runtime29.jsx("p", {
+            /* @__PURE__ */ jsx_runtime30.jsx("p", {
               className: "font-medium",
               children: t2.title
             }),
-            t2.description && /* @__PURE__ */ jsx_runtime29.jsx("p", {
+            t2.description && /* @__PURE__ */ jsx_runtime30.jsx("p", {
               className: "mt-0.5 text-xs text-ink-dim",
               children: t2.description
             })
           ]
         }),
-        /* @__PURE__ */ jsx_runtime29.jsx("button", {
+        /* @__PURE__ */ jsx_runtime30.jsx("button", {
           type: "button",
           onClick: () => onDismiss(t2.id),
           "aria-label": "Dismiss",
           className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-          children: /* @__PURE__ */ jsx_runtime29.jsx(X, {
+          children: /* @__PURE__ */ jsx_runtime30.jsx(X, {
             "aria-hidden": true,
             className: "size-3.5"
           })
@@ -60958,25 +61047,29 @@ function Toasts({
   });
 }
 
-// src/scriptorium/surface/components/WaitingBadge.tsx
-var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
-var LABEL = {
-  working: "working on this…",
-  stalled: "took this in, then went quiet — may be stuck"
-};
-function WaitingBadge({ badge }) {
-  const working = badge === "working";
-  return /* @__PURE__ */ jsx_runtime30.jsxs("p", {
-    "aria-live": "polite",
-    className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention"),
-    children: [
-      /* @__PURE__ */ jsx_runtime30.jsx("span", {
-        "aria-hidden": true,
-        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
-      }),
-      LABEL[badge]
-    ]
-  });
+// src/scriptorium/surface/state/notes.ts
+function badgesOn(waiting, doc2) {
+  const out = new Map;
+  for (const n of waiting)
+    if (n.doc === doc2)
+      out.set(n.noteId, n.badge);
+  return out;
+}
+function loudest(badges) {
+  let got = null;
+  for (const b of badges) {
+    if (b === "stalled")
+      return "stalled";
+    got = "working";
+  }
+  return got;
+}
+function label(quote, max2 = 60) {
+  const flat = quote.replace(/\s+/gu, " ").trim();
+  return flat.length <= max2 ? flat : `${flat.slice(0, max2 - 1).trimEnd()}…`;
+}
+function askAboutNote(note, docName) {
+  return `About my note on “${label(note.quote)}” in ${docName}: ${note.body}`;
 }
 
 // src/scriptorium/surface/state/storage.ts
@@ -61224,7 +61317,7 @@ var CONNECTION_LABEL = {
   closed: "daemon unreachable — retrying"
 };
 function ColumnButton({
-  label,
+  label: label2,
   onClick,
   pressed,
   control,
@@ -61234,9 +61327,9 @@ function ColumnButton({
     type: "button",
     onClick,
     "data-column-control": control,
-    "aria-label": label,
+    "aria-label": label2,
     "aria-pressed": pressed,
-    title: label,
+    title: label2,
     className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "[&_svg]:size-3.5", pressed && "bg-surface-raised text-ink"),
     children
   });
@@ -61457,6 +61550,12 @@ function Workspace({
   const [focusedNote, setFocusedNote] = import_react30.useState(null);
   const open = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
+  const noteBadges = import_react30.useMemo(() => badgesOn(state.notesWaiting, open?.slug ?? null), [state.notesWaiting, open?.slug]);
+  const notesLoudest = loudest(noteBadges.values());
+  const askAbout = (note, docName) => {
+    send({ type: "say", text: askAboutNote(note, docName), withSelection: false });
+    setRightPane("conversation");
+  };
   const openTasks = state.tasks.filter((t2) => t2.doneAt === undefined);
   const activeDoc = open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
   const text4 = open ? texts.get(textKey(open.slug, open.active)) : undefined;
@@ -61675,6 +61774,9 @@ function Workspace({
               dock: collapsed.chat && /* @__PURE__ */ jsx_runtime31.jsx(FloatingComposer, {
                 chat: state.chat,
                 waiting: state.waiting,
+                notesWaiting: state.notesWaiting,
+                docs: state.docs,
+                onAsk: askAbout,
                 onOpen: () => {
                   setRightPane("conversation");
                   toggleFrom("chat", "expand");
@@ -61694,12 +61796,12 @@ function Workspace({
                 if (open)
                   send({ type: "activate", doc: open.slug, version: version3 });
               },
-              onNewVersion: (label, intent) => {
+              onNewVersion: (label2, intent) => {
                 if (open)
                   send({
                     type: "version.new",
                     doc: open.slug,
-                    ...label ? { label } : {},
+                    ...label2 ? { label: label2 } : {},
                     activate: intent === "branch"
                   });
               },
@@ -61718,6 +61820,7 @@ function Workspace({
               reveal,
               clearSeq,
               focusedNote,
+              notesWaiting: noteBadges,
               onAddNote: (from, to, body) => {
                 if (open)
                   send({ type: "note.add", doc: open.slug, from, to, body });
@@ -61780,7 +61883,16 @@ function Workspace({
                       onClick: () => setRightPane(which),
                       "aria-pressed": rightPane === which,
                       className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                      children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                      children: which === "notes" && openNotes.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                        className: "flex items-center gap-1",
+                        children: [
+                          `Notes (${openNotes.length})`,
+                          notesLoudest && /* @__PURE__ */ jsx_runtime31.jsx(WaitingDot, {
+                            badge: notesLoudest,
+                            of: "note"
+                          })
+                        ]
+                      }) : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
                         className: "flex items-center gap-1",
                         children: [
                           /* @__PURE__ */ jsx_runtime31.jsx(Spinner, {
@@ -61811,6 +61923,8 @@ function Workspace({
               }) : rightPane === "notes" ? /* @__PURE__ */ jsx_runtime31.jsx(NotesPanel, {
                 notes: open?.notes ?? [],
                 focusedId: focusedNote,
+                waiting: noteBadges,
+                onAsk: (n) => open && askAbout(n, open.name),
                 selection: open && selection && text4 !== undefined ? { ...selection, text: text4.slice(selection.from, selection.to) } : null,
                 onAdd: (from, to, body) => {
                   if (open)
@@ -61870,13 +61984,56 @@ function Workspace({
 function FloatingComposer({
   chat,
   waiting,
+  notesWaiting,
+  docs,
+  onAsk,
   onOpen,
   children
 }) {
   const last2 = chat.findLast((m2) => m2.who !== "system");
+  const first = notesWaiting[0];
+  const firstDoc = first ? docs.find((d) => d.slug === first.doc) : undefined;
+  const firstNote = firstDoc?.notes.find((n) => n.id === first?.noteId);
+  const badge = loudest(notesWaiting.map((n) => n.badge));
   return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
     className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
     children: [
+      firstDoc && firstNote && badge && /* @__PURE__ */ jsx_runtime31.jsxs("div", {
+        className: "flex items-center gap-2 px-1 text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+            className: "min-w-0 flex-1 truncate",
+            title: firstNote.body,
+            children: [
+              /* @__PURE__ */ jsx_runtime31.jsx("span", {
+                className: "mr-1.5 font-medium text-ink-faint",
+                children: "Your note"
+              }),
+              firstNote.body,
+              notesWaiting.length > 1 && /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                className: "ml-1.5 text-ink-faint",
+                children: [
+                  "+",
+                  notesWaiting.length - 1,
+                  " more"
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime31.jsx(WaitingBadge, {
+            badge,
+            of: "note",
+            className: "mt-0 shrink-0"
+          }),
+          badge === "stalled" && /* @__PURE__ */ jsx_runtime31.jsx("button", {
+            type: "button",
+            onClick: () => onAsk(firstNote, firstDoc.name),
+            title: "Send this note to the agent as a message in the conversation",
+            className: "shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline",
+            children: "Ask the agent"
+          })
+        ]
+      }),
       last2 && /* @__PURE__ */ jsx_runtime31.jsxs("div", {
         className: "flex items-center gap-2 px-1 text-[11px] text-ink-dim",
         children: [

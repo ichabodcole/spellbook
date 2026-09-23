@@ -206,6 +206,11 @@ export type Note = {
   createdAt: number;
   /** When the body was last changed — absent if it never was (E46). */
   editedAt?: number;
+  /**
+   * Who changed it then (E65) — what tells a human's rewrite, which is owed an
+   * answer, from the agent's, which is one. Absent on edits made before E65.
+   */
+  editedBy?: VersionAuthor;
   resolved: boolean;
 };
 
@@ -295,6 +300,19 @@ export type Waiting = {
   badge: "working" | "stalled";
 };
 
+/**
+ * E65: a note the human wrote and the agent has not answered — E53's `Waiting`,
+ * for a note. Same two badges, same rule for each: `stalled` is STATIC.
+ * DERIVED by the daemon from the notes and the conversation (`notesWaiting` in
+ * `waiting.ts`); nothing stores it, so a reload or a restart re-derives it.
+ */
+export type NoteWaiting = {
+  doc: string;
+  noteId: string;
+  since: number;
+  badge: Waiting["badge"];
+};
+
 export type ChatMessage = {
   id: string;
   who: ChatWho;
@@ -327,6 +345,12 @@ export type PublicState = {
    * about whether to draw a pulse and whether to send a ping.
    */
   waiting: Waiting | null;
+  /**
+   * E65: every note still owed an answer, oldest first — the same derivation
+   * as `waiting`, for notes, and computed in the same place for the same
+   * reason: one rule, drawn wherever the note is shown.
+   */
+  notesWaiting: NoteWaiting[];
   /**
    * E60: what the context's undo arrows should show. ⚠ NOT the editor's undo —
    * CodeMirror owns keystrokes inside a document; this is acts on the SHAPE of

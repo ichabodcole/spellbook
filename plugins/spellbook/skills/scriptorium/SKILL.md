@@ -133,9 +133,13 @@ Facts, not chatter. The ones worth acting on:
 - **`waiting`** — they have been waiting 30 seconds with no reply from you. It
   carries the text they are waiting on. Answer, or `working` to say you are
   still on it (see below).
-- **`note.added`** — they annotated a passage. The event names the document, not
-  the text; `notes --doc <slug>` reads it. **A note is not a request.** They are
-  marking something for themselves unless they say otherwise.
+- **`note.added`** — they annotated a passage, and **expect you to act on it**.
+  A short note arrives whole — the passage (`quote`), what they wrote (`body`)
+  and its `lines`; a long one says to read it with `notes --doc <slug>`. Answer
+  it or propose a version, then **resolve it** (`note-resolve <id>`): resolving
+  is what tells them it is dealt with, and the event's `hint` names the exact
+  command. A `note.edited` from them carries the same fields and is owed the
+  same.
 - **`doctor`** — at startup, anything worth looking at in the session, each
   finding carrying the verb that fixes it. Offer; do not silently repair. **It
   says nothing when there is nothing wrong**, so its absence is good news rather
@@ -158,6 +162,12 @@ honest replies:
 
 You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
+
+**A note of theirs shows the same thing** — a pulse on the note until you say
+something in the app or resolve it, then "may be stuck" after 30 seconds.
+`working` covers notes too. There is no nudge for a note: when one looks stuck,
+they have a button that asks you about it, and it arrives as an ordinary
+`message`.
 
 ## The four words that mean something specific
 
