@@ -6,8 +6,8 @@ title:
 description:
   A stale chip when a rendered selection cannot be placed, ctrl+click read as a
   right-click off macOS, a chip that outlives an Escape-dismissed note menu, a
-  Notes-panel note that does not consume the selection, and (most serious) a
-  chip that survives a document switch under the new document's name
+  Notes-panel note that does not consume the selection, and (fixed, E66) a chip
+  that survived a document switch under the new document's name
 tags: [scriptorium, selection, edge-cases]
 status: draft
 lifecycle: open
@@ -21,7 +21,7 @@ Raised by the independent review of `fix/scriptorium-selection-context`
 defect the branch fixed; each is the same _shape_ — the chip saying something
 the document does not.
 
-## 0. ⛔ The chip survives a document switch, and names the wrong document (most serious)
+## 0. ✅ The chip survived a document switch, and named the wrong document (fixed, E66)
 
 Reproduced with real mouse input by the reviewer of record of
 `feat/scriptorium-note-in-progress` (2026-09-22). `develop`'s `dist/` behaves
@@ -41,8 +41,18 @@ A `say` now would send the agent alpha's text attributed to beta, at a line
 number that means nothing there. The held selection outlives the switch and is
 re-labelled with the new document instead of being dropped.
 
-The fix probably follows branch 1's rule: switching the open document is a
-clear, like the chip's X.
+**✅ Fixed on `fix/scriptorium-chip-across-documents` (E66).** Switching the
+document text on screen (another document, or another version of this one)
+clears the held selection in the surface and in the daemon, the same clear as
+the chip's X. It is dropped, never re-labelled, and going back does not revive
+it. The rule is `selectionOnScreen` in `backend/selection.ts`, shared by both
+halves. The surface's selection now carries the `doc` and `version` it was made
+in, and the daemon applies the rule on every read and refuses a `select` for
+text that is not on screen. Driven with real mouse input across every path that
+moves the open document. The list is in E66.
+
+None of edges 1–4 fell to the same act. Each is about a selection within one
+document.
 
 ## 1. An unplaceable selection keeps the previous passage on the chip
 

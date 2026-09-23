@@ -2534,3 +2534,66 @@ left as built, and stated plainly here so real use knows what to watch for.
 
 Also as documented above: a note edited before `editedBy` existed counts from
 when it was made.
+
+## E66 — A selection belongs to the text it was made in
+
+**Ruled:** the orchestrator of the `2026-09-scriptorium-real-use` cycle,
+2026-09-22, reading Cole's standing "keep the UX model simple" and his chip
+ruling ("if you clear the context from the chat, that … should be treated as
+clearing the selection"). The defect was edge 0 of
+[the selection-edges backlog item](../../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md).
+Select in `alpha.md`, click `beta.md`, and the chip read `beta.md · v1 · line 5`
+over alpha's words. The daemon held the same thing, so a `say` would have sent
+alpha's text attributed to beta's path and line.
+
+**⛔ THE RULE: when the document text on screen changes, the held selection is
+cleared, in the surface and in the daemon.** "The text on screen" is the open
+document at its active version, so another document **or another version**
+counts. It is the same clear as the chip's X: the selection goes, and so does
+its paint. It is dropped, never re-labelled, and going back does not revive it.
+
+**Why it happened.** The surface held the selection as offsets and lines with no
+document of its own. The effect that tells the daemon stamped it with whatever
+document was open when it ran. A switch re-ran that effect, and the old passage
+went out under the new name. The rendered pane could not catch it either: the
+press was in the context list, so the emptied browser selection was not the
+pane's to clear.
+
+**Built:**
+
+- `selectionOnScreen` (`backend/selection.ts`) is the one rule, shared by both
+  halves: a selection is kept only while its `doc` and `version` are the ones on
+  screen.
+- **Surface.** `HeldSelection` carries the `doc` and `version` it was made in,
+  stamped by App on each report. A new `shown` event goes through
+  `applySelectionEvent`, so a switch reaches the paint the way the X does. App
+  also derives `shown` for the one render between the switch and the clear. That
+  render is the one that used to send the stale selection, so the chip, the
+  Notes panel and the daemon read `shown`, not `selection`.
+- **Daemon.** Every read of the held selection (`/state`, the snapshot, `say`)
+  goes through the rule, and a `select` naming text that is not on screen is
+  refused. The open document moves from many places: the surface's `open` and
+  `open.doc`, a followed link, the agent's `activate`, a document removed, an
+  undo. Checking at each of them is a check some later path would forget, so the
+  check is on the read.
+
+**Checked with real mouse input**, the chip and `/state` agreeing after each:
+the context-list click (the repro), a search result in another document, the
+Notes panel's "note owed an answer on X" line, a followed link, the agent's
+`activate`, the human's version menu, the history arrow undoing a removal of the
+open document, a reload, and raw mode. **A rename is not a switch.** The
+document record and its text are the same, and the chip and the daemon's path
+follow the new name together.
+
+**Not taken:**
+
+- **Re-key the selection to the new document.** That is the defect.
+- **Keep it for a deliberate "select in A, ask about it from B".** No such flow
+  was found, and the chip already names the document, so a human reading B while
+  asking about A would see one name and mean the other. If real use produces
+  this flow, the answer is a chip that visibly says "from alpha.md", not a
+  selection that silently outlives its text.
+- **Keep it across a version switch, since the text is often identical.** The
+  offsets belong to one version's text, and a branch made to rewrite a passage
+  is exactly the case where they stop matching. One rule is simpler to hold than
+  "same document unless the text moved".
