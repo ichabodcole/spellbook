@@ -2227,16 +2227,45 @@ minimum. That is a different fact — "how wide I like it", not "is it open" —
 it gets its own small pref, `panes:open`, and reopening uses `resize` to that
 width (default 22% / 28%) instead of the library's `expand()`.
 
+**⚠ AND TWO WAYS THAT FIRST VERSION WENT WRONG, found by the no-stake
+verifier.** (1) The separator's Enter still ran the library's `expand()`, so
+after a reload it reopened a 512 px column at 153 px (the 12% minimum), and that
+minimum was then SAVED as the reopen width, so the buttons reopened at 153 px
+from then on. Enter on either handle now goes through the same collapse and
+reopen as the buttons, taken in the capture phase before the library's listener
+sees it. A width at a column's minimum is also never remembered, and a stored
+one decodes to nothing, so a pref the bug already wrote heals itself. The price
+is that a column deliberately dragged to exactly its minimum does not reopen
+there. (2) A width remembered while the other column was collapsed could be too
+wide once that column came back. Reopening at it squeezed the document to its
+minimum and then pushed the OTHER column shut. The reopen width is now capped so
+the document keeps its 25%, and never goes below the column's own minimum
+(`reopenSize`).
+
 **The affordance (ours; Cole had not ruled).** A collapse button at the end of
 each column's own heading, and a reopen button at the matching END of the
 document's heading — where the column went, which is where the eye looks for it.
 The resize handle stays at the window edge, so a column can also be dragged shut
-or dragged back out, and the library's own separator keyboard (Enter on the left
-handle) collapses and reopens the context column; the right handle's Enter acts
-on the document, which does not collapse, so it does nothing. **Not taken:** a
-keyboard shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and
+or dragged back out. Enter on a focused handle collapses and reopens the column
+beside it: the left handle acts on the context, the right on the conversation.
+The library bound the right handle's Enter to the document, which does not
+collapse, so it used to do nothing. **Controls that take themselves away hand
+focus on**: collapsing moves focus to the reopen button, and reopening moves it
+back to the collapse button, instead of dropping it to `<body>`. **Not taken:**
+a keyboard shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and
 forward, ⌘B is bold to anyone who has used an editor), and a shortcut is the
 least discoverable of the options; it can come when real use asks for it.
+
+**⛔ THESE CONTROLS STAY REACHABLE AT EVERY WIDTH THE LAYOUT ALLOWS
+(verifier).** The conversation's tabs need about 275 px, and at its 15% minimum
+the column is 192 px even in a 1280 px window, so a collapse button placed after
+the tabs was pushed out of sight. Each column's collapse button is now pinned,
+and the title and tabs around it shrink, wrap or clip instead. The document's
+heading wraps to a second row instead of clipping, because the pane can be as
+narrow as 25% of the window. Checked with `elementFromPoint` on every column,
+reader and view-mode control at 1280, 900 and 600 px, with each column in turn
+at its minimum and the document at its minimum. **Not taken:** an overflow menu,
+which makes a control reachable only by first finding the menu.
 
 **⚠ THE FLOAT IS IN THE FLOW, NOT OVER THE TEXT.** It reserves its own height at
 the foot of the pane, so it never covers the last lines of the document and the
@@ -2252,8 +2281,10 @@ in `state/columns.ts`), so collapsing a column makes split available with no
 further wiring, and reopening one falls back to rendered exactly as a narrow
 drag always did. The disabled split button now says "collapse a side column to
 make room" when collapsing WOULD make room (`splitRoom`), and only then — a
-refusal that names the act that answers it. Compare gets the width and nothing
-else, as ruled.
+refusal that names the act that answers it. The estimate is rounded to the
+pixel: the browser lays out in 1/64 px units, and an unrounded one read a hair
+under 720 in a window where collapsing gave exactly 720 (verifier). Compare gets
+the width and nothing else, as ruled.
 
 **⛔ READER MODE IS A PRESET, AND IT IS DERIVED (Cole: build only if cheap — it
 was).** Reader mode is rendered + both columns collapsed + quieter chrome, so
@@ -2267,6 +2298,14 @@ pointer or the keyboard focus reaches them. **Not taken:** hiding them — that
 would take Save, the version and "Unsaved" out of reach. **Not taken:**
 remembering the view you entered from and restoring it on leave, which would be
 the second piece of state the preset exists to avoid.
+
+**⛔ UNSAVED STAYS LOUD (Cole, 2026-09-22, asked after the verifier raised
+it).** While the document has unsaved edits, Save and the "Unsaved" marker stay
+at full strength in reader mode, and everything else still fades. A quiet
+reading view must not make an unsaved edit easy to forget. With nothing unsaved,
+Save has nothing to do and fades with the rest (`readerStaysLoud`). Because
+opacity multiplies down the tree, the fade moved from the two bars onto their
+parts. A faded bar cannot hold one of its children at full strength.
 
 **⚠ A HOLE IN E63 THAT COLLAPSING EXPOSED, CLOSED.** The rendered pane caches
 its block anchors and clears them from a `ResizeObserver`. A collapse widens the

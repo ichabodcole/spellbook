@@ -12,6 +12,7 @@ import {
   encodeOpenSizes,
   isReader,
   readerAct,
+  readerStaysLoud,
   rememberOpen,
   reopenSize,
   SPLIT_MIN_PX,
@@ -20,6 +21,8 @@ import {
 
 /** A layout `useDefaultLayout` wrote to a real home's prefs, verbatim. */
 const REAL = { context: 21.722, document: 52.742, chat: 25.536 };
+/** The same home with the context collapsed — plenty of room to reopen it. */
+const CONTEXT_SHUT = { context: 0, document: 74.464, chat: 25.536 };
 
 describe("collapsedSides — what counts as collapsed", () => {
   test("a layout the library saved with both columns open: nothing is collapsed", () => {
@@ -75,10 +78,35 @@ describe("the width a column reopens to — kept in the home's prefs", () => {
   });
 
   test("reopening uses the remembered width, else the column's default", () => {
-    expect(reopenSize({ context: 30 }, "context")).toBe(30);
+    expect(reopenSize({ context: 30 }, "context", CONTEXT_SHUT)).toBe(30);
     // The defaults are the ones `App.tsx` gives the panels: 22 and 28.
-    expect(reopenSize({}, "context")).toBe(22);
-    expect(reopenSize({}, "chat")).toBe(28);
+    expect(reopenSize({}, "context", CONTEXT_SHUT)).toBe(22);
+    expect(reopenSize({}, "chat", { context: 22, document: 78, chat: 0 })).toBe(28);
+  });
+
+  test("a column at its MINIMUM is not a width to reopen to — it is what the library falls back to", () => {
+    // Verifier, 2026-09-22: Enter on the handle after a reload reopened the
+    // context at 12% (153 px of 1280), and that 12 was then saved, so every
+    // later reopen came back at 153 px too.
+    const before = { context: 40, chat: 25 };
+    expect(rememberOpen(before, { context: 12, document: 63, chat: 25 })).toBe(before);
+    expect(rememberOpen(before, { context: 40, document: 45, chat: 15 })).toBe(before);
+  });
+
+  test("a stored minimum decodes to nothing, so a pref the old bug wrote heals itself", () => {
+    expect(decodeOpenSizes('{"context":12,"chat":15}')).toEqual({});
+  });
+
+  test("reopening never pushes the OTHER column shut: the document keeps its 25% minimum", () => {
+    // Verifier: context remembered at ~75%, conversation dragged out to ~55%;
+    // reopening the context at 75% squeezed the conversation shut.
+    // 100 − 55 (conversation) − 25 (document's minimum) leaves 20.
+    expect(reopenSize({ context: 75 }, "context", { context: 0, document: 45, chat: 55 })).toBe(20);
+  });
+
+  test("…and never below the column's own minimum, even when that means squeezing", () => {
+    // 100 − 70 − 25 = 5, under the context's 12% minimum.
+    expect(reopenSize({ context: 40 }, "context", { context: 0, document: 30, chat: 70 })).toBe(12);
   });
 
   test("the pref round-trips", () => {
@@ -119,6 +147,13 @@ describe("splitRoom — split against the width the pane actually gets", () => {
     expect(splitRoom(400, 60)).toEqual({ now: false, ifCollapsed: false });
   });
 
+  test("the estimate is not defeated by sub-pixel noise at the boundary", () => {
+    // Verifier: a 722 px window said "no room" although collapsing gave the
+    // document exactly 720 px. Measured widths are fractional and the layout
+    // is rounded to three decimals, so half of 720 can come back a hair short.
+    expect(splitRoom(359.99, 50).ifCollapsed).toBe(true);
+  });
+
   test("with both columns already collapsed there is nothing more to reclaim", () => {
     expect(splitRoom(700, 100)).toEqual({ now: false, ifCollapsed: false });
   });
@@ -150,5 +185,19 @@ describe("reader mode — a preset, not a fifth view mode (Cole)", () => {
 
   test("leaving: both columns come back, and the view stays rendered", () => {
     expect(readerAct("rendered", both)).toEqual({ expand: ["context", "chat"], collapse: [] });
+  });
+});
+
+describe("what reader mode's fade leaves at full strength (Cole, 2026-09-22)", () => {
+  test("with unsaved edits, Save and the Unsaved marker stay loud and the rest fades", () => {
+    expect(readerStaysLoud("save", true)).toBe(true);
+    expect(readerStaysLoud("unsaved", true)).toBe(true);
+    expect(readerStaysLoud("other", true)).toBe(false);
+  });
+
+  test("with nothing unsaved, everything fades — Save has nothing to do", () => {
+    expect(readerStaysLoud("save", false)).toBe(false);
+    expect(readerStaysLoud("unsaved", false)).toBe(false);
+    expect(readerStaysLoud("other", false)).toBe(false);
   });
 });

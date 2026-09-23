@@ -32,6 +32,18 @@ export type OpenSizes = Partial<Record<Side, number>>;
 export const DEFAULT_SIZE: Record<Side, number> = { context: 22, chat: 28 };
 /** The narrowest an OPEN column may be dragged to — the panels' `minSize`. */
 export const MIN_SIZE: Record<Side, number> = { context: 12, chat: 15 };
+/** The document pane's `minSize` — what a reopening column must leave it. */
+export const DOC_MIN_SIZE = 25;
+
+/**
+ * ⚠ A COLUMN AT ITS MINIMUM IS NOT A WIDTH TO REOPEN TO. The minimum is what
+ * the library's own `expand()` falls back to when it has no remembered width
+ * (after a reload), and remembering it turned one bad reopen into every later
+ * one (verifier, 2026-09-22). A human who really drags a column to exactly its
+ * minimum loses only the remembering of that width, which is the cheaper
+ * mistake. Half a percent of slack, because the layout is floating-point.
+ */
+const atMinimum = (side: Side, size: number) => size <= MIN_SIZE[side] + 0.5;
 
 /** The pref the reopen widths live in, beside the library's layout pref. */
 export const OPEN_PREF = "panes:open";
@@ -62,14 +74,29 @@ export function rememberOpen(prev: OpenSizes, layout: Layout): OpenSizes {
   let next: OpenSizes = prev;
   for (const side of SIDES) {
     const size = layout[side];
-    if (collapsed[side] || typeof size !== "number" || prev[side] === size) continue;
+    if (collapsed[side] || typeof size !== "number" || atMinimum(side, size) || prev[side] === size)
+      continue;
     next = { ...next, [side]: size };
   }
   return next;
 }
 
-export function reopenSize(open: OpenSizes, side: Side): number {
-  return open[side] ?? DEFAULT_SIZE[side];
+/**
+ * The width to reopen `side` at, given the layout it reopens into.
+ *
+ * ⛔ CAPPED SO REOPENING ONE COLUMN NEVER PUSHES THE OTHER SHUT (verifier,
+ * 2026-09-22). A width remembered while the other column was collapsed can be
+ * too wide once that column is back; resized to it anyway, the library
+ * squeezes the document to its minimum and then the OTHER column below ITS
+ * minimum, which collapses it. So the reopen leaves the document its minimum
+ * and takes only what is left — but never less than the column's own minimum.
+ */
+export function reopenSize(open: OpenSizes, side: Side, layout: Layout | undefined): number {
+  const want = open[side] ?? DEFAULT_SIZE[side];
+  const other: Side = side === "context" ? "chat" : "context";
+  const otherSize = layout?.[other] ?? 0;
+  const room = 100 - otherSize - DOC_MIN_SIZE;
+  return Math.max(MIN_SIZE[side], Math.min(want, room));
 }
 
 export function encodeOpenSizes(open: OpenSizes): string {
@@ -89,8 +116,9 @@ export function decodeOpenSizes(raw: string | undefined): OpenSizes {
   const out: OpenSizes = {};
   for (const side of SIDES) {
     const v = (parsed as Record<string, unknown>)[side];
-    // A zero (or anything under the collapsed line) would "reopen" collapsed.
-    if (typeof v === "number" && Number.isFinite(v) && v >= COLLAPSED_BELOW && v < 100)
+    // A zero would "reopen" collapsed, and a minimum is the library's fallback
+    // rather than anybody's choice (`atMinimum`).
+    if (typeof v === "number" && Number.isFinite(v) && !atMinimum(side, v) && v < 100)
       out[side] = v;
   }
   return out;
@@ -121,7 +149,12 @@ export function splitRoom(
   const now = paneWidth === 0 || paneWidth >= SPLIT_MIN_PX;
   if (now || docPercent <= 0 || docPercent >= 100 - COLLAPSED_BELOW)
     return { now, ifCollapsed: false };
-  return { now, ifCollapsed: (paneWidth * 100) / docPercent >= SPLIT_MIN_PX };
+  // Rounded to the pixel: the browser lays the pane out in 1/64 px units and
+  // the layout's percentages are rounded to three decimals, so the estimate
+  // lands a few hundredths either side of the whole-pixel width the document
+  // would really get (in a 722 px window, where collapsing leaves exactly
+  // 720, three layouts read 720.003–720.014, and the verifier's read short).
+  return { now, ifCollapsed: Math.round((paneWidth * 100) / docPercent) >= SPLIT_MIN_PX };
 }
 
 /**
@@ -149,4 +182,15 @@ export function readerAct(
     collapse: SIDES.filter((s) => !collapsed[s]),
     expand: [],
   };
+}
+
+/**
+ * ⛔ WHAT READER MODE'S FADE LEAVES ALONE (Cole, 2026-09-22): while the document
+ * has unsaved edits, Save and the "Unsaved" marker stay at full strength and
+ * everything else still fades. A quiet reading view must not make an unsaved
+ * edit easy to forget; with nothing unsaved, Save has nothing to do and fades
+ * with the rest.
+ */
+export function readerStaysLoud(part: "save" | "unsaved" | "other", dirty: boolean): boolean {
+  return dirty && part !== "other";
 }

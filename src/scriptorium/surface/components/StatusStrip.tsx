@@ -11,9 +11,18 @@ export type StatusSegment = {
   label?: string;
   value: string;
   priority?: "low";
+  /** E64: stays at full strength when the strip is faded (reader mode). */
+  loud?: boolean;
 };
 
-export function StatusStrip({ segments }: { segments: StatusSegment[] }) {
+export function StatusStrip({
+  segments,
+  fade,
+}: {
+  segments: StatusSegment[];
+  /** E64 reader mode: the class that fades a segment; `loud` ones are spared. */
+  fade?: string;
+}) {
   return (
     <div
       data-slot="status-strip"
@@ -24,13 +33,14 @@ export function StatusStrip({ segments }: { segments: StatusSegment[] }) {
           {i > 0 && (
             <Separator
               orientation="vertical"
-              className={cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")}
+              className={cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block", fade)}
             />
           )}
           <span
             className={cn(
               "flex items-baseline gap-1",
               s.priority === "low" && "hidden @[44rem]:flex",
+              !s.loud && fade,
             )}
           >
             {s.label && <span>{s.label}:</span>}

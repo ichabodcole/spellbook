@@ -77,17 +77,21 @@ function ColumnButton({
   label,
   onClick,
   pressed,
+  control,
   children,
 }: {
   label: string;
   onClick: () => void;
   pressed?: boolean;
+  /** Names the control so focus can be handed to it when its twin goes away. */
+  control?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-column-control={control}
       aria-label={label}
       aria-pressed={pressed}
       title={label}
@@ -103,11 +107,29 @@ function ColumnButton({
   );
 }
 
-function PaneHeading({ children, actions }: { children: string; actions?: React.ReactNode }) {
+/**
+ * ⛔ `pinned` NEVER CLIPS (E64, verifier): at the narrowest width the layout
+ * allows, the title and the other actions give way — they shrink and clip —
+ * and the pinned control (the column's collapse button) stays on screen.
+ */
+function PaneHeading({
+  children,
+  actions,
+  pinned,
+}: {
+  children: string;
+  actions?: React.ReactNode;
+  pinned?: React.ReactNode;
+}) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-1 border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase">
-      {children}
-      {actions && <div className="ml-auto flex items-center gap-0.5">{actions}</div>}
+    <div className="flex h-9 shrink-0 items-center gap-1 border-b border-edge px-2 text-xs font-medium tracking-wide text-ink-dim uppercase">
+      <span className="min-w-0 truncate pl-1">{children}</span>
+      {actions && (
+        <div className="ml-auto flex min-w-0 items-center gap-0.5 overflow-hidden">{actions}</div>
+      )}
+      {pinned && (
+        <div className={cn("flex shrink-0 items-center", !actions && "ml-auto")}>{pinned}</div>
+      )}
     </div>
   );
 }
@@ -266,14 +288,55 @@ function Workspace({
   const collapse = useCallback((side: Side) => panelFor(side)?.collapse(), [panelFor]);
   // ⚠ NOT the library's `expand()`: it reopens to a width it keeps in memory,
   // so after a reload a column came back at its minimum. The width it reopens
-  // to is the home's (`panes:open`), like the rest of the layout.
+  // to is the home's (`panes:open`), like the rest of the layout — capped so it
+  // never pushes the other column shut (`reopenSize`).
   const expand = useCallback(
     (side: Side) => {
       const panel = panelFor(side);
-      if (panel?.isCollapsed()) panel.resize(`${reopenSize(openSizesRef.current, side)}%`);
+      if (!panel?.isCollapsed()) return;
+      const other = panelFor(side === "context" ? "chat" : "context");
+      const around = other
+        ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage }
+        : undefined;
+      panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
     },
     [panelFor],
   );
+  /**
+   * ⛔ THE HANDLE'S ENTER GOES THROUGH THE SAME TWO ACTS (verifier). The
+   * library binds Enter on a separator to its own collapse/expand, and its
+   * expand reopens at the MINIMUM after a reload. Taken in the capture phase —
+   * React's capture listener sits on the root, which the event reaches before
+   * the library's listener on the handle itself — so the library never sees it.
+   * The right handle's Enter used to act on the document (not collapsible, so
+   * it did nothing); it now toggles the conversation, the mirror of the left.
+   */
+  const handleEnter = (side: Side) => (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (collapsed[side]) expand(side);
+    else collapse(side);
+  };
+  /**
+   * Where focus goes when a column button takes itself away (E64, verifier):
+   * collapsing makes the button inert and reopening removes the reopen button,
+   * so focus fell to <body>. The twin control is where the next act is.
+   */
+  const focusNext = useRef<string | null>(null);
+  const toggleFrom = (side: Side, act: "collapse" | "expand") => {
+    focusNext.current = `${side}-${act === "collapse" ? "reopen" : "collapse"}`;
+    if (act === "collapse") collapse(side);
+    else expand(side);
+  };
+  useEffect(() => {
+    const id = focusNext.current;
+    if (!id) return;
+    const el = document.querySelector<HTMLElement>(`[data-column-control="${id}"]`);
+    if (!el || el.closest("[inert]")) return;
+    focusNext.current = null;
+    el.focus();
+  });
   const onLayoutChanged = useCallback(
     (next: Layout, meta: Parameters<typeof layout.onLayoutChanged>[1]) => {
       layout.onLayoutChanged(next, meta);
@@ -530,26 +593,27 @@ function Workspace({
         >
           <PaneHeading
             actions={
-              <>
-                <HistoryArrows
-                  history={state.history}
-                  display={(p) => shortPath(p, state.userHome, 2)}
-                  onUndo={(confirmDelete) =>
-                    send(
-                      confirmDelete
-                        ? { type: "history.undo", confirmDelete }
-                        : { type: "history.undo" },
-                    )
-                  }
-                  onRedo={() => send({ type: "history.redo" })}
-                />
-                <ColumnButton
-                  label="Collapse the context column"
-                  onClick={() => collapse("context")}
-                >
-                  <PanelLeftCloseIcon aria-hidden />
-                </ColumnButton>
-              </>
+              <HistoryArrows
+                history={state.history}
+                display={(p) => shortPath(p, state.userHome, 2)}
+                onUndo={(confirmDelete) =>
+                  send(
+                    confirmDelete
+                      ? { type: "history.undo", confirmDelete }
+                      : { type: "history.undo" },
+                  )
+                }
+                onRedo={() => send({ type: "history.redo" })}
+              />
+            }
+            pinned={
+              <ColumnButton
+                label="Collapse the context column"
+                control="context-collapse"
+                onClick={() => toggleFrom("context", "collapse")}
+              >
+                <PanelLeftCloseIcon aria-hidden />
+              </ColumnButton>
             }
           >
             Context
@@ -574,7 +638,7 @@ function Workspace({
             onDismissNotice={clearError}
           />
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle onKeyDownCapture={handleEnter("context")} />
         <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
           <DocumentPane
             doc={open}
@@ -588,7 +652,11 @@ function Workspace({
             // column was, so the way back is where the eye goes looking for it.
             headingStart={
               collapsed.context && (
-                <ColumnButton label="Show the context column" onClick={() => expand("context")}>
+                <ColumnButton
+                  label="Show the context column"
+                  control="context-reopen"
+                  onClick={() => toggleFrom("context", "expand")}
+                >
                   <PanelLeftOpenIcon aria-hidden />
                 </ColumnButton>
               )
@@ -607,7 +675,11 @@ function Workspace({
                   <GlassesIcon aria-hidden />
                 </ColumnButton>
                 {collapsed.chat && (
-                  <ColumnButton label="Show the conversation column" onClick={() => expand("chat")}>
+                  <ColumnButton
+                    label="Show the conversation column"
+                    control="chat-reopen"
+                    onClick={() => toggleFrom("chat", "expand")}
+                  >
                     <PanelRightOpenIcon aria-hidden />
                   </ColumnButton>
                 )}
@@ -711,7 +783,7 @@ function Workspace({
             onRevert={() => open && send({ type: "revert", doc: open.slug })}
           />
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle onKeyDownCapture={handleEnter("chat")} />
         <ResizablePanel
           id="chat"
           panelRef={chatPanel}
@@ -726,40 +798,48 @@ function Workspace({
               "what is being said about this document", so they share, and when
               chat lands it joins as the same kind of tab rather than needing
               somewhere new to live. */}
-          <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2">
-            {(["conversation", "notes", "tasks"] as const).map((which) => (
-              <button
-                key={which}
-                type="button"
-                onClick={() => setRightPane(which)}
-                aria-pressed={rightPane === which}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
-                  "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-                  rightPane === which && "bg-surface-raised text-ink",
-                )}
-              >
-                {/* Parenthesised so the number reads as a COUNT rather than
+          {/* ⛔ THE COLLAPSE BUTTON IS PINNED, THE TABS GIVE WAY (E64,
+              verifier): the tabs need ~275 px and the column's minimum is
+              15% of the window, so with the button after them it was pushed
+              off the edge even at 1280. The tabs wrap, then clip; the button
+              stays on screen at every width the layout allows. */}
+          <div className="flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden">
+              {(["conversation", "notes", "tasks"] as const).map((which) => (
+                <button
+                  key={which}
+                  type="button"
+                  onClick={() => setRightPane(which)}
+                  aria-pressed={rightPane === which}
+                  className={cn(
+                    "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
+                    "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+                    rightPane === which && "bg-surface-raised text-ink",
+                  )}
+                >
+                  {/* Parenthesised so the number reads as a COUNT rather than
                     part of the tab's name (Cole). */}
-                {which === "notes" && openNotes.length > 0 ? (
-                  `Notes (${openNotes.length})`
-                ) : which === "tasks" && openTasks.length > 0 ? (
-                  // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
-                  // the point of a queue is knowing work is outstanding while
-                  // you are looking at something else.
-                  <span className="flex items-center gap-1">
-                    <Spinner className="text-ink-dim" />
-                    {`Tasks (${openTasks.length})`}
-                  </span>
-                ) : (
-                  which
-                )}
-              </button>
-            ))}
-            <div className="ml-auto">
+                  {which === "notes" && openNotes.length > 0 ? (
+                    `Notes (${openNotes.length})`
+                  ) : which === "tasks" && openTasks.length > 0 ? (
+                    // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
+                    // the point of a queue is knowing work is outstanding while
+                    // you are looking at something else.
+                    <span className="flex items-center gap-1">
+                      <Spinner className="text-ink-dim" />
+                      {`Tasks (${openTasks.length})`}
+                    </span>
+                  ) : (
+                    which
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="shrink-0">
               <ColumnButton
                 label="Collapse the conversation column"
-                onClick={() => collapse("chat")}
+                control="chat-collapse"
+                onClick={() => toggleFrom("chat", "collapse")}
               >
                 <PanelRightCloseIcon aria-hidden />
               </ColumnButton>

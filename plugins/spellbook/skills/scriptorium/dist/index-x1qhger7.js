@@ -33714,6 +33714,8 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 var SIDES = ["context", "chat"];
 var DEFAULT_SIZE = { context: 22, chat: 28 };
 var MIN_SIZE = { context: 12, chat: 15 };
+var DOC_MIN_SIZE = 25;
+var atMinimum = (side, size4) => size4 <= MIN_SIZE[side] + 0.5;
 var OPEN_PREF = "panes:open";
 var COLLAPSED_BELOW = 1;
 function collapsedSides(layout2) {
@@ -33728,14 +33730,18 @@ function rememberOpen(prev, layout2) {
   let next = prev;
   for (const side of SIDES) {
     const size4 = layout2[side];
-    if (collapsed[side] || typeof size4 !== "number" || prev[side] === size4)
+    if (collapsed[side] || typeof size4 !== "number" || atMinimum(side, size4) || prev[side] === size4)
       continue;
     next = { ...next, [side]: size4 };
   }
   return next;
 }
-function reopenSize(open, side) {
-  return open[side] ?? DEFAULT_SIZE[side];
+function reopenSize(open, side, layout2) {
+  const want = open[side] ?? DEFAULT_SIZE[side];
+  const other = side === "context" ? "chat" : "context";
+  const otherSize = layout2?.[other] ?? 0;
+  const room = 100 - otherSize - DOC_MIN_SIZE;
+  return Math.max(MIN_SIZE[side], Math.min(want, room));
 }
 function encodeOpenSizes(open) {
   return JSON.stringify(open);
@@ -33754,7 +33760,7 @@ function decodeOpenSizes(raw) {
   const out = {};
   for (const side of SIDES) {
     const v = parsed[side];
-    if (typeof v === "number" && Number.isFinite(v) && v >= COLLAPSED_BELOW && v < 100)
+    if (typeof v === "number" && Number.isFinite(v) && !atMinimum(side, v) && v < 100)
       out[side] = v;
   }
   return out;
@@ -33764,7 +33770,7 @@ function splitRoom(paneWidth, docPercent) {
   const now3 = paneWidth === 0 || paneWidth >= SPLIT_MIN_PX;
   if (now3 || docPercent <= 0 || docPercent >= 100 - COLLAPSED_BELOW)
     return { now: now3, ifCollapsed: false };
-  return { now: now3, ifCollapsed: paneWidth * 100 / docPercent >= SPLIT_MIN_PX };
+  return { now: now3, ifCollapsed: Math.round(paneWidth * 100 / docPercent) >= SPLIT_MIN_PX };
 }
 function isReader(mode, collapsed) {
   return mode === "rendered" && collapsed.context && collapsed.chat;
@@ -33777,6 +33783,9 @@ function readerAct(mode, collapsed) {
     collapse: SIDES.filter((s) => !collapsed[s]),
     expand: []
   };
+}
+function readerStaysLoud(part, dirty) {
+  return dirty && part !== "other";
 }
 
 // node_modules/mdast-util-to-string/lib/index.js
@@ -59487,7 +59496,10 @@ function NoteAtSelection({
 // src/scriptorium/surface/components/StatusStrip.tsx
 var import_react22 = __toESM(require_react(), 1);
 var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
-function StatusStrip({ segments }) {
+function StatusStrip({
+  segments,
+  fade
+}) {
   return /* @__PURE__ */ jsx_runtime21.jsx("div", {
     "data-slot": "status-strip",
     className: "@container flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-edge bg-surface px-3 text-xs whitespace-nowrap text-ink-dim",
@@ -59495,10 +59507,10 @@ function StatusStrip({ segments }) {
       children: [
         i2 > 0 && /* @__PURE__ */ jsx_runtime21.jsx(Separator2, {
           orientation: "vertical",
-          className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block")
+          className: cn("my-1.5", s.priority === "low" && "hidden @[44rem]:block", fade)
         }),
         /* @__PURE__ */ jsx_runtime21.jsxs("span", {
-          className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex"),
+          className: cn("flex items-baseline gap-1", s.priority === "low" && "hidden @[44rem]:flex", !s.loud && fade),
           children: [
             s.label && /* @__PURE__ */ jsx_runtime21.jsxs("span", {
               children: [
@@ -59810,6 +59822,7 @@ var MODE_BUTTONS = [
   { mode: "split", label: "Raw and rendered side by side", icon: Columns2 },
   { mode: "compare", label: "Compare with another version", icon: GitCompare }
 ];
+var FADE = "opacity-40 transition-opacity duration-300 group-hover/chrome:opacity-100 group-has-[:focus-visible]/chrome:opacity-100";
 function useDebouncedStats(text4, ms = 300) {
   const [stats, setStats] = import_react24.useState(() => contentStats(text4 ?? ""));
   import_react24.useEffect(() => {
@@ -59872,6 +59885,7 @@ function DocumentPane({
   const { confirm, dialog } = useConfirm();
   const place2 = import_react24.useMemo(() => createPlace(), [doc2?.slug]);
   const [noteAt, setNoteAt] = import_react24.useState(null);
+  const fade = quiet ? FADE : undefined;
   const segments = doc2 ? [
     { label: "Version", value: versionSummary(active, doc2.active) },
     { label: "Author", value: active?.author === "agent" ? "Agent" : "Human", priority: "low" },
@@ -59880,7 +59894,10 @@ function DocumentPane({
       value: active ? relativeTime(active.createdAt, now3) : "—",
       priority: "low"
     },
-    { value: doc2.outsideChanged ? "Changed on disk" : doc2.dirty ? "Unsaved" : "Saved" },
+    {
+      value: doc2.outsideChanged ? "Changed on disk" : doc2.dirty ? "Unsaved" : "Saved",
+      loud: readerStaysLoud("unsaved", doc2.dirty)
+    },
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
   ] : [];
@@ -59890,49 +59907,57 @@ function DocumentPane({
     className: "flex min-h-0 flex-1 flex-col",
     children: [
       /* @__PURE__ */ jsx_runtime24.jsxs("div", {
-        className: cn("flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3", quiet && "border-transparent", quiet && "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100"),
+        className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-edge px-3 py-1", quiet && "group/chrome border-transparent"),
         children: [
-          headingStart,
+          headingStart && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+            className: cn("flex shrink-0", fade),
+            children: headingStart
+          }),
           doc2 ? /* @__PURE__ */ jsx_runtime24.jsxs(jsx_runtime24.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime24.jsx(VersionMenu, {
-                versions: doc2.versions,
-                active: doc2.active,
-                onActivate,
-                onCompare: (n) => {
-                  onAgainst(n);
-                  onMode("compare");
-                },
-                onNewVersion: setNaming,
-                onReveal: onRevealVersion,
-                onDelete: async (n) => {
-                  const v = doc2.versions.find((x3) => x3.n === n);
-                  const ok3 = await confirm({
-                    title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
-                    message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
-                    warning: "Anything written only in this version is lost.",
-                    confirmLabel: "Delete",
-                    confirmClassName: "bg-danger text-bg hover:bg-danger/90"
-                  });
-                  if (ok3)
-                    onDeleteVersion(n);
-                }
-              }),
-              /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
-                orientation: "vertical",
-                className: "my-2 shrink-0"
-              }),
-              /* @__PURE__ */ jsx_runtime24.jsx(FileText, {
-                "aria-hidden": true,
-                className: "size-3.5 shrink-0 text-ink-faint"
-              }),
-              /* @__PURE__ */ jsx_runtime24.jsx("span", {
-                className: "truncate text-sm text-ink",
-                title: doc2.original,
-                children: doc2.name
+              /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+                className: cn("flex min-w-0 items-center gap-2", fade),
+                children: [
+                  /* @__PURE__ */ jsx_runtime24.jsx(VersionMenu, {
+                    versions: doc2.versions,
+                    active: doc2.active,
+                    onActivate,
+                    onCompare: (n) => {
+                      onAgainst(n);
+                      onMode("compare");
+                    },
+                    onNewVersion: setNaming,
+                    onReveal: onRevealVersion,
+                    onDelete: async (n) => {
+                      const v = doc2.versions.find((x3) => x3.n === n);
+                      const ok3 = await confirm({
+                        title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
+                        message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
+                        warning: "Anything written only in this version is lost.",
+                        confirmLabel: "Delete",
+                        confirmClassName: "bg-danger text-bg hover:bg-danger/90"
+                      });
+                      if (ok3)
+                        onDeleteVersion(n);
+                    }
+                  }),
+                  /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
+                    orientation: "vertical",
+                    className: "my-2 shrink-0"
+                  }),
+                  /* @__PURE__ */ jsx_runtime24.jsx(FileText, {
+                    "aria-hidden": true,
+                    className: "size-3.5 shrink-0 text-ink-faint"
+                  }),
+                  /* @__PURE__ */ jsx_runtime24.jsx("span", {
+                    className: "truncate text-sm text-ink",
+                    title: doc2.original,
+                    children: doc2.name
+                  })
+                ]
               }),
               /* @__PURE__ */ jsx_runtime24.jsxs("div", {
-                className: "ml-auto flex shrink-0 items-center gap-1",
+                className: "ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1",
                 children: [
                   /* @__PURE__ */ jsx_runtime24.jsxs(Button3, {
                     variant: "ghost",
@@ -59940,7 +59965,7 @@ function DocumentPane({
                     onClick: onRevert,
                     disabled: !doc2.dirty && !doc2.outsideChanged,
                     title: "Take the file on disk back over your edits",
-                    className: "h-7 gap-1.5 px-2 text-xs",
+                    className: cn("h-7 gap-1.5 px-2 text-xs", fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime24.jsx(UndoDot, {
                         className: "size-3.5"
@@ -59954,7 +59979,7 @@ function DocumentPane({
                     onClick: onSave,
                     disabled: !doc2.dirty,
                     title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
-                    className: "h-7 gap-1.5 px-2 text-xs",
+                    className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2.dirty) && fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime24.jsx(Save, {
                         className: "size-3.5"
@@ -59965,7 +59990,7 @@ function DocumentPane({
                   /* @__PURE__ */ jsx_runtime24.jsx("div", {
                     role: "toolbar",
                     "aria-label": "How to show this document",
-                    className: "flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
+                    className: cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade),
                     children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
                       const unavailable = m2 === "split" && !roomToSplit;
                       return /* @__PURE__ */ jsx_runtime24.jsx("button", {
@@ -59987,11 +60012,11 @@ function DocumentPane({
               })
             ]
           }) : /* @__PURE__ */ jsx_runtime24.jsx("span", {
-            className: "text-xs font-medium tracking-wide text-ink-dim uppercase",
+            className: cn("text-xs font-medium tracking-wide text-ink-dim uppercase", fade),
             children: "Document"
           }),
           headingEnd && /* @__PURE__ */ jsx_runtime24.jsx("div", {
-            className: cn("flex shrink-0 items-center gap-0.5", !doc2 && "ml-auto"),
+            className: cn("flex shrink-0 items-center gap-0.5", !doc2 && "ml-auto", fade),
             children: headingEnd
           })
         ]
@@ -60147,9 +60172,10 @@ function DocumentPane({
         children: dock
       }),
       doc2 && /* @__PURE__ */ jsx_runtime24.jsx("div", {
-        className: cn("shrink-0", quiet && "opacity-40 transition-opacity duration-300 hover:opacity-100 has-[:focus-visible]:opacity-100"),
+        className: cn("shrink-0", quiet && "group/chrome"),
         children: /* @__PURE__ */ jsx_runtime24.jsx(StatusStrip, {
-          segments
+          segments,
+          fade
         })
       }),
       dialog,
@@ -61180,11 +61206,13 @@ function ColumnButton({
   label,
   onClick,
   pressed,
+  control,
   children
 }) {
   return /* @__PURE__ */ jsx_runtime31.jsx("button", {
     type: "button",
     onClick,
+    "data-column-control": control,
     "aria-label": label,
     "aria-pressed": pressed,
     title: label,
@@ -61192,14 +61220,25 @@ function ColumnButton({
     children
   });
 }
-function PaneHeading({ children, actions }) {
+function PaneHeading({
+  children,
+  actions,
+  pinned
+}) {
   return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
-    className: "flex h-9 shrink-0 items-center gap-1 border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase",
+    className: "flex h-9 shrink-0 items-center gap-1 border-b border-edge px-2 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children: [
-      children,
+      /* @__PURE__ */ jsx_runtime31.jsx("span", {
+        className: "min-w-0 truncate pl-1",
+        children
+      }),
       actions && /* @__PURE__ */ jsx_runtime31.jsx("div", {
-        className: "ml-auto flex items-center gap-0.5",
+        className: "ml-auto flex min-w-0 items-center gap-0.5 overflow-hidden",
         children: actions
+      }),
+      pinned && /* @__PURE__ */ jsx_runtime31.jsx("div", {
+        className: cn("flex shrink-0 items-center", !actions && "ml-auto"),
+        children: pinned
       })
     ]
   });
@@ -61317,9 +61356,40 @@ function Workspace({
   const collapse = import_react30.useCallback((side) => panelFor(side)?.collapse(), [panelFor]);
   const expand2 = import_react30.useCallback((side) => {
     const panel = panelFor(side);
-    if (panel?.isCollapsed())
-      panel.resize(`${reopenSize(openSizesRef.current, side)}%`);
+    if (!panel?.isCollapsed())
+      return;
+    const other = panelFor(side === "context" ? "chat" : "context");
+    const around = other ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage } : undefined;
+    panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
   }, [panelFor]);
+  const handleEnter = (side) => (e) => {
+    if (e.key !== "Enter")
+      return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (collapsed[side])
+      expand2(side);
+    else
+      collapse(side);
+  };
+  const focusNext = import_react30.useRef(null);
+  const toggleFrom = (side, act) => {
+    focusNext.current = `${side}-${act === "collapse" ? "reopen" : "collapse"}`;
+    if (act === "collapse")
+      collapse(side);
+    else
+      expand2(side);
+  };
+  import_react30.useEffect(() => {
+    const id = focusNext.current;
+    if (!id)
+      return;
+    const el = document.querySelector(`[data-column-control="${id}"]`);
+    if (!el || el.closest("[inert]"))
+      return;
+    focusNext.current = null;
+    el.focus();
+  });
   const onLayoutChanged = import_react30.useCallback((next, meta2) => {
     layout2.onLayoutChanged(next, meta2);
     setLayoutNow(next);
@@ -61496,22 +61566,19 @@ function Workspace({
             },
             children: [
               /* @__PURE__ */ jsx_runtime31.jsx(PaneHeading, {
-                actions: /* @__PURE__ */ jsx_runtime31.jsxs(jsx_runtime31.Fragment, {
-                  children: [
-                    /* @__PURE__ */ jsx_runtime31.jsx(HistoryArrows, {
-                      history: state.history,
-                      display: (p) => shortPath(p, state.userHome, 2),
-                      onUndo: (confirmDelete) => send(confirmDelete ? { type: "history.undo", confirmDelete } : { type: "history.undo" }),
-                      onRedo: () => send({ type: "history.redo" })
-                    }),
-                    /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
-                      label: "Collapse the context column",
-                      onClick: () => collapse("context"),
-                      children: /* @__PURE__ */ jsx_runtime31.jsx(PanelLeftClose, {
-                        "aria-hidden": true
-                      })
-                    })
-                  ]
+                actions: /* @__PURE__ */ jsx_runtime31.jsx(HistoryArrows, {
+                  history: state.history,
+                  display: (p) => shortPath(p, state.userHome, 2),
+                  onUndo: (confirmDelete) => send(confirmDelete ? { type: "history.undo", confirmDelete } : { type: "history.undo" }),
+                  onRedo: () => send({ type: "history.redo" })
+                }),
+                pinned: /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
+                  label: "Collapse the context column",
+                  control: "context-collapse",
+                  onClick: () => toggleFrom("context", "collapse"),
+                  children: /* @__PURE__ */ jsx_runtime31.jsx(PanelLeftClose, {
+                    "aria-hidden": true
+                  })
                 }),
                 children: "Context"
               }),
@@ -61537,7 +61604,8 @@ function Workspace({
             ]
           }),
           /* @__PURE__ */ jsx_runtime31.jsx(ResizableHandle, {
-            withHandle: true
+            withHandle: true,
+            onKeyDownCapture: handleEnter("context")
           }),
           /* @__PURE__ */ jsx_runtime31.jsx(ResizablePanel, {
             id: "document",
@@ -61553,7 +61621,8 @@ function Workspace({
               quiet: reader,
               headingStart: collapsed.context && /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
                 label: "Show the context column",
-                onClick: () => expand2("context"),
+                control: "context-reopen",
+                onClick: () => toggleFrom("context", "expand"),
                 children: /* @__PURE__ */ jsx_runtime31.jsx(PanelLeftOpen, {
                   "aria-hidden": true
                 })
@@ -61570,7 +61639,8 @@ function Workspace({
                   }),
                   collapsed.chat && /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
                     label: "Show the conversation column",
-                    onClick: () => expand2("chat"),
+                    control: "chat-reopen",
+                    onClick: () => toggleFrom("chat", "expand"),
                     children: /* @__PURE__ */ jsx_runtime31.jsx(PanelRightOpen, {
                       "aria-hidden": true
                     })
@@ -61663,7 +61733,8 @@ function Workspace({
             })
           }),
           /* @__PURE__ */ jsx_runtime31.jsx(ResizableHandle, {
-            withHandle: true
+            withHandle: true,
+            onKeyDownCapture: handleEnter("chat")
           }),
           /* @__PURE__ */ jsx_runtime31.jsxs(ResizablePanel, {
             id: "chat",
@@ -61675,28 +61746,32 @@ function Workspace({
             className: "flex flex-col bg-surface",
             children: [
               /* @__PURE__ */ jsx_runtime31.jsxs("div", {
-                className: "flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2",
+                className: "flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1",
                 children: [
-                  ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_runtime31.jsx("button", {
-                    type: "button",
-                    onClick: () => setRightPane(which),
-                    "aria-pressed": rightPane === which,
-                    className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
-                    children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
-                      className: "flex items-center gap-1",
-                      children: [
-                        /* @__PURE__ */ jsx_runtime31.jsx(Spinner, {
-                          className: "text-ink-dim"
-                        }),
-                        `Tasks (${openTasks.length})`
-                      ]
-                    }) : which
-                  }, which)),
                   /* @__PURE__ */ jsx_runtime31.jsx("div", {
-                    className: "ml-auto",
+                    className: "flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden",
+                    children: ["conversation", "notes", "tasks"].map((which) => /* @__PURE__ */ jsx_runtime31.jsx("button", {
+                      type: "button",
+                      onClick: () => setRightPane(which),
+                      "aria-pressed": rightPane === which,
+                      className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", rightPane === which && "bg-surface-raised text-ink"),
+                      children: which === "notes" && openNotes.length > 0 ? `Notes (${openNotes.length})` : which === "tasks" && openTasks.length > 0 ? /* @__PURE__ */ jsx_runtime31.jsxs("span", {
+                        className: "flex items-center gap-1",
+                        children: [
+                          /* @__PURE__ */ jsx_runtime31.jsx(Spinner, {
+                            className: "text-ink-dim"
+                          }),
+                          `Tasks (${openTasks.length})`
+                        ]
+                      }) : which
+                    }, which))
+                  }),
+                  /* @__PURE__ */ jsx_runtime31.jsx("div", {
+                    className: "shrink-0",
                     children: /* @__PURE__ */ jsx_runtime31.jsx(ColumnButton, {
                       label: "Collapse the conversation column",
-                      onClick: () => collapse("chat"),
+                      control: "chat-collapse",
+                      onClick: () => toggleFrom("chat", "collapse"),
                       children: /* @__PURE__ */ jsx_runtime31.jsx(PanelRightClose, {
                         "aria-hidden": true
                       })
