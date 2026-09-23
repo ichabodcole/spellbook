@@ -1,7 +1,7 @@
 // E63: keeping your place — the source line at the top of a pane, and what it
 // takes to put another pane at the same line without the two chasing each other.
 import { describe, expect, test } from "bun:test";
-import { createPlace, lineAtTop, type Place, sourceLine, topForLine } from "./place";
+import { anchorCache, createPlace, lineAtTop, type Place, sourceLine, topForLine } from "./place";
 import { project } from "./projection";
 
 /**
@@ -491,5 +491,52 @@ describe("createPlace", () => {
     const was = rendered.position;
     raw.human(404);
     expect(rendered.position).toBe(was);
+  });
+});
+
+describe("anchorCache — the rendered pane's anchors, and when they are stale (E64)", () => {
+  const counting = () => {
+    let measured = 0;
+    let width = 600;
+    const cache = anchorCache(
+      () => {
+        measured += 1;
+        return [{ line: measured, top: 0 }];
+      },
+      () => width,
+    );
+    return {
+      cache,
+      measured: () => measured,
+      widen: (w: number) => {
+        width = w;
+      },
+    };
+  };
+
+  test("measured once, then served from the cache while nothing changes", () => {
+    const c = counting();
+    c.cache.get();
+    c.cache.get();
+    expect(c.measured()).toBe(1);
+  });
+
+  test("a clear (the ResizeObserver, a new rendering) forces a re-measure", () => {
+    const c = counting();
+    c.cache.get();
+    c.cache.clear();
+    c.cache.get();
+    expect(c.measured()).toBe(2);
+  });
+
+  test("a DIFFERENT WIDTH re-measures even with no clear — the event that beats the observer", () => {
+    // A collapse widens the pane in one layout; scroll anchoring's own scroll
+    // event is dispatched before the ResizeObserver callback, so the cache is
+    // asked before anyone has cleared it. The width is the evidence.
+    const c = counting();
+    c.cache.get();
+    c.widen(997);
+    expect(c.cache.get()).toEqual([{ line: 2, top: 0 }]);
+    expect(c.measured()).toBe(2);
   });
 });

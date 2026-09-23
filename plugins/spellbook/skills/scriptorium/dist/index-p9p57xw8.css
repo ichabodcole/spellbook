@@ -909,6 +909,10 @@
     cursor: pointer;
   }
 
+  .resize {
+    resize: both;
+  }
+
   .resize-none {
     resize: none;
   }

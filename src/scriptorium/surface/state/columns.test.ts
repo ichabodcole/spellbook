@@ -61,12 +61,12 @@ describe("collapsedSides — what counts as collapsed", () => {
 
 describe("the width a column reopens to — kept in the home's prefs", () => {
   test("an open column's width is remembered", () => {
-    expect(rememberOpen({}, REAL)).toEqual({ context: 21.722, chat: 25.536 });
+    expect(rememberOpen({}, REAL, true)).toEqual({ context: 21.722, chat: 25.536 });
   });
 
   test("collapsing does NOT overwrite the width it will reopen to", () => {
     const before = { context: 30, chat: 25 };
-    expect(rememberOpen(before, { context: 0, document: 75, chat: 25 })).toEqual({
+    expect(rememberOpen(before, { context: 0, document: 75, chat: 25 }, true)).toEqual({
       context: 30,
       chat: 25,
     });
@@ -74,7 +74,7 @@ describe("the width a column reopens to — kept in the home's prefs", () => {
 
   test("nothing changed is the SAME object, so no pref is written", () => {
     const before = { context: 21.722, chat: 25.536 };
-    expect(rememberOpen(before, REAL)).toBe(before);
+    expect(rememberOpen(before, REAL, true)).toBe(before);
   });
 
   test("reopening uses the remembered width, else the column's default", () => {
@@ -89,8 +89,32 @@ describe("the width a column reopens to — kept in the home's prefs", () => {
     // context at 12% (153 px of 1280), and that 12 was then saved, so every
     // later reopen came back at 153 px too.
     const before = { context: 40, chat: 25 };
-    expect(rememberOpen(before, { context: 12, document: 63, chat: 25 })).toBe(before);
-    expect(rememberOpen(before, { context: 40, document: 45, chat: 15 })).toBe(before);
+    expect(rememberOpen(before, { context: 12, document: 63, chat: 25 }, true)).toBe(before);
+    expect(rememberOpen(before, { context: 40, document: 45, chat: 15 }, true)).toBe(before);
+  });
+
+  test("the minimum has half a percent of slack, and no more", () => {
+    // The layout is floating-point: a column the library left "at" 12% can
+    // read 12.2. A width a whole percent above the minimum is a real choice.
+    expect(rememberOpen({}, { context: 12.2, document: 62.8, chat: 25 }, true)).toEqual({
+      chat: 25,
+    });
+    expect(rememberOpen({}, { context: 13, document: 62, chat: 25 }, true)).toEqual({
+      context: 13,
+      chat: 25,
+    });
+  });
+
+  test("only the HUMAN's resize is remembered — a reopen the library squeezed is not a choice", () => {
+    // Reviewer: a capped reopen the library squeezed to 60 became the new
+    // reopen width. Imperative resizes (a reopen, a collapse, the initial
+    // mount) report isUserInteraction false; a drag or a key on a handle true.
+    const before = { context: 40, chat: 25 };
+    expect(rememberOpen(before, { context: 60, document: 25, chat: 15 }, false)).toBe(before);
+    expect(rememberOpen(before, { context: 60, document: 25, chat: 15 }, true)).toEqual({
+      context: 60,
+      chat: 25, // 15 is the conversation's minimum: not remembered either
+    });
   });
 
   test("a stored minimum decodes to nothing, so a pref the old bug wrote heals itself", () => {
@@ -118,6 +142,10 @@ describe("the width a column reopens to — kept in the home's prefs", () => {
     expect(decodeOpenSizes(undefined)).toEqual({});
     expect(decodeOpenSizes("not json")).toEqual({});
     expect(decodeOpenSizes('{"context":"wide","chat":null,"other":5}')).toEqual({});
+    // JSON that parses to something other than an object must not reach the
+    // property reads (reviewer: `null` would throw there).
+    for (const raw of ["null", "5", '"wide"', "true", "[]", "[30, 25]"])
+      expect(decodeOpenSizes(raw)).toEqual({});
   });
 
   test("a stored zero is not a width to reopen to — it would reopen collapsed", () => {
@@ -152,6 +180,16 @@ describe("splitRoom — split against the width the pane actually gets", () => {
     // document exactly 720 px. Measured widths are fractional and the layout
     // is rounded to three decimals, so half of 720 can come back a hair short.
     expect(splitRoom(359.99, 50).ifCollapsed).toBe(true);
+  });
+
+  test("rounded to the NEAREST pixel, not up: 719.3 px is not 720", () => {
+    expect(splitRoom(359.65, 50).ifCollapsed).toBe(false);
+  });
+
+  test("a document already within 1% of the whole window has nothing to reclaim", () => {
+    // 716 / 0.995 ≈ 719.6, which would round to 720 — but the columns beside a
+    // 99.5% document are already shut, so collapsing them buys nothing.
+    expect(splitRoom(716, 99.5).ifCollapsed).toBe(false);
   });
 
   test("with both columns already collapsed there is nothing more to reclaim", () => {
@@ -189,15 +227,28 @@ describe("reader mode — a preset, not a fifth view mode (Cole)", () => {
 });
 
 describe("what reader mode's fade leaves at full strength (Cole, 2026-09-22)", () => {
-  test("with unsaved edits, Save and the Unsaved marker stay loud and the rest fades", () => {
-    expect(readerStaysLoud("save", true)).toBe(true);
-    expect(readerStaysLoud("unsaved", true)).toBe(true);
-    expect(readerStaysLoud("other", true)).toBe(false);
+  // Cole: anything asking for attention stays at full strength — unsaved edits
+  // AND warnings such as "Changed on disk"; only idle chrome fades.
+  const clean = { dirty: false, outsideChanged: false };
+  const unsaved = { dirty: true, outsideChanged: false };
+  const changedOnDisk = { dirty: false, outsideChanged: true };
+
+  test("with unsaved edits, Save and the save-state marker stay loud and the rest fades", () => {
+    expect(readerStaysLoud("save", unsaved)).toBe(true);
+    expect(readerStaysLoud("status", unsaved)).toBe(true);
+    expect(readerStaysLoud("other", unsaved)).toBe(false);
   });
 
-  test("with nothing unsaved, everything fades — Save has nothing to do", () => {
-    expect(readerStaysLoud("save", false)).toBe(false);
-    expect(readerStaysLoud("unsaved", false)).toBe(false);
-    expect(readerStaysLoud("other", false)).toBe(false);
+  test("a file changed on disk keeps its marker loud — a warning is not idle chrome", () => {
+    expect(readerStaysLoud("status", changedOnDisk)).toBe(true);
+    // Save is disabled with nothing unsaved; the banner carries the acts.
+    expect(readerStaysLoud("save", changedOnDisk)).toBe(false);
+    expect(readerStaysLoud("other", changedOnDisk)).toBe(false);
+  });
+
+  test("with nothing asking for attention, everything fades", () => {
+    expect(readerStaysLoud("save", clean)).toBe(false);
+    expect(readerStaysLoud("status", clean)).toBe(false);
+    expect(readerStaysLoud("other", clean)).toBe(false);
   });
 });

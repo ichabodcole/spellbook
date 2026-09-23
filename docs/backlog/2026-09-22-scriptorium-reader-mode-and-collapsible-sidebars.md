@@ -21,8 +21,9 @@ Cole (Operator doc, 2026-09-20, §4) separates two concepts:
 
 (2) matters most where two documents share the centre: **split** (raw +
 rendered) and **compare** (a diff against another version). Split already
-refuses to show below 720 px (`DocumentPane.tsx:47`) — collapsing the side
-columns is also what makes split _available_ on a smaller screen.
+refuses to show below 720 px (`SPLIT_MIN_PX`, now in `surface/state/columns.ts`)
+— collapsing the side columns is also what makes split _available_ on a smaller
+screen.
 
 ## What was built (branch `feat/scriptorium-collapsible-sidebars`, E64)
 
@@ -43,10 +44,11 @@ split off. The rulings and the options not taken are in
   and a way to open the conversation. The draft moved up into `App`, so there is
   one draft wherever the composer is drawn.
 - **Split** becomes available when collapsing gives the pane 720 px, and the
-  disabled button says to collapse a column when that would make room.
+  disabled button says to collapse the side columns when that would make room.
 - **Reader mode** is a preset (the glasses button): rendered + both collapsed,
-  with the heading and status strip faded back until reached for. It is derived
-  from the view mode and the columns, not stored.
+  with idle chrome faded back until reached for; anything asking for attention
+  (unsaved edits, "Changed on disk") stays at full strength. It is derived from
+  the view mode and the columns, not stored.
 - **Keeping your place** — collapsing exposed a hole in E63 (the rendered pane's
   anchors were read at the old width by the scroll anchoring's own event) and it
   is closed; see E64 for what was observed.

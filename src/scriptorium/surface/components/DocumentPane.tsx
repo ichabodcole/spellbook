@@ -226,7 +226,7 @@ export function DocumentPane({
         },
         {
           value: doc.outsideChanged ? "Changed on disk" : doc.dirty ? "Unsaved" : "Saved",
-          loud: readerStaysLoud("unsaved", doc.dirty),
+          loud: readerStaysLoud("status", doc),
         },
         { label: "Words", value: stats.words.toLocaleString() },
         { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" },
@@ -311,10 +311,7 @@ export function DocumentPane({
                 onClick={onSave}
                 disabled={!doc.dirty}
                 title={`Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`}
-                className={cn(
-                  "h-7 gap-1.5 px-2 text-xs",
-                  !readerStaysLoud("save", doc.dirty) && fade,
-                )}
+                className={cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc) && fade)}
               >
                 <SaveIcon className="size-3.5" />
                 Save
@@ -338,7 +335,7 @@ export function DocumentPane({
                         !unavailable
                           ? label
                           : room.ifCollapsed
-                            ? `${label} — the pane is too narrow; collapse a side column to make room`
+                            ? `${label} — the pane is too narrow; collapse the side columns to make room`
                             : `${label} — the pane is too narrow`
                       }
                       className={cn(

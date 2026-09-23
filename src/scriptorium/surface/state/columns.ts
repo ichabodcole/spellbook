@@ -66,16 +66,22 @@ export function collapsedSides(layout: Layout | undefined): Collapsed {
 
 /**
  * The reopen widths after a layout change: every OPEN column's width is
- * remembered, and a collapsed one keeps what it had. Returns `prev` itself when
- * nothing moved, so the caller can skip writing the pref.
+ * remembered, and a collapsed one keeps what it had (0 is below any minimum,
+ * so `atMinimum` covers it). Returns `prev` itself when nothing moved, so the
+ * caller can skip writing the pref.
+ *
+ * ⛔ ONLY A CHANGE THE HUMAN MADE (`fromUser` — the library's
+ * `isUserInteraction`: a drag or a key on a handle). A reopen is an imperative
+ * resize, and when the library squeezes a capped reopen, the width it lands
+ * on is the library's compromise, not a choice; remembering it overwrote the
+ * width the human had actually picked (reviewer, 2026-09-22).
  */
-export function rememberOpen(prev: OpenSizes, layout: Layout): OpenSizes {
-  const collapsed = collapsedSides(layout);
+export function rememberOpen(prev: OpenSizes, layout: Layout, fromUser: boolean): OpenSizes {
+  if (!fromUser) return prev;
   let next: OpenSizes = prev;
   for (const side of SIDES) {
     const size = layout[side];
-    if (collapsed[side] || typeof size !== "number" || atMinimum(side, size) || prev[side] === size)
-      continue;
+    if (typeof size !== "number" || atMinimum(side, size) || prev[side] === size) continue;
     next = { ...next, [side]: size };
   }
   return next;
@@ -112,14 +118,16 @@ export function decodeOpenSizes(raw: string | undefined): OpenSizes {
   } catch {
     return {};
   }
+  // ⛔ Before any property read: `null`, a number or a string parse fine and
+  // must not reach the loop below (`null[side]` throws). JSON.parse yields only
+  // plain data, so past this guard nothing can throw.
   if (!parsed || typeof parsed !== "object") return {};
   const out: OpenSizes = {};
   for (const side of SIDES) {
     const v = (parsed as Record<string, unknown>)[side];
     // A zero would "reopen" collapsed, and a minimum is the library's fallback
     // rather than anybody's choice (`atMinimum`).
-    if (typeof v === "number" && Number.isFinite(v) && !atMinimum(side, v) && v < 100)
-      out[side] = v;
+    if (typeof v === "number" && !atMinimum(side, v) && v < 100) out[side] = v;
   }
   return out;
 }
@@ -185,12 +193,18 @@ export function readerAct(
 }
 
 /**
- * ⛔ WHAT READER MODE'S FADE LEAVES ALONE (Cole, 2026-09-22): while the document
- * has unsaved edits, Save and the "Unsaved" marker stay at full strength and
- * everything else still fades. A quiet reading view must not make an unsaved
- * edit easy to forget; with nothing unsaved, Save has nothing to do and fades
- * with the rest.
+ * ⛔ WHAT READER MODE'S FADE LEAVES ALONE (Cole, 2026-09-22): anything asking
+ * for attention stays at full strength, and only idle chrome fades. That is
+ * unsaved edits (Save, and the save-state marker saying "Unsaved") and a
+ * warning (the same marker saying "Changed on disk"). With nothing unsaved,
+ * Save is disabled and fades with the rest; the changed-on-disk banner, which
+ * carries the acts that answer it, is never faded at all.
  */
-export function readerStaysLoud(part: "save" | "unsaved" | "other", dirty: boolean): boolean {
-  return dirty && part !== "other";
+export function readerStaysLoud(
+  part: "save" | "status" | "other",
+  doc: { dirty: boolean; outsideChanged: boolean },
+): boolean {
+  if (part === "save") return doc.dirty;
+  if (part === "status") return doc.dirty || doc.outsideChanged;
+  return false;
 }

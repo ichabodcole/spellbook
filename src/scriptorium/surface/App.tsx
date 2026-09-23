@@ -285,7 +285,16 @@ function Workspace({
     (side: Side) => (side === "context" ? contextPanel : chatPanel).current,
     [contextPanel, chatPanel],
   );
-  const collapse = useCallback((side: Side) => panelFor(side)?.collapse(), [panelFor]);
+  /** Collapse `side`; false when there was nothing to do (already shut). */
+  const collapse = useCallback(
+    (side: Side) => {
+      const panel = panelFor(side);
+      if (!panel || panel.isCollapsed()) return false;
+      panel.collapse();
+      return true;
+    },
+    [panelFor],
+  );
   // ⚠ NOT the library's `expand()`: it reopens to a width it keeps in memory,
   // so after a reload a column came back at its minimum. The width it reopens
   // to is the home's (`panes:open`), like the rest of the layout — capped so it
@@ -293,12 +302,13 @@ function Workspace({
   const expand = useCallback(
     (side: Side) => {
       const panel = panelFor(side);
-      if (!panel?.isCollapsed()) return;
+      if (!panel?.isCollapsed()) return false;
       const other = panelFor(side === "context" ? "chat" : "context");
       const around = other
         ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage }
         : undefined;
       panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
+      return true;
     },
     [panelFor],
   );
@@ -325,9 +335,10 @@ function Workspace({
    */
   const focusNext = useRef<string | null>(null);
   const toggleFrom = (side: Side, act: "collapse" | "expand") => {
-    focusNext.current = `${side}-${act === "collapse" ? "reopen" : "collapse"}`;
-    if (act === "collapse") collapse(side);
-    else expand(side);
+    const acted = act === "collapse" ? collapse(side) : expand(side);
+    // ⚠ A no-op leaves nothing pending: a stale hand-off would otherwise grab
+    // focus the next time that control happened to render (reviewer).
+    focusNext.current = acted ? `${side}-${act === "collapse" ? "reopen" : "collapse"}` : null;
   };
   useEffect(() => {
     const id = focusNext.current;
@@ -341,7 +352,7 @@ function Workspace({
     (next: Layout, meta: Parameters<typeof layout.onLayoutChanged>[1]) => {
       layout.onLayoutChanged(next, meta);
       setLayoutNow(next);
-      const remembered = rememberOpen(openSizesRef.current, next);
+      const remembered = rememberOpen(openSizesRef.current, next, meta.isUserInteraction);
       if (remembered !== openSizesRef.current)
         send({ type: "prefs.set", key: OPEN_PREF, value: encodeOpenSizes(remembered) });
     },
@@ -695,7 +706,7 @@ function Workspace({
                   waiting={state.waiting}
                   onOpen={() => {
                     setRightPane("conversation");
-                    expand("chat");
+                    toggleFrom("chat", "expand");
                   }}
                 >
                   <ChatComposer floating {...composer} />
@@ -754,7 +765,7 @@ function Workspace({
               // showing the conversation, or be collapsed (E64), and either
               // way a border nobody can see is not an answer.
               setRightPane("notes");
-              expand("chat");
+              toggleFrom("chat", "expand");
               setFocusedNote(id);
             }}
             splitLayout={splitLayout}

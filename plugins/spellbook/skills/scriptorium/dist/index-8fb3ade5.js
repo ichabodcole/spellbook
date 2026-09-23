@@ -33725,12 +33725,13 @@ function collapsedSides(layout2) {
   };
   return { context: at2("context"), chat: at2("chat") };
 }
-function rememberOpen(prev, layout2) {
-  const collapsed = collapsedSides(layout2);
+function rememberOpen(prev, layout2, fromUser) {
+  if (!fromUser)
+    return prev;
   let next = prev;
   for (const side of SIDES) {
     const size4 = layout2[side];
-    if (collapsed[side] || typeof size4 !== "number" || atMinimum(side, size4) || prev[side] === size4)
+    if (typeof size4 !== "number" || atMinimum(side, size4) || prev[side] === size4)
       continue;
     next = { ...next, [side]: size4 };
   }
@@ -33760,7 +33761,7 @@ function decodeOpenSizes(raw) {
   const out = {};
   for (const side of SIDES) {
     const v = parsed[side];
-    if (typeof v === "number" && Number.isFinite(v) && !atMinimum(side, v) && v < 100)
+    if (typeof v === "number" && !atMinimum(side, v) && v < 100)
       out[side] = v;
   }
   return out;
@@ -33784,8 +33785,12 @@ function readerAct(mode, collapsed) {
     expand: []
   };
 }
-function readerStaysLoud(part, dirty) {
-  return dirty && part !== "other";
+function readerStaysLoud(part, doc) {
+  if (part === "save")
+    return doc.dirty;
+  if (part === "status")
+    return doc.dirty || doc.outsideChanged;
+  return false;
 }
 
 // node_modules/mdast-util-to-string/lib/index.js
@@ -41518,6 +41523,23 @@ function createPlace(opts = {}) {
         panes.delete(id);
         armed.delete(id);
       };
+    }
+  };
+}
+function anchorCache(measure, width) {
+  let anchors = null;
+  let measuredAt = -1;
+  return {
+    get() {
+      const w = width();
+      if (!anchors || w !== measuredAt) {
+        anchors = measure();
+        measuredAt = w;
+      }
+      return anchors;
+    },
+    clear() {
+      anchors = null;
     }
   };
 }
@@ -58870,27 +58892,26 @@ function MarkdownView({
   const body = import_react19.useRef(null);
   const lastRange = import_react19.useRef(null);
   const scroller = import_react19.useRef(null);
-  const anchors = import_react19.useRef(null);
   const measureRef = import_react19.useRef(() => []);
-  const measuredWidth = import_react19.useRef(-1);
-  measureRef.current = () => {
-    const root2 = body.current;
-    const sc = scroller.current;
-    if (!root2 || !sc)
-      return [];
-    if (!anchors.current || measuredWidth.current !== sc.clientWidth) {
-      anchors.current = lineAnchors(root2, sc, projection, text4);
-      measuredWidth.current = sc.clientWidth;
-    }
-    return anchors.current;
-  };
+  const measureFrom = import_react19.useRef({ projection, text: text4 });
+  measureFrom.current = { projection, text: text4 };
+  const anchors = import_react19.useRef(null);
+  if (!anchors.current)
+    anchors.current = anchorCache(() => {
+      const root2 = body.current;
+      const sc = scroller.current;
+      if (!root2 || !sc)
+        return [];
+      return lineAnchors(root2, sc, measureFrom.current.projection, measureFrom.current.text);
+    }, () => scroller.current?.clientWidth ?? 0);
+  measureRef.current = () => body.current && scroller.current ? anchors.current?.get() ?? [] : [];
   import_react19.useEffect(() => {
-    anchors.current = null;
+    anchors.current?.clear();
     const sc = scroller.current;
     if (!sc)
       return;
     const ro = new ResizeObserver(() => {
-      anchors.current = null;
+      anchors.current?.clear();
     });
     ro.observe(sc);
     if (body.current)
@@ -59896,7 +59917,7 @@ function DocumentPane({
     },
     {
       value: doc2.outsideChanged ? "Changed on disk" : doc2.dirty ? "Unsaved" : "Saved",
-      loud: readerStaysLoud("unsaved", doc2.dirty)
+      loud: readerStaysLoud("status", doc2)
     },
     { label: "Words", value: stats.words.toLocaleString() },
     { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" }
@@ -59979,7 +60000,7 @@ function DocumentPane({
                     onClick: onSave,
                     disabled: !doc2.dirty,
                     title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
-                    className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2.dirty) && fade),
+                    className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2) && fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime24.jsx(Save, {
                         className: "size-3.5"
@@ -59999,7 +60020,7 @@ function DocumentPane({
                         disabled: unavailable,
                         "aria-pressed": showing === m2,
                         "aria-label": label,
-                        title: !unavailable ? label : room.ifCollapsed ? `${label} — the pane is too narrow; collapse a side column to make room` : `${label} — the pane is too narrow`,
+                        title: !unavailable ? label : room.ifCollapsed ? `${label} — the pane is too narrow; collapse the side columns to make room` : `${label} — the pane is too narrow`,
                         className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
                         children: /* @__PURE__ */ jsx_runtime24.jsx(Icon2, {
                           "aria-hidden": true,
@@ -61353,14 +61374,21 @@ function Workspace({
   const contextPanel = fn();
   const chatPanel = fn();
   const panelFor = import_react30.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
-  const collapse = import_react30.useCallback((side) => panelFor(side)?.collapse(), [panelFor]);
+  const collapse = import_react30.useCallback((side) => {
+    const panel = panelFor(side);
+    if (!panel || panel.isCollapsed())
+      return false;
+    panel.collapse();
+    return true;
+  }, [panelFor]);
   const expand2 = import_react30.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel?.isCollapsed())
-      return;
+      return false;
     const other = panelFor(side === "context" ? "chat" : "context");
     const around = other ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage } : undefined;
     panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
+    return true;
   }, [panelFor]);
   const handleEnter = (side) => (e) => {
     if (e.key !== "Enter")
@@ -61374,11 +61402,8 @@ function Workspace({
   };
   const focusNext = import_react30.useRef(null);
   const toggleFrom = (side, act) => {
-    focusNext.current = `${side}-${act === "collapse" ? "reopen" : "collapse"}`;
-    if (act === "collapse")
-      collapse(side);
-    else
-      expand2(side);
+    const acted = act === "collapse" ? collapse(side) : expand2(side);
+    focusNext.current = acted ? `${side}-${act === "collapse" ? "reopen" : "collapse"}` : null;
   };
   import_react30.useEffect(() => {
     const id = focusNext.current;
@@ -61393,7 +61418,7 @@ function Workspace({
   const onLayoutChanged = import_react30.useCallback((next, meta2) => {
     layout2.onLayoutChanged(next, meta2);
     setLayoutNow(next);
-    const remembered = rememberOpen(openSizesRef.current, next);
+    const remembered = rememberOpen(openSizesRef.current, next, meta2.isUserInteraction);
     if (remembered !== openSizesRef.current)
       send({ type: "prefs.set", key: OPEN_PREF, value: encodeOpenSizes(remembered) });
   }, [layout2.onLayoutChanged, send]);
@@ -61652,7 +61677,7 @@ function Workspace({
                 waiting: state.waiting,
                 onOpen: () => {
                   setRightPane("conversation");
-                  expand2("chat");
+                  toggleFrom("chat", "expand");
                 },
                 children: /* @__PURE__ */ jsx_runtime31.jsx(ChatComposer, {
                   floating: true,
@@ -61704,7 +61729,7 @@ function Workspace({
               },
               onShowNote: (id) => {
                 setRightPane("notes");
-                expand2("chat");
+                toggleFrom("chat", "expand");
                 setFocusedNote(id);
               },
               splitLayout,

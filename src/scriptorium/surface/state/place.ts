@@ -273,3 +273,43 @@ export function createPlace(
     },
   };
 }
+
+/**
+ * The rendered pane's anchor table, measured once and kept until it is stale.
+ *
+ * ⛔ NOT ON EVERY SCROLL. Measuring walks every element and reads a rect from
+ * each, which forces layout; doing that per scroll event in a split would make
+ * the pane the human is dragging stutter. So the table is cached, cleared by
+ * whoever sees the rendering move (`clear`: the pane's ResizeObserver, a new
+ * html) — AND re-measured whenever the width differs from the one it was
+ * measured at.
+ *
+ * ⛔ THAT SECOND RULE IS E64's. A column collapsing widens the pane in a single
+ * layout, the browser's scroll anchoring moves `scrollTop` to keep the same
+ * text at the top, and that scroll event is dispatched BEFORE the
+ * ResizeObserver's callback — so it was reported through anchors measured at
+ * the OLD width, which named a line in the section above the real one, and the
+ * split that the extra width then mounted opened there. A width that differs
+ * from the one measured at is exact evidence the table is stale; no timing is
+ * involved.
+ */
+export function anchorCache(
+  measure: () => Anchor[],
+  width: () => number,
+): { get(): Anchor[]; clear(): void } {
+  let anchors: Anchor[] | null = null;
+  let measuredAt = -1;
+  return {
+    get() {
+      const w = width();
+      if (!anchors || w !== measuredAt) {
+        anchors = measure();
+        measuredAt = w;
+      }
+      return anchors;
+    },
+    clear() {
+      anchors = null;
+    },
+  };
+}

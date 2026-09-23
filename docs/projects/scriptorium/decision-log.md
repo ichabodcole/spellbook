@@ -2229,18 +2229,25 @@ width (default 22% / 28%) instead of the library's `expand()`.
 
 **⚠ AND TWO WAYS THAT FIRST VERSION WENT WRONG, found by the no-stake
 verifier.** (1) The separator's Enter still ran the library's `expand()`, so
-after a reload it reopened a 512 px column at 153 px (the 12% minimum), and that
-minimum was then SAVED as the reopen width, so the buttons reopened at 153 px
-from then on. Enter on either handle now goes through the same collapse and
-reopen as the buttons, taken in the capture phase before the library's listener
-sees it. A width at a column's minimum is also never remembered, and a stored
-one decodes to nothing, so a pref the bug already wrote heals itself. The price
-is that a column deliberately dragged to exactly its minimum does not reopen
-there. (2) A width remembered while the other column was collapsed could be too
-wide once that column came back. Reopening at it squeezed the document to its
-minimum and then pushed the OTHER column shut. The reopen width is now capped so
-the document keeps its 25%, and never goes below the column's own minimum
+after a reload it reopened a column at its 12% minimum, and that minimum was
+then SAVED as the reopen width, so the buttons reopened there from then on.
+Enter on either handle now goes through the same collapse and reopen as the
+buttons, taken in the capture phase before the library's listener sees it. A
+width at a column's minimum is also never remembered, and a stored one decodes
+to nothing, so a pref the bug already wrote heals itself. The price is that a
+column deliberately dragged to exactly its minimum does not reopen there. (2) A
+width remembered while the other column was collapsed could be too wide once
+that column came back. Reopening at it squeezed the document to its minimum and
+then pushed the OTHER column shut. The reopen width is now capped so the
+document keeps its 25%, and never goes below the column's own minimum
 (`reopenSize`).
+
+**⛔ ONLY THE HUMAN'S RESIZE IS REMEMBERED (reviewer of record).** A reopen is
+an imperative resize, and when the library squeezes a capped reopen, the width
+it lands on is the library's compromise. Remembering it overwrote the width the
+human had actually chosen. `rememberOpen` now takes the library's
+`isUserInteraction` (true for a drag or a key on a handle; false for a reopen, a
+collapse and the initial mount) and remembers only when it is true.
 
 **The affordance (ours; Cole had not ruled).** A collapse button at the end of
 each column's own heading, and a reopen button at the matching END of the
@@ -2251,10 +2258,13 @@ beside it: the left handle acts on the context, the right on the conversation.
 The library bound the right handle's Enter to the document, which does not
 collapse, so it used to do nothing. **Controls that take themselves away hand
 focus on**: collapsing moves focus to the reopen button, and reopening moves it
-back to the collapse button, instead of dropping it to `<body>`. **Not taken:**
-a keyboard shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and
-forward, ⌘B is bold to anyone who has used an editor), and a shortcut is the
-least discoverable of the options; it can come when real use asks for it.
+back to the collapse button, instead of dropping it to `<body>`. "Open the
+conversation" on the float, and pointing at a note, reopen through the same
+hand-off; a reopen or collapse that turns out to be a no-op leaves nothing
+pending, so a stale hand-off cannot take focus later. **Not taken:** a keyboard
+shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and forward, ⌘B is
+bold to anyone who has used an editor), and a shortcut is the least discoverable
+of the options; it can come when real use asks for it.
 
 **⛔ THESE CONTROLS STAY REACHABLE AT EVERY WIDTH THE LAYOUT ALLOWS
 (verifier).** The conversation's tabs need about 275 px, and at its 15% minimum
@@ -2279,12 +2289,14 @@ human could not see.
 already measured its own width against split's floor (720 px, now `SPLIT_MIN_PX`
 in `state/columns.ts`), so collapsing a column makes split available with no
 further wiring, and reopening one falls back to rendered exactly as a narrow
-drag always did. The disabled split button now says "collapse a side column to
-make room" when collapsing WOULD make room (`splitRoom`), and only then — a
-refusal that names the act that answers it. The estimate is rounded to the
-pixel: the browser lays out in 1/64 px units, and an unrounded one read a hair
-under 720 in a window where collapsing gave exactly 720 (verifier). Compare gets
-the width and nothing else, as ruled.
+drag always did. The disabled split button now says "collapse the side columns
+to make room" when collapsing both WOULD make room (`splitRoom` computes the
+width with both shut, so the words say both), and only then — a refusal that
+names the act that answers it. The estimate is rounded to the pixel: the browser
+lays out in 1/64 px units, and an unrounded one read a hair under 720 in a
+window where collapsing gave exactly 720 (verifier). It is rounded to the
+NEAREST pixel, not up: 719.3 is not 720. Compare gets the width and nothing
+else, as ruled.
 
 **⛔ READER MODE IS A PRESET, AND IT IS DERIVED (Cole: build only if cheap — it
 was).** Reader mode is rendered + both columns collapsed + quieter chrome, so
@@ -2299,13 +2311,18 @@ would take Save, the version and "Unsaved" out of reach. **Not taken:**
 remembering the view you entered from and restoring it on leave, which would be
 the second piece of state the preset exists to avoid.
 
-**⛔ UNSAVED STAYS LOUD (Cole, 2026-09-22, asked after the verifier raised
-it).** While the document has unsaved edits, Save and the "Unsaved" marker stay
-at full strength in reader mode, and everything else still fades. A quiet
-reading view must not make an unsaved edit easy to forget. With nothing unsaved,
-Save has nothing to do and fades with the rest (`readerStaysLoud`). Because
-opacity multiplies down the tree, the fade moved from the two bars onto their
-parts. A faded bar cannot hold one of its children at full strength.
+**⛔ WHAT ASKS FOR ATTENTION STAYS LOUD (Cole, 2026-09-22, in two steps).**
+First, after the verifier raised it: while the document has unsaved edits, Save
+and the "Unsaved" marker stay at full strength in reader mode. Then,
+generalised: **anything asking for attention stays at full strength, and only
+idle chrome fades.** That is unsaved edits and warnings. The save-state marker
+stays loud when it says "Unsaved" and when it says "Changed on disk". Save stays
+loud while there is something to save; with nothing unsaved it is disabled and
+fades with the rest. The changed-on-disk banner, which carries the acts that
+answer it, was never faded. A quiet reading view must not make an unsaved edit
+or a changed file easy to miss (`readerStaysLoud`). Because opacity multiplies
+down the tree, the fade moved from the two bars onto their parts. A faded bar
+cannot hold one of its children at full strength.
 
 **⚠ A HOLE IN E63 THAT COLLAPSING EXPOSED, CLOSED.** The rendered pane caches
 its block anchors and clears them from a `ResizeObserver`. A collapse widens the
@@ -2317,9 +2334,13 @@ rendered: a heading at the top of the pane was reported as a line in the section
 before it, and the split that the widening then mounted opened there. A drag
 reaches the same widths in small steps, and did not show it. The anchors now
 record the width they were measured at, and a different width re-measures them —
-exact evidence the table is stale, with no timing in it. Re-driven after the
-fix, the same collapse landed both halves of the split on the heading at each of
-four headings tried.
+exact evidence the table is stale, with no timing in it (`anchorCache` in
+`state/place.ts`, whose cell asks it at a new width with no clear). Re-driven
+after the fix, the same collapse landed both halves of the split on the heading
+at each of four headings tried. ⚠ The cell holds the rule, not the wiring: that
+`MarkdownView` reads its anchors through the cache is evidenced only by that
+browser run. To reproduce: split saved but falling back to rendered, a heading
+scrolled to the top, then collapse the context column so split mounts.
 
 **Keeping your place across a collapse, as observed** (same document and
 viewport): the rendered pane keeps its top block through a collapse and a

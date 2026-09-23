@@ -25,7 +25,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { DocMeta, PlacedNote } from "../../backend/protocol";
 import { renderMarkdown, splitFrontmatter } from "../state/markdown";
-import { type Anchor, lineAtTop, type Place, topForLine } from "../state/place";
+import { type Anchor, anchorCache, lineAtTop, type Place, topForLine } from "../state/place";
 import { lineAt, project } from "../state/projection";
 import { align, lineAnchors, paintRange, resolveRange } from "../state/renderedRange";
 import { contextPressAfter, renderedSelectionAct } from "../state/selection";
@@ -138,52 +138,40 @@ export function MarkdownView({
   // ── keeping your place (E63) ───────────────────────────────────────────────
   const scroller = useRef<HTMLDivElement>(null);
   /**
-   * The block anchors, measured once and kept until the rendering changes.
-   *
-   * ⛔ NOT ON EVERY SCROLL. Measuring walks every element and reads a rect from
-   * each, which forces layout; doing that per scroll event in a split would
-   * make the pane the human is dragging stutter. The rendering only moves when
-   * the html or the pane's width does, so those are what clear it.
-   */
-  const anchors = useRef<Anchor[] | null>(null);
-  /**
    * Read through a ref rather than a dependency, so a keystroke — which makes a
    * new projection every 250 ms — does not tear down and re-arm the scroll
    * listeners, and above all does not re-run the arrival scroll: that would
    * jump the reader to the remembered line every time they typed.
    */
   const measureRef = useRef<() => Anchor[]>(() => []);
+  /** What a measure reads — kept current each render, read by the cache. */
+  const measureFrom = useRef({ projection, text });
+  measureFrom.current = { projection, text };
   /**
-   * The scroller width the anchors were measured at.
-   *
-   * ⛔ THE RESIZE OBSERVER BELOW IS TOO LATE FOR ONE EVENT (E64). A column
-   * collapsing widens this pane in a single layout, the browser's scroll
-   * anchoring moves `scrollTop` to keep the same text at the top, and that
-   * scroll event is dispatched BEFORE the observer's callback runs — so it was
-   * reported through anchors measured at the OLD width, which named a line
-   * dozens above the real one (measured: a heading at the top reported as the
-   * section before it), and the split that the extra width then mounted landed
-   * there. A width that differs from the one measured at is exact evidence the
-   * table is stale; no timing is involved.
+   * The anchor table (`anchorCache`): measured once, cleared when the
+   * rendering moves, and re-measured when the scroller's width is not the one
+   * it was measured at (E64 — the collapse that beats the ResizeObserver).
    */
-  const measuredWidth = useRef(-1);
-  measureRef.current = () => {
-    const root = body.current;
-    const sc = scroller.current;
-    if (!root || !sc) return [];
-    if (!anchors.current || measuredWidth.current !== sc.clientWidth) {
-      anchors.current = lineAnchors(root, sc, projection, text);
-      measuredWidth.current = sc.clientWidth;
-    }
-    return anchors.current;
-  };
+  const anchors = useRef<ReturnType<typeof anchorCache> | null>(null);
+  if (!anchors.current)
+    anchors.current = anchorCache(
+      () => {
+        const root = body.current;
+        const sc = scroller.current;
+        if (!root || !sc) return [];
+        return lineAnchors(root, sc, measureFrom.current.projection, measureFrom.current.text);
+      },
+      () => scroller.current?.clientWidth ?? 0,
+    );
+  measureRef.current = () =>
+    body.current && scroller.current ? (anchors.current?.get() ?? []) : [];
 
   useEffect(() => {
-    anchors.current = null;
+    anchors.current?.clear();
     const sc = scroller.current;
     if (!sc) return;
     const ro = new ResizeObserver(() => {
-      anchors.current = null;
+      anchors.current?.clear();
     });
     ro.observe(sc);
     // ⛔ AND THE CONTENT, NOT JUST THE SCROLLER. The scroller's own border box
