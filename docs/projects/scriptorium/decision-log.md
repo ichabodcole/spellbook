@@ -2575,15 +2575,43 @@ pane's to clear.
   refused. The open document moves from many places: the surface's `open` and
   `open.doc`, a followed link, the agent's `activate`, a document removed, an
   undo. Checking at each of them is a check some later path would forget, so the
-  check is on the read.
+  check is on the read. **The read in `say` is a backstop that no test can
+  pin.** Every path that moves the document broadcasts first, and that read has
+  already dropped the stale selection, so the check in `say` cannot be reached
+  by construction. It stays for a future path that skips the broadcast, and the
+  code says so.
+
+**⛔ AND A REVEAL IS ONE SHOT, FOR THE TEXT IT WAS AIMED AT** (found by the
+no-stake verifier, after the paths below had first been called checked). A
+search jump or a note click sets `reveal`, a range the raw editor selects. The
+editor applies it whenever it is **created**, and nothing ever cleared it. So a
+search hit in gamma, then long.md, then Raw, put gamma's offsets on long.md: the
+chip read `long.md · v1 · line 3 / "h fill"`, and `/state` held the same, text
+nobody selected. In one document, the chip's X and then rendered → raw brought
+the cleared passage back. The same bug class as the selection, in a second value
+that names a place in a document without saying which. Built, both ways the
+verifier offered:
+
+- **Keyed.** A reveal carries the `doc` and `version` it was aimed at. The pane
+  gets it only through `selectionOnScreen`, and a switch drops it (`revealAfter`
+  in `surface/state/selection.ts`).
+- **Consumed.** The editor reports that it applied a reveal, and it is spent, so
+  a re-created editor has nothing to replay. Any change to the held selection
+  (the X, a click, another passage) also drops a reveal still waiting, because
+  the human has since chosen something else.
+- ⚠ **Kept on purpose:** a jump made in **rendered** view waits, and switching
+  to raw in the same document selects the hit. That is the reveal the human
+  asked for, in the text they asked for, used once.
 
 **Checked with real mouse input**, the chip and `/state` agreeing after each:
 the context-list click (the repro), a search result in another document, the
 Notes panel's "note owed an answer on X" line, a followed link, the agent's
 `activate`, the human's version menu, the history arrow undoing a removal of the
-open document, a reload, and raw mode. **A rename is not a switch.** The
-document record and its text are the same, and the chip and the daemon's path
-follow the new name together.
+open document, a reload, and raw mode. After the reveal fix: the verifier's
+repro, the X then rendered → raw in one document, a jump in raw (still selects),
+and a rendered jump followed by another selection and then raw (keeps the
+human's passage). **A rename is not a switch.** The document record and its text
+are the same, and the chip and the daemon's path follow the new name together.
 
 **Not taken:**
 

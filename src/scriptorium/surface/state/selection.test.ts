@@ -7,7 +7,9 @@ import {
   contextPressAfter,
   type HeldSelection,
   heldAfter,
+  type Reveal,
   renderedSelectionAct,
+  revealAfter,
 } from "./selection";
 
 const A: HeldSelection = {
@@ -135,6 +137,40 @@ describe("E66 — the open document changing is a clear", () => {
   test("the same range in ANOTHER document is a new selection, not the one held", () => {
     const onBeta = { ...A, doc: "beta" };
     expect(heldAfter(A, { type: "report", selection: onBeta })).toBe(onBeta);
+  });
+});
+
+describe("E66 — a reveal is one shot, for the text it was aimed at", () => {
+  // The verifier's repro: a search jump into gamma left `reveal` standing; open
+  // long.md, switch to Raw, and the editor re-created itself, applied gamma's
+  // offsets to long.md, and the chip read `long.md · v1 · line 3 / "h fill"`.
+  const R: Reveal = { doc: "gamma", version: 1, from: 40, to: 46, seq: 7 };
+
+  test("⛔ another document shown: the reveal goes", () => {
+    expect(revealAfter(R, { type: "shown", doc: "long", version: 1 })).toBeNull();
+  });
+
+  test("another version of the same document shown: the reveal goes", () => {
+    expect(revealAfter(R, { type: "shown", doc: "gamma", version: 2 })).toBeNull();
+  });
+
+  test("the text it was aimed at, still shown: it waits, unchanged", () => {
+    expect(revealAfter(R, { type: "shown", doc: "gamma", version: 1 })).toBe(R);
+  });
+
+  test("⛔ once applied it is spent, so a re-created editor cannot replay it", () => {
+    expect(revealAfter(R, { type: "applied", seq: 7 })).toBeNull();
+  });
+
+  test("applying an OLDER reveal does not spend a newer one", () => {
+    expect(revealAfter(R, { type: "applied", seq: 6 })).toBe(R);
+  });
+
+  test("⛔ the held selection changing — the chip's X, a click, a new passage — ends it", () => {
+    // The same-document variant: X, then a view switch, brought the passage
+    // back. A reveal is a request about what to select NOW, and the human has
+    // since said something else.
+    expect(revealAfter(R, { type: "selection" })).toBeNull();
   });
 });
 

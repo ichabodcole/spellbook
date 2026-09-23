@@ -156,3 +156,39 @@ export function contextPressAfter(
 ): boolean {
   return event.kind === "pointerdown" ? event.context : false;
 }
+
+/** A request to select and show a range — a search jump, or a note clicked. */
+export type Reveal = { doc: string; version: number; from: number; to: number; seq: number };
+
+/**
+ * What is left of a pending reveal after `event` (E66).
+ *
+ * ⛔ A REVEAL IS ONE SHOT, FOR THE TEXT IT WAS AIMED AT. Only the raw editor
+ * applies one, and it applies it whenever the editor is CREATED — so a reveal
+ * left standing became a selection nobody made: gamma's search hit applied to
+ * long.md after a switch and a click on Raw, or a passage the chip's X had
+ * cleared coming back after rendered → raw. So it goes when the text on screen
+ * changes (checked by the same rule as the selection), when it has been
+ * applied, and when the held selection changes for any other reason — the
+ * human has since chosen something else, including nothing.
+ *
+ * ⚠ Its own application reports a selection too; by then it is spent, so the
+ * `selection` event finds nothing to drop.
+ */
+export function revealAfter(
+  reveal: Reveal | null,
+  event:
+    | { type: "shown"; doc: string | null; version: number | null }
+    | { type: "applied"; seq: number }
+    | { type: "selection" },
+): Reveal | null {
+  if (!reveal) return null;
+  if (event.type === "selection") return null;
+  if (event.type === "applied") return event.seq === reveal.seq ? null : reveal;
+  return selectionOnScreen(
+    reveal,
+    event.doc !== null && event.version !== null
+      ? { doc: event.doc, version: event.version }
+      : null,
+  );
+}

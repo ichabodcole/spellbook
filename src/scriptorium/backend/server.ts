@@ -675,6 +675,12 @@ export async function startDaemon(opts: StartOpts) {
       case "say": {
         const text = msg.text.trim();
         if (!text) return;
+        // ⚠ A BACKSTOP, AND NO TEST CAN PIN IT (E66). Every path that moves the
+        // open document or its version broadcasts first, and the broadcast's
+        // read has already dropped a stale selection — so reading the raw
+        // `selection` here is unreachable-wrong by construction. It reads
+        // through the rule anyway, for the path somebody adds without a
+        // broadcast.
         const sel = msg.withSelection ? heldSelection() : null;
         const activePath = sel ? session.activePath(sel.doc) : session.activePath();
         // E65's "Ask the agent": the message carries the note it is about, so

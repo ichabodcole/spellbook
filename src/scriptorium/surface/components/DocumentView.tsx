@@ -245,6 +245,7 @@ export function DocumentView({
   onSave,
   onSelect,
   reveal,
+  onRevealed,
   clearSeq,
   pendingNote,
   onContextMenu,
@@ -268,6 +269,12 @@ export function DocumentView({
   onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
+  /**
+   * Told once `reveal` has been applied, so it is spent (E66). ⛔ The effect
+   * below runs whenever this editor is CREATED — a switch to raw, or split —
+   * so a reveal left standing replayed as a selection nobody made.
+   */
+  onRevealed?: (seq: number) => void;
   /** Bumped when the held selection goes away — the editor's goes with it. */
   clearSeq?: number;
   /** The passage a note is being written about — painted while the composer is open. */
@@ -470,6 +477,8 @@ export function DocumentView({
 
   // Clicking a note's quote brings it into view and selects it — `seq` is what
   // lets the same note be asked for twice in a row.
+  const revealed = useRef(onRevealed);
+  revealed.current = onRevealed;
   useEffect(() => {
     const v = view.current;
     if (!v || !reveal) return;
@@ -480,6 +489,7 @@ export function DocumentView({
       effects: EditorView.scrollIntoView(start, { y: "center" }),
     });
     v.focus();
+    revealed.current?.(reveal.seq);
   }, [reveal]);
 
   // A CLEAR CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): the chip and the

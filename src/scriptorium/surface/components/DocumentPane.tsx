@@ -110,6 +110,7 @@ export function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  onRevealed,
   clearSeq,
   focusedNote,
   notesWaiting,
@@ -145,6 +146,8 @@ export function DocumentPane({
   /** E45/E48: the editor's selection — offsets for notes, lines for the wire. */
   onSelect: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   reveal: { from: number; to: number; seq: number } | null;
+  /** The editor applied `reveal`, which is now spent (E66). */
+  onRevealed: (seq: number) => void;
   /** Bumped when the held selection goes away: collapse this pane's own. */
   clearSeq: number;
   /** E47: the note the panel has focused — the rendered view paints it apart. */
@@ -469,6 +472,7 @@ export function DocumentPane({
           onSave={onSave}
           onSelect={onSelect}
           reveal={reveal}
+          onRevealed={onRevealed}
           clearSeq={clearSeq}
           place={place}
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
@@ -504,6 +508,7 @@ export function DocumentPane({
               onSave={onSave}
               onSelect={onSelect}
               reveal={reveal}
+              onRevealed={onRevealed}
               clearSeq={clearSeq}
               place={place}
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}

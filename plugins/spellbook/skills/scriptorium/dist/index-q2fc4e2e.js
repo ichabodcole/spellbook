@@ -58395,6 +58395,7 @@ function DocumentView({
   onSave,
   onSelect,
   reveal,
+  onRevealed,
   clearSeq,
   pendingNote,
   onContextMenu,
@@ -58529,6 +58530,8 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
+  const revealed = import_react18.useRef(onRevealed);
+  revealed.current = onRevealed;
   import_react18.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
@@ -58540,6 +58543,7 @@ function DocumentView({
       effects: EditorView.scrollIntoView(start, { y: "center" })
     });
     v.focus();
+    revealed.current?.(reveal.seq);
   }, [reveal]);
   const unpainted = import_react18.useRef(clearSeq);
   import_react18.useEffect(() => {
@@ -58746,6 +58750,15 @@ function applySelectionEvent(held, event) {
 }
 function contextPressAfter(event) {
   return event.kind === "pointerdown" ? event.context : false;
+}
+function revealAfter(reveal, event) {
+  if (!reveal)
+    return null;
+  if (event.type === "selection")
+    return null;
+  if (event.type === "applied")
+    return event.seq === reveal.seq ? null : reveal;
+  return selectionOnScreen(reveal, event.doc !== null && event.version !== null ? { doc: event.doc, version: event.version } : null);
 }
 
 // src/scriptorium/surface/components/MetaHeader.tsx
@@ -59950,6 +59963,7 @@ function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  onRevealed,
   clearSeq,
   focusedNote,
   notesWaiting,
@@ -60201,6 +60215,7 @@ function DocumentPane({
         onSave,
         onSelect,
         reveal,
+        onRevealed,
         clearSeq,
         place: place2,
         pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
@@ -60236,6 +60251,7 @@ function DocumentPane({
               onSave,
               onSelect,
               reveal,
+              onRevealed,
               clearSeq,
               place: place2,
               pendingNote: noteAt && noteAt.from < noteAt.to ? noteAt : null,
@@ -61612,8 +61628,10 @@ function Workspace({
   const [clearSeq, setClearSeq] = import_react30.useState(0);
   const onSelectionEvent = import_react30.useCallback((event) => {
     const next = applySelectionEvent(selection, event);
-    if (next.held !== selection)
+    if (next.held !== selection) {
       setSelection(next.held);
+      setReveal((r2) => revealAfter(r2, { type: "selection" }));
+    }
     if (next.clearPaint)
       setClearSeq((n) => n + 1);
   }, [selection]);
@@ -61647,7 +61665,13 @@ function Workspace({
     if (!open || open.original !== jump.path)
       return;
     jumped.current = jump.seq;
-    setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
+    setReveal({
+      doc: open.slug,
+      version: open.active,
+      from: jump.at.from,
+      to: jump.at.to,
+      seq: jump.seq
+    });
   }, [jump, open]);
   const asked = import_react30.useRef(new Set);
   import_react30.useEffect(() => {
@@ -61665,6 +61689,7 @@ function Workspace({
   const shown = selectionOnScreen(selection, openSlug !== null && activeVersion !== null ? { doc: openSlug, version: activeVersion } : null);
   import_react30.useEffect(() => {
     onSelectionEvent({ type: "shown", doc: openSlug, version: activeVersion });
+    setReveal((r2) => revealAfter(r2, { type: "shown", doc: openSlug, version: activeVersion }));
   }, [openSlug, activeVersion, onSelectionEvent]);
   import_react30.useEffect(() => {
     if (!openSlug || activeVersion === null || original === null)
@@ -61907,7 +61932,8 @@ function Workspace({
                   }
                 });
               },
-              reveal,
+              reveal: selectionOnScreen(reveal, openSlug !== null && activeVersion !== null ? { doc: openSlug, version: activeVersion } : null),
+              onRevealed: (seq) => setReveal((r2) => revealAfter(r2, { type: "applied", seq })),
               clearSeq,
               focusedNote,
               notesWaiting: noteBadges,
@@ -62025,8 +62051,14 @@ function Workspace({
                 },
                 onGoTo: (n) => {
                   setFocusedNote(n.id);
-                  if (n.from !== null)
-                    setReveal({ from: n.from, to: n.to, seq: Date.now() });
+                  if (n.from !== null && open)
+                    setReveal({
+                      doc: open.slug,
+                      version: open.active,
+                      from: n.from,
+                      to: n.to,
+                      seq: Date.now()
+                    });
                 },
                 onEdit: (id, body) => {
                   if (open)

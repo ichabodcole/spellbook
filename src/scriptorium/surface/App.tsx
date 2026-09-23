@@ -56,7 +56,13 @@ import {
   type Side,
 } from "./state/columns";
 import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
-import { applySelectionEvent, type HeldSelection, type SelectionEvent } from "./state/selection";
+import {
+  applySelectionEvent,
+  type HeldSelection,
+  type Reveal,
+  revealAfter,
+  type SelectionEvent,
+} from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -418,7 +424,12 @@ function Workspace({
   const onSelectionEvent = useCallback(
     (event: SelectionEvent) => {
       const next = applySelectionEvent(selection, event);
-      if (next.held !== selection) setSelection(next.held);
+      if (next.held !== selection) {
+        setSelection(next.held);
+        // E66: the human has chosen something else, so a reveal still waiting
+        // for the raw editor is no longer what they asked for.
+        setReveal((r) => revealAfter(r, { type: "selection" }));
+      }
       if (next.clearPaint) setClearSeq((n) => n + 1);
     },
     [selection],
@@ -427,7 +438,7 @@ function Workspace({
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
-  const [reveal, setReveal] = useState<{ from: number; to: number; seq: number } | null>(null);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
   /** The note the document is pointing at (E47). */
   const [focusedNote, setFocusedNote] = useState<string | null>(null);
 
@@ -484,7 +495,13 @@ function Workspace({
     if (!jump?.at || jump.seq === jumped.current) return;
     if (!open || open.original !== jump.path) return;
     jumped.current = jump.seq;
-    setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
+    setReveal({
+      doc: open.slug,
+      version: open.active,
+      from: jump.at.from,
+      to: jump.at.to,
+      seq: jump.seq,
+    });
   }, [jump, open]);
 
   // A snapshot can name an open document whose text this viewer has never
@@ -521,8 +538,11 @@ function Workspace({
   // selection goes, and so does any paint of it. Whatever moved the document —
   // the context list, a search result, a note's "open", the agent, the history
   // arrows, a version made active — reaches here as the same two values.
+  // A reveal waiting for the raw editor goes the same way: it names a range in
+  // the text it was aimed at, and nowhere else.
   useEffect(() => {
     onSelectionEvent({ type: "shown", doc: openSlug, version: activeVersion });
+    setReveal((r) => revealAfter(r, { type: "shown", doc: openSlug, version: activeVersion }));
   }, [openSlug, activeVersion, onSelectionEvent]);
   useEffect(() => {
     if (!openSlug || activeVersion === null || original === null) return;
@@ -805,7 +825,13 @@ function Workspace({
                 },
               });
             }}
-            reveal={reveal}
+            reveal={selectionOnScreen(
+              reveal,
+              openSlug !== null && activeVersion !== null
+                ? { doc: openSlug, version: activeVersion }
+                : null,
+            )}
+            onRevealed={(seq) => setReveal((r) => revealAfter(r, { type: "applied", seq }))}
             clearSeq={clearSeq}
             focusedNote={focusedNote}
             notesWaiting={noteBadges}
@@ -961,8 +987,14 @@ function Workspace({
                 // bordered — so the panel pointed at one note while the editor
                 // showed another. Whatever was last asked for is the one marked.
                 setFocusedNote(n.id);
-                if (n.from !== null)
-                  setReveal({ from: n.from, to: n.to as number, seq: Date.now() });
+                if (n.from !== null && open)
+                  setReveal({
+                    doc: open.slug,
+                    version: open.active,
+                    from: n.from,
+                    to: n.to as number,
+                    seq: Date.now(),
+                  });
               }}
               onEdit={(id, body) => {
                 if (open) send({ type: "note.edit", doc: open.slug, id, body });
