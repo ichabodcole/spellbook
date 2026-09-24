@@ -251,7 +251,8 @@ Waiting on Cole:
 
 - **Whether mind-mapper stays a presence spell.** The tail handoff ruled it one,
   so its window always re-arms Monitor and never takes the zero-wake one-shot.
-  He has not ruled.
+  He has not ruled. _(Note added 2026-09-24: he ruled it follows the session
+  spells. Built on `feat/mind-mapper-quiet-handoff`.)_
 - **The house-style proposals** above. _(Note added 2026-09-24, after the close:
   Cole approved all four, and they are integrated into `grimoire/house-style.md`
   on `docs/house-style-from-scriptorium-real-use`.)_

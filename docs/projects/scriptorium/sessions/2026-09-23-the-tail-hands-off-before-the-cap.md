@@ -78,6 +78,9 @@ taken.
   log, and no longer opens a stream after a stop that lands during `resolve`.
 - **`--once`** on the five session spells: scriptorium, glamour, imago, magpie
   and bounty. Astrolabe, grapevine and mind-mapper are presence tails.
+  _Superseded for mind-mapper by Cole's ruling of 2026-09-24: it takes `--once`
+  too (`feat/mind-mapper-quiet-handoff`; the kit header's "MIND-MAPPER JOINS THE
+  SESSION SPELLS")._
 - **The bookmark carries its log.** Spells whose daemon stamps an epoch print it
   as `--since N@<epoch>`, so a tail re-armed across a restart re-reads the new
   log instead of skipping its start.
@@ -142,7 +145,10 @@ All are in the kit header with the options not taken.
 
 - **Mind-mapper is a presence spell.** Its SSE tail is what its daemon counts as
   an agent present, so its window always re-arms Monitor. Cole has not overruled
-  this.
+  this. _Superseded: Cole overruled it on 2026-09-24. Mind-mapper follows the
+  session spells, and its daemon's presence lingers across the tail's gaps
+  (`feat/mind-mapper-quiet-handoff`; the kit header's "MIND-MAPPER JOINS THE
+  SESSION SPELLS")._
 - **The margin is 60 s.** It covers start-up, a daemon spawn, the last line's
   flush and Monitor's batching. The spike measured a 12 s window ending cleanly
   under a 20 s cap.

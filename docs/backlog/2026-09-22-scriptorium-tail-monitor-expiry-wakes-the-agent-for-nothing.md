@@ -130,7 +130,11 @@ exercise" list:
   the rulings with the options not taken.
 - **`tail --once`** on the five session spells (scriptorium, glamour, imago,
   magpie, bounty). The presence spells (astrolabe, grapevine, and mind-mapper,
-  whose SSE tail is its agent presence) always get the Monitor re-arm.
+  whose SSE tail is its agent presence) always get the Monitor re-arm. _(Note
+  added 2026-09-24: Cole ruled mind-mapper follows the session spells. It takes
+  `--once` on `feat/mind-mapper-quiet-handoff`, and its daemon's presence
+  lingers across the tail's gaps. Astrolabe and grapevine stay presence
+  spells.)_
 - **The client closes its connection on a terminal frame**
   (`src/kit/wire/tailEvents.ts`), which is what lets `--once` exit.
 - **A `--since` re-arm prints no grounding line.** Grapevine seeds its bookmark
