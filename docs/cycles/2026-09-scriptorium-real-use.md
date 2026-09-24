@@ -7,8 +7,9 @@ description:
   30-minute wake-ups
 tags: [scriptorium, real-use, co-presence]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-09-22
+closed: 2026-09-24
 appetite:
   "Stop when the context chip always matches the selection, switching views
   keeps your place, the side columns can get out of the way, a note shows that
@@ -105,7 +106,154 @@ Out of scope, deliberately:
 
 ## Outcome
 
-_Written at close, not before._
+Closed 2026-09-24. Every entry in `scope:` is `done` and all seven branches
+landed on `develop`. The appetite was met, except that the chip clause holds for
+everything Cole reported but not yet "always" (below). The cycle also shipped a
+fix it had not planned: the house-wide tail handoff, which its own spike found.
+
+### Against the appetite
+
+- **"The context chip always matches the selection."** Met for every case Cole
+  reported and for the worst edge the reviews found, but not yet _always_.
+  [Branch 1](../projects/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
+  fixed the four causes of rendered-mode drift, and Cole ruled that clearing the
+  chip clears the selection, in the daemon too.
+  [The chip-across-documents fix](../projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md)
+  stopped a selection surviving a document switch under the new document's name.
+  Three edges in
+  [the selection-edges item](../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md)
+  can still put the wrong passage on a message, or none: an unplaceable
+  selection keeps the previous passage (edge 1), a note added from the Notes
+  panel leaves its passage on the chip (edge 4), and a second tab wipes the
+  daemon's selection while the first tab's chip still shows it (edge 5).
+- **"Switching views keeps your place."** Met.
+  [Branch 2](../projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md):
+  raw, rendered and split keep the top-visible source line, all through one
+  primitive. Two sub-frame holes are pinned and filed. A resize still does not
+  re-place a pane; Cole deferred that until his own use says it matters.
+- **"The side columns can get out of the way."** Met.
+  [Branch 3](../projects/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md):
+  either column collapses and the choice persists. The composer floats while the
+  conversation is shut, and reader mode fell out as a derived preset.
+- **"A note shows that it is being worked on."** Met.
+  [Branch 4](../projects/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md):
+  a note shows it is with the agent and goes to a static "may be stuck" the way
+  E53's messages do. Resolving it is the close. On Cole's ruling, three
+  trade-offs are left to be learned in use.
+- **"The 30-minute wake-up has an explanation and a ruling."** Exceeded.
+  [The spike](../investigations/2026-09-22-monitor-expiry-and-the-tail.md)
+  explained it: the wake was Monitor's cap, not Scriptorium, and every bare
+  re-arm replayed the session. Cole ruled, and
+  [`feat/tail-quiet-handoff`](../projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md)
+  shipped the fix to the kit and every spell with a tail.
+- **"Anything that needs more real use waits."** Held. Eager vs. lazy
+  versioning, the note trade-offs, the resize re-place, a collapse shortcut, and
+  which tab's selection should win all wait on Cole's use. Each session ends
+  with a "what to exercise" list, which is where that signal will come from.
+
+### How the scope moved
+
+Two additions, both ruled in by Cole, each for a stated reason.
+
+- **The chip across documents.** Branch 4's reviewer of record found it with a
+  real mouse. It predated the cycle, but it broke the first appetite clause, and
+  it sent the agent one document's text as another's. So it was fixed in-cycle
+  rather than filed.
+- **The tail handoff.** Branch 5 was planned as a spike that might leave the
+  cycle. It found the cause in the shared kit client and all seven skills that
+  wrap a tail, not in Scriptorium. Cole kept the fix in because the replay is a
+  correctness bug in every spell with a tail and has to ship before the next
+  release. That widened the cycle past Scriptorium on purpose. Its session sits
+  under Scriptorium only because a cross-spell session has no other home in
+  `docs/`.
+
+### The working method
+
+The orchestrator delegated every branch in three stages, none of which reviewed
+its own work. An implementer built it test-first. A no-stake verifier drove the
+committed build with its own reproductions. A fresh reviewer of record read the
+net diff, ran the gate and mutation-tested the new cells. The chip fix, the
+smallest, used one agent to verify and review, and that agent still found a
+second defect.
+
+Each stage found what the one before it passed over:
+
+- **The verifier found defects the implementer's green tests did not.** Every
+  branch had at least one: the offset-0 clamp (branch 1), the time-window guard
+  that discarded a human's scroll (branch 2), controls clipped out of reach
+  (branch 3), a second "Ask the agent" that re-sent (branch 4), the reveal range
+  carrying the same wrong-document flaw (chip fix), and a re-arm that hung when
+  the session closed in the gap (tail).
+- **The reviewer found code that could change with the suite still green.**
+  Deleting `alignRuns`' back-off loop (branch 1), branches in `columns.ts`
+  (branch 3), and the wiring around a well-pinned rule (branch 4 and the tail)
+  all survived mutation until cells were written. It also found what nobody had
+  asked about: an inverse bug that branch 1's fix opened, a falsified "only one
+  ordering" claim (branch 2), and a rule in the tail that would have sent an
+  anthill seat `tail.closed` on its first arm, before its board existed.
+
+On branches 1 and 3 the orchestrator re-ran the reviewer's decisive mutations
+itself before landing.
+
+### What it learned
+
+The memories carry the detail. Four generalise past their incident and are
+proposed for `grimoire/house-style.md` in
+[the house-style rules item](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
+
+- [one state, one meaning](../memories/2026-09-22-scriptorium-selection-and-the-chip.md)
+- [ask what a number is for](../projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums)
+  before writing it into a document
+- [a place in a document names its document](../memories/2026-09-22-a-place-in-a-document-names-its-document.md)
+- [a wait that wakes by ending must end](../memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md)
+
+Two stay memories, and that item says why:
+[an exact test over a time window](../memories/2026-09-22-a-time-window-is-a-guess.md)
+with
+[its observer-order sequel](../memories/2026-09-22-an-observer-is-late-for-the-event-that-beats-it.md),
+and
+[the rule was pinned, the wiring was not](../memories/2026-09-22-the-rule-was-pinned-the-wiring-was-not.md).
+
+### Carried forward
+
+Open backlog items this cycle filed or touched:
+
+- [Selection edges](../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md):
+  edges 1–7 (edge 0 is fixed). Edges 1, 4 and 5 are the ones that can send the
+  wrong passage; 3 and 6 are cosmetic, 2 is off-macOS only, and 7 is the context
+  tree.
+- [Selection hygiene](../backlog/2026-09-22-scriptorium-selection-hygiene-duplication-and-cost.md):
+  the duplicated edge-detect, and a full re-walk on every `selectionchange`.
+- [A coalesced scroll is lost](../backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md):
+  the two pinned sub-frame holes.
+- [Eager or lazy versioning](../backlog/2026-09-22-scriptorium-eager-or-lazy-versioning.md):
+  waiting on Cole's use.
+- [Anthill's seat filter drops the handoff line](../backlog/2026-09-23-anthill-seat-tail-filter-drops-the-handoff-line.md):
+  the change is anthill's. Until it lands, a seat's bounty watch dies silently
+  at the cap.
+- [House-style rules from this cycle](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
+  Cole's to rule.
+
+Recorded under "Known and not built" in the sessions, with no backlog item of
+their own:
+
+- **The tail:** the fallback gap for spells whose daemon stamps no epoch
+  (glamour, imago, magpie, bounty), the printed re-arm naming a versioned plugin
+  path that goes stale across an upgrade, and the keyed late-lead edge.
+- **Scriptorium:** a resize does not re-place a pane, and a triple-click in
+  rendered mode gives no chip.
+- **Batched note review**, out of scope by Cole's call, is mentioned only in the
+  note item.
+
+Waiting on Cole:
+
+- **Whether mind-mapper stays a presence spell.** The tail handoff ruled it one,
+  so its window always re-arms Monitor and never takes the zero-wake one-shot.
+  He has not ruled.
+- **The house-style proposals** above.
+- **From his own use:** eager vs. lazy versioning, the three note trade-offs,
+  the resize re-place, which tab's selection wins, and whether he reaches for a
+  collapse shortcut.
 
 ## Sessions
 
