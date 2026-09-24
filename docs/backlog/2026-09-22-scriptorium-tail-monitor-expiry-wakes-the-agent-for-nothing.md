@@ -111,6 +111,38 @@ it lands.
 - **Fallback:** if the one-shot cannot outlive 30 minutes, re-arm silently with
   the bookmark.
 
+## Built (feat/tail-quiet-handoff, 2026-09-23)
+
+The ruling is built, house-wide. The item stays open until the branch lands and
+Cole's real use says whether the handoff feels right.
+
+- **The kit: `src/kit/wire/tailHandoff.ts`.** Every spell's `tail` now ends its
+  own window 60 s inside Monitor's cap and prints one stdout line naming the
+  next act, bookmark included: `tail.window` (re-arm Monitor), `tail.quiet` (run
+  `tail --once` as a background Bash task), `tail.woke` (the one-shot fired;
+  back to Monitor), `tail.closed` or `tail.lost` (stop; the line names
+  `open --restore <id>`). Its header is the decision log: the four adjustments,
+  the margin, the disconnect decision, and the rulings with the options not
+  taken.
+- **`tail --once`** on the five session spells (scriptorium, glamour, imago,
+  magpie, bounty). The presence spells (astrolabe, grapevine, and mind-mapper,
+  whose SSE tail is its agent presence) always get the Monitor re-arm.
+- **The client closes its connection on a terminal frame**
+  (`src/kit/wire/tailEvents.ts`), which is what lets `--once` exit.
+- **A `--since` re-arm prints no grounding line.** Grapevine seeds its bookmark
+  from the `subscribed` marker's `latest_id`, so a live-only tail's re-arm no
+  longer misses messages sent in the gap.
+- **A killed daemon ends a session spell's tail on stdout** (`tail.lost`), in
+  both modes, so a Monitor-wrapped agent hears it.
+- **Skills:** all seven carry the same short rule (Monitor at
+  `timeout_ms: 1800000`, follow the last line, the silent-bookmark fallback,
+  never re-arm without `--since`). Bounty's `persistent`, `timeout_ms: 3600000`
+  and `--since 0` are gone. mind-mapper's help names `timeout_ms` and the
+  handoff.
+- **Tests:** `src/kit/wire/tailHandoff.test.ts` (the pure decision, the
+  connection close, the wrapper) and
+  `src/scriptorium/backend/tail-handoff.integration.test.ts` (a real daemon).
+
 ## References
 
 - `plugins/spellbook/skills/scriptorium/SKILL.md:86`

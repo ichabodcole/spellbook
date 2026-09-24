@@ -118,3 +118,5 @@ _Written at close, not before._
 - feat/scriptorium-note-in-progress (landed 2026-09-22)
 
 - fix/scriptorium-chip-across-documents (landed 2026-09-22)
+
+- feat/tail-quiet-handoff (open)
