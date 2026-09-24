@@ -192,3 +192,8 @@ _No pages yet._
   — Scriptorium's selection and its reveal range were bare offsets, so a
   document switch applied them to the wrong text; both now carry the document
   and version they name, checked through one rule
+
+- [A wait that wakes by ending must end on every path](./memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md)
+  — A background task wakes the agent only by exiting, so a one-shot that does
+  not exit fails silently; the tail handoff hit that shape three times, each on
+  a path other than the happy one

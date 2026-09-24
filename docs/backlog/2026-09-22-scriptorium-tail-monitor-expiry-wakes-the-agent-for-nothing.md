@@ -8,7 +8,7 @@ description:
   tail, not Scriptorium's idle close; each expiry wakes the agent to re-arm
 tags: [scriptorium, tail, monitor, co-presence]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
 
@@ -113,8 +113,10 @@ it lands.
 
 ## Built (feat/tail-quiet-handoff, 2026-09-23)
 
-The ruling is built, house-wide. The item stays open until the branch lands and
-Cole's real use says whether the handoff feels right.
+The ruling is built, house-wide, and the branch was cleared to land (re-review,
+2026-09-23). How the handoff feels in real use is the session's "What to
+exercise" list:
+[the session](../projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md).
 
 - **The kit: `src/kit/wire/tailHandoff.ts`.** Every spell's `tail` now ends its
   own window 60 s inside Monitor's cap and prints one stdout line naming the

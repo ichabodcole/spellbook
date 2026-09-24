@@ -119,4 +119,6 @@ _Written at close, not before._
 
 - fix/scriptorium-chip-across-documents (landed 2026-09-22)
 
-- feat/tail-quiet-handoff (open)
+- spike/monitor-expiry (landed 2026-09-23)
+
+- feat/tail-quiet-handoff (landed 2026-09-23)
