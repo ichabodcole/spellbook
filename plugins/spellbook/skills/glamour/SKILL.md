@@ -181,7 +181,7 @@ prints the full surface and takes no flags.
 | Verb                                                                                                               | What it does                                                                                                                                                                                                                                                                                                                               |
 | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--start-timeout S] [--restore <id\|path>]`             | Spawn the daemon (opens the browser); prints `{url, port, session_id}`. `--no-open` suppresses the browser tab. `--timeout S` sets the session idle timeout (daemon retires an idle session after S seconds). `--start-timeout S` sets how long the CLI waits for the daemon's launch handshake (default 45 s; raise on cold first build). |
-| `tail [--since N]`                                                                                                 | Stream user events as JSONL — run via Monitor (see Operating rule below)                                                                                                                                                                                                                                                                   |
+| `tail [--since N] [--once]`                                                                                        | Stream user events as JSONL — run via Monitor (see Operating rule below)                                                                                                                                                                                                                                                                   |
 | `state [--full]`                                                                                                   | State snapshot — lean by default (blobs stripped); `--full` for raw incl. base64                                                                                                                                                                                                                                                           |
 | `intent <text…>`                                                                                                   | Set / replace the session intent                                                                                                                                                                                                                                                                                                           |
 | `annotate <id> <text…>`                                                                                            | Write agent annotation onto a library item                                                                                                                                                                                                                                                                                                 |
@@ -225,6 +225,33 @@ bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts tail
 Each stdout line becomes a fresh turn. (`${CLAUDE_PLUGIN_ROOT}` must be the
 absolute path to this skill's `scripts/cli.ts` — see the variable warning in the
 Verbs section.)
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. That line's `command` is the verb and
+its arguments only, bookmark (`--since`) included, with no launcher and no path.
+Always run it with this skill's own launcher, the one you use for its other
+verbs: `bun <this skill's directory>/scripts/cli.ts <command>`. A `command` of
+`tail --since 12` runs as
+`bun <this skill's directory>/scripts/cli.ts tail --since 12`. Never reuse a
+launcher path from an earlier line or session: the plugin's directory changes
+when it updates. Do what `next` says:
+
+- `monitor`: arm Monitor again with the launcher and `command`.
+- `background`: nothing happened; the human is away. Run the launcher and
+  `command` as a background Bash task (`run_in_background`). It exits on the
+  next event, which wakes you. Handle the event, then follow its line back to
+  Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; the launcher
+  and `command` bring it back. If you run it, arm the tail again with no
+  `--since` (and the session id it prints, where there is one): a restarted
+  daemon starts a new event log.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`, written `<id>@<its epoch>` when events carry an
+`epoch`. Never re-arm without `--since`: that replays events you have already
+handled. If the launcher refuses a `command` with a usage error, its message
+names the forms it accepts; fix the arguments to match.
 
 **After `open`, stay silent** until the first `message.user` or `item.add` event
 — the landing screen orients the user; don't post a greeting.

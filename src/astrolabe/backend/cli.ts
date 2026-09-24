@@ -40,7 +40,13 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { printJson } from "../../kit/lib/printJson";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+import {
+  commandLine,
+  readSince,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -234,9 +240,12 @@ function openBrowser(url: string): void {
 // resumes when the human reopens the board.
 async function streamEvents(opts: {
   since: number;
+  sinceEpoch?: string;
   project?: string;
   scopeId?: string;
   self?: string;
+  /** The verb and its identity flags, so the handoff line re-arms THIS watch. */
+  again: string[];
 }): Promise<number> {
   type Ev = { id?: number; epoch?: string; type?: string; by?: string; projectId?: string };
 
@@ -246,31 +255,47 @@ async function streamEvents(opts: {
     return ev.projectId === opts.scopeId;
   };
 
-  return await tailEvents<Ev>({
-    resolve: runningBase,
-    path: "/events",
-    since: opts.since,
-    cursorOf: (ev) => ev.id,
-    query: (cursor) => ({
-      since: String(cursor),
-      ...(opts.project ? { project: opts.project } : {}),
-    }),
-    accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
-    terminal: (ev) => ev.type === "closed",
-    // ⛔ THE RESTART GAP. Astrolabe is a singleton that `cli.ts` respawns, and
-    // its event ids restart at 1 — so a `join` that has been running for hours
-    // resumes at `since=<a large number>` against a daemon whose whole log is
-    // smaller than that. The daemon half (`kit/wire/eventLog.ts`) replays whole
-    // when the cursor is beyond its own; this half is what stops the tail then
-    // re-requesting the stale cursor on every subsequent reconnect. The line is
-    // SYNTHESIZED — it is not a bus event, carries no `id`, and never advances
-    // the cursor — which is the same separation mind-mapper's `epoch.changed`
-    // makes and `src/mind-mapper/backend/tail.test.ts` pins.
-    epochOf: (ev) => ev.epoch,
-    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => ": astrolabe-keepalive",
-  });
+  // ⛔ A PRESENCE SPELL (`kit/wire/tailHandoff.ts`): `join` holding its
+  // connection is what lights the card, so its window always names the Monitor
+  // re-arm and never the stop-start `--once`, and a lost daemon is waited for,
+  // not reported (a dead astrolabe resumes when the human reopens the board).
+  return await tailWithHandoff<Ev>(
+    {
+      resolve: runningBase,
+      path: "/events",
+      since: opts.since,
+      ...(opts.sinceEpoch ? { sinceEpoch: opts.sinceEpoch } : {}),
+      cursorOf: (ev) => ev.id,
+      query: (cursor) => ({
+        since: String(cursor),
+        ...(opts.project ? { project: opts.project } : {}),
+      }),
+      accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
+      terminal: (ev) => ev.type === "closed",
+      // ⛔ THE RESTART GAP. Astrolabe is a singleton that `cli.ts` respawns, and
+      // its event ids restart at 1 — so a `join` that has been running for hours
+      // resumes at `since=<a large number>` against a daemon whose whole log is
+      // smaller than that. The daemon half (`kit/wire/eventLog.ts`) replays whole
+      // when the cursor is beyond its own; this half is what stops the tail then
+      // re-requesting the stale cursor on every subsequent reconnect. The line is
+      // SYNTHESIZED — it is not a bus event, carries no `id`, and never advances
+      // the cursor — which is the same separation mind-mapper's `epoch.changed`
+      // makes and `src/mind-mapper/backend/tail.test.ts` pins.
+      epochOf: (ev) => ev.epoch,
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => ": astrolabe-keepalive",
+    },
+    {
+      spell: "astrolabe",
+      mode: "watch",
+      presence: true,
+      commands: {
+        tail: ({ since, epoch }) => tailCommand(opts.again, since, false, epoch),
+        comeBack: () => commandLine(["open", "--no-open"]),
+      },
+    },
+  );
 }
 
 // ── verbs ────────────────────────────────────────────────────────────
@@ -495,6 +520,7 @@ const HELP = `astrolabe — a standing observatory board for projects in flight.
       read-back: project cards (each carries a derived zone: attention | active | quiet)
   tail [--since N] [--as <name>]
       unscoped event tail as JSONL (no presence)
+  join and tail ${WINDOW_HELP}
   list | close | info | help | --version
 
   Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.
@@ -579,7 +605,15 @@ async function dispatch(argv: string[]): Promise<number> {
   }
   const flags = parsed.values as Record<string, string | boolean>;
   const pos = parsed.positionals as string[];
-  const since = typeof flags.since === "string" ? Number.parseInt(flags.since, 10) : -1;
+  // `--since` is a bookmark, `N` or `N@<epoch>` as the handoff line prints it
+  // (`kit/wire/tailHandoff.ts`, D2): the epoch lets the tail notice a restarted
+  // daemon whose new log is already past the id.
+  // A form it does not accept is refused with the accepted forms named, never
+  // misparsed (`readSince`).
+  const read = typeof flags.since === "string" ? readSince(flags.since, { epoch: true }) : null;
+  if (read !== null && !read.ok) die(read.message, "usage");
+  const since = read?.ok ? read.since : -1;
+  const sinceEpoch = read?.ok ? read.epoch : undefined;
 
   switch (verb) {
     case "open":
@@ -632,13 +666,27 @@ async function dispatch(argv: string[]): Promise<number> {
           hint: "run: cli.ts add <name> --path <p> to register it",
           choices: state.projects.map((p) => p.id),
         });
-      return await streamEvents({ since, project: id, scopeId: id, self: resolveAs(flags) });
+      const self = resolveAs(flags);
+      return await streamEvents({
+        since,
+        sinceEpoch,
+        project: id,
+        scopeId: id,
+        self,
+        again: ["join", id, ...(self !== undefined ? ["--as", self] : [])],
+      });
     }
     case "tail": {
       // ensureDaemon for the START of the watch only; the tail re-resolves the
       // daemon on every reconnect (see streamEvents), so `base` is not carried.
       await ensureDaemon();
-      return await streamEvents({ since, self: resolveAs(flags) });
+      const self = resolveAs(flags);
+      return await streamEvents({
+        since,
+        sinceEpoch,
+        self,
+        again: ["tail", ...(self !== undefined ? ["--as", self] : [])],
+      });
     }
     default:
       die(`unknown verb '${verb}'`, "usage", {

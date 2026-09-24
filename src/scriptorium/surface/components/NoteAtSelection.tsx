@@ -14,6 +14,8 @@ import { cn } from "cn";
 import { MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/ui/button";
+import type { Waiting } from "../../backend/protocol";
+import { WaitingDot } from "./WaitingBadge";
 
 export type At = { x: number; y: number; from: number; to: number; noteIds: string[] };
 
@@ -40,8 +42,11 @@ export function NoteAtSelection({
   at: At | null;
   /** The selected text, shown so the note is never written about the wrong passage. */
   quote: string;
-  /** The notes under the pointer, labelled — usually none or one (E47). */
-  existing: { id: string; label: string }[];
+  /**
+   * The notes under the pointer, labelled — usually none or one (E47) — and
+   * whether each is still owed an answer (E65), so the passage says so too.
+   */
+  existing: { id: string; label: string; waiting?: { badge: Waiting["badge"]; asked: boolean } }[];
   onClose: () => void;
   onAdd: (from: number, to: number, body: string) => void;
   onShowNote: (id: string) => void;
@@ -157,6 +162,9 @@ export function NoteAtSelection({
               >
                 <MessagesSquareIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
                 <span className="min-w-0 flex-1 truncate">{n.label}</span>
+                {n.waiting && (
+                  <WaitingDot badge={n.waiting.badge} of={n.waiting.asked ? "asked" : "note"} />
+                )}
               </button>
               {/* ⛔ IMMEDIATE, LIKE THE PANEL'S. Deleting a note asks nowhere
                   else, and one delete that confirms while its twin does not is

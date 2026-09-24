@@ -2,7 +2,7 @@
 // document has CHANGED — an anchor that only works on unmodified text is an
 // offset with extra steps.
 import { describe, expect, test } from "bun:test";
-import { anchorOf, findAnchor, quoteLabel } from "./anchors";
+import { anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
 
 const DOC = `# Release notes
 
@@ -126,5 +126,23 @@ describe("quoteLabel", () => {
 
   test("leaves a short quote exactly as it is", () => {
     expect(quoteLabel("short")).toBe("short");
+  });
+});
+
+describe("linesOf (E65) — the lines a note covers, as a human counts them", () => {
+  const text = "one\ntwo\nthree\n";
+  test("a range inside one line", () => {
+    expect(linesOf(text, 4, 7)).toEqual({ from: 2, to: 2 });
+  });
+  test("a range across lines", () => {
+    expect(linesOf(text, 1, 10)).toEqual({ from: 1, to: 3 });
+  });
+  test("a range that ENDS on a newline stops at the line it ended, not the next", () => {
+    // "two\n" selected whole: the caret is at the start of line 3, and line 3
+    // has none of the note's text.
+    expect(linesOf(text, 4, 8)).toEqual({ from: 2, to: 2 });
+  });
+  test("the first character is line 1", () => {
+    expect(linesOf(text, 0, 1)).toEqual({ from: 1, to: 1 });
   });
 });

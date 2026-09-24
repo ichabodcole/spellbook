@@ -167,8 +167,47 @@ export type TailOptions<Ev> = {
   epochOf?: (ev: Ev) => string | undefined;
   /** A reconnect landed on a DIFFERENT epoch: the daemon restarted, so the
    *  cursor resets to 0. Return a line to emit (a synthesized notice, never a
-   *  bus event) or null. */
+   *  bus event) or null.
+   *
+   *  ⛔ AND WHEN THE NEW LOG WAS ALREADY PAST THE BOOKMARK, THE CLIENT
+   *  RECONNECTS FROM ITS START. A daemon that believes the cursor sends only
+   *  what lies above it, so the new log's early frames — a human message at
+   *  new id 2 under an old bookmark of 4 — were skipped silently. Everything in
+   *  a new epoch is new to this reader, so the attempt is dropped and re-made
+   *  from 0 at once (no backoff). A frame AT or below the asked cursor means
+   *  the daemon is already replaying whole, and is kept. (Reviewer's D2 gap,
+   *  feat/tail-quiet-handoff.) */
   onEpochChange?: (next: string) => string | null;
+  /** The epoch the starting `since` came from, when the caller has one (a
+   *  bookmark printed as `N@<epoch>`, `./tailHandoff.ts`). The first frame of a
+   *  different epoch is then an epoch change like any other — which is what
+   *  stops a bookmark outliving its log across processes. */
+  sinceEpoch?: string;
+  /**
+   * Read a frame whose id is AT OR BELOW the cursor this connection asked
+   * from as "the log restarted", reset the cursor to 0, and call
+   * `onEpochChange` (with the frame's epoch, or `"unknown"`). Default false.
+   *
+   * ⛔ WHY IT IS HONEST: the kit's event log answers a cursor beyond its own
+   * by replaying WHOLE (`./eventLog.ts`, point 3), and otherwise sends only
+   * ids above the cursor. So a frame at or below the asked cursor exists only
+   * when the daemon judged the cursor foreign — a restarted daemon, whose ids
+   * began again at 1. The epoch catches that WITHIN one process; this catches
+   * it ACROSS processes, where a re-armed tail carries a bookmark from a log
+   * that no longer exists and, without it, kept that bookmark forever: every
+   * re-arm replayed the whole new log, and a `--once` woke at once, in a loop
+   * (found by the verifier on feat/tail-quiet-handoff, after `tail.lost` →
+   * `open --restore`).
+   *
+   * ⚠ ONLY FOR A DAEMON ON THE KIT'S EVENT LOG. Grapevine's ids are recovered
+   * across a restart and its `--last` query overrides `since`, so it leaves
+   * this off. And the blind spot is stated: a bookmark that happens to be at
+   * or below the RESTARTED log's own length looks valid to the daemon, which
+   * then sends only what lies above it. The come-back path therefore drops
+   * the bookmark altogether (`./tailHandoff.ts`, D2), so this is the net, not
+   * the rule.
+   */
+  restartOnReplay?: boolean;
 
   // ── FILTER and SHAPE ─────────────────────────────────────────────────────
   /** Scope ∧ ¬self-echo. A rejected event still ADVANCES THE CURSOR. */
@@ -192,8 +231,17 @@ export type TailOptions<Ev> = {
   // ── END ──────────────────────────────────────────────────────────────────
   /** The frame that ends the watch (a `closed` lifecycle event). Optional, and
    *  that is the actual shape of the roster rather than a hedge: some tails run
-   *  forever and have no terminal frame at all. */
-  terminal?: (ev: Ev) => boolean;
+   *  forever and have no terminal frame at all. `accepted` is `accept`'s
+   *  verdict on this frame, which is what lets `tail --once` end on the first
+   *  frame it actually DELIVERS (`./tailHandoff.ts`).
+   *
+   *  ⛔ A TERMINAL FRAME CLOSES THE CONNECTION before the client returns. It
+   *  used to return from inside the read loop with the SSE stream still open,
+   *  which kept the process alive — unseen for `closed`, because the server
+   *  ends that stream itself, and fatal for `--once`, whose background task
+   *  would never exit and so never wake the agent. (Adjustment 1 of the
+   *  Monitor-expiry spike; pinned in `tailHandoff.test.ts`.) */
+  terminal?: (ev: Ev, frame: SseFrame, accepted: boolean) => boolean;
   /** Emit the terminal frame even when `accept` rejected it. Default false. */
   terminalEmitsFiltered?: boolean;
 
@@ -260,6 +308,19 @@ export type TailOptions<Ev> = {
    * half of the fix five spells did not apply.
    */
   signals?: boolean;
+  /**
+   * Called once as the tail ends, with the final cursor (the bookmark a re-arm
+   * passes as `--since`) and why it ended. A REPORT SINK like `onDisconnect`,
+   * not a behavioural hatch: it changes nothing the client does. It exists
+   * for `./tailHandoff.ts`, whose last line names the re-arm and must carry
+   * the cursor exactly as this loop left it, epoch resets included.
+   */
+  onEnd?: (end: {
+    cursor: number;
+    /** The epoch of the log the cursor belongs to, when the daemon stamps one. */
+    epoch: string | null;
+    reason: "terminal" | "unresolved" | "stopped";
+  }) => void;
 };
 
 const DEFAULT_IDLE_MS = 45_000;
@@ -273,7 +334,10 @@ const DEFAULT_RETRY = { initialMs: 250, maxMs: 5000 };
  * Returns null for a comment-only frame; `comments` carries their text so the
  * caller can surface a keepalive sentinel.
  */
-export function parseSseFrame(block: string): { frame: SseFrame | null; comments: string[] } {
+export function parseSseFrame(block: string): {
+  frame: SseFrame | null;
+  comments: string[];
+} {
   const comments: string[] = [];
   const dataLines: string[] = [];
   let event = "message";
@@ -317,12 +381,13 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
   const cursorPolicy = opts.cursorPolicy ?? "monotonic";
 
   let cursor = opts.since;
-  let epoch: string | null = null;
+  let epoch: string | null = opts.sinceEpoch ?? null;
   let everResolved = false;
   let everConnected = false;
   let firstConnect = true;
   let delay = retry.initialMs;
   let code = 0;
+  let ending: "terminal" | "unresolved" | "stopped" = "stopped";
 
   // One stop switch for every way this loop can end: a signal, a caller's
   // abort, a downstream reader closing our stdout. Each sets it, aborts the
@@ -400,16 +465,32 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       // from inside a reconnect loop and ended the process from three frames
       // down.
       const base = await opts.resolve();
+      // ⛔ A STOP THAT LANDED WHILE `resolve` WAS AWAITED (the handoff's window,
+      // a signal) found no attempt to abort. Without this check the loop went
+      // on to fetch, skipped the read, and returned with that stream still
+      // open — which keeps a process alive exactly like the terminal-frame
+      // hang. (Suspected by the reviewer, pinned in `tailHandoff.test.ts`.)
+      if (stopped) break;
       if (base === null) {
         const verdict = opts.onUnresolved?.({ everResolved, everConnected }) ?? "retry";
-        if (verdict === "stop") return code;
+        if (verdict === "stop") {
+          ending = "unresolved";
+          return code;
+        }
         await backoff(delay);
         delay = Math.min(delay * 2, retry.maxMs);
         continue;
       }
       everResolved = true;
 
-      const params = opts.query?.(cursor, firstConnect) ?? { since: String(cursor) };
+      const params = opts.query?.(cursor, firstConnect) ?? {
+        since: String(cursor),
+      };
+      // What this connection asked from, for `restartOnReplay`.
+      const askedSince = cursor;
+      let restartNoted = false;
+      // Set when an epoch change finds the new log past the bookmark.
+      let fromTop = false;
       const qs = new URLSearchParams(params).toString();
       const url = `${base}${opts.path}${qs ? `?${qs}` : ""}`;
 
@@ -520,35 +601,68 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
               continue;
             }
 
-            if (opts.epochOf) {
-              const next = opts.epochOf(ev);
-              if (typeof next === "string") {
-                if (epoch !== null && next !== epoch) {
-                  cursor = 0;
-                  const line = opts.onEpochChange?.(next) ?? null;
-                  if (line !== null) emit(line);
-                }
-                epoch = next;
-              }
-            }
-
             // ⛔ THE CURSOR ADVANCES ON EVERY EVENT, INCLUDING A FILTERED ONE.
             // A scope predicate is about what the CALLER reads, never about what
             // the daemon has delivered; advancing only on emitted events makes
             // every reconnect re-request the filtered ones forever.
             const n = opts.cursorOf?.(ev);
+
+            let epochReset = false;
+            if (opts.epochOf) {
+              const next = opts.epochOf(ev);
+              if (typeof next === "string") {
+                if (epoch !== null && next !== epoch) {
+                  cursor = 0;
+                  epochReset = true;
+                  const line = opts.onEpochChange?.(next) ?? null;
+                  if (line !== null) emit(line);
+                  // The new log is past the bookmark: its start was skipped.
+                  // Drop this attempt and re-read the new log from 0.
+                  if (askedSince > 0 && typeof n === "number" && n > askedSince) {
+                    epoch = next;
+                    fromTop = true;
+                    break;
+                  }
+                }
+                epoch = next;
+              }
+            }
+            if (
+              opts.restartOnReplay === true &&
+              !epochReset &&
+              !restartNoted &&
+              askedSince >= 0 &&
+              typeof n === "number" &&
+              n <= askedSince
+            ) {
+              // The daemon replayed WHOLE: its log restarted (see the option).
+              restartNoted = true;
+              cursor = 0;
+              const line = opts.onEpochChange?.(opts.epochOf?.(ev) ?? "unknown") ?? null;
+              if (line !== null) emit(line);
+            }
             if (typeof n === "number" && Number.isFinite(n)) {
               cursor = cursorPolicy === "assign" ? n : Math.max(cursor, n);
             }
 
             const accepted = opts.accept?.(ev, frame) ?? true;
-            const isTerminal = opts.terminal?.(ev) ?? false;
+            const isTerminal = opts.terminal?.(ev, frame, accepted) ?? false;
 
             if (accepted || (isTerminal && opts.terminalEmitsFiltered === true)) {
               const line = opts.render ? opts.render(ev, frame) : frame.data;
               if (line !== null) emit(line);
             }
-            if (isTerminal) return code;
+            if (isTerminal) {
+              // ⛔ CLOSE THE CONNECTION. See `terminal`'s doc: without this the
+              // open stream keeps the process alive after we return.
+              controller.abort();
+              ending = "terminal";
+              return code;
+            }
+          }
+          if (fromTop) {
+            controller.abort();
+            break;
           }
         }
       } finally {
@@ -557,6 +671,11 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       }
 
       if (stopped) break;
+      if (fromTop) {
+        // Re-read the new log from its start, now: nothing failed.
+        delay = retry.initialMs;
+        continue;
+      }
       // ⛔ AND THE GROWTH LINE BELONGS HERE TOO. Every `continue` above grows
       // the delay; the path that falls through — a connection that OPENED and
       // then ended — did not, in any of the seven hand-written loops. Against a
@@ -575,5 +694,6 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
     }
     outEmitter.off?.("error", onOutError);
     opts.signal?.removeEventListener("abort", onCallerAbort);
+    opts.onEnd?.({ cursor, epoch, reason: ending });
   }
 }

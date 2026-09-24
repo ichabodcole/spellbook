@@ -10,13 +10,15 @@ import {
   SaveIcon,
   UndoDotIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
 import { Separator } from "@/ui/separator";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
-import type { DiffPayload, DiffSide, DocView } from "../../backend/protocol";
+import type { DiffPayload, DiffSide, DocView, NoteWaiting } from "../../backend/protocol";
+import { readerStaysLoud, splitRoom } from "../state/columns";
+import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
 import { CompareView } from "./CompareView";
 import { DocumentView } from "./DocumentView";
@@ -36,15 +38,12 @@ import { VersionMenu, versionSummary } from "./VersionMenu";
 export const VIEW_MODES = ["raw", "rendered", "split", "compare"] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
-/**
- * Below this the pane cannot hold two readable columns: the raw view's measure
- * is 76ch and the rendered view's the same, so a split narrower than this is
- * two columns of broken lines rather than a comparison. Split is then not
- * offered, and a SAVED split falls back to rendered until there is room again —
- * the pane is resizable and the chat pane is beside it, so "enough room" is a
- * thing the human changes minute to minute (E11).
- */
-const SPLIT_MIN_PX = 720;
+// ⚠ SPLIT'S FLOOR (`SPLIT_MIN_PX`, 720 px) LIVES IN `state/columns.ts` NOW
+// (E64): below it split is not offered, and a SAVED split falls back to
+// rendered until there is room again — the pane is resizable and the side
+// columns collapse, so "enough room" is a thing the human changes minute to
+// minute (E11). Collapsing them is also what makes split AVAILABLE on a
+// smaller screen, which is why the disabled button says so.
 
 /** The pane's own width, watched — a container query cannot change a MODE. */
 function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
@@ -66,6 +65,16 @@ const MODE_BUTTONS: { mode: ViewMode; label: string; icon: typeof FileTextIcon }
   { mode: "split", label: "Raw and rendered side by side", icon: ColumnsIcon },
   { mode: "compare", label: "Compare with another version", icon: GitCompareIcon },
 ];
+
+/**
+ * E64 reader mode: a part of the chrome fades back until the pointer or the
+ * KEYBOARD focus reaches its bar (`group/chrome`). Applied per part rather than
+ * to the whole bar, because opacity multiplies down the tree — a faded bar
+ * could not hold one part at full strength, and Cole ruled that Save and
+ * "Unsaved" stay loud while there are unsaved edits (`readerStaysLoud`).
+ */
+const FADE =
+  "opacity-40 transition-opacity duration-300 group-hover/chrome:opacity-100 group-has-[:focus-visible]/chrome:opacity-100";
 
 /** Recount after typing pauses, as Operator's useContentStats does (300 ms). */
 function useDebouncedStats(text: string | undefined, ms = 300) {
@@ -101,7 +110,10 @@ export function DocumentPane({
   onRevealVersion,
   onSelect,
   reveal,
+  onRevealed,
+  clearSeq,
   focusedNote,
+  notesWaiting,
   onAddNote,
   onShowNote,
   onDeleteNote,
@@ -111,6 +123,11 @@ export function DocumentPane({
   onRevert,
   onFollowLink,
   onAddFrontmatter,
+  docPercent = 100,
+  headingStart,
+  headingEnd,
+  dock,
+  quiet = false,
 }: {
   doc: DocView | null;
   text: string | undefined;
@@ -129,8 +146,14 @@ export function DocumentPane({
   /** E45/E48: the editor's selection — offsets for notes, lines for the wire. */
   onSelect: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   reveal: { from: number; to: number; seq: number } | null;
+  /** The editor applied `reveal`, which is now spent (E66). */
+  onRevealed: (seq: number) => void;
+  /** Bumped when the held selection goes away: collapse this pane's own. */
+  clearSeq: number;
   /** E47: the note the panel has focused — the rendered view paints it apart. */
   focusedNote: string | null;
+  /** E65: this document's notes still owed an answer, by id — for the note menu. */
+  notesWaiting: ReadonlyMap<string, NoteWaiting>;
   onAddNote: (from: number, to: number, body: string) => void;
   /** E47: the document pointing at a note — the panel borders it. */
   onShowNote: (id: string) => void;
@@ -145,6 +168,18 @@ export function DocumentPane({
   onFollowLink: (target: string) => void;
   /** Offer a frontmatter block for a document that has none (E35). */
   onAddFrontmatter: () => void;
+  /**
+   * E64: this pane's share of the window, so a split that does not fit can say
+   * whether collapsing the side columns would make it fit.
+   */
+  docPercent?: number;
+  /** E64: controls at either end of the heading — reopening a collapsed column. */
+  headingStart?: React.ReactNode;
+  headingEnd?: React.ReactNode;
+  /** E64: the floating composer, docked under the document. */
+  dock?: React.ReactNode;
+  /** E64: reader mode — the chrome steps back until it is reached for. */
+  quiet?: boolean;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -161,15 +196,28 @@ export function DocumentPane({
   const now = useNow();
   const [paneRef, width] = useWidth();
   // Width 0 is "not measured yet", not "too narrow": a saved split must not
-  // flicker through rendered on the first frame.
-  const roomToSplit = width === 0 || width >= SPLIT_MIN_PX;
+  // flicker through rendered on the first frame (`splitRoom`).
+  const room = splitRoom(width, docPercent);
+  const roomToSplit = room.now;
   const showing: ViewMode = mode === "split" && !roomToSplit ? "rendered" : mode;
   const active = doc?.versions.find((v) => v.n === doc.active);
   const [naming, setNaming] = useState<VersionIntent | null>(null);
   const { confirm, dialog } = useConfirm();
+  /**
+   * E63: where the human is in THIS document, shared by whichever panes are
+   * mounted. It lives here because the panes do not outlive a mode switch —
+   * raw and rendered are different subtrees, so anything held inside one is
+   * gone by the time the other renders, which is the whole of the bug. Keyed
+   * to the document: your place in one says nothing about your place in
+   * another. ⛔ Compare is deliberately not a caller (Cole) — CodeMirror's
+   * merge view does its own scrolling.
+   */
+  const place = useMemo(() => createPlace(), [doc?.slug]);
   /** Where the human right-clicked a passage, and which passage (E46). */
   const [noteAt, setNoteAt] = useState<At | null>(null);
 
+  /** The reader-mode fade, or nothing outside reader mode. */
+  const fade = quiet ? FADE : undefined;
   const segments: StatusSegment[] = doc
     ? [
         // Read-only here, and a control in the header (E38): the strip is where
@@ -182,62 +230,83 @@ export function DocumentPane({
           value: active ? relativeTime(active.createdAt, now) : "—",
           priority: "low",
         },
-        { value: doc.outsideChanged ? "Changed on disk" : doc.dirty ? "Unsaved" : "Saved" },
+        {
+          value: doc.outsideChanged ? "Changed on disk" : doc.dirty ? "Unsaved" : "Saved",
+          loud: readerStaysLoud("status", doc),
+        },
         { label: "Words", value: stats.words.toLocaleString() },
         { label: "Characters", value: stats.characters.toLocaleString(), priority: "low" },
       ]
     : [];
 
   return (
-    <div ref={paneRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-edge px-3">
+    <div ref={paneRef} data-reader={quiet || undefined} className="flex min-h-0 flex-1 flex-col">
+      {/* ⛔ QUIETER, NOT GONE (E64 reader mode). The heading and the status
+          strip fade back until the pointer or the KEYBOARD focus reaches them
+          (a mouse click on a control leaves focus behind, and would keep them
+          loud). Hiding them would take Save, the version and "Unsaved" out of
+          reach, and a reader mode that loses an edit is worse than one that
+          shows a bar. */}
+      <div
+        className={cn(
+          // ⛔ IT WRAPS RATHER THAN CLIPS (E64, verifier). The document pane can
+          // be as narrow as 25% of the window, and a heading that clipped put
+          // the reader toggle, the split button and the column controls out of
+          // reach. A second row is ugly; an unreachable control is a defect.
+          "flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-edge px-3 py-1",
+          quiet && "group/chrome border-transparent",
+        )}
+      >
+        {headingStart && <div className={cn("flex shrink-0", fade)}>{headingStart}</div>}
         {doc ? (
           <>
-            {/* ⛔ LEFT OF THE TITLE, AND THAT IS THE POINT (Cole, E38). The
+            <div className={cn("flex min-w-0 items-center gap-2", fade)}>
+              {/* ⛔ LEFT OF THE TITLE, AND THAT IS THE POINT (Cole, E38). The
                 strip below is read-only status, so the one control down there
                 did not read as a control at all — and which version you are in
                 is not a status property, it is part of what you are looking
                 at. It reads with the name now: "v2 · the agent's pass —
                 note.md". */}
-            <VersionMenu
-              versions={doc.versions}
-              active={doc.active}
-              onActivate={onActivate}
-              onCompare={(n) => {
-                onAgainst(n);
-                onMode("compare");
-              }}
-              onNewVersion={setNaming}
-              onReveal={onRevealVersion}
-              onDelete={async (n) => {
-                const v = doc.versions.find((x) => x.n === n);
-                // ⛔ ASKED, because this removes a FILE. The version's own text
-                // is the only copy of whatever was tried in it — the original
-                // on disk and the active version both survive, but what was
-                // written here does not.
-                const ok = await confirm({
-                  title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
-                  message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
-                  warning: "Anything written only in this version is lost.",
-                  confirmLabel: "Delete",
-                  confirmClassName: "bg-danger text-bg hover:bg-danger/90",
-                });
-                if (ok) onDeleteVersion(n);
-              }}
-            />
-            <Separator orientation="vertical" className="my-2 shrink-0" />
-            <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
-            <span className="truncate text-sm text-ink" title={doc.original}>
-              {doc.name}
-            </span>
-            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <VersionMenu
+                versions={doc.versions}
+                active={doc.active}
+                onActivate={onActivate}
+                onCompare={(n) => {
+                  onAgainst(n);
+                  onMode("compare");
+                }}
+                onNewVersion={setNaming}
+                onReveal={onRevealVersion}
+                onDelete={async (n) => {
+                  const v = doc.versions.find((x) => x.n === n);
+                  // ⛔ ASKED, because this removes a FILE. The version's own text
+                  // is the only copy of whatever was tried in it — the original
+                  // on disk and the active version both survive, but what was
+                  // written here does not.
+                  const ok = await confirm({
+                    title: `Delete ${v?.label?.trim() ? `“${v.label.trim()}”` : `v${n}`}?`,
+                    message: `v${n} and its file are removed from this session. The file on disk and the version you are editing are untouched.`,
+                    warning: "Anything written only in this version is lost.",
+                    confirmLabel: "Delete",
+                    confirmClassName: "bg-danger text-bg hover:bg-danger/90",
+                  });
+                  if (ok) onDeleteVersion(n);
+                }}
+              />
+              <Separator orientation="vertical" className="my-2 shrink-0" />
+              <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-ink-faint" />
+              <span className="truncate text-sm text-ink" title={doc.original}>
+                {doc.name}
+              </span>
+            </div>
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onRevert}
                 disabled={!doc.dirty && !doc.outsideChanged}
                 title="Take the file on disk back over your edits"
-                className="h-7 gap-1.5 px-2 text-xs"
+                className={cn("h-7 gap-1.5 px-2 text-xs", fade)}
               >
                 <UndoDotIcon className="size-3.5" />
                 Revert
@@ -248,7 +317,7 @@ export function DocumentPane({
                 onClick={onSave}
                 disabled={!doc.dirty}
                 title={`Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`}
-                className="h-7 gap-1.5 px-2 text-xs"
+                className={cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc) && fade)}
               >
                 <SaveIcon className="size-3.5" />
                 Save
@@ -256,7 +325,7 @@ export function DocumentPane({
               <div
                 role="toolbar"
                 aria-label="How to show this document"
-                className="flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5"
+                className={cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade)}
               >
                 {MODE_BUTTONS.map(({ mode: m, label, icon: Icon }) => {
                   const unavailable = m === "split" && !roomToSplit;
@@ -268,7 +337,13 @@ export function DocumentPane({
                       disabled={unavailable}
                       aria-pressed={showing === m}
                       aria-label={label}
-                      title={unavailable ? `${label} — the pane is too narrow` : label}
+                      title={
+                        !unavailable
+                          ? label
+                          : room.ifCollapsed
+                            ? `${label} — the pane is too narrow; collapse the side columns to make room`
+                            : `${label} — the pane is too narrow`
+                      }
                       className={cn(
                         "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
                         "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
@@ -284,7 +359,14 @@ export function DocumentPane({
             </div>
           </>
         ) : (
-          <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">Document</span>
+          <span className={cn("text-xs font-medium tracking-wide text-ink-dim uppercase", fade)}>
+            Document
+          </span>
+        )}
+        {headingEnd && (
+          <div className={cn("flex shrink-0 items-center gap-0.5", !doc && "ml-auto", fade)}>
+            {headingEnd}
+          </div>
         )}
       </div>
       {doc && shown !== undefined && doc.meta === null && (
@@ -390,6 +472,9 @@ export function DocumentPane({
           onSave={onSave}
           onSelect={onSelect}
           reveal={reveal}
+          onRevealed={onRevealed}
+          clearSeq={clearSeq}
+          place={place}
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onContextMenu={setNoteAt}
         />
@@ -402,6 +487,8 @@ export function DocumentPane({
           pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
           onFollowLink={onFollowLink}
           onSelect={onSelect}
+          clearSeq={clearSeq}
+          place={place}
           onContextMenu={setNoteAt}
         />
       ) : (
@@ -421,6 +508,9 @@ export function DocumentPane({
               onSave={onSave}
               onSelect={onSelect}
               reveal={reveal}
+              onRevealed={onRevealed}
+              clearSeq={clearSeq}
+              place={place}
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onContextMenu={setNoteAt}
             />
@@ -440,19 +530,31 @@ export function DocumentPane({
               pendingNote={noteAt && noteAt.from < noteAt.to ? noteAt : null}
               onFollowLink={onFollowLink}
               onSelect={onSelect}
+              clearSeq={clearSeq}
+              place={place}
               onContextMenu={setNoteAt}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
       )}
-      {doc && <StatusStrip segments={segments} />}
+      {/* The float sits IN the flow rather than over the text: it never covers
+          the last lines of the document, and the scrollers — which keeping your
+          place (E63) measures — need no padding to make room for it. */}
+      {dock && <div className="shrink-0 px-3 py-2">{dock}</div>}
+      {doc && (
+        <div className={cn("shrink-0", quiet && "group/chrome")}>
+          <StatusStrip segments={segments} fade={fade} />
+        </div>
+      )}
       {dialog}
       <NoteAtSelection
         at={noteAt}
         quote={noteAt && shown !== undefined ? shown.slice(noteAt.from, noteAt.to) : ""}
         existing={(noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc?.notes.find((x) => x.id === id);
-          return n ? [{ id, label: n.body }] : [];
+          const w = notesWaiting.get(id);
+          const waiting = w ? { badge: w.badge, asked: w.askedIn !== undefined } : undefined;
+          return n ? [{ id, label: n.body, ...(waiting ? { waiting } : {}) }] : [];
         })}
         onClose={() => setNoteAt(null)}
         onAdd={onAddNote}

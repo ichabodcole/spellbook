@@ -51,6 +51,10 @@ beforeAll(async () => {
       // knob would betray the pre-split shared value).
       MIND_MAPPER_ACTIVITY_TTL_MS: "150",
       MIND_MAPPER_STALL_TTL_MS: "600",
+      // The presence LINGER (feat/mind-mapper-quiet-handoff): how long the
+      // count holds after the last agent tail closes. Short here so the cells
+      // that wait for a drop to 0 still see one inside their 2 s deadline.
+      MIND_MAPPER_PRESENCE_LINGER_MS: "600",
     },
     stdout: "pipe",
   });
@@ -553,4 +557,112 @@ test("POST /activity 400s an unknown messageId — a mistyped tie is not a silen
   });
   expect(res.status).toBe(400);
   expect(((await res.json()) as { error: string }).error).toContain("messageId");
+});
+
+// ── THE PRESENCE LINGER (feat/mind-mapper-quiet-handoff) ─────────────────────
+//
+// Mind-mapper's tail now stops and starts: a window ends and is re-armed, a
+// quiet window hands off to a background `--once`, and a woken one-shot exits
+// while the agent handles the event and re-arms Monitor. Between those, NO tail
+// is open. Presence counted open tails, so each gap showed the human "no agent"
+// and skipped the auto-`received` flip on a message sent in it. The count now
+// HOLDS for the linger after the last tail closes; a tail that opens inside it
+// changes nothing on the wire, and an agent's own act (`/activity`, an agent
+// `/send`) inside it restarts it.
+
+async function openTail(project: string): Promise<AbortController> {
+  const ac = new AbortController();
+  const tail = await fetch(`${url}/events?project=${project}`, { signal: ac.signal });
+  await (tail.body as ReadableStream<Uint8Array>).getReader().read();
+  return ac;
+}
+
+const presenceCounts = (events: Array<Record<string, unknown>>) =>
+  events
+    .filter((e) => e.kind === "presence.changed")
+    .map((e) => (e.payload as { agents: number }).agents);
+
+test("a tail re-armed inside the linger never shows the agent gone, and a message in the gap still flips received", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "linger-rearm", title: "Linger" }),
+  });
+  const watcher = await collectWs("linger-rearm");
+  const first = await openTail("linger-rearm");
+  expect(await until(async () => (await agents("linger-rearm")) === 1, 2000)).toBe(true);
+
+  first.abort(); // the window ends; the agent has not re-armed yet
+  await new Promise((r) => setTimeout(r, 150));
+  expect(await agents("linger-rearm")).toBe(1);
+  // The human speaks in the gap: the agent reads it on the re-arm (the
+  // bookmark), so "received" is the honest badge.
+  await fetch(`${url}/send?project=linger-rearm`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", text: "still there?" }),
+  });
+  const second = await openTail("linger-rearm"); // the re-arm, inside the linger
+  await new Promise((r) => setTimeout(r, 900)); // past the linger from the close
+  expect(await agents("linger-rearm")).toBe(1);
+  expect(presenceCounts(watcher.events)).toEqual([1]); // no 0, and no second 1
+  expect(
+    watcher.events.some(
+      (e) => e.kind === "agent.activity" && (e.payload as { state: string }).state === "received",
+    ),
+  ).toBe(true);
+
+  second.abort(); // and now the agent really goes
+  expect(await until(async () => (await agents("linger-rearm")) === 0, 2000)).toBe(true);
+  expect(presenceCounts(watcher.events)).toEqual([1, 0]);
+  watcher.close();
+});
+
+test("an agent's own act inside the linger restarts it; silence after it lets presence go", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "linger-act", title: "Linger act" }),
+  });
+  const tail = await openTail("linger-act");
+  expect(await until(async () => (await agents("linger-act")) === 1, 2000)).toBe(true);
+  tail.abort(); // a woken one-shot exits; the agent is handling the event
+  const closedAt = Date.now();
+  await new Promise((r) => setTimeout(r, 350));
+  await fetch(`${url}/activity?project=linger-act`, {
+    method: "POST",
+    body: JSON.stringify({ state: "thinking" }),
+  });
+  // Past the linger measured from the close, inside it measured from the act.
+  await new Promise((r) => setTimeout(r, Math.max(0, closedAt + 800 - Date.now())));
+  expect(await agents("linger-act")).toBe(1);
+  expect(await until(async () => (await agents("linger-act")) === 0, 2000)).toBe(true);
+});
+
+// The same shape for `/send`: an AGENT's send is an act on the board and
+// restarts the linger; a HUMAN's send is not the agent being here, so it must
+// not keep the dot lit.
+async function sendInGap(project: string, role: "agent" | "user"): Promise<number> {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: project, title: project }),
+  });
+  const tail = await openTail(project);
+  expect(await until(async () => (await agents(project)) === 1, 2000)).toBe(true);
+  tail.abort();
+  const closedAt = Date.now();
+  await new Promise((r) => setTimeout(r, 350));
+  await fetch(`${url}/send?project=${project}`, {
+    method: "POST",
+    body: JSON.stringify({ role, text: `a ${role} send in the gap` }),
+  });
+  // Past the linger measured from the close, inside it measured from the send.
+  await new Promise((r) => setTimeout(r, Math.max(0, closedAt + 800 - Date.now())));
+  return agents(project);
+}
+
+test("an agent /send inside the linger restarts it", async () => {
+  expect(await sendInGap("linger-agent-send", "agent")).toBe(1);
+  expect(await until(async () => (await agents("linger-agent-send")) === 0, 2000)).toBe(true);
+});
+
+test("a human /send inside the linger does not restart it", async () => {
+  expect(await sendInGap("linger-user-send", "user")).toBe(0);
 });

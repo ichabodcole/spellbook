@@ -64,6 +64,37 @@ that introduces it.
   wet"); the trap is warning against detours nobody's taking.
 - **Repeal when:** —
 
+### Ask what a number is for before you write it down.
+
+<!-- rule-id: ask-what-number-is-for -->
+
+> What is the purpose of adding this number? Who is it for? What are they
+> actually going to do with it? Is it actionable, or is it just information? —
+> Cole
+
+A number earns its place when someone will act on it: a bar a design is held to,
+a threshold a check reads, a baseline a later measurement will be compared
+against. Then it carries its **method, its population and its limit**. A tally
+of the moment (how many headings, runs or files there are today) goes stale
+without anyone noticing, and nobody acts on it. The fix for one is to **delete
+it**, not to reconcile it.
+
+- **Boundary check:** ask "who acts on this?" **before** "is it right?".
+  Checking a number nobody needs is wasted work, and a wrong one is only noticed
+  once someone has already acted on it. Once a number has earned its place, the
+  denominator clauses under _Enumerate the roster by behaviour_ say how to
+  publish it. A number in a scar can earn its place as evidence of how bad the
+  failure was. The test is still whether a reader decides something by it.
+- **Repeal when:** documents quote their numbers from a live measurement at read
+  time, so a stale one cannot be written down.
+
+_Scar: one branch of Scriptorium's keep-your-place work published three numbers
+that failed re-measurement: an accuracy bar from a probe that flattered it, a
+headline population that disagreed with its own detail figures, and a count
+nobody could verify. Every blocking item from the reviewer was a claim like
+these, not code.
+([Session](../docs/projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
+
 ### Start minimal; subtract before you test.
 
 <!-- rule-id: start-minimal-subtract-before -->
@@ -173,6 +204,37 @@ keep working something together.
   human's half went unwritten for as long as it stood.)
 - **Repeal when:** —
 
+### A shared fact gets one state; everything that shows it reads that state.
+
+<!-- rule-id: shared-fact-one-state -->
+
+A fact both parties act on (the selection, a column's width, a draft) is held in
+exactly one place: the daemon's copy, when the agent reads it. Every view of it
+(a chip, a badge, a mode) is derived from that place. A second flag that hides,
+dismisses or remembers the fact locally can disagree with it, and when it does,
+the human sees one thing while the agent acts on another.
+
+- **Boundary check:** a **command** is not a second state. A clear signal that
+  carries nothing about _what_ was selected cannot disagree with the selection
+  it accompanies. Test a candidate by asking whether it could ever say something
+  the one state does not. How to _draw_ a fact (hover, focus, an open menu) is
+  not the fact, and is out of scope. Where a library already holds the fact (a
+  collapsed panel is a width of 0), use its state. Do not add a flag beside it.
+- **Repeal when:** the surface renders the daemon's state with no local copy at
+  all, by construction, so a second state cannot be written.
+
+_Scar: Scriptorium's chip kept a `dropped` flag the selection did not. After one
+dismissal, every later selection stayed hidden, and the daemon, whose held
+selection `say` attaches, was never told the passage had gone. Fixed on
+`fix/scriptorium-selection-context`: clearing the chip clears the selection, in
+both panes and in the daemon. The rule stands.
+([Session](../docs/projects/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
+[memory](../docs/memories/2026-09-22-scriptorium-selection-and-the-chip.md);
+applied on purpose in
+[branch 3](../docs/projects/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
+and
+[the chip-across-documents fix](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
+
 ### Keep the client thin — MCP at the auth layer.
 
 <!-- rule-id: keep-client-thin-mcp -->
@@ -247,7 +309,7 @@ where the signal originates.
 
 <!-- rule-id: carry-frame-just-value -->
 
-Three rules with one family resemblance and **three different mechanisms**. The
+Four rules with one family resemblance and **four different mechanisms**. The
 family name is how you recognise a fourth one; it is **not** a derivation, and
 none of these follows from the others.
 
@@ -262,10 +324,10 @@ none of these follows from the others.
   and the second fails — a subsumption dies to a single counterexample, so
   attempting the counterexample _is_ the test. If you cannot build one, you have
   found a genuine overlap; if you can, they are siblings and stay separate.
-- **Repeal when:** a mechanism is found that genuinely generates all three, at
-  which point this becomes one rule with three corollaries rather than three
-  rules under a heading. **Nobody has found one; two attempts were refuted the
-  day the family was written.**
+- **Repeal when:** a mechanism is found that genuinely generates all four, at
+  which point this becomes one rule with four corollaries rather than four rules
+  under a heading. **Nobody has found one; two attempts were refuted the day the
+  family was written.**
 
 #### A response states the conditions it was produced under.
 
@@ -355,6 +417,34 @@ unchanged**, which is why the scar stays._
 > who goes looking for a live case, finds none, and concludes the rule is stale
 > has been misled by grammar. _(Found by the clause's own author, hours after
 > writing it, applying a standing check she had just watched land elsewhere.)_
+
+#### A reference names what it refers into.
+
+<!-- rule-id: carry-frame-just-value.reference-names-what-refers -->
+
+A value that names a place in something (an offset, a range, a line, a cursor
+into a log) carries **which** thing it names, and which version. Resolve it
+against "whatever is open now" and one day it will be applied to something else.
+It will apply cleanly, too: the offsets are valid, and the text is wrong.
+
+- **Boundary check:** check it **where it is read**, not where the thing
+  changes. The thing changes from many places, and a check at each one is the
+  check the next path forgets. A request to act on a place is **one-shot**. If
+  it is held for "the right moment", it replays at a moment nobody chose. A
+  value that lives and dies inside one immutable thing needs no label.
+- **Repeal when:** references stop being bare numbers and become handles bound
+  to their referent, so there is nothing left to separate.
+
+_Scar: Scriptorium's selection was offsets with no document, so a document
+switch put alpha's words on the chip under beta's name, and in the daemon's copy
+that `say` attaches. The kit's tail bookmark `--since N` was a cursor with no
+log, so after a daemon restart it skipped the new log's start. Both are fixed
+(E66, and `--since N@<epoch>` on `feat/tail-quiet-handoff`). The rule stands,
+and the spells whose daemon stamps no epoch still carry the gap.
+([Session](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
+[memory](../docs/memories/2026-09-22-a-place-in-a-document-names-its-document.md);
+the tail:
+[session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
 
 ---
 
@@ -549,8 +639,23 @@ registry uses the registry's `cn` throughout, one semantics per spell.
 `0` submitted · `2` bad input · `124` idle timeout · `130` user cancelled
 (closed tab after interacting). Cantrip and conjuration alike.
 
-- **Boundary check:** —
+- **Boundary check — a process whose exit IS the signal must exit on every
+  path.** A background task or a one-shot wait wakes its caller only by ending,
+  and its output means nothing until then. List every way the wait can finish
+  (success, the peer closing, the peer dying, the peer never existing, a stop)
+  and show that each one exits, with a last line that names the next act. A
+  retry-forever loop is a hang to any caller waiting for an end, so give it the
+  condition that says "this will not come back". **Test the exit, not the
+  output:** a cell that reads the last line passes on a process that prints it
+  and hangs.
 - **Repeal when:** —
+
+_Scar: the kit's `tail --once` hung three ways before it shipped: an open stream
+after its event, a dead daemon retried forever, and a session closed in the gap.
+None printed anything wrong. All three are fixed on `feat/tail-quiet-handoff`,
+and the rule stands for every other wait.
+([Session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
+[memory](../docs/memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md))_
 
 ### Enumerate the roster by behaviour, never by a fixed path or a name.
 

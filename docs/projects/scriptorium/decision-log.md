@@ -2069,3 +2069,559 @@ kind of small wrongness that makes a tool read as careless._
 
 Driven against a session carrying all three at once, and the startup line
 reported them in one sentence.
+
+## E63 — Keeping your place: the top-visible line, and one primitive for both halves
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real editing produced
+(switching raw ↔ rendered returned to the top; split's panes scrolled apart).
+
+**⛔ THE ANCHOR IS THE TOP-VISIBLE LINE, NOT THE SELECTION.** Whatever sits at
+the top of the pane you leave sits at the top of the pane you arrive in. **Not
+taken:** "the selection when there is one, the scroll offset otherwise", which
+the backlog item itself proposed. Cole chose the single rule for the same reason
+he chose one meaning for the chip's X the day before — one rule is less to
+juggle for the human _and_ the agent than two that disagree at the edges.
+
+**⛔ COMPARE IS OUT OF SCOPE**, decided rather than forgotten.
+`@codemirror/merge` does its own scrolling, and only raw, rendered and split
+take part.
+
+**⚠ CLOSE, NOT PIXEL-PERFECT** (Cole). Rendered height and source height have no
+common measure — a fenced block is twenty source lines and one box. So "close"
+is defined rather than hoped for: the rendered pane is described by ANCHORS (the
+source line each rendered block begins on, and where it sits in the scroller)
+and anything between two anchors is interpolated. The error is bounded by the
+BLOCK, which is the unit a human looks for when they switch views. **Measured on
+`grimoire/house-style.md` (668 lines): when a block begins at the top edge, the
+other pane's top line is that block's line EXACTLY (25 of the 27 `h2`–`h4`
+headings the probe queried); of 42 arbitrary positions, 37 were measurable — one
+bottom clamp, four where the oracle could not locate the text — and all 37 are
+within three source lines.** Those figures are kept because a later change that
+degrades the sync is caught by re-running that sweep and comparing; they carry
+their population for the same reason.
+
+**⛔ AND THAT IS THE TEST FOR WRITING A NUMBER DOWN AT ALL (Cole, 2026-09-22):
+what is it for, who is it for, and what will they do with it?** A number that
+has to stay true, or that a later reader will compare against to see whether
+something degraded, earns its place — and then it owes its method, its
+population and its limit, because without those there is nothing to compare
+against. A number that merely records what was true on the day — how many cells
+a branch added, how many anchors there were before and after a fix — is nobody's
+to act on and is a hostage to the next person who measures it. **Not taken:**
+reconciling every figure on the branch for accuracy's sake, which was the
+instruction until this rule replaced it; accuracy is the second question, and
+asking it first keeps figures alive that should have been cut. _Ruled while
+correcting a denominator that did not match itself — the third numeric claim on
+this branch to be corrected by someone else's instrument._ At the very bottom
+the follower is already at maximum scroll and cannot put the leader's line at
+the top at all — the residue is the distance from the last anchor to the last
+line, a structural floor of scrolling, named here rather than papered over.
+
+**⚠ A first pass claimed "within one source line"**, on a 24-position sweep
+whose probe flattered it, and it did not reproduce for the verifier. Recorded
+because the lesson is the general one: a number in the tree is a claim, and a
+claim nobody else can reproduce is a defect in its own right. Measurements here
+now carry their method and their limit.
+
+**One primitive, two callers** (`surface/state/place.ts`). The source line is
+the only coordinate both views can name: the raw half gets it exactly from
+CodeMirror, the rendered half derives it through E51's projection, and a mode
+switch and a split are then the same mechanism rather than two that drift. **Not
+taken:** a scroll-fraction, which is wrong the moment the two documents have
+different heights, and a second mapping beside E51's.
+
+**⛔ THE FEEDBACK GUARD LIVES IN THE STORE, NOT IN THE PANES.** A pane that must
+remember to suppress its own scroll handler while being driven is a pane that
+will forget, and the failure — each pane re-triggering the other down the
+document — is the classic one. A pane can only take part through `join`, and
+`join` is what arms the guard.
+
+**⛔ AND THE GUARD IS AN EVENT, NOT A DURATION — ruled after it was built the
+other way.** The first version suppressed a pane's reports for 150 ms after
+driving it. A window is a GUESS about which scroll a report came from, and an
+independent verifier convicted both halves of the guess: a real scroll that
+landed inside the window was thrown away with nothing to catch it up (**fifty
+lines apart, and still fifty lines apart four seconds later**), and during a
+fast wheel two windows overlapped so that one expired under the other and left
+the follower **twelve lines behind, frozen there** until the next tick nudged
+it. **Not taken:** widening or narrowing the window, which only moves which
+scrolls are lost; and a tolerance on the line numbers, which would have made the
+bottom clamp indistinguishable from a real move.
+
+What replaced it works on events rather than clocks. A programmatic scroll
+produces exactly ONE scroll event, so the arm is one-shot: the first report
+after a drive IS that drive. A scroll event is dispatched in the rendering
+update's scroll steps, which run BEFORE that frame's animation-frame callbacks —
+so a one-frame disarm can clear an arm that will never be consumed (a drive that
+moved nothing sends no event) without ever racing the event itself. And a human
+scroll COALESCED into the same event as ours is told apart by WHERE THE PANE IS
+against where the drive left it.
+
+**⚠ IT IS NOT AIRTIGHT, AND THIS ENTRY SAID IT WAS.** The comparison can only
+speak once `left` has been recorded, which is a frame after the drive. Two
+windows are therefore uncovered: a report that arrives BEFORE `afterFrame` has
+nothing to compare against, and a human scroll landing BETWEEN the drive and
+`afterFrame` is folded into `left` itself and reads as the drive. Both swallow a
+real scroll and leave the panes disagreeing until the next tick, which corrects
+it completely. **Cole ruled it filed rather than fixed** — reaching either needs
+a synthetic injection, and real alternating wheel input could not provoke worse
+than three lines. Pinned by two cells in `place.test.ts` (`PINNED 1/2`,
+`PINNED 2/2`) that assert TODAY'S behaviour so a later change cannot move it
+silently, and filed as
+[the coalesced-scroll item](../../backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md).
+
+_The word "airtight" stood here for exactly one round of review. It was written
+in the same breath as this branch's own lesson — that an unreproducible claim in
+the tree is a defect — and it is the third claim on this branch to be corrected
+by someone else's instrument rather than by its author's._
+
+_Measured, and the reason the ordering is written down rather than assumed:
+CodeMirror's `scrollIntoView` is applied a frame late — immediately after the
+dispatch `scrollTop` is unchanged; by the next frame it has landed._
+
+**The invariant the cells now hold is the one the verifier named: when
+everything settles, the two panes agree.** Asserting that the follower's report
+is dropped was not enough — it asserted the mechanism and not the consequence,
+and the defect lived in the gap between them.
+
+## E64 — The side columns get out of the way
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real use produced (more
+room, above all in split and compare). Either column — the context on the left,
+the conversation on the right — collapses on its own or with the other, and the
+view mode does not change.
+
+**⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (Cole).** While the
+conversation column is collapsed, a floating composer is docked at the foot of
+the document pane, and the selection chip rides on it exactly as it does in the
+column. Conversation-primary: collapsing the chat must not remove the human's
+way to talk to the agent.
+
+**⛔ ONE COMPOSER'S WORTH OF STATE (Cole, applying the one-state rule from this
+cycle's first branch —
+[the memory](../../memories/2026-09-22-scriptorium-selection-and-the-chip.md)).**
+The draft moved OUT of `ChatComposer` and into `App`, and the composer is drawn
+in exactly one place at a time — the column while it is open, the float while it
+is shut. A draft living inside the component would be lost on every move (the
+move is a remount), and drawing it in both places would make two drafts that can
+disagree. The chip has been the held selection's, not the component's, since
+that branch, so it follows for free. **Not taken:** keeping the column's
+composer mounted and hidden while the float shows a second one; that is the
+two-copies defect by construction. _A side effect worth knowing: switching the
+right pane to Notes or Tasks and back no longer loses a half-written message
+either._
+
+**⛔ COLLAPSED IS A WIDTH, NOT A FLAG.** `react-resizable-panels` already has
+collapsible panels, and a collapsed panel is a panel at its collapsed size (0).
+The layout that records that is the one `useDefaultLayout` already persists in
+the home's prefs beside every other pane size, so the collapsed state persists
+with no new mechanism, and "is the chat collapsed?" is read off the layout
+(`state/columns.ts`, `collapsedSides`). Clicking the button, dragging the column
+shut and restoring a saved layout all land on the same fact. **Not taken:** a
+`panes:collapsed` pref beside the layout — a second record of what the layout
+already says, which would disagree the first time someone dragged a column shut.
+
+**⚠ WHAT THE LAYOUT CANNOT HOLD is the width a column reopens to.** The library
+keeps that in memory only, so after a reload `expand()` reopened a column at its
+minimum. That is a different fact — "how wide I like it", not "is it open" — so
+it gets its own small pref, `panes:open`, and reopening uses `resize` to that
+width (default 22% / 28%) instead of the library's `expand()`.
+
+**⚠ AND TWO WAYS THAT FIRST VERSION WENT WRONG, found by the no-stake
+verifier.** (1) The separator's Enter still ran the library's `expand()`, so
+after a reload it reopened a column at its 12% minimum, and that minimum was
+then SAVED as the reopen width, so the buttons reopened there from then on.
+Enter on either handle now goes through the same collapse and reopen as the
+buttons, taken in the capture phase before the library's listener sees it. A
+width at a column's minimum is also never remembered, and a stored one decodes
+to nothing, so a pref the bug already wrote heals itself. The price is that a
+column deliberately dragged to exactly its minimum does not reopen there. (2) A
+width remembered while the other column was collapsed could be too wide once
+that column came back. Reopening at it squeezed the document to its minimum and
+then pushed the OTHER column shut. The reopen width is now capped so the
+document keeps its 25%, and never goes below the column's own minimum
+(`reopenSize`).
+
+**⛔ ONLY THE HUMAN'S RESIZE IS REMEMBERED (reviewer of record).** A reopen is
+an imperative resize, and when the library squeezes a capped reopen, the width
+it lands on is the library's compromise. Remembering it overwrote the width the
+human had actually chosen. `rememberOpen` now takes the library's
+`isUserInteraction` (true for a drag or a key on a handle; false for a reopen, a
+collapse and the initial mount) and remembers only when it is true.
+
+**The affordance (ours; Cole had not ruled).** A collapse button at the end of
+each column's own heading, and a reopen button at the matching END of the
+document's heading — where the column went, which is where the eye looks for it.
+The resize handle stays at the window edge, so a column can also be dragged shut
+or dragged back out. Enter on a focused handle collapses and reopens the column
+beside it: the left handle acts on the context, the right on the conversation.
+The library bound the right handle's Enter to the document, which does not
+collapse, so it used to do nothing. **Controls that take themselves away hand
+focus on**: collapsing moves focus to the reopen button, and reopening moves it
+back to the collapse button, instead of dropping it to `<body>`. "Open the
+conversation" on the float, and pointing at a note, reopen through the same
+hand-off; a reopen or collapse that turns out to be a no-op leaves nothing
+pending, so a stale hand-off cannot take focus later. **Not taken:** a keyboard
+shortcut. The obvious ones collide (⌘[ / ⌘] are browser back and forward, ⌘B is
+bold to anyone who has used an editor), and a shortcut is the least discoverable
+of the options; it can come when real use asks for it.
+
+**⛔ THESE CONTROLS STAY REACHABLE AT EVERY WIDTH THE LAYOUT ALLOWS
+(verifier).** The conversation's tabs need about 275 px, and at its 15% minimum
+the column is 192 px even in a 1280 px window, so a collapse button placed after
+the tabs was pushed out of sight. Each column's collapse button is now pinned,
+and the title and tabs around it shrink, wrap or clip instead. The document's
+heading wraps to a second row instead of clipping, because the pane can be as
+narrow as 25% of the window. Checked with `elementFromPoint` on every column,
+reader and view-mode control at 1280, 900 and 600 px, with each column in turn
+at its minimum and the document at its minimum. **Not taken:** an overflow menu,
+which makes a control reachable only by first finding the menu.
+
+**⚠ THE FLOAT IS IN THE FLOW, NOT OVER THE TEXT.** It reserves its own height at
+the foot of the pane, so it never covers the last lines of the document and the
+scrollers — which E63's keeping-your-place measures — need no padding to make
+room for it. It carries one line of the conversation: the latest message, with
+its waiting badge while the agent is on it, and "Open the conversation". _Our
+ruling:_ without it, a message sent from the float got its answer somewhere the
+human could not see.
+
+**Split becomes available when collapsing gives it room.** The document pane
+already measured its own width against split's floor (720 px, now `SPLIT_MIN_PX`
+in `state/columns.ts`), so collapsing a column makes split available with no
+further wiring, and reopening one falls back to rendered exactly as a narrow
+drag always did. The disabled split button now says "collapse the side columns
+to make room" when collapsing both WOULD make room (`splitRoom` computes the
+width with both shut, so the words say both), and only then — a refusal that
+names the act that answers it. The estimate is rounded to the pixel: the browser
+lays out in 1/64 px units, and an unrounded one read a hair under 720 in a
+window where collapsing gave exactly 720 (verifier). It is rounded to the
+NEAREST pixel, not up: 719.3 is not 720. Compare gets the width and nothing
+else, as ruled.
+
+**⛔ READER MODE IS A PRESET, AND IT IS DERIVED (Cole: build only if cheap — it
+was).** Reader mode is rendered + both columns collapsed + quieter chrome, so
+`isReader` is true exactly when the view is rendered and both columns are shut,
+however that came about. One toggle (the glasses, in the document's heading)
+enters it — rendered, collapse whatever is open — and leaves it by reopening
+both columns; the view stays rendered. There is no reader flag to fall out of
+step with the columns it describes, and it is not a fifth entry in `VIEW_MODES`.
+"Quieter" means the document's heading and status strip fade back until the
+pointer or the keyboard focus reaches them. **Not taken:** hiding them — that
+would take Save, the version and "Unsaved" out of reach. **Not taken:**
+remembering the view you entered from and restoring it on leave, which would be
+the second piece of state the preset exists to avoid.
+
+**⛔ WHAT ASKS FOR ATTENTION STAYS LOUD (Cole, 2026-09-22, in two steps).**
+First, after the verifier raised it: while the document has unsaved edits, Save
+and the "Unsaved" marker stay at full strength in reader mode. Then,
+generalised: **anything asking for attention stays at full strength, and only
+idle chrome fades.** That is unsaved edits and warnings. The save-state marker
+stays loud when it says "Unsaved" and when it says "Changed on disk". Save stays
+loud while there is something to save; with nothing unsaved it is disabled and
+fades with the rest. The changed-on-disk banner, which carries the acts that
+answer it, was never faded. A quiet reading view must not make an unsaved edit
+or a changed file easy to miss (`readerStaysLoud`). Because opacity multiplies
+down the tree, the fade moved from the two bars onto their parts. A faded bar
+cannot hold one of its children at full strength.
+
+**⚠ A HOLE IN E63 THAT COLLAPSING EXPOSED, CLOSED.** The rendered pane caches
+its block anchors and clears them from a `ResizeObserver`. A collapse widens the
+pane in ONE layout, the browser's scroll anchoring moves `scrollTop` to keep the
+same text at the top, and that scroll event is dispatched before the observer's
+callback — so it was reported through anchors measured at the OLD width. Driven
+on `grimoire/house-style.md`, 1280 × 800, with a saved split falling back to
+rendered: a heading at the top of the pane was reported as a line in the section
+before it, and the split that the widening then mounted opened there. A drag
+reaches the same widths in small steps, and did not show it. The anchors now
+record the width they were measured at, and a different width re-measures them —
+exact evidence the table is stale, with no timing in it (`anchorCache` in
+`state/place.ts`, whose cell asks it at a new width with no clear). Re-driven
+after the fix, the same collapse landed both halves of the split on the heading
+at each of four headings tried. ⚠ The cell holds the rule, not the wiring: that
+`MarkdownView` reads its anchors through the cache is evidenced only by that
+browser run. To reproduce: split saved but falling back to rendered, a heading
+scrolled to the top, then collapse the context column so split mounts.
+
+**Keeping your place across a collapse, as observed** (same document and
+viewport): the rendered pane keeps its top block through a collapse and a
+reopen, because the browser's scroll anchoring holds it; the raw pane moved by
+one source line on collapse and returned exactly on reopen. E63's deferred item
+— a resize does not re-place a pane — is unchanged and still Cole's to rule on
+after use.
+
+## E65 — A note shows that it is with the agent
+
+**Ruled:** Cole, 2026-09-22, on the backlog item his real use produced. Agents
+act on nearly every `note.added`, although the skill said "a note is not a
+request", and he thinks acting is the right instinct. So the behaviour stays,
+and what changes is everything around it. Between adding a note and the agent's
+answer, the surface used to show nothing. Messages had E53's signal and notes
+had none.
+
+**⛔ DERIVED, LIKE E53, AND NO NEW AGENT DUTY (Cole).** A note the human wrote
+shows a pulse ("with the agent…") until the agent answers it in a way the daemon
+can see. After E53's 30 s with no answer it turns into a static "no word from
+the agent — may be stuck" in the attention colour. It does not pulse, because an
+animation over a wedged agent would be false liveness. Nothing asks the agent to
+announce anything. The derivation is `notesWaiting` in `backend/waiting.ts`,
+beside `waitingOn`, and the two share one `badgeFor`, so a note and a message
+that have waited equally long cannot read differently. It rides in
+`PublicState.notesWaiting` and is computed where `waiting` is (in the daemon, on
+E53's 1 s tick, broadcast only on change). `working`'s snooze covers notes too.
+
+**⛔ WHAT ANSWERS A NOTE (ours, after Cole's steer that resolving is the
+close).** Every part is a fact the daemon already holds:
+
+- **Resolved.** Resolving is the act that closes a note, whoever does it (Cole),
+  so a resolved note is owed nothing. It is the note's own stored `resolved`, so
+  there is no second record of it.
+- **An agent message after it** (strictly after: one in the same millisecond
+  cannot have read it). That is what the human is waiting for, and it is the
+  same reason one reply answers E53's run of messages. So **two notes and then
+  one reply clears both**, and a note added after that reply stays owed. The
+  claim is "the agent has said something since", never "the agent dealt with
+  this". The pending mark goes away and the note stays **open**. "Dealt with" is
+  `resolved`.
+- **The agent rewriting that note** (`note-edit`), an act on this note that the
+  human sees on this note. It needed one new stored field, `editedBy`. A
+  **human** rewrite makes the note owed again, timed from the rewrite, so a
+  human's `note.edited` now carries the same fields as `note.added`. An edit
+  made before `editedBy` existed is not evidence either way, so the note counts
+  from when it was made.
+- **⚠ A system line is still not a reply.** The agent resolving note A is
+  narrated as a system line. It closes A and says nothing about B.
+
+**Not taken:**
+
+- **Only `resolved` counts.** This was Cole's suggested shape, weighed as he
+  asked. An agent visibly working on a note, which has replied or started a
+  task, would flip it to "may be stuck" at 30 s whenever it forgot to resolve,
+  and E53's whole premise is that it forgets. That is a false alarm that teaches
+  the human to ignore the mark.
+- **A drawn "acknowledged" state between pending and resolved.** The daemon
+  cannot tell that a reply was about this note, so a mark saying "the agent has
+  this one" would claim more than it knows. Once answered, the note looks as it
+  always did. Resolved is the existing dimmed, hidden-by-default state.
+- **A ✓ once answered.** It would be a third look, with a lifetime of its own
+  (when does it go?), and it would claim "handled" where the rule knows only
+  "spoken since".
+- **An agent version, an agent note nearby, or an edit to the lines.** The agent
+  never writes the active version (E2), so its edits land in a version the note
+  is not anchored in. "Near" is a guess, and a new version is announced as a
+  system line.
+
+- **A human reopening a note re-arms it, timed from the reopen** (verifier). It
+  was first left out ("reopening stores no time"), and that left two cases
+  disagreeing. A note resolved before any reply and then reopened came back owed
+  but timed from its creation, so it could reappear already "may be stuck". An
+  answered note, reopened, was not owed at all. Now there is one rule: making,
+  rewriting and reopening are all the human putting the note in front of the
+  agent, and the latest of them starts the clock. The agent reopening or
+  rewriting a note is an act on it, and answers it. This needed two more stored
+  fields, `reopenedAt` and `reopenedBy`. A human's `note.reopened` carries the
+  same fields as `note.added`.
+
+**⛔ "MAY BE STUCK" HAS AN ACT: "Ask the agent" (ours).** On the stuck note in
+the notes panel, and on the floating composer's line. It sends one ordinary
+message in the human's conversation, _About my note on “‹passage›” in ‹file›:
+“‹excerpt›”_, and brings the conversation forward so they see it go. Being a
+message, it gets everything a message gets: E53's badge on it, and E53's one
+nudge if the agent stays quiet. The agent's reply to it answers the note as
+well. The other way out is the existing ✓: resolving it yourself. **Not taken:**
+a daemon nudge per stalled note on the agent's tail. The `note.added` that
+delivered it already carried it, and routing the human's "are you there?"
+through the conversation keeps one nudging mechanism, not two. Also not taken: a
+"dismiss" flag. That would be a second record of what `resolved` already says.
+
+**⛔ AND ONCE ASKED, THE NOTE WAITS ON THAT MESSAGE (verifier D1).** The first
+version left the note reading "may be stuck" with the button still offered, so a
+second click sent the same message again. The message now carries the note's
+reference (`note: {doc, id}`, stored on the message). While a human message
+about the note, sent after its latest human write, is unanswered, the note's
+entry carries `askedIn` and reads "asked in the conversation…". Its badge **is**
+E53's badge for the conversation, not a second clock that could disagree with
+it. The button is not offered while the note is asked. The daemon drops a second
+ask about a note that is already asked, which is the same derived fact, so a
+double-click sends one message (driven: one `message` on the tail). There is no
+"asked" flag; it is read off the conversation.
+
+**⛔ THE ASK NAMES THE NOTE, NOT JUST ITS WORDS (verifier D4).** On the tail the
+message carries `note` (the id), `doc`, and a `hint` naming
+`note-resolve <id> --doc <slug>`, so the agent can act on it and resolve it
+without matching prose. The message's text quotes only a short excerpt of the
+note (120 characters). A long note pasted whole would bury the conversation, and
+the reference is what the agent uses.
+
+**`note.added` carries the note when it is short, and names the close (Cole).**
+It carries the passage (`quote`), the `body` and the `lines` it covers (1-based,
+in the active version; a range that ends on a newline ends on that line). Its
+`hint` names `note-resolve <id> --doc <slug>`. **The cap is 1000 characters of
+quote plus body** (`NOTE_TEXT_MAX`). Notes are made mid-read, on a phrase or a
+sentence, and those should reach the agent whole so it can act without a round
+trip. A note over a whole section is where the round trip pays, because `notes`
+also says whether the passage still stands and where it is now. The agent
+reading its tail is the one who acts on this number. **⛔ Whole or not at all,
+never truncated.** A clipped quote reads as the whole passage. Over the cap, the
+event keeps `lines` and its `hint` says to read the note with `notes --doc`. The
+cap counts **characters (code points)**, not UTF-16 units, so an emoji counts as
+one (verifier D6). **A note whose passage is gone** from the active version has
+no `lines`. The event then says `passage: "gone"`, and its hint says so and
+points at `notes`, where the long-note path already sent the agent (verifier
+D5). Before this, a rewrite of such a note said "act on it" with nothing to
+find.
+
+**Where the signal shows: one derived list, drawn in four places, over ONE
+scope: the session.** The rule it meets (verifier D3): if something is owed
+anywhere in the session, the human can see it without collapsing a column. The
+first version disagreed with itself. The tab and panel read the open document
+while the composer read the session, so a stuck note on another document showed
+only once the column was shut. Now:
+
+- **The Notes tab** has one dot for every owed note in the session, stuck if any
+  is. The count stays the open document's, like the list.
+- **The notes panel** lists the open document's notes with their badges and act,
+  and above them one line per other document with owed notes ("2 notes owed an
+  answer on harbour.md", stuck if any is). Clicking the line opens that
+  document.
+- **The floating composer**, while the column is collapsed, shows the oldest
+  note the human can still act on (not yet asked about), naming its document
+  when it is not the open one. It has that note's own badge and act, and "+N
+  more" is kept **outside** the truncated text so it never clips (verifier D2).
+- **The note menu** on a passage has a dot beside each owed note. **Not taken:**
+  marking the passage in the running text. Notes are already painted in the
+  attention colour, so a "stuck" tint would not be told apart, and a badge in
+  the text would move the words.
+
+**Reload and restart.** What is stored is `editedBy`, `reopenedAt`/`reopenedBy`
+and the ask's `note` reference; `notesWaiting` is not stored, and the state is
+re-derived from the persisted notes and conversation, so it survives both.
+Driven in the browser: a note pulsed, then cleared on a CLI `say`. A second note
+went to "may be stuck" at 30 s. After a page reload it was still stuck, on the
+tab and on the floating composer. After `close` and `open --restore` it was
+still stuck. "Ask the agent" sent the message, and the tail carried it. Then
+`note-resolve` from the CLI cleared the note, and the message kept its own E53
+pulse until a `say`. The one thing that does not survive a restart is
+`working`'s snooze, which is in memory, as in E53.
+
+Re-driven after the verifier's fixes, with two documents: two notes stalled on
+harbour.md while maren.md was open with the column open. The tab dot and the
+panel's "2 notes owed an answer on harbour.md" showed them. With the column
+collapsed, the composer line read "Your note on harbour.md … +1 more", and the
+count was not clipped (checked with `elementFromPoint`). A double-click on "Ask
+the agent" sent one message carrying `note`, `doc` and the hint. The asked note
+then read "asked in the conversation…" with no button, and it still did after a
+reload. A rewrite of a note whose passage had been deleted emitted
+`passage: "gone"`.
+
+### Known limits, left to real use (Cole)
+
+Cole ruled these trade-offs are to be learned in use, not theorised. They are
+left as built, and stated plainly here so real use knows what to watch for.
+
+1. **Any agent reply clears pending on every earlier note, across documents.**
+   The verifier's repro: an unrelated question and answer in the chat silenced a
+   note nobody had touched, and one `say` cleared every stuck note across two
+   documents. The notes stay open (unresolved), but the "may be stuck" signal is
+   gone.
+2. **An agent that works on the noted passage without speaking still reads as
+   "may be stuck".** The agent writes a new version (E2 forbids the active one),
+   changes the passage the note is about, and says nothing. At 30 s the note
+   shows "may be stuck" although work visibly happened. Only a reply, a resolve
+   or a rewrite of the note answers it.
+3. **`working`'s snooze covers notes added after it.** A note made during a
+   snooze pulses until the snooze ends instead of stalling at 30 s, as a message
+   sent during a snooze does in E53.
+
+Also as documented above: a note edited before `editedBy` existed counts from
+when it was made.
+
+## E66 — A selection belongs to the text it was made in
+
+**Ruled:** the orchestrator of the `2026-09-scriptorium-real-use` cycle,
+2026-09-22, reading Cole's standing "keep the UX model simple" and his chip
+ruling ("if you clear the context from the chat, that … should be treated as
+clearing the selection"). The defect was edge 0 of
+[the selection-edges backlog item](../../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md).
+Select in `alpha.md`, click `beta.md`, and the chip read `beta.md · v1 · line 5`
+over alpha's words. The daemon held the same thing, so a `say` would have sent
+alpha's text attributed to beta's path and line.
+
+**⛔ THE RULE: when the document text on screen changes, the held selection is
+cleared, in the surface and in the daemon.** "The text on screen" is the open
+document at its active version, so another document **or another version**
+counts. It is the same clear as the chip's X: the selection goes, and so does
+its paint. It is dropped, never re-labelled, and going back does not revive it.
+
+**Why it happened.** The surface held the selection as offsets and lines with no
+document of its own. The effect that tells the daemon stamped it with whatever
+document was open when it ran. A switch re-ran that effect, and the old passage
+went out under the new name. The rendered pane could not catch it either: the
+press was in the context list, so the emptied browser selection was not the
+pane's to clear.
+
+**Built:**
+
+- `selectionOnScreen` (`backend/selection.ts`) is the one rule, shared by both
+  halves: a selection is kept only while its `doc` and `version` are the ones on
+  screen.
+- **Surface.** `HeldSelection` carries the `doc` and `version` it was made in,
+  stamped by App on each report. A new `shown` event goes through
+  `applySelectionEvent`, so a switch reaches the paint the way the X does. App
+  also derives `shown` for the one render between the switch and the clear. That
+  render is the one that used to send the stale selection, so the chip, the
+  Notes panel and the daemon read `shown`, not `selection`.
+- **Daemon.** Every read of the held selection (`/state`, the snapshot, `say`)
+  goes through the rule, and a `select` naming text that is not on screen is
+  refused. The open document moves from many places: the surface's `open` and
+  `open.doc`, a followed link, the agent's `activate`, a document removed, an
+  undo. Checking at each of them is a check some later path would forget, so the
+  check is on the read. **The read in `say` is a backstop that no test can
+  pin.** Every path that moves the document broadcasts first, and that read has
+  already dropped the stale selection, so the check in `say` cannot be reached
+  by construction. It stays for a future path that skips the broadcast, and the
+  code says so.
+
+**⛔ AND A REVEAL IS ONE SHOT, FOR THE TEXT IT WAS AIMED AT** (found by the
+no-stake verifier, after the paths below had first been called checked). A
+search jump or a note click sets `reveal`, a range the raw editor selects. The
+editor applies it whenever it is **created**, and nothing ever cleared it. So a
+search hit in gamma, then long.md, then Raw, put gamma's offsets on long.md: the
+chip read `long.md · v1 · line 3 / "h fill"`, and `/state` held the same, text
+nobody selected. In one document, the chip's X and then rendered → raw brought
+the cleared passage back. The same bug class as the selection, in a second value
+that names a place in a document without saying which. Built, both ways the
+verifier offered:
+
+- **Keyed.** A reveal carries the `doc` and `version` it was aimed at. The pane
+  gets it only through `selectionOnScreen`, and a switch drops it (`revealAfter`
+  in `surface/state/selection.ts`).
+- **Consumed.** The editor reports that it applied a reveal, and it is spent, so
+  a re-created editor has nothing to replay. Any change to the held selection
+  (the X, a click, another passage) also drops a reveal still waiting, because
+  the human has since chosen something else.
+- ⚠ **Kept on purpose:** a jump made in **rendered** view waits, and switching
+  to raw in the same document selects the hit. That is the reveal the human
+  asked for, in the text they asked for, used once.
+
+**Checked with real mouse input**, the chip and `/state` agreeing after each:
+the context-list click (the repro), a search result in another document, the
+Notes panel's "note owed an answer on X" line, a followed link, the agent's
+`activate`, the human's version menu, the history arrow undoing a removal of the
+open document, a reload, and raw mode. After the reveal fix: the verifier's
+repro, the X then rendered → raw in one document, a jump in raw (still selects),
+and a rendered jump followed by another selection and then raw (keeps the
+human's passage). **A rename is not a switch.** The document record and its text
+are the same, and the chip and the daemon's path follow the new name together.
+
+**Not taken:**
+
+- **Re-key the selection to the new document.** That is the defect.
+- **Keep it for a deliberate "select in A, ask about it from B".** No such flow
+  was found, and the chip already names the document, so a human reading B while
+  asking about A would see one name and mean the other. If real use produces
+  this flow, the answer is a chip that visibly says "from alpha.md", not a
+  selection that silently outlives its text.
+- **Keep it across a version switch, since the text is often identical.** The
+  offsets belong to one version's text, and a branch made to rewrite a passage
+  is exactly the case where they stop matching. One rule is simpler to hold than
+  "same document unless the text moved".

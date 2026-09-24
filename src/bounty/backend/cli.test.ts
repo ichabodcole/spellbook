@@ -54,9 +54,10 @@ test("VERBS + VERB_ALIASES are the dispatch switch — neither may grow a verb a
 test("the parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
   expect(SRC).toContain("options: CLI_OPTIONS,");
   expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
-  // 22 flags, thoth's audited set. A count, not a list: the list is the pin in
+  // 23 flags: thoth's audited 22 plus `--once` (tail's background one-shot,
+  // feat/tail-quiet-handoff). A count, not a list: the list is the pin in
   // `error-choices-census.test.ts`'s arm 2b, which drives it out of the process.
-  expect(RECOGNIZED_FLAGS.length).toBe(22);
+  expect(RECOGNIZED_FLAGS.length).toBe(23);
 });
 
 /**

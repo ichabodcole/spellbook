@@ -153,6 +153,54 @@ export function project(text: string): Projection {
     plain += value;
   };
 
+  /**
+   * Prose, split at its line breaks when the source carries markup on each line.
+   *
+   * ⛔ A WRAPPED LIST ITEM OR QUOTE IS NOT ONE RUN. Its source repeats the
+   * indent or the `> ` on every line and its rendered text does not, so the
+   * text node is longer in source than on screen — which made the whole node
+   * non-exact, and a word on its third line resolved to every line of the
+   * paragraph (house-style, 2026-09-22). Each line of the value is found in
+   * the source in turn and emitted exactly, the line break with it; if any line
+   * cannot be found (an escape, an entity), the node falls back to one
+   * non-exact run rather than a partial guess.
+   */
+  const emitText = (value: string, node: Node) => {
+    const s = node.position?.start.offset;
+    const e = node.position?.end.offset;
+    if (s === undefined || e === undefined || e - s === value.length || !value.includes("\n")) {
+      emit(value, node);
+      return;
+    }
+    const pieces: { value: string; at: number }[] = [];
+    let cursor = s;
+    const lines = value.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] as string;
+      const at = line === "" ? cursor : body.indexOf(line, cursor);
+      if (at === -1 || at + line.length > e || (i === 0 && at !== s)) {
+        emit(value, node);
+        return;
+      }
+      if (line !== "") pieces.push({ value: line, at });
+      cursor = at + line.length;
+      if (i < lines.length - 1) {
+        const nl = body.indexOf("\n", cursor);
+        if (nl === -1 || nl >= e) {
+          emit(value, node);
+          return;
+        }
+        pieces.push({ value: "\n", at: nl });
+        cursor = nl + 1;
+      }
+    }
+    for (const piece of pieces)
+      emit(piece.value, {
+        type: "text",
+        position: { start: { offset: piece.at }, end: { offset: piece.at + piece.value.length } },
+      });
+  };
+
   const walk = (node: Node) => {
     // ⛔ THE OUTERMOST BOUNDARY WINS, which is why this only sets when none is
     // pending. A list item holds a paragraph, so walking `- a` fires `listItem`
@@ -167,6 +215,8 @@ export function project(text: string): Projection {
     }
     switch (node.type) {
       case "text":
+        emitText(node.value ?? "", node);
+        return;
       case "inlineCode":
       case "code":
       case "html":
@@ -258,33 +308,101 @@ export function toPlain(
  * wrong: micromark puts a newline between block tags, so `<p>a</p>\n<p>b</p>`
  * contributes a `"\n"` text node the projection wrote as `"\n\n"`, and every
  * offset after the first block is then off by one and drifting. Matching each
- * run forwards from a cursor instead cannot drift — the runs appear in `plain`
- * in document order, so a run is always found at or after the last one, and
- * inter-tag whitespace simply fails to match and is skipped.
+ * run forwards from a cursor instead keeps the runs in document order.
+ *
+ * ⛔ BUT A FORWARD SEARCH IS ONLY AS GOOD AS ITS WORST MATCH, because the
+ * cursor never comes back. Two rules keep one bad match from stranding every
+ * run after it — which is what Cole hit on house-style (2026-09-22): past a
+ * blockquote, rendered selections landed pages away or not at all.
+ *
+ * 1. INTER-TAG WHITESPACE IS PLACED ONLY WHERE THE CURSOR ALREADY IS. micromark
+ *    wrote three newline nodes between a quote's last word and the next list's
+ *    first; the projection wrote two. Searched for, the third matched the soft
+ *    line break INSIDE the list item and moved the cursor past real text. A
+ *    whitespace-only run that is not sitting at the cursor is `null` and moves
+ *    nothing — it has no text a selection could be about anyway.
+ * 2. A MATCH THAT SKIPS TEXT MUST BE CONFIRMED BY THE NEXT RUN. Normally the
+ *    gap between the cursor and the match is whitespace (a block separator).
+ *    When it is not, either an earlier run failed to place (and its text is the
+ *    gap), or this run is text the projection never wrote — a footnote's "1" —
+ *    that happens to occur later. The next run tells them apart: it follows the
+ *    real match directly, and not the accidental one.
+ *
+ * A run is matched on its TRIMMED text, and what it is placed at is the first
+ * character of that text. micromark puts a block of raw HTML (a
+ * `<!-- rule-id -->` comment) in one text node together with the newlines
+ * around it, and a GFM task item's text node starts with the space after the
+ * checkbox — whitespace the projection never wrote.
+ *
+ * ⛔ WHICH IS WHY A PLACEMENT IS A PAIR, NOT AN OFFSET. Leading whitespace the
+ * projection DID write is part of the run and the placement covers it; leading
+ * whitespace it did not is `lead`, and every one of those characters resolves
+ * to where the run's text starts (`runOffset`). One number cannot say both: it
+ * either put the run's text one character late, or — at the very start of a
+ * document, where backing off clamps at zero — put EVERY character of the node
+ * one character early.
  *
  * A run that cannot be placed gets `null` rather than a guess: it is either
  * whitespace the projection did not write, or text from something the
- * projection deliberately skipped (an image's alt attribute is not a text node,
- * but a future construct might be), and a wrong offset there would silently
+ * projection deliberately skipped, and a wrong offset there would silently
  * anchor a note onto unrelated words.
  */
-export function alignRuns(plain: string, runs: readonly string[]): (number | null)[] {
-  const out: (number | null)[] = [];
+export type RunPlacement = {
+  /** Where the run's first PROJECTED character is in `plain`. */
+  at: number;
+  /** How many of the run's leading characters have no place in `plain`. */
+  lead: number;
+};
+
+/** Where character `within` of a placed run is in `plain`. */
+export function runOffset(placement: RunPlacement, within: number): number {
+  return placement.at + Math.max(0, within - placement.lead);
+}
+
+export function alignRuns(plain: string, runs: readonly string[]): (RunPlacement | null)[] {
+  const cores = runs.map((r) => r.trim());
+  const out: (RunPlacement | null)[] = [];
   let cursor = 0;
-  for (const run of runs) {
-    if (run === "") {
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i] as string;
+    const core = cores[i] as string;
+    if (core === "") {
+      // Rule 1: whitespace is placed where it stands, or not at all.
+      if (run !== "" && plain.startsWith(run, cursor)) {
+        out.push({ at: cursor, lead: 0 });
+        cursor += run.length;
+      } else out.push(null);
+      continue;
+    }
+    const found = plain.indexOf(core, cursor);
+    if (
+      found === -1 ||
+      (/\S/.test(plain.slice(cursor, found)) && !confirmed(plain, found + core.length, cores, i))
+    ) {
       out.push(null);
       continue;
     }
-    const at = plain.indexOf(run, cursor);
-    if (at === -1) {
-      out.push(null);
-      continue;
-    }
-    out.push(at);
-    cursor = at + run.length;
+    // Back off over the leading whitespace `plain` actually has; the rest is
+    // the DOM's alone and resolves to where the text begins.
+    const wanted = run.length - run.trimStart().length;
+    let back = 0;
+    while (back < wanted && plain[found - back - 1] === run[wanted - back - 1]) back++;
+    out.push({ at: found - back, lead: wanted - back });
+    cursor = found + core.length;
   }
   return out;
+}
+
+/** Rule 2: does the next run with text in it begin right after `end`? */
+function confirmed(plain: string, end: number, cores: readonly string[], i: number): boolean {
+  let j = i + 1;
+  while (j < cores.length && cores[j] === "") j++;
+  const next = cores[j];
+  // The last run has nothing to be confirmed by; take the match.
+  if (next === undefined) return true;
+  let k = end;
+  while (k < plain.length && /\s/.test(plain[k] as string)) k++;
+  return plain.startsWith(next, k);
 }
 
 /**

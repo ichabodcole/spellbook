@@ -162,6 +162,75 @@ test("join follows the daemon to a NEW port after a restart (B1)", async () => {
   expect(sinces[0]).toBe(1);
 }, 30000);
 
+// D2 (feat/tail-quiet-handoff): the handoff line prints the bookmark as
+// `--since N@<epoch>`. A restarted daemon whose NEW log is already past N sends
+// only what lies above N, so without the epoch the new log's start was skipped
+// silently. `join` must notice the epoch change and re-read from 0.
+test("join --since N@epoch from a restarted log re-reads the new log from 0 (D2)", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-d2-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  const sinces: number[] = [];
+  const d = fakeDaemon((conn) => {
+    sinces.push(conn.since);
+    for (let id = 1; id <= 5; id++)
+      if (id > conn.since)
+        conn.push(
+          `data: ${JSON.stringify({ id, epoch: "epoch-new", type: "status", projectId: "proj", by: "someone" })}\n\n`,
+        );
+  });
+  writeFileSync(join(home, "daemon.port"), String(d.port));
+  const proc = Bun.spawn(["bun", "run", CLI, "join", "proj", "--since", "4@epoch-old"], {
+    env: { ...process.env, ASTROLABE_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  cleanup.push(() => proc.kill());
+  const lines = await readLines(proc.stdout as ReadableStream<Uint8Array>, 6, 5000);
+  expect(sinces.slice(0, 2)).toEqual([4, 0]);
+  expect(lines.map((l) => JSON.parse(l).id ?? JSON.parse(l).type)).toEqual([
+    "epoch.changed",
+    1,
+    2,
+    3,
+    4,
+    5,
+  ]);
+}, 30000);
+
+// The handoff line's command names no launcher and no path, and the line
+// carries `spell` (Cole's ruling, 2026-09-24): the agent runs it with its own
+// launcher. A spell that put `bun <path>` back would fail here.
+test("join's printed re-arm is the verb and its arguments, with spell, and no launcher", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-printed-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  const d = fakeDaemon((conn) => {
+    if (conn.since < 1)
+      conn.push(
+        `data: ${JSON.stringify({ id: 1, epoch: "epoch-x", type: "status", projectId: "proj", by: "someone" })}\n\n`,
+      );
+  });
+  writeFileSync(join(home, "daemon.port"), String(d.port));
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    ASTROLABE_HOME: home,
+    SPELLBOOK_TAIL_WINDOW_MS: "600",
+  };
+  delete env.ASTROLABE_AS;
+  const proc = Bun.spawn(["bun", "run", CLI, "join", "proj", "--as", "me", "--since", "0"], {
+    env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  cleanup.push(() => proc.kill());
+  const lines = await readLines(proc.stdout as ReadableStream<Uint8Array>, 2, 5000);
+  const last = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+  expect([last.type, last.spell, last.command]).toEqual([
+    "tail.window",
+    "astrolabe",
+    "join proj --as me --since 1@epoch-x",
+  ]);
+}, 30000);
+
 // ── register A1 · the declaration is bound to the behaviour ──────────────────
 //
 // ⛔ `VERBS` IS WHAT EVERY `choices` ON AN UNKNOWN VERB IS BUILT FROM, and

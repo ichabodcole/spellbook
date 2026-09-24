@@ -244,6 +244,111 @@ describe("a session, end to end through the launchers", () => {
     expect(typeof line.epoch).toBe("string");
   });
 
+  test("E65 — a note reaches the tail with its text and lines, is owed an answer, and a reply or a resolve closes it", async () => {
+    const before = JSON.parse((await cli("state")).out) as PublicState;
+    const path = before.docs[0]?.versions[0]?.path ?? "";
+    const text = readFileSync(path, "utf8");
+    const at = text.indexOf("line three");
+    surface.send({ type: "note.add", doc: "a", from: at, to: at + 10, body: "cut this?" });
+    const added = await waitTail((l) => l.type === "note.added" && l.by === "human");
+    expect(added).toMatchObject({
+      doc: "a",
+      quote: "line three",
+      body: "cut this?",
+      lines: { from: 4, to: 4 },
+    });
+    expect(String(added.hint)).toContain(`note-resolve ${added.note} --doc a`);
+
+    // Owed an answer, until the agent says something.
+    const owed = JSON.parse((await cli("state")).out) as PublicState;
+    expect(owed.notesWaiting).toEqual([
+      expect.objectContaining({ doc: "a", noteId: added.note, badge: "working" }),
+    ]);
+    expect((await cli("say", "on it")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+
+    // A second note, closed by RESOLVING it, with nothing said.
+    surface.send({ type: "note.add", doc: "a", from: at, to: at + 4, body: "and this" });
+    const second = await waitTail((l) => l.type === "note.added" && l.note !== added.note);
+    expect(
+      (JSON.parse((await cli("state")).out) as PublicState).notesWaiting.map((n) => n.noteId),
+    ).toEqual([String(second.note)]);
+    expect((await cli("note-resolve", String(second.note), "--doc", "a")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+
+    // Reopened by the human, it is owed again — timed from the REOPEN.
+    const reopenedAfter = Date.now();
+    surface.send({ type: "note.resolve", doc: "a", id: String(second.note), resolved: false });
+    const reopened = await waitTail((l) => l.type === "note.reopened");
+    expect(reopened).toMatchObject({ body: "and this", lines: { from: 4, to: 4 } });
+    const again = (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    expect(again.map((n) => n.noteId)).toEqual([String(second.note)]);
+    expect(again[0]?.since).toBeGreaterThanOrEqual(reopenedAfter);
+
+    // "Ask the agent": the message carries the note's reference to the tail,
+    // the note then waits ON that message, and a second ask is dropped.
+    const ask = {
+      type: "say" as const,
+      text: "About my note",
+      withSelection: false,
+      note: { doc: "a", id: String(second.note) },
+    };
+    surface.send(ask);
+    const asked = await waitTail((l) => l.type === "message" && l.note === second.note);
+    expect(asked).toMatchObject({ doc: "a", note: second.note });
+    expect(String(asked.hint)).toContain(`note-resolve ${second.note} --doc a`);
+    const owedNow = (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    expect(owedNow[0]?.askedIn).toBe(String(asked.message_id));
+    surface.send(ask);
+    surface.send({ type: "say", text: "marker", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker");
+    expect(tailLines().filter((l) => l.type === "message" && l.note === second.note)).toHaveLength(
+      1,
+    );
+    expect((await cli("say", "the map is wrong")).code).toBe(0);
+    expect((JSON.parse((await cli("state")).out) as PublicState).notesWaiting).toEqual([]);
+  });
+
+  test("E65 (reviewer) — who rewrote or reopened a note is recorded, and decides whether it is owed", async () => {
+    const owed = async () => (JSON.parse((await cli("state")).out) as PublicState).notesWaiting;
+    const before = JSON.parse((await cli("state")).out) as PublicState;
+    const note = before.docs[0]?.notes.find((n) => n.body === "and this");
+    if (!note) throw new Error("the previous cell's note is missing");
+    expect(await owed()).toEqual([]);
+
+    // The HUMAN rewrites it: owed again, timed from the rewrite, and the tail
+    // is told what it now says.
+    const rewroteAfter = Date.now();
+    surface.send({ type: "note.edit", doc: "a", id: note.id, body: "and this, rewritten" });
+    const edited = await waitTail((l) => l.type === "note.edited" && l.by === "human");
+    expect(edited).toMatchObject({ note: note.id, body: "and this, rewritten", quote: "line" });
+    const again = await owed();
+    expect(again.map((n) => n.noteId)).toEqual([note.id]);
+    expect(again[0]?.since).toBeGreaterThanOrEqual(rewroteAfter);
+
+    // The AGENT rewrites it: that answers it.
+    expect((await cli("note-edit", note.id, "--doc", "a", "agreed — cut")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // The AGENT resolving and then reopening it is an act on it, not a new ask.
+    expect((await cli("note-resolve", note.id, "--doc", "a")).code).toBe(0);
+    expect((await cli("note-resolve", note.id, "--doc", "a", "--reopen")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // An ask about a note that does not exist is refused, and nothing is sent.
+    surface.send({
+      type: "say",
+      text: "About a note that is not there",
+      withSelection: false,
+      note: { doc: "a", id: "n-nope" },
+    });
+    await surface.waitFor((m) => m.type === "error" && m.message.includes("n-nope"));
+    surface.send({ type: "say", text: "marker two", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker two");
+    expect(tailLines().some((l) => l.type === "message" && l.note === "n-nope")).toBe(false);
+    expect((await cli("say", "noted")).code).toBe(0);
+  });
+
   test("version-new → the agent edits that file → the surface receives the text", async () => {
     const r = await cli("version-new", "--label", "tighter");
     expect(r.code).toBe(0);
@@ -326,6 +431,54 @@ describe("a session, end to end through the launchers", () => {
     expect(JSON.parse(r.err).error.choices).toEqual(["a"]);
   });
 
+  // ⚠ LATE ON PURPOSE: it opens a second document, and the cells above count
+  // the session's documents.
+  test("E66 — another document or version on screen clears the held selection; it is never re-labelled or revived", async () => {
+    const stateNow = async () => JSON.parse((await cli("state")).out) as PublicState;
+    const heldNow = async () => (await stateNow()).selection ?? null;
+    const a = (await stateNow()).docs[0];
+    expect(a?.slug).toBe("a");
+    const onA = {
+      doc: "a",
+      version: a?.active ?? 0,
+      path: a?.original ?? "",
+      fromLine: 3,
+      toLine: 3,
+      text: "line two, edited",
+    };
+    surface.send({ type: "select", selection: onA });
+    await Bun.sleep(100);
+    expect(await heldNow()).toEqual(onA);
+
+    // The agent makes another version active: the selection was about text
+    // that is no longer on screen.
+    expect((await cli("activate", "v1")).code).toBe(0);
+    expect(await heldNow()).toBeNull();
+    expect((await cli("activate", `v${onA.version}`)).code).toBe(0);
+
+    // The reviewer's repro, daemon half: the open document changes under a
+    // held selection. It used to stay, and the surface re-sent it stamped with
+    // the NEW document, so `say` attached a's text to solo's path.
+    surface.send({ type: "select", selection: onA });
+    await Bun.sleep(100);
+    expect(await heldNow()).toEqual(onA);
+    surface.send({ type: "open", path: join(docs, "solo.md") });
+    await surface.waitFor((m) => m.type === "state" && m.state.openDoc === "solo");
+    expect(await heldNow()).toBeNull();
+
+    // A selection that arrives naming a document not on screen is that stale
+    // echo itself, and is not held — so going back does not revive it. ⚠ No
+    // read between the two: a read would drop it on its own, and the guard on
+    // `select` would go unconvicted.
+    surface.send({ type: "select", selection: onA });
+    const before = surface.frames.length;
+    surface.send({ type: "open.doc", doc: "a" });
+    await surface.waitFor(
+      (m) => m.type === "state" && m.state.openDoc === "a" && surface.frames.indexOf(m) >= before,
+    );
+    expect(await heldNow()).toBeNull();
+  });
+
   test("say reaches the chat; close ends the tail at 0, unlinks discovery, and the manifest stays", async () => {
     const body = join(root, "say.txt");
     writeFileSync(body, "Done — v2 is `tighter`.\n");
@@ -333,7 +486,14 @@ describe("a session, end to end through the launchers", () => {
     expect((await cli("close")).code).toBe(0);
     const code = await tail?.exited;
     expect(code).toBe(0);
-    expect(tailLines().at(-1)?.type).toBe("closed");
+    // The `closed` frame, then the handoff line naming the way back
+    // (`kit/wire/tailHandoff.ts`): a closed session is not a re-arm.
+    expect(
+      tailLines()
+        .map((l) => l.type)
+        .slice(-2),
+    ).toEqual(["closed", "tail.closed"]);
+    expect(tailLines().at(-1)?.command).toBe(`open --restore ${sessionId} --no-open`);
     expect(existsSync(join(root, "tmp", `scriptorium-${sessionId}.json`))).toBe(false);
     const manifest = JSON.parse(
       readFileSync(join(root, "home", "sessions", sessionId, "manifest.json"), "utf8"),

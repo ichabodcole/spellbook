@@ -144,7 +144,13 @@ interface ProjectEntry {
   db: Database;
   bus: EventBus;
   meta: ProjectMeta;
+  // What presence SAYS (`/state`, `presence.changed`, the auto-received gate).
+  // It equals `tails` whenever a tail is open, and holds through the linger
+  // after the last one closes (see `adjustAgents`).
   agents: number;
+  // Agent SSE tails open right now: the measurement `agents` is derived from.
+  tails: number;
+  lingerTimer: ReturnType<typeof setTimeout> | null;
   activityTimer: ReturnType<typeof setTimeout> | null;
   activityState: string | null;
   activitySource: "auto" | "explicit" | null;
@@ -181,6 +187,8 @@ function loadProject(id?: string): ProjectEntry {
     bus: createEventBus(),
     meta,
     agents: 0,
+    tails: 0,
+    lingerTimer: null,
     activityTimer: null,
     activityState: null,
     activitySource: null,
@@ -236,9 +244,70 @@ function badRequest(e: unknown, expected?: string): Response {
 // counted at SSE subscribe/unsubscribe. Accuracy is bounded by the keepalive
 // (Claim F): a dead socket only tears down when the next keepalive write
 // throws, so the decrement can lag by up to one tick — never dangle.
+//
+// ⛔ THE LAST TAIL'S CLOSE LINGERS (feat/mind-mapper-quiet-handoff). Since the
+// quiet handoff (`src/kit/wire/tailHandoff.ts`, "MIND-MAPPER JOINS THE SESSION
+// SPELLS") the agent's tail STOPS AND STARTS: a window ends and is re-armed, a
+// quiet window hands off to a background `--once`, and a woken one-shot exits
+// while the agent handles the event, re-arming Monitor only after. No tail is
+// open in any of those gaps, and the last one lasts as long as the agent's
+// turn. Counted raw, every gap showed the human "no agent on this project"
+// while the agent was in fact working on the board, and a message sent in it
+// skipped the auto-`received` flip. So when the LAST tail closes the count
+// HOLDS for `presenceLingerMs()`, and:
+//   · a tail that opens inside the linger cancels it, and nothing is emitted —
+//     the count never changed, so the surface never flickers;
+//   · an agent's own act inside it (`POST /activity`, an agent `/send` — the
+//     two writes only an agent makes) restarts it (`notePresenceAct`): an agent
+//     that is acting on the board is here;
+//   · silence past it lets the count fall to 0, with its `presence.changed`.
+// The cost, stated: an agent that really left shows "here" for up to the
+// linger after its last tail or act. Not taken: (a) a raw count — the flicker
+// and the missed flip above; (b) re-arming Monitor BEFORE handling a woken
+// event — that is the shared tail rule, word-for-word across every spell, and
+// it would not cover the window→re-arm gap anyway; (c) refreshing on every
+// board write — the browser POSTs the same routes (ratify, delete…), so a
+// human's own clicks would keep "an agent is here" lit.
+function presenceLingerMs(): number {
+  const v = Number.parseInt(process.env.MIND_MAPPER_PRESENCE_LINGER_MS ?? "", 10);
+  // Default: the stall window's 150 s — the same "human-paced beat of agent
+  // deliberation" (Round 5, SW1), which is what the longest gap (handling a
+  // woken event) is. `0` turns the linger off.
+  return Number.isFinite(v) && v >= 0 ? v : 150_000;
+}
+
+function setAgents(entry: ProjectEntry, agents: number): void {
+  if (agents === entry.agents) return;
+  entry.agents = agents;
+  entry.bus.emit("presence.changed", { agents });
+}
+
+function startLinger(entry: ProjectEntry): void {
+  if (entry.lingerTimer !== null) clearTimeout(entry.lingerTimer);
+  entry.lingerTimer = setTimeout(() => {
+    entry.lingerTimer = null;
+    if (entry.tails === 0) setAgents(entry, 0);
+  }, presenceLingerMs());
+}
+
 function adjustAgents(entry: ProjectEntry, delta: number): void {
-  entry.agents = Math.max(0, entry.agents + delta);
-  entry.bus.emit("presence.changed", { agents: entry.agents });
+  entry.tails = Math.max(0, entry.tails + delta);
+  if (entry.tails > 0) {
+    if (entry.lingerTimer !== null) {
+      clearTimeout(entry.lingerTimer);
+      entry.lingerTimer = null;
+    }
+    setAgents(entry, entry.tails);
+    return;
+  }
+  // The last tail closed: hold what the surface shows, unless there is no linger.
+  if (presenceLingerMs() === 0) setAgents(entry, 0);
+  else startLinger(entry);
+}
+
+/** An agent-only write while no tail is open restarts the linger. */
+function notePresenceAct(entry: ProjectEntry): void {
+  if (entry.tails === 0 && entry.lingerTimer !== null) startLinger(entry);
 }
 
 function activityTtlMs(): number {
@@ -973,6 +1042,7 @@ async function main(argv: string[]): Promise<number> {
                   tie = messageId;
                 }
                 postActivity(entry, state, "explicit", tie);
+                notePresenceAct(entry); // only an agent posts activity
                 return Response.json({
                   ok: true,
                   state,
@@ -1222,6 +1292,7 @@ async function main(argv: string[]): Promise<number> {
                   postActivity(entry, "received", "auto", message.id);
                 } else if (role === "agent") {
                   resolveActivity(entry, { terminalAct: true });
+                  notePresenceAct(entry);
                 }
                 // Round 11 (SEAM 1): `kind` is the CHANNEL; an unknown one is
                 // stored verbatim with an additive advisory (never a 400).

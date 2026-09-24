@@ -83,8 +83,35 @@ before the CLI sees them. Same for `note` and `task`.
 ```bash
 S=<this skill's directory>
 bun $S/scripts/cli.ts open ~/notes/chapter-3.md ~/notes/research/
-bun $S/scripts/cli.ts tail        # wrap with Monitor
+bun $S/scripts/cli.ts tail        # wrap with Monitor, timeout_ms 1800000
 ```
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. That line's `command` is the verb and
+its arguments only, bookmark (`--since`) included, with no launcher and no path.
+Always run it with this skill's own launcher, the one you use for its other
+verbs: `bun <this skill's directory>/scripts/cli.ts <command>`. A `command` of
+`tail --since 12` runs as
+`bun <this skill's directory>/scripts/cli.ts tail --since 12`. Never reuse a
+launcher path from an earlier line or session: the plugin's directory changes
+when it updates. Do what `next` says:
+
+- `monitor`: arm Monitor again with the launcher and `command`.
+- `background`: nothing happened; the human is away. Run the launcher and
+  `command` as a background Bash task (`run_in_background`). It exits on the
+  next event, which wakes you. Handle the event, then follow its line back to
+  Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; the launcher
+  and `command` bring it back. If you run it, arm the tail again with no
+  `--since` (and the session id it prints, where there is one): a restarted
+  daemon starts a new event log.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`, written `<id>@<its epoch>` when events carry an
+`epoch`. Never re-arm without `--since`: that replays events you have already
+handled. If the launcher refuses a `command` with a usage error, its message
+names the forms it accepts; fix the arguments to match.
 
 **⚠ Not every line is JSON. Ignore any line beginning with `:`** — those are
 keepalives (`: scriptorium-keepalive`), and a loop that parses every line will
@@ -133,18 +160,24 @@ Facts, not chatter. The ones worth acting on:
 - **`waiting`** — they have been waiting 30 seconds with no reply from you. It
   carries the text they are waiting on. Answer, or `working` to say you are
   still on it (see below).
-- **`note.added`** — they annotated a passage. The event names the document, not
-  the text; `notes --doc <slug>` reads it. **A note is not a request.** They are
-  marking something for themselves unless they say otherwise.
+- **`note.added`** — they annotated a passage, and **expect you to act on it**.
+  A short note arrives whole — the passage (`quote`), what they wrote (`body`)
+  and its `lines`; a long one says to read it with `notes --doc <slug>`. Answer
+  it or propose a version, then **resolve it** (`note-resolve <id>`): resolving
+  is what tells them it is dealt with, and the event's `hint` names the exact
+  command. If the passage is no longer in the active version, the event says
+  `passage: "gone"` instead of giving `lines`. A `note.edited` or
+  `note.reopened` from them is owed an answer in the same way.
 - **`doctor`** — at startup, anything worth looking at in the session, each
   finding carrying the verb that fixes it. Offer; do not silently repair. **It
   says nothing when there is nothing wrong**, so its absence is good news rather
   than a broken tail. Run the `doctor` verb any time to ask directly.
 - **`saved`, `activated`, `system`** — they changed what is where. `system`
   announcements carry a `fact` and, for structure changes, who did it.
-- **`closed`** — the session ended and `tail` exits 0. A tail that stops with no
-  `closed` means the daemon died; the client reports the disconnection and keeps
-  retrying.
+- **`closed`** — the session ended. The tail follows it with `tail.closed` and
+  exits 0. A daemon that dies without `closed` (a crash, a `kill -9`) ends the
+  tail with `tail.lost` instead, on stdout, so you hear it. Both name
+  `open --restore <id>` as the way back.
 
 ## When you go quiet
 
@@ -158,6 +191,13 @@ honest replies:
 
 You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
+
+**A note of theirs shows the same thing** — a pulse on the note until you say
+something in the app, resolve it, or rewrite it (`note-edit`), then "may be
+stuck" after 30 seconds. `working` covers notes too. There is no nudge for a
+note. When one looks stuck, they have a button that asks you about it, and it
+arrives as an ordinary `message` carrying the note's id (`note`) and `doc`, so
+you can `note-resolve` it directly once it is dealt with.
 
 ## The four words that mean something specific
 
@@ -221,8 +261,8 @@ belongs to `task-status`, and it does not; `task-status` takes a positional and
 
 `--body-file` `--by` `--context` `--doc` `--entry` `--for` `--from` `--full`
 `--hunks` `--into` `--label` `--lifecycle` `--limit` `--no-open` `--patch`
-`--quote` `--reopen` `--restore` `--session` `--since` `--start-timeout`
-`--status` `--stdin` `--tag` `--timeout` `--type`
+`--once` `--quote` `--reopen` `--restore` `--session` `--since`
+`--start-timeout` `--status` `--stdin` `--tag` `--timeout` `--type`
 
 `--session` works with every verb and targets a session other than the most
 recent.

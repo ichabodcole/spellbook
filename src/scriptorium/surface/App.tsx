@@ -2,12 +2,21 @@
 // the context sidebar on the left (E16 — built first, props-only so it can move
 // to the kit), the open document read-only in the centre with the status strip
 // under it (E18), and the conversation placeholder on the right (chat is a later
-// piece, E16).
+// piece, E16). Either side column collapses out of the way (E64).
 
 import { cn } from "cn";
-import { MessagesSquareIcon, MoonIcon, SunIcon } from "lucide-react";
+import {
+  GlassesIcon,
+  MessagesSquareIcon,
+  MoonIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PanelRightCloseIcon,
+  PanelRightOpenIcon,
+  SunIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useDefaultLayout } from "react-resizable-panels";
+import { type Layout, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
@@ -16,9 +25,11 @@ import type {
   ContextEntry,
   DiffSide,
   DocView,
+  NoteWaiting,
   PublicState,
   Waiting,
 } from "../backend/protocol";
+import { selectionOnScreen } from "../backend/selection";
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ChatComposer } from "./components/ChatComposer";
 import { ContextSidebar } from "./components/context/ContextSidebar";
@@ -30,7 +41,28 @@ import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
 import { TaskToasts } from "./components/TaskToasts";
 import { Toasts, useToasts } from "./components/Toasts";
-import { WaitingBadge } from "./components/WaitingBadge";
+import { WaitingBadge, WaitingDot } from "./components/WaitingBadge";
+import {
+  collapsedSides,
+  DEFAULT_SIZE,
+  decodeOpenSizes,
+  encodeOpenSizes,
+  isReader,
+  MIN_SIZE,
+  OPEN_PREF,
+  readerAct,
+  rememberOpen,
+  reopenSize,
+  type Side,
+} from "./state/columns";
+import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
+import {
+  applySelectionEvent,
+  type HeldSelection,
+  type Reveal,
+  revealAfter,
+  type SelectionEvent,
+} from "./state/selection";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import { type Connection, textKey, useDaemon } from "./state/useDaemon";
 
@@ -49,11 +81,64 @@ const CONNECTION_LABEL: Record<Connection, string> = {
   closed: "daemon unreachable — retrying",
 };
 
-function PaneHeading({ children, actions }: { children: string; actions?: React.ReactNode }) {
+/** A small icon button for the columns' own chrome — collapse, reopen, reader. */
+function ColumnButton({
+  label,
+  onClick,
+  pressed,
+  control,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  /** Names the control so focus can be handed to it when its twin goes away. */
+  control?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-1 border-b border-edge px-3 text-xs font-medium tracking-wide text-ink-dim uppercase">
+    <button
+      type="button"
+      onClick={onClick}
+      data-column-control={control}
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      className={cn(
+        "flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none",
+        "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+        "[&_svg]:size-3.5",
+        pressed && "bg-surface-raised text-ink",
+      )}
+    >
       {children}
-      {actions && <div className="ml-auto flex items-center gap-0.5">{actions}</div>}
+    </button>
+  );
+}
+
+/**
+ * ⛔ `pinned` NEVER CLIPS (E64, verifier): at the narrowest width the layout
+ * allows, the title and the other actions give way — they shrink and clip —
+ * and the pinned control (the column's collapse button) stays on screen.
+ */
+function PaneHeading({
+  children,
+  actions,
+  pinned,
+}: {
+  children: string;
+  actions?: React.ReactNode;
+  pinned?: React.ReactNode;
+}) {
+  return (
+    <div className="flex h-9 shrink-0 items-center gap-1 border-b border-edge px-2 text-xs font-medium tracking-wide text-ink-dim uppercase">
+      <span className="min-w-0 truncate pl-1">{children}</span>
+      {actions && (
+        <div className="ml-auto flex min-w-0 items-center gap-0.5 overflow-hidden">{actions}</div>
+      )}
+      {pinned && (
+        <div className={cn("flex shrink-0 items-center", !actions && "ml-auto")}>{pinned}</div>
+      )}
     </div>
   );
 }
@@ -191,6 +276,105 @@ function Workspace({
     [send],
   );
   const layout = useDefaultLayout({ id: LAYOUT_ID, panelIds: [...PANES], storage });
+
+  // ── the side columns (E64) ─────────────────────────────────────────────────
+  // ⛔ COLLAPSED IS READ OFF THE LAYOUT (`state/columns.ts`): a collapsed column
+  // is a panel at width 0, persisted by the same layout pref as every other
+  // size, so the button, a drag shut and a reload all agree by construction.
+  // This copy of the layout exists only so React re-renders when it changes;
+  // it is set from the library's own callback and never written back.
+  const [layoutNow, setLayoutNow] = useState<Layout | undefined>(layout.defaultLayout);
+  const collapsed = collapsedSides(layoutNow);
+  const openSizes = decodeOpenSizes(state.prefs[OPEN_PREF]);
+  const openSizesRef = useRef(openSizes);
+  openSizesRef.current = openSizes;
+  const contextPanel = usePanelRef();
+  const chatPanel = usePanelRef();
+  const panelFor = useCallback(
+    (side: Side) => (side === "context" ? contextPanel : chatPanel).current,
+    [contextPanel, chatPanel],
+  );
+  /** Collapse `side`; false when there was nothing to do (already shut). */
+  const collapse = useCallback(
+    (side: Side) => {
+      const panel = panelFor(side);
+      if (!panel || panel.isCollapsed()) return false;
+      panel.collapse();
+      return true;
+    },
+    [panelFor],
+  );
+  // ⚠ NOT the library's `expand()`: it reopens to a width it keeps in memory,
+  // so after a reload a column came back at its minimum. The width it reopens
+  // to is the home's (`panes:open`), like the rest of the layout — capped so it
+  // never pushes the other column shut (`reopenSize`).
+  const expand = useCallback(
+    (side: Side) => {
+      const panel = panelFor(side);
+      if (!panel?.isCollapsed()) return false;
+      const other = panelFor(side === "context" ? "chat" : "context");
+      const around = other
+        ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage }
+        : undefined;
+      panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
+      return true;
+    },
+    [panelFor],
+  );
+  /**
+   * ⛔ THE HANDLE'S ENTER GOES THROUGH THE SAME TWO ACTS (verifier). The
+   * library binds Enter on a separator to its own collapse/expand, and its
+   * expand reopens at the MINIMUM after a reload. Taken in the capture phase —
+   * React's capture listener sits on the root, which the event reaches before
+   * the library's listener on the handle itself — so the library never sees it.
+   * The right handle's Enter used to act on the document (not collapsible, so
+   * it did nothing); it now toggles the conversation, the mirror of the left.
+   */
+  const handleEnter = (side: Side) => (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (collapsed[side]) expand(side);
+    else collapse(side);
+  };
+  /**
+   * Where focus goes when a column button takes itself away (E64, verifier):
+   * collapsing makes the button inert and reopening removes the reopen button,
+   * so focus fell to <body>. The twin control is where the next act is.
+   */
+  const focusNext = useRef<string | null>(null);
+  const toggleFrom = (side: Side, act: "collapse" | "expand") => {
+    const acted = act === "collapse" ? collapse(side) : expand(side);
+    // ⚠ A no-op leaves nothing pending: a stale hand-off would otherwise grab
+    // focus the next time that control happened to render (reviewer).
+    focusNext.current = acted ? `${side}-${act === "collapse" ? "reopen" : "collapse"}` : null;
+  };
+  useEffect(() => {
+    const id = focusNext.current;
+    if (!id) return;
+    const el = document.querySelector<HTMLElement>(`[data-column-control="${id}"]`);
+    if (!el || el.closest("[inert]")) return;
+    focusNext.current = null;
+    el.focus();
+  });
+  const onLayoutChanged = useCallback(
+    (next: Layout, meta: Parameters<typeof layout.onLayoutChanged>[1]) => {
+      layout.onLayoutChanged(next, meta);
+      setLayoutNow(next);
+      const remembered = rememberOpen(openSizesRef.current, next, meta.isUserInteraction);
+      if (remembered !== openSizesRef.current)
+        send({ type: "prefs.set", key: OPEN_PREF, value: encodeOpenSizes(remembered) });
+    },
+    [layout.onLayoutChanged, send],
+  );
+  /**
+   * What the human is typing to the agent. ⛔ HELD HERE, NOT IN THE COMPOSER
+   * (E64): the composer is drawn in the conversation column or floating under
+   * the document depending on whether that column is collapsed, and a draft
+   * living inside it would be lost — or, drawn twice, duplicated — every time
+   * it moved. One draft, one meaning, wherever it is shown.
+   */
+  const [draft, setDraft] = useState("");
   const splitLayout = useDefaultLayout({
     id: SPLIT_LAYOUT_ID,
     panelIds: [...SPLIT_PANES],
@@ -201,6 +385,18 @@ function Workspace({
   const mode: ViewMode = (VIEW_MODES as readonly string[]).includes(saved ?? "")
     ? (saved as ViewMode)
     : "rendered";
+  const setMode = useCallback(
+    (next: ViewMode) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+    [send],
+  );
+  /** E64: rendered with both columns shut — derived, never stored (`isReader`). */
+  const reader = isReader(mode, collapsed);
+  const toggleReader = () => {
+    const act = readerAct(mode, collapsed);
+    if (act.mode) setMode(act.mode);
+    for (const side of act.collapse) collapse(side);
+    for (const side of act.expand) expand(side);
+  };
 
   // What the comparison is against (E36). Deliberately NOT persisted: which
   // version you wanted to look at last session says nothing about this one,
@@ -209,22 +405,81 @@ function Workspace({
   const { toasts, announce, dismiss } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
-  const [selection, setSelection] = useState<{
-    from: number;
-    to: number;
-    fromLine: number;
-    toLine: number;
-    text: string;
-  } | null>(null);
+  // The chat's chip mirrors it, and the daemon is told of every change (below).
+  const [selection, setSelection] = useState<HeldSelection | null>(null);
+  /**
+   * Bumped when the held selection goes away — the chip's X, a note consuming
+   * the passage (E57), or a click that clears it in EITHER pane.
+   *
+   * ⛔ CLEARING IT HAS TO REACH THE HIGHLIGHT. Cole's ruling (2026-09-22):
+   * "if you clear the context from the chat, that should basically be treated
+   * as clearing the selection", and "clicking in either clears the selection,
+   * it's the simpler ux pattern". One state, one meaning, so neither the human
+   * nor the agent has to work out which copy is live. The panes own their own
+   * selection (the browser's in the rendered half, CodeMirror's in the raw
+   * one), so a clear reaches them as a seq they act on, NOT as a second copy
+   * of what is selected. `applySelectionEvent` decides when it is bumped.
+   */
+  const [clearSeq, setClearSeq] = useState(0);
+  const onSelectionEvent = useCallback(
+    (event: SelectionEvent) => {
+      const next = applySelectionEvent(selection, event);
+      if (next.held !== selection) {
+        setSelection(next.held);
+        // E66: the human has chosen something else, so a reveal still waiting
+        // for the raw editor is no longer what they asked for.
+        setReveal((r) => revealAfter(r, { type: "selection" }));
+      }
+      if (next.clearPaint) setClearSeq((n) => n + 1);
+    },
+    [selection],
+  );
+
   // Which of the right pane's two things is showing.
   const [rightPane, setRightPane] = useState<"conversation" | "notes" | "tasks">("conversation");
   /** Asking the editor to scroll a note's range into view — bumped per request. */
-  const [reveal, setReveal] = useState<{ from: number; to: number; seq: number } | null>(null);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
   /** The note the document is pointing at (E47). */
   const [focusedNote, setFocusedNote] = useState<string | null>(null);
 
   const open: DocView | null = state.docs.find((d) => d.slug === state.openDoc) ?? null;
   const openNotes = (open?.notes ?? []).filter((n) => !n.resolved);
+  /** E65: the open document's notes still owed an answer — drawn, never decided, here. */
+  const noteBadges = useMemo(
+    () => badgesOn(state.notesWaiting, open?.slug ?? null),
+    [state.notesWaiting, open?.slug],
+  );
+  /**
+   * ⛔ ONE SCOPE: THE SESSION (verifier D3). The tab's dot, the floating
+   * composer and the panel's pointer all read every owed note in the session,
+   * so a note owed on another document is visible without collapsing a column.
+   * Only the panel's LIST is the open document's, and it points at the rest.
+   */
+  const notesLoudest = loudest(state.notesWaiting.map((n) => n.badge));
+  const notesOthers = elsewhere(state.notesWaiting, open?.slug ?? null).map((o) => ({
+    ...o,
+    name: state.docs.find((d) => d.slug === o.doc)?.name ?? o.doc,
+  }));
+  /**
+   * E65: "may be stuck" → ask the agent, in the conversation. It is the human's
+   * message, so the agent's answer to it answers the note as well, and while it
+   * waits it carries E53's own badge. The conversation comes forward so the
+   * human sees it go.
+   */
+  const askAbout = (
+    note: { id: string; quote: string; body: string },
+    doc: { slug: string; name: string },
+  ) => {
+    // The message carries the note's REFERENCE (verifier D4), so the agent can
+    // resolve it by id; the daemon drops a second ask while one is unanswered.
+    send({
+      type: "say",
+      text: askAboutNote(note, doc.name),
+      withSelection: false,
+      note: { doc: doc.slug, id: note.id },
+    });
+    setRightPane("conversation");
+  };
   const openTasks = state.tasks.filter((t) => t.doneAt === undefined);
   const activeDoc =
     open?.entryId && open.rel !== null ? { entryId: open.entryId, rel: open.rel } : null;
@@ -240,7 +495,13 @@ function Workspace({
     if (!jump?.at || jump.seq === jumped.current) return;
     if (!open || open.original !== jump.path) return;
     jumped.current = jump.seq;
-    setReveal({ from: jump.at.from, to: jump.at.to, seq: jump.seq });
+    setReveal({
+      doc: open.slug,
+      version: open.active,
+      from: jump.at.from,
+      to: jump.at.to,
+      seq: jump.seq,
+    });
   }, [jump, open]);
 
   // A snapshot can name an open document whose text this viewer has never
@@ -261,30 +522,44 @@ function Workspace({
   const openSlug = open?.slug ?? null;
   const activeVersion = open?.active ?? null;
   const original = open?.original ?? null;
+  /**
+   * The held selection, if it is about the text on screen (E66) — what the
+   * chip, the Notes panel and the daemon are given. ⛔ NOT A SECOND COPY: it is
+   * `selection` or null, and the effect below makes `selection` itself null
+   * one render later. It exists for that one render, in which the document has
+   * already changed and `selection` has not — the render that used to send the
+   * daemon alpha's words stamped with beta's name.
+   */
+  const shown = selectionOnScreen(
+    selection,
+    openSlug !== null && activeVersion !== null ? { doc: openSlug, version: activeVersion } : null,
+  );
+  // ⛔ SWITCHING THE DOCUMENT IS A CLEAR (E66), like the chip's X: the held
+  // selection goes, and so does any paint of it. Whatever moved the document —
+  // the context list, a search result, a note's "open", the agent, the history
+  // arrows, a version made active — reaches here as the same two values.
+  // A reveal waiting for the raw editor goes the same way: it names a range in
+  // the text it was aimed at, and nowhere else.
+  useEffect(() => {
+    onSelectionEvent({ type: "shown", doc: openSlug, version: activeVersion });
+    setReveal((r) => revealAfter(r, { type: "shown", doc: openSlug, version: activeVersion }));
+  }, [openSlug, activeVersion, onSelectionEvent]);
   useEffect(() => {
     if (!openSlug || activeVersion === null || original === null) return;
     send({
       type: "select",
-      selection: selection
+      selection: shown
         ? {
-            doc: openSlug,
-            version: activeVersion,
+            doc: shown.doc,
+            version: shown.version,
             path: original,
-            fromLine: selection.fromLine,
-            toLine: selection.toLine,
-            text: selection.text,
+            fromLine: shown.fromLine,
+            toLine: shown.toLine,
+            text: shown.text,
           }
         : null,
     });
-  }, [
-    openSlug,
-    activeVersion,
-    original,
-    selection?.fromLine,
-    selection?.toLine,
-    selection?.text,
-    send,
-  ]);
+  }, [openSlug, activeVersion, original, shown?.fromLine, shown?.toLine, shown?.text, send]);
 
   // Ask for the comparison whenever anything it depends on moves — the
   // document, the active version, the chosen side, or the text itself. A merge
@@ -330,6 +605,26 @@ function Workspace({
   // A new document this viewer made opens at once (and the sidebar puts it in
   // rename mode); a new folder only renames.
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
+
+  /** The one composer's props, whichever place it is drawn in (E64). */
+  const composer = {
+    connected: connection === "open",
+    attachable:
+      open && shown
+        ? {
+            doc: open.slug,
+            name: open.name,
+            version: open.active,
+            fromLine: shown.fromLine,
+            toLine: shown.toLine,
+            text: shown.text,
+          }
+        : null,
+    draft,
+    onDraft: setDraft,
+    onDrop: () => onSelectionEvent({ type: "drop" }),
+    onSend: (text: string, withSelection: boolean) => send({ type: "say", text, withSelection }),
+  };
   useEffect(() => {
     if (created?.op === "doc.create") send({ type: "open", path: created.path });
   }, [created, send]);
@@ -343,12 +638,18 @@ function Workspace({
         orientation="horizontal"
         className="min-h-0 flex-1"
         defaultLayout={layout.defaultLayout}
-        onLayoutChanged={layout.onLayoutChanged}
+        onLayoutChanged={onLayoutChanged}
       >
         <ResizablePanel
           id="context"
-          defaultSize="22"
-          minSize="12"
+          panelRef={contextPanel}
+          collapsible
+          defaultSize={`${DEFAULT_SIZE.context}`}
+          minSize={`${MIN_SIZE.context}`}
+          // ⚠ Kept MOUNTED while collapsed, and inert: the tree's open folders
+          // and any rename in progress are the sidebar's own state, and
+          // unmounting it would forget them every time it was put away.
+          inert={collapsed.context}
           className="flex flex-col bg-surface"
           // ⛔ ⌘Z HERE MEANS THE CONTEXT, AND ONLY WHILE THE FOCUS IS IN HERE
           // (Cole: "if you've got that area focused, shortcuts could do it").
@@ -386,6 +687,15 @@ function Workspace({
                 onRedo={() => send({ type: "history.redo" })}
               />
             }
+            pinned={
+              <ColumnButton
+                label="Collapse the context column"
+                control="context-collapse"
+                onClick={() => toggleFrom("context", "collapse")}
+              >
+                <PanelLeftCloseIcon aria-hidden />
+              </ColumnButton>
+            }
           >
             Context
           </PaneHeading>
@@ -409,13 +719,74 @@ function Workspace({
             onDismissNotice={clearError}
           />
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle onKeyDownCapture={handleEnter("context")} />
         <ResizablePanel id="document" defaultSize="50" minSize="25" className="flex flex-col bg-bg">
           <DocumentPane
             doc={open}
             text={text}
             mode={mode}
-            onMode={(next) => send({ type: "prefs.set", key: VIEW_PREF, value: next })}
+            onMode={setMode}
+            docPercent={layoutNow?.document ?? 100}
+            quiet={reader}
+            // ⛔ A COLLAPSED COLUMN IS REOPENED FROM THE EDGE IT WENT TO (E64).
+            // The button sits at that end of the document's heading, where the
+            // column was, so the way back is where the eye goes looking for it.
+            headingStart={
+              collapsed.context && (
+                <ColumnButton
+                  label="Show the context column"
+                  control="context-reopen"
+                  onClick={() => toggleFrom("context", "expand")}
+                >
+                  <PanelLeftOpenIcon aria-hidden />
+                </ColumnButton>
+              )
+            }
+            headingEnd={
+              <>
+                <ColumnButton
+                  label={
+                    reader
+                      ? "Leave reader mode — bring the columns back"
+                      : "Reader mode — rendered, with both columns out of the way"
+                  }
+                  pressed={reader}
+                  onClick={toggleReader}
+                >
+                  <GlassesIcon aria-hidden />
+                </ColumnButton>
+                {collapsed.chat && (
+                  <ColumnButton
+                    label="Show the conversation column"
+                    control="chat-reopen"
+                    onClick={() => toggleFrom("chat", "expand")}
+                  >
+                    <PanelRightOpenIcon aria-hidden />
+                  </ColumnButton>
+                )}
+              </>
+            }
+            // ⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (E64, Cole —
+            // conversation-primary). With the conversation collapsed, the SAME
+            // composer floats under the document: same draft, same chip.
+            dock={
+              collapsed.chat && (
+                <FloatingComposer
+                  chat={state.chat}
+                  waiting={state.waiting}
+                  notesWaiting={state.notesWaiting}
+                  docs={state.docs}
+                  openDoc={open?.slug ?? null}
+                  onAsk={askAbout}
+                  onOpen={() => {
+                    setRightPane("conversation");
+                    toggleFrom("chat", "expand");
+                  }}
+                >
+                  <ChatComposer floating {...composer} />
+                </FloatingComposer>
+              )
+            }
             diff={diff}
             onAgainst={setAgainst}
             onTake={(hunks) => {
@@ -439,11 +810,31 @@ function Workspace({
             onRevealVersion={(version) => {
               if (open) send({ type: "reveal.version", doc: open.slug, version });
             }}
-            onSelect={(from, to, fromLine, toLine, sel) =>
-              setSelection(from === to ? null : { from, to, fromLine, toLine, text: sel })
-            }
-            reveal={reveal}
+            onSelect={(from, to, fromLine, toLine, sel) => {
+              if (!open) return;
+              onSelectionEvent({
+                type: "report",
+                selection: {
+                  doc: open.slug,
+                  version: open.active,
+                  from,
+                  to,
+                  fromLine,
+                  toLine,
+                  text: sel,
+                },
+              });
+            }}
+            reveal={selectionOnScreen(
+              reveal,
+              openSlug !== null && activeVersion !== null
+                ? { doc: openSlug, version: activeVersion }
+                : null,
+            )}
+            onRevealed={(seq) => setReveal((r) => revealAfter(r, { type: "applied", seq }))}
+            clearSeq={clearSeq}
             focusedNote={focusedNote}
+            notesWaiting={noteBadges}
             onAddNote={(from, to, body) => {
               if (open) send({ type: "note.add", doc: open.slug, from, to, body });
               // ⛔ THE NOTE CONSUMES THE SELECTION (E57, Cole). Making a note is
@@ -452,17 +843,19 @@ function Workspace({
               // again — "I've made some notes, take a look" arriving with the
               // very passage the note is about. Clearing it here also reaches
               // the daemon, because the effect below reports `selection` as it
-              // changes, so the agent's view and the composer's chip agree.
-              setSelection(null);
+              // changes, so the agent's view and the composer's chip agree — and
+              // the highlight goes with it, like any other drop.
+              onSelectionEvent({ type: "drop" });
             }}
             onDeleteNote={(id) => {
               if (open) send({ type: "note.remove", doc: open.slug, id });
             }}
             onShowNote={(id) => {
               // Pointing at a note has to OPEN the notes — the panel may be
-              // showing the conversation, in which case a border nobody can
-              // see is not an answer.
+              // showing the conversation, or be collapsed (E64), and either
+              // way a border nobody can see is not an answer.
               setRightPane("notes");
+              toggleFrom("chat", "expand");
               setFocusedNote(id);
             }}
             splitLayout={splitLayout}
@@ -491,11 +884,14 @@ function Workspace({
             onRevert={() => open && send({ type: "revert", doc: open.slug })}
           />
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle onKeyDownCapture={handleEnter("chat")} />
         <ResizablePanel
           id="chat"
-          defaultSize="28"
-          minSize="15"
+          panelRef={chatPanel}
+          collapsible
+          defaultSize={`${DEFAULT_SIZE.chat}`}
+          minSize={`${MIN_SIZE.chat}`}
+          inert={collapsed.chat}
           className="flex flex-col bg-surface"
         >
           {/* ⛔ TWO THINGS, ONE PANE (E45). A fourth resizable pane would make
@@ -503,36 +899,65 @@ function Workspace({
               "what is being said about this document", so they share, and when
               chat lands it joins as the same kind of tab rather than needing
               somewhere new to live. */}
-          <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2">
-            {(["conversation", "notes", "tasks"] as const).map((which) => (
-              <button
-                key={which}
-                type="button"
-                onClick={() => setRightPane(which)}
-                aria-pressed={rightPane === which}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
-                  "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-                  rightPane === which && "bg-surface-raised text-ink",
-                )}
-              >
-                {/* Parenthesised so the number reads as a COUNT rather than
+          {/* ⛔ THE COLLAPSE BUTTON IS PINNED, THE TABS GIVE WAY (E64,
+              verifier): the tabs need ~275 px and the column's minimum is
+              15% of the window, so with the button after them it was pushed
+              off the edge even at 1280. The tabs wrap, then clip; the button
+              stays on screen at every width the layout allows. */}
+          <div className="flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden">
+              {(["conversation", "notes", "tasks"] as const).map((which) => (
+                <button
+                  key={which}
+                  type="button"
+                  onClick={() => setRightPane(which)}
+                  aria-pressed={rightPane === which}
+                  className={cn(
+                    "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
+                    "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+                    rightPane === which && "bg-surface-raised text-ink",
+                  )}
+                >
+                  {/* Parenthesised so the number reads as a COUNT rather than
                     part of the tab's name (Cole). */}
-                {which === "notes" && openNotes.length > 0 ? (
-                  `Notes (${openNotes.length})`
-                ) : which === "tasks" && openTasks.length > 0 ? (
-                  // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
-                  // the point of a queue is knowing work is outstanding while
-                  // you are looking at something else.
-                  <span className="flex items-center gap-1">
-                    <Spinner className="text-ink-dim" />
-                    {`Tasks (${openTasks.length})`}
-                  </span>
-                ) : (
-                  which
-                )}
-              </button>
-            ))}
+                  {which === "notes" && (openNotes.length > 0 || notesLoudest) ? (
+                    // E65: a note owed an answer shows on the tab, so it is
+                    // seen from the conversation too — one dot for every owed
+                    // note in the SESSION, stuck if any is. The count stays
+                    // the open document's, as the list below is.
+                    <span className="flex items-center gap-1">
+                      {openNotes.length > 0 ? `Notes (${openNotes.length})` : "notes"}
+                      {notesLoudest && (
+                        <WaitingDot
+                          badge={notesLoudest}
+                          of="note"
+                          label={owedLabel(state.notesWaiting)}
+                        />
+                      )}
+                    </span>
+                  ) : which === "tasks" && openTasks.length > 0 ? (
+                    // ⛔ THE SPINNER IS IN THE TAB, not only inside the panel —
+                    // the point of a queue is knowing work is outstanding while
+                    // you are looking at something else.
+                    <span className="flex items-center gap-1">
+                      <Spinner className="text-ink-dim" />
+                      {`Tasks (${openTasks.length})`}
+                    </span>
+                  ) : (
+                    which
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="shrink-0">
+              <ColumnButton
+                label="Collapse the conversation column"
+                control="chat-collapse"
+                onClick={() => toggleFrom("chat", "collapse")}
+              >
+                <PanelRightCloseIcon aria-hidden />
+              </ColumnButton>
+            </div>
           </div>
           {rightPane === "tasks" ? (
             <TasksPanel
@@ -544,9 +969,13 @@ function Workspace({
             <NotesPanel
               notes={open?.notes ?? []}
               focusedId={focusedNote}
+              waiting={noteBadges}
+              others={notesOthers}
+              onOpenDoc={(doc) => send({ type: "open.doc", doc })}
+              onAsk={(n) => open && askAbout(n, open)}
               selection={
-                open && selection && text !== undefined
-                  ? { ...selection, text: text.slice(selection.from, selection.to) }
+                open && shown && text !== undefined
+                  ? { ...shown, text: text.slice(shown.from, shown.to) }
                   : null
               }
               onAdd={(from, to, body) => {
@@ -558,8 +987,14 @@ function Workspace({
                 // bordered — so the panel pointed at one note while the editor
                 // showed another. Whatever was last asked for is the one marked.
                 setFocusedNote(n.id);
-                if (n.from !== null)
-                  setReveal({ from: n.from, to: n.to as number, seq: Date.now() });
+                if (n.from !== null && open)
+                  setReveal({
+                    doc: open.slug,
+                    version: open.active,
+                    from: n.from,
+                    to: n.to as number,
+                    seq: Date.now(),
+                  });
               }}
               onEdit={(id, body) => {
                 if (open) send({ type: "note.edit", doc: open.slug, id, body });
@@ -588,27 +1023,99 @@ function Workspace({
               ) : (
                 <ActivityLog chat={state.chat} waiting={state.waiting} />
               )}
-              <ChatComposer
-                connected={connection === "open"}
-                attachable={
-                  open && selection
-                    ? {
-                        doc: open.slug,
-                        name: open.name,
-                        version: open.active,
-                        fromLine: selection.fromLine,
-                        toLine: selection.toLine,
-                        text: selection.text,
-                      }
-                    : null
-                }
-                onSend={(text, withSelection) => send({ type: "say", text, withSelection })}
-              />
+              {/* ⛔ DRAWN IN ONE PLACE AT A TIME: here while the column is
+                  open, floating under the document while it is collapsed. */}
+              {!collapsed.chat && <ChatComposer {...composer} />}
             </>
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </>
+  );
+}
+
+/**
+ * The composer, floating under the document while the conversation column is
+ * collapsed (E64) — with the one line of the conversation a human needs so as
+ * not to have to open it: the agent's latest word, or that it is still working
+ * on yours. Anything more is a click away, and the click reopens the column.
+ */
+function FloatingComposer({
+  chat,
+  waiting,
+  notesWaiting,
+  docs,
+  openDoc,
+  onAsk,
+  onOpen,
+  children,
+}: {
+  chat: readonly ChatMessage[];
+  waiting: Waiting | null;
+  /** E65: with the column shut, a note owed an answer has to show somewhere. */
+  notesWaiting: readonly NoteWaiting[];
+  docs: readonly DocView[];
+  openDoc: string | null;
+  onAsk: (
+    note: { id: string; quote: string; body: string },
+    doc: { slug: string; name: string },
+  ) => void;
+  onOpen: () => void;
+  children: React.ReactNode;
+}) {
+  const last = chat.findLast((m) => m.who !== "system");
+  // The note the line is ABOUT: the oldest one the human can still act on
+  // (not yet asked about), else the oldest. Its own badge, and a count of the
+  // rest kept OUT of the truncated text so it never clips (verifier D2).
+  const first = notesWaiting.find((n) => !n.askedIn) ?? notesWaiting[0];
+  const firstDoc = first ? docs.find((d) => d.slug === first.doc) : undefined;
+  const firstNote = firstDoc?.notes.find((n) => n.id === first?.noteId);
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-1">
+      {first && firstDoc && firstNote && (
+        <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
+          <span className="min-w-0 flex-1 truncate" title={firstNote.body}>
+            <span className="mr-1.5 font-medium text-ink-faint">
+              Your note{firstDoc.slug !== openDoc ? ` on ${firstDoc.name}` : ""}
+            </span>
+            {firstNote.body}
+          </span>
+          {notesWaiting.length > 1 && (
+            <span className="shrink-0 text-ink-faint">+{notesWaiting.length - 1} more</span>
+          )}
+          <WaitingBadge badge={first.badge} of={waitingOf(first)} className="mt-0 shrink-0" />
+          {first.badge === "stalled" && !first.askedIn && (
+            <button
+              type="button"
+              onClick={() => onAsk(firstNote, firstDoc)}
+              title="Send this note to the agent as a message in the conversation"
+              className="shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+            >
+              Ask the agent
+            </button>
+          )}
+        </div>
+      )}
+      {last && (
+        <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
+          <span className="min-w-0 flex-1 truncate" title={last.text}>
+            <span className="mr-1.5 font-medium text-ink-faint">
+              {last.who === "agent" ? "Agent" : "You"}
+            </span>
+            {last.text}
+          </span>
+          {waiting?.messageId === last.id && <WaitingBadge badge={waiting.badge} />}
+          <button
+            type="button"
+            onClick={onOpen}
+            className="shrink-0 rounded-sm px-1 text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+          >
+            Open the conversation
+          </button>
+        </div>
+      )}
+      {children}
+    </div>
   );
 }
 

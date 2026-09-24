@@ -166,3 +166,34 @@ _No pages yet._
   error rejections across all eight spells, and ruled that choices is required
   only where a closed set is in hand at the raise while hint is required only
   where a next act exists
+
+- [Scriptorium's chip: a forward cursor that never came back, and a flag that outlived its passage](./memories/2026-09-22-scriptorium-selection-and-the-chip.md)
+  — Rendered-mode selections drifted because one whitespace run moved alignRuns'
+  cursor past real text, and the chip kept a second piece of state the selection
+  did not — fixed, with the ruling that clearing the chip clears the selection
+
+- [A time window is a guess about which scroll a report came from](./memories/2026-09-22-a-time-window-is-a-guess.md)
+  — Scriptorium's split-view sync suppressed reports for a time window after
+  driving a pane, which discarded real scrolls; replacing the guess with an
+  exact position test fixed both symptoms and left two pinned sub-frame holes
+
+- [An observer is late for the event that beats it](./memories/2026-09-22-an-observer-is-late-for-the-event-that-beats-it.md)
+  — Scriptorium cached layout measurements and cleared them from a
+  ResizeObserver, but a scroll event caused by the same resize is dispatched
+  first and read the stale cache; keying the cache on the width it measured made
+  staleness exact
+
+- [The rule was pinned; the wiring around it was not](./memories/2026-09-22-the-rule-was-pinned-the-wiring-was-not.md)
+  — Two Scriptorium branches in a row kept their rule in a pure, well-tested
+  function and left the code that feeds and carries it untested; mutation is
+  what found it both times
+
+- [A place in a document must name its document](./memories/2026-09-22-a-place-in-a-document-names-its-document.md)
+  — Scriptorium's selection and its reveal range were bare offsets, so a
+  document switch applied them to the wrong text; both now carry the document
+  and version they name, checked through one rule
+
+- [A wait that wakes by ending must end on every path](./memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md)
+  — A background task wakes the agent only by exiting, so a one-shot that does
+  not exit fails silently; the tail handoff hit that shape three times, each on
+  a path other than the happy one

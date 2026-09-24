@@ -105,3 +105,16 @@ export function quoteLabel(quote: string, max = 60): string {
   const flat = quote.replace(/\s+/gu, " ").trim();
   return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
 }
+
+/**
+ * The 1-based lines `[from, to)` covers (E65), as a human counts them: a range
+ * that ends just after a newline ends on the line it finished, not the next.
+ */
+export function linesOf(text: string, from: number, to: number): { from: number; to: number } {
+  const lineAt = (i: number) => {
+    let n = 1;
+    for (let k = text.indexOf("\n"); k !== -1 && k < i; k = text.indexOf("\n", k + 1)) n++;
+    return n;
+  };
+  return { from: lineAt(from), to: lineAt(Math.max(from, to - 1)) };
+}

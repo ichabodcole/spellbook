@@ -6,7 +6,7 @@
 //
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--no-open]   # spawn a session
-//   bun cli.ts tail [--since N]                               # SSE events → JSONL (Monitor this)
+//   bun cli.ts tail [--since N] [--once]                      # SSE events → JSONL (Monitor this; last line names the next act)
 //   bun cli.ts state [--full]                                 # lean state snapshot
 //
 // Agent commands (POST /cmd):
@@ -41,7 +41,13 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+import {
+  commandLine,
+  readSince,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat";
 import { optimizeImageDataUrl } from "./imageOptimize.server";
 
@@ -264,6 +270,7 @@ const CLI_OPTIONS = {
   seed: { type: "string" },
   session: { type: "string" },
   since: { type: "string" },
+  once: { type: "boolean" },
   src: { type: "string" },
   "start-timeout": { type: "string" },
   status: { type: "string" },
@@ -659,6 +666,16 @@ async function cmdState(session?: string, full = false) {
   printJson(data);
 }
 
+/** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
+ *  `readSince`): a form this tail does not accept — an epoch bookmark from
+ *  another spell's or version's handoff line — is refused with the accepted
+ *  forms named, never misparsed. */
+function sinceOrDie(token: string): number {
+  const r = readSince(token, { epoch: false });
+  if (!r.ok) die(r.message, "usage");
+  return r.since;
+}
+
 /**
  * The event tail — ONE CALL into the house's shared SSE client
  * (`src/kit/wire/tailEvents.ts`), where the reconnect loop, the spec-correct
@@ -691,46 +708,74 @@ async function cmdState(session?: string, full = false) {
  * The pin, the grounding anchor and the "our session went away" exit are all
  * preserved verbatim: the FIRST resolved session is pinned for the life of the
  * watch, the grounding line names that binding once, and a pointer that
- * disappears AFTER we were bound ends the watch at 0 — a completed watch, not a
- * failure. A pointer that never appeared keeps retrying, which is what `tail`'s
- * own help promises ("waits for a session, never exits 5").
+ * disappears AFTER we were bound ends the watch at 0 with a `tail.closed` line
+ * naming the way back (`kit/wire/tailHandoff.ts`). A pointer that never
+ * appeared keeps retrying on a FIRST arm; a re-arm (`--session` or `--since`)
+ * that cannot find its session ends `tail.closed` at once (D1), because a
+ * session named by a bookmark existed. A first arm still waits for a
+ * session, which is what `tail`'s help promises ("never exits 5").
  */
-async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
+async function cmdTail(
+  session: string | undefined,
+  sinceArg: number,
+  o: { once: boolean; sinceGiven: boolean },
+): Promise<number> {
   let boundId = session;
-  let grounded = false;
+  const reArm = session !== undefined || o.sinceGiven;
+  // A `--since` re-arm prints no grounding line (`kit/wire/tailHandoff.ts`, A3).
+  let grounded = o.sinceGiven;
+  const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
 
-  return await tailEvents<{ id?: number; type?: string }>({
-    resolve: () => {
-      // readSession dies on a CORRUPT pointer and returns null only for a
-      // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
-      // throw leaves the tail through main's funnel instead of exiting from three
-      // frames down inside a reconnect loop. It is D8's audit paying for itself:
-      // this is the one die-reachable call the shared client invokes on a schedule.
-      const s = readSession(boundId);
-      if (!s) return null;
-      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
-      if (!grounded) {
-        grounded = true;
-        // grounding line — parseable in Monitor, names the binding so a wrong
-        // session/port is obvious instead of silent.
-        process.stdout.write(
-          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-        );
-      }
-      return `http://127.0.0.1:${s.port}`;
+  return await tailWithHandoff<{ id?: number; type?: string }>(
+    {
+      resolve: () => {
+        // readSession dies on a CORRUPT pointer and returns null only for a
+        // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
+        // throw leaves the tail through main's funnel instead of exiting from three
+        // frames down inside a reconnect loop. It is D8's audit paying for itself:
+        // this is the one die-reachable call the shared client invokes on a schedule.
+        const s = readSession(boundId);
+        if (!s) return null;
+        if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+        if (!grounded) {
+          grounded = true;
+          // grounding line — parseable in Monitor, names the binding so a wrong
+          // session/port is obvious instead of silent.
+          process.stdout.write(
+            `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+          );
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        // D1: a tail given --session or a bookmark is re-arming an EXISTING
+        // session, so not finding it means it closed (in the gap, say) — the
+        // handoff says `tail.closed`, never a silent retry-forever.
+        if (everResolved || reArm) return "stop";
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since: sinceArg,
+      cursorOf: (ev) => ev.id,
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => ": glamour-keepalive",
+      // This daemon stamps no epoch, so the only way its log is seen to
+      // restart is the kit's whole-replay net (`kit/wire/tailHandoff.ts`,
+      // D2); it says so on stdout, like the spells that do stamp one.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved) return "stop"; // our pinned session went away → done
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      spell: "glamour",
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since, once }) => tailCommand(["tail", ...pin()], since, once),
+        comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),
+      },
     },
-    path: "/events",
-    since: sinceArg,
-    cursorOf: (ev) => ev.id,
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => ": glamour-keepalive",
-  });
+  );
 }
 
 function cmdInfo(session?: string) {
@@ -818,11 +863,14 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     name: "tail",
-    flags: [...SESSION, "since"],
+    flags: [...SESSION, "since", "once"],
     positionals: P.none,
-    describe: "SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5)",
+    describe: `SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ${WINDOW_HELP}`,
     run: (_pos, flags, session) =>
-      cmdTail(session, typeof flags.since === "string" ? Number.parseInt(flags.since, 10) : -1),
+      cmdTail(session, typeof flags.since === "string" ? sinceOrDie(flags.since) : -1, {
+        once: flags.once === true,
+        sinceGiven: typeof flags.since === "string",
+      }),
   },
   {
     name: "state",

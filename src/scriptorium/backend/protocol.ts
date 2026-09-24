@@ -206,6 +206,17 @@ export type Note = {
   createdAt: number;
   /** When the body was last changed — absent if it never was (E46). */
   editedAt?: number;
+  /**
+   * Who changed it then (E65) — what tells a human's rewrite, which is owed an
+   * answer, from the agent's, which is one. Absent on edits made before E65.
+   */
+  editedBy?: VersionAuthor;
+  /**
+   * When it was last reopened, and by whom (E65) — a human reopening a note is
+   * asking again, so the wait is timed from here.
+   */
+  reopenedAt?: number;
+  reopenedBy?: VersionAuthor;
   resolved: boolean;
 };
 
@@ -295,6 +306,28 @@ export type Waiting = {
   badge: "working" | "stalled";
 };
 
+/**
+ * E65: a note the human wrote and the agent has not answered — E53's `Waiting`,
+ * for a note. Same two badges, same rule for each: `stalled` is STATIC.
+ * DERIVED by the daemon from the notes and the conversation (`notesWaiting` in
+ * `waiting.ts`); nothing stores it, so a reload or a restart re-derives it.
+ */
+export type NoteWaiting = {
+  doc: string;
+  noteId: string;
+  since: number;
+  badge: Waiting["badge"];
+  /**
+   * Set while the human has asked about this note in the conversation and that
+   * message is unanswered: the id of the message. `badge` is then E53's badge
+   * for the conversation, so the two cannot disagree.
+   */
+  askedIn?: string;
+};
+
+/** A message ABOUT a note (E65's "Ask the agent") — how the agent finds it. */
+export type NoteRef = { doc: string; id: string };
+
 export type ChatMessage = {
   id: string;
   who: ChatWho;
@@ -303,6 +336,8 @@ export type ChatMessage = {
   selection?: Selection | null;
   /** The active version's path at send time — so the agent knows what to read. */
   activePath?: string | null;
+  /** E65: the note this message asks about, when it was sent by "Ask the agent". */
+  note?: NoteRef;
 };
 
 /** The snapshot the surface renders and `state --full` prints. */
@@ -327,6 +362,12 @@ export type PublicState = {
    * about whether to draw a pulse and whether to send a ping.
    */
   waiting: Waiting | null;
+  /**
+   * E65: every note still owed an answer, oldest first — the same derivation
+   * as `waiting`, for notes, and computed in the same place for the same
+   * reason: one rule, drawn wherever the note is shown.
+   */
+  notesWaiting: NoteWaiting[];
   /**
    * E60: what the context's undo arrows should show. ⚠ NOT the editor's undo —
    * CodeMirror owns keystrokes inside a document; this is acts on the SHAPE of
@@ -475,7 +516,11 @@ export type ClientMsg =
    */
   | { type: "history.undo"; confirmDelete?: boolean }
   | { type: "history.redo" }
-  | { type: "say"; text: string; withSelection: boolean }
+  /**
+   * `note` (E65): the message asks about that note — "Ask the agent". The
+   * daemon refuses a second ask while one about the same note is unanswered.
+   */
+  | { type: "say"; text: string; withSelection: boolean; note?: NoteRef }
   | { type: "activate"; doc: string; version: number }
   /**
    * E37: the HUMAN makes a version. The agent has had `version.new` since E1;

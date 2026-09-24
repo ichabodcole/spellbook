@@ -76,9 +76,16 @@ import type {
   ServerMsg,
   StructureOp,
 } from "./protocol";
+import { type Screen, selectionOnScreen } from "./selection";
 import { type FileEvent, Session, SessionError, sideName } from "./session";
 import { listDir, PathError } from "./tree";
-import { DEFAULT_SNOOZE_MS, waitingOn } from "./waiting";
+import {
+  attentionKey,
+  DEFAULT_SNOOZE_MS,
+  noteEventFacts,
+  notesWaiting,
+  waitingOn,
+} from "./waiting";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
@@ -128,6 +135,24 @@ export async function startDaemon(opts: StartOpts) {
     : Session.create(home, undefined, opts.workspace);
   const sessionId = session.id;
   let selection: Selection | null = null;
+  /** The document text on screen — the open document at its active version. */
+  const screen = (): Screen | null => {
+    const d = session.openDocSlug ? session.findDoc(session.openDocSlug) : undefined;
+    return d ? { doc: d.slug, version: d.active } : null;
+  };
+  /**
+   * The held selection, once the text it was made in is still the text on
+   * screen (E66). ⛔ READ THROUGH THIS, NEVER `selection` DIRECTLY: the open
+   * document moves under it from many places (the surface's `open` and
+   * `open.doc`, the agent, a version activated, a document removed), and a
+   * check at each of them is a check some future path forgets. Dropping it
+   * here, on the next read, is why going back to the first document does not
+   * revive it — every one of those paths broadcasts, and the broadcast reads.
+   */
+  const heldSelection = (): Selection | null => {
+    selection = selectionOnScreen(selection, screen());
+    return selection;
+  };
 
   // --- prefs: per-viewer conveniences that outlive a session's port ------------
   // Browser storage is keyed by origin, port included, and every session gets a
@@ -185,10 +210,12 @@ export async function startDaemon(opts: StartOpts) {
   const history = new History();
 
   const viewState = (): PublicState => {
-    const base = { ...session.view(mode, selection), prefs: readPrefs(), userHome };
+    const base = { ...session.view(mode, heldSelection()), prefs: readPrefs(), userHome };
+    const now = Date.now();
     return {
       ...base,
-      waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil }),
+      waiting: waitingOn(base.chat, now, { acknowledgedUntil }),
+      notesWaiting: notesWaiting(session.noteFacts(), base.chat, now, { acknowledgedUntil }),
       history: history.view(),
     };
   };
@@ -641,14 +668,46 @@ export async function startDaemon(opts: StartOpts) {
       }
       case "select":
         // AMBIENT state: stored and shown, never pushed onto the agent's tail.
-        selection = msg.selection;
+        // ⛔ One naming a document that is not on screen is a stale echo from
+        // before a switch (E66), and is not held.
+        selection = selectionOnScreen(msg.selection, screen());
         return;
       case "say": {
         const text = msg.text.trim();
         if (!text) return;
-        const sel = msg.withSelection ? selection : null;
+        // ⚠ A BACKSTOP, AND NO TEST CAN PIN IT (E66). Every path that moves the
+        // open document or its version broadcasts first, and the broadcast's
+        // read has already dropped a stale selection — so reading the raw
+        // `selection` here is unreachable-wrong by construction. It reads
+        // through the rule anyway, for the path somebody adds without a
+        // broadcast.
+        const sel = msg.withSelection ? heldSelection() : null;
         const activePath = sel ? session.activePath(sel.doc) : session.activePath();
-        const m = session.addMessage("human", text, { selection: sel, activePath });
+        // E65's "Ask the agent": the message carries the note it is about, so
+        // the agent can act on it and resolve it by id rather than by matching
+        // prose. ⛔ ONE ASK AT A TIME: while a message about this note is
+        // unanswered the note already says it was asked, so a second is a
+        // double-click, not a new question — dropped, and derived rather than
+        // flagged: it is the same fact the note's own badge reads.
+        let note: { doc: string; id: string } | undefined;
+        if (msg.note) {
+          const d = session.noteFacts().find((x) => x.slug === msg.note?.doc);
+          if (!d?.notes.some((n) => n.id === msg.note?.id)) {
+            reply(ws, { type: "error", message: `No note ${msg.note.id} on ${msg.note.doc}.` });
+            return;
+          }
+          const owed = notesWaiting(session.noteFacts(), session.messages(), Date.now(), {
+            acknowledgedUntil,
+          });
+          if (owed.some((w) => w.doc === msg.note?.doc && w.noteId === msg.note.id && w.askedIn))
+            return;
+          note = { doc: msg.note.doc, id: msg.note.id };
+        }
+        const m = session.addMessage("human", text, {
+          selection: sel,
+          activePath,
+          ...(note ? { note } : {}),
+        });
         log.emit({
           type: "message",
           message_id: m.id,
@@ -656,6 +715,13 @@ export async function startDaemon(opts: StartOpts) {
           selection: sel,
           active: activeOf(sel?.doc),
           ts: m.ts,
+          ...(note
+            ? {
+                note: note.id,
+                doc: note.doc,
+                hint: `about note ${note.id} — \`notes --doc ${note.doc}\` has it whole; answer here, and \`note-resolve ${note.id} --doc ${note.doc}\` when it is dealt with`,
+              }
+            : {}),
         });
         broadcastState();
         return;
@@ -670,7 +736,16 @@ export async function startDaemon(opts: StartOpts) {
           who: "human",
           range: { from: msg.from, to: msg.to },
         });
-        log.emit({ type: "note.added", doc: r.slug, note: r.note.id, by: "human" });
+        // E65: the event carries the note itself when it is short, and names
+        // the act that closes it — an agent should not have to go and ask
+        // what just arrived before it can start.
+        log.emit({
+          type: "note.added",
+          doc: r.slug,
+          note: r.note.id,
+          by: "human",
+          ...noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note)),
+        });
         broadcastState();
         return;
       }
@@ -694,18 +769,36 @@ export async function startDaemon(opts: StartOpts) {
         return;
       }
       case "note.edit": {
-        const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
-        log.emit({ type: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
+        const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body, who: "human" });
+        // A human's rewrite is owed an answer again (E65), so it says what
+        // the note now says, exactly as `note.added` does.
+        log.emit({
+          type: "note.edited",
+          doc: r.slug,
+          note: r.note.id,
+          by: "human",
+          ...noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note)),
+        });
         broadcastState();
         return;
       }
       case "note.resolve": {
-        const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
+        const r = session.resolveNote({
+          doc: msg.doc,
+          id: msg.id,
+          resolved: msg.resolved,
+          who: "human",
+        });
         log.emit({
           type: msg.resolved ? "note.resolved" : "note.reopened",
           doc: r.slug,
           note: r.note.id,
           by: "human",
+          // A human reopening a note is asking again (E65), so it carries what
+          // `note.added` carries.
+          ...(msg.resolved
+            ? {}
+            : noteEventFacts(r.slug, r.note, session.noteLines(r.slug, r.note))),
         });
         broadcastState();
         return;
@@ -1179,7 +1272,7 @@ export async function startDaemon(opts: StartOpts) {
         return { task: r.task.id, already: r.already };
       }
       case "note.edit": {
-        const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body });
+        const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body, who: "agent" });
         announce(`Agent rewrote a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`, {
           fact: "note.edited",
           doc: r.slug,
@@ -1189,7 +1282,12 @@ export async function startDaemon(opts: StartOpts) {
         return { doc: r.slug, note: r.note.id };
       }
       case "note.resolve": {
-        const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });
+        const r = session.resolveNote({
+          doc: cmd.doc,
+          id: cmd.id,
+          resolved: cmd.resolved,
+          who: "agent",
+        });
         announce(
           `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`,
           { fact: "note.resolved", doc: r.slug, note: r.note.id, by: "agent" },
@@ -1507,8 +1605,15 @@ export async function startDaemon(opts: StartOpts) {
    */
   let lastWaiting: string | null = null;
   const attentionTimer = setInterval(() => {
-    const w = waitingOn(session.messages(), Date.now(), { acknowledgedUntil });
-    const key = w ? `${w.messageId}:${w.badge}` : null;
+    const now = Date.now();
+    const w = waitingOn(session.messages(), now, { acknowledgedUntil });
+    // E65: a note flipping to stalled is a change the surface must see too.
+    // ⚠ NOT a nudge: see E65 in the decision log — the note's act is the
+    // human's, and the event that delivered it already carried it.
+    const notes = notesWaiting(session.noteFacts(), session.messages(), now, {
+      acknowledgedUntil,
+    });
+    const key = attentionKey(w, notes);
     if (key === lastWaiting) return;
     lastWaiting = key;
     // The badge changed, so the surface needs the new snapshot.

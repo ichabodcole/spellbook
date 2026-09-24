@@ -31,6 +31,7 @@ import {
 import { Decoration, type DecorationSet, EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import type { PlacedNote } from "../../backend/protocol";
+import type { Place } from "../state/place";
 import { markdownHighlighting } from "./markdownMode";
 
 /** A change that came FROM the daemon, so the listener does not send it back. */
@@ -244,8 +245,11 @@ export function DocumentView({
   onSave,
   onSelect,
   reveal,
+  onRevealed,
+  clearSeq,
   pendingNote,
   onContextMenu,
+  place,
 }: {
   docKey: string;
   text: string;
@@ -265,6 +269,14 @@ export function DocumentView({
   onSelect?: (from: number, to: number, fromLine: number, toLine: number, text: string) => void;
   /** Ask the editor to show a range — `seq` makes the same range askable twice. */
   reveal?: { from: number; to: number; seq: number } | null;
+  /**
+   * Told once `reveal` has been applied, so it is spent (E66). ⛔ The effect
+   * below runs whenever this editor is CREATED — a switch to raw, or split —
+   * so a reveal left standing replayed as a selection nobody made.
+   */
+  onRevealed?: (seq: number) => void;
+  /** Bumped when the held selection goes away — the editor's goes with it. */
+  clearSeq?: number;
   /** The passage a note is being written about — painted while the composer is open. */
   pendingNote?: { from: number; to: number } | null;
   /**
@@ -278,6 +290,8 @@ export function DocumentView({
     to: number;
     noteIds: string[];
   }) => void;
+  /** E63: the source line at the top of this pane, shared with the rendered one. */
+  place?: Place;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -411,8 +425,60 @@ export function DocumentView({
     };
   }, [docKey, editable]);
 
+  // ── keeping your place (E63) ───────────────────────────────────────────────
+  //
+  // This side needs no anchor table: CodeMirror already knows both directions
+  // exactly — `posAtCoords` for the line under the top edge of the scroller,
+  // and `scrollIntoView` for the reverse — because the raw view's coordinate
+  // IS the source. The rendered view is the half that has to interpolate
+  // (`state/place.ts`), and the line number is what the two agree on.
+  //
+  // Declared AFTER the view effect so `view.current` is set when it runs, and
+  // keyed on EVERYTHING THE VIEW IS KEYED ON as well as the place. `place`
+  // alone was not enough: it happens to change with `docKey` today, but
+  // `editable` is in the view's key too, and only the call sites that pass a
+  // place hard-code it to true. This file's own contract says only the ACTIVE
+  // version is editable (E2), so the day that becomes dynamic the view would be
+  // rebuilt underneath a listener still attached to the destroyed view's
+  // `scrollDOM`, and the new view would never join the place at all.
+  useEffect(() => {
+    const v = view.current;
+    if (!v || !place) return;
+    const scroller = v.scrollDOM;
+    const topLine = () => {
+      const r = scroller.getBoundingClientRect();
+      // `precise: false` always answers, which is what a scroll position needs:
+      // the top edge often falls in the content's padding, not on a character.
+      const pos = v.posAtCoords({ x: r.left + r.width / 2, y: r.top + 1 }, false);
+      return v.state.doc.lineAt(Math.max(0, Math.min(pos, v.state.doc.length))).number;
+    };
+    const toLine = (n: number) => {
+      // The first line is the TOP, not a line to align to: `scrollIntoView`
+      // would scroll the editor's own top padding away, so arriving from a
+      // rendered pane that was at the top left the raw one looking clipped.
+      if (n <= 1) {
+        scroller.scrollTop = 0;
+        return;
+      }
+      const line = v.state.doc.line(Math.max(1, Math.min(n, v.state.doc.lines)));
+      v.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "start" }) });
+    };
+    // Synchronous, like the rendered pane's: the place reads a drive's own
+    // event by ORDER against the animation frame, and a deferred report would
+    // arrive on the wrong side of it.
+    const onScroll = () => place.report("raw", topLine());
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    const leave = place.join("raw", { to: toLine, at: () => scroller.scrollTop });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      leave();
+    };
+  }, [place, docKey, editable]);
+
   // Clicking a note's quote brings it into view and selects it — `seq` is what
   // lets the same note be asked for twice in a row.
+  const revealed = useRef(onRevealed);
+  revealed.current = onRevealed;
   useEffect(() => {
     const v = view.current;
     if (!v || !reveal) return;
@@ -423,7 +489,29 @@ export function DocumentView({
       effects: EditorView.scrollIntoView(start, { y: "center" }),
     });
     v.focus();
+    revealed.current?.(reveal.seq);
   }, [reveal]);
+
+  // A CLEAR CLEARS THE HIGHLIGHT TOO (Cole, 2026-09-22): the chip and the
+  // editor cannot disagree about what is chosen, and a click in the OTHER pane
+  // is a clear as much as the chip's X is. Collapsing to the head fires the
+  // update listener, which reports the empty range — the same path a click
+  // takes, and nothing is held by then, so it does not come round again.
+  const unpainted = useRef(clearSeq);
+  useEffect(() => {
+    const v = view.current;
+    if (!v || clearSeq === undefined || clearSeq === unpainted.current) return;
+    unpainted.current = clearSeq;
+    v.dispatch({ selection: { anchor: v.state.selection.main.head } });
+    // ⛔ AND THE BROWSER'S OWN, because the X is clicked OUTSIDE the editor:
+    // CodeMirror syncs the DOM selection from its state only while focused, so
+    // collapsing the model alone left the grey blurred highlight painted over a
+    // passage nothing was holding. MEASURED — `getSelection()` still read the
+    // passage after the drop, and read empty once focus returned.
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
+      sel.removeAllRanges();
+  }, [clearSeq]);
 
   useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });

@@ -18,6 +18,8 @@
 //                 line per event on stdout
 //                 --inbound filters server-side to human-originated events
 //                 (chat + dropped nodes) + opens with a kind:"grounding" line
+//                 --once sleeps until the first log event, prints it, exits
+//                 (the quiet handoff's background one-shot)
 //   projects      list saved projects; --create <title> makes a new one
 //   ingest        --title T (--file P | --stdin) → POST /ingest
 //   propose-node  --stdin JSON {draft, evidence, suggestedTier?} → POST /proposals
@@ -118,7 +120,13 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import {
+  commandLine,
+  readSince,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS, TAIL_RETRY_MAX_MS, TAIL_RETRY_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS COMPUTED FROM THE ARTIFACT'S ADDRESS, WHICH IS
@@ -379,6 +387,7 @@ const CLI_OPTIONS = {
   "no-open": { type: "boolean" },
   node: { type: "string" },
   note: { type: "string" },
+  once: { type: "boolean" },
   owner: { type: "string" },
   port: { type: "string" },
   project: { type: "string" },
@@ -409,7 +418,7 @@ export const VERB_SPEC = {
   open: ["no-open", "port", "project"],
   state: ["skeleton", "batch", "project"],
   changes: ["since", "project"],
-  tail: ["since", "inbound", "project"],
+  tail: ["since", "inbound", "once", "project"],
   projects: ["create"],
   ingest: ["title", "file", "stdin", "project"],
   "propose-node": ["stdin", "zone", "project"],
@@ -525,7 +534,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
   state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
   changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
-  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor)
+  tail   [--since N] [--inbound] [--once]            SSE events as JSONL (wrap with Monitor; see below)
   projects [--create <title>]                        list projects / create one
   ingest --title <t> (--file <p> | --stdin)          add a doc
   propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
@@ -556,7 +565,34 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
 
   Output: every verb prints JSON on stdout by default, one document per answer —
   except tail, a stream that prints one JSON line per event. Prose, warnings and
-  diagnostics go to stderr; failures exit non-zero (2 = usage).`;
+  diagnostics go to stderr; failures exit non-zero (2 = usage).
+
+  Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at
+  timeout_ms: 1800000. It ends itself just before the cap, and its last line
+  (type: "tail.…") names your next act. That line's command is the verb and its
+  arguments only, bookmark (--since) included, with no launcher and no path.
+  Always run it with this skill's own launcher, the one you use for its other
+  verbs: bun <this skill's directory>/scripts/cli.ts <command>. A command of
+  tail --since 12 runs as bun <this skill's directory>/scripts/cli.ts tail --since 12.
+  Never reuse a launcher path from an earlier line or session: the plugin's
+  directory changes when it updates. Do what next says:
+
+  - monitor: arm Monitor again with the launcher and command.
+  - background: nothing happened; the human is away. Run the launcher and
+    command as a background Bash task (run_in_background). It exits on the
+    next event, which wakes you. Handle the event, then follow its line back to
+    Monitor.
+  - stop: the session closed or its daemon is gone. Do not re-arm; the launcher
+    and command bring it back. If you run it, arm the tail again with no
+    --since (and the session id it prints, where there is one): a restarted
+    daemon starts a new event log.
+
+  If Monitor expires before that line arrives, re-arm silently with
+  --since <the last id you saw>, written <id>@<its epoch> when events carry an
+  epoch. Never re-arm without --since: that replays events you have already
+  handled. If the launcher refuses a command with a usage error, its message
+  names the forms it accepts; fix the arguments to match.
+  tail ${WINDOW_HELP}.`;
 
 // The plugin manifest is the one version source; the CLI reads it rather than
 // mirroring the number (astrolabe's pattern). Layout-dependent, so absence
@@ -724,8 +760,21 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "tail") {
     const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
+    const once = parsed.values.once === true;
+    // A bookmark, `N` or `N@<epoch>` as the handoff line prints it
+    // (`kit/wire/tailHandoff.ts`, D2). A form it does not accept is refused with
+    // the accepted forms named — read BEFORE the daemon check, so the answer
+    // does not depend on whether one is up.
+    const read =
+      typeof parsed.values.since === "string"
+        ? readSince(parsed.values.since, { epoch: true })
+        : null;
+    if (read !== null && !read.ok) throw usageError(read.message);
+    const mark = read?.ok ? read : null;
+    const since = mark?.since ?? Number.NaN;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
-    const since = Number.parseInt(parsed.values.since as string, 10);
+    // A `--since` re-arm prints no grounding (`kit/wire/tailHandoff.ts`, A3).
+    const sinceGiven = parsed.values.since !== undefined;
     // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
     // connect; forward only the FIRST so the agent's Monitor sees exactly one
     // grounding line, not one per reconnect (F5: first-connect line).
@@ -740,7 +789,7 @@ async function dispatch(argv: string[]): Promise<number> {
     // behaviour without touching this file. The alternative was asking the kit
     // for a `firstFrameOnce` option, which is a widening for a closure the
     // caller can write in three lines (D82's not-taken).
-    let grounded = false;
+    let grounded = sinceGiven;
 
     // ⛔ ONE CALL INTO THE HOUSE'S SHARED TAIL CLIENT
     // (`src/kit/wire/tailEvents.ts`), REPLACING A HAND-ROLLED
@@ -776,72 +825,117 @@ async function dispatch(argv: string[]): Promise<number> {
     // spell's own tail suite drives are resolved (D75). The number is 45,000 at
     // the default, which is what this file hard-coded; the EXPRESSION is what
     // changed.
-    return await tailEvents<{ id?: unknown; epoch?: unknown; kind?: unknown }>({
-      resolve: () => {
-        const port = livePort();
-        return port === null ? null : `http://127.0.0.1:${port}`;
+    //
+    // ⛔ AND THE QUIET HANDOFF, LIKE THE SESSION SPELLS (Cole's ruling,
+    // 2026-09-24; `kit/wire/tailHandoff.ts`, "MIND-MAPPER JOINS THE SESSION
+    // SPELLS"). A quiet window names a background `--once`; a woken one-shot
+    // names Monitor; a daemon that died names `open --no-open`. The tail's
+    // stop-start is what the daemon's presence LINGER (`server.ts`,
+    // `adjustAgents`) exists to hide from the human.
+    //
+    // ⚠ THE LAST URL IS KEPT, so a dead daemon is LOST rather than unresolved.
+    // `livePort()` answers null once the daemon's pid is dead, and an
+    // unresolved tail retries forever — a `--once` would sleep for good and a
+    // Monitor watch would never hear it. Asking the last port instead gets
+    // refused, and the kit's lost rule ends the tail with the way back. A live
+    // daemon on a NEW port (someone ran `open` again) is still found first.
+    let lastUrl: string | null = null;
+    return await tailWithHandoff<{ id?: unknown; epoch?: unknown; kind?: unknown }>(
+      {
+        resolve: () => {
+          const port = livePort();
+          if (port !== null) lastUrl = `http://127.0.0.1:${port}`;
+          return lastUrl;
+        },
+        path: "/events",
+        since: Number.isFinite(since) ? since : 0,
+        ...(mark?.epoch ? { sinceEpoch: mark.epoch } : {}),
+        query: (cursor) => ({
+          since: String(cursor),
+          ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
+          ...(inbound ? { inbound: "1" } : {}),
+        }),
+        // ⛔ `id`, NOT `seq` — the daemon's envelope field was renamed by the
+        // `createEventLog` adoption (D81), and this is the CLI-side reader of it.
+        // ⚠ The CLI half FORCED nothing: `cursorOf` is caller-supplied, so
+        // `(ev) => ev.seq` would have compiled and run. It would also have read a
+        // field the daemon no longer emits, so the cursor would never advance and
+        // every reconnect would re-request `since=0` — the whole replay window
+        // into an agent's pipe, silently, forever. **A caller-supplied accessor is
+        // where a wire rename goes wrong quietly.**
+        cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+        epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
+        // A reconnect that lands on a different epoch means the daemon restarted:
+        // the kit resets the cursor to 0 and this line tells the casting agent to
+        // refetch state. CLI-synthesized only, never a bus event (the browser WS
+        // never sees it), and it carries no `id` — so it never advances the
+        // cursor, which is the same separation the grounding line makes.
+        onEpochChange: (epoch) => JSON.stringify({ kind: "epoch.changed", epoch }),
+        // Grounding is a synthetic, id-less first-connect frame: forward the
+        // first, suppress re-groundings on reconnect (exactly one per process).
+        // Returning null writes nothing; it never carries id/epoch, so the
+        // cursor and the epoch are untouched either way.
+        render: (ev, frame) => {
+          if (ev.kind === "grounding") {
+            if (grounded) return null;
+            grounded = true;
+          }
+          return frame.data;
+        },
+        // A refused connection (409 needs-project on a projectless store, 404
+        // unknown project) is a usage error, not a transport blip — retrying it
+        // forever would just spin silently. `passOrThrow` always throws here, and
+        // the throw propagates out of the client into `main`'s catch, which is
+        // strictly better than a raise reachable from inside a reconnect loop.
+        // Annotated: an async arrow's `return "retry"` widens to `Promise<string>`
+        // unless the return type is stated, and the client accepts only the
+        // literal (type-debt T36).
+        onHttpError: async (res): Promise<"retry"> => {
+          if (res.status === 409 || res.status === 404) await passOrThrow(res);
+          return "retry";
+        },
+        // ⛔ THE UNPARSEABLE LINE GOES TO STDOUT, WHICH IS THIS SPELL'S OWN
+        // BEHAVIOUR AND THE ONE THE KIT'S DEFAULT WOULD HAVE CHANGED. The
+        // hand-rolled loop caught the `JSON.parse` and passed the raw line
+        // through untracked; the kit's `onMalformed` return value goes to `err`
+        // instead, because a diagnostic about the stream is not data. mind-mapper
+        // is the "one spell" that module's header names as genuinely wanting it on
+        // stdout, and the way to keep that is to write it from inside the hook and
+        // return null.
+        onMalformed: (frame) => {
+          process.stdout.write(`${frame.data}\n`);
+          return null;
+        },
+        idleMs: TAIL_IDLE_MS,
+        retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
       },
-      path: "/events",
-      since: Number.isFinite(since) ? since : 0,
-      query: (cursor) => ({
-        since: String(cursor),
-        ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
-        ...(inbound ? { inbound: "1" } : {}),
-      }),
-      // ⛔ `id`, NOT `seq` — the daemon's envelope field was renamed by the
-      // `createEventLog` adoption (D81), and this is the CLI-side reader of it.
-      // ⚠ The CLI half FORCED nothing: `cursorOf` is caller-supplied, so
-      // `(ev) => ev.seq` would have compiled and run. It would also have read a
-      // field the daemon no longer emits, so the cursor would never advance and
-      // every reconnect would re-request `since=0` — the whole replay window
-      // into an agent's pipe, silently, forever. **A caller-supplied accessor is
-      // where a wire rename goes wrong quietly.**
-      cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
-      epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
-      // A reconnect that lands on a different epoch means the daemon restarted:
-      // the kit resets the cursor to 0 and this line tells the casting agent to
-      // refetch state. CLI-synthesized only, never a bus event (the browser WS
-      // never sees it), and it carries no `id` — so it never advances the
-      // cursor, which is the same separation the grounding line makes.
-      onEpochChange: (epoch) => JSON.stringify({ kind: "epoch.changed", epoch }),
-      // Grounding is a synthetic, id-less first-connect frame: forward the
-      // first, suppress re-groundings on reconnect (exactly one per process).
-      // Returning null writes nothing; it never carries id/epoch, so the
-      // cursor and the epoch are untouched either way.
-      render: (ev, frame) => {
-        if (ev.kind === "grounding") {
-          if (grounded) return null;
-          grounded = true;
-        }
-        return frame.data;
+      {
+        spell: "mind-mapper",
+        mode: once ? "once" : "watch",
+        presence: false,
+        // ⛔ `presence.changed` IS ON THE LOG AND IS NOT COUNTED. The daemon
+        // emits it, with a log id, when a tail opens or (past the linger) the
+        // last one closes — so a tail's OWN connect lands on its own stream.
+        // Counted, every window would be "active" and every `--once` would wake
+        // on itself at once. It is churn, not an act to answer. (The grounding
+        // frame carries no log id, so D3's rule already leaves it out.)
+        counts: (ev) => ev.kind !== "presence.changed",
+        commands: {
+          tail: ({ since: at, once: nextOnce, epoch }) =>
+            tailCommand(
+              [
+                "tail",
+                ...(inbound ? ["--inbound"] : []),
+                ...(parsed.values.project ? ["--project", parsed.values.project as string] : []),
+              ],
+              at,
+              nextOnce,
+              epoch,
+            ),
+          comeBack: () => commandLine(["open", "--no-open"]),
+        },
       },
-      // A refused connection (409 needs-project on a projectless store, 404
-      // unknown project) is a usage error, not a transport blip — retrying it
-      // forever would just spin silently. `passOrThrow` always throws here, and
-      // the throw propagates out of the client into `main`'s catch, which is
-      // strictly better than a raise reachable from inside a reconnect loop.
-      // Annotated: an async arrow's `return "retry"` widens to `Promise<string>`
-      // unless the return type is stated, and the client accepts only the
-      // literal (type-debt T36).
-      onHttpError: async (res): Promise<"retry"> => {
-        if (res.status === 409 || res.status === 404) await passOrThrow(res);
-        return "retry";
-      },
-      // ⛔ THE UNPARSEABLE LINE GOES TO STDOUT, WHICH IS THIS SPELL'S OWN
-      // BEHAVIOUR AND THE ONE THE KIT'S DEFAULT WOULD HAVE CHANGED. The
-      // hand-rolled loop caught the `JSON.parse` and passed the raw line
-      // through untracked; the kit's `onMalformed` return value goes to `err`
-      // instead, because a diagnostic about the stream is not data. mind-mapper
-      // is the "one spell" that module's header names as genuinely wanting it on
-      // stdout, and the way to keep that is to write it from inside the hook and
-      // return null.
-      onMalformed: (frame) => {
-        process.stdout.write(`${frame.data}\n`);
-        return null;
-      },
-      idleMs: TAIL_IDLE_MS,
-      retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
-    });
+    );
   }
 
   if (verb === "projects") {

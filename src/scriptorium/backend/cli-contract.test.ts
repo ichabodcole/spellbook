@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import {
   docArg,
   flagsFor,
-  parseSince,
+  parseTailSince,
   parseVersion,
   RECOGNIZED_FLAGS,
   VERB_SPEC,
@@ -404,9 +404,11 @@ test("fix 9 — tail --since that is not an integer is a usage error, not a full
   expect(r.stdout).toBe("");
   expect(r.code).toBe(2);
   expect((JSON.parse(r.stderr) as Envelope).error.kind).toBe("usage");
-  expect(parseSince("12")).toBe(12);
-  expect(parseSince("-1")).toBe(-1);
-  expect(() => parseSince("1.5")).toThrow();
+  expect(parseTailSince("12")).toEqual({ since: 12 });
+  expect(parseTailSince("-1")).toEqual({ since: -1 });
+  expect(parseTailSince("4@e-1")).toEqual({ since: 4, epoch: "e-1" });
+  expect(() => parseTailSince("1.5")).toThrow();
+  expect(() => parseTailSince("4@")).toThrow();
 });
 
 test("fix 8 — --doc paths resolve against the CLI's own cwd; slugs and bare names pass through", () => {

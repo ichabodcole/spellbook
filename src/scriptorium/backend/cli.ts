@@ -68,7 +68,13 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+import {
+  commandLine,
+  readSince,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -242,6 +248,7 @@ const CLI_OPTIONS = {
   limit: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
+  once: { type: "boolean" },
   patch: { type: "boolean" },
   restore: { type: "string" },
   session: { type: "string" },
@@ -288,17 +295,17 @@ export function parseArgs(args: string[]): {
 }
 
 /**
- * `--since` is an event id: an integer, -1 for "everything". Verify-pass fix
- * 9: `--since abc` parsed to NaN, which the log reads as "from the start", so
- * a typo replayed the whole buffer into the agent's pipe at exit 0.
+ * `tail --since` is a BOOKMARK: an event id (-1 for "everything"), optionally
+ * with the epoch of the log it came from (`12@<epoch>`, as the tail's own handoff line prints it —
+ * `kit/wire/tailHandoff.ts`, D2). The epoch is what lets the tail notice a
+ * restarted daemon whose new log is already past the id. Verify-pass fix 9
+ * still holds: `--since abc` used to parse to NaN, which the log reads as "from
+ * the start", so a typo replayed the whole buffer at exit 0 — it is refused.
  */
-export function parseSince(token: string): number {
-  if (!/^-?\d+$/.test(token.trim()))
-    die(
-      `--since: "${token}" is not an event id — give an integer (the id of the last line you saw)`,
-      "usage",
-    );
-  return Number.parseInt(token, 10);
+export function parseTailSince(token: string): { since: number; epoch?: string } {
+  const r = readSince(token, { epoch: true });
+  if (!r.ok) die(r.message, "usage");
+  return r.epoch ? { since: r.since, epoch: r.epoch } : { since: r.since };
 }
 
 /**
@@ -600,66 +607,94 @@ async function readSayBody(
  */
 let disconnected = false;
 
-async function cmdTail(session: string | undefined, since: number): Promise<number> {
+/**
+ * The watch. Ends itself before Monitor's cap with one line naming the next
+ * act (`src/kit/wire/tailHandoff.ts`): re-arm Monitor, go to a background
+ * `--once`, or come back from a closed or lost session with `open --restore`.
+ * A `--since` re-arm prints no grounding line: the agent already knows the
+ * session, and the line would count as noise in the window's wake.
+ */
+async function cmdTail(
+  session: string | undefined,
+  since: number,
+  o: { once: boolean; sinceGiven: boolean; epoch?: string },
+): Promise<number> {
   let boundId = session;
-  let grounded = false;
-  return await tailEvents<{ id?: number; epoch?: string; type?: string }>({
-    resolve: () => {
-      const s = readSession(boundId);
-      if (!s) return null;
-      if (!boundId) boundId = s.session_id;
-      if (!grounded) {
-        grounded = true;
-        process.stdout.write(
-          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-        );
-      }
-      return `http://127.0.0.1:${s.port}`;
+  const reArm = session !== undefined || o.sinceGiven;
+  let grounded = o.sinceGiven;
+  const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
+  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string }>(
+    {
+      resolve: () => {
+        const s = readSession(boundId);
+        if (!s) return null;
+        if (!boundId) boundId = s.session_id;
+        if (!grounded) {
+          grounded = true;
+          process.stdout.write(
+            `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+          );
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        // D1: a tail given --session or a bookmark is re-arming an EXISTING
+        // session, so not finding it means it closed (in the gap, say) — the
+        // handoff says `tail.closed`, never a silent retry-forever.
+        if (everResolved || reArm) return "stop";
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since,
+      ...(o.epoch ? { sinceEpoch: o.epoch } : {}),
+      cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+      epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
+      // A different epoch on reconnect = the daemon restarted; ids began again.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      // ⛔ A KEEPALIVE IS PROOF OF LIFE, so it is also what clears a reported
+      // disconnection. There is no `onConnect` hook and this is the honest
+      // substitute: the daemon only sends comments down a live stream.
+      onComment: () => {
+        if (!disconnected) return ": scriptorium-keepalive";
+        disconnected = false;
+        return JSON.stringify({ type: "tail.reconnected" });
+      },
+      // ⛔ ONE LINE PER EPISODE, NOT PER ATTEMPT. The client reconnects with
+      // backoff forever, so a hook that spoke every time would emit a line every
+      // few seconds for as long as the daemon stayed down — which is how a
+      // watcher gets muted, and then nobody hears the next real thing.
+      //
+      // ⚠ WHY THIS EXISTS AT ALL: without it a DEAD daemon and a QUIET one are
+      // the same thing from out here. A graceful close emits `closed` and ends
+      // the tail; a crash, a kill -9 or a sleeping laptop emits nothing, the
+      // client retries in silence, and the absence of events is not an event. A
+      // watcher waiting for the human's next message would wait forever and
+      // never learn it had stopped listening. (Found 2026-09-14 while answering
+      // Cole's question about whether a timeout would notify me. It would not.)
+      onDisconnect: ({ cause, status }) => {
+        if (disconnected) return null;
+        disconnected = true;
+        return JSON.stringify({
+          type: "tail.disconnected",
+          cause,
+          ...(status !== undefined ? { status } : {}),
+          note: "retrying; the session may have closed or crashed",
+        });
+      },
     },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved) return "stop";
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      spell: "scriptorium",
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
+        comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),
+      },
     },
-    path: "/events",
-    since,
-    cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
-    epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
-    // A different epoch on reconnect = the daemon restarted; ids began again.
-    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    // ⛔ A KEEPALIVE IS PROOF OF LIFE, so it is also what clears a reported
-    // disconnection. There is no `onConnect` hook and this is the honest
-    // substitute: the daemon only sends comments down a live stream.
-    onComment: () => {
-      if (!disconnected) return ": scriptorium-keepalive";
-      disconnected = false;
-      return JSON.stringify({ type: "tail.reconnected" });
-    },
-    // ⛔ ONE LINE PER EPISODE, NOT PER ATTEMPT. The client reconnects with
-    // backoff forever, so a hook that spoke every time would emit a line every
-    // few seconds for as long as the daemon stayed down — which is how a
-    // watcher gets muted, and then nobody hears the next real thing.
-    //
-    // ⚠ WHY THIS EXISTS AT ALL: without it a DEAD daemon and a QUIET one are
-    // the same thing from out here. A graceful close emits `closed` and ends
-    // the tail; a crash, a kill -9 or a sleeping laptop emits nothing, the
-    // client retries in silence, and the absence of events is not an event. A
-    // watcher waiting for the human's next message would wait forever and
-    // never learn it had stopped listening. (Found 2026-09-14 while answering
-    // Cole's question about whether a timeout would notify me. It would not.)
-    onDisconnect: ({ cause, status }) => {
-      if (disconnected) return null;
-      disconnected = true;
-      return JSON.stringify({
-        type: "tail.disconnected",
-        cause,
-        ...(status !== undefined ? { status } : {}),
-        note: "retrying; the session may have closed or crashed",
-      });
-    },
-  });
+  );
 }
 
 function versionInfo(): { name: string; version: string } {
@@ -755,12 +790,18 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     name: "tail",
-    flags: [...SESSION, "since"],
+    flags: [...SESSION, "since", "once"],
     positionals: [],
     describe:
-      "the human's messages (with selection + active path) as JSON lines — wrap with Monitor",
-    run: (_pos, flags, session) =>
-      cmdTail(session, typeof flags.since === "string" ? parseSince(flags.since) : -1),
+      "the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
+    run: (_pos, flags, session) => {
+      const b = typeof flags.since === "string" ? parseTailSince(flags.since) : { since: -1 };
+      return cmdTail(session, b.since, {
+        once: flags.once === true,
+        sinceGiven: typeof flags.since === "string",
+        ...(b.epoch ? { epoch: b.epoch } : {}),
+      });
+    },
   },
   {
     name: "version-new",
@@ -1386,7 +1427,8 @@ ${body}
   Output: JSON on stdout, one document per answer — except tail (one JSON line
   per event) and help (prose). Failures: one JSON envelope on stderr, exit
   2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
-  session rather than failing, and ends 0 when its session closes.`;
+  session rather than failing, and ends 0 when its session closes. tail
+  ${WINDOW_HELP}.`;
 }
 
 export function buildDeclaration() {

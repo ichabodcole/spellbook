@@ -111,18 +111,22 @@ const EXPECTED: Record<
   string,
   { sites: number; choices: number; verbRoster: boolean; flagMap: boolean }
 > = {
-  astrolabe: { sites: 15, choices: 4, verbRoster: true, flagMap: true },
-  bounty: { sites: 32, choices: 2, verbRoster: true, flagMap: true },
+  // +1 site on every tail but scriptorium's (fix/tail-rearm-without-plugin-path):
+  // `tail --since` refuses a form it does not accept with the forms named
+  // (`kit/wire/tailHandoff.ts`, `readSince`), where it used to misparse it. No
+  // `choices`: an id is not a closed set; the message names the shapes.
+  astrolabe: { sites: 16, choices: 4, verbRoster: true, flagMap: true },
+  bounty: { sites: 33, choices: 2, verbRoster: true, flagMap: true },
   digestify: { sites: 8, choices: 2, verbRoster: false, flagMap: true },
   // 25 -> 26 on 2026-09-10, type-debt Phase 3c: `positional()` in cli.ts, a
   // named usage throw for a builder called without the positional arity
   // dispatch guarantees. No `choices` by A1's ruling — an id positional is not
   // an enumerated set — so `choices` stays 9. Impossible through the CLI.
-  glamour: { sites: 26, choices: 9, verbRoster: true, flagMap: true },
-  grapevine: { sites: 58, choices: 5, verbRoster: true, flagMap: true },
-  imago: { sites: 24, choices: 3, verbRoster: true, flagMap: true },
-  magpie: { sites: 32, choices: 4, verbRoster: true, flagMap: true },
-  "mind-mapper": { sites: 66, choices: 14, verbRoster: true, flagMap: true },
+  glamour: { sites: 27, choices: 9, verbRoster: true, flagMap: true },
+  grapevine: { sites: 59, choices: 5, verbRoster: true, flagMap: true },
+  imago: { sites: 25, choices: 3, verbRoster: true, flagMap: true },
+  magpie: { sites: 33, choices: 4, verbRoster: true, flagMap: true },
+  "mind-mapper": { sites: 67, choices: 14, verbRoster: true, flagMap: true },
   // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
   // row is a design, not an archaeology: every enumerable usage rejection
   // carries `choices` from day one (A1 inherited, not converted into).

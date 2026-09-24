@@ -49,7 +49,7 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { writeFileAtomic } from "../../kit/wire/discovery.ts";
-import { type Anchor, anchorOf, findAnchor } from "./anchors";
+import { type Anchor, anchorOf, findAnchor, linesOf } from "./anchors";
 import { applyHunks, diffText } from "./diff";
 import { type Finding, findings } from "./doctor";
 import {
@@ -79,6 +79,7 @@ import type {
   MetaFilter,
   MovePlan,
   Note,
+  NoteRef,
   PlacedNote,
   PublicState,
   Selection,
@@ -915,6 +916,25 @@ export class Session {
     return { slug: d.slug, note, how: opts.range ? "selection" : "quote" };
   }
 
+  /**
+   * Every document's notes as STORED — no placement, so no file reads. E65's
+   * attention tick asks this every second; `view()` would re-place every note.
+   */
+  noteFacts(): { slug: string; notes: readonly Note[] }[] {
+    return this.m.docs.map((d) => ({ slug: d.slug, notes: d.notes ?? [] }));
+  }
+
+  /**
+   * The lines a note covers in the active version now (E65), or null when its
+   * text is gone. Placed, not remembered, for the reason notes are (E45).
+   */
+  noteLines(doc: string, note: Note): { from: number; to: number } | null {
+    const d = this.docOrDie(doc);
+    const text = this.activeText(d);
+    const at = findAnchor(text, note);
+    return at.from === null ? null : linesOf(text, at.from, at.to);
+  }
+
   /** Notes on a document, placed — `all` includes the resolved ones. */
   notesOf(opts: { doc?: string; all?: boolean }): { slug: string; notes: PlacedNote[] } {
     const d = this.docOrDie(opts.doc);
@@ -935,23 +955,34 @@ export class Session {
 
   /** Change what a note SAYS. Its anchor is untouched — it is still about the
    *  same passage, which is why editing does not re-quote (E46). */
-  editNote(opts: { doc?: string; id: string; body: string }): { slug: string; note: Note } {
+  editNote(opts: { doc?: string; id: string; body: string; who: VersionAuthor }): {
+    slug: string;
+    note: Note;
+  } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     const body = opts.body.trim();
     if (!body) throw new SessionError("a note needs something written in it", 400);
     note.body = body;
     note.editedAt = Date.now();
+    // E65: whose rewrite it was decides whether the note is owed an answer.
+    note.editedBy = opts.who;
     this.persist();
     return { slug: d.slug, note };
   }
 
-  resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
+  resolveNote(opts: { doc?: string; id: string; resolved: boolean; who: VersionAuthor }): {
     slug: string;
     note: Note;
   } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
+    // E65: a REOPEN is a write — a human reopening asks again, and the wait is
+    // timed from here; the agent reopening is an act on the note.
+    if (note.resolved && !opts.resolved) {
+      note.reopenedAt = Date.now();
+      note.reopenedBy = opts.who;
+    }
     note.resolved = opts.resolved;
     this.persist();
     return { slug: d.slug, note };
@@ -1831,7 +1862,7 @@ export class Session {
   addMessage(
     who: ChatWho,
     text: string,
-    extra: { selection?: Selection | null; activePath?: string | null } = {},
+    extra: { selection?: Selection | null; activePath?: string | null; note?: NoteRef } = {},
   ): ChatMessage {
     const msg: ChatMessage = { id: `m-${randHex(4)}`, who, text, ts: Date.now(), ...extra };
     this.m.chat.push(msg);
@@ -2218,8 +2249,9 @@ export class Session {
     // the snooze the server holds, neither of which belongs in the session.
     // ⚠ `waiting` and `history` are the SERVER's to add (E53, E60): one depends
     // on the clock and the snooze it holds, the other on the in-memory act
-    // stacks. Neither belongs in the session's persisted state.
-  ): Omit<PublicState, "prefs" | "userHome" | "waiting" | "history"> {
+    // stacks. Neither belongs in the session's persisted state. E65's
+    // `notesWaiting` is the server's for `waiting`'s reasons.
+  ): Omit<PublicState, "prefs" | "userHome" | "waiting" | "notesWaiting" | "history"> {
     const meta = this.contextMeta();
     return {
       sessionId: this.m.sessionId,

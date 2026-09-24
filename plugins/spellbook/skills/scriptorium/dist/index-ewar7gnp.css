@@ -12,6 +12,7 @@
     --container-xs: 20rem;
     --container-sm: 24rem;
     --container-md: 28rem;
+    --container-2xl: 42rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
     --text-sm: .875rem;
@@ -394,6 +395,10 @@
     visibility: collapse;
   }
 
+  .invisible {
+    visibility: hidden;
+  }
+
   .visible {
     visibility: visible;
   }
@@ -555,6 +560,10 @@
 
   .my-2 {
     margin-block: calc(var(--spacing) * 2);
+  }
+
+  .mt-0 {
+    margin-top: calc(var(--spacing) * 0);
   }
 
   .mt-0\.5 {
@@ -739,6 +748,10 @@
     min-height: calc(var(--spacing) * 8);
   }
 
+  .min-h-9 {
+    min-height: calc(var(--spacing) * 9);
+  }
+
   .min-h-full {
     min-height: 100%;
   }
@@ -778,6 +791,10 @@
 
   .w-px {
     width: 1px;
+  }
+
+  .max-w-2xl {
+    max-width: var(--container-2xl);
   }
 
   .max-w-64 {
@@ -827,6 +844,10 @@
 
   .flex-1 {
     flex: 1;
+  }
+
+  .shrink {
+    flex-shrink: 1;
   }
 
   .shrink-0 {
@@ -890,6 +911,10 @@
 
   .cursor-pointer {
     cursor: pointer;
+  }
+
+  .resize {
+    resize: both;
   }
 
   .resize-none {
@@ -1004,6 +1029,10 @@
 
   .overflow-y-auto {
     overflow-y: auto;
+  }
+
+  .rounded {
+    border-radius: .25rem;
   }
 
   .rounded-\[2px\] {
@@ -1599,6 +1628,10 @@
     padding-bottom: calc(var(--spacing) * 16);
   }
 
+  .pl-1 {
+    padding-left: calc(var(--spacing) * 1);
+  }
+
   .pl-1\.5 {
     padding-left: calc(var(--spacing) * 1.5);
   }
@@ -1854,6 +1887,10 @@
     opacity: 0;
   }
 
+  .opacity-40 {
+    opacity: .4;
+  }
+
   .opacity-60 {
     opacity: .6;
   }
@@ -2006,6 +2043,11 @@
     transition-duration: .1s;
   }
 
+  .duration-300 {
+    --tw-duration: .3s;
+    transition-duration: .3s;
+  }
+
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
@@ -2018,6 +2060,12 @@
 
   .ring-inset {
     --tw-ring-inset: inset;
+  }
+
+  @media (hover: hover) {
+    .group-hover\/chrome\:opacity-100:is(:where(.group\/chrome):hover *) {
+      opacity: 1;
+    }
   }
 
   @media (hover: hover) {
@@ -2038,6 +2086,10 @@
 
   .group-focus\/dropdown-menu-item\:text-accent-foreground:is(:where(.group\/dropdown-menu-item):focus *) {
     color: var(--color-accent-foreground);
+  }
+
+  .group-has-\[\:focus-visible\]\/chrome\:opacity-100:is(:where(.group\/chrome):has(:focus-visible) *) {
+    opacity: 1;
   }
 
   .file\:inline-flex::-webkit-file-upload-button {
@@ -2870,6 +2922,11 @@
 
   .\[\&_svg\]\:pointer-events-none svg {
     pointer-events: none;
+  }
+
+  .\[\&_svg\]\:size-3\.5 svg {
+    width: calc(var(--spacing) * 3.5);
+    height: calc(var(--spacing) * 3.5);
   }
 
   .\[\&_svg\]\:shrink-0 svg {
