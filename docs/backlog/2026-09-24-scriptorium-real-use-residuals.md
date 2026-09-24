@@ -20,7 +20,9 @@ nowhere else. They are grouped here so that none is lost. Each is small, or is
 waiting on Cole. If one grows, split it into its own item. The versioned plugin
 path from the same list has
 [its own item](./2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md),
-because it can bite at the next release.
+because it can bite at the next release. It is resolved: the printed command
+names no path, and the agent runs it with its own launcher (Cole's ruling,
+2026-09-24; `fix/tail-rearm-without-plugin-path`).
 
 ## 1. The no-epoch spells' fallback gap
 

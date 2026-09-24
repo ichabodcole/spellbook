@@ -8,7 +8,7 @@ description:
   deleted. Resolve before the release that ships the handoff
 tags: [tail, monitor, plugin-install, release]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
 ---
 
@@ -119,6 +119,38 @@ a moved launcher.
 - [ ] A cell drives it: print a handoff line, move the launcher's directory, run
       the printed command, and assert the agent-facing outcome.
 - [ ] The kit header's "KNOWN LIMIT, NOT FIXED" entry is updated to match.
+
+## Built (fix/tail-rearm-without-plugin-path, 2026-09-24)
+
+**Cole's ruling:** the printed command must not name the plugin's path. It
+prints the verb and its arguments only, and the skill supplies its own launcher,
+which is always the version the session loaded. His reasoning: the worst case is
+that the plugin's CLI changed and the agent gets an error, and if the tools are
+designed right, that error says what went wrong. So this is option A without the
+path, not A, B or C as written above. The kit header records the ruling and the
+options not taken.
+
+- **The line** (`src/kit/wire/tailHandoff.ts`). `command` is launcher-free, for
+  example `tail --session s1 --since 12@<epoch> --once`, and the line carries
+  `spell`. Every hint says to run
+  `bun <this skill's directory>/scripts/cli.ts <command>`. The come-back
+  commands are launcher-free too: `open --restore <id> --no-open`,
+  `open --session-key K --no-open`, `open --no-open`, `doctor`. `selfCommand()`
+  is gone.
+- **The shared skill rule** (seven skills plus mind-mapper's help) says to run
+  `command` with this skill's own launcher, shows the full form with an example,
+  and says never to reuse a launcher path from an earlier line.
+  `grimoire/tail-rule-parity.test.ts` holds the copies word-for-word equal.
+- **The error when versions disagree.** Every tail reads `--since` through the
+  kit's `readSince`, so a form it does not accept is a usage error naming the
+  accepted forms, the same way on all eight tails. Before, the four no-epoch
+  spells read `4@<epoch>` as `4` with `parseInt`, and mind-mapper and astrolabe
+  read junk as a whole replay. `grimoire/tail-since-refusal.test.ts` drives each
+  launcher.
+- **What the acceptance criteria became.** No printed command names a path, so
+  no printed command can point at a moved or deleted directory. The cells run a
+  printed command the way the skill says, with the launcher the test knows. The
+  "moved launcher" cell is moot.
 
 ## References
 

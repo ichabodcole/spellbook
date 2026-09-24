@@ -240,7 +240,9 @@ items:
 - [The tail's re-arm command names a versioned plugin path](../backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md):
   across an upgrade, a printed command first runs stale code, then fails once
   the old directory is deleted. It is its own item because it should be resolved
-  before the release that first ships the handoff.
+  before the release that first ships the handoff. _(Note added 2026-09-24,
+  after the close: resolved on `fix/tail-rearm-without-plugin-path`. The printed
+  command names no path.)_
 - [Residuals from this cycle](../backlog/2026-09-24-scriptorium-real-use-residuals.md):
   the no-epoch spells' fallback gap, the keyed late-lead edge, a resize not
   re-placing a pane, triple-click giving no chip, and batched note review.
