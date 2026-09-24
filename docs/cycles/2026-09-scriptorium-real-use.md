@@ -252,7 +252,9 @@ Waiting on Cole:
 - **Whether mind-mapper stays a presence spell.** The tail handoff ruled it one,
   so its window always re-arms Monitor and never takes the zero-wake one-shot.
   He has not ruled.
-- **The house-style proposals** above.
+- **The house-style proposals** above. _(Note added 2026-09-24, after the close:
+  Cole approved all four, and they are integrated into `grimoire/house-style.md`
+  on `docs/house-style-from-scriptorium-real-use`.)_
 - **From his own use:** eager vs. lazy versioning, the three note trade-offs,
   the resize re-place, which tab's selection wins, and whether he reaches for a
   collapse shortcut.

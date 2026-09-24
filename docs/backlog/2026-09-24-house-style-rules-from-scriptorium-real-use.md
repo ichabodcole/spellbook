@@ -8,7 +8,7 @@ description:
   wording and section, for Cole to rule on
 tags: [house-style, grimoire, canon, proposal]
 status: draft
-lifecycle: open
+lifecycle: done
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
 ---
 
@@ -309,10 +309,30 @@ and the rule stands for every other wait._
   non-author mutation principle this would sharpen. That file is outside this
   item's remit.
 
+## Integrated (2026-09-24)
+
+**Cole's ruling:** "let's integrate the house style proposal." All four were
+adopted as proposed, on `docs/house-style-from-scriptorium-real-use`. Proposal 2
+went to `house-style.md`, not `AGENTS.md`: Cole did not choose, so it landed
+where it was proposed.
+
+- **1** is `shared-fact-one-state` under _The shape of a spell_, directly after
+  the co-presence rule, with a new ledger row.
+- **2** is `ask-what-number-is-for` under _Authoring_, after _Context is an
+  attention budget_, with a new ledger row.
+- **3** is `carry-frame-just-value.reference-names-what-refers`, the fourth
+  `####` clause under _Carry the frame, not just the value_. It has no row of
+  its own, like its siblings; the family's row was reinforced. The family's
+  intro and repeal criterion now say "four" where they said "three".
+- **4** fills the boundary check of `honor-exit-code-contract`, with its scar
+  after the rule. The rule's row was reinforced.
+
+Each rule's scar links the sessions and memories cited above.
+
 ## Acceptance Criteria
 
-- [ ] Cole has ruled on each of the four: adopt, adopt with changes, or decline.
-- [ ] Each adopted rule is in `grimoire/house-style.md`, with a `rule-id` and a
+- [x] Cole has ruled on each of the four: adopt, adopt with changes, or decline.
+- [x] Each adopted rule is in `grimoire/house-style.md`, with a `rule-id` and a
       `decay-ledger.md` row (or, for proposal 4, a bumped reinforcement date),
       and `bun run gate` passes.
 - [ ] If proposal 2 goes to `AGENTS.md` instead, that is recorded here.
