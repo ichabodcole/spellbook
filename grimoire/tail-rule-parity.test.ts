@@ -7,8 +7,9 @@
 // the failure the rule exists to prevent: in the launcher-free ruling of
 // 2026-09-24, HOW to run the printed command lives only in this text. So the
 // copies are compared after normalising markdown (bold, backticks) and line
-// wrapping. The presence sentence after the block is spell-specific and
-// outside it.
+// wrapping. The presence sentence after the block (astrolabe's and
+// grapevine's; mind-mapper dropped its own when it took the quiet handoff,
+// 2026-09-24) is spell-specific and outside it.
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

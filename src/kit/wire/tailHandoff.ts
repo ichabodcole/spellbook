@@ -26,15 +26,17 @@
  *   • `watch` (the default, run under Monitor): streams until its WINDOW ends,
  *     then prints `tail.window` (it saw events → re-arm Monitor) or
  *     `tail.quiet` (it saw none → run `tail --once` as a background Bash
- *     task). A PRESENCE spell always gets `tail.window`: a stop-start tail
- *     would flicker the presence its connection carries.
+ *     task). A PRESENCE spell (astrolabe, grapevine) always gets
+ *     `tail.window`: a stop-start tail would flicker the presence its
+ *     connection carries. Mind-mapper was one and is not since 2026-09-24
+ *     (see "MIND-MAPPER JOINS THE SESSION SPELLS" below).
  *   • `once` (run as a background Bash task): sleeps until the first log event,
  *     prints it, prints `tail.woke` (→ back to Monitor) and EXITS, which is
  *     what wakes the agent.
  *
  * Either mode ends with `tail.closed` when the session closes and `tail.lost`
- * when the daemon is gone (session spells), each naming how to come back
- * instead of a re-arm. A signal or a caller's abort prints nothing.
+ * when the daemon is gone (session spells and mind-mapper), each naming how to
+ * come back instead of a re-arm. A signal or a caller's abort prints nothing.
  *
  * Every re-arm carries `--since <cursor>`, so nothing replays; the daemon's
  * buffer covers whatever lands between one watch's exit and the next's arm.
@@ -58,7 +60,8 @@
  * A2 · THE NEXT ACT DEPENDS ON STATE. `handoff()` below is the pure decision:
  *      quiet → background, active or presence → Monitor, woke → Monitor,
  *      closed → come back, lost → come back. Come back is the spell's own verb
- *      (`open --restore <id>` for the session spells).
+ *      (`open --restore <id>` for the session spells, `open --no-open` for
+ *      mind-mapper and astrolabe).
  *      ⚖ THE DISCONNECT DECISION: for a session spell, a LOST daemon ends the
  *      tail in BOTH modes with a stdout `tail.lost` line. Monitor notifies only
  *      on stdout, so the old stderr-only `tail.disconnected` left a
@@ -147,8 +150,10 @@
  *            message at new id 2 under a bookmark of 4 — were skipped with no
  *            notice. Three paths reach it: coming back without following (b);
  *            the Monitor-cap fallback ("re-arm from the last id you saw")
- *            across a restart; and a presence tail (astrolabe, mind-mapper)
- *            whose first frame after a restart is already past its bookmark.
+ *            across a restart; and a tail that reconnects in-process
+ *            (astrolabe, or mind-mapper when its daemon is back before the
+ *            lost rule fires) whose first frame after a restart is already
+ *            past its bookmark.
  *            The fix needs no new flag and no wire change: the bookmark is
  *            printed `--since N@<epoch>` (`parseBookmark`), the client starts
  *            with that epoch (`sinceEpoch`), and an epoch change whose frame
@@ -204,6 +209,57 @@
  * orphaned and re-execs a newer sibling (B — it leans on a Claude Code
  * internal marker and does nothing once the directory is deleted); version
  * negotiation.
+ *
+ * ── MIND-MAPPER JOINS THE SESSION SPELLS (Cole's ruling, 2026-09-24) ──────
+ *
+ * Built on `feat/mind-mapper-quiet-handoff`. It REVERSES the implementer's
+ * ruling of `feat/tail-quiet-handoff` that mind-mapper is a presence spell
+ * (its daemon counts an open SSE tail as the agent present, so the window
+ * always re-armed Monitor). Cole's reasoning: mind-mapper sessions are used
+ * like scriptorium's, bursts of activity with breaks, and in a break the agent
+ * should not be woken every 30 minutes. So mind-mapper takes the quiet handoff
+ * to `--once`, the lost come-back (`open --no-open`), and keeps its
+ * `--since N@epoch` bookmark. Three things had to be settled to make that
+ * honest, each pinned in `src/mind-mapper/backend/{tail,presence}.test.ts`
+ * and mutation-confirmed:
+ *
+ * M1 · PRESENCE LINGERS ACROSS THE GAPS (the daemon, `server.ts`
+ *      `adjustAgents`). A one-shot holds an SSE connection, so it COUNTS as
+ *      present, which is true: the agent will wake on the next event. The gaps
+ *      are the problem: window → re-arm, quiet → `--once`, and above all
+ *      `tail.woke` → the agent handles the event → Monitor, which lasts the
+ *      agent's whole turn. Raw, the surface's header dot (the only thing
+ *      presence drives there, besides the daemon's auto-`received` flip on a
+ *      human message) read "connected — no agent on this project" while the
+ *      agent was working the board, and a message sent then got no
+ *      `received`. The daemon has no idle close, so nothing else reacts. Now
+ *      the count HOLDS for `MIND_MAPPER_PRESENCE_LINGER_MS` (150 s, the stall
+ *      window's beat) after the last tail closes: a tail opening inside it
+ *      emits nothing, an agent-only write (`/activity`, an agent `/send`)
+ *      restarts it, and silence past it drops the count to 0.
+ *      ⚖ Not taken: re-arming Monitor BEFORE handling a woken event (that is
+ *      the shared rule, word-for-word in every spell); refreshing on every
+ *      board write (the browser POSTs the same routes, so the human's own
+ *      clicks would keep the dot lit). Cost: an agent that really left reads
+ *      "here" for up to 150 s.
+ * M2 · `presence.changed` IS NOT COUNTED (mind-mapper's `counts`). It is ON
+ *      THE LOG, with an id, and a tail's own connect emits one onto its own
+ *      stream, so counted it made every window "active" and would wake every
+ *      `--once` on itself. The linger removes most of that churn; `counts`
+ *      removes the rest (a first arm, another agent coming or going).
+ * M3 · A DEAD DAEMON IS LOST, NOT UNRESOLVED (mind-mapper's `resolve`). Its
+ *      discovery probes the daemon's pid, so a killed daemon made `resolve`
+ *      answer null and an unresolved tail retries forever: a `--once` would
+ *      have slept for good (D1's defect). The tail keeps the last URL it
+ *      resolved, so the dead port refuses and `LOST_AFTER_REFUSALS` ends it
+ *      with `tail.lost` → `open --no-open`, then a tail with no `--since`.
+ *      Mind-mapper has no session to close, so it never prints `tail.closed`.
+ *      Measured on a real `kill -9` under a `--once`: `tail.lost` 7 s later,
+ *      not 0.75 s, because mind-mapper's own backoff starts at 1 s (1 + 2 + 4).
+ *      M1–M3 were driven on a real daemon with a 4 s window: active → window,
+ *      quiet → `--once`, a human message woke it, back to Monitor; `/state`
+ *      presence read 1 in all 85 samples and the surface saw one
+ *      `presence.changed` (the first arm) across four tail processes.
  *
  * ⚖ `--once` ENDS ON THE FIRST FRAME, with no drain. A burst arrives split: the
  *   first event on the one-shot, the rest on the Monitor re-arm, which loses

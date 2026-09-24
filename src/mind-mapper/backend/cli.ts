@@ -18,7 +18,9 @@
 //                 line per event on stdout
 //                 --inbound filters server-side to human-originated events
 //                 (chat + dropped nodes) + opens with a kind:"grounding" line
-//   projects      list saved projects; --create <title> makes a new one
+//                 --once sleeps until the first log event, prints it, exits
+//                 (the quiet handoff's background one-shot)
+//   projects     list saved projects; --create <title> makes a new one
 //   ingest        --title T (--file P | --stdin) → POST /ingest
 //   propose-node  --stdin JSON {draft, evidence, suggestedTier?} → POST /proposals
 //   propose-edge  same shape, kind: "edge" (source/target may be a real node
@@ -385,6 +387,7 @@ const CLI_OPTIONS = {
   "no-open": { type: "boolean" },
   node: { type: "string" },
   note: { type: "string" },
+  once: { type: "boolean" },
   owner: { type: "string" },
   port: { type: "string" },
   project: { type: "string" },
@@ -415,7 +418,7 @@ export const VERB_SPEC = {
   open: ["no-open", "port", "project"],
   state: ["skeleton", "batch", "project"],
   changes: ["since", "project"],
-  tail: ["since", "inbound", "project"],
+  tail: ["since", "inbound", "once", "project"],
   projects: ["create"],
   ingest: ["title", "file", "stdin", "project"],
   "propose-node": ["stdin", "zone", "project"],
@@ -531,7 +534,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
   state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
   changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
-  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor; see below)
+  tail   [--since N] [--inbound] [--once]            SSE events as JSONL (wrap with Monitor; see below)
   projects [--create <title>]                        list projects / create one
   ingest --title <t> (--file <p> | --stdin)          add a doc
   propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
@@ -588,9 +591,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   --since <the last id you saw>, written <id>@<its epoch> when events carry an
   epoch. Never re-arm without --since: that replays events you have already
   handled. If the launcher refuses a command with a usage error, its message
-  names the forms it accepts; fix the arguments to match. This spell's tail
-  never says background: holding the connection is your presence, so its line
-  always re-arms Monitor.
+  names the forms it accepts; fix the arguments to match.
   tail ${WINDOW_HELP}.`;
 
 // The plugin manifest is the one version source; the CLI reads it rather than
@@ -759,6 +760,7 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "tail") {
     const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
+    const once = parsed.values.once === true;
     // A bookmark, `N` or `N@<epoch>` as the handoff line prints it
     // (`kit/wire/tailHandoff.ts`, D2). A form it does not accept is refused with
     // the accepted forms named — read BEFORE the daemon check, so the answer
@@ -824,14 +826,26 @@ async function dispatch(argv: string[]): Promise<number> {
     // the default, which is what this file hard-coded; the EXPRESSION is what
     // changed.
     //
-    // ⛔ AND A PRESENCE SPELL (`kit/wire/tailHandoff.ts`): an SSE tail is what
-    // the daemon counts as an agent present, so the window always names the
-    // Monitor re-arm, never the stop-start `--once`.
+    // ⛔ AND THE QUIET HANDOFF, LIKE THE SESSION SPELLS (Cole's ruling,
+    // 2026-09-24; `kit/wire/tailHandoff.ts`, "MIND-MAPPER JOINS THE SESSION
+    // SPELLS"). A quiet window names a background `--once`; a woken one-shot
+    // names Monitor; a daemon that died names `open --no-open`. The tail's
+    // stop-start is what the daemon's presence LINGER (`server.ts`,
+    // `adjustAgents`) exists to hide from the human.
+    //
+    // ⚠ THE LAST URL IS KEPT, so a dead daemon is LOST rather than unresolved.
+    // `livePort()` answers null once the daemon's pid is dead, and an
+    // unresolved tail retries forever — a `--once` would sleep for good and a
+    // Monitor watch would never hear it. Asking the last port instead gets
+    // refused, and the kit's lost rule ends the tail with the way back. A live
+    // daemon on a NEW port (someone ran `open` again) is still found first.
+    let lastUrl: string | null = null;
     return await tailWithHandoff<{ id?: unknown; epoch?: unknown; kind?: unknown }>(
       {
         resolve: () => {
           const port = livePort();
-          return port === null ? null : `http://127.0.0.1:${port}`;
+          if (port !== null) lastUrl = `http://127.0.0.1:${port}`;
+          return lastUrl;
         },
         path: "/events",
         since: Number.isFinite(since) ? since : 0,
@@ -897,12 +911,17 @@ async function dispatch(argv: string[]): Promise<number> {
       },
       {
         spell: "mind-mapper",
-        mode: "watch",
-        presence: true,
-        // (No `counts`: the daemon's grounding frame carries no log id, so it
-        // never counts — D3's rule covers it.)
+        mode: once ? "once" : "watch",
+        presence: false,
+        // ⛔ `presence.changed` IS ON THE LOG AND IS NOT COUNTED. The daemon
+        // emits it, with a log id, when a tail opens or (past the linger) the
+        // last one closes — so a tail's OWN connect lands on its own stream.
+        // Counted, every window would be "active" and every `--once` would wake
+        // on itself at once. It is churn, not an act to answer. (The grounding
+        // frame carries no log id, so D3's rule already leaves it out.)
+        counts: (ev) => ev.kind !== "presence.changed",
         commands: {
-          tail: ({ since: at, epoch }) =>
+          tail: ({ since: at, once: nextOnce, epoch }) =>
             tailCommand(
               [
                 "tail",
@@ -910,7 +929,7 @@ async function dispatch(argv: string[]): Promise<number> {
                 ...(parsed.values.project ? ["--project", parsed.values.project as string] : []),
               ],
               at,
-              false,
+              nextOnce,
               epoch,
             ),
           comeBack: () => commandLine(["open", "--no-open"]),

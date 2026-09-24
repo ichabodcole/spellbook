@@ -53,6 +53,9 @@ type Conn = {
   inbound: string | null;
   push: (chunk: string) => void;
   end: () => void;
+  /** Whether the CLIENT has gone (its request aborted). Added for the quiet
+   *  handoff cells: a `--once` that does not close its connection never exits. */
+  closed: () => boolean;
 };
 
 let cleanup: Array<() => void> = [];
@@ -74,12 +77,17 @@ function fakeSseServer(onConnection: (conn: Conn, index: number) => void) {
       const url = new URL(req.url);
       if (url.pathname !== "/events") return new Response("nope", { status: 404 });
       const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
+      let gone = false;
+      req.signal.addEventListener("abort", () => {
+        gone = true;
+      });
       const stream = new ReadableStream({
         start(controller) {
           const encoder = new TextEncoder();
           const conn: Conn = {
             since: Number.isFinite(since) ? since : 0,
             inbound: url.searchParams.get("inbound"),
+            closed: () => gone,
             push: (chunk) => {
               try {
                 controller.enqueue(encoder.encode(chunk));
@@ -105,7 +113,7 @@ function fakeSseServer(onConnection: (conn: Conn, index: number) => void) {
   cleanup.push(() => server.stop(true));
   const { port } = server;
   if (port === undefined) throw new Error("fake SSE server did not bind a TCP port");
-  return { port };
+  return { port, stop: () => server.stop(true) };
 }
 
 function mintHome(port: number): string {
@@ -311,4 +319,149 @@ test("the printed re-arm is the verb and its arguments, with spell, and no launc
     "mind-mapper",
     "tail --since 1@epoch-x",
   ]);
+});
+
+// ── THE QUIET HANDOFF (feat/mind-mapper-quiet-handoff, Cole's ruling
+//    2026-09-24): mind-mapper follows the session spells. A quiet window hands
+//    off to a background `--once`; a `--once` exits on the first log event; a
+//    daemon that dies ends the tail with a come-back line. The kit's decision
+//    log (`src/kit/wire/tailHandoff.ts`, "MIND-MAPPER JOINS THE SESSION
+//    SPELLS") records why.
+
+function presenceChanged(id: number, epoch: string, agents: number): string {
+  return `data: ${JSON.stringify({ id, epoch, kind: "presence.changed", payload: { agents } })}\n\n`;
+}
+
+async function readAll(proc: { stdout: unknown }, ms: number): Promise<string[]> {
+  const text = await Promise.race([
+    new Response(proc.stdout as ReadableStream<Uint8Array>).text(),
+    new Promise<string>((r) => setTimeout(() => r(""), ms)),
+  ]);
+  return text.split("\n").filter((l) => l.length > 0);
+}
+
+async function until(predicate: () => boolean, ms: number): Promise<boolean> {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline && !predicate()) await new Promise((r) => setTimeout(r, 20));
+  return predicate();
+}
+
+function spawnHandoff(home: string, windowMs: string, ...args: string[]) {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail", ...args], {
+    env: {
+      ...process.env,
+      MIND_MAPPER_HOME: home,
+      MIND_MAPPER_TAIL_RETRY_MS: "50",
+      SPELLBOOK_TAIL_WINDOW_MS: windowMs,
+    },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  cleanup.push(() => proc.kill());
+  return proc;
+}
+
+// The tail's own connect is a `presence.changed` ON THE LOG (it carries an
+// id). Counted, it would make every window "active" and wake every `--once`
+// at once, so it is not counted — and a window with nothing else says
+// background.
+test("a quiet window (only presence churn) hands off to a background --once, no launcher", async () => {
+  const server = fakeSseServer((conn) => {
+    if (conn.since < 1) conn.push(presenceChanged(1, "epoch-q", 1));
+    const timer = setInterval(() => conn.push(": keepalive\n\n"), 80);
+    cleanup.push(() => clearInterval(timer));
+  });
+  const home = mintHome(server.port);
+  const proc = spawnHandoff(home, "600", "--since", "0");
+  const lines = await readAll(proc, 5000);
+  expect(await proc.exited).toBe(0);
+  const last = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+  expect([last.type, last.next, last.spell, last.events, last.command]).toEqual([
+    "tail.quiet",
+    "background",
+    "mind-mapper",
+    0,
+    "tail --since 1@epoch-q --once",
+  ]);
+  // No launcher, no path: the agent prepends its own.
+  expect(String(last.command)).not.toMatch(/\bbun\b|\//);
+});
+
+// Presence churn does not wake the one-shot; the first real log event does. It
+// is printed, the connection is CLOSED (A1), the process exits, and the line
+// names the Monitor re-arm with the scope flags and the epoch bookmark.
+test("--once exits on the first log event, closes its connection, and names the Monitor re-arm", async () => {
+  const conns: Conn[] = [];
+  const server = fakeSseServer((conn) => {
+    conns.push(conn);
+    conn.push(grounding()); // id-less: never a wake
+    conn.push(presenceChanged(5, "epoch-o", 1)); // on the log, but not a wake
+    setTimeout(() => conn.push(event(6, "epoch-o")), 200);
+    // The server never ends this stream: only the client can close it.
+  });
+  const home = mintHome(server.port);
+  const proc = spawnHandoff(
+    home,
+    "0",
+    "--inbound",
+    "--project",
+    "p1",
+    "--since",
+    "4@epoch-o",
+    "--once",
+  );
+  const lines = await readAll(proc, 5000);
+  expect(await proc.exited).toBe(0);
+  const parsed = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+  // A `--since` re-arm prints no grounding; the bookmark reached the daemon.
+  expect(parsed.some((p) => p.kind === "grounding")).toBe(false);
+  expect(conns.map((c) => c.since)).toEqual([4]);
+  expect(parsed.at(-2)).toMatchObject({ id: 6, kind: "doc.added" });
+  expect(parsed.at(-1)).toMatchObject({
+    type: "tail.woke",
+    next: "monitor",
+    spell: "mind-mapper",
+    command: "tail --inbound --project p1 --since 6@epoch-o",
+  });
+  expect(String(parsed.at(-1)?.command)).not.toMatch(/\bbun\b|\//);
+  expect(await until(() => conns[0]?.closed() === true, 2000)).toBe(true);
+});
+
+// D2(c) in once mode: an old-epoch bookmark against a restarted log re-reads
+// the new log from 0 and wakes on ITS first frame, bookmark re-stamped.
+test("--once honours --since N@epoch: a restarted log is re-read from 0 and wakes on its first frame", async () => {
+  const sinces: number[] = [];
+  const server = fakeSseServer((conn) => {
+    sinces.push(conn.since);
+    for (let id = 1; id <= 5; id++) if (id > conn.since) conn.push(event(id, "epoch-new"));
+  });
+  const home = mintHome(server.port);
+  const proc = spawnHandoff(home, "0", "--since", "4@epoch-old", "--once");
+  const lines = await readAll(proc, 5000);
+  expect(await proc.exited).toBe(0);
+  const parsed = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+  expect(sinces.slice(0, 2)).toEqual([4, 0]);
+  expect(parsed.map((p) => p.id ?? p.kind ?? p.type)).toEqual(["epoch.changed", 1, "tail.woke"]);
+  expect(parsed.at(-1)?.command).toBe("tail --since 1@epoch-new");
+});
+
+// A `--once` on a daemon that died would otherwise sleep forever: the pid
+// probe says "no daemon" and an unresolved tail retries. So the tail keeps
+// asking the last port it knew, which refuses, and the kit's lost rule ends it
+// with the way back.
+test("a --once whose daemon dies ends tail.lost, naming open --no-open", async () => {
+  const conns: Conn[] = [];
+  const server = fakeSseServer((conn) => {
+    conns.push(conn);
+  });
+  const home = mintHome(server.port);
+  const proc = spawnHandoff(home, "0", "--since", "3@epoch-d", "--once");
+  expect(await until(() => conns.length === 1, 3000)).toBe(true);
+  // A killed daemon leaves its discovery files behind, naming a dead pid.
+  writeFileSync(join(home, "daemon.pid"), "999999");
+  server.stop();
+  const lines = await readAll(proc, 8000);
+  expect(await proc.exited).toBe(0);
+  const last = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+  expect([last.type, last.next, last.command]).toEqual(["tail.lost", "stop", "open --no-open"]);
 });
