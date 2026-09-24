@@ -96,12 +96,14 @@ bun $S/scripts/cli.ts tail        # wrap with Monitor, timeout_ms 1800000
   background Bash task (`run_in_background`). It exits on the next event, which
   wakes you. Handle the event, then follow its line back to Monitor.
 - `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
-  how to bring it back. If you do, tail the session id it prints with no
-  `--since`: a restored session starts a new event log.
+  how to bring it back. If you run it, arm the tail again with no `--since` (and
+  the session id it prints, where there is one): a restarted daemon starts a new
+  event log.
 
 If Monitor expires before that line arrives, re-arm silently with
-`--since <the last id you saw>`. Never re-arm without `--since`: that replays
-events you have already handled.
+`--since <the last id you saw>`, written `<id>@<its epoch>` when events carry an
+`epoch`. Never re-arm without `--since`: that replays events you have already
+handled.
 
 **⚠ Not every line is JSON. Ignore any line beginning with `:`** — those are
 keepalives (`: scriptorium-keepalive`), and a loop that parses every line will

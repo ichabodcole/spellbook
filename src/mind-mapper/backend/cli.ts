@@ -120,6 +120,7 @@ import {
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
+  parseBookmark,
   selfCommand,
   tailCommand,
   tailWithHandoff,
@@ -574,12 +575,13 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
                 event, which wakes you. Handle the event, then follow its line
                 back to Monitor.
     stop        the session closed or its daemon is gone. Do not re-arm;
-                command is how to bring it back. If you do, tail the session id
-                it prints with no --since: a restored session starts a new
-                event log.
+                command is how to bring it back. If you run it, arm the tail
+                again with no --since (and the session id it prints, where
+                there is one): a restarted daemon starts a new event log.
   If Monitor expires before that line arrives, re-arm silently with
-  --since <the last id you saw>. Never re-arm without --since: that replays
-  events you have already handled. This spell's tail never says background:
+  --since <the last id you saw>, written <id>@<its epoch> when events carry an
+  epoch. Never re-arm without --since: that replays events you have already
+  handled. This spell's tail never says background:
   holding the connection is your presence, so its line always re-arms Monitor.
   tail ${WINDOW_HELP}.`;
 
@@ -750,7 +752,11 @@ async function dispatch(argv: string[]): Promise<number> {
     const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
-    const since = Number.parseInt(parsed.values.since as string, 10);
+    // A bookmark, `N` or `N@<epoch>` as the handoff line prints it
+    // (`kit/wire/tailHandoff.ts`, D2).
+    const mark =
+      typeof parsed.values.since === "string" ? parseBookmark(parsed.values.since) : null;
+    const since = mark?.since ?? Number.NaN;
     // A `--since` re-arm prints no grounding (`kit/wire/tailHandoff.ts`, A3).
     const sinceGiven = parsed.values.since !== undefined;
     // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
@@ -815,6 +821,7 @@ async function dispatch(argv: string[]): Promise<number> {
         },
         path: "/events",
         since: Number.isFinite(since) ? since : 0,
+        ...(mark?.epoch ? { sinceEpoch: mark.epoch } : {}),
         query: (cursor) => ({
           since: String(cursor),
           ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
@@ -877,10 +884,10 @@ async function dispatch(argv: string[]): Promise<number> {
       {
         mode: "watch",
         presence: true,
-        // The grounding frame is the daemon's, but it is not a log event.
-        counts: (ev) => ev.kind !== "grounding",
+        // (No `counts`: the daemon's grounding frame carries no log id, so it
+        // never counts — D3's rule covers it.)
         commands: {
-          tail: ({ since: at }) =>
+          tail: ({ since: at, epoch }) =>
             tailCommand(
               [
                 ...selfCommand(),
@@ -890,6 +897,7 @@ async function dispatch(argv: string[]): Promise<number> {
               ],
               at,
               false,
+              epoch,
             ),
           comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
         },

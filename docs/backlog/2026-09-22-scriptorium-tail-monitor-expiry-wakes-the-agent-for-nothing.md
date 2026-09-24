@@ -120,10 +120,12 @@ Cole's real use says whether the handoff feels right.
   own window 60 s inside Monitor's cap and prints one stdout line naming the
   next act, bookmark included: `tail.window` (re-arm Monitor), `tail.quiet` (run
   `tail --once` as a background Bash task), `tail.woke` (the one-shot fired;
-  back to Monitor), `tail.closed` or `tail.lost` (stop; the line names
-  `open --restore <id>`). Its header is the decision log: the four adjustments,
-  the margin, the disconnect decision, and the rulings with the options not
-  taken.
+  back to Monitor), `tail.closed` or `tail.lost` (stop; the line names the
+  spell's way back: `open --restore <id> --no-open` for the session spells,
+  `open --session-key K --no-open` for a keyed bounty board, `open --no-open`
+  for astrolabe and mind-mapper, `doctor` for grapevine). Its header is the
+  decision log: the four adjustments, the margin, the disconnect decision, and
+  the rulings with the options not taken.
 - **`tail --once`** on the five session spells (scriptorium, glamour, imago,
   magpie, bounty). The presence spells (astrolabe, grapevine, and mind-mapper,
   whose SSE tail is its agent presence) always get the Monitor re-arm.
@@ -145,9 +147,15 @@ Cole's real use says whether the handoff feels right.
 - **The verifier's four defects, fixed on the branch** (D1–D4 in the kit
   header): a re-arm at a session that closed in the gap ends `tail.closed`
   instead of waiting forever; a bookmark from a restarted log is dropped (the
-  come-back line says to tail the new session id with no `--since`); a tab's
-  id-less ping no longer wakes `--once`; `grapevine tail --human` has no window.
-  Anthill's seat filter, which drops the handoff line, is filed as
+  come-back line says to arm the tail again with no `--since`); a tab's id-less
+  ping no longer wakes `--once`; `grapevine tail --human` has no window. The
+  review then added B1 (bounty's rule fired on a keyed FIRST arm; now only an
+  explicit `--session` or `--since` marks a re-arm, and a keyed board comes back
+  by its key) and closed D2's gap for the spells that stamp an epoch: the
+  bookmark is printed `--since N@<epoch>`, so a restarted log is re-read from
+  its start instead of skipped. Glamour, imago, magpie and bounty stamp none;
+  for them the gap is stated in the kit header. Anthill's seat filter, which
+  drops the handoff line, is filed as
   [its own item](./2026-09-23-anthill-seat-tail-filter-drops-the-handoff-line.md).
 
 ## References

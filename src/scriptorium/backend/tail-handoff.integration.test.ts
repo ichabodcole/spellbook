@@ -145,7 +145,7 @@ describe("the handoff on a live session", () => {
       events: 1,
       cursor: since + 1,
       next: "monitor",
-      command: cmd("tail", "--session", id, "--since", String(since + 1)),
+      command: cmd("tail", "--session", id, "--since", `${since + 1}@${event?.epoch}`),
       hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
     });
   }, 30_000);
@@ -190,7 +190,7 @@ describe("the handoff on a live session", () => {
       events: 1,
       cursor: since + 1,
       next: "monitor",
-      command: cmd("tail", "--session", id, "--since", String(since + 1)),
+      command: cmd("tail", "--session", id, "--since", `${since + 1}@${lines[0]?.epoch}`),
       hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
     });
   }, 30_000);
@@ -277,7 +277,7 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
         cursor: since,
         next: "stop",
         command: cmd("open", "--restore", id, "--no-open"),
-        hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
+        hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
       },
     ]);
 
@@ -308,5 +308,53 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
       again.filter((l) => typeof l.id === "number" && (l.id as number) <= (woke.cursor as number)),
     ).toEqual([]);
     expect(again.at(-1)?.type).toMatch(/^tail\.(quiet|window)$/);
+  }, 30_000);
+
+  test("D2 gap: after a restart, a bookmark AT OR BELOW the new log's length still delivers the new log's start", async () => {
+    const r = await cli("open", "--no-open", doc);
+    const { session_id: id, port } = JSON.parse(r.out) as { session_id: string; port: number };
+    opened.push(id);
+    for (const text of ["one", "two", "three"]) await humanSays(port, text);
+    // The re-arm a window prints: its bookmark carries the log's epoch.
+    const w = spawnTail(["--session", id, "--since", "0"], 600);
+    await w.exit(10_000);
+    const printed = w.lines().at(-1) as Line;
+    expect(String(printed.command)).toMatch(/ --since 4@[0-9a-f-]+$/);
+
+    const pid = (
+      await new Response(
+        Bun.spawn(["lsof", "-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], { stdout: "pipe" })
+          .stdout,
+      ).text()
+    ).trim();
+    process.kill(Number(pid), "SIGKILL");
+    await Bun.sleep(500);
+    const back = JSON.parse((await cli("open", "--no-open", "--restore", id)).out) as {
+      port: number;
+    };
+    // The NEW log grows past the old bookmark: ready (1), then new ids 2..5 —
+    // a human message at new id 2 sits BELOW the old bookmark of 4.
+    for (const text of ["new-a", "new-b", "new-c", "new-d"]) await humanSays(back.port, text);
+
+    // The old printed re-arm, run as printed.
+    const p = Bun.spawn(["sh", "-c", String(printed.command)], {
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...env, SPELLBOOK_TAIL_WINDOW_MS: "1500" },
+    });
+    const out = await new Response(p.stdout).text();
+    expect(await p.exited).toBe(0);
+    const lines = out
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Line);
+    expect(lines[0]?.type).toBe("epoch.changed");
+    expect(lines.filter((l) => l.type === "message").map((l) => [l.id, l.text])).toEqual([
+      [2, "new-a"],
+      [3, "new-b"],
+      [4, "new-c"],
+      [5, "new-d"],
+    ]);
+    expect(String(lines.at(-1)?.command)).toMatch(/ --since 5@[0-9a-f-]+$/);
   }, 30_000);
 });

@@ -13,14 +13,15 @@ import {
   type HandoffCommands,
   handoff,
   LOST_AFTER_REFUSALS,
+  parseBookmark,
   resolveWindowMs,
   tailCommand,
   tailWithHandoff,
 } from "./tailHandoff";
 
 const CMD: HandoffCommands = {
-  tail: ({ since, once }) =>
-    `bun /x/cli.ts tail --session s1 --since ${since}${once ? " --once" : ""}`,
+  tail: ({ since, once, epoch }) =>
+    `bun /x/cli.ts tail --session s1 --since ${since}${epoch ? `@${epoch}` : ""}${once ? " --once" : ""}`,
   comeBack: () => "bun /x/cli.ts open --restore s1",
 };
 
@@ -95,7 +96,7 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       cursor: 9,
       next: "stop",
       command: "bun /x/cli.ts open --restore s1",
-      hint: "the session closed; there is nothing left to watch. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
+      hint: "the session closed; there is nothing left to watch. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
     });
   });
 
@@ -108,7 +109,7 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       cursor: 2,
       next: "stop",
       command: "bun /x/cli.ts open --restore s1",
-      hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
+      hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
     });
   });
 
@@ -270,7 +271,7 @@ describe("adjustment 1 — a terminal frame closes the connection", () => {
       out: collector(),
       onEnd: (e) => ends.push(e),
     });
-    expect(ends).toEqual([{ cursor: 5, reason: "terminal" }]);
+    expect(ends).toEqual([{ cursor: 5, epoch: null, reason: "terminal" }]);
   });
 });
 
@@ -530,17 +531,105 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     expect(JSON.parse(out.lines().at(-1) ?? "{}").cursor).toBe(1);
   });
 
-  test("D2: a daemon whose ids survive a restart (eventLog: false) keeps its bookmark", async () => {
-    const d = fakeDaemon((conn) => conn.push({ id: 5, type: "message" }));
-    const out = collector();
-    await tailWithHandoff<Ev>(base(d, out, { since: 8 }), {
-      mode: "watch",
-      presence: true,
-      eventLog: false,
-      windowMs: 150,
-      commands: CMD,
+  test("D2 gap: a bookmark that carries its epoch re-reads a NEW log from 0 — nothing is skipped", async () => {
+    // The new log is already PAST the old bookmark (ids 1..5, bookmark 4), so
+    // the daemon believes the cursor and sends only id 5. Its early frames — a
+    // human message at new id 2 — were skipped with no notice.
+    const sinces: Array<string | null> = [];
+    const d = fakeDaemon((conn) => {
+      sinces.push(conn.since);
+      const from = Number(conn.since);
+      for (let id = 1; id <= 5; id++)
+        if (id > from) conn.push({ id, epoch: "new", type: id === 2 ? "message" : "x" });
     });
-    expect(JSON.parse(out.lines().at(-1) ?? "{}").cursor).toBe(8);
+    const out = collector();
+    await tailWithHandoff<Ev & { epoch?: string }>(
+      base(d, out, {
+        since: 4,
+        sinceEpoch: "old",
+        epochOf: (ev: Ev & { epoch?: string }) => ev.epoch,
+        onEpochChange: (e) => JSON.stringify({ type: "epoch.changed", epoch: e }),
+      }) as Parameters<typeof tailWithHandoff<Ev & { epoch?: string }>>[0],
+      { mode: "watch", presence: false, windowMs: 250, commands: CMD },
+    );
+    const lines = out.lines().map((l) => JSON.parse(l));
+    expect(sinces).toEqual(["4", "0"]);
+    expect(lines.map((l) => l.id ?? l.type)).toEqual([
+      "epoch.changed",
+      1,
+      2,
+      3,
+      4,
+      5,
+      "tail.window",
+    ]);
+    expect(lines.at(-1).command).toBe("bun /x/cli.ts tail --session s1 --since 5@new");
+  });
+
+  test("D2 gap: a presence tail whose reconnect lands past its cursor in a new epoch re-reads from 0", async () => {
+    const sinces: Array<string | null> = [];
+    const d = fakeDaemon((conn, i) => {
+      sinces.push(conn.since);
+      if (i === 0) {
+        conn.push({ id: 5, epoch: "a" });
+        conn.end();
+      } else if (i === 1) {
+        conn.push({ id: 7, epoch: "b" }); // restarted, and already past 5
+      } else {
+        for (let id = 1; id <= 7; id++) conn.push({ id, epoch: "b" });
+      }
+    });
+    const out = collector();
+    await tailWithHandoff<Ev & { epoch?: string }>(
+      base(d, out, {
+        since: 0,
+        retry: { initialMs: 5, maxMs: 5 },
+        epochOf: (ev: Ev & { epoch?: string }) => ev.epoch,
+      }) as Parameters<typeof tailWithHandoff<Ev & { epoch?: string }>>[0],
+      { mode: "watch", presence: true, windowMs: 300, commands: CMD },
+    );
+    expect(sinces.slice(0, 3)).toEqual(["0", "5", "0"]);
+    expect(out.lines().map((l) => JSON.parse(l).id ?? JSON.parse(l).type)).toEqual([
+      5,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      "tail.window",
+    ]);
+  });
+
+  test("D2 gap: the bookmark syntax — N@epoch parses, a bare id still does, junk does not", () => {
+    expect(parseBookmark("12@abc-1")).toEqual({ since: 12, epoch: "abc-1" });
+    expect(parseBookmark("-1@e")).toEqual({ since: -1, epoch: "e" });
+    expect(parseBookmark("7")).toEqual({ since: 7 });
+    expect(parseBookmark("x")).toBeNull();
+    expect(parseBookmark("7@")).toBeNull();
+    expect(tailCommand(["bun", "c", "tail"], 3, true, "e1")).toBe("bun c tail --since 3@e1 --once");
+    expect(tailCommand(["bun", "c", "tail"], -1, false, "e1")).toBe("bun c tail --since=-1@e1");
+  });
+
+  test("a stop that lands while resolve is awaited opens no connection (the reviewer's race)", async () => {
+    const d = fakeDaemon(() => {});
+    const out = collector();
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 30);
+    await tailEvents<Ev>({
+      resolve: async () => {
+        await Bun.sleep(150);
+        return d.base;
+      },
+      path: "/events",
+      since: 0,
+      signals: false,
+      out,
+      signal: ac.signal,
+    });
+    await Bun.sleep(100);
+    expect(d.state.open).toBe(0);
   });
 
   test("D3: an id-less ping is not on the log — it neither counts nor wakes a --once", async () => {

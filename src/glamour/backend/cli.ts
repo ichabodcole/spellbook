@@ -698,9 +698,12 @@ async function cmdState(session?: string, full = false) {
  * The pin, the grounding anchor and the "our session went away" exit are all
  * preserved verbatim: the FIRST resolved session is pinned for the life of the
  * watch, the grounding line names that binding once, and a pointer that
- * disappears AFTER we were bound ends the watch at 0 — a completed watch, not a
- * failure. A pointer that never appeared keeps retrying, which is what `tail`'s
- * own help promises ("waits for a session, never exits 5").
+ * disappears AFTER we were bound ends the watch at 0 with a `tail.closed` line
+ * naming the way back (`kit/wire/tailHandoff.ts`). A pointer that never
+ * appeared keeps retrying on a FIRST arm; a re-arm (`--session` or `--since`)
+ * that cannot find its session ends `tail.closed` at once (D1), because a
+ * session named by a bookmark existed. A first arm still waits for a
+ * session, which is what `tail`'s help promises ("never exits 5").
  */
 async function cmdTail(
   session: string | undefined,
@@ -748,6 +751,10 @@ async function cmdTail(
       terminal: (ev) => ev.type === "closed",
       idleMs: TAIL_IDLE_MS,
       onComment: () => ": glamour-keepalive",
+      // This daemon stamps no epoch, so the only way its log is seen to
+      // restart is the kit's whole-replay net (`kit/wire/tailHandoff.ts`,
+      // D2); it says so on stdout, like the spells that do stamp one.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
     {
       mode: o.once ? "once" : "watch",

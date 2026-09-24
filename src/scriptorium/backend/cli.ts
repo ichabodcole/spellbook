@@ -70,6 +70,7 @@ import {
 } from "../../kit/wire/errors";
 import {
   commandLine,
+  parseBookmark,
   selfCommand,
   tailCommand,
   tailWithHandoff,
@@ -295,17 +296,21 @@ export function parseArgs(args: string[]): {
 }
 
 /**
- * `--since` is an event id: an integer, -1 for "everything". Verify-pass fix
- * 9: `--since abc` parsed to NaN, which the log reads as "from the start", so
- * a typo replayed the whole buffer into the agent's pipe at exit 0.
+ * `tail --since` is a BOOKMARK: an event id (-1 for "everything"), optionally
+ * with the epoch of the log it came from (`12@<epoch>`, as the tail's own handoff line prints it —
+ * `kit/wire/tailHandoff.ts`, D2). The epoch is what lets the tail notice a
+ * restarted daemon whose new log is already past the id. Verify-pass fix 9
+ * still holds: `--since abc` used to parse to NaN, which the log reads as "from
+ * the start", so a typo replayed the whole buffer at exit 0 — it is refused.
  */
-export function parseSince(token: string): number {
-  if (!/^-?\d+$/.test(token.trim()))
+export function parseTailSince(token: string): { since: number; epoch?: string } {
+  const b = parseBookmark(token);
+  if (b === null)
     die(
-      `--since: "${token}" is not an event id — give an integer (the id of the last line you saw)`,
+      `--since: "${token}" is not an event id — give an integer (the id of the last line you saw), optionally as <id>@<epoch>`,
       "usage",
     );
-  return Number.parseInt(token, 10);
+  return b;
 }
 
 /**
@@ -617,7 +622,7 @@ let disconnected = false;
 async function cmdTail(
   session: string | undefined,
   since: number,
-  o: { once: boolean; sinceGiven: boolean },
+  o: { once: boolean; sinceGiven: boolean; epoch?: string },
 ): Promise<number> {
   let boundId = session;
   const reArm = session !== undefined || o.sinceGiven;
@@ -647,6 +652,7 @@ async function cmdTail(
       },
       path: "/events",
       since,
+      ...(o.epoch ? { sinceEpoch: o.epoch } : {}),
       cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
       epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
       // A different epoch on reconnect = the daemon restarted; ids began again.
@@ -688,7 +694,8 @@ async function cmdTail(
       mode: o.once ? "once" : "watch",
       presence: false,
       commands: {
-        tail: ({ since: at, once }) => tailCommand([...selfCommand(), "tail", ...pin()], at, once),
+        tail: ({ since: at, once, epoch }) =>
+          tailCommand([...selfCommand(), "tail", ...pin()], at, once, epoch),
         comeBack: () =>
           commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>", "--no-open"]),
       },
@@ -793,11 +800,14 @@ const COMMANDS: CommandSpec[] = [
     positionals: [],
     describe:
       "the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-    run: (_pos, flags, session) =>
-      cmdTail(session, typeof flags.since === "string" ? parseSince(flags.since) : -1, {
+    run: (_pos, flags, session) => {
+      const b = typeof flags.since === "string" ? parseTailSince(flags.since) : { since: -1 };
+      return cmdTail(session, b.since, {
         once: flags.once === true,
         sinceGiven: typeof flags.since === "string",
-      }),
+        ...(b.epoch ? { epoch: b.epoch } : {}),
+      });
+    },
   },
   {
     name: "version-new",

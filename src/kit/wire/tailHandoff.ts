@@ -78,8 +78,9 @@
  * A3 · QUIET IS THE TAIL'S OWN COUNT. `events` counts the log frames this
  *      process wrote to stdout. The grounding line, a spell's `subscribed`
  *      marker, `epoch.changed` and the handoff line itself are not log frames
- *      and are not counted (`counts` lets a spell exclude a server-sent
- *      grounding frame). Any log frame counts, the daemon's `waiting` reminder
+ *      and are not counted: a frame counts only if it carries a log id (D3),
+ *      and `counts` lets a spell exclude a frame that does (grapevine's
+ *      `subscribed` marker, which seeds the bookmark from `latest_id`). Any log frame counts, the daemon's `waiting` reminder
  *      included, so "quiet" means nothing on the log.
  *      ⚖ A frame the tail's own filter rejects (bounty's owner scope, a
  *      self-echo) is NOT counted and does not end a `--once`: it was never
@@ -95,8 +96,7 @@
  *      start-up, a session lookup, a daemon spawn on the spells whose `resolve`
  *      spawns one — bounded by their start timeouts, which are seconds) plus
  *      the last line's flush and Monitor's 200 ms batching. A minute covers
- *      all of that many times over and costs 3% of the window, one extra
- *      re-arm about every 14.5 hours of activity. The spike measured a 12 s
+ *      all of that many times over. The spike measured a 12 s
  *      window under a 20 s cap ending cleanly; nothing here depends on a
  *      margin that tight. If the cap wins anyway, the agent gets Monitor's
  *      bare expiry notice and re-arms silently from the last id it saw — the
@@ -120,23 +120,48 @@
  *      `--session` or a bookmark is re-arming an EXISTING session, so not
  *      finding it means it closed; the spell's `onUnresolved` says "stop"
  *      and this module reads ANY stop as closed. A bare first arm still
- *      waits for a session to appear.
+ *      waits for a session to appear. ⚠ "Given" means ON THE COMMAND LINE
+ *      (review B1): bounty also resolves a session from
+ *      `$BOUNTY_SESSION_KEY`, `$BOUNTY_SESSION` or a `.bounty-session` file,
+ *      which every anthill seat has, and a seat's first arm must wait. A
+ *      keyed bounty board comes back by its key (`open --session-key K`);
+ *      restoring it by id spawns an unkeyed stray.
  * D2 · A BOOKMARK CANNOT OUTLIVE ITS LOG. A restored daemon's ids begin at 1,
  *      and the kit's log answers a cursor beyond its own by replaying whole;
  *      the tail kept its higher cursor, so every re-arm replayed the new log
  *      and a `--once` woke at once, in a loop. Two halves:
- *        (a) the net — `tailEvents`' `restartOnReplay` (on by default here,
- *            off for grapevine, whose ids survive a restart) reads a frame at
- *            or below the asked cursor as a restarted log and resets;
- *        (b) the rule — the `tail.closed`/`tail.lost` hint says to tail the
- *            session id `open` prints WITH NO `--since`, and so does every
- *            skill. Bounty's restore mints a new id, which is why the line
- *            names "the id it prints", not the old one.
- *      Not taken: carrying the daemon's epoch in the bookmark
- *      (`--since N --epoch E`) — exact, but a new flag on eight verbs and an
- *      epoch the tail sees only once a frame arrives. (a)'s stated blind spot
- *      is a stale bookmark at or below the NEW log's length; (b) is why the
- *      come-back path never presents one.
+ *      and a `--once` woke at once, in a loop. Three parts:
+ *        (a) the net — `tailEvents`' `restartOnReplay`, on for every spell,
+ *            reads a frame at or below the asked cursor as a restarted log
+ *            and resets the cursor;
+ *        (b) the rule — the `tail.closed`/`tail.lost` hint, and every skill,
+ *            say: run the command the line names, then tail WITH NO
+ *            `--since` (a restored daemon starts a new log; bounty's restore
+ *            even mints a new id);
+ *        (c) THE EPOCH IN THE BOOKMARK — ⚖ A REVERSAL. The first version of
+ *            this entry listed "carry the epoch in the bookmark" as not taken
+ *            (a new flag on eight verbs; an epoch seen only once a frame
+ *            arrives). The reviewer then showed (a)'s blind spot LIVE: an old
+ *            bookmark at or below the NEW log's length makes the daemon send
+ *            only what lies above it, so the new log's early frames — a human
+ *            message at new id 2 under a bookmark of 4 — were skipped with no
+ *            notice. Three paths reach it: coming back without following (b);
+ *            the Monitor-cap fallback ("re-arm from the last id you saw")
+ *            across a restart; and a presence tail (astrolabe, mind-mapper)
+ *            whose first frame after a restart is already past its bookmark.
+ *            The fix needs no new flag and no wire change: the bookmark is
+ *            printed `--since N@<epoch>` (`parseBookmark`), the client starts
+ *            with that epoch (`sinceEpoch`), and an epoch change whose frame
+ *            is past the asked cursor re-reads the new log from 0. The same
+ *            reconnect covers the in-process presence case.
+ *      ⚠ STATED LIMIT: only daemons that stamp an epoch get (c) —
+ *      scriptorium, astrolabe and mind-mapper. Glamour, imago, magpie and
+ *      bounty stamp none (session-scoped logs, ruled so in D39/B8; bounty's
+ *      server header names this residue), so for them the gap stays open on
+ *      the fallback path, (a) covers the whole-replay case and (b) the
+ *      come-back path. Closing it there is a daemon change: an epoch on
+ *      `createEventLog`. Every spell prints the net's reset as
+ *      `epoch.changed` (`"epoch": "unknown"` where there is none).
  * D3 · ONLY A FRAME WITH A LOG ID COUNTS. Glamour's and imago's tab pings
  *      (`connected`/`disconnected`) carry no id: not on the log, so a laptop
  *      lid no longer wakes a `--once`, and imago's grep no longer shows a
@@ -206,12 +231,16 @@ export type HandoffInput = {
   events: number;
   /** The bookmark: the highest id this process has seen. */
   cursor: number;
+  /** The log the bookmark belongs to, when the daemon stamps an epoch. */
+  epoch?: string;
   presence: boolean;
 };
 
 export type HandoffCommands = {
-  /** The re-arm, with the bookmark; `once` adds `--once`. */
-  tail: (o: { since: number; once: boolean }) => string;
+  /** The re-arm, with the bookmark; `once` adds `--once`. `epoch` is the
+   *  log the bookmark belongs to, when the daemon stamps one: a spell whose
+   *  `--since` parses `N@<epoch>` (`parseBookmark`) prints it. */
+  tail: (o: { since: number; once: boolean; epoch?: string }) => string;
   /** How to come back from a session that is gone. */
   comeBack: () => string;
 };
@@ -231,7 +260,7 @@ export type HandoffLine = {
 /** The come-back hint, with how to RESUME after coming back (D2): a restored
  *  daemon starts a new log, so the old bookmark means nothing there. */
 const COME_BACK = (why: string) =>
-  `${why} To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)`;
+  `${why} To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
 
 /**
  * THE DECISION: given how the tail ended, which line it prints. Pure, so every
@@ -264,7 +293,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
         type: "tail.woke",
         ...base,
         next: "monitor",
-        command: cmd.tail({ since: s.cursor, once: false }),
+        command: cmd.tail({ since: s.cursor, once: false, ...(s.epoch ? { epoch: s.epoch } : {}) }),
         hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
       };
     case "window":
@@ -273,14 +302,18 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
           type: "tail.window",
           ...base,
           next: "monitor",
-          command: cmd.tail({ since: s.cursor, once: false }),
+          command: cmd.tail({
+            since: s.cursor,
+            once: false,
+            ...(s.epoch ? { epoch: s.epoch } : {}),
+          }),
           hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
         };
       return {
         type: "tail.quiet",
         ...base,
         next: "background",
-        command: cmd.tail({ since: s.cursor, once: true }),
+        command: cmd.tail({ since: s.cursor, once: true, ...(s.epoch ? { epoch: s.epoch } : {}) }),
         hint: "nothing on the log this window; run command as a background Bash task (run_in_background) — it exits on the next event",
       };
   }
@@ -290,6 +323,20 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
  *  runs as printed. */
 export function shellQuote(arg: string): string {
   return /^[A-Za-z0-9_@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replaceAll("'", `'\\''`)}'`;
+}
+
+/**
+ * Read a `--since` value: an event id, optionally carrying the epoch of the
+ * log it came from (`12@<epoch>`, D2). Null when the id is not an integer.
+ * For the spells whose daemon stamps an epoch; the rest take a plain id.
+ */
+export function parseBookmark(token: string): { since: number; epoch?: string } | null {
+  const at = token.indexOf("@");
+  const id = at === -1 ? token : token.slice(0, at);
+  const epoch = at === -1 ? "" : token.slice(at + 1);
+  if (!/^-?\d+$/.test(id.trim())) return null;
+  if (at !== -1 && epoch === "") return null;
+  return { since: Number.parseInt(id, 10), ...(epoch ? { epoch } : {}) };
 }
 
 /** Join an argv into one runnable command line. */
@@ -303,11 +350,18 @@ export function selfCommand(): string[] {
   return ["bun", process.argv[1] ?? "cli.ts"];
 }
 
-/** The re-arm for a spell whose tail is `<prefix…> --since N [--once]`. */
-export function tailCommand(prefix: readonly string[], since: number, once: boolean): string {
+/** The re-arm for a spell whose tail is `<prefix…> --since N[@epoch] [--once]`.
+ *  Pass `epoch` only for a spell whose `--since` parses it (`parseBookmark`). */
+export function tailCommand(
+  prefix: readonly string[],
+  since: number,
+  once: boolean,
+  epoch?: string,
+): string {
   // ⚠ A negative bookmark (nothing seen yet) is spelled `--since=-1`: the
   // parsers read a bare `-1` after a flag as another flag and refuse it.
-  const at = since < 0 ? [`--since=${since}`] : ["--since", String(since)];
+  const mark = epoch ? `${since}@${epoch}` : String(since);
+  const at = since < 0 ? [`--since=${mark}`] : ["--since", mark];
   return commandLine([...prefix, ...at, ...(once ? ["--once"] : [])]);
 }
 
@@ -321,10 +375,6 @@ export type HandoffOptions<Ev> = {
   counts?: (ev: Ev, frame: SseFrame) => boolean;
   /** Which terminal frame means the session closed. Default: every terminal. */
   isClosed?: (ev: Ev) => boolean;
-  /** The daemon runs the kit's event log, so a frame at or below the asked
-   *  cursor means its log restarted (`tailEvents`' `restartOnReplay`, D2).
-   *  Default true; grapevine's durable log turns it off. */
-  eventLog?: boolean;
   commands: HandoffCommands;
 };
 
@@ -348,6 +398,7 @@ export async function tailWithHandoff<Ev>(
 
   let events = 0;
   let cursor = tail.since;
+  let epoch: string | undefined = tail.sinceEpoch;
   let frameHasId = false;
   /** A3 + D3: a frame counts, and wakes a `--once`, only when it is ON THE
    *  LOG — it carries a log id — and the spell's own `counts` agrees. A tab's
@@ -367,7 +418,11 @@ export async function tailWithHandoff<Ev>(
     const code = await tailEvents<Ev>({
       ...tail,
       signal: ac.signal,
-      restartOnReplay: h.eventLog ?? true,
+      // D2's net. On for every spell: a frame at or below the asked cursor
+      // means a whole replay on the kit's log, and on grapevine's durable log
+      // it happens only when `--last` reaches below `--since`, where
+      // re-reading the cursor from the frames is the more correct answer.
+      restartOnReplay: true,
       // D3: remember whether THIS frame carries a log id. `tailEvents` reads
       // the cursor once per frame, before `accept`, `terminal` and `render`.
       cursorOf: (ev) => {
@@ -418,6 +473,7 @@ export async function tailWithHandoff<Ev>(
       },
       onEnd: (s) => {
         cursor = s.cursor;
+        epoch = s.epoch ?? undefined;
         tail.onEnd?.(s);
       },
     });
@@ -427,6 +483,7 @@ export async function tailWithHandoff<Ev>(
         mode: h.mode,
         events,
         cursor,
+        ...(epoch ? { epoch } : {}),
         presence: h.presence,
       },
       h.commands,

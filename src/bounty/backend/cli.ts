@@ -1068,7 +1068,15 @@ async function cmdTail(
   sinceArg: number,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
   once = false,
-  sinceGiven = false,
+  arm: {
+    /** `--since` was given. */
+    sinceGiven?: boolean;
+    /** `--session` was given ON THE COMMAND LINE (not resolved from a key,
+     *  `$BOUNTY_SESSION` or a `.bounty-session` file). */
+    sessionFlag?: boolean;
+    /** The session key in play (`--session-key` or `$BOUNTY_SESSION_KEY`). */
+    key?: string;
+  } = {},
 ): Promise<number> {
   const owner = scope.owner;
   const self = scope.as;
@@ -1084,7 +1092,11 @@ async function cmdTail(
     process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
   let pinned = session;
-  const reArm = session !== undefined || sinceGiven;
+  // D1, and B1 of the review: only an EXPLICIT `--session` or a bookmark marks
+  // a re-arm. `session` here is also filled from `$BOUNTY_SESSION_KEY`,
+  // `$BOUNTY_SESSION` or a `.bounty-session` file — which every anthill seat
+  // has — and a seat's FIRST arm must still wait for its board to appear.
+  const reArm = arm.sessionFlag === true || arm.sinceGiven === true;
   let announcedPin = false;
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
@@ -1143,14 +1155,25 @@ async function cmdTail(
       terminalEmitsFiltered: true,
       idleMs: TAIL_IDLE_MS,
       onComment: () => ": bounty-keepalive",
+      // This daemon stamps no epoch, so the only way its log is seen to
+      // restart is the kit's whole-replay net (`kit/wire/tailHandoff.ts`,
+      // D2); it says so on stdout, like the spells that do stamp one.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
     {
       mode: once ? "once" : "watch",
       presence: false,
       commands: {
         tail: ({ since, once: o }) => tailCommand(again(), since, o),
+        // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
+        // as printed spawns an UNKEYED stray board; `open --session-key K`
+        // derives the same id and restores it by default (#69).
         comeBack: () =>
-          commandLine([...selfCommand(), "open", "--restore", pinned ?? "<id>", "--no-open"]),
+          commandLine(
+            arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned
+              ? [...selfCommand(), "open", "--session-key", arm.key, "--no-open"]
+              : [...selfCommand(), "open", "--restore", pinned ?? "<id>", "--no-open"],
+          ),
       },
     },
   );
@@ -1391,7 +1414,18 @@ async function dispatch(argv: string[]): Promise<number> {
           as,
         },
         flags.once === true,
-        typeof flags.since === "string",
+        {
+          sinceGiven: typeof flags.since === "string",
+          sessionFlag: typeof flags.session === "string",
+          // The key in play, if any; `cmdTail` checks it derives THIS board's
+          // id before naming it (a re-arm carries `--session <k-id>`, which
+          // outranks the key in `resolveSession` but is the same board).
+          ...(typeof flags["session-key"] === "string"
+            ? { key: flags["session-key"] }
+            : process.env.BOUNTY_SESSION_KEY
+              ? { key: process.env.BOUNTY_SESSION_KEY }
+              : {}),
+        },
       );
     }
     case "state": {

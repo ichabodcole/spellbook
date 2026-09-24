@@ -1014,9 +1014,6 @@ async function cmdTail(
       // D4: a human at a terminal (`--human`) is not an agent under
       // Monitor's cap, so their watch never ends by itself.
       ...(opts.human ? { windowMs: 0 } : {}),
-      // Ids are recovered across a restart (D70), so a frame at or below the
-      // bookmark never means a restarted log here.
-      eventLog: false,
       // The `subscribed` marker (and the grounding line it renders) is not a
       // message on the channel.
       counts: (_ev, frame) => frame.event !== "subscribed",

@@ -448,9 +448,13 @@ async function cmdState(session?: string, full = false) {
  * PRESERVED VERBATIM, because they are imago's own contract and not the shared
  * client's: the FIRST resolved session is pinned for the life of the watch, the
  * grounding line names that binding once so a wrong session/port is obvious
- * instead of silent, a pointer that disappears AFTER we were bound ends the
- * watch at 0 (a completed watch, not a failure), and one that never appeared
- * keeps retrying with `# no session yet, retrying…` on stderr.
+ * instead of silent, and a pointer that
+ * disappears AFTER we were bound ends the watch at 0 with a `tail.closed` line
+ * naming the way back (`kit/wire/tailHandoff.ts`). A pointer that never
+ * appeared keeps retrying on a FIRST arm; a re-arm (`--session` or `--since`)
+ * that cannot find its session ends `tail.closed` at once (D1), because a
+ * session named by a bookmark existed. A first arm's retry says
+ * `# no session yet, retrying…` on stderr.
  */
 async function cmdTail(
   session: string | undefined,
@@ -497,6 +501,10 @@ async function cmdTail(
       terminal: (ev) => ev.type === "closed",
       idleMs: TAIL_IDLE_MS,
       onComment: () => ": imago-keepalive",
+      // This daemon stamps no epoch, so the only way its log is seen to
+      // restart is the kit's whole-replay net (`kit/wire/tailHandoff.ts`,
+      // D2); it says so on stdout, like the spells that do stamp one.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
     {
       mode: o.once ? "once" : "watch",

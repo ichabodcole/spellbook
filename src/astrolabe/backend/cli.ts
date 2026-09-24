@@ -42,6 +42,7 @@ import { printJson } from "../../kit/lib/printJson";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
 import {
   commandLine,
+  parseBookmark,
   selfCommand,
   tailCommand,
   tailWithHandoff,
@@ -240,6 +241,7 @@ function openBrowser(url: string): void {
 // resumes when the human reopens the board.
 async function streamEvents(opts: {
   since: number;
+  sinceEpoch?: string;
   project?: string;
   scopeId?: string;
   self?: string;
@@ -263,6 +265,7 @@ async function streamEvents(opts: {
       resolve: runningBase,
       path: "/events",
       since: opts.since,
+      ...(opts.sinceEpoch ? { sinceEpoch: opts.sinceEpoch } : {}),
       cursorOf: (ev) => ev.id,
       query: (cursor) => ({
         since: String(cursor),
@@ -288,7 +291,8 @@ async function streamEvents(opts: {
       mode: "watch",
       presence: true,
       commands: {
-        tail: ({ since }) => tailCommand([...selfCommand(), ...opts.again], since, false),
+        tail: ({ since, epoch }) =>
+          tailCommand([...selfCommand(), ...opts.again], since, false, epoch),
         comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
       },
     },
@@ -602,7 +606,12 @@ async function dispatch(argv: string[]): Promise<number> {
   }
   const flags = parsed.values as Record<string, string | boolean>;
   const pos = parsed.positionals as string[];
-  const since = typeof flags.since === "string" ? Number.parseInt(flags.since, 10) : -1;
+  // `--since` is a bookmark, `N` or `N@<epoch>` as the handoff line prints it
+  // (`kit/wire/tailHandoff.ts`, D2): the epoch lets the tail notice a restarted
+  // daemon whose new log is already past the id.
+  const mark = typeof flags.since === "string" ? parseBookmark(flags.since) : null;
+  const since = mark?.since ?? -1;
+  const sinceEpoch = mark?.epoch;
 
   switch (verb) {
     case "open":
@@ -658,6 +667,7 @@ async function dispatch(argv: string[]): Promise<number> {
       const self = resolveAs(flags);
       return await streamEvents({
         since,
+        sinceEpoch,
         project: id,
         scopeId: id,
         self,
@@ -671,6 +681,7 @@ async function dispatch(argv: string[]): Promise<number> {
       const self = resolveAs(flags);
       return await streamEvents({
         since,
+        sinceEpoch,
         self,
         again: ["tail", ...(self !== undefined ? ["--as", self] : [])],
       });
