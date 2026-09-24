@@ -368,9 +368,9 @@ line it prints
 **Confidence:**
 
 - High that the cause and the replay are as stated.
-- Medium on Option 2. The probe below shows a background shell outlives the Bash
-  tool's 10-minute foreground cap, but nothing past 30 minutes was tested, and
-  no real idle session has run on it.
+- Medium on Option 2 when written. The
+  [feasibility spike](#feasibility-of-the-ruled-hybrid) has since raised it: a
+  background one-shot slept 38 minutes and still woke the agent.
 
 ### What Cole needs to rule on (cost against UX)
 
@@ -396,7 +396,9 @@ this cycle on `feat/tail-quiet-handoff`:
 - Bounty's example is fixed.
 - Fallback: a silent bookmark re-arm.
 
-Option 3, the lapse, was not taken. The full ruling is on
+Option 3, the lapse, was not taken. The
+[feasibility spike](#feasibility-of-the-ruled-hybrid) found it works, with four
+adjustments. The full ruling is on
 [the backlog item](../backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md#ruling-cole-2026-09-23).
 
 ## Background-shell probe
@@ -409,17 +411,177 @@ foreground maximum), launched 2026-09-22.
 on exit (`background shell survived 660s`). So a background wait is not bound by
 the 600,000 ms foreground `timeout`, and exit is the wake.
 
-**Not established:** whether it survives past 1,800,000 ms. No cap is
-documented, and this probe did not test that far. **The pilot's first step is
-one idle wait longer than 30 minutes.** If a cap turns up there, Option 2
-degrades to Option 1's cadence. It still has no replay.
+**Past 1,800,000 ms:** settled by the
+[feasibility spike](#feasibility-of-the-ruled-hybrid), where a background
+one-shot slept 2279 s and still woke the agent.
+
+## Feasibility of the ruled hybrid
+
+**Verdict: the hybrid works. The fallback is not needed.** Four adjustments are
+required before it is built; they are listed under
+[Design adjustments](#design-adjustments-the-fix-branch-must-carry).
+
+### Method
+
+`tail --once` does not exist yet, so it was emulated in the scratchpad (not the
+repo) as `proto-tail.ts`, a small script on **the kit's own client**,
+`src/kit/wire/tailEvents.ts`. It has two modes:
+
+- `once` ends on the first log event (the kit's `terminal` hook).
+- `for:<s>` is a self-ending window that counts its own events.
+
+Both modes end with one stdout line naming the next act, bookmark included. For
+example:
+`{"type":"tail.quiet","events":0,"cursor":1,…,"next":"Bash run_in_background: tail --once --since 1"}`.
+
+The setup:
+
+- Sessions were throwaway, with `SCRIPTORIUM_HOME` and `TMPDIR` in the
+  scratchpad, opened by the shipped `scripts/cli.ts`.
+- Human messages were posted the way the surface posts them: a `say` frame over
+  `ws://127.0.0.1:<port>/ws`.
+- Page reloads were emulated as a socket open and close with nothing sent.
+- Every session and process was closed afterwards.
+
+### (a) The quiet signal: the script decides, not the expiry notice
+
+| Probe                                                 | What the agent received                                                                                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| real `tail --since 1` under a 15 s Monitor, no events | the `grounding` line, then `[Monitor expired after 15s with 1 event delivered. …]`                                                     |
+| real `tail --since 2`, 8 s Monitor, 1 human event     | `grounding`, the event, then `[Monitor expired after 8s with 2 events delivered. …]`                                                   |
+| prototype `for:12` under a 20 s Monitor, no events    | one notification with `{"type":"tail.quiet","events":0,…,"next":"Bash run_in_background: tail --once --since 1"}` and the stream's end |
+| prototype `for:12`, 2 human events                    | the 2 events, then `{"type":"tail.window","events":2,"cursor":3,…,"next":"Monitor: tail --since 3"}`                                   |
+
+**The notice's count is not trustworthy as the branch signal.** It counts every
+stdout line, including the tail's own `grounding` line, so a truly idle window
+reports "1 event". It would also count any future diagnostic that reaches
+stdout.
+
+The script knows exactly what it saw. When it ends itself before the cap, its
+own line arrives in the **same notification** as the stream's end. That is one
+wake, and it already names the act. This confirms the ruling's preference.
+
+### (b) The key question: a background one-shot outlives 30 minutes and wakes the agent
+
+The setup:
+
+- The session was opened with `--timeout 60`, so its idle close would fire
+  within a minute of losing its last subscriber.
+- `proto-tail.ts <port> 1 once` ran as a `run_in_background` Bash task, and was
+  the session's only subscriber.
+- A **detached** `nohup` shell, independent of the harness's task machinery,
+  slept 2280 s and then posted one human message.
+
+| Time (UTC, 2026-09-24) | What happened                                                                      | Method                                |
+| ---------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| 00:27:02.817           | one-shot armed                                                                     | the script's own `started`            |
+| 00:48:38               | daemon still listening, 21 min in, against a 60 s idle close                       | `lsof` on the session's port          |
+| 00:58:06               | one-shot still asleep, 31 min in, past the Monitor cap                             | its task output, polled               |
+| 01:05:02.245           | fake human posts                                                                   | the message's own `ts`                |
+| 01:05:02.246           | one-shot receives it and exits 0 (`uptime_s: 2279`)                                | the script's `last_event` and `ended` |
+| 01:05:02               | **the harness notifies the agent**: "Background command … completed (exit code 0)" | the task notification in this session |
+
+**Results:**
+
+- **No cap on the background task.** It slept 2279 s, 1.27× the Monitor's cap,
+  and exited on the event.
+- **No latency cost.** The wake came 1 ms after the event's timestamp.
+- **No spurious wakes.** The event it woke on was id 2, the first after `ready`.
+  Nothing else was written to the log in 38 minutes.
+- **The idle close does not interfere.** The one-shot is an SSE subscriber, so
+  `shouldIdleClose` never fired. The same session was re-armed after the wake
+  (below), which proves it never closed.
+
+⚠ **This run is the second attempt, and the first attempt's failure is the most
+important finding here** (see adjustment 1). The first one-shot printed its wake
+line and then **never exited**. A background task that never exits never wakes
+the agent, and nothing would have said so.
+
+### (c) The handoff: nothing replays, and nothing is lost
+
+Three checks:
+
+- **Handoff at 38 minutes.** After the wake, a Monitor re-armed with
+  `tail --since 2` delivered `grounding`, then one new live event (id 3). Ids 1
+  and 2 were not replayed.
+- **Two quick events.** Against a one-shot at `--since 10`, two human messages
+  were sent back to back. The one-shot exited on the first (id 11), 1.5 s after
+  arming.
+- **An event in the gap.** One more message was sent after the exit and before
+  the re-arm. The re-arm at `--since 11` then delivered **id 12 (the second
+  quick event) and id 13 (the gap event)**, and nothing at or below 11.
+
+The bookmark covers the gap because the daemon buffers what lands in it.
+
+### (d) What else could break it
+
+- **Page reload.** Two socket open/close cycles wrote nothing to the log. The
+  one-shot stayed asleep until its 6 s test alarm. **No spurious wake.**
+- **`waiting` nudges wake the one-shot.** Twice, a one-shot woke at once on a
+  `waiting` event: the daemon's 30-second reminder about a human message nobody
+  had answered. That is correct, since a waiting human is actionable. It also
+  means **"quiet" must mean nothing on the log**, not "no human messages". The
+  agent's own `task.*` and `version.*` events are on the same log, so they would
+  wake it too. That is inferred from the code, not tested, and it would be
+  right.
+- **Graceful close while asleep.** The one-shot woke on `closed` (id 2) with
+  `closed: true`. But the prototype then named `Monitor: tail --since 2`, which
+  is **the wrong act**: there is nothing left to watch. See adjustment 2.
+- **Crash while asleep.** The daemon was killed with `kill -9`, found by its own
+  port per E55's process note. The real `tail` wrote
+  `{"type":"tail.disconnected",…}` to **stderr** and retried silently. **A
+  one-shot on a dead daemon would sleep forever and never wake the agent.** And
+  it is not new: under **today's** Monitor loop the same line is invisible too,
+  because Monitor notifies only on stdout. E55's stated purpose, "a watcher …
+  would never learn it had stopped listening", is therefore unmet for a
+  Monitor-wrapped agent. See adjustment 2.
+
+### Design adjustments the fix branch must carry
+
+1. **A terminal event must close the connection** (`tailEvents`, kit). On a
+   terminal frame the client `return`s from inside the read loop, but its
+   `finally` never aborts the fetch or cancels the reader. The process stays
+   alive on the open SSE stream. `closed` never exposed this, because there the
+   server ends the stream itself. `--once` will expose it on every wake.
+   Measured: the prototype's first one-shot printed `tail.woke` and was still
+   running 2 min later; it was killed by hand.
+2. **Loss of the daemon ends the wait, on stdout, naming how to come back.**
+   - In `--once`, a `closed` frame and a disconnect are both terminal.
+   - Their line names the act for that state, not a re-arm. The act is
+     `open --restore <id>`, which is E56's verb, with `doctor` if unsure.
+   - The ruling's "the script names the next act" must be **conditional on
+     state**: re-arm Monitor, go to background, or come back from a closed
+     session.
+   - Whether Monitor mode should also move `tail.disconnected` to stdout is the
+     same question for today's loop. It should be decided on the same branch,
+     because it is the same line.
+3. **The script decides quiet from its own count of log frames, not the
+   notice.** Two rules follow:
+   - the `grounding` line is not counted;
+   - on a `--since` re-arm, the `grounding` line should not be printed at all,
+     since the agent already knows the session.
+4. **The self-ending window must end before the Monitor cap, with margin.** If
+   the Monitor kills the tail first, the script's line is never printed and the
+   agent gets the bare notice. Measured here: a 12 s window under a 20 s cap
+   ended cleanly. The kit's deadline should sit well inside 1,800,000 ms. The
+   skill sets `timeout_ms` to the maximum, and the fallback for a bare notice is
+   the ruling's silent bookmark re-arm, from the last id the agent saw.
+
+**Not changed by the spike:**
+
+- The ruling's shape stands.
+- Presence spells keep the Monitor re-arm; nothing here tested presence.
+- A burst still arrives split: the first event on the one-shot, the rest on the
+  re-arm. Draining for ~200 ms after the first event, to match Monitor's own
+  batching window, is an option for the branch, not a requirement.
 
 ## Open Questions
 
 - **The notification size of a large replay, and whether the harness clips it.**
   Not measured; Option 1 makes it moot.
-- **Option 2 in practice.** How a real session feels when every human message is
-  followed by one re-arm call. It needs a drive, not a reading.
+- **Option 2 in practice.** How a real session feels when every return from away
+  is followed by one re-arm call. The mechanism is proven (see Feasibility); the
+  feel needs Cole's real use.
 
 ---
 
