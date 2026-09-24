@@ -1,5 +1,45 @@
 # Changelog
 
+## [3.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.0.1...spellbook-v3.1.0) (2026-09-24)
+
+
+### Features
+
+* every spell's tail hands off before Monitor's cap, bookmark included ([4c558ee](https://github.com/ichabodcole/spellbook/commit/4c558ee006a7453fcc12ce029fc1b453055156cd))
+* **kit:** the tail ends its own window and names the next act ([0fbba47](https://github.com/ichabodcole/spellbook/commit/0fbba47c43fd0e787f89065c4889117adb6551b4))
+* **mind-mapper:** the agent's presence lingers across the tail's gaps ([b28d638](https://github.com/ichabodcole/spellbook/commit/b28d6383135fa19933e15ab21b20f2e5037314ad))
+* **mind-mapper:** the tail takes the quiet handoff, like the session spells ([00f5f0a](https://github.com/ichabodcole/spellbook/commit/00f5f0a3430fe84d86716255cc778b906f65ebab))
+* **scriptorium:** a note shows that it is with the agent (E65) ([e9c219c](https://github.com/ichabodcole/spellbook/commit/e9c219c0425e489d47de4ef4d068b67943579d07))
+* **scriptorium:** raw, rendered and split keep your place (E63) ([046fa91](https://github.com/ichabodcole/spellbook/commit/046fa917aa4f1b1abfb05e766d4ef3351bdc57c7))
+* **scriptorium:** the side columns collapse, and the composer floats (E64) ([54a3889](https://github.com/ichabodcole/spellbook/commit/54a388946e6c88237035d0a6a7c1e5e4c5b97f1b))
+* **scriptorium:** the source line at the top of a pane (E63) ([681337a](https://github.com/ichabodcole/spellbook/commit/681337abff5a19cc1923c3aa71ce039ce2d44f14))
+
+
+### Bug Fixes
+
+* **kit:** review fixes: keyed first arms wait, a bookmark carries its epoch ([7340486](https://github.com/ichabodcole/spellbook/commit/7340486cf365e2853fea648b46ec632c5b77c7e3))
+* **kit:** review follow-ups: per-spell printed-command cells, refusal wording, notes ([9065e65](https://github.com/ichabodcole/spellbook/commit/9065e65ee3dcdc96c50a57d94c5b5d5295194548))
+* **kit:** the tail handoff survives a closed gap, a restarted log and a human ([b0174d9](https://github.com/ichabodcole/spellbook/commit/b0174d9fbacf8c6b6a2486ac7f00aea003d9f77b))
+* **kit:** the tail's printed command names no path; every --since refusal names its forms ([095ba37](https://github.com/ichabodcole/spellbook/commit/095ba378d7ecd75d4303f4385b69fb222cb2f676))
+* **mind-mapper:** pin the /send side of the presence linger; review follow-ups ([49bea5c](https://github.com/ichabodcole/spellbook/commit/49bea5c1c8c2e8c5a6fd225432c7b59cc3e91795))
+* **scriptorium:** a click in either pane clears both ([0f0a75c](https://github.com/ichabodcole/spellbook/commit/0f0a75c5b8262fb2f40a7a7cbf150b1abc252ffd))
+* **scriptorium:** a click inside the selection clears the chip too ([5ab29bc](https://github.com/ichabodcole/spellbook/commit/5ab29bc130efd0bf7edbdfa0244cfbeee7f87567))
+* **scriptorium:** a key ends a context press, so the chip stops sticking ([ee8b97b](https://github.com/ichabodcole/spellbook/commit/ee8b97be14ad7dfab34c51c1208e4d120182f9a5))
+* **scriptorium:** a reveal is one shot, for the text it was aimed at (E66) ([612bd3a](https://github.com/ichabodcole/spellbook/commit/612bd3a48a10eb500602179646458822decd7ba8))
+* **scriptorium:** a run's own characters, not the one before it ([0049de0](https://github.com/ichabodcole/spellbook/commit/0049de037d9db3483c0ae992cae5d85413f7b71f))
+* **scriptorium:** a word on a wrapped list or quote line reports that line ([df0af6e](https://github.com/ichabodcole/spellbook/commit/df0af6e5a7e35776b73eea814fd9cba515024d7b))
+* **scriptorium:** dropping the context drops the highlight too ([dff26fd](https://github.com/ichabodcole/spellbook/commit/dff26fda01f96ecacc74d50ab13bea1d9f5a0769))
+* **scriptorium:** pin the note-in-progress plumbing the reviewer found unconvicted (E65) ([6319d0c](https://github.com/ichabodcole/spellbook/commit/6319d0ca9528055794052d7a702189afb7f3523a))
+* **scriptorium:** rendered selections stay on their lines past a blockquote ([b6a3ea8](https://github.com/ichabodcole/spellbook/commit/b6a3ea82714c0823a211e9fa0a769dd3fa820072))
+* **scriptorium:** switching the document clears the held selection (E66) ([566327c](https://github.com/ichabodcole/spellbook/commit/566327cb993aab057cb9386058fb553c78d2bd76))
+* **scriptorium:** the chat's chip mirrors the selection again ([645a52c](https://github.com/ichabodcole/spellbook/commit/645a52c27e8fcee2e62c02e09b0e01eb182960c3))
+* **scriptorium:** the chip's X says what it now does ([11bc993](https://github.com/ichabodcole/spellbook/commit/11bc993f1bcfdc5b7473ab8ecf4a3be0a3486a85))
+* **scriptorium:** the claims a reviewer falsified, and a second pinned hole (E63) ([fcb00fc](https://github.com/ichabodcole/spellbook/commit/fcb00fc018972cff8b00cbf003270acc05d340dc))
+* **scriptorium:** the reviewer's findings on the side columns (E64) ([52234e3](https://github.com/ichabodcole/spellbook/commit/52234e35adb4ce79f2fbe053c3d2e79af38ae5e1))
+* **scriptorium:** the split's guard is an event, not a 150 ms window (E63) ([8b29117](https://github.com/ichabodcole/spellbook/commit/8b29117178bc7737d5c99d3bb7c24744927fcad5))
+* **scriptorium:** what the no-stake verifier found in note-in-progress (E65) ([8a65c39](https://github.com/ichabodcole/spellbook/commit/8a65c39d25c3739d269177a25204d5884d81a7fe))
+* **scriptorium:** what the no-stake verifier found in the side columns (E64) ([6affa0d](https://github.com/ichabodcole/spellbook/commit/6affa0d2b7b5c6ed33f9f22da47bd77c1be049bc))
+
 ## [3.0.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.0.0...spellbook-v3.0.1) (2026-09-17)
 
 
