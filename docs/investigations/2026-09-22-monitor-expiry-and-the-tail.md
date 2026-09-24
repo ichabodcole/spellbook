@@ -14,7 +14,8 @@ generated: { by: claude-opus-5.5, at: 2026-09-22 }
 
 # Investigation: the Monitor's 30-minute expiry, and what re-arming the tail costs
 
-**Outcome:** Proposal Recommended, pending Cole's ruling (see
+**Outcome:** Ruled by Cole 2026-09-23: a hybrid, fixed in this cycle (see
+[Decision](#decision) and
 [the backlog item](../backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md))
 
 ---
@@ -380,6 +381,23 @@ line it prints
    reshaping for the saving is a cost call.
 3. **Is the multi-day lapse (Option 3) still wanted** now that Option 2 exists?
    It trades the heard-on-return guarantee for the last few wakes.
+
+## Decision
+
+Cole ruled on 2026-09-23, choosing a **hybrid of Options 1, 2 and 4**, fixed in
+this cycle on `feat/tail-quiet-handoff`:
+
+- Monitor while he is active.
+- At the cap, the tail ends itself and names the next act, bookmark included:
+  - re-arm Monitor if the window saw events;
+  - a background one-shot `tail --once` if it saw none.
+- The bookmark is always used.
+- Presence spells keep the Monitor re-arm.
+- Bounty's example is fixed.
+- Fallback: a silent bookmark re-arm.
+
+Option 3, the lapse, was not taken. The full ruling is on
+[the backlog item](../backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md#ruling-cole-2026-09-23).
 
 ## Background-shell probe
 

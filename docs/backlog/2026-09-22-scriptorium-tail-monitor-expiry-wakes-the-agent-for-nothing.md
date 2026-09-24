@@ -85,6 +85,32 @@ The ruling is pending, so this item stays open.
   deliberate lapse. **Cole rules** whether 2 idle wakes an hour are acceptable,
   and whether zero is worth a re-arm after every event.
 
+## Ruling (Cole, 2026-09-23)
+
+A **hybrid**, fixed **in this cycle** because it must ship before the next
+release. The fix branch is `feat/tail-quiet-handoff`. This item stays open until
+it lands.
+
+- **By default the agent watches with Monitor.** It streams live while Cole is
+  active, which is most of the time.
+- **At the 30-minute cap, what the watch saw decides the next act:**
+  - it saw events: re-arm Monitor with `--since <last id>`;
+  - it saw none (he is away: dinner, bed): switch to a one-shot
+    `tail --once --since <last id>` in a background Bash task. It sleeps until
+    something happens, so there are no idle wakes.
+- **When the one-shot fires** (he is back), the agent handles the event and
+  returns to Monitor.
+- **The script names the next act, not the skill.** Just before the cap, the
+  tail ends itself with a line naming the right re-arm command, bookmark
+  included. This is the house rule that a response names its next act.
+- **The bookmark (`--since`) is always used.** That fixes the replay house-wide.
+- **Presence spells** (astrolabe, grapevine) may always get the Monitor re-arm
+  line, because a one-shot would flicker their presence.
+- **Fix bounty's example.** Its `timeout_ms: 3600000` and `persistent: true` are
+  misleading.
+- **Fallback:** if the one-shot cannot outlive 30 minutes, re-arm silently with
+  the bookmark.
+
 ## References
 
 - `plugins/spellbook/skills/scriptorium/SKILL.md:86`

@@ -69,6 +69,21 @@ every spell.
      and the source confirmed (Monitor's 30-min cap, or the daemon). Then a
      ruling. If the cause is the Monitor pattern the other skills share, the fix
      may leave this cycle as its own item.
+   - **Found (2026-09-22):** the fix is house-wide, not Scriptorium's. The wake
+     is the Monitor's 30-minute cap, and every bare re-arm replays the session,
+     so answered messages come back looking live. The shared tail client in the
+     kit (`src/kit/wire/tailEvents.ts`) and the seven skills that wrap a tail in
+     Monitor all carry it. See
+     [the investigation](../investigations/2026-09-22-monitor-expiry-and-the-tail.md).
+6. **`feat/tail-quiet-handoff`** (added by Cole's ruling, 2026-09-23)
+   - **The scope widens past Scriptorium on purpose.** The replay is a
+     correctness bug in every spell with a tail, and Cole ruled that the fix
+     must ship before the next release. So it stays in this cycle instead of
+     leaving as its own item. The hybrid he chose (Monitor while active, a
+     one-shot background wait while away, and the tail naming its own re-arm
+     with the bookmark) is recorded as the Ruling on the backlog item. It
+     touches the kit client and all seven skills, bounty's misleading example
+     included.
 
 Unplanned addition:
 
