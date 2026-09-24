@@ -92,7 +92,10 @@ async function socket(port: number, send?: unknown) {
   await Bun.sleep(250);
 }
 
-const cmd = (...args: string[]) => ["bun", CLI, ...args].join(" ");
+// The printed command is the verb and its arguments only; the agent runs it with
+// its own launcher (Cole's ruling, 2026-09-24). So a printed command is run
+// here the way the skill says: `bun <this skill's launcher> <command>`.
+const cmd = (...args: string[]) => args.join(" ");
 
 describe("glamour's tail handoff", () => {
   test("D1: a re-arm at a session that closed in the gap ends tail.closed at once", async () => {

@@ -14,6 +14,7 @@ import {
   handoff,
   LOST_AFTER_REFUSALS,
   parseBookmark,
+  readSince,
   resolveWindowMs,
   tailCommand,
   tailWithHandoff,
@@ -21,21 +22,25 @@ import {
 
 const CMD: HandoffCommands = {
   tail: ({ since, once, epoch }) =>
-    `bun /x/cli.ts tail --session s1 --since ${since}${epoch ? `@${epoch}` : ""}${once ? " --once" : ""}`,
-  comeBack: () => "bun /x/cli.ts open --restore s1",
+    `tail --session s1 --since ${since}${epoch ? `@${epoch}` : ""}${once ? " --once" : ""}`,
+  comeBack: () => "open --restore s1",
 };
 
 describe("handoff — which line, given how the tail ended (pure)", () => {
   test("quiet window: nothing on the log → a background one-shot, bookmark included", () => {
     expect(
-      handoff({ end: "window", mode: "watch", events: 0, cursor: 7, presence: false }, CMD),
+      handoff(
+        { spell: "demo", end: "window", mode: "watch", events: 0, cursor: 7, presence: false },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.quiet",
+      spell: "demo",
       events: 0,
       cursor: 7,
       next: "background",
-      command: "bun /x/cli.ts tail --session s1 --since 7 --once",
-      hint: "nothing on the log this window; run command as a background Bash task (run_in_background) — it exits on the next event",
+      command: "tail --session s1 --since 7 --once",
+      hint: "nothing on the log this window; run bun <this skill's directory>/scripts/cli.ts <command> as a background Bash task (run_in_background) — it exits on the next event",
     });
   });
 
@@ -43,6 +48,7 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
     expect(
       handoff(
         {
+          spell: "demo",
           end: "window",
           mode: "watch",
           events: 3,
@@ -53,63 +59,80 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       ),
     ).toEqual({
       type: "tail.window",
+      spell: "demo",
       events: 3,
       cursor: 12,
       next: "monitor",
-      command: "bun /x/cli.ts tail --session s1 --since 12",
-      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
+      command: "tail --session s1 --since 12",
+      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
     });
   });
 
   test("presence spell, quiet window: STILL Monitor, never the one-shot", () => {
     expect(
-      handoff({ end: "window", mode: "watch", events: 0, cursor: 4, presence: true }, CMD),
+      handoff(
+        { spell: "demo", end: "window", mode: "watch", events: 0, cursor: 4, presence: true },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.window",
+      spell: "demo",
       events: 0,
       cursor: 4,
       next: "monitor",
-      command: "bun /x/cli.ts tail --session s1 --since 4",
-      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
+      command: "tail --session s1 --since 4",
+      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
     });
   });
 
   test("once woke on an event → back to Monitor from the bookmark", () => {
     expect(
-      handoff({ end: "event", mode: "once", events: 1, cursor: 8, presence: false }, CMD),
+      handoff(
+        { spell: "demo", end: "event", mode: "once", events: 1, cursor: 8, presence: false },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.woke",
+      spell: "demo",
       events: 1,
       cursor: 8,
       next: "monitor",
-      command: "bun /x/cli.ts tail --session s1 --since 8",
-      hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
+      command: "tail --session s1 --since 8",
+      hint: "handle the event above, then arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
     });
   });
 
   test("closed → stop, naming how to come back — not a re-arm", () => {
     expect(
-      handoff({ end: "closed", mode: "once", events: 1, cursor: 9, presence: false }, CMD),
+      handoff(
+        { spell: "demo", end: "closed", mode: "once", events: 1, cursor: 9, presence: false },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.closed",
+      spell: "demo",
       events: 1,
       cursor: 9,
       next: "stop",
-      command: "bun /x/cli.ts open --restore s1",
-      hint: "the session closed; there is nothing left to watch. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
+      command: "open --restore s1",
+      hint: "the session closed; there is nothing left to watch. To bring it back, run bun <this skill's directory>/scripts/cli.ts <command>; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
     });
   });
 
   test("disconnected (lost) → stop, naming how to come back — not a re-arm", () => {
     expect(
-      handoff({ end: "lost", mode: "watch", events: 0, cursor: 2, presence: false }, CMD),
+      handoff(
+        { spell: "demo", end: "lost", mode: "watch", events: 0, cursor: 2, presence: false },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.lost",
+      spell: "demo",
       events: 0,
       cursor: 2,
       next: "stop",
-      command: "bun /x/cli.ts open --restore s1",
-      hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
+      command: "open --restore s1",
+      hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run bun <this skill's directory>/scripts/cli.ts <command>; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
     });
   });
 
@@ -117,6 +140,7 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
     expect(
       handoff(
         {
+          spell: "demo",
           end: "stopped",
           mode: "watch",
           events: 5,
@@ -142,6 +166,42 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       "bun cli.ts tail --since=-1 --once",
     );
     expect(tailCommand(["bun", "cli.ts", "tail"], 0, false)).toBe("bun cli.ts tail --since 0");
+  });
+
+  test("readSince: every tail's --since reads the same way, and refuses with the accepted forms named", () => {
+    expect(readSince("12", { epoch: false })).toEqual({ ok: true, since: 12 });
+    expect(readSince("-1", { epoch: false })).toEqual({ ok: true, since: -1 });
+    expect(readSince("12@e1", { epoch: true })).toEqual({ ok: true, since: 12, epoch: "e1" });
+    // ⛔ An epoch bookmark on a spell whose log stamps none: refused, never read as 12.
+    expect(readSince("12@e1", { epoch: false })).toEqual({
+      ok: false,
+      message:
+        '--since: "12@e1" is not a bookmark this tail accepts — give an event id (an integer; -1 for everything); this spell\'s log stamps no epoch, so pass the id without the "@…" part',
+    });
+    expect(readSince("abc", { epoch: true })).toEqual({
+      ok: false,
+      message:
+        '--since: "abc" is not a bookmark this tail accepts — give an event id (an integer; -1 for everything), or <id>@<epoch> as a handoff line prints it',
+    });
+    expect(readSince("-1", { epoch: false, min: 0 })).toEqual({
+      ok: false,
+      message:
+        '--since: "-1" is not a bookmark this tail accepts — give an event id (an integer, 0 or more)',
+    });
+    expect(readSince("1.5", { epoch: false }).ok).toBe(false);
+  });
+
+  test("the printed command names no launcher and no path — the agent supplies its own", () => {
+    const line = handoff(
+      { spell: "demo", end: "window", mode: "watch", events: 0, cursor: 7, presence: false },
+      {
+        tail: ({ since, once }) => tailCommand(["tail", "--session", "s1"], since, once),
+        comeBack: () => "open --restore s1 --no-open",
+      },
+    );
+    expect(line?.spell).toBe("demo");
+    expect(line?.command).toBe("tail --session s1 --since 7 --once");
+    expect(line?.hint).toContain("bun <this skill's directory>/scripts/cli.ts <command>");
   });
 
   test("a printed command runs as printed: arguments that need it are quoted", () => {
@@ -296,6 +356,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const d = fakeDaemon(() => {});
     const out = collector();
     const code = await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "watch",
       presence: false,
       windowMs: 150,
@@ -305,11 +366,12 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     expect(out.lines().map((l) => JSON.parse(l))).toEqual([
       {
         type: "tail.quiet",
+        spell: "demo",
         events: 0,
         cursor: 2,
         next: "background",
-        command: "bun /x/cli.ts tail --session s1 --since 2 --once",
-        hint: "nothing on the log this window; run command as a background Bash task (run_in_background) — it exits on the next event",
+        command: "tail --session s1 --since 2 --once",
+        hint: "nothing on the log this window; run bun <this skill's directory>/scripts/cli.ts <command> as a background Bash task (run_in_background) — it exits on the next event",
       },
     ]);
     expect(await until(() => d.state.cancelled === 1)).toBe(true);
@@ -323,6 +385,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     });
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "watch",
       presence: false,
       windowMs: 200,
@@ -335,7 +398,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
       "tail.window",
       2,
       4,
-      "bun /x/cli.ts tail --session s1 --since 4",
+      "tail --session s1 --since 4",
     ]);
   });
 
@@ -343,6 +406,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const d = fakeDaemon((conn) => conn.push({ kind: "grounding" }));
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "watch",
       presence: false,
       windowMs: 150,
@@ -356,6 +420,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const d = fakeDaemon(() => {});
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "watch",
       presence: true,
       windowMs: 100,
@@ -373,6 +438,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     });
     const out = collector();
     const code = await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "once",
       presence: false,
       windowMs: 50, // ignored in once mode: a one-shot has no window
@@ -383,11 +449,12 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
       { id: 3, type: "message" },
       {
         type: "tail.woke",
+        spell: "demo",
         events: 1,
         cursor: 3,
         next: "monitor",
-        command: "bun /x/cli.ts tail --session s1 --since 3",
-        hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
+        command: "tail --session s1 --since 3",
+        hint: "handle the event above, then arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
       },
     ]);
     expect(await until(() => d.state.cancelled === 1)).toBe(true);
@@ -400,6 +467,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     });
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out, { accept: (ev) => ev.by !== "me" }), {
+      spell: "demo",
       mode: "once",
       presence: false,
       commands: CMD,
@@ -411,6 +479,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const d = fakeDaemon((conn) => conn.push({ id: 3, type: "closed" }));
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "once",
       presence: false,
       commands: CMD,
@@ -419,7 +488,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     expect([last.type, last.next, last.command]).toEqual([
       "tail.closed",
       "stop",
-      "bun /x/cli.ts open --restore s1",
+      "open --restore s1",
     ]);
   });
 
@@ -433,7 +502,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
         onUnresolved: ({ everResolved }) => (everResolved ? "stop" : "retry"),
         retry: { initialMs: 5, maxMs: 5 },
       }),
-      { mode: "once", presence: false, commands: CMD },
+      { spell: "demo", mode: "once", presence: false, commands: CMD },
     );
     expect(JSON.parse(out.lines().at(-1) ?? "{}").type).toBe("tail.closed");
   });
@@ -445,7 +514,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const out = collector();
     const code = await tailWithHandoff<Ev>(
       base({ base: dead }, out, { retry: { initialMs: 5, maxMs: 5 } }),
-      { mode: "once", presence: false, commands: CMD },
+      { spell: "demo", mode: "once", presence: false, commands: CMD },
     );
     expect(code).toBe(0);
     expect(out.lines().map((l) => JSON.parse(l).type)).toEqual(["tail.lost"]);
@@ -457,6 +526,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     cleanup.shift()?.();
     const out = collector();
     await tailWithHandoff<Ev>(base({ base: dead }, out, { retry: { initialMs: 5, maxMs: 5 } }), {
+      spell: "demo",
       mode: "watch",
       presence: true,
       windowMs: 200,
@@ -471,6 +541,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const ac = new AbortController();
     setTimeout(() => ac.abort(), 50);
     await tailWithHandoff<Ev>(base(d, out, { signal: ac.signal }), {
+      spell: "demo",
       mode: "watch",
       presence: false,
       windowMs: 10_000,
@@ -490,7 +561,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
         // an EXISTING session, so not finding it means it closed.
         onUnresolved: () => "stop",
       }),
-      { mode: "once", presence: false, commands: CMD },
+      { spell: "demo", mode: "once", presence: false, commands: CMD },
     );
     expect(code).toBe(0);
     expect(out.lines().map((l) => JSON.parse(l).type)).toEqual(["tail.closed"]);
@@ -510,11 +581,11 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
         since: 8,
         onEpochChange: (e) => JSON.stringify({ type: "epoch.changed", epoch: e }),
       }),
-      { mode: "watch", presence: false, windowMs: 200, commands: CMD },
+      { spell: "demo", mode: "watch", presence: false, windowMs: 200, commands: CMD },
     );
     const lines = out.lines().map((l) => JSON.parse(l));
     expect(lines.map((l) => l.type)).toEqual(["epoch.changed", "ready", "message", "tail.window"]);
-    expect(lines.at(-1).command).toBe("bun /x/cli.ts tail --session s1 --since 2");
+    expect(lines.at(-1).command).toBe("tail --session s1 --since 2");
   });
 
   test("D2: a --once on a restarted log wakes ONCE and names the new cursor, not the stale one", async () => {
@@ -524,6 +595,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     });
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out, { since: 8 }), {
+      spell: "demo",
       mode: "once",
       presence: false,
       commands: CMD,
@@ -550,7 +622,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
         epochOf: (ev: Ev & { epoch?: string }) => ev.epoch,
         onEpochChange: (e) => JSON.stringify({ type: "epoch.changed", epoch: e }),
       }) as Parameters<typeof tailWithHandoff<Ev & { epoch?: string }>>[0],
-      { mode: "watch", presence: false, windowMs: 250, commands: CMD },
+      { spell: "demo", mode: "watch", presence: false, windowMs: 250, commands: CMD },
     );
     const lines = out.lines().map((l) => JSON.parse(l));
     expect(sinces).toEqual(["4", "0"]);
@@ -563,7 +635,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
       5,
       "tail.window",
     ]);
-    expect(lines.at(-1).command).toBe("bun /x/cli.ts tail --session s1 --since 5@new");
+    expect(lines.at(-1).command).toBe("tail --session s1 --since 5@new");
   });
 
   test("D2 gap: a presence tail whose reconnect lands past its cursor in a new epoch re-reads from 0", async () => {
@@ -586,7 +658,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
         retry: { initialMs: 5, maxMs: 5 },
         epochOf: (ev: Ev & { epoch?: string }) => ev.epoch,
       }) as Parameters<typeof tailWithHandoff<Ev & { epoch?: string }>>[0],
-      { mode: "watch", presence: true, windowMs: 300, commands: CMD },
+      { spell: "demo", mode: "watch", presence: true, windowMs: 300, commands: CMD },
     );
     expect(sinces.slice(0, 3)).toEqual(["0", "5", "0"]);
     expect(out.lines().map((l) => JSON.parse(l).id ?? JSON.parse(l).type)).toEqual([
@@ -640,6 +712,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     });
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "once",
       presence: false,
       commands: CMD,
@@ -652,6 +725,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const d = fakeDaemon((conn) => conn.push({ type: "connected" }));
     const out = collector();
     await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
       mode: "watch",
       presence: false,
       windowMs: 150,
@@ -666,6 +740,7 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     const ac = new AbortController();
     setTimeout(() => ac.abort(), 400);
     await tailWithHandoff<Ev>(base(d, out, { signal: ac.signal }), {
+      spell: "demo",
       mode: "watch",
       presence: true,
       windowMs: 0,

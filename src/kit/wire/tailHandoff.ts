@@ -169,8 +169,8 @@
  * D4 · A HUMAN'S WATCH HAS NO WINDOW. `grapevine tail --human` passes
  *      `windowMs: 0`; no other spell has a human mode. Every `tail`'s help
  *      carries `WINDOW_HELP`, which names `SPELLBOOK_TAIL_WINDOW_MS=0`.
- * Also: every come-back command carries `--no-open`, so running it as printed
- * opens no browser tab.
+ * Also: every come-back command carries `--no-open`, so running it opens no
+ * browser tab.
  *
  * ⚠ KNOWN EDGE, NOT FIXED (found by the re-review): a keyed bounty FIRST arm
  *   (an anthill seat) whose window ends before its board ever opens prints a
@@ -180,19 +180,39 @@
  *   late — the seat gets `tail.closed` instead of waiting. Minor: the
  *   come-back it names (`open --session-key K`) is the right next step anyway.
  *
- * ⚠ KNOWN LIMIT, NOT FIXED: the printed `command` names the launcher by its
- *   full path, which for an installed plugin includes its VERSIONED cache
- *   directory. Across a plugin upgrade a re-arm keeps running the old version
- *   until the agent next arms from the skill's own path. Noted, not redesigned.
+ * ── THE COMMAND NAMES NO PATH (Cole's ruling, 2026-09-24) ──────────────────
+ *
+ * The line's `command` is the VERB AND ITS ARGUMENTS ONLY
+ * (`tail --session X --since N@E --once`), plus `spell`, and the agent runs it
+ * with ITS OWN launcher, `bun <this skill's directory>/scripts/cli.ts`. It used
+ * to be runnable as printed, headed by `bun <argv[1]>` — and for an installed
+ * plugin `argv[1]` is inside a VERSIONED cache directory. An upgrade marks the
+ * old directory orphaned and deletes it later (measured in
+ * `docs/backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md`),
+ * so a line printed before an upgrade first ran STALE code against a newer
+ * daemon, then failed with "module not found" once the directory was gone. No
+ * stable path exists to print instead: the cache, `$CLAUDE_PLUGIN_ROOT` and the
+ * install record are all versioned.
+ *   The skill's launcher is always the version the session loaded. Cole's
+ * reasoning: the worst case is that the CLI changed and the agent gets an
+ * error — and if the tools are designed right, that error says what went
+ * wrong. So the parsers are the other half of this ruling: `readSince` refuses
+ * any `--since` form a tail does not accept with a usage error NAMING the
+ * forms it does, the same way on all eight tails, instead of misparsing it.
+ *   Not taken: printing the path AND the args (option A of the item — two
+ * commands where one is wrong after an upgrade); a launcher that notices it is
+ * orphaned and re-execs a newer sibling (B — it leans on a Claude Code
+ * internal marker and does nothing once the directory is deleted); version
+ * negotiation.
  *
  * ⚖ `--once` ENDS ON THE FIRST FRAME, with no drain. A burst arrives split: the
  *   first event on the one-shot, the rest on the Monitor re-arm, which loses
  *   nothing because of the bookmark. The spike offered a ~200 ms drain as an
  *   option, not a requirement; not taken, because it adds a timer to the
  *   exit path whose failure this branch exists to make impossible.
- * ⚖ THE LINE'S `command` IS RUNNABLE AS PRINTED: `bun <this cli's path> …`,
- *   pinned to the session this tail was bound to, with its scope flags. The
- *   skills name the rule once; the line carries the specifics.
+ * ⚖ THE LINE'S `command` IS COMPLETE BUT FOR THE LAUNCHER: pinned to the
+ *   session this tail was bound to, with its scope flags. The skills name the
+ *   rule once, launcher form included; the line carries the specifics.
  */
 import { type SseFrame, type TailOptions, tailEvents } from "./tailEvents";
 
@@ -233,6 +253,8 @@ export type TailMode = "watch" | "once";
 export type TailEnd = "window" | "event" | "closed" | "lost" | "stopped";
 
 export type HandoffInput = {
+  /** The spell whose tail this is, so the agent knows whose launcher runs it. */
+  spell: string;
   end: TailEnd;
   mode: TailMode;
   /** Log frames this process wrote to stdout (A3). */
@@ -255,20 +277,28 @@ export type HandoffCommands = {
 
 export type HandoffLine = {
   type: "tail.window" | "tail.quiet" | "tail.woke" | "tail.closed" | "tail.lost";
+  /** Whose launcher runs `command`. */
+  spell: string;
   events: number;
   cursor: number;
-  /** `monitor`: arm Monitor (timeout_ms 1800000) with `command`.
-   *  `background`: run `command` as a background Bash task.
+  /** `monitor`: arm Monitor (timeout_ms 1800000) with the launcher + `command`.
+   *  `background`: run the launcher + `command` as a background Bash task.
    *  `stop`: nothing to watch; `command` is how to come back, if wanted. */
   next: "monitor" | "background" | "stop";
+  /** The verb and its arguments ONLY — no launcher, no path. The agent runs
+   *  `bun <this skill's directory>/scripts/cli.ts <command>`. */
   command: string;
   hint: string;
 };
 
+/** How the agent runs a printed `command`: with ITS OWN launcher, never a path
+ *  this process names (the ruling on the versioned plugin path, in the header). */
+export const RUN_WITH_LAUNCHER = "bun <this skill's directory>/scripts/cli.ts <command>";
+
 /** The come-back hint, with how to RESUME after coming back (D2): a restored
  *  daemon starts a new log, so the old bookmark means nothing there. */
 const COME_BACK = (why: string) =>
-  `${why} To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
+  `${why} To bring it back, run ${RUN_WITH_LAUNCHER}; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
 
 /**
  * THE DECISION: given how the tail ended, which line it prints. Pure, so every
@@ -276,7 +306,7 @@ const COME_BACK = (why: string) =>
  * a human's Ctrl-C or a caller's abort is not a handoff.
  */
 export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | null {
-  const base = { events: s.events, cursor: s.cursor };
+  const base = { spell: s.spell, events: s.events, cursor: s.cursor };
   switch (s.end) {
     case "stopped":
       return null;
@@ -302,7 +332,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
         ...base,
         next: "monitor",
         command: cmd.tail({ since: s.cursor, once: false, ...(s.epoch ? { epoch: s.epoch } : {}) }),
-        hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
+        hint: `handle the event above, then arm Monitor (timeout_ms 1800000) running ${RUN_WITH_LAUNCHER}`,
       };
     case "window":
       if (s.presence || s.events > 0)
@@ -315,20 +345,20 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
             once: false,
             ...(s.epoch ? { epoch: s.epoch } : {}),
           }),
-          hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
+          hint: `the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) running ${RUN_WITH_LAUNCHER}`,
         };
       return {
         type: "tail.quiet",
         ...base,
         next: "background",
         command: cmd.tail({ since: s.cursor, once: true, ...(s.epoch ? { epoch: s.epoch } : {}) }),
-        hint: "nothing on the log this window; run command as a background Bash task (run_in_background) — it exits on the next event",
+        hint: `nothing on the log this window; run ${RUN_WITH_LAUNCHER} as a background Bash task (run_in_background) — it exits on the next event`,
       };
   }
 }
 
 /** POSIX single-quote an argument when it needs it, so a printed `command`
- *  runs as printed. */
+ *  runs as printed after the agent's own launcher. */
 export function shellQuote(arg: string): string {
   return /^[A-Za-z0-9_@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replaceAll("'", `'\\''`)}'`;
 }
@@ -347,15 +377,45 @@ export function parseBookmark(token: string): { since: number; epoch?: string } 
   return { since: Number.parseInt(id, 10), ...(epoch ? { epoch } : {}) };
 }
 
+/**
+ * Every tail's `--since`, read the same way: a bookmark this tail accepts, or a
+ * refusal that NAMES the accepted forms. ⛔ NEVER A SILENT MISPARSE. The four
+ * no-epoch spells used `parseInt`, which read an epoch bookmark (`4@e1`, from
+ * a handoff line another version or spell printed) as `4` and dropped the
+ * rest without a word; mind-mapper read junk as 0 and astrolabe as -1, both a
+ * whole replay. A printed command outlives the CLI that printed it (the
+ * launcher-free ruling, in the header), so the parser is where an older or
+ * newer form must say what went wrong.
+ *
+ * `epoch`: whether this spell's log stamps one (scriptorium, astrolabe,
+ * mind-mapper). `min`: the smallest id accepted (grapevine takes no -1).
+ */
+export function readSince(
+  token: string,
+  o: { epoch: boolean; min?: number },
+): { ok: true; since: number; epoch?: string } | { ok: false; message: string } {
+  const min = o.min ?? -1;
+  const b = parseBookmark(token);
+  if (b !== null && b.since >= min && (b.epoch === undefined || o.epoch))
+    return { ok: true, since: b.since, ...(b.epoch ? { epoch: b.epoch } : {}) };
+  const id =
+    min < 0
+      ? "an event id (an integer; -1 for everything)"
+      : `an event id (an integer, ${min} or more)`;
+  const forms = o.epoch ? `${id}, or <id>@<epoch> as a handoff line prints it` : id;
+  const why =
+    !o.epoch && token.includes("@")
+      ? `; this spell's log stamps no epoch, so pass the id without the "@…" part`
+      : "";
+  return {
+    ok: false,
+    message: `--since: "${token}" is not a bookmark this tail accepts — give ${forms}${why}`,
+  };
+}
+
 /** Join an argv into one runnable command line. */
 export function commandLine(argv: readonly string[]): string {
   return argv.map(shellQuote).join(" ");
-}
-
-/** How THIS process was invoked, as the head of a command that runs it again:
- *  `bun <the launcher's full path>`. Bun hands `argv[1]` over as a full path. */
-export function selfCommand(): string[] {
-  return ["bun", process.argv[1] ?? "cli.ts"];
 }
 
 /** The re-arm for a spell whose tail is `<prefix…> --since N[@epoch] [--once]`.
@@ -374,6 +434,8 @@ export function tailCommand(
 }
 
 export type HandoffOptions<Ev> = {
+  /** The spell's name, carried on the line (whose launcher runs it). */
+  spell: string;
   mode: TailMode;
   /** A presence spell: always `tail.window` at the window's end, never lost. */
   presence: boolean;
@@ -493,6 +555,7 @@ export async function tailWithHandoff<Ev>(
         cursor,
         ...(epoch ? { epoch } : {}),
         presence: h.presence,
+        spell: h.spell,
       },
       h.commands,
     );

@@ -105,7 +105,10 @@ async function lastId(id: string): Promise<number> {
   return handoff.cursor as number;
 }
 
-const cmd = (...args: string[]) => ["bun", CLI, ...args].join(" ");
+// The printed command is the verb and its arguments only; the agent runs it with
+// its own launcher (Cole's ruling, 2026-09-24). So a printed command is run
+// here the way the skill says: `bun <this skill's launcher> <command>`.
+const cmd = (...args: string[]) => args.join(" ");
 
 describe("the handoff on a live session", () => {
   let port = 0;
@@ -142,11 +145,12 @@ describe("the handoff on a live session", () => {
     ]);
     expect(woke).toEqual({
       type: "tail.woke",
+      spell: "scriptorium",
       events: 1,
       cursor: since + 1,
       next: "monitor",
       command: cmd("tail", "--session", id, "--since", `${since + 1}@${event?.epoch}`),
-      hint: "handle the event above, then arm Monitor (timeout_ms 1800000) with command",
+      hint: "handle the event above, then arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
     });
   }, 30_000);
 
@@ -157,11 +161,12 @@ describe("the handoff on a live session", () => {
     expect(t.lines()).toEqual([
       {
         type: "tail.quiet",
+        spell: "scriptorium",
         events: 0,
         cursor: since,
         next: "background",
         command: cmd("tail", "--session", id, "--since", String(since), "--once"),
-        hint: "nothing on the log this window; run command as a background Bash task (run_in_background) — it exits on the next event",
+        hint: "nothing on the log this window; run bun <this skill's directory>/scripts/cli.ts <command> as a background Bash task (run_in_background) — it exits on the next event",
       },
     ]);
   }, 30_000);
@@ -187,11 +192,12 @@ describe("the handoff on a live session", () => {
     expect(lines.map((l) => l.type)).toEqual(["message", "tail.window"]);
     expect(lines[1]).toEqual({
       type: "tail.window",
+      spell: "scriptorium",
       events: 1,
       cursor: since + 1,
       next: "monitor",
       command: cmd("tail", "--session", id, "--since", `${since + 1}@${lines[0]?.epoch}`),
-      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) with command",
+      hint: "the window ended before Monitor's cap; arm Monitor (timeout_ms 1800000) running bun <this skill's directory>/scripts/cli.ts <command>",
     });
   }, 30_000);
 
@@ -273,16 +279,17 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(lost).toEqual([
       {
         type: "tail.lost",
+        spell: "scriptorium",
         events: 0,
         cursor: since,
         next: "stop",
         command: cmd("open", "--restore", id, "--no-open"),
-        hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
+        hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run bun <this skill's directory>/scripts/cli.ts <command>; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
       },
     ]);
 
     // Come back exactly as the line says. The restored daemon's ids begin at 1.
-    const back = Bun.spawn(["sh", "-c", `${lost[0]?.command}`], {
+    const back = Bun.spawn(["sh", "-c", `bun ${CLI} ${lost[0]?.command}`], {
       stdout: "pipe",
       stderr: "pipe",
       env,
@@ -337,7 +344,7 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     for (const text of ["new-a", "new-b", "new-c", "new-d"]) await humanSays(back.port, text);
 
     // The old printed re-arm, run as printed.
-    const p = Bun.spawn(["sh", "-c", String(printed.command)], {
+    const p = Bun.spawn(["sh", "-c", `bun ${CLI} ${printed.command}`], {
       stdout: "pipe",
       stderr: "pipe",
       env: { ...env, SPELLBOOK_TAIL_WINDOW_MS: "1500" },

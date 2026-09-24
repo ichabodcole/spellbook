@@ -44,7 +44,7 @@ import {
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
-  selfCommand,
+  readSince,
   tailCommand,
   tailWithHandoff,
   WINDOW_HELP,
@@ -418,6 +418,16 @@ async function cmdState(session?: string, full = false) {
   printJson(data);
 }
 
+/** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
+ *  `readSince`): a form this tail does not accept — an epoch bookmark from
+ *  another spell's or version's handoff line — is refused with the accepted
+ *  forms named, never misparsed. */
+function sinceOrDie(token: string): number {
+  const r = readSince(token, { epoch: false });
+  if (!r.ok) die(r.message, "usage");
+  return r.since;
+}
+
 /**
  * The event tail — ONE CALL into the house's shared SSE client
  * (`src/kit/wire/tailEvents.ts`), where the reconnect loop, the spec-correct
@@ -507,12 +517,12 @@ async function cmdTail(
       onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
     {
+      spell: "imago",
       mode: o.once ? "once" : "watch",
       presence: false,
       commands: {
-        tail: ({ since, once }) => tailCommand([...selfCommand(), "tail", ...pin()], since, once),
-        comeBack: () =>
-          commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>", "--no-open"]),
+        tail: ({ since, once }) => tailCommand(["tail", ...pin()], since, once),
+        comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),
       },
     },
   );
@@ -631,7 +641,7 @@ async function dispatch(argv: string[]): Promise<number> {
       await cmdOpen(flags);
       break;
     case "tail":
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1, {
+      await cmdTail(session, typeof flags.since === "string" ? sinceOrDie(flags.since) : -1, {
         once: flags.once === true,
         sinceGiven: typeof flags.since === "string",
       });

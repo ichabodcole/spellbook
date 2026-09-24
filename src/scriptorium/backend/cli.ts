@@ -70,8 +70,7 @@ import {
 } from "../../kit/wire/errors";
 import {
   commandLine,
-  parseBookmark,
-  selfCommand,
+  readSince,
   tailCommand,
   tailWithHandoff,
   WINDOW_HELP,
@@ -304,13 +303,9 @@ export function parseArgs(args: string[]): {
  * the start", so a typo replayed the whole buffer at exit 0 — it is refused.
  */
 export function parseTailSince(token: string): { since: number; epoch?: string } {
-  const b = parseBookmark(token);
-  if (b === null)
-    die(
-      `--since: "${token}" is not an event id — give an integer (the id of the last line you saw), optionally as <id>@<epoch>`,
-      "usage",
-    );
-  return b;
+  const r = readSince(token, { epoch: true });
+  if (!r.ok) die(r.message, "usage");
+  return r.epoch ? { since: r.since, epoch: r.epoch } : { since: r.since };
 }
 
 /**
@@ -691,13 +686,12 @@ async function cmdTail(
       },
     },
     {
+      spell: "scriptorium",
       mode: o.once ? "once" : "watch",
       presence: false,
       commands: {
-        tail: ({ since: at, once, epoch }) =>
-          tailCommand([...selfCommand(), "tail", ...pin()], at, once, epoch),
-        comeBack: () =>
-          commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>", "--no-open"]),
+        tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
+        comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),
       },
     },
   );

@@ -65,7 +65,7 @@ import {
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
-  selfCommand,
+  readSince,
   tailCommand,
   tailWithHandoff,
   WINDOW_HELP,
@@ -1032,6 +1032,16 @@ async function cmdState(
   printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
+/** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
+ *  `readSince`): a form this tail does not accept — an epoch bookmark from
+ *  another spell's or version's handoff line — is refused with the accepted
+ *  forms named, never misparsed. */
+function sinceOrDie(token: string): number {
+  const r = readSince(token, { epoch: false });
+  if (!r.ok) die(r.message, "usage");
+  return r.since;
+}
+
 /**
  * The agent's live tail — ONE call into `src/kit/wire/tailEvents.ts`.
  *
@@ -1101,7 +1111,6 @@ async function cmdTail(
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
   const again = () => [
-    ...selfCommand(),
     "tail",
     ...(pinned !== undefined ? ["--session", pinned] : []),
     ...(owner ? ["--owner", owner] : []),
@@ -1161,6 +1170,7 @@ async function cmdTail(
       onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
     },
     {
+      spell: "bounty",
       mode: once ? "once" : "watch",
       presence: false,
       commands: {
@@ -1171,8 +1181,8 @@ async function cmdTail(
         comeBack: () =>
           commandLine(
             arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned
-              ? [...selfCommand(), "open", "--session-key", arm.key, "--no-open"]
-              : [...selfCommand(), "open", "--restore", pinned ?? "<id>", "--no-open"],
+              ? ["open", "--session-key", arm.key, "--no-open"]
+              : ["open", "--restore", pinned ?? "<id>", "--no-open"],
           ),
       },
     },
@@ -1407,7 +1417,7 @@ async function dispatch(argv: string[]): Promise<number> {
       // — the same mistake `open` has a comment about two cases up.
       return await cmdTail(
         session,
-        typeof flags.since === "string" ? parseInt(flags.since, 10) : -1,
+        typeof flags.since === "string" ? sinceOrDie(flags.since) : -1,
         {
           owner: typeof flags.owner === "string" ? flags.owner : undefined,
           mine,

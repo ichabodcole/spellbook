@@ -42,8 +42,7 @@ import { printJson } from "../../kit/lib/printJson";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
 import {
   commandLine,
-  parseBookmark,
-  selfCommand,
+  readSince,
   tailCommand,
   tailWithHandoff,
   WINDOW_HELP,
@@ -288,12 +287,12 @@ async function streamEvents(opts: {
       onComment: () => ": astrolabe-keepalive",
     },
     {
+      spell: "astrolabe",
       mode: "watch",
       presence: true,
       commands: {
-        tail: ({ since, epoch }) =>
-          tailCommand([...selfCommand(), ...opts.again], since, false, epoch),
-        comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
+        tail: ({ since, epoch }) => tailCommand(opts.again, since, false, epoch),
+        comeBack: () => commandLine(["open", "--no-open"]),
       },
     },
   );
@@ -609,9 +608,12 @@ async function dispatch(argv: string[]): Promise<number> {
   // `--since` is a bookmark, `N` or `N@<epoch>` as the handoff line prints it
   // (`kit/wire/tailHandoff.ts`, D2): the epoch lets the tail notice a restarted
   // daemon whose new log is already past the id.
-  const mark = typeof flags.since === "string" ? parseBookmark(flags.since) : null;
-  const since = mark?.since ?? -1;
-  const sinceEpoch = mark?.epoch;
+  // A form it does not accept is refused with the accepted forms named, never
+  // misparsed (`readSince`).
+  const read = typeof flags.since === "string" ? readSince(flags.since, { epoch: true }) : null;
+  if (read !== null && !read.ok) die(read.message, "usage");
+  const since = read?.ok ? read.since : -1;
+  const sinceEpoch = read?.ok ? read.epoch : undefined;
 
   switch (verb) {
     case "open":

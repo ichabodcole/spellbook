@@ -37,7 +37,7 @@ import {
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
-  selfCommand,
+  readSince,
   tailWithHandoff,
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
@@ -900,7 +900,6 @@ async function cmdTail(
   // daemon is retried (`resolve` respawns it), not reported.
   const again = (at: number) =>
     commandLine([
-      ...selfCommand(),
       "tail",
       name,
       ...(opts.lurk ? ["--lurk"] : myAlias ? ["--as", myAlias] : []),
@@ -1009,6 +1008,7 @@ async function cmdTail(
       idleMs: TAIL_IDLE_MS,
     },
     {
+      spell: "grapevine",
       mode: "watch",
       presence: true,
       // D4: a human at a terminal (`--human`) is not an agent under
@@ -1019,7 +1019,7 @@ async function cmdTail(
       counts: (_ev, frame) => frame.event !== "subscribed",
       commands: {
         tail: ({ since: at }) => again(at),
-        comeBack: () => commandLine([...selfCommand(), "doctor"]),
+        comeBack: () => commandLine(["doctor"]),
       },
     },
   );
@@ -1998,6 +1998,15 @@ type CommandSpec = {
   run: (positional: string[], flags: Flags) => unknown;
 };
 
+/** `tail --since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
+ *  `readSince`): an id of 0 or more; an epoch bookmark printed by another
+ *  spell's handoff line is refused with the accepted forms named. */
+function sinceOrDie(token: string): number {
+  const r = readSince(token, { epoch: false, min: 0 });
+  if (!r.ok) die(r.message, "usage");
+  return r.since;
+}
+
 // A declared value flag that carries a number must REJECT a non-number as a
 // usage error (exit 2), not crash on it downstream — `schema` publishes the
 // flag as valid, so the parse boundary is where a bad value gets its
@@ -2214,7 +2223,7 @@ const COMMANDS: CommandSpec[] = [
     positionals: [{ name: "name", required: true }],
     run: async (positional, flags) => {
       return await cmdTail(positional[0], {
-        since: flags.since !== undefined ? numericFlag("tail", "since", flags.since, 0) : undefined,
+        since: flags.since !== undefined ? sinceOrDie(String(flags.since)) : undefined,
         fromStart: !!flags["from-start"],
         last: flags.last !== undefined ? numericFlag("tail", "last", flags.last, 0) : undefined,
         as: resolveAlias(flags),

@@ -116,27 +116,35 @@ cli.ts tail --session <id> | grep --line-buffered -E '"type":"(say|proposal\.sen
 ```
 
 ⚠ Keep `tail\.[a-z]+` in the grep: it lets the tail's own handoff line through
-(below). When you re-arm Monitor with that line's `command`, append the same
-grep.
+(below). When you re-arm Monitor with the launcher and that line's `command`,
+append the same grep.
 
 **Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
 `timeout_ms: 1800000`. It ends itself just before the cap, and its last line
-(`type: "tail.…"`) names your next act. Do what its `next` says with its
-`command`, which already carries the bookmark (`--since`):
+(`type: "tail.…"`) names your next act. That line's `command` is the verb and
+its arguments only, bookmark (`--since`) included, with no launcher and no path.
+Always run it with this skill's own launcher, the one you use for its other
+verbs: `bun <this skill's directory>/scripts/cli.ts <command>`. A `command` of
+`tail --since 12` runs as
+`bun <this skill's directory>/scripts/cli.ts tail --since 12`. Never reuse a
+launcher path from an earlier line or session: the plugin's directory changes
+when it updates. Do what `next` says:
 
-- `monitor`: arm Monitor again with `command`.
-- `background`: nothing happened; the human is away. Run `command` as a
-  background Bash task (`run_in_background`). It exits on the next event, which
-  wakes you. Handle the event, then follow its line back to Monitor.
-- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
-  how to bring it back. If you run it, arm the tail again with no `--since` (and
-  the session id it prints, where there is one): a restarted daemon starts a new
-  event log.
+- `monitor`: arm Monitor again with the launcher and `command`.
+- `background`: nothing happened; the human is away. Run the launcher and
+  `command` as a background Bash task (`run_in_background`). It exits on the
+  next event, which wakes you. Handle the event, then follow its line back to
+  Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; the launcher
+  and `command` bring it back. If you run it, arm the tail again with no
+  `--since` (and the session id it prints, where there is one): a restarted
+  daemon starts a new event log.
 
 If Monitor expires before that line arrives, re-arm silently with
 `--since <the last id you saw>`, written `<id>@<its epoch>` when events carry an
 `epoch`. Never re-arm without `--since`: that replays events you have already
-handled.
+handled. If the launcher refuses a `command` with a usage error, its message
+names the forms it accepts; fix the arguments to match.
 
 That grep IS the wake set. **Ambient board state never reaches the stream at
 all** — focus, ref selection, likes, context link/unlink, aspect/size, pins,

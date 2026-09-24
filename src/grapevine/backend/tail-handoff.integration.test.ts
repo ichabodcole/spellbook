@@ -84,7 +84,7 @@ describe("grapevine's tail handoff", () => {
       "tail.window",
       0,
       3,
-      ["bun", CLI, "tail", "seeded", "--as", "agentx", "--since", "3"].join(" "),
+      "tail seeded --as agentx --since 3",
     ]);
   }, 30_000);
 

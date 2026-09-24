@@ -120,8 +120,7 @@ import {
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
-  parseBookmark,
-  selfCommand,
+  readSince,
   tailCommand,
   tailWithHandoff,
   WINDOW_HELP,
@@ -567,22 +566,31 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
 
   Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at
   timeout_ms: 1800000. It ends itself just before the cap, and its last line
-  (type: "tail.…") names your next act. Do what its "next" says with its
-  "command", which already carries the bookmark (--since):
-    monitor     arm Monitor again with command.
-    background  nothing happened; the human is away. Run command as a
-                background Bash task (run_in_background). It exits on the next
-                event, which wakes you. Handle the event, then follow its line
-                back to Monitor.
-    stop        the session closed or its daemon is gone. Do not re-arm;
-                command is how to bring it back. If you run it, arm the tail
-                again with no --since (and the session id it prints, where
-                there is one): a restarted daemon starts a new event log.
+  (type: "tail.…") names your next act. That line's command is the verb and its
+  arguments only, bookmark (--since) included, with no launcher and no path.
+  Always run it with this skill's own launcher, the one you use for its other
+  verbs: bun <this skill's directory>/scripts/cli.ts <command>. A command of
+  tail --since 12 runs as bun <this skill's directory>/scripts/cli.ts tail --since 12.
+  Never reuse a launcher path from an earlier line or session: the plugin's
+  directory changes when it updates. Do what next says:
+
+  - monitor: arm Monitor again with the launcher and command.
+  - background: nothing happened; the human is away. Run the launcher and
+    command as a background Bash task (run_in_background). It exits on the
+    next event, which wakes you. Handle the event, then follow its line back to
+    Monitor.
+  - stop: the session closed or its daemon is gone. Do not re-arm; the launcher
+    and command bring it back. If you run it, arm the tail again with no
+    --since (and the session id it prints, where there is one): a restarted
+    daemon starts a new event log.
+
   If Monitor expires before that line arrives, re-arm silently with
   --since <the last id you saw>, written <id>@<its epoch> when events carry an
   epoch. Never re-arm without --since: that replays events you have already
-  handled. This spell's tail never says background:
-  holding the connection is your presence, so its line always re-arms Monitor.
+  handled. If the launcher refuses a command with a usage error, its message
+  names the forms it accepts; fix the arguments to match. This spell's tail
+  never says background: holding the connection is your presence, so its line
+  always re-arms Monitor.
   tail ${WINDOW_HELP}.`;
 
 // The plugin manifest is the one version source; the CLI reads it rather than
@@ -751,12 +759,18 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "tail") {
     const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
-    requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     // A bookmark, `N` or `N@<epoch>` as the handoff line prints it
-    // (`kit/wire/tailHandoff.ts`, D2).
-    const mark =
-      typeof parsed.values.since === "string" ? parseBookmark(parsed.values.since) : null;
+    // (`kit/wire/tailHandoff.ts`, D2). A form it does not accept is refused with
+    // the accepted forms named — read BEFORE the daemon check, so the answer
+    // does not depend on whether one is up.
+    const read =
+      typeof parsed.values.since === "string"
+        ? readSince(parsed.values.since, { epoch: true })
+        : null;
+    if (read !== null && !read.ok) throw usageError(read.message);
+    const mark = read?.ok ? read : null;
     const since = mark?.since ?? Number.NaN;
+    requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     // A `--since` re-arm prints no grounding (`kit/wire/tailHandoff.ts`, A3).
     const sinceGiven = parsed.values.since !== undefined;
     // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
@@ -882,6 +896,7 @@ async function dispatch(argv: string[]): Promise<number> {
         retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
       },
       {
+        spell: "mind-mapper",
         mode: "watch",
         presence: true,
         // (No `counts`: the daemon's grounding frame carries no log id, so it
@@ -890,7 +905,6 @@ async function dispatch(argv: string[]): Promise<number> {
           tail: ({ since: at, epoch }) =>
             tailCommand(
               [
-                ...selfCommand(),
                 "tail",
                 ...(inbound ? ["--inbound"] : []),
                 ...(parsed.values.project ? ["--project", parsed.values.project as string] : []),
@@ -899,7 +913,7 @@ async function dispatch(argv: string[]): Promise<number> {
               false,
               epoch,
             ),
-          comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
+          comeBack: () => commandLine(["open", "--no-open"]),
         },
       },
     );

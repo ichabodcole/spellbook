@@ -92,7 +92,10 @@ async function openBoard(env: Record<string, string | undefined>, ...extra: stri
   return hs.session_id;
 }
 
-const cmd = (...args: string[]) => ["bun", CLI, ...args].join(" ");
+// The printed command is the verb and its arguments only; the agent runs it with
+// its own launcher (Cole's ruling, 2026-09-24). So a printed command is run
+// here the way the skill says: `bun <this skill's launcher> <command>`.
+const cmd = (...args: string[]) => args.join(" ");
 
 describe("bounty's tail handoff", () => {
   test("B1: a keyed FIRST arm (an anthill seat's shape) waits for its board instead of closing", async () => {
