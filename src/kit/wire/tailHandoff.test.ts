@@ -40,7 +40,16 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
 
   test("active window: it saw events → re-arm Monitor from the bookmark", () => {
     expect(
-      handoff({ end: "window", mode: "watch", events: 3, cursor: 12, presence: false }, CMD),
+      handoff(
+        {
+          end: "window",
+          mode: "watch",
+          events: 3,
+          cursor: 12,
+          presence: false,
+        },
+        CMD,
+      ),
     ).toEqual({
       type: "tail.window",
       events: 3,
@@ -86,7 +95,7 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       cursor: 9,
       next: "stop",
       command: "bun /x/cli.ts open --restore s1",
-      hint: "the session closed; there is nothing left to watch. To bring it back, run command",
+      hint: "the session closed; there is nothing left to watch. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
     });
   });
 
@@ -99,13 +108,22 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       cursor: 2,
       next: "stop",
       command: "bun /x/cli.ts open --restore s1",
-      hint: "lost the daemon (it crashed or was killed); nothing is listening. To come back, run command",
+      hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
     });
   });
 
   test("a signal or a caller's abort prints nothing", () => {
     expect(
-      handoff({ end: "stopped", mode: "watch", events: 5, cursor: 5, presence: false }, CMD),
+      handoff(
+        {
+          end: "stopped",
+          mode: "watch",
+          events: 5,
+          cursor: 5,
+          presence: false,
+        },
+        CMD,
+      ),
     ).toBeNull();
   });
 
@@ -140,7 +158,11 @@ afterEach(() => {
   cleanup = [];
 });
 
-type Conn = { since: string | null; push: (ev: unknown) => void; end: () => void };
+type Conn = {
+  since: string | null;
+  push: (ev: unknown) => void;
+  end: () => void;
+};
 
 /** A scripted SSE server that ALSO records when a client closes its stream —
  *  the observable half of adjustment 1. */
@@ -182,7 +204,9 @@ function fakeDaemon(onConnection: (conn: Conn, index: number) => void) {
           state.cancelled += 1;
         },
       });
-      return new Response(stream, { headers: { "Content-Type": "text/event-stream" } });
+      return new Response(stream, {
+        headers: { "Content-Type": "text/event-stream" },
+      });
     },
   });
   cleanup.push(() => server.stop(true));
@@ -385,7 +409,11 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
   test("--once on a closed session: the closed frame, then tail.closed naming the way back", async () => {
     const d = fakeDaemon((conn) => conn.push({ id: 3, type: "closed" }));
     const out = collector();
-    await tailWithHandoff<Ev>(base(d, out), { mode: "once", presence: false, commands: CMD });
+    await tailWithHandoff<Ev>(base(d, out), {
+      mode: "once",
+      presence: false,
+      commands: CMD,
+    });
     const last = JSON.parse(out.lines().at(-1) ?? "{}");
     expect([last.type, last.next, last.command]).toEqual([
       "tail.closed",
@@ -445,6 +473,113 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
       mode: "watch",
       presence: false,
       windowMs: 10_000,
+      commands: CMD,
+    });
+    expect(out.lines()).toEqual([]);
+  });
+
+  // ── the verifier's defects (D1–D4) ────────────────────────────────────────
+
+  test("D1: re-armed at a session that is gone (never resolved) → tail.closed, not a silent retry", async () => {
+    const out = collector();
+    const code = await tailWithHandoff<Ev>(
+      base({ base: "unused" }, out, {
+        resolve: () => null,
+        // The spell's rule: a tail given a bookmark or --session is re-arming
+        // an EXISTING session, so not finding it means it closed.
+        onUnresolved: () => "stop",
+      }),
+      { mode: "once", presence: false, commands: CMD },
+    );
+    expect(code).toBe(0);
+    expect(out.lines().map((l) => JSON.parse(l).type)).toEqual(["tail.closed"]);
+  });
+
+  test("D2: a bookmark from a restarted log is dropped — the replay resets the cursor", async () => {
+    // A restarted daemon: its ids began again at 1, so it answers since=8 by
+    // replaying WHOLE (the kit's event log, point 3).
+    const d = fakeDaemon((conn) => {
+      expect(conn.since).toBe("8");
+      conn.push({ id: 1, type: "ready" });
+      conn.push({ id: 2, type: "message" });
+    });
+    const out = collector();
+    await tailWithHandoff<Ev>(
+      base(d, out, {
+        since: 8,
+        onEpochChange: (e) => JSON.stringify({ type: "epoch.changed", epoch: e }),
+      }),
+      { mode: "watch", presence: false, windowMs: 200, commands: CMD },
+    );
+    const lines = out.lines().map((l) => JSON.parse(l));
+    expect(lines.map((l) => l.type)).toEqual(["epoch.changed", "ready", "message", "tail.window"]);
+    expect(lines.at(-1).command).toBe("bun /x/cli.ts tail --session s1 --since 2");
+  });
+
+  test("D2: a --once on a restarted log wakes ONCE and names the new cursor, not the stale one", async () => {
+    const d = fakeDaemon((conn) => {
+      conn.push({ id: 1, type: "ready" });
+      conn.push({ id: 2, type: "message" });
+    });
+    const out = collector();
+    await tailWithHandoff<Ev>(base(d, out, { since: 8 }), {
+      mode: "once",
+      presence: false,
+      commands: CMD,
+    });
+    expect(JSON.parse(out.lines().at(-1) ?? "{}").cursor).toBe(1);
+  });
+
+  test("D2: a daemon whose ids survive a restart (eventLog: false) keeps its bookmark", async () => {
+    const d = fakeDaemon((conn) => conn.push({ id: 5, type: "message" }));
+    const out = collector();
+    await tailWithHandoff<Ev>(base(d, out, { since: 8 }), {
+      mode: "watch",
+      presence: true,
+      eventLog: false,
+      windowMs: 150,
+      commands: CMD,
+    });
+    expect(JSON.parse(out.lines().at(-1) ?? "{}").cursor).toBe(8);
+  });
+
+  test("D3: an id-less ping is not on the log — it neither counts nor wakes a --once", async () => {
+    const d = fakeDaemon((conn) => {
+      conn.push({ type: "connected" });
+      conn.push({ type: "disconnected" });
+      setTimeout(() => conn.push({ id: 3, type: "message" }), 50);
+    });
+    const out = collector();
+    await tailWithHandoff<Ev>(base(d, out), {
+      mode: "once",
+      presence: false,
+      commands: CMD,
+    });
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect([last.type, last.events, last.cursor]).toEqual(["tail.woke", 1, 3]);
+  });
+
+  test("D3: a window that saw only id-less pings is quiet", async () => {
+    const d = fakeDaemon((conn) => conn.push({ type: "connected" }));
+    const out = collector();
+    await tailWithHandoff<Ev>(base(d, out), {
+      mode: "watch",
+      presence: false,
+      windowMs: 150,
+      commands: CMD,
+    });
+    expect(JSON.parse(out.lines().at(-1) ?? "{}").type).toBe("tail.quiet");
+  });
+
+  test("D4: windowMs 0 (a human at a terminal) never ends the watch by itself", async () => {
+    const d = fakeDaemon(() => {});
+    const out = collector();
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 400);
+    await tailWithHandoff<Ev>(base(d, out, { signal: ac.signal }), {
+      mode: "watch",
+      presence: true,
+      windowMs: 0,
       commands: CMD,
     });
     expect(out.lines()).toEqual([]);

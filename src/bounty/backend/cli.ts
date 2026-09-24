@@ -68,6 +68,7 @@ import {
   selfCommand,
   tailCommand,
   tailWithHandoff,
+  WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
@@ -1067,6 +1068,7 @@ async function cmdTail(
   sinceArg: number,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
   once = false,
+  sinceGiven = false,
 ): Promise<number> {
   const owner = scope.owner;
   const self = scope.as;
@@ -1082,6 +1084,7 @@ async function cmdTail(
     process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
   let pinned = session;
+  const reArm = session !== undefined || sinceGiven;
   let announcedPin = false;
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
@@ -1117,6 +1120,10 @@ async function cmdTail(
         return `http://127.0.0.1:${resolved.session.port}`;
       },
       onUnresolved: () => {
+        // D1: a tail given --session or a bookmark is re-arming an EXISTING
+        // board, so not finding it means it closed — `tail.closed`, never a
+        // silent retry-forever. Only a bare first arm waits for a board.
+        if (reArm) return "stop";
         process.stderr.write("# no session yet, retrying…\n");
         return "retry";
       },
@@ -1142,7 +1149,8 @@ async function cmdTail(
       presence: false,
       commands: {
         tail: ({ since, once: o }) => tailCommand(again(), since, o),
-        comeBack: () => commandLine([...selfCommand(), "open", "--restore", pinned ?? "<id>"]),
+        comeBack: () =>
+          commandLine([...selfCommand(), "open", "--restore", pinned ?? "<id>", "--no-open"]),
       },
     },
   );
@@ -1303,7 +1311,8 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
   state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }
            (--full is accepted but redundant: the read is full by default — b6)
-  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor; the last line names the next act)
+  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
+         ${WINDOW_HELP}
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
   --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.
@@ -1382,6 +1391,7 @@ async function dispatch(argv: string[]): Promise<number> {
           as,
         },
         flags.once === true,
+        typeof flags.since === "string",
       );
     }
     case "state": {

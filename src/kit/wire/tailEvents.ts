@@ -169,6 +169,31 @@ export type TailOptions<Ev> = {
    *  cursor resets to 0. Return a line to emit (a synthesized notice, never a
    *  bus event) or null. */
   onEpochChange?: (next: string) => string | null;
+  /**
+   * Read a frame whose id is AT OR BELOW the cursor this connection asked
+   * from as "the log restarted", reset the cursor to 0, and call
+   * `onEpochChange` (with the frame's epoch, or `"unknown"`). Default false.
+   *
+   * ⛔ WHY IT IS HONEST: the kit's event log answers a cursor beyond its own
+   * by replaying WHOLE (`./eventLog.ts`, point 3), and otherwise sends only
+   * ids above the cursor. So a frame at or below the asked cursor exists only
+   * when the daemon judged the cursor foreign — a restarted daemon, whose ids
+   * began again at 1. The epoch catches that WITHIN one process; this catches
+   * it ACROSS processes, where a re-armed tail carries a bookmark from a log
+   * that no longer exists and, without it, kept that bookmark forever: every
+   * re-arm replayed the whole new log, and a `--once` woke at once, in a loop
+   * (found by the verifier on feat/tail-quiet-handoff, after `tail.lost` →
+   * `open --restore`).
+   *
+   * ⚠ ONLY FOR A DAEMON ON THE KIT'S EVENT LOG. Grapevine's ids are recovered
+   * across a restart and its `--last` query overrides `since`, so it leaves
+   * this off. And the blind spot is stated: a bookmark that happens to be at
+   * or below the RESTARTED log's own length looks valid to the daemon, which
+   * then sends only what lies above it. The come-back path therefore drops
+   * the bookmark altogether (`./tailHandoff.ts`, D2), so this is the net, not
+   * the rule.
+   */
+  restartOnReplay?: boolean;
 
   // ── FILTER and SHAPE ─────────────────────────────────────────────────────
   /** Scope ∧ ¬self-echo. A rejected event still ADVANCES THE CURSOR. */
@@ -290,7 +315,10 @@ const DEFAULT_RETRY = { initialMs: 250, maxMs: 5000 };
  * Returns null for a comment-only frame; `comments` carries their text so the
  * caller can surface a keepalive sentinel.
  */
-export function parseSseFrame(block: string): { frame: SseFrame | null; comments: string[] } {
+export function parseSseFrame(block: string): {
+  frame: SseFrame | null;
+  comments: string[];
+} {
   const comments: string[] = [];
   const dataLines: string[] = [];
   let event = "message";
@@ -430,7 +458,12 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       }
       everResolved = true;
 
-      const params = opts.query?.(cursor, firstConnect) ?? { since: String(cursor) };
+      const params = opts.query?.(cursor, firstConnect) ?? {
+        since: String(cursor),
+      };
+      // What this connection asked from, for `restartOnReplay`.
+      const askedSince = cursor;
+      let restartNoted = false;
       const qs = new URLSearchParams(params).toString();
       const url = `${base}${opts.path}${qs ? `?${qs}` : ""}`;
 
@@ -541,11 +574,13 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
               continue;
             }
 
+            let epochReset = false;
             if (opts.epochOf) {
               const next = opts.epochOf(ev);
               if (typeof next === "string") {
                 if (epoch !== null && next !== epoch) {
                   cursor = 0;
+                  epochReset = true;
                   const line = opts.onEpochChange?.(next) ?? null;
                   if (line !== null) emit(line);
                 }
@@ -558,6 +593,20 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
             // the daemon has delivered; advancing only on emitted events makes
             // every reconnect re-request the filtered ones forever.
             const n = opts.cursorOf?.(ev);
+            if (
+              opts.restartOnReplay === true &&
+              !epochReset &&
+              !restartNoted &&
+              askedSince >= 0 &&
+              typeof n === "number" &&
+              n <= askedSince
+            ) {
+              // The daemon replayed WHOLE: its log restarted (see the option).
+              restartNoted = true;
+              cursor = 0;
+              const line = opts.onEpochChange?.(opts.epochOf?.(ev) ?? "unknown") ?? null;
+              if (line !== null) emit(line);
+            }
             if (typeof n === "number" && Number.isFinite(n)) {
               cursor = cursorPolicy === "assign" ? n : Math.max(cursor, n);
             }

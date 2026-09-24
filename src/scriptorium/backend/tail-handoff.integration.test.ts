@@ -228,15 +228,36 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(lines.map((l) => l.type)).toEqual(["closed", "tail.closed"]);
     expect(lines[1]).toMatchObject({
       next: "stop",
-      command: cmd("open", "--restore", id),
+      command: cmd("open", "--restore", id, "--no-open"),
     });
   }, 30_000);
 
-  test("a kill -9'd daemon: the one-shot wakes with tail.lost ON STDOUT instead of sleeping forever", async () => {
+  test("D1: re-armed at a session that closed in the gap → tail.closed at once, in both modes", async () => {
+    const r = await cli("open", "--no-open", doc);
+    const { session_id: id } = JSON.parse(r.out) as { session_id: string };
+    opened.push(id);
+    const since = await lastId(id);
+    expect((await cli("close", "--session", id)).code).toBe(0);
+    await Bun.sleep(500);
+    // Watch mode, with a window far longer than the cell: it must not wait it out.
+    const watch = spawnTail(["--session", id, "--since", String(since)], 60_000);
+    expect(await watch.exit(5000)).toBe(0);
+    expect(watch.lines().map((l) => [l.type, l.command])).toEqual([
+      ["tail.closed", cmd("open", "--restore", id, "--no-open")],
+    ]);
+    // The one-shot the verifier saw hang forever.
+    const once = spawnTail(["--session", id, "--since", String(since), "--once"], 0);
+    expect(await once.exit(5000)).toBe(0);
+    expect(once.lines().map((l) => l.type)).toEqual(["tail.closed"]);
+  }, 30_000);
+
+  test("a kill -9'd daemon: tail.lost ON STDOUT; after open --restore the stale bookmark cannot replay (D2)", async () => {
     const r = await cli("open", "--no-open", doc);
     const { session_id: id, port } = JSON.parse(r.out) as { session_id: string; port: number };
     opened.push(id);
+    for (const text of ["one", "two", "three"]) await humanSays(port, text);
     const since = await lastId(id);
+    expect(since).toBeGreaterThanOrEqual(4);
     const t = spawnTail(["--session", id, "--since", String(since), "--once"], 0);
     await Bun.sleep(800);
     const pid = (
@@ -248,17 +269,44 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(pid).toMatch(/^\d+$/);
     process.kill(Number(pid), "SIGKILL");
     expect(await t.exit(10_000)).toBe(0);
-    expect(t.lines()).toEqual([
+    const lost = t.lines();
+    expect(lost).toEqual([
       {
         type: "tail.lost",
         events: 0,
         cursor: since,
         next: "stop",
-        command: cmd("open", "--restore", id),
-        hint: "lost the daemon (it crashed or was killed); nothing is listening. To come back, run command",
+        command: cmd("open", "--restore", id, "--no-open"),
+        hint: "lost the daemon (it crashed or was killed); nothing is listening. To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)",
       },
     ]);
-    // The killed daemon left its pointer behind; clear it so nothing reads it.
-    rmSync(join(root, "tmp", `scriptorium-${id}.json`), { force: true });
+
+    // Come back exactly as the line says. The restored daemon's ids begin at 1.
+    const back = Bun.spawn(["sh", "-c", `${lost[0]?.command}`], {
+      stdout: "pipe",
+      stderr: "pipe",
+      env,
+      cwd: root,
+    });
+    expect(await back.exited).toBe(0);
+    const restored = JSON.parse(await new Response(back.stdout).text()) as { session_id: string };
+    expect(restored.session_id).toBe(id);
+
+    // D2: an agent that re-arms with the STALE bookmark anyway. The daemon
+    // replays its new log whole; the one-shot wakes ONCE and names the NEW
+    // cursor, so the next re-arm replays nothing.
+    const stale = spawnTail(["--session", id, "--since", String(since), "--once"], 0);
+    expect(await stale.exit(5000)).toBe(0);
+    const woke = stale.lines().at(-1) as Line;
+    expect(woke.type).toBe("tail.woke");
+    expect(woke.cursor as number).toBeLessThan(since);
+    expect(stale.lines()[0]?.type).toBe("epoch.changed");
+    const rearm = spawnTail(["--session", id, "--since", String(woke.cursor)], 800);
+    await rearm.exit(10_000);
+    const again = rearm.lines();
+    expect(
+      again.filter((l) => typeof l.id === "number" && (l.id as number) <= (woke.cursor as number)),
+    ).toEqual([]);
+    expect(again.at(-1)?.type).toMatch(/^tail\.(quiet|window)$/);
   }, 30_000);
 });

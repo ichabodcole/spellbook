@@ -123,6 +123,7 @@ import {
   selfCommand,
   tailCommand,
   tailWithHandoff,
+  WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS, TAIL_RETRY_MAX_MS, TAIL_RETRY_MS } from "./heartbeat.ts";
 
@@ -530,7 +531,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
   state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
   changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
-  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor, timeout_ms 1800000; the last line names the re-arm)
+  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor; see below)
   projects [--create <title>]                        list projects / create one
   ingest --title <t> (--file <p> | --stdin)          add a doc
   propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
@@ -561,7 +562,26 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
 
   Output: every verb prints JSON on stdout by default, one document per answer —
   except tail, a stream that prints one JSON line per event. Prose, warnings and
-  diagnostics go to stderr; failures exit non-zero (2 = usage).`;
+  diagnostics go to stderr; failures exit non-zero (2 = usage).
+
+  Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at
+  timeout_ms: 1800000. It ends itself just before the cap, and its last line
+  (type: "tail.…") names your next act. Do what its "next" says with its
+  "command", which already carries the bookmark (--since):
+    monitor     arm Monitor again with command.
+    background  nothing happened; the human is away. Run command as a
+                background Bash task (run_in_background). It exits on the next
+                event, which wakes you. Handle the event, then follow its line
+                back to Monitor.
+    stop        the session closed or its daemon is gone. Do not re-arm;
+                command is how to bring it back. If you do, tail the session id
+                it prints with no --since: a restored session starts a new
+                event log.
+  If Monitor expires before that line arrives, re-arm silently with
+  --since <the last id you saw>. Never re-arm without --since: that replays
+  events you have already handled. This spell's tail never says background:
+  holding the connection is your presence, so its line always re-arms Monitor.
+  tail ${WINDOW_HELP}.`;
 
 // The plugin manifest is the one version source; the CLI reads it rather than
 // mirroring the number (astrolabe's pattern). Layout-dependent, so absence
@@ -871,7 +891,7 @@ async function dispatch(argv: string[]): Promise<number> {
               at,
               false,
             ),
-          comeBack: () => commandLine([...selfCommand(), "open"]),
+          comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
         },
       },
     );

@@ -40,7 +40,13 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { printJson } from "../../kit/lib/printJson";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { commandLine, selfCommand, tailCommand, tailWithHandoff } from "../../kit/wire/tailHandoff";
+import {
+  commandLine,
+  selfCommand,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -283,7 +289,7 @@ async function streamEvents(opts: {
       presence: true,
       commands: {
         tail: ({ since }) => tailCommand([...selfCommand(), ...opts.again], since, false),
-        comeBack: () => commandLine([...selfCommand(), "open"]),
+        comeBack: () => commandLine([...selfCommand(), "open", "--no-open"]),
       },
     },
   );
@@ -511,6 +517,7 @@ const HELP = `astrolabe — a standing observatory board for projects in flight.
       read-back: project cards (each carries a derived zone: attention | active | quiet)
   tail [--since N] [--as <name>]
       unscoped event tail as JSONL (no presence)
+  join and tail ${WINDOW_HELP}
   list | close | info | help | --version
 
   Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.

@@ -493,7 +493,7 @@ describe("a session, end to end through the launchers", () => {
         .map((l) => l.type)
         .slice(-2),
     ).toEqual(["closed", "tail.closed"]);
-    expect(tailLines().at(-1)?.command).toBe(`bun ${CLI} open --restore ${sessionId}`);
+    expect(tailLines().at(-1)?.command).toBe(`bun ${CLI} open --restore ${sessionId} --no-open`);
     expect(existsSync(join(root, "tmp", `scriptorium-${sessionId}.json`))).toBe(false);
     const manifest = JSON.parse(
       readFileSync(join(root, "home", "sessions", sessionId, "manifest.json"), "utf8"),

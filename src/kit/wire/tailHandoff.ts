@@ -106,6 +106,52 @@
  *      for a human watching a terminal). An env var and not a flag: it is
  *      not an agent's act, so it stays out of eight verbs' schemas.
  *
+ * ── THE VERIFIER'S DEFECTS, FIXED ON THE SAME BRANCH (2026-09-23) ──────────
+ *
+ * The no-stake verifier ran every spell's real tail and found four ways the
+ * loop broke. Each has a cell in `tailHandoff.test.ts`; D1 and D2 also have a
+ * real-daemon cell in `src/scriptorium/backend/tail-handoff.integration.test.ts`.
+ *
+ * D1 · A RE-ARM AT A SESSION THAT CLOSED IN THE GAP ENDS `tail.closed`. The
+ *      trigger is ordinary: the human presses Close while the agent handles
+ *      `tail.woke`. The session spells stopped only when THIS process had
+ *      once reached the session, so the re-arm retried "no session yet" on
+ *      stderr forever — and its `--once` never exited. Rule: a tail given
+ *      `--session` or a bookmark is re-arming an EXISTING session, so not
+ *      finding it means it closed; the spell's `onUnresolved` says "stop"
+ *      and this module reads ANY stop as closed. A bare first arm still
+ *      waits for a session to appear.
+ * D2 · A BOOKMARK CANNOT OUTLIVE ITS LOG. A restored daemon's ids begin at 1,
+ *      and the kit's log answers a cursor beyond its own by replaying whole;
+ *      the tail kept its higher cursor, so every re-arm replayed the new log
+ *      and a `--once` woke at once, in a loop. Two halves:
+ *        (a) the net — `tailEvents`' `restartOnReplay` (on by default here,
+ *            off for grapevine, whose ids survive a restart) reads a frame at
+ *            or below the asked cursor as a restarted log and resets;
+ *        (b) the rule — the `tail.closed`/`tail.lost` hint says to tail the
+ *            session id `open` prints WITH NO `--since`, and so does every
+ *            skill. Bounty's restore mints a new id, which is why the line
+ *            names "the id it prints", not the old one.
+ *      Not taken: carrying the daemon's epoch in the bookmark
+ *      (`--since N --epoch E`) — exact, but a new flag on eight verbs and an
+ *      epoch the tail sees only once a frame arrives. (a)'s stated blind spot
+ *      is a stale bookmark at or below the NEW log's length; (b) is why the
+ *      come-back path never presents one.
+ * D3 · ONLY A FRAME WITH A LOG ID COUNTS. Glamour's and imago's tab pings
+ *      (`connected`/`disconnected`) carry no id: not on the log, so a laptop
+ *      lid no longer wakes a `--once`, and imago's grep no longer shows a
+ *      `tail.woke` with nothing above it.
+ * D4 · A HUMAN'S WATCH HAS NO WINDOW. `grapevine tail --human` passes
+ *      `windowMs: 0`; no other spell has a human mode. Every `tail`'s help
+ *      carries `WINDOW_HELP`, which names `SPELLBOOK_TAIL_WINDOW_MS=0`.
+ * Also: every come-back command carries `--no-open`, so running it as printed
+ * opens no browser tab.
+ *
+ * ⚠ KNOWN LIMIT, NOT FIXED: the printed `command` names the launcher by its
+ *   full path, which for an installed plugin includes its VERSIONED cache
+ *   directory. Across a plugin upgrade a re-arm keeps running the old version
+ *   until the agent next arms from the skill's own path. Noted, not redesigned.
+ *
  * ⚖ `--once` ENDS ON THE FIRST FRAME, with no drain. A burst arrives split: the
  *   first event on the one-shot, the rest on the Monitor re-arm, which loses
  *   nothing because of the bookmark. The spike offered a ~200 ms drain as an
@@ -126,6 +172,11 @@ export const WINDOW_MARGIN_MS = 60_000;
 export const DEFAULT_WINDOW_MS = MONITOR_CAP_MS - WINDOW_MARGIN_MS;
 /** The injection point for tests and verification (see A4). */
 export const WINDOW_ENV = "SPELLBOOK_TAIL_WINDOW_MS";
+/** The one sentence every `tail`'s help carries, so a human watching in a
+ *  terminal finds the escape hatch where they look (D4). Worded once here. */
+export const WINDOW_HELP =
+  "ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0";
+
 /** Connection refusals in a row that make the daemon "lost" (see A2). Three
  *  span about 0.75 s under the kit's default backoff (250 + 500 ms between
  *  them): a live daemon never refuses its own port, and the two extra attempts
@@ -177,6 +228,11 @@ export type HandoffLine = {
   hint: string;
 };
 
+/** The come-back hint, with how to RESUME after coming back (D2): a restored
+ *  daemon starts a new log, so the old bookmark means nothing there. */
+const COME_BACK = (why: string) =>
+  `${why} To bring it back, run command; then tail the session id it prints, with no --since (a restored session starts a new event log, so the old bookmark does not apply)`;
+
 /**
  * THE DECISION: given how the tail ended, which line it prints. Pure, so every
  * state is a literal cell in `tailHandoff.test.ts`. Returns null for `stopped`:
@@ -193,7 +249,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
         ...base,
         next: "stop",
         command: cmd.comeBack(),
-        hint: "the session closed; there is nothing left to watch. To bring it back, run command",
+        hint: COME_BACK("the session closed; there is nothing left to watch."),
       };
     case "lost":
       return {
@@ -201,7 +257,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
         ...base,
         next: "stop",
         command: cmd.comeBack(),
-        hint: "lost the daemon (it crashed or was killed); nothing is listening. To come back, run command",
+        hint: COME_BACK("lost the daemon (it crashed or was killed); nothing is listening."),
       };
     case "event":
       return {
@@ -265,6 +321,10 @@ export type HandoffOptions<Ev> = {
   counts?: (ev: Ev, frame: SseFrame) => boolean;
   /** Which terminal frame means the session closed. Default: every terminal. */
   isClosed?: (ev: Ev) => boolean;
+  /** The daemon runs the kit's event log, so a frame at or below the asked
+   *  cursor means its log restarted (`tailEvents`' `restartOnReplay`, D2).
+   *  Default true; grapevine's durable log turns it off. */
+  eventLog?: boolean;
   commands: HandoffCommands;
 };
 
@@ -288,6 +348,11 @@ export async function tailWithHandoff<Ev>(
 
   let events = 0;
   let cursor = tail.since;
+  let frameHasId = false;
+  /** A3 + D3: a frame counts, and wakes a `--once`, only when it is ON THE
+   *  LOG — it carries a log id — and the spell's own `counts` agrees. A tab's
+   *  id-less `connected`/`disconnected` ping is not on the log. */
+  const isLogFrame = (ev: Ev, frame: SseFrame) => frameHasId && counts(ev, frame);
   let end: TailEnd | null = null;
   let refusals = 0;
 
@@ -302,16 +367,26 @@ export async function tailWithHandoff<Ev>(
     const code = await tailEvents<Ev>({
       ...tail,
       signal: ac.signal,
+      restartOnReplay: h.eventLog ?? true,
+      // D3: remember whether THIS frame carries a log id. `tailEvents` reads
+      // the cursor once per frame, before `accept`, `terminal` and `render`.
+      cursorOf: (ev) => {
+        const n = tail.cursorOf?.(ev);
+        frameHasId = typeof n === "number" && Number.isFinite(n);
+        return n;
+      },
       onUnresolved: (s) => {
         const verdict = tail.onUnresolved?.(s) ?? "retry";
-        // A pinned session's pointer vanishing after we had it: it closed.
-        if (verdict === "stop" && s.everResolved && end === null) end = "closed";
+        // D1: a tail that gives up on finding its session is watching a
+        // session that is gone — whether this process ever reached it (its
+        // pointer vanished) or it was re-armed at one that closed in the gap.
+        if (verdict === "stop" && end === null) end = "closed";
         return verdict;
       },
       render: (ev, frame) => {
         refusals = 0;
         const line = tail.render ? tail.render(ev, frame) : frame.data;
-        if (line !== null && counts(ev, frame)) events += 1;
+        if (line !== null && isLogFrame(ev, frame)) events += 1;
         return line;
       },
       terminal: (ev, frame, accepted) => {
@@ -319,7 +394,7 @@ export async function tailWithHandoff<Ev>(
           if (end === null) end = (h.isClosed ?? (() => true))(ev) ? "closed" : "event";
           return true;
         }
-        if (h.mode === "once" && accepted && counts(ev, frame)) {
+        if (h.mode === "once" && accepted && isLogFrame(ev, frame)) {
           if (end === null) end = "event";
           return true;
         }
@@ -347,7 +422,13 @@ export async function tailWithHandoff<Ev>(
       },
     });
     const line = handoff(
-      { end: end ?? "stopped", mode: h.mode, events, cursor, presence: h.presence },
+      {
+        end: end ?? "stopped",
+        mode: h.mode,
+        events,
+        cursor,
+        presence: h.presence,
+      },
       h.commands,
     );
     if (line !== null) out.write(`${JSON.stringify(line)}\n`);

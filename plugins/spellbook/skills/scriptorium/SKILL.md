@@ -96,7 +96,8 @@ bun $S/scripts/cli.ts tail        # wrap with Monitor, timeout_ms 1800000
   background Bash task (`run_in_background`). It exits on the next event, which
   wakes you. Handle the event, then follow its line back to Monitor.
 - `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
-  how to bring it back.
+  how to bring it back. If you do, tail the session id it prints with no
+  `--since`: a restored session starts a new event log.
 
 If Monitor expires before that line arrives, re-arm silently with
 `--since <the last id you saw>`. Never re-arm without `--since`: that replays

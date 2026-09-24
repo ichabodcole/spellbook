@@ -142,6 +142,13 @@ Cole's real use says whether the handoff feels right.
 - **Tests:** `src/kit/wire/tailHandoff.test.ts` (the pure decision, the
   connection close, the wrapper) and
   `src/scriptorium/backend/tail-handoff.integration.test.ts` (a real daemon).
+- **The verifier's four defects, fixed on the branch** (D1–D4 in the kit
+  header): a re-arm at a session that closed in the gap ends `tail.closed`
+  instead of waiting forever; a bookmark from a restarted log is dropped (the
+  come-back line says to tail the new session id with no `--since`); a tab's
+  id-less ping no longer wakes `--once`; `grapevine tail --human` has no window.
+  Anthill's seat filter, which drops the handoff line, is filed as
+  [its own item](./2026-09-23-anthill-seat-tail-filter-drops-the-handoff-line.md).
 
 ## References
 

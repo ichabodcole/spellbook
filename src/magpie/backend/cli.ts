@@ -41,7 +41,13 @@ import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/ty
 import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { printJson } from "../../kit/lib/printJson";
 import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { commandLine, selfCommand, tailCommand, tailWithHandoff } from "../../kit/wire/tailHandoff";
+import {
+  commandLine,
+  selfCommand,
+  tailCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff";
 import {
   ALPHA_POLICIES,
   type AlphaPolicy,
@@ -428,6 +434,7 @@ async function cmdTail(
   o: { once: boolean; sinceGiven: boolean },
 ): Promise<number> {
   let boundId = session;
+  const reArm = session !== undefined || o.sinceGiven;
   // A `--since` re-arm prints no grounding line (`kit/wire/tailHandoff.ts`, A3).
   let grounded = o.sinceGiven;
   const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
@@ -452,7 +459,10 @@ async function cmdTail(
         return `http://127.0.0.1:${s.port}`;
       },
       onUnresolved: ({ everResolved }) => {
-        if (everResolved) return "stop"; // our pinned session went away → done
+        // D1: a tail given --session or a bookmark is re-arming an EXISTING
+        // session, so not finding it means it closed (in the gap, say) — the
+        // handoff says `tail.closed`, never a silent retry-forever.
+        if (everResolved || reArm) return "stop";
         process.stderr.write("# no session yet, retrying…\n");
         return "retry";
       },
@@ -468,7 +478,8 @@ async function cmdTail(
       presence: false,
       commands: {
         tail: ({ since, once }) => tailCommand([...selfCommand(), "tail", ...pin()], since, once),
-        comeBack: () => commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>"]),
+        comeBack: () =>
+          commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>", "--no-open"]),
       },
     },
   );
@@ -961,7 +972,8 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
 
   open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                            list saved (resumable) sessions
-  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor; the last line names the next act)
+  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)
+                                     ${WINDOW_HELP}
   state  [--full]                     lean state snapshot (add --full for raw)
   say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)
   ask    <text...> [--options "a|b|c"]   ask the user a question (in-thread)

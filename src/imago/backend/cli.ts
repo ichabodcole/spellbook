@@ -47,6 +47,7 @@ import {
   selfCommand,
   tailCommand,
   tailWithHandoff,
+  WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
@@ -457,6 +458,7 @@ async function cmdTail(
   o: { once: boolean; sinceGiven: boolean },
 ): Promise<number> {
   let boundId = session;
+  const reArm = session !== undefined || o.sinceGiven;
   // A `--since` re-arm prints no grounding line (`kit/wire/tailHandoff.ts`, A3).
   let grounded = o.sinceGiven;
   const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
@@ -482,7 +484,10 @@ async function cmdTail(
         return `http://127.0.0.1:${s.port}`;
       },
       onUnresolved: ({ everResolved }) => {
-        if (everResolved) return "stop"; // our pinned session went away → done
+        // D1: a tail given --session or a bookmark is re-arming an EXISTING
+        // session, so not finding it means it closed (in the gap, say) — the
+        // handoff says `tail.closed`, never a silent retry-forever.
+        if (everResolved || reArm) return "stop";
         process.stderr.write("# no session yet, retrying…\n");
         return "retry";
       },
@@ -498,7 +503,8 @@ async function cmdTail(
       presence: false,
       commands: {
         tail: ({ since, once }) => tailCommand([...selfCommand(), "tail", ...pin()], since, once),
-        comeBack: () => commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>"]),
+        comeBack: () =>
+          commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>", "--no-open"]),
       },
     },
   );
@@ -573,7 +579,8 @@ const HELP = `imago — a grounded image conversation.
 
   open   [--title ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                           list saved (resumable) sessions
-  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor; the last line names the next act)
+  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)
+                                     ${WINDOW_HELP}
   state  [--full]                    lean state snapshot (add --full for raw incl. base64)
   say    <text...>                   post agent dialogue into the conversation
   propose <prompt...> [--n N]        propose a prompt for the user to send (×N, ≤4)

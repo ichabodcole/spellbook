@@ -35,7 +35,12 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { commandLine, selfCommand, tailWithHandoff } from "../../kit/wire/tailHandoff.ts";
+import {
+  commandLine,
+  selfCommand,
+  tailWithHandoff,
+  WINDOW_HELP,
+} from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
@@ -1006,6 +1011,12 @@ async function cmdTail(
     {
       mode: "watch",
       presence: true,
+      // D4: a human at a terminal (`--human`) is not an agent under
+      // Monitor's cap, so their watch never ends by itself.
+      ...(opts.human ? { windowMs: 0 } : {}),
+      // Ids are recovered across a restart (D70), so a frame at or below the
+      // bookmark never means a restarted log here.
+      eventLog: false,
       // The `subscribed` marker (and the grounding line it renders) is not a
       // message on the channel.
       counts: (_ev, frame) => frame.event !== "subscribed",
@@ -2546,6 +2557,7 @@ Usage:
   grapevine announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] [<text...>]
                                     # broadcast one message to every active channel (or --channels)
   grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]
+                                    # ${WINDOW_HELP} (--human never ends by itself)
        # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)
   grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)
   grapevine triage <name>             # full-scan: open messages on top + grouped by_status
