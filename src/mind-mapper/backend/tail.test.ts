@@ -264,3 +264,28 @@ test("an epoch change on reconnect resets the cursor and synthesizes epoch.chang
   expect(sinces[0]).toBe(0);
   expect(sinces[1]).toBe(5);
 });
+
+// D2 (feat/tail-quiet-handoff): a bookmark printed `--since N@<epoch>` carries
+// the log it came from. A restarted daemon whose NEW log is already past N
+// sends only what lies above N, so without the epoch the new log's start was
+// skipped silently. The tail must notice the epoch change and re-read from 0.
+test("a --since N@epoch bookmark from a restarted log re-reads the new log from 0", async () => {
+  const sinces: number[] = [];
+  const server = fakeSseServer((conn) => {
+    sinces.push(conn.since);
+    // the new daemon's log: ids 1..5 in epoch-new; it believes the cursor.
+    for (let id = 1; id <= 5; id++) if (id > conn.since) conn.push(event(id, "epoch-new"));
+  });
+  const home = mintHome(server.port);
+  const proc = spawnTail(home, "--since", "4@epoch-old");
+  const lines = await readLines(proc, 6, 5000);
+  expect(sinces.slice(0, 2)).toEqual([4, 0]);
+  expect(lines.map((l) => JSON.parse(l).id ?? JSON.parse(l).kind)).toEqual([
+    "epoch.changed",
+    1,
+    2,
+    3,
+    4,
+    5,
+  ]);
+});

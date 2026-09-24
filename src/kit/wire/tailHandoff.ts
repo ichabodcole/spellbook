@@ -172,6 +172,14 @@
  * Also: every come-back command carries `--no-open`, so running it as printed
  * opens no browser tab.
  *
+ * ⚠ KNOWN EDGE, NOT FIXED (found by the re-review): a keyed bounty FIRST arm
+ *   (an anthill seat) whose window ends before its board ever opens prints a
+ *   re-arm pinned to the derived id with an empty bookmark
+ *   (`--session k-… --since=-1 --once`). That re-arm is a re-arm by D1's rule,
+ *   so if the board is still not up — the lead more than one window (29 min)
+ *   late — the seat gets `tail.closed` instead of waiting. Minor: the
+ *   come-back it names (`open --session-key K`) is the right next step anyway.
+ *
  * ⚠ KNOWN LIMIT, NOT FIXED: the printed `command` names the launcher by its
  *   full path, which for an installed plugin includes its VERSIONED cache
  *   directory. Across a plugin upgrade a re-arm keeps running the old version
