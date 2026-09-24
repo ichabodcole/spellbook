@@ -234,16 +234,16 @@ Open backlog items this cycle filed or touched:
 - [House-style rules from this cycle](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
   Cole's to rule.
 
-Recorded under "Known and not built" in the sessions, with no backlog item of
-their own:
+The residuals the sessions recorded under "Known and not built" are filed as two
+items:
 
-- **The tail:** the fallback gap for spells whose daemon stamps no epoch
-  (glamour, imago, magpie, bounty), the printed re-arm naming a versioned plugin
-  path that goes stale across an upgrade, and the keyed late-lead edge.
-- **Scriptorium:** a resize does not re-place a pane, and a triple-click in
-  rendered mode gives no chip.
-- **Batched note review**, out of scope by Cole's call, is mentioned only in the
-  note item.
+- [The tail's re-arm command names a versioned plugin path](../backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md):
+  across an upgrade, a printed command first runs stale code, then fails once
+  the old directory is deleted. It is its own item because it should be resolved
+  before the release that first ships the handoff.
+- [Residuals from this cycle](../backlog/2026-09-24-scriptorium-real-use-residuals.md):
+  the no-epoch spells' fallback gap, the keyed late-lead edge, a resize not
+  re-placing a pane, triple-click giving no chip, and batched note review.
 
 Waiting on Cole:
 
