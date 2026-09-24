@@ -20,7 +20,7 @@
 //                 (chat + dropped nodes) + opens with a kind:"grounding" line
 //                 --once sleeps until the first log event, prints it, exits
 //                 (the quiet handoff's background one-shot)
-//   projects     list saved projects; --create <title> makes a new one
+//   projects      list saved projects; --create <title> makes a new one
 //   ingest        --title T (--file P | --stdin) → POST /ingest
 //   propose-node  --stdin JSON {draft, evidence, suggestedTier?} → POST /proposals
 //   propose-edge  same shape, kind: "edge" (source/target may be a real node

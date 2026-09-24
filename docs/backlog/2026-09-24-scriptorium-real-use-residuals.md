@@ -4,9 +4,9 @@ title: "Residuals from the Scriptorium real-use cycle"
 description:
   Known gaps the cycle recorded only in its sessions (the no-epoch spells'
   fallback gap, the keyed late-lead edge, a resize not re-placing a pane,
-  triple-click giving no chip, batched note review) and one a later verifier
-  found (magpie's `--once` waking on a tab connecting), each with a repro or
-  pointer
+  triple-click giving no chip, batched note review) and two later verifiers
+  found (magpie's `--once` waking on a tab connecting, a doubled
+  `epoch.changed`), each with a repro or pointer
 tags: [scriptorium, tail, residuals]
 status: draft
 lifecycle: open
@@ -17,9 +17,9 @@ generated: { by: claude-opus-5.5, at: 2026-09-24 }
 
 These were recorded under "Known and not built" in the sessions of
 [Scriptorium from real use](../cycles/2026-09-scriptorium-real-use.md), and
-nowhere else, plus one found later (section 6). They are grouped here so that
-none is lost. Each is small, or is waiting on Cole. If one grows, split it into
-its own item. The versioned plugin path from the same list has
+nowhere else, plus two found later (sections 6 and 7). They are grouped here so
+that none is lost. Each is small, or is waiting on Cole. If one grows, split it
+into its own item. The versioned plugin path from the same list has
 [its own item](./2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md),
 because it can bite at the next release. It is resolved: the printed command
 names no path, and the agent runs it with its own launcher (Cole's ruling,
@@ -129,3 +129,30 @@ whether the wake is wanted.
 
 **Pointers:** `src/magpie/backend/server.ts` (the lifecycle emits),
 `src/kit/wire/tailHandoff.ts` (A3, D3).
+
+## 7. `epoch.changed` prints twice after an in-process reconnect to a restarted daemon
+
+**What:** the verifier of `feat/mind-mapper-quiet-handoff` restarted
+mind-mapper's daemon on a different port under a running tail. The tail
+re-resolved and reconnected in-process, and printed `epoch.changed` twice, the
+second time with the same epoch. It predates that branch; it is in the kit, so
+any epoch-stamping spell that reconnects in-process (scriptorium, astrolabe,
+mind-mapper) can show it.
+
+**Cause (the verifier's):** in `tailEvents.ts`, the epoch branch resets the
+cursor and prints the line but sets only the per-frame `epochReset`, not the
+per-attempt `restartNoted`. `askedSince` still holds the old bookmark for the
+rest of that attempt. So the NEXT frame of the new log, whose id is also at or
+below the old bookmark, passes the `restartOnReplay` check (`!epochReset` is
+true again, `!restartNoted` is true, `n <= askedSince`) and prints a second
+`epoch.changed`.
+
+**Cost:** an extra line naming nothing new. An agent told to refetch state on
+`epoch.changed` does it twice. No frame is lost or replayed.
+
+**If it is changed:** set `restartNoted = true` where the epoch branch resets
+the cursor, with a cell in `tailEvents.test.ts` that reconnects to a new epoch
+whose first two frames are at or below the bookmark and expects one line.
+
+**Pointers:** `src/kit/wire/tailEvents.ts` (the epoch branch and the
+`restartOnReplay` check in the frame loop), `src/kit/wire/tailHandoff.ts` (D2).

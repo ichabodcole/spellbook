@@ -635,3 +635,34 @@ test("an agent's own act inside the linger restarts it; silence after it lets pr
   expect(await agents("linger-act")).toBe(1);
   expect(await until(async () => (await agents("linger-act")) === 0, 2000)).toBe(true);
 });
+
+// The same shape for `/send`: an AGENT's send is an act on the board and
+// restarts the linger; a HUMAN's send is not the agent being here, so it must
+// not keep the dot lit.
+async function sendInGap(project: string, role: "agent" | "user"): Promise<number> {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: project, title: project }),
+  });
+  const tail = await openTail(project);
+  expect(await until(async () => (await agents(project)) === 1, 2000)).toBe(true);
+  tail.abort();
+  const closedAt = Date.now();
+  await new Promise((r) => setTimeout(r, 350));
+  await fetch(`${url}/send?project=${project}`, {
+    method: "POST",
+    body: JSON.stringify({ role, text: `a ${role} send in the gap` }),
+  });
+  // Past the linger measured from the close, inside it measured from the send.
+  await new Promise((r) => setTimeout(r, Math.max(0, closedAt + 800 - Date.now())));
+  return agents(project);
+}
+
+test("an agent /send inside the linger restarts it", async () => {
+  expect(await sendInGap("linger-agent-send", "agent")).toBe(1);
+  expect(await until(async () => (await agents("linger-agent-send")) === 0, 2000)).toBe(true);
+});
+
+test("a human /send inside the linger does not restart it", async () => {
+  expect(await sendInGap("linger-user-send", "user")).toBe(0);
+});

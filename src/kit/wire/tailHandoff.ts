@@ -257,9 +257,8 @@
  *      Measured on a real `kill -9` under a `--once`: `tail.lost` 7 s later,
  *      not 0.75 s, because mind-mapper's own backoff starts at 1 s (1 + 2 + 4).
  *      M1–M3 were driven on a real daemon with a 4 s window: active → window,
- *      quiet → `--once`, a human message woke it, back to Monitor; `/state`
- *      presence read 1 in all 85 samples and the surface saw one
- *      `presence.changed` (the first arm) across four tail processes.
+ *      quiet → `--once`, a human message woke it, back to Monitor; presence
+ *      never dropped across the gaps.
  *
  * ⚖ `--once` ENDS ON THE FIRST FRAME, with no drain. A burst arrives split: the
  *   first event on the one-shot, the rest on the Monitor re-arm, which loses
