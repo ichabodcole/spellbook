@@ -131,6 +131,23 @@ Discipline (house pattern): the structured payload and events ride **stdout**
 (one JSON line each); only diagnostics and an occasional keepalive go to
 **stderr** — never merge the two under Monitor.
 
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled. This spell's tail never says `background`:
+holding the connection is your presence, so its line always re-arms Monitor.
+
 ### The board — what the human sees
 
 Three zones, calm by default (the literal `zone` value `state` reports is in

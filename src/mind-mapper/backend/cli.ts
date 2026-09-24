@@ -118,7 +118,12 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import {
+  commandLine,
+  selfCommand,
+  tailCommand,
+  tailWithHandoff,
+} from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS, TAIL_RETRY_MAX_MS, TAIL_RETRY_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS COMPUTED FROM THE ARTIFACT'S ADDRESS, WHICH IS
@@ -525,7 +530,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
   state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
   changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
-  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor)
+  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor, timeout_ms 1800000; the last line names the re-arm)
   projects [--create <title>]                        list projects / create one
   ingest --title <t> (--file <p> | --stdin)          add a doc
   propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
@@ -726,6 +731,8 @@ async function dispatch(argv: string[]): Promise<number> {
     const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     const since = Number.parseInt(parsed.values.since as string, 10);
+    // A `--since` re-arm prints no grounding (`kit/wire/tailHandoff.ts`, A3).
+    const sinceGiven = parsed.values.since !== undefined;
     // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
     // connect; forward only the FIRST so the agent's Monitor sees exactly one
     // grounding line, not one per reconnect (F5: first-connect line).
@@ -740,7 +747,7 @@ async function dispatch(argv: string[]): Promise<number> {
     // behaviour without touching this file. The alternative was asking the kit
     // for a `firstFrameOnce` option, which is a widening for a closure the
     // caller can write in three lines (D82's not-taken).
-    let grounded = false;
+    let grounded = sinceGiven;
 
     // ⛔ ONE CALL INTO THE HOUSE'S SHARED TAIL CLIENT
     // (`src/kit/wire/tailEvents.ts`), REPLACING A HAND-ROLLED
@@ -776,72 +783,98 @@ async function dispatch(argv: string[]): Promise<number> {
     // spell's own tail suite drives are resolved (D75). The number is 45,000 at
     // the default, which is what this file hard-coded; the EXPRESSION is what
     // changed.
-    return await tailEvents<{ id?: unknown; epoch?: unknown; kind?: unknown }>({
-      resolve: () => {
-        const port = livePort();
-        return port === null ? null : `http://127.0.0.1:${port}`;
+    //
+    // ⛔ AND A PRESENCE SPELL (`kit/wire/tailHandoff.ts`): an SSE tail is what
+    // the daemon counts as an agent present, so the window always names the
+    // Monitor re-arm, never the stop-start `--once`.
+    return await tailWithHandoff<{ id?: unknown; epoch?: unknown; kind?: unknown }>(
+      {
+        resolve: () => {
+          const port = livePort();
+          return port === null ? null : `http://127.0.0.1:${port}`;
+        },
+        path: "/events",
+        since: Number.isFinite(since) ? since : 0,
+        query: (cursor) => ({
+          since: String(cursor),
+          ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
+          ...(inbound ? { inbound: "1" } : {}),
+        }),
+        // ⛔ `id`, NOT `seq` — the daemon's envelope field was renamed by the
+        // `createEventLog` adoption (D81), and this is the CLI-side reader of it.
+        // ⚠ The CLI half FORCED nothing: `cursorOf` is caller-supplied, so
+        // `(ev) => ev.seq` would have compiled and run. It would also have read a
+        // field the daemon no longer emits, so the cursor would never advance and
+        // every reconnect would re-request `since=0` — the whole replay window
+        // into an agent's pipe, silently, forever. **A caller-supplied accessor is
+        // where a wire rename goes wrong quietly.**
+        cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+        epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
+        // A reconnect that lands on a different epoch means the daemon restarted:
+        // the kit resets the cursor to 0 and this line tells the casting agent to
+        // refetch state. CLI-synthesized only, never a bus event (the browser WS
+        // never sees it), and it carries no `id` — so it never advances the
+        // cursor, which is the same separation the grounding line makes.
+        onEpochChange: (epoch) => JSON.stringify({ kind: "epoch.changed", epoch }),
+        // Grounding is a synthetic, id-less first-connect frame: forward the
+        // first, suppress re-groundings on reconnect (exactly one per process).
+        // Returning null writes nothing; it never carries id/epoch, so the
+        // cursor and the epoch are untouched either way.
+        render: (ev, frame) => {
+          if (ev.kind === "grounding") {
+            if (grounded) return null;
+            grounded = true;
+          }
+          return frame.data;
+        },
+        // A refused connection (409 needs-project on a projectless store, 404
+        // unknown project) is a usage error, not a transport blip — retrying it
+        // forever would just spin silently. `passOrThrow` always throws here, and
+        // the throw propagates out of the client into `main`'s catch, which is
+        // strictly better than a raise reachable from inside a reconnect loop.
+        // Annotated: an async arrow's `return "retry"` widens to `Promise<string>`
+        // unless the return type is stated, and the client accepts only the
+        // literal (type-debt T36).
+        onHttpError: async (res): Promise<"retry"> => {
+          if (res.status === 409 || res.status === 404) await passOrThrow(res);
+          return "retry";
+        },
+        // ⛔ THE UNPARSEABLE LINE GOES TO STDOUT, WHICH IS THIS SPELL'S OWN
+        // BEHAVIOUR AND THE ONE THE KIT'S DEFAULT WOULD HAVE CHANGED. The
+        // hand-rolled loop caught the `JSON.parse` and passed the raw line
+        // through untracked; the kit's `onMalformed` return value goes to `err`
+        // instead, because a diagnostic about the stream is not data. mind-mapper
+        // is the "one spell" that module's header names as genuinely wanting it on
+        // stdout, and the way to keep that is to write it from inside the hook and
+        // return null.
+        onMalformed: (frame) => {
+          process.stdout.write(`${frame.data}\n`);
+          return null;
+        },
+        idleMs: TAIL_IDLE_MS,
+        retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
       },
-      path: "/events",
-      since: Number.isFinite(since) ? since : 0,
-      query: (cursor) => ({
-        since: String(cursor),
-        ...(parsed.values.project ? { project: parsed.values.project as string } : {}),
-        ...(inbound ? { inbound: "1" } : {}),
-      }),
-      // ⛔ `id`, NOT `seq` — the daemon's envelope field was renamed by the
-      // `createEventLog` adoption (D81), and this is the CLI-side reader of it.
-      // ⚠ The CLI half FORCED nothing: `cursorOf` is caller-supplied, so
-      // `(ev) => ev.seq` would have compiled and run. It would also have read a
-      // field the daemon no longer emits, so the cursor would never advance and
-      // every reconnect would re-request `since=0` — the whole replay window
-      // into an agent's pipe, silently, forever. **A caller-supplied accessor is
-      // where a wire rename goes wrong quietly.**
-      cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
-      epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
-      // A reconnect that lands on a different epoch means the daemon restarted:
-      // the kit resets the cursor to 0 and this line tells the casting agent to
-      // refetch state. CLI-synthesized only, never a bus event (the browser WS
-      // never sees it), and it carries no `id` — so it never advances the
-      // cursor, which is the same separation the grounding line makes.
-      onEpochChange: (epoch) => JSON.stringify({ kind: "epoch.changed", epoch }),
-      // Grounding is a synthetic, id-less first-connect frame: forward the
-      // first, suppress re-groundings on reconnect (exactly one per process).
-      // Returning null writes nothing; it never carries id/epoch, so the
-      // cursor and the epoch are untouched either way.
-      render: (ev, frame) => {
-        if (ev.kind === "grounding") {
-          if (grounded) return null;
-          grounded = true;
-        }
-        return frame.data;
+      {
+        mode: "watch",
+        presence: true,
+        // The grounding frame is the daemon's, but it is not a log event.
+        counts: (ev) => ev.kind !== "grounding",
+        commands: {
+          tail: ({ since: at }) =>
+            tailCommand(
+              [
+                ...selfCommand(),
+                "tail",
+                ...(inbound ? ["--inbound"] : []),
+                ...(parsed.values.project ? ["--project", parsed.values.project as string] : []),
+              ],
+              at,
+              false,
+            ),
+          comeBack: () => commandLine([...selfCommand(), "open"]),
+        },
       },
-      // A refused connection (409 needs-project on a projectless store, 404
-      // unknown project) is a usage error, not a transport blip — retrying it
-      // forever would just spin silently. `passOrThrow` always throws here, and
-      // the throw propagates out of the client into `main`'s catch, which is
-      // strictly better than a raise reachable from inside a reconnect loop.
-      // Annotated: an async arrow's `return "retry"` widens to `Promise<string>`
-      // unless the return type is stated, and the client accepts only the
-      // literal (type-debt T36).
-      onHttpError: async (res): Promise<"retry"> => {
-        if (res.status === 409 || res.status === 404) await passOrThrow(res);
-        return "retry";
-      },
-      // ⛔ THE UNPARSEABLE LINE GOES TO STDOUT, WHICH IS THIS SPELL'S OWN
-      // BEHAVIOUR AND THE ONE THE KIT'S DEFAULT WOULD HAVE CHANGED. The
-      // hand-rolled loop caught the `JSON.parse` and passed the raw line
-      // through untracked; the kit's `onMalformed` return value goes to `err`
-      // instead, because a diagnostic about the stream is not data. mind-mapper
-      // is the "one spell" that module's header names as genuinely wanting it on
-      // stdout, and the way to keep that is to write it from inside the hook and
-      // return null.
-      onMalformed: (frame) => {
-        process.stdout.write(`${frame.data}\n`);
-        return null;
-      },
-      idleMs: TAIL_IDLE_MS,
-      retry: { initialMs: TAIL_RETRY_MS, maxMs: TAIL_RETRY_MAX_MS },
-    });
+    );
   }
 
   if (verb === "projects") {

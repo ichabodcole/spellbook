@@ -35,7 +35,7 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import { commandLine, selfCommand, tailWithHandoff } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
@@ -876,97 +876,145 @@ async function cmdTail(
   const since = opts.fromStart ? 0 : (opts.since ?? -1);
   // Emit the grounding line only on the first subscribe, never on reconnects
   // (a reconnect resumes from the cursor — there is no unseen history then).
-  let grounded = false;
+  // ⛔ AND NEVER ON A `--since` RE-ARM (`kit/wire/tailHandoff.ts`, A3): the
+  // agent already knows the channel, and the history hint would be noise.
+  let grounded = opts.since !== undefined;
+  // ⛔ THE BOOKMARK FOR A LIVE-ONLY TAIL. `since = -1` asks for no history, so a
+  // tail that sees no message has no id to hand its re-arm, and the re-arm
+  // would miss everything sent in the gap. The `subscribed` marker carries the
+  // channel's `latest_id`: seeding the cursor from it makes the handoff's
+  // `--since` exact. Only for a live-only start — a backfilling one (`--last`,
+  // `--from-start`, `--since`) is still reading ids at or below it, and a
+  // reconnect mid-backfill must not skip past them.
+  // Once: a later marker (a reconnect) must not jump the cursor past messages
+  // its own backlog is about to replay.
+  let seedFromMarker = since < 0 && opts.last === undefined;
 
-  return await tailEvents<TailPayload>({
-    // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT AND NEVER CAPTURED. A tail outlives
-    // the daemon it started against — `roll` and `restart` both replace it — and
-    // `ensureDaemon` re-reads the port file and respawns, so a reconnect after a
-    // roll lands on the NEW daemon rather than spinning against a dead port.
-    resolve: async () => `http://127.0.0.1:${await ensureDaemon()}`,
-    path: `/channels/${name}/tail`,
-    since,
-    // ⚠ NO ensure call before the subscribe. A fresh `tail name` still works
-    // without an explicit open — GET …/tail creates the channel itself — and
-    // that is the ONLY way the subscribed event's `created` flag can ever be
-    // true: an ensure sent first creates the channel, so the subscribe that
-    // follows always reports `created:false` and the mistyped-name signal never
-    // fires.
-    query: (cursor, firstConnect) => {
-      const q: Record<string, string> = { since: String(cursor) };
-      // #68 — `--last N` rides the FIRST connection only. Once any message
-      // lands the cursor advances and a reconnect resumes from it via `since`,
-      // never re-backfilling the window. `firstConnect` is the kit's parameter
-      // for exactly this; the hand-written loop spelled it `highestSeen < 0`,
-      // which was the same test by accident of the sentinel.
-      if (opts.last !== undefined && firstConnect) q.last = String(opts.last);
-      if (myAlias) q.as = myAlias;
-      if (opts.human && !opts.lurk) q.human = "1";
-      if (opts.lurk) q.lurk = "1";
-      return q;
+  // ⛔ A PRESENCE SPELL: the connection IS `who`'s presence, so the window
+  // always names the Monitor re-arm, never the stop-start `--once`, and a lost
+  // daemon is retried (`resolve` respawns it), not reported.
+  const again = (at: number) =>
+    commandLine([
+      ...selfCommand(),
+      "tail",
+      name,
+      ...(opts.lurk ? ["--lurk"] : myAlias ? ["--as", myAlias] : []),
+      ...(opts.human && !opts.lurk ? ["--human"] : []),
+      ...(opts.max !== undefined ? ["--max", String(opts.max)] : []),
+      // `--since` takes no negative here; a tail that never learned an id
+      // re-arms live-only, which is what -1 meant.
+      ...(at >= 0 ? ["--since", String(at)] : []),
+    ]);
+
+  return await tailWithHandoff<TailPayload>(
+    {
+      // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT AND NEVER CAPTURED. A tail outlives
+      // the daemon it started against — `roll` and `restart` both replace it — and
+      // `ensureDaemon` re-reads the port file and respawns, so a reconnect after a
+      // roll lands on the NEW daemon rather than spinning against a dead port.
+      resolve: async () => `http://127.0.0.1:${await ensureDaemon()}`,
+      path: `/channels/${name}/tail`,
+      since,
+      // ⚠ NO ensure call before the subscribe. A fresh `tail name` still works
+      // without an explicit open — GET …/tail creates the channel itself — and
+      // that is the ONLY way the subscribed event's `created` flag can ever be
+      // true: an ensure sent first creates the channel, so the subscribe that
+      // follows always reports `created:false` and the mistyped-name signal never
+      // fires.
+      query: (cursor, firstConnect) => {
+        const q: Record<string, string> = { since: String(cursor) };
+        // #68 — `--last N` rides the FIRST connection only. Once any message
+        // lands the cursor advances and a reconnect resumes from it via `since`,
+        // never re-backfilling the window. `firstConnect` is the kit's parameter
+        // for exactly this; the hand-written loop spelled it `highestSeen < 0`,
+        // which was the same test by accident of the sentinel.
+        if (opts.last !== undefined && firstConnect) q.last = String(opts.last);
+        if (myAlias) q.as = myAlias;
+        if (opts.human && !opts.lurk) q.human = "1";
+        if (opts.lurk) q.lurk = "1";
+        return q;
+      },
+      cursorOf: (ev) => {
+        if (typeof ev.id === "number") return ev.id;
+        if (seedFromMarker && typeof ev.latest_id === "number") {
+          seedFromMarker = false;
+          return ev.latest_id;
+        }
+        return undefined;
+      },
+      accept: (ev, frame) => {
+        // The subscribed marker is not a message; `render` answers it.
+        if (frame.event === "subscribed") return true;
+        // Drop DISPOSITION frames — they are metadata about another message. A
+        // lifecycle frame (archive/unarchive) passes through: an agent tailing a
+        // channel could not previously see either party retire it, and found out
+        // when its next send was rejected.
+        if (isDispositionFrame(ev)) return false;
+        // Suppress self-echo: when --as is set, drop messages we sent ourselves.
+        // The sender already got the receipt as the POST response, so re-emitting
+        // it on tail is pure noise.
+        if (myAlias && ev.from === myAlias) return false;
+        return true;
+      },
+      render: (payload, frame) => {
+        if (frame.event === "subscribed") return renderSubscribed(payload);
+        // #67 — front-load a recovery pointer on EVERY message frame, so the read
+        // coordinates survive a downstream notification clip. Monitor truncates at
+        // its OWN cap (below our hint threshold, and one we cannot observe here); a
+        // message it clips would otherwise lose its trailing `id` and become
+        // unrecoverable — the reader is left inferring the id. Every frame
+        // therefore carries a FRONT-loaded `read <channel> <id>`, either as the
+        // richer `truncation_hint` (genuinely-long messages — the "+N chars,
+        // you're definitely missing content" alarm) or as the compact `full`
+        // pointer. Serializing it before the long `.text` is what makes it survive
+        // the clip (F17).
+        const readRef = `read ${name} ${payload.id}`;
+        if (
+          typeof payload.text === "string" &&
+          payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
+        ) {
+          const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
+          // Cap the INLINE body when --max is set (the full message stays on disk
+          // → `read`); without --max, emit the full text (today's default).
+          const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
+          return JSON.stringify({ truncation_hint, ...payload, text });
+        }
+        return JSON.stringify({ full: readRef, ...payload });
+      },
+      // Daemon liveness heartbeat (`: hb <ts>`). Surface a recognizable sentinel
+      // on stderr so a `2>&1` consumer can tell "idle" from "wedged" (F6). Kept
+      // off stdout — the JSONL stream stays pure.
+      onComment: (text) => (text.trimStart().startsWith("hb") ? ": grapevine-keepalive" : null),
+      onMalformed: (_frame, e) => `# bad sse data: ${e instanceof Error ? e.message : String(e)}`,
+      // The four lines the hand-written loop wrote, preserved verbatim — a tail
+      // that reconnects in silence is indistinguishable from one that is working.
+      onDisconnect: (info) => {
+        switch (info.cause) {
+          case "connect-failed":
+            return `# connect failed: ${info.error instanceof Error ? info.error.message : String(info.error)}, retrying…`;
+          case "http":
+          case "no-body":
+            return `# tail HTTP ${info.status}, retrying…`;
+          case "stream-error":
+            return `# stream dropped: ${info.error instanceof Error ? info.error.message : String(info.error)}, reconnecting…`;
+          case "stream-end":
+            return "# stream closed, reconnecting…";
+        }
+      },
+      idleMs: TAIL_IDLE_MS,
     },
-    cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
-    accept: (ev, frame) => {
-      // The subscribed marker is not a message; `render` answers it.
-      if (frame.event === "subscribed") return true;
-      // Drop DISPOSITION frames — they are metadata about another message. A
-      // lifecycle frame (archive/unarchive) passes through: an agent tailing a
-      // channel could not previously see either party retire it, and found out
-      // when its next send was rejected.
-      if (isDispositionFrame(ev)) return false;
-      // Suppress self-echo: when --as is set, drop messages we sent ourselves.
-      // The sender already got the receipt as the POST response, so re-emitting
-      // it on tail is pure noise.
-      if (myAlias && ev.from === myAlias) return false;
-      return true;
+    {
+      mode: "watch",
+      presence: true,
+      // The `subscribed` marker (and the grounding line it renders) is not a
+      // message on the channel.
+      counts: (_ev, frame) => frame.event !== "subscribed",
+      commands: {
+        tail: ({ since: at }) => again(at),
+        comeBack: () => commandLine([...selfCommand(), "doctor"]),
+      },
     },
-    render: (payload, frame) => {
-      if (frame.event === "subscribed") return renderSubscribed(payload);
-      // #67 — front-load a recovery pointer on EVERY message frame, so the read
-      // coordinates survive a downstream notification clip. Monitor truncates at
-      // its OWN cap (below our hint threshold, and one we cannot observe here); a
-      // message it clips would otherwise lose its trailing `id` and become
-      // unrecoverable — the reader is left inferring the id. Every frame
-      // therefore carries a FRONT-loaded `read <channel> <id>`, either as the
-      // richer `truncation_hint` (genuinely-long messages — the "+N chars,
-      // you're definitely missing content" alarm) or as the compact `full`
-      // pointer. Serializing it before the long `.text` is what makes it survive
-      // the clip (F17).
-      const readRef = `read ${name} ${payload.id}`;
-      if (
-        typeof payload.text === "string" &&
-        payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
-      ) {
-        const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
-        // Cap the INLINE body when --max is set (the full message stays on disk
-        // → `read`); without --max, emit the full text (today's default).
-        const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
-        return JSON.stringify({ truncation_hint, ...payload, text });
-      }
-      return JSON.stringify({ full: readRef, ...payload });
-    },
-    // Daemon liveness heartbeat (`: hb <ts>`). Surface a recognizable sentinel
-    // on stderr so a `2>&1` consumer can tell "idle" from "wedged" (F6). Kept
-    // off stdout — the JSONL stream stays pure.
-    onComment: (text) => (text.trimStart().startsWith("hb") ? ": grapevine-keepalive" : null),
-    onMalformed: (_frame, e) => `# bad sse data: ${e instanceof Error ? e.message : String(e)}`,
-    // The four lines the hand-written loop wrote, preserved verbatim — a tail
-    // that reconnects in silence is indistinguishable from one that is working.
-    onDisconnect: (info) => {
-      switch (info.cause) {
-        case "connect-failed":
-          return `# connect failed: ${info.error instanceof Error ? info.error.message : String(info.error)}, retrying…`;
-        case "http":
-        case "no-body":
-          return `# tail HTTP ${info.status}, retrying…`;
-        case "stream-error":
-          return `# stream dropped: ${info.error instanceof Error ? info.error.message : String(info.error)}, reconnecting…`;
-        case "stream-end":
-          return "# stream closed, reconnecting…";
-      }
-    },
-    idleMs: TAIL_IDLE_MS,
-  });
+  );
 
   /** The `subscribed` marker: stderr context, plus a structured grounding line
    *  on stdout the FIRST time only. */

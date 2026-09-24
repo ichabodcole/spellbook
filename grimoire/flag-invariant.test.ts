@@ -72,6 +72,8 @@ import { must } from "./lib/must.ts";
 // An explicit list is verifiable by LISTING, which is why it is a list.
 const FOREIGN: Record<string, string> = {
   "grapevine:line-buffered": "grep's flag, from the Monitor incantation",
+  "imago:line-buffered":
+    "grep's flag, in the Monitor wake-set filter (without it grep holds lines under a pipe)",
   "grapevine:version": "no such flag; the hits are a `version` field",
   "grapevine:declaration":
     "acc's flag, quoted in the schema row — `acc check <cli.ts> --declaration <(cli.ts schema)`",

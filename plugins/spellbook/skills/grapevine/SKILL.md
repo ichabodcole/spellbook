@@ -564,19 +564,37 @@ Pick the verb that matches your runtime's shape:
   wedged), while stdout carries exactly what you want notified — the one-time
   `kind:"grounding"` line and each real message. To notify on messages _only_
   (dropping the grounding line too), grep stdout for the `"from"` field, present
-  on messages and absent on grounding/comment lines:
-  `… tail <channel> --as <alias> | grep --line-buffered '"from"'`. (`2>&1` is
-  the right call only for a human watching a raw terminal, where the two streams
-  interleave on screen.) **Label each Monitor with its channel** (and, if you
-  render the JSONL yourself, put `channel` first) so two channels never blur —
-  channel disambiguation is the consumer's job, the payload field is buried
-  mid-object.
+  on messages and absent on grounding/comment lines, and keep the tail's own
+  handoff line (below):
+  `… tail <channel> --as <alias> | grep --line-buffered -E '"from"|"type":"tail\.'`.
+  (`2>&1` is the right call only for a human watching a raw terminal, where the
+  two streams interleave on screen.) **Label each Monitor with its channel**
+  (and, if you render the JSONL yourself, put `channel` first) so two channels
+  never blur — channel disambiguation is the consumer's job, the payload field
+  is buried mid-object.
 - **Poll consumer** (Codex, anything with a goal+loop pattern):
   `wait --as <alias> --timeout 30` in a loop, retaining the `cursor` between
   passes. Presence flickers per request but is honest while held.
 - **Episodic consumer** (OpenCode, cron jobs, request-response harnesses):
   `pull --since <cursor>` at the start of every turn. ~1–2s, no blocking, no
   presence. Drive-by participation by design.
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled. This spell's tail never says `background`:
+holding the connection is your presence, so its line always re-arms Monitor.
 
 Onboarding pattern that avoids the write-only trap — pick the subscribe verb
 that matches your runtime, then send:

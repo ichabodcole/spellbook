@@ -6,7 +6,7 @@
 //
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]  # spawn a daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently — #69)
-//   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
+//   bun cli.ts tail [--since N] [--once] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
 //   bun cli.ts state [--owner <name> | --mine] [--as <name>]    # scoped read-back (full; --full accepted, it is the default)
 //     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
 //     (the not-done blockers), so a filtered blocked task stays actionable.
@@ -63,7 +63,12 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import {
+  commandLine,
+  selfCommand,
+  tailCommand,
+  tailWithHandoff,
+} from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -496,6 +501,7 @@ const CLI_OPTIONS = {
   session: { type: "string" },
   "session-key": { type: "string" },
   since: { type: "string" },
+  once: { type: "boolean" },
   size: { type: "string" },
   status: { type: "string" },
   tag: { type: "string" },
@@ -1060,6 +1066,7 @@ async function cmdTail(
   session: string | undefined,
   sinceArg: number,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
+  once = false,
 ): Promise<number> {
   const owner = scope.owner;
   const self = scope.as;
@@ -1077,48 +1084,68 @@ async function cmdTail(
   let pinned = session;
   let announcedPin = false;
 
-  return await tailEvents<{ id?: number; type?: string; by?: string; owner?: string }>({
-    // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT, NEVER CAPTURED — a tail outlives
-    // the daemon it started against. `readSession` DIES on a corrupt pointer and
-    // returns null only for a genuinely absent one, and that `die` now THROWS,
-    // so it leaves through `main`'s funnel instead of exiting from inside a
-    // reconnect loop. B9's audit paying for itself: this is the one
-    // die-reachable call the shared client invokes on a schedule.
-    resolve: () => {
-      const resolved = pickTailSession(pinned, readSession);
-      if (!resolved) return null;
-      if (pinned === undefined) {
-        pinned = resolved.pinned;
-      }
-      if (!announcedPin) {
-        announcedPin = true;
-        process.stderr.write(
-          `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
-        );
-      }
-      return `http://127.0.0.1:${resolved.session.port}`;
+  // The re-arm keeps this tail's pin and scope, so the next watch is this one.
+  const again = () => [
+    ...selfCommand(),
+    "tail",
+    ...(pinned !== undefined ? ["--session", pinned] : []),
+    ...(owner ? ["--owner", owner] : []),
+    ...(scope.mine ? ["--mine"] : []),
+    ...(self !== undefined ? ["--as", self] : []),
+  ];
+
+  return await tailWithHandoff<{ id?: number; type?: string; by?: string; owner?: string }>(
+    {
+      // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT, NEVER CAPTURED — a tail outlives
+      // the daemon it started against. `readSession` DIES on a corrupt pointer and
+      // returns null only for a genuinely absent one, and that `die` now THROWS,
+      // so it leaves through `main`'s funnel instead of exiting from inside a
+      // reconnect loop. B9's audit paying for itself: this is the one
+      // die-reachable call the shared client invokes on a schedule.
+      resolve: () => {
+        const resolved = pickTailSession(pinned, readSession);
+        if (!resolved) return null;
+        if (pinned === undefined) {
+          pinned = resolved.pinned;
+        }
+        if (!announcedPin) {
+          announcedPin = true;
+          process.stderr.write(
+            `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
+          );
+        }
+        return `http://127.0.0.1:${resolved.session.port}`;
+      },
+      onUnresolved: () => {
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since: sinceArg,
+      // The cursor advances on EVERY frame, including ones `accept` rejects —
+      // that is the client's documented rule and it is what bounty's own loop did
+      // ("advance the cursor on EVERY event (even filtered ones) so resume is
+      // correct regardless of scope").
+      cursorOf: (ev) => ev.id,
+      accept: (ev) => inScope(ev) && !(self !== undefined && ev.by === self),
+      terminal: (ev) => ev.type === "closed",
+      // ⛔ THE `closed` FRAME IS EMITTED EVEN WHEN THE SCOPE FILTER REJECTED IT.
+      // It is lifecycle, not board data: a scoped worker still needs to know the
+      // board ended, and the old loop guarded the exit outside the filter for
+      // exactly this reason.
+      terminalEmitsFiltered: true,
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => ": bounty-keepalive",
     },
-    onUnresolved: () => {
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      mode: once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since, once: o }) => tailCommand(again(), since, o),
+        comeBack: () => commandLine([...selfCommand(), "open", "--restore", pinned ?? "<id>"]),
+      },
     },
-    path: "/events",
-    since: sinceArg,
-    // The cursor advances on EVERY frame, including ones `accept` rejects —
-    // that is the client's documented rule and it is what bounty's own loop did
-    // ("advance the cursor on EVERY event (even filtered ones) so resume is
-    // correct regardless of scope").
-    cursorOf: (ev) => ev.id,
-    accept: (ev) => inScope(ev) && !(self !== undefined && ev.by === self),
-    terminal: (ev) => ev.type === "closed",
-    // ⛔ THE `closed` FRAME IS EMITTED EVEN WHEN THE SCOPE FILTER REJECTED IT.
-    // It is lifecycle, not board data: a scoped worker still needs to know the
-    // board ended, and the old loop guarded the exit outside the filter for
-    // exactly this reason.
-    terminalEmitsFiltered: true,
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => ": bounty-keepalive",
-  });
+  );
 }
 
 function cmdInfo(session?: string) {
@@ -1276,7 +1303,7 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
   state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }
            (--full is accepted but redundant: the read is full by default — b6)
-  tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
+  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor; the last line names the next act)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
   --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.
@@ -1354,6 +1381,7 @@ async function dispatch(argv: string[]): Promise<number> {
           mine,
           as,
         },
+        flags.once === true,
       );
     }
     case "state": {

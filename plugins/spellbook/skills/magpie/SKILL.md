@@ -121,7 +121,7 @@ first; pass `--session <id>` **after the verb** to target a specific session
 | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id\|path>]`                  | Spawn the daemon (opens the browser); prints `{port, session_id, files_dir}`                                        |
 | `sessions`                                                                                          | List saved (resumable) sessions                                                                                     |
-| `tail [--since N]`                                                                                  | Stream user events as JSONL — run via Monitor (see Operating rule)                                                  |
+| `tail [--since N] [--once]`                                                                         | Stream user events as JSONL — run via Monitor (see Operating rule)                                                  |
 | `state [--full]`                                                                                    | State snapshot — lean by default; `--full` for raw                                                                  |
 | `say <text…> [--stdin]`                                                                             | Post agent dialogue into the conversation (`--stdin` for piped NL text)                                             |
 | `ask <text…> [--options "a\|b"]`                                                                    | Ask the user a question in-thread                                                                                   |
@@ -149,6 +149,22 @@ The tail pushes **imperatives only** — the moves where the user hands you work
 moves/renames/retypes/draws/drops, the re-run flag, version picks, and the
 backdrop swatch all mutate state silently. Don't wait for them; **read `state`
 when an imperative fires** to see the current boxes / flags / chosen versions.
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled.
 
 After `open`, stay quiet until the user does something. **Conversation is the
 primary channel** — the user mostly steers by talking to you; on-surface buttons

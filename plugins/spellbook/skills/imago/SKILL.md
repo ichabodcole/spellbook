@@ -77,7 +77,7 @@ session. `help` prints the full surface.
 | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `open [--title ..] [--no-open] [--timeout S] [--restore <id\|path>]`                                                     | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`)                                                                                                                                                                                                                 |
 | `sessions`                                                                                                               | List saved, resumable sessions                                                                                                                                                                                                                                                                                |
-| `tail [--since N]`                                                                                                       | Stream user events as JSONL — **wrap with Monitor** (see below)                                                                                                                                                                                                                                               |
+| `tail [--since N] [--once]`                                                                                              | Stream user events as JSONL — **wrap with Monitor** (see below)                                                                                                                                                                                                                                               |
 | `state [--full]`                                                                                                         | State snapshot — **lean by default** (image blobs stripped); `--full` for raw                                                                                                                                                                                                                                 |
 | `say <text…>`                                                                                                            | Post your dialogue into the conversation                                                                                                                                                                                                                                                                      |
 | `propose <prompt…> [--n N]`                                                                                              | Propose a prompt for the user to send (a Send ×N card; N≤4)                                                                                                                                                                                                                                                   |
@@ -112,8 +112,28 @@ react statelessly, one event per turn). Wrap the tail and filter to the events
 that want a response:
 
 ```
-cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|proposal\.dismiss|context\.capture|marks\.commit|submit)"'
+cli.ts tail --session <id> | grep --line-buffered -E '"type":"(say|proposal\.send|proposal\.dismiss|context\.capture|marks\.commit|submit|tail\.[a-z]+)"'
 ```
+
+⚠ Keep `tail\.[a-z]+` in the grep: it lets the tail's own handoff line through
+(below). When you re-arm Monitor with that line's `command`, append the same
+grep.
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled.
 
 That grep IS the wake set. **Ambient board state never reaches the stream at
 all** — focus, ref selection, likes, context link/unlink, aspect/size, pins,

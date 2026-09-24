@@ -223,7 +223,7 @@ session by default; pass `--session <id>` to target a specific one.
 | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                  | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69)                                                           |
 | `state [--owner <name> \| --mine] [--as <name>]`                                                                       | read-back `{ state, cursor, snapshotBackedUp, readMode }` — confirm a command applied; scope like `tail`. The read is FULL; `--full` is accepted for compatibility and is now the default (b6) |
-| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                                                                                         |
+| `tail [--since N] [--once] [--owner <name> \| --mine] [--as <name>]`                                                   | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                                                                                         |
 | `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                                                                                                            |
 | `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold)                                                                               |
 | `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                                                                                                  |
@@ -339,17 +339,36 @@ don't merge them (`2>&1`), or every keepalive becomes a spurious notification.
 ```
 Monitor({
   description: "bounty events for <short purpose>",
-  persistent: true,
-  timeout_ms: 3600000,
-  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --since 0 --session <id>"
+  timeout_ms: 1800000,
+  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --session <id>"
 })
 ```
+
+(`timeout_ms` is capped at 1800000, so a bigger number buys nothing, and Monitor
+has no `persistent` option that lifts the cap. Give `--since` only when you are
+resuming from an id you have seen: `--since 0` replays the whole board.)
 
 `tail` reconnects automatically on a transient drop and resumes from the last
 event id, so nothing is missed across the gap. When a notification arrives,
 react by issuing a `cli.ts update` / `message` (or nothing if it's not
 interesting), then end the turn — the Monitor stays armed. The `closed` frame
-ends the tail (exit 0); `TaskStop` the Monitor when you see it.
+ends the tail (exit 0), and with it the Monitor.
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled.
 
 **Pin a long-lived tail to its session.** On a host that may run more than one
 board, pass `--session <id>` so the Monitor's `tail` locks to _that_ board. An
@@ -872,9 +891,9 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
 - **Don't merge tail's stderr into stdout.** Monitor notifies on every stdout
   line; the keepalive tick + diagnostics ride stderr by design. `2>&1` turns
   every keepalive into a spurious notification. Leave them split.
-- **TaskStop the Monitor when the session ends.** When you see the `closed`
-  frame, `TaskStop` the Monitor's task id before continuing. Otherwise the watch
-  keeps running against a closed daemon until it times out.
+- **The watch ends with the session.** On `closed` the tail prints `tail.closed`
+  and exits, which ends its Monitor; there is nothing to `TaskStop`. Stop a
+  background `--once` you no longer need with `TaskStop`.
 - **The daemon outlives the browser tab.** Closing the tab doesn't end the
   session — only the human's **Close board**, your `cli.ts close`, or the idle
   timeout does. If you opened a board and the user wandered off, it sits until

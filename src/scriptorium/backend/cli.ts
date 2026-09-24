@@ -68,7 +68,7 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+import { commandLine, selfCommand, tailCommand, tailWithHandoff } from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -242,6 +242,7 @@ const CLI_OPTIONS = {
   limit: { type: "string" },
   label: { type: "string" },
   "no-open": { type: "boolean" },
+  once: { type: "boolean" },
   patch: { type: "boolean" },
   restore: { type: "string" },
   session: { type: "string" },
@@ -600,66 +601,88 @@ async function readSayBody(
  */
 let disconnected = false;
 
-async function cmdTail(session: string | undefined, since: number): Promise<number> {
+/**
+ * The watch. Ends itself before Monitor's cap with one line naming the next
+ * act (`src/kit/wire/tailHandoff.ts`): re-arm Monitor, go to a background
+ * `--once`, or come back from a closed or lost session with `open --restore`.
+ * A `--since` re-arm prints no grounding line: the agent already knows the
+ * session, and the line would count as noise in the window's wake.
+ */
+async function cmdTail(
+  session: string | undefined,
+  since: number,
+  o: { once: boolean; sinceGiven: boolean },
+): Promise<number> {
   let boundId = session;
-  let grounded = false;
-  return await tailEvents<{ id?: number; epoch?: string; type?: string }>({
-    resolve: () => {
-      const s = readSession(boundId);
-      if (!s) return null;
-      if (!boundId) boundId = s.session_id;
-      if (!grounded) {
-        grounded = true;
-        process.stdout.write(
-          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-        );
-      }
-      return `http://127.0.0.1:${s.port}`;
+  let grounded = o.sinceGiven;
+  const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
+  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string }>(
+    {
+      resolve: () => {
+        const s = readSession(boundId);
+        if (!s) return null;
+        if (!boundId) boundId = s.session_id;
+        if (!grounded) {
+          grounded = true;
+          process.stdout.write(
+            `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+          );
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        if (everResolved) return "stop";
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since,
+      cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
+      epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
+      // A different epoch on reconnect = the daemon restarted; ids began again.
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      // ⛔ A KEEPALIVE IS PROOF OF LIFE, so it is also what clears a reported
+      // disconnection. There is no `onConnect` hook and this is the honest
+      // substitute: the daemon only sends comments down a live stream.
+      onComment: () => {
+        if (!disconnected) return ": scriptorium-keepalive";
+        disconnected = false;
+        return JSON.stringify({ type: "tail.reconnected" });
+      },
+      // ⛔ ONE LINE PER EPISODE, NOT PER ATTEMPT. The client reconnects with
+      // backoff forever, so a hook that spoke every time would emit a line every
+      // few seconds for as long as the daemon stayed down — which is how a
+      // watcher gets muted, and then nobody hears the next real thing.
+      //
+      // ⚠ WHY THIS EXISTS AT ALL: without it a DEAD daemon and a QUIET one are
+      // the same thing from out here. A graceful close emits `closed` and ends
+      // the tail; a crash, a kill -9 or a sleeping laptop emits nothing, the
+      // client retries in silence, and the absence of events is not an event. A
+      // watcher waiting for the human's next message would wait forever and
+      // never learn it had stopped listening. (Found 2026-09-14 while answering
+      // Cole's question about whether a timeout would notify me. It would not.)
+      onDisconnect: ({ cause, status }) => {
+        if (disconnected) return null;
+        disconnected = true;
+        return JSON.stringify({
+          type: "tail.disconnected",
+          cause,
+          ...(status !== undefined ? { status } : {}),
+          note: "retrying; the session may have closed or crashed",
+        });
+      },
     },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved) return "stop";
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since: at, once }) => tailCommand([...selfCommand(), "tail", ...pin()], at, once),
+        comeBack: () => commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>"]),
+      },
     },
-    path: "/events",
-    since,
-    cursorOf: (ev) => (typeof ev.id === "number" ? ev.id : undefined),
-    epochOf: (ev) => (typeof ev.epoch === "string" ? ev.epoch : undefined),
-    // A different epoch on reconnect = the daemon restarted; ids began again.
-    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    // ⛔ A KEEPALIVE IS PROOF OF LIFE, so it is also what clears a reported
-    // disconnection. There is no `onConnect` hook and this is the honest
-    // substitute: the daemon only sends comments down a live stream.
-    onComment: () => {
-      if (!disconnected) return ": scriptorium-keepalive";
-      disconnected = false;
-      return JSON.stringify({ type: "tail.reconnected" });
-    },
-    // ⛔ ONE LINE PER EPISODE, NOT PER ATTEMPT. The client reconnects with
-    // backoff forever, so a hook that spoke every time would emit a line every
-    // few seconds for as long as the daemon stayed down — which is how a
-    // watcher gets muted, and then nobody hears the next real thing.
-    //
-    // ⚠ WHY THIS EXISTS AT ALL: without it a DEAD daemon and a QUIET one are
-    // the same thing from out here. A graceful close emits `closed` and ends
-    // the tail; a crash, a kill -9 or a sleeping laptop emits nothing, the
-    // client retries in silence, and the absence of events is not an event. A
-    // watcher waiting for the human's next message would wait forever and
-    // never learn it had stopped listening. (Found 2026-09-14 while answering
-    // Cole's question about whether a timeout would notify me. It would not.)
-    onDisconnect: ({ cause, status }) => {
-      if (disconnected) return null;
-      disconnected = true;
-      return JSON.stringify({
-        type: "tail.disconnected",
-        cause,
-        ...(status !== undefined ? { status } : {}),
-        note: "retrying; the session may have closed or crashed",
-      });
-    },
-  });
+  );
 }
 
 function versionInfo(): { name: string; version: string } {
@@ -755,12 +778,15 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     name: "tail",
-    flags: [...SESSION, "since"],
+    flags: [...SESSION, "since", "once"],
     positionals: [],
     describe:
-      "the human's messages (with selection + active path) as JSON lines — wrap with Monitor",
+      "the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
     run: (_pos, flags, session) =>
-      cmdTail(session, typeof flags.since === "string" ? parseSince(flags.since) : -1),
+      cmdTail(session, typeof flags.since === "string" ? parseSince(flags.since) : -1, {
+        once: flags.once === true,
+        sinceGiven: typeof flags.since === "string",
+      }),
   },
   {
     name: "version-new",

@@ -83,8 +83,24 @@ before the CLI sees them. Same for `note` and `task`.
 ```bash
 S=<this skill's directory>
 bun $S/scripts/cli.ts open ~/notes/chapter-3.md ~/notes/research/
-bun $S/scripts/cli.ts tail        # wrap with Monitor
+bun $S/scripts/cli.ts tail        # wrap with Monitor, timeout_ms 1800000
 ```
+
+**Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
+`timeout_ms: 1800000`. It ends itself just before the cap, and its last line
+(`type: "tail.…"`) names your next act. Do what its `next` says with its
+`command`, which already carries the bookmark (`--since`):
+
+- `monitor`: arm Monitor again with `command`.
+- `background`: nothing happened; the human is away. Run `command` as a
+  background Bash task (`run_in_background`). It exits on the next event, which
+  wakes you. Handle the event, then follow its line back to Monitor.
+- `stop`: the session closed or its daemon is gone. Do not re-arm; `command` is
+  how to bring it back.
+
+If Monitor expires before that line arrives, re-arm silently with
+`--since <the last id you saw>`. Never re-arm without `--since`: that replays
+events you have already handled.
 
 **⚠ Not every line is JSON. Ignore any line beginning with `:`** — those are
 keepalives (`: scriptorium-keepalive`), and a loop that parses every line will
@@ -147,9 +163,10 @@ Facts, not chatter. The ones worth acting on:
   than a broken tail. Run the `doctor` verb any time to ask directly.
 - **`saved`, `activated`, `system`** — they changed what is where. `system`
   announcements carry a `fact` and, for structure changes, who did it.
-- **`closed`** — the session ended and `tail` exits 0. A tail that stops with no
-  `closed` means the daemon died; the client reports the disconnection and keeps
-  retrying.
+- **`closed`** — the session ended. The tail follows it with `tail.closed` and
+  exits 0. A daemon that dies without `closed` (a crash, a `kill -9`) ends the
+  tail with `tail.lost` instead, on stdout, so you hear it. Both name
+  `open --restore <id>` as the way back.
 
 ## When you go quiet
 
@@ -233,8 +250,8 @@ belongs to `task-status`, and it does not; `task-status` takes a positional and
 
 `--body-file` `--by` `--context` `--doc` `--entry` `--for` `--from` `--full`
 `--hunks` `--into` `--label` `--lifecycle` `--limit` `--no-open` `--patch`
-`--quote` `--reopen` `--restore` `--session` `--since` `--start-timeout`
-`--status` `--stdin` `--tag` `--timeout` `--type`
+`--once` `--quote` `--reopen` `--restore` `--session` `--since`
+`--start-timeout` `--status` `--stdin` `--tag` `--timeout` `--type`
 
 `--session` works with every verb and targets a session other than the most
 recent.

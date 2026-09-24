@@ -486,7 +486,14 @@ describe("a session, end to end through the launchers", () => {
     expect((await cli("close")).code).toBe(0);
     const code = await tail?.exited;
     expect(code).toBe(0);
-    expect(tailLines().at(-1)?.type).toBe("closed");
+    // The `closed` frame, then the handoff line naming the way back
+    // (`kit/wire/tailHandoff.ts`): a closed session is not a re-arm.
+    expect(
+      tailLines()
+        .map((l) => l.type)
+        .slice(-2),
+    ).toEqual(["closed", "tail.closed"]);
+    expect(tailLines().at(-1)?.command).toBe(`bun ${CLI} open --restore ${sessionId}`);
     expect(existsSync(join(root, "tmp", `scriptorium-${sessionId}.json`))).toBe(false);
     const manifest = JSON.parse(
       readFileSync(join(root, "home", "sessions", sessionId, "manifest.json"), "utf8"),

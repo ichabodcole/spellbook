@@ -6,7 +6,7 @@
 //
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--restore <id>] [--timeout S] [--no-open]
-//   bun cli.ts tail [--since N]            # SSE user events → JSONL (Monitor this)
+//   bun cli.ts tail [--since N] [--once]   # SSE user events → JSONL (Monitor this; last line names the next act)
 //   bun cli.ts state [--full]              # lean state snapshot (add --full for raw)
 //
 // Driving the surface (POST /cmd):
@@ -41,7 +41,7 @@ import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/ty
 import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { printJson } from "../../kit/lib/printJson";
 import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+import { commandLine, selfCommand, tailCommand, tailWithHandoff } from "../../kit/wire/tailHandoff";
 import {
   ALPHA_POLICIES,
   type AlphaPolicy,
@@ -234,6 +234,7 @@ const CLI_OPTIONS = {
   restore: { type: "string" },
   session: { type: "string" },
   since: { type: "string" },
+  once: { type: "boolean" },
   timeout: { type: "string" },
   title: { type: "string" },
   type: { type: "string" },
@@ -260,7 +261,7 @@ const CLI_OPTIONS = {
 export const VERB_SPEC = {
   open: ["title", "intent", "timeout", "restore", "no-open"],
   sessions: [],
-  tail: ["session", "since"],
+  tail: ["session", "since", "once"],
   state: ["session", "full"],
   say: ["session", "stdin"],
   ask: ["session", "options"],
@@ -421,40 +422,56 @@ async function cmdState(session?: string, full = false) {
  * disappears AFTER we were bound ends the watch at 0 — a completed watch, not a
  * failure. A pointer that never appeared keeps retrying.
  */
-async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
+async function cmdTail(
+  session: string | undefined,
+  sinceArg: number,
+  o: { once: boolean; sinceGiven: boolean },
+): Promise<number> {
   let boundId = session;
-  let grounded = false;
+  // A `--since` re-arm prints no grounding line (`kit/wire/tailHandoff.ts`, A3).
+  let grounded = o.sinceGiven;
+  const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
 
-  return await tailEvents<{ id?: number; type?: string }>({
-    resolve: () => {
-      // readSession dies on a CORRUPT pointer and returns null only for a
-      // genuinely absent one — the ENOENT rule. A die here now throws, and the
-      // throw leaves the tail through main's funnel instead of exiting from
-      // three frames down inside a reconnect loop.
-      const s = readSession(boundId);
-      if (!s) return null;
-      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
-      if (!grounded) {
-        grounded = true;
-        // grounding anchor — parseable + visible in a Monitor; names the binding.
-        process.stdout.write(
-          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-        );
-      }
-      return `http://127.0.0.1:${s.port}`;
+  return await tailWithHandoff<{ id?: number; type?: string }>(
+    {
+      resolve: () => {
+        // readSession dies on a CORRUPT pointer and returns null only for a
+        // genuinely absent one — the ENOENT rule. A die here now throws, and the
+        // throw leaves the tail through main's funnel instead of exiting from
+        // three frames down inside a reconnect loop.
+        const s = readSession(boundId);
+        if (!s) return null;
+        if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+        if (!grounded) {
+          grounded = true;
+          // grounding anchor — parseable + visible in a Monitor; names the binding.
+          process.stdout.write(
+            `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+          );
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        if (everResolved) return "stop"; // our pinned session went away → done
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since: sinceArg,
+      cursorOf: (ev) => ev.id,
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => ": magpie-keepalive",
     },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved) return "stop"; // our pinned session went away → done
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since, once }) => tailCommand([...selfCommand(), "tail", ...pin()], since, once),
+        comeBack: () => commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>"]),
+      },
     },
-    path: "/events",
-    since: sinceArg,
-    cursorOf: (ev) => ev.id,
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => ": magpie-keepalive",
-  });
+  );
 }
 
 function cmdInfo(session?: string) {
@@ -944,7 +961,7 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
 
   open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                            list saved (resumable) sessions
-  tail   [--since N]                  SSE user events → JSONL (wrap with Monitor)
+  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor; the last line names the next act)
   state  [--full]                     lean state snapshot (add --full for raw)
   say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)
   ask    <text...> [--options "a|b|c"]   ask the user a question (in-thread)
@@ -1058,6 +1075,7 @@ async function dispatch(argv: string[]): Promise<number> {
       return await cmdTail(
         session,
         typeof flags.since === "string" ? parseInt(flags.since, 10) : -1,
+        { once: flags.once === true, sinceGiven: typeof flags.since === "string" },
       );
     case "state":
       await cmdState(session, flags.full === true);

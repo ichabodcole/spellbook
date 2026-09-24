@@ -42,7 +42,12 @@ import {
   reportCliError,
   setCurrentCommand,
 } from "../../kit/wire/errors.ts";
-import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import {
+  commandLine,
+  selfCommand,
+  tailCommand,
+  tailWithHandoff,
+} from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS RESOLVED FROM THE EMITTED BUNDLE, NEVER FROM THIS FILE.
@@ -252,6 +257,7 @@ const CLI_OPTIONS = {
   restore: { type: "string" },
   session: { type: "string" },
   since: { type: "string" },
+  once: { type: "boolean" },
   summary: { type: "string" },
   tag: { type: "string" },
   tags: { type: "string" },
@@ -445,41 +451,57 @@ async function cmdState(session?: string, full = false) {
  * watch at 0 (a completed watch, not a failure), and one that never appeared
  * keeps retrying with `# no session yet, retrying…` on stderr.
  */
-async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
+async function cmdTail(
+  session: string | undefined,
+  sinceArg: number,
+  o: { once: boolean; sinceGiven: boolean },
+): Promise<number> {
   let boundId = session;
-  let grounded = false;
+  // A `--since` re-arm prints no grounding line (`kit/wire/tailHandoff.ts`, A3).
+  let grounded = o.sinceGiven;
+  const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
 
-  return await tailEvents<{ id?: number; type?: string }>({
-    resolve: () => {
-      // `readSession` dies on a CORRUPT pointer and returns null only for a
-      // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
-      // throw leaves the tail through main's funnel instead of exiting from
-      // three frames down inside a reconnect loop. It is B9's audit paying for
-      // itself: this is the one die-reachable call the shared client invokes on
-      // a schedule.
-      const s = readSession(boundId);
-      if (!s) return null;
-      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
-      if (!grounded) {
-        grounded = true;
-        process.stdout.write(
-          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-        );
-      }
-      return `http://127.0.0.1:${s.port}`;
+  return await tailWithHandoff<{ id?: number; type?: string }>(
+    {
+      resolve: () => {
+        // `readSession` dies on a CORRUPT pointer and returns null only for a
+        // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
+        // throw leaves the tail through main's funnel instead of exiting from
+        // three frames down inside a reconnect loop. It is B9's audit paying for
+        // itself: this is the one die-reachable call the shared client invokes on
+        // a schedule.
+        const s = readSession(boundId);
+        if (!s) return null;
+        if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+        if (!grounded) {
+          grounded = true;
+          process.stdout.write(
+            `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+          );
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        if (everResolved) return "stop"; // our pinned session went away → done
+        process.stderr.write("# no session yet, retrying…\n");
+        return "retry";
+      },
+      path: "/events",
+      since: sinceArg,
+      cursorOf: (ev) => ev.id,
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => ": imago-keepalive",
     },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved) return "stop"; // our pinned session went away → done
-      process.stderr.write("# no session yet, retrying…\n");
-      return "retry";
+    {
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      commands: {
+        tail: ({ since, once }) => tailCommand([...selfCommand(), "tail", ...pin()], since, once),
+        comeBack: () => commandLine([...selfCommand(), "open", "--restore", boundId ?? "<id>"]),
+      },
     },
-    path: "/events",
-    since: sinceArg,
-    cursorOf: (ev) => ev.id,
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => ": imago-keepalive",
-  });
+  );
 }
 
 function fileToDataUrl(path: string): string {
@@ -551,7 +573,7 @@ const HELP = `imago — a grounded image conversation.
 
   open   [--title ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                           list saved (resumable) sessions
-  tail   [--since N]                  SSE user events → JSONL (wrap with Monitor)
+  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor; the last line names the next act)
   state  [--full]                    lean state snapshot (add --full for raw incl. base64)
   say    <text...>                   post agent dialogue into the conversation
   propose <prompt...> [--n N]        propose a prompt for the user to send (×N, ≤4)
@@ -594,7 +616,10 @@ async function dispatch(argv: string[]): Promise<number> {
       await cmdOpen(flags);
       break;
     case "tail":
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1);
+      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1, {
+        once: flags.once === true,
+        sinceGiven: typeof flags.since === "string",
+      });
       break;
     case "state":
       await cmdState(session, flags.full === true);
