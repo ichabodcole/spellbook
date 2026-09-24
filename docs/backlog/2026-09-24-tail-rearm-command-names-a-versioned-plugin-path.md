@@ -14,12 +14,14 @@ generated: { by: claude-opus-5.5, at: 2026-09-24 }
 
 # The tail's re-arm command names a versioned plugin path
 
-> ⚠ **Resolve this before the next release.** The tail handoff
-> (`feat/tail-quiet-handoff`) is on `develop` and in no release yet: the latest
-> tag, `spellbook-v3.0.1`, does not contain it. So the next release is the first
-> to print these commands, and it will print them with the flaw. Once they are
-> printed, they are fixed in the agent's context. A fix in any later release
-> cannot reach commands the next release has already printed.
+> ✅ **Resolved before the release, on `fix/tail-rearm-without-plugin-path`:**
+> the printed command names no path (see Built, below). The warning that stood
+> here, kept for the record: the tail handoff (`feat/tail-quiet-handoff`) is on
+> `develop` and in no release yet: the latest tag, `spellbook-v3.0.1`, does not
+> contain it. So the next release is the first to print these commands, and it
+> will print them with the flaw. Once they are printed, they are fixed in the
+> agent's context. A fix in any later release cannot reach commands the next
+> release has already printed.
 
 ## What happens
 

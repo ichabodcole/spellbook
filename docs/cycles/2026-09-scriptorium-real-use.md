@@ -230,9 +230,11 @@ Open backlog items this cycle filed or touched:
   waiting on Cole's use.
 - [Anthill's seat filter drops the handoff line](../backlog/2026-09-23-anthill-seat-tail-filter-drops-the-handoff-line.md):
   the change is anthill's. Until it lands, a seat's bounty watch dies silently
-  at the cap.
+  at the cap. Filed as
+  [ichabodcole/anthill#113](https://github.com/ichabodcole/anthill/issues/113).
 - [House-style rules from this cycle](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
-  Cole's to rule.
+  Cole's to rule. _(Note added 2026-09-24: approved and integrated into
+  `grimoire/house-style.md`.)_
 
 The residuals the sessions recorded under "Known and not built" are filed as two
 items:
@@ -275,3 +277,7 @@ Waiting on Cole:
 - spike/monitor-expiry (landed 2026-09-23)
 
 - feat/tail-quiet-handoff (landed 2026-09-23)
+
+- fix/tail-rearm-without-plugin-path (landed 2026-09-24, after the close)
+
+- feat/mind-mapper-quiet-handoff (landed 2026-09-24, after the close)
