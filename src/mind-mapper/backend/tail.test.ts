@@ -289,3 +289,26 @@ test("a --since N@epoch bookmark from a restarted log re-reads the new log from 
     5,
   ]);
 });
+
+// The handoff line's command names no launcher and no path, and the line
+// carries `spell` (Cole's ruling, 2026-09-24): the agent runs it with its own
+// launcher. A spell that put `bun <path>` back would fail here.
+test("the printed re-arm is the verb and its arguments, with spell, and no launcher", async () => {
+  const server = fakeSseServer((conn) => {
+    if (conn.since < 1) conn.push(event(1, "epoch-x"));
+  });
+  const home = mintHome(server.port);
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail", "--since", "0"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home, SPELLBOOK_TAIL_WINDOW_MS: "600" },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  cleanup.push(() => proc.kill());
+  const lines = await readLines(proc, 2, 5000);
+  const last = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+  expect([last.type, last.spell, last.command]).toEqual([
+    "tail.window",
+    "mind-mapper",
+    "tail --since 1@epoch-x",
+  ]);
+});

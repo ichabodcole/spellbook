@@ -2,9 +2,10 @@
 type: backlog
 title: "Residuals from the Scriptorium real-use cycle"
 description:
-  Five known gaps the cycle recorded only in its sessions (the no-epoch spells'
+  Known gaps the cycle recorded only in its sessions (the no-epoch spells'
   fallback gap, the keyed late-lead edge, a resize not re-placing a pane,
-  triple-click giving no chip, and batched note review), each with a repro or
+  triple-click giving no chip, batched note review) and one a later verifier
+  found (magpie's `--once` waking on a tab connecting), each with a repro or
   pointer
 tags: [scriptorium, tail, residuals]
 status: draft
@@ -16,9 +17,9 @@ generated: { by: claude-opus-5.5, at: 2026-09-24 }
 
 These were recorded under "Known and not built" in the sessions of
 [Scriptorium from real use](../cycles/2026-09-scriptorium-real-use.md), and
-nowhere else. They are grouped here so that none is lost. Each is small, or is
-waiting on Cole. If one grows, split it into its own item. The versioned plugin
-path from the same list has
+nowhere else, plus one found later (section 6). They are grouped here so that
+none is lost. Each is small, or is waiting on Cole. If one grows, split it into
+its own item. The versioned plugin path from the same list has
 [its own item](./2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md),
 because it can bite at the next release. It is resolved: the printed command
 names no path, and the agent runs it with its own launcher (Cole's ruling,
@@ -107,3 +108,24 @@ extend it. It was option 4 in the note item and is untouched.
 **Pointers:**
 [the note item, option 4](./2026-09-22-scriptorium-a-note-is-acted-on-and-nothing-shows-it.md);
 [branch 4 session](../projects/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md#rulings).
+
+## 6. Magpie's `--once` wakes on a tab connecting
+
+**What:** the verifier of `fix/tail-rearm-without-plugin-path` ran magpie's full
+loop literally, and its background `--once` woke on the WebSocket `connected`
+lifecycle event before the human's message arrived. Magpie puts `connected` on
+its event log, with a log id, so under the handoff's rule (a delivered log frame
+counts and wakes `--once`) it is a real wake. Glamour's and imago's pings carry
+no id and do not wake it. It predates that branch.
+
+**Arguably fine:** a tab connecting usually means the human is back, which is
+what the one-shot waits for. **But it is a wake without work.** The agent
+handles nothing and re-arms, and a reload or a second tab does it again.
+
+**If it is ever changed:** a `counts` predicate in magpie's tail that leaves out
+`connected`/`disconnected`, as grapevine's leaves out its `subscribed` marker.
+Or take them off the log, as glamour does. Either way, wait for real use to say
+whether the wake is wanted.
+
+**Pointers:** `src/magpie/backend/server.ts` (the lifecycle emits),
+`src/kit/wire/tailHandoff.ts` (A3, D3).

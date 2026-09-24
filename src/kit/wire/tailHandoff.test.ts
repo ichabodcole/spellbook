@@ -176,12 +176,12 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
     expect(readSince("12@e1", { epoch: false })).toEqual({
       ok: false,
       message:
-        '--since: "12@e1" is not a bookmark this tail accepts — give an event id (an integer; -1 for everything); this spell\'s log stamps no epoch, so pass the id without the "@…" part',
+        '--since: "12@e1" is not a bookmark this tail accepts — give an event id (an integer; --since=-1 for everything); this spell\'s log stamps no epoch, so pass the id without the "@…" part',
     });
     expect(readSince("abc", { epoch: true })).toEqual({
       ok: false,
       message:
-        '--since: "abc" is not a bookmark this tail accepts — give an event id (an integer; -1 for everything), or <id>@<epoch> as a handoff line prints it',
+        '--since: "abc" is not a bookmark this tail accepts — give an event id (an integer; --since=-1 for everything), or <id>@<epoch> as a handoff line prints it',
     });
     expect(readSince("-1", { epoch: false, min: 0 })).toEqual({
       ok: false,

@@ -400,7 +400,7 @@ export function readSince(
     return { ok: true, since: b.since, ...(b.epoch ? { epoch: b.epoch } : {}) };
   const id =
     min < 0
-      ? "an event id (an integer; -1 for everything)"
+      ? "an event id (an integer; --since=-1 for everything)"
       : `an event id (an integer, ${min} or more)`;
   const forms = o.epoch ? `${id}, or <id>@<epoch> as a handoff line prints it` : id;
   const why =

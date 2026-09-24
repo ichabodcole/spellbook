@@ -61,7 +61,8 @@ const NO_EPOCH = `this spell's log stamps no epoch, so pass the id without the "
 
 // [spell, argv after the launcher, what the refusal must also say]
 const CASES: Array<[string, string[], string]> = [
-  // The four no-epoch spells, handed an epoch bookmark another spell printed.
+  // The five tails whose log stamps no epoch, handed an epoch bookmark another
+  // spell printed.
   ["glamour", ["tail", "--since", "4@e1"], NO_EPOCH],
   ["imago", ["tail", "--since", "4@e1"], NO_EPOCH],
   ["magpie", ["tail", "--since", "4@e1"], NO_EPOCH],
@@ -95,5 +96,7 @@ for (const [spell, argv, says] of CASES) {
     expect(envelope.error?.kind).toBe("usage");
     expect(envelope.error?.message).toContain(ACCEPTS);
     expect(envelope.error?.message).toContain(says);
+    // Grapevine prefixes every flag refusal with its verb; this one too.
+    if (spell === "grapevine") expect(envelope.error?.message).toStartWith("tail: --since:");
   }, 30_000);
 }

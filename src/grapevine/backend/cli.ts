@@ -2003,7 +2003,8 @@ type CommandSpec = {
  *  spell's handoff line is refused with the accepted forms named. */
 function sinceOrDie(token: string): number {
   const r = readSince(token, { epoch: false, min: 0 });
-  if (!r.ok) die(r.message, "usage");
+  // The `tail:` prefix every other grapevine flag refusal carries.
+  if (!r.ok) die(`tail: ${r.message}`, "usage");
   return r.since;
 }
 

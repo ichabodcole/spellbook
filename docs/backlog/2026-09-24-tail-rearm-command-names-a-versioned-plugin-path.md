@@ -114,11 +114,19 @@ a moved launcher.
 
 ## Acceptance Criteria
 
-- [ ] After an upgrade, a re-arm taken from a pre-upgrade handoff line either
+- [x] After an upgrade, a re-arm taken from a pre-upgrade handoff line either
       runs the installed version or fails with a line that names how to recover.
-- [ ] A cell drives it: print a handoff line, move the launcher's directory, run
-      the printed command, and assert the agent-facing outcome.
-- [ ] The kit header's "KNOWN LIMIT, NOT FIXED" entry is updated to match.
+      _Met by the ruling: the line names no path, so the agent's own launcher
+      (the installed version) runs it; a form that version does not accept is a
+      usage error naming the forms it does (`readSince`)._
+- [x] ~~A cell drives it: print a handoff line, move the launcher's directory,
+      run the printed command, and assert the agent-facing outcome.~~ _Moot
+      under the ruling: no printed command names a directory to move. What the
+      cells assert instead is that every tail's printed command names no
+      launcher or path (each spell's own cell), and that a foreign `--since`
+      form is refused (`grimoire/tail-since-refusal.test.ts`)._
+- [x] The kit header's "KNOWN LIMIT, NOT FIXED" entry is updated to match. _It
+      is now the ruling, "THE COMMAND NAMES NO PATH"._
 
 ## Built (fix/tail-rearm-without-plugin-path, 2026-09-24)
 
@@ -154,8 +162,9 @@ options not taken.
 
 ## References
 
-- `src/kit/wire/tailHandoff.ts`: `selfCommand()`, `tailCommand()`, and the
-  header's "KNOWN LIMIT, NOT FIXED" entry
+- `src/kit/wire/tailHandoff.ts`: `tailCommand()`, `readSince()`, and the
+  header's "THE COMMAND NAMES NO PATH" entry (`selfCommand()`, named in "What
+  happens" above, was removed by the fix)
 - `~/.claude/plugins/installed_plugins.json`,
   `~/.claude/plugins/cache/spellbook-marketplace/spellbook/*/.orphaned_at`,
   `…/.in_use/`
