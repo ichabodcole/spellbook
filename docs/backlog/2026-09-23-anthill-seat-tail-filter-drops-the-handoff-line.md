@@ -16,6 +16,10 @@ generated: { by: claude-opus-5.5, at: 2026-09-23 }
 **This is anthill's code, not ours.** It is filed here so it can be carried to
 anthill; nothing in this repo changes.
 
+**Filed on anthill, 2026-09-24:**
+[ichabodcole/anthill#113](https://github.com/ichabodcole/anthill/issues/113).
+This item stays open until anthill ships the fix.
+
 ## What happens
 
 Since `feat/tail-quiet-handoff`, every spell's `tail` ends its own watch just
