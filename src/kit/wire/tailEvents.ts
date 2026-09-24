@@ -192,8 +192,17 @@ export type TailOptions<Ev> = {
   // ── END ──────────────────────────────────────────────────────────────────
   /** The frame that ends the watch (a `closed` lifecycle event). Optional, and
    *  that is the actual shape of the roster rather than a hedge: some tails run
-   *  forever and have no terminal frame at all. */
-  terminal?: (ev: Ev) => boolean;
+   *  forever and have no terminal frame at all. `accepted` is `accept`'s
+   *  verdict on this frame, which is what lets `tail --once` end on the first
+   *  frame it actually DELIVERS (`./tailHandoff.ts`).
+   *
+   *  ⛔ A TERMINAL FRAME CLOSES THE CONNECTION before the client returns. It
+   *  used to return from inside the read loop with the SSE stream still open,
+   *  which kept the process alive — unseen for `closed`, because the server
+   *  ends that stream itself, and fatal for `--once`, whose background task
+   *  would never exit and so never wake the agent. (Adjustment 1 of the
+   *  Monitor-expiry spike; pinned in `tailHandoff.test.ts`.) */
+  terminal?: (ev: Ev, frame: SseFrame, accepted: boolean) => boolean;
   /** Emit the terminal frame even when `accept` rejected it. Default false. */
   terminalEmitsFiltered?: boolean;
 
@@ -260,6 +269,14 @@ export type TailOptions<Ev> = {
    * half of the fix five spells did not apply.
    */
   signals?: boolean;
+  /**
+   * Called once as the tail ends, with the final cursor (the bookmark a re-arm
+   * passes as `--since`) and why it ended. A REPORT SINK like `onDisconnect`,
+   * not a behavioural hatch: it changes nothing the client does. It exists
+   * for `./tailHandoff.ts`, whose last line names the re-arm and must carry
+   * the cursor exactly as this loop left it, epoch resets included.
+   */
+  onEnd?: (end: { cursor: number; reason: "terminal" | "unresolved" | "stopped" }) => void;
 };
 
 const DEFAULT_IDLE_MS = 45_000;
@@ -323,6 +340,7 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
   let firstConnect = true;
   let delay = retry.initialMs;
   let code = 0;
+  let ending: "terminal" | "unresolved" | "stopped" = "stopped";
 
   // One stop switch for every way this loop can end: a signal, a caller's
   // abort, a downstream reader closing our stdout. Each sets it, aborts the
@@ -402,7 +420,10 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       const base = await opts.resolve();
       if (base === null) {
         const verdict = opts.onUnresolved?.({ everResolved, everConnected }) ?? "retry";
-        if (verdict === "stop") return code;
+        if (verdict === "stop") {
+          ending = "unresolved";
+          return code;
+        }
         await backoff(delay);
         delay = Math.min(delay * 2, retry.maxMs);
         continue;
@@ -542,13 +563,19 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
             }
 
             const accepted = opts.accept?.(ev, frame) ?? true;
-            const isTerminal = opts.terminal?.(ev) ?? false;
+            const isTerminal = opts.terminal?.(ev, frame, accepted) ?? false;
 
             if (accepted || (isTerminal && opts.terminalEmitsFiltered === true)) {
               const line = opts.render ? opts.render(ev, frame) : frame.data;
               if (line !== null) emit(line);
             }
-            if (isTerminal) return code;
+            if (isTerminal) {
+              // ⛔ CLOSE THE CONNECTION. See `terminal`'s doc: without this the
+              // open stream keeps the process alive after we return.
+              controller.abort();
+              ending = "terminal";
+              return code;
+            }
           }
         }
       } finally {
@@ -575,5 +602,6 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
     }
     outEmitter.off?.("error", onOutError);
     opts.signal?.removeEventListener("abort", onCallerAbort);
+    opts.onEnd?.({ cursor, reason: ending });
   }
 }
