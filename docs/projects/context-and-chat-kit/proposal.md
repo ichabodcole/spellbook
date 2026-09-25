@@ -321,7 +321,8 @@ Spellbook, as its own line of work**, not as a phase 2 deliverable. It asks how
 a spell can be _hosted_ somewhere and have a _local_ agent connect to its
 session in real time. That is a question of deployment and session transport,
 separate from this kit. It **consumes** the phase 2 chat seam, and phase 2
-should keep it in view as a second host.
+should keep it in view as a second host. Tracked in
+[Hosted spells with a local agent](../../investigations/2026-09-25-hosted-spells-investigation.md).
 
 ## Success Criteria
 
