@@ -57,6 +57,14 @@ base yet, so once you are standing there `bun run land-check` can fail on a
 branch that adds it. If you already switched, run it by path or via
 `git show <branch>:scripts/land-check.ts`.
 
+> **⚠ Re-run `git status --porcelain` AFTER the gate, not only before it.**
+> `bun run gate` runs `build`, which rewrites the tracked `dist/` bundles — and
+> their inline sourcemaps embed source text, so even a **comment-only** edit
+> under `src/` leaves 17 dirty bundles. A clean status taken before the gate
+> says nothing about the tree you are about to merge. Commit the rebuild (a
+> `chore(dist)` when behaviour is unchanged) before landing. _Bit the
+> project-docs v3 migration landing, 2026-09-26._
+
 > **⚠ Run the gate UNPIPED.** finalize-branch's format/lint/types/test gate
 > still applies, and `bun test | tail` reports the **exit code of `tail`** —
 > which is always 0. Redirect to a file and read `$?`:
