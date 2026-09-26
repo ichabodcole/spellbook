@@ -24,7 +24,7 @@
 >   house intent is an open question for a human, not a stale artifact.
 >
 > _Archived by the 2026-08-10 sweep —
-> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
+> [`docs/reports/2026-08-10-project-status-sweep.md`](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md)._
 
 A place to track the question: _are our spells implemented at a consistent level
 of maturity, and should the better patterns become canonical (a guide + a real

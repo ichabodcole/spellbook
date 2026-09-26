@@ -39,7 +39,7 @@ generated: { by: unknown, at: 2026-05-29 }
 > should not claim D3 until that choice is made.**
 >
 > _Corrected by the 2026-08-10 sweep —
-> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md)._
+> [`docs/reports/2026-08-10-project-status-sweep.md`](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md)._
 
 ---
 

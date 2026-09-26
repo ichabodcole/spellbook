@@ -59,7 +59,7 @@ generated: { by: unknown, at: 2026-07-08 }
 > reference spell**, and not as a condition of closing this plan._
 >
 > _Corrected by the 2026-08-10 sweep —
-> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md).
+> [`docs/reports/2026-08-10-project-status-sweep.md`](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md).
 > **That sweep's first pass got this wrong in the opposite direction**, calling
 > the mechanism nonexistent because it looked only where this plan pointed._
 

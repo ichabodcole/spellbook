@@ -54,8 +54,8 @@ dispatcher, help, and (eventually) a `schema` verb all walk.
 ## Prediction outcome (2026-08-26) — HIT at substance, corrected in detail
 
 Run by acc's recorded-surface reader against the captured `state` rejection
-(`docs/investigations/2026-08-25-recorded-surface-batches/`), both registrations
-pinned in their tree before the differ existed:
+(`docs/projects/spell-hardening/artifacts/2026-08-25-recorded-surface-batches/`),
+both registrations pinned in their tree before the differ existed:
 
 - **18 `accepted-not-declared` of 22 enumerated** (registration said ~17 of 21;
   the denominator was corrected to 22 from the verbatim capture before any diff

@@ -14,7 +14,7 @@
 > `LibraryPicker` scroll-orphan edge case.
 >
 > _Archived by the 2026-08-10 sweep —
-> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
+> [`docs/reports/2026-08-10-project-status-sweep.md`](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md)._
 
 **Started:** 2026-06-11 (promoted from
 `docs/backlog/2026-06-10-imago-image-creation-spell.md`) **Spell kind:**

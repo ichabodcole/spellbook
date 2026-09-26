@@ -1,5 +1,5 @@
 ---
-type: report
+type: artifact
 title: "Bounty — Idiomatic Kanban Feature Audit"
 description:
   Bounty kanban feature audit evaluating existing capabilities and planned

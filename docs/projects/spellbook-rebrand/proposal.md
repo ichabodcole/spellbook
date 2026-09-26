@@ -42,7 +42,7 @@ generated: { by: unknown, at: 2026-05-29 }
 > end condition: _a gate must state what it cannot see._
 >
 > _Reviewed by the 2026-08-10 sweep —
-> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md)._
+> [`docs/reports/2026-08-10-project-status-sweep.md`](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md)._
 
 ---
 

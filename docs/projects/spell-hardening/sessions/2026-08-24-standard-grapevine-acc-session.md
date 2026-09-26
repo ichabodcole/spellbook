@@ -59,7 +59,7 @@ sides expected corrections. Cole delegated session direction to acc.
   emitter/tool pairing; census caught all three root-level ones with correct
   finding kinds, honestly missed the below-root negative control. First outside
   evidence for acc CHARTER Q4. Fixture set archived in
-  `docs/investigations/2026-08-24-grapevine-drift-experiment/`.
+  `docs/projects/spell-hardening/artifacts/2026-08-24-grapevine-drift-experiment/`.
 - **The modelled experiment**: hand-written declaration for bounty → census
   legibly reports "diff did not run", establishing that modelled declarations
   are currently inert for this fleet ("true at the format layer and inert at the

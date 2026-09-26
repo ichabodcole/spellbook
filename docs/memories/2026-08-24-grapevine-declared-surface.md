@@ -25,7 +25,7 @@ honestly missed).
 
 **Key files:** `plugins/spellbook/skills/grapevine/scripts/cli.ts` (COMMANDS
 registry + `buildDeclaration`), `cli.test.ts` ("declared surface" block),
-`docs/investigations/2026-08-24-grapevine-drift-experiment/`,
+`docs/projects/spell-hardening/artifacts/2026-08-24-grapevine-drift-experiment/`,
 `docs/backlog/2026-08-24-bounty-conformance-gaps-and-latent-flag-drift.md`
 
 **Docs:**
