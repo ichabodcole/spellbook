@@ -946,24 +946,30 @@ to showing agent activity in the UI, not to waking the agent.
 
 ## Next Steps
 
-1. ~~Contract inventory~~ **Done.**
-2. ~~Remote mode and auth design~~ **Done** (direct mode, no bridge).
-3. **Cole's call:** should the spike also try a **Claude Code channel** as a
-   second delivery path? And separately, is it worth investigating channels as a
-   replacement for Monitor plus the tail in _local_ spells?
-4. **Spike on a cycle branch:**
-   - `kit/wire/auth.ts` and `remote.ts`;
-   - grapevine's `log.ts` routes;
-   - `GRAPEVINE_HOSTED`;
-   - the Dockerfile;
-   - the acceptance checklist.
+**Decision (Cole, 2026-09-25): the spike lives in a new repo, `wocky-talky`**
+(`~/Projects/wocky-talky`, local git only). The name started as a speech-to-text
+slip for "walkie-talkie" and was kept on purpose. Why a new repo:
 
-   **Confirm with Cole before deploying anything to the VPS.**
+- Not StoryLoom: other work is in progress there.
+- Not Spellbook: the layer isn't aimed at spells, and extracting it later would
+  drag Spellbook history along.
 
-5. **Cold read** of the design by a no-stake subagent before the spike code
-   lands.
-6. **Later:** a spike on a spell with editable shared state (check 4), and a
-   bridge for spells that pass local file paths.
+Its first test is deliberately small: **a plain chat round trip.** The human
+chats on a web page, the local agent is woken and replies, and everything goes
+through the protocol only. It runs on localhost first, with the same protocol a
+server would use. Its brief is `~/Projects/wocky-talky/docs/spike-brief.md`.
+
+1. Build the spike from the brief:
+   - server with a durable log;
+   - minimal chat page;
+   - `copresence-client` core;
+   - adapters in order: the `wait` CLI, then a Claude Code channel, then a
+     DeepSeek Harness plugin.
+2. Acceptance checks: round trip, reconnect, presence, two harnesses, only
+   through the layer.
+3. **Then** host it on the Coolify VPS, with Cole's go-ahead.
+4. **Then** a StoryLoom spike: documents, edit conflicts, OAuth reuse.
+5. Parked: grapevine's remote mode and auth, and retrofitting spells onto v0.
 
 ---
 
