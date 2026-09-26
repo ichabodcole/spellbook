@@ -10,6 +10,8 @@ lifecycle: backlog
 id: 019feeaa-e8f2-7b85-9125-2ff933299875
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
+cycle: 2026-09-filed-is-not-fixed
+parent: feature/spell-hardening
 ---
 
 # `bounty tail` retries forever at exit 0 when its target can never resolve

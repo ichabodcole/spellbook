@@ -10,6 +10,8 @@ lifecycle: backlog
 id: 019feeaa-e8f0-724d-96f4-6765e4ebd9a1
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
+cycle: 2026-09-filed-is-not-fixed
+parent: feature/spell-hardening
 ---
 
 # `astrolabe close` exits 0 carrying an error envelope — wrong on both axes, and they cancel

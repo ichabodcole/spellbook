@@ -10,6 +10,8 @@ lifecycle: backlog
 id: 019feeaa-e8f1-7900-b3f9-8be01f026ccf
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
+cycle: 2026-09-filed-is-not-fixed
+parent: feature/spell-hardening
 ---
 
 # `bounty update --notes ""` cannot tell a deliberate clear from a substitution that produced nothing

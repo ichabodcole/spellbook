@@ -10,6 +10,8 @@ lifecycle: backlog
 id: 019fef02-3880-7ca3-b563-d1e9ed17f5ed
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
+cycle: 2026-09-filed-is-not-fixed
+parent: feature/spell-hardening
 ---
 
 # `bounty update --stdin` writes the TITLE, and `valuesIgnored: null` reports a false negative on a data-destroying path

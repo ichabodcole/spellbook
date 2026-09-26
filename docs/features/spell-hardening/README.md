@@ -12,9 +12,10 @@ generated: { by: unknown, at: 2026-08-06 }
 
 **Status:** Active · **Current sprint:**
 **[06, "filed is not fixed"](./sprints/06-filed-is-not-fixed/plan.md) — 🟡
-SCAFFOLD, not ratified, no branch cut.** [05](./sprints/05-the-gate/plan.md)
-merged to `develop` 2026-08-10 and is **held unreleased** so 05 and 06 ship
-together. **Started:** 2026-08-05 ·
+SCAFFOLD, not ratified, no branch cut.** Tracked as the planned cycle
+[2026-09-filed-is-not-fixed](../../cycles/2026-09-filed-is-not-fixed.md).
+[05](./sprints/05-the-gate/plan.md) merged to `develop` 2026-08-10 and is **held
+unreleased** so 05 and 06 ship together. **Started:** 2026-08-05 ·
 [03](./sprints/03-what-close-takes-with-it/plan.md) shipped in v2.1.0;
 [04](./sprints/04-the-shape-of-nothing/plan.md) shipped in **v2.2.0**
 (`c2c00a5`).
