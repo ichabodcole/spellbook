@@ -1,24 +1,98 @@
 ---
 type: investigation
-title: "Investigation: Hosted spells with a local agent"
+title: "Investigation: Co-presence for hosted apps"
 description:
-  Can a spell's surface and session be hosted remotely while a local terminal
-  agent joins that session in real time through an outbound bridge, without
-  changing the contract the agent already uses (CLI, tail, acc, tail handoff)?
+  Can the spell paradigm (a local terminal agent joined to a shared surface in
+  real time, with equal capabilities and UI acts delivered as messages) be
+  brought to conventionally hosted apps such as StoryLoom, and what is the
+  smallest reusable layer that does it?
 tags: [hosting, co-presence, transport, spells]
 status: draft
 lifecycle: active
 generated: { by: claude-opus-5-5, at: 2026-09-25 }
 ---
 
-# Investigation: Hosted spells with a local agent
+# Investigation: Co-presence for hosted apps
 
-**Outcome:** In progress. The thesis holds with adapters: the contract inventory
-is done, and the spike (grapevine on the Coolify VPS) comes next.
+**Outcome:** In progress. **Reframed 2026-09-25** (see below). The earlier
+grapevine-hosting findings still hold as groundwork (auth, direct mode,
+channels). The target is now a reusable co-presence layer for hosted apps, not
+hosted versions of spells.
 
 ---
 
 ## Question / Motivation
+
+### Reframe (Cole, 2026-09-25): the target is the paradigm, not hosted spells
+
+> "My intent really isn't to take the spells that are in this repo and turn them
+> into hosted versions. It's more to take that live communication … the sort of
+> equal capabilities for the agent and the user and that sort of shared
+> interface and the ability to communicate what you're doing in the surface to
+> the agent really easily, and bring those paradigms to other types of apps that
+> I'm building that are more intended to be a hosted experience."
+
+Cole is building apps that are meant to be hosted conventionally, with StoryLoom
+first. He wants the qualities that make spells good:
+
+- a local agent joins the app;
+- a shared surface;
+- **real-time** messages in both directions;
+- UI acts that reach the agent as messages.
+
+**MCP gives some of that but "misses the real-time aspect."** That is why the
+original report lives in StoryLoom.
+
+**The revised core question:** what is the smallest **reusable co-presence
+layer** that a conventionally hosted app (with its own backend, auth and
+database) can adopt, so that a local terminal agent can join a session and
+collaborate in real time as it does with a spell?
+
+**What changes because of this:**
+
+- **The host is the app's own backend**, not a spell daemon in a container. The
+  layer has to bolt onto an existing server: StoryLoom is Elysia plus Postgres,
+  with its own MCP server and auth.
+- **The agent side becomes one generic client**, not a remote mode per spell.
+  That makes **Claude Code Channels** more central: it is the documented way to
+  add real-time push next to MCP tools. The likely shape is **the app's MCP
+  tools for actions, plus a channel for real-time events.**
+- **The grapevine findings are now groundwork, not the plan:**
+  - the auth model (pairing, tokens, fail-closed routes, an Origin allowlist);
+  - direct mode;
+  - the durable log with a cursor;
+  - the rules for the tail and heartbeat.
+
+  Grapevine's own remote mode (`remote.json`, `endpoint()`, the per-verb
+  refusals) is only needed if a spell is ever hosted. That's parked.
+
+- **This is the hosted counterpart of the
+  [co-presence retrofit](./2026-07-14-agent-co-presence-retrofit-investigation.md)**
+  (a sidecar daemon plus a CLI with a tail, bolted onto human-first apps, with
+  StoryLoom as a pilot). The two should converge.
+
+### Requirement: works across harnesses (Cole, 2026-09-25)
+
+Claude Code is Cole's main harness, but the agent side should ideally also work
+from **Codex, OpenCode, and other harnesses he uses**. Some of them may not
+support the functionality this needs, and finding that out is part of the work.
+The consequences:
+
+- A Claude Code channel is **one delivery adapter**, not the design.
+- The agent side is a **client core that doesn't depend on any harness**
+  (connect, auth, cursor and resume, post, presence), plus a thin **per-harness
+  delivery adapter**:
+  - a push mechanism where the harness has one (Claude Code channels);
+  - a background tail where the harness can wake on output (Monitor or an
+    equivalent);
+  - a **lowest-common-denominator** path for any harness that can run a shell
+    command (for example a blocking long-poll `wait` the agent calls in a loop).
+- The wire protocol assumes nothing about the harness.
+- Sub-research: what each harness supports (push into a running session, waking
+  on a background process, MCP notifications, programmatic injection). A
+  web-research subagent is surveying this.
+
+### Original question (kept for the record)
 
 Every spell today is **started by the agent and runs on the agent's machine**.
 The agent launches a Bun daemon, the daemon serves the surface on `127.0.0.1`,
@@ -533,6 +607,256 @@ it proves the thesis without changing the contract. Evaluate a **channel as an
 optional second delivery path** in the same spike, since the hosted service's
 SSE stream is the same for both. This is a design choice for Cole, recorded
 below.
+
+### Co-presence layer design, with StoryLoom as the first host (2026-09-25, a design subagent)
+
+Read-only. The orchestrator spot-checked StoryLoom and confirmed:
+
+- the `oauthProvider` plugin with `validAudiences: [.../mcp]`
+  (`apps/api/src/features/auth/adapter.ts:85-96`);
+- `documents.revision` (`features/documents/db.ts:144`);
+- the job-stream heartbeat (`core/http/agent-job-stream.ts`);
+- `better-auth ^1.6.4`.
+
+**StoryLoom already has the four hard parts**, which shrinks the design:
+
+- **An OAuth 2.1 server** (better-auth with DCR and PKCE) that already
+  authenticates agents for `/mcp`, and a `requireAuth` that accepts a cookie or
+  a bearer token.
+- **Optimistic concurrency.** A stale `baseRevision` returns 409 over HTTP and a
+  `ConflictError` over MCP, and every version records who made it (`user` or
+  `ai:<agent>`). **That's acceptance check 4, which grapevine couldn't test.**
+- **SSE patterns.** The job stream registers its listener _before_ the catch-up
+  read, heartbeats, and cleans up. It's per job and in-memory, though: no log
+  and no cursor.
+- **A stateless MCP server:** a good data plane with no session plane.
+- **Missing:** a chat UI in Studio, selection tracking in the editor, and Redis
+  pub/sub (only needed with more than one replica).
+
+**Server side** (bolted onto StoryLoom's Elysia API):
+
+- **Tables:**
+  - `copresence_sessions`: the subject ref and a single-use join code;
+  - `copresence_events`: a bigserial id as the cursor, `actor_role`, `via`, and
+    a jsonb body. **Intent events only.**
+  - `copresence_state`: the **ambient** board (what's being viewed, the
+    selection, the revision in view). It's overwritten, never logged, and the
+    agent pulls it.
+- **Presence** is derived in memory from live streams, plus a `status` the agent
+  posts.
+- **Routes**, all behind `requireAuth`:
+  - `POST /copresence/sessions` and `/join`
+  - `GET /sessions/:id/events?since=` (SSE; honours `Last-Event-ID`)
+  - `POST /messages`
+  - `GET`/`PUT /state`
+  - `POST /presence`
+- **The server stamps provenance; the client never asserts it.** A cookie means
+  `human`, a bearer token means `agent`.
+- **A reflection hook:** the shared document-write service (used by both HTTP
+  and MCP) emits `doc.revised {docRef, revision, by}` into open sessions on that
+  document. An agent's MCP edit then shows up, attributed, in the human's view,
+  and the human's edits reach the agent.
+
+**Auth: reuse, don't invent.**
+
+- The local client runs the same OAuth flow Claude Code already uses for `/mcp`
+  (DCR, PKCE, a loopback redirect). That's **one browser consent and no new
+  server auth code.**
+- The client stores its own token, in the keychain or a 0600 file.
+- **The join code picks a session; it is not a credential.** This replaces
+  grapevine's whole token and pairing-secret design.
+- **Fallback:** the RFC 8628 device grant, for headless or SSH use.
+- **Caveat:** an `/mcp`-audience token would also authorize co-presence. Fine
+  for one user; add a `/copresence` audience later.
+
+**Agent side: one client core, several adapters.**
+
+- **The core `copresence-client`:**
+  - token store and refresh;
+  - SSE with `since`, epoch and reconnect;
+  - 502/503/504 counted as refusals;
+  - post and act;
+  - get state.
+- **Adapters:**
+  - A **Claude Code channel** for push, launched dormant. A `join` tool summons
+    it mid-conversation, which **mostly removes the "channels attach at session
+    start" objection**, as long as the session was launched with the flag.
+  - **CLI plus tail**, the portable path that needs no flag.
+  - Other harnesses, depending on the harness survey.
+- **Channel constraint:** `meta` values are strings and keys must be identifiers
+  only (other keys are silently dropped). So refs go in `content` or in a
+  JSON-string meta.
+
+**Surface side (Vue):**
+
+- `useCopresence` (EventSource with `Last-Event-ID`);
+- a **presence pill** (connected, working or unavailable);
+- **a co-presence panel** with provenance chips (typed vs. gesture) and a filter
+  that hides gestures;
+- **selection is ambient state** (`PUT /state`, debounced). The composer
+  attaches it as a **pinned ref (doc, char span, revision) on the next
+  message**. A context-menu act posts the same envelope with
+  `source: "gesture"`. That is conversation-primary: the button is a shortcut
+  for a message.
+
+What's shared with the context-and-chat-kit is the **ref contract and message
+model as TypeScript types, not components**. Phase 1's zero-dependency ref
+module is the first thing StoryLoom would copy.
+
+**The v0 protocol is realistic**, because spell daemons already do SSE with an
+id and `since`.
+
+- **Event:** `{id, session, epoch, at, kind, from: {role, handle, via}, body}`.
+  - **kinds (intent only):** `message`, `act`, `fact`, `presence`.
+- **Message:**
+  `{text, refs, selection?, provenance: {source, gesture?}, replyTo?}`.
+- **Presence:** `{handle, role, status, since}`.
+- **Resume:** `?since=` or `Last-Event-ID`; an epoch mismatch means a full
+  resync.
+- **Heartbeat:** `: hb` every 3 s or less.
+- **Ambient:** `GET /state` returns `{rev, at, doc}`.
+- **Auth step:** a bearer token, or "none plus `origin.ts`" for a loopback spell
+  daemon.
+
+A spell daemon speaking v0 would get the channel adapter for free, locally too.
+**Don't retrofit spells yet.**
+
+**Spike recommendation: directly in StoryLoom, one document plus chat.** This is
+option (i). The alternatives lose:
+
+- (ii), a reference app in Spellbook, would have to rebuild an auth server and a
+  domain just to fake them;
+- (iii), grapevine, can't exercise auth composition, editable state or
+  reflection.
+
+Run it on localhost first: every check except "hosted" can be proven there.
+**Coolify needs nothing new:** use StoryLoom's existing deployment with one API
+replica, then verify that Traefik doesn't buffer SSE, and measure the
+presence-ghost bound.
+
+**Carry over and park:**
+
+- **Carry over:** the cursor, epoch and heartbeat rules; 5xx counted as refusal;
+  presence as a live stream; routes private by default; the acceptance
+  checklist. From the co-presence retrofit: ambient vs. intent, data plane vs.
+  session plane, the reflection hook, and the human-owned, agent-visited
+  invocation.
+- **Park:** grapevine's remote mode and its own auth (`gva_` tokens, the admin
+  key, pairing as a credential); digestify's multi-session service; the
+  dream-flute sidecar; retrofitting spells onto v0.
+
+#### Addendum: the agent side, made harness-neutral (after the cross-harness requirement)
+
+This replaces the agent-side section above.
+
+**`copresence-client`, the core.** It has no harness or MCP imports and runs on
+Bun or Node. The only per-app configuration is `{baseUrl, issuer, resource}`.
+
+- `auth`: OAuth with a device-grant fallback, a token store, refresh.
+- `sessions`: list, join, leave.
+- `stream(since)`: an async iterator with resume, epoch resync, and 5xx counted
+  as refusal. It saves the last acknowledged cursor per session.
+- `post`, `state`, `presence`.
+- `wait({since, timeoutMs, kinds})`: a long-poll.
+
+**Three delivery adapters, each about 100–200 lines:**
+
+1. **Push.** A Claude Code channel. A sibling adapter with the same shape for
+   any harness that has a push hook. Constraints that only apply to channels
+   stay inside this adapter.
+2. **Background tail.** `<cli> tail`, run under Monitor or an equivalent, with a
+   handoff line and an exact re-arm.
+3. **Lowest common denominator.** For any harness that can run a shell:
+   - `<cli> wait --session X --timeout 25m` blocks until at least one intent
+     event arrives, prints the batch, advances the cursor and exits 0;
+   - on timeout it exits with a distinct code and a line naming the next act
+     ("call `wait` again");
+   - the agent loops wait → act → wait;
+   - the same verbs are also an **MCP tool set** (`copresence_wait` with a
+     bounded timeout), for harnesses with MCP but no shell. **A blocking tool
+     call is the portable way to get push.**
+
+**Presence is inferred on the server.** The agent counts as "connected" if it
+has a live stream, a `wait` in flight, or a `wait` that returned within about 60
+s (the grace window). "Working" comes from `status`, which the act verbs set
+implicitly.
+
+**What each mode costs:**
+
+- Only push interrupts a busy agent.
+- Tail pays the re-arm cost.
+- `wait` gives up the agent's turn while it waits.
+
+**Protocol additions:**
+
+- **Nothing harness-specific on the wire.** `via` is one of
+  `ui|chat|mcp|api|cli`.
+- New route `GET /sessions/:id/wait?since=&timeout=&kinds=`. It holds the
+  request for up to about 30 s on the server, under Traefik's limits, then
+  returns `{events, cursor}`. It shares the log and emitter with the SSE route
+  (attach the listener, replay, drop duplicates).
+
+**Revised spike order:**
+
+1. The core plus the `wait` CLI, proven in **two harnesses**: Claude Code, plus
+   Codex or OpenCode.
+2. The Claude Code channel adapter, to prove true push.
+3. The tail adapter, which is mostly `kit/wire/tailEvents` rewired onto the
+   core.
+
+**New acceptance check:** two different harnesses join the same session one
+after the other, see identical event sequences from the same cursor, and
+presence is correct for each delivery mode.
+
+### Harness capability survey (2026-09-25, a web-research subagent)
+
+The cells are the survey's claims. Some rest on secondary sources, flagged in
+its report. **The orchestrator verified OpenCode against its official server
+docs:**
+
+- `POST /session/:id/message` (sync) and `POST /session/:id/prompt_async`
+  (`204`) send a prompt into an existing session;
+- `GET /event` is an SSE stream;
+- HTTP basic auth via `OPENCODE_SERVER_PASSWORD`;
+- the TUI is itself a client of that server, so an external client can share the
+  session.
+
+| Harness                | Push into a live session                                                                              | Background wake                                                            | Headless / programmatic                                             | Best adapter                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **Claude Code**        | **Yes:** Channels (research preview, launch flag)                                                     | **Yes:** Monitor (30-min cap)                                              | `-p`, the Agent SDK                                                 | Channel; tail as the fallback                                                     |
+| **OpenCode**           | **Yes:** `opencode serve`, `prompt_async` (verified)                                                  | not documented                                                             | the HTTP API itself                                                 | **The bridge POSTs each event into the session.** True push, no polling, no flag. |
+| **Codex CLI**          | No mid-turn injection                                                                                 | No (`wake_on_output` is an open request); background/timeout bugs reported | **`app-server` JSON-RPC** (`thread/resume`), `codex exec`           | The bridge resumes a turn for each event; `wait` as the fallback                  |
+| Cursor CLI             | No                                                                                                    | Not locally                                                                | `-p` plus NDJSON                                                    | The bridge relaunches or continues per event                                      |
+| Goose                  | not documented                                                                                        | No                                                                         | `goose run`; hooks with non-blocking context injection              | Hook injection or headless                                                        |
+| Aider / deepagents CLI | No                                                                                                    | No                                                                         | stdin/stdout scripting; headless (the deepagents CLI is deprecated) | Relaunch per event                                                                |
+| Gemini / Antigravity   | not documented                                                                                        | not documented                                                             | unverified                                                          | Hooks, unverified                                                                 |
+| "Deep sea"             | No harness by that name. The nearest is **Deep Code** (`deepcode`, referenced in DeepSeek's API docs) | —                                                                          | —                                                                   | Verify before building an adapter                                                 |
+
+**Lowest common denominator:** a blocking `wait` in a loop works in any harness
+that has a shell. It costs a round trip per event and is only as reliable as the
+harness's handling of long commands (Codex has reported bugs here).
+
+**The key finding: there are two kinds of push.**
+
+1. **In-session push**, where the event goes into the running conversation:
+   Claude Code channels.
+2. **Turn injection from outside**, where a local bridge starts or continues a
+   turn through the harness's own API: OpenCode's `prompt_async`, Codex's
+   `app-server`. _Only these two can wake a genuinely idle agent without its own
+   loop._
+
+So the bridge from the co-presence design gains a fourth adapter shape: **drive
+the harness's own API.** That is the best adapter for OpenCode and Codex.
+
+**Standards.** The MCP roadmap lists **server-initiated events ("webhooks and
+channels, so clients aren't left polling")** as active 2026 work, and the
+2026-07-28 spec added a `subscriptions/listen` stream. If this lands, channels
+may become a spec-level primitive that every MCP-client harness inherits.
+**Design the client core so a future MCP-native push adapter is just another
+adapter.**
+
+ACP and AG-UI go the other way: the app _watches_ the agent. They are relevant
+to showing agent activity in the UI, not to waking the agent.
 
 ### Hypotheses, revisited
 
