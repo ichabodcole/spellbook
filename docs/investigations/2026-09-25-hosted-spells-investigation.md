@@ -288,6 +288,252 @@ Grapevine is append-only. It needs shared editable state: a later spike on
 mind-mapper or scriptorium, or StoryLoom's document plus chat. Digestify only
 exercises check 1, and needs a new server anyway.
 
+### Remote mode and auth design (2026-09-25, a design subagent; the orchestrator verified its two corrections)
+
+**Two corrections to the inventory, both verified in code:**
+
+- **Grapevine's tail never reports `lost`.** `tailHandoff.ts:517` sets
+  `endOnLost = !h.presence`, and grapevine's tail is `presence: true`
+  (`cli.ts:1013`). The "refuse, don't return a 5xx" rule applies to the kit's
+  spells that _don't_ use presence.
+- **A 5xx reaches the tail even with no bridge.** When the container is down,
+  Coolify's Traefik answers 502/503. Any HTTP status resets the refusal count
+  (`tailHandoff.ts:588-595`). The fix belongs in the kit: count 502, 503 and 504
+  as refusals.
+
+**Recommendation: no bridge for the grapevine spike ("direct mode").** The CLI
+talks to the hosted service itself over HTTPS/SSE with a bearer token.
+
+- `tailEvents` already takes the daemon's location as a callback.
+- One tail is one upstream stream, so presence works.
+- The heartbeat passes straight through.
+- **Nothing listens on the laptop, so the confused-deputy risk disappears.**
+
+A bridge is only needed later, for:
+
+- spells that hand the agent a local `path` (imago, magpie, glamour);
+- the co-presence sidecar for apps that aren't spells;
+- _or as a Claude Code channel_ (see below).
+
+**How remote mode is selected: a session file.**
+
+- `$GRAPEVINE_HOME/remote.json` (mode 0600) holds
+  `{url, token, token_id, expires_at, label}`.
+- `start --remote` and `join` write it; `leave` deletes it.
+- `GRAPEVINE_REMOTE_URL`/`_TOKEN` override the file (for CI);
+  `GRAPEVINE_REMOTE=off` forces local mode.
+- An env var alone wouldn't work: an agent's Bash calls don't keep env vars
+  between calls.
+
+**One endpoint seam.** `endpoint()` replaces
+`ensureDaemon()`/`readDaemonPort()`. In remote mode it **never spawns a local
+daemon**. It fails with an error that names the next step:
+
+- `grapevine doctor` to diagnose;
+- `grapevine leave` to return to local mode;
+- for a 401, `grapevine join <code> --remote <url>`.
+
+**Local-disk reads move to the daemon in both modes, so there is one code
+path.** The folding and grep logic moves to a new `backend/log.ts`, served by:
+
+- `GET /channels/:n/messages?since=&badge=1` (and `?status=`)
+- `/channels/:n/messages/:id`
+- `/channels/:n/triage`
+- `/channels/:n/grep` (pattern capped, 400 on a bad regex)
+
+Flagged behaviour change: `grep` on a missing channel becomes `not_found`
+instead of an empty result with exit 0.
+
+**Verb behaviour:**
+
+- Messaging verbs work over the wire with **byte-identical output**.
+- `stop`, `restart` and `roll` refuse, because they'd stop or replace the
+  service for everyone.
+- `reap` and `prune` are unchanged (they only ever touch local processes).
+- `doctor` reports the mode, whether the service is reachable, the auth state,
+  and **a live local daemon as a split-brain warning with its fix**.
+- `alias` becomes `PUT /identity`.
+- New verbs: `join`, `leave`.
+
+**Auth.** One container is one tenant, which is one session.
+
+- `GRAPEVINE_ADMIN_KEY` is a Coolify secret, used only to mint tokens.
+- **Agent token:** `gva_<32B>`, 24 h. The server stores only its sha256 hash in
+  `/data/auth/tokens.jsonl` and compares in constant time. It's sent as a bearer
+  token.
+- **Pairing code:** `XXXX-XXXX` (about 40 bits), single use, 10 min TTL, and
+  rate-limited (5 failures a minute per IP, then a lockout).
+- **Browser:** `/pair#<code>.<channel>`. The code is in the URL fragment, so it
+  never reaches logs or a Referer. The page POSTs it to `/auth/browser` and gets
+  back an `HttpOnly; Secure; SameSite=Strict` cookie.
+- **Origin allowlist:** `GRAPEVINE_PUBLIC_ORIGIN`, with the loopback origins
+  refused. A cookie-authenticated write must carry an allowlisted `Origin`.
+- **Routes are private by default.** Only `/`, `/watch`, `/pair`, static assets
+  and the two pairing endpoints are public, so a route added later starts out
+  private.
+- `DELETE /` returns 403 when hosted. `close` takes a snapshot into
+  `/data/archive` first.
+- **Revocation:**
+  - `leave` revokes the token the agent itself holds;
+  - `POST /auth/revoke` requires the admin key;
+  - a kill switch (rotate the key or bump `GRAPEVINE_TOKEN_EPOCH`) revokes
+    everything.
+- **What a leaked token can do:** read, send under any alias, and close/reset
+  (recoverable from the snapshots). It **cannot** mint agent tokens, shut the
+  service down, or touch the host.
+- **Deferred:** accounts, tokens bound to an alias, per-channel scopes, UI-first
+  pairing, refresh tokens, multiple tenants.
+
+**Daemon changes, behind `GRAPEVINE_HOSTED=1`** (local mode untouched):
+
+1. Bind `0.0.0.0` on `GRAPEVINE_PORT`. The daemon refuses to boot hosted without
+   a port, a public origin and an admin key.
+2. Pass the allowlist to `refuseForeignOrigin`.
+3. Add an `authorize()` step, the `/auth/*` and `/pair` routes, the `DELETE /`
+   403, and the snapshot before close.
+4. `/data` on a volume.
+
+**The agent-facing contract.**
+
+- **Byte-identical:** verbs, JSON, tail lines, the handoff line, error
+  envelopes.
+- **Additive:** `mode`/`url` fields, `start --remote`, `join`, `leave`.
+- **SKILL.md** must drop "Do NOT use for … cross-machine reach" and gain a
+  "Remote sessions" section.
+
+**What goes into the kit:**
+
+- `kit/wire/auth.ts`: tokens, pairing codes, cookies, `authorize()`.
+- `kit/wire/remote.ts`: `remote.json`, `resolveEndpoint` with the never-spawn
+  rule, canned errors.
+- `origin.ts`: takes an allowlist.
+- `tailEvents`: a `headers` option.
+- `tailHandoff`: 502/503/504 count as refusals.
+
+**Risks:**
+
+- presence ghosts through Traefik (measure them);
+- a sticky `remote.json` in a shared HOME;
+- regex DoS on server-side grep;
+- alias spoofing;
+- local-mode drift when the reads move server-side (a parity test covers it);
+- SSE buffering on Coolify (verify it live).
+
+**Spike acceptance checklist:**
+
+- **Check 1:**
+  - a hosted-watch send wakes the laptop agent's Monitor, and the line diffs
+    byte-identical against a local golden;
+  - the agent's `send` appears in the watch.
+- **Check 2:** during a `docker restart`, a redeploy and a Wi-Fi drop, ids stay
+  contiguous with no duplicates, and a re-arm with `--since` is exact.
+- **Check 3:** the roster shows the agent while its tail is live, and it
+  disappears within a measured bound after the tail dies.
+- **Safety:**
+  - with the service down, no verb spawns a local daemon;
+  - every private route returns 401 without auth;
+  - a cookie write from a foreign Origin returns 403;
+  - `DELETE /` returns 403;
+  - after revocation the tail exits with an error naming `join`;
+  - local and remote mode agree on `triage`, `grep` and `pull --status` over the
+    same fixture log.
+
+### Outside view: other patterns (2026-09-25, a web-research subagent)
+
+Asked without Spellbook's assumptions: "a hosted web app, and a local terminal
+agent that joins in real time, securely, and survives reconnects."
+
+- **Confirms the direction:**
+  - **An outbound-only local process:** Cursor connects its cloud to a user's
+    machine this way, and Warp's shared sessions use a similar relay. Theirs
+    points the other way (their cloud is the brain), but the shape is the same.
+  - **A durable log with a resume cursor** is the simplest thing that meets "no
+    loss, no duplicates". Grapevine already has it (durable ids plus `since`).
+- **Worth comparing:**
+  - **OAuth Device Authorization Grant (RFC 8628):** the shape `gh`, `vercel`,
+    `supabase` and `stripe` converged on (the CLI shows a code, the human
+    approves in a browser, the CLI polls). It's probably overkill for one person
+    on one laptop, but the _shape_ could be adopted in miniature. Current
+    practice keeps tokens in the **OS keychain**, not a dotfile.
+  - **Managed realtime services** (Ably, Liveblocks, PartyKit on Durable
+    Objects) handle reconnect and ordering for you. The cost is a paid
+    dependency and losing ownership of the wire protocol. Reconsider for
+    StoryLoom.
+- **Ruled out for this problem:**
+  - **Tunnels** (Cloudflare Tunnel, Tailscale Funnel, ngrok) fit the opposite
+    setup: the app on your laptop, up only when the laptop is. They'd suit a
+    "share my local spell" feature instead.
+  - **AG-UI** assumes the agent is hosted. **A2A** is agent-to-agent. **WebRTC**
+    adds NAT traversal for no gain. Bare **Postgres LISTEN/NOTIFY** loses events
+    while a listener is disconnected.
+- **The researcher's MCP claims came from secondary sources**, so the
+  orchestrator checked them against the official docs, which led to the next
+  section.
+
+### Claude Code Channels: a native way to push events (verified in the official docs, 2026-09-25)
+
+Sources: `code.claude.com/docs/en/channels`, `/channels-reference`,
+`/remote-control`, `/mcp`.
+
+**What a channel is.** An MCP server that **Claude Code spawns as a local stdio
+subprocess**, and that pushes events into the running session.
+
+- It declares `capabilities.experimental['claude/channel']` and emits
+  `notifications/claude/channel {content, meta}`.
+- The model receives each event as a `<channel source=… k=v>` block.
+- **Two-way:** it can expose a reply tool.
+- "Events queue into the session and are processed in order. If several
+  notifications arrive while Claude is busy, they're delivered together on the
+  next turn."
+- A channel can opt in to **permission relay**, which forwards tool-approval
+  prompts to the remote side.
+- **Sender allowlists** with pairing codes are the documented security pattern.
+
+**Status and limits:**
+
+- It's a **research preview**; the flag syntax and protocol may change.
+- Custom channels aren't on the approved allowlist, so testing them needs
+  `claude --dangerously-load-development-channels server:<name>` **at launch**.
+- It requires claude.ai or Console authentication, not Bedrock or Vertex.
+- On Team and Enterprise plans an admin must enable it.
+- It's specific to Claude Code, which cuts against the cross-harness direction.
+- Events only arrive while the session is open.
+
+**Why it matters: this is the local-bridge role, built into Claude Code.** The
+bridge would become a small channel server that:
+
+- dials out to the hosted service over SSE with the token;
+- pushes each inbound event as a channel notification;
+- exposes `send` as its reply tool.
+
+That would **replace Monitor plus the tail for delivery**, which makes the
+30-minute Monitor cap and the whole tail-handoff apparatus unnecessary (see
+[Monitor expiry and the tail](./2026-09-22-monitor-expiry-and-the-tail.md)), and
+it batches events that arrive while the agent is busy. **It applies to local
+spells too, not only hosted ones.**
+
+**What doesn't fit:**
+
+- It changes the agent-facing contract: a tail becomes a channel, a CLI verb
+  becomes a reply tool. That breaks the thesis's "unchanged contract" and
+  touches acc and SKILL.md.
+- It needs a restart with a special flag during the preview.
+- A channel is attached when a session _starts_. A spell today is summoned in
+  the middle of a session, so a channel can't be opened mid-conversation the way
+  a spell is.
+
+Remote Control, by contrast, is **only for Anthropic's clients** (claude.ai and
+the mobile apps driving a local session). A third-party app can't use it.
+
+MCP server-to-client notifications (for example `list_changed`) are **not
+documented as reaching the model** outside channels.
+
+**Position:** keep direct mode (CLI plus tail) as the spike's main path, because
+it proves the thesis without changing the contract. Evaluate a **channel as an
+optional second delivery path** in the same spike, since the hosted service's
+SSE stream is the same for both. This is a design choice for Cole, recorded
+below.
+
 ### Hypotheses, revisited
 
 1. _The contract can stay the same._ **Holds for the text of the contract, but
@@ -376,22 +622,24 @@ exercises check 1, and needs a new server anyway.
 
 ## Next Steps
 
-1. ~~Contract inventory~~ **Done** (above).
-2. **Design the remote mode for grapevine's CLI** (the biggest risk):
-   - every read goes over the wire;
-   - `ensureDaemon` refuses to spawn locally;
-   - the lifecycle verbs are redefined;
-   - the bridge refuses (rather than returning a 5xx) when upstream is gone;
-   - the bridge guards its own origin.
-3. **Transport and auth sketch:**
-   - a pairing token scoped to one session;
-   - a browser capability exchanged for a cookie;
-   - a public-origin allowlist;
-   - gated destructive routes.
-4. **The spike, on a cycle branch:** grapevine as a Coolify container with one
-   tenant, the four daemon changes, and a local bridge. Judge it by acceptance
-   checks 1 to 3. **Confirm with Cole before deploying anything to the VPS.**
-5. **Later:** a second spike on a spell with shared editable state, for check 4.
+1. ~~Contract inventory~~ **Done.**
+2. ~~Remote mode and auth design~~ **Done** (direct mode, no bridge).
+3. **Cole's call:** should the spike also try a **Claude Code channel** as a
+   second delivery path? And separately, is it worth investigating channels as a
+   replacement for Monitor plus the tail in _local_ spells?
+4. **Spike on a cycle branch:**
+   - `kit/wire/auth.ts` and `remote.ts`;
+   - grapevine's `log.ts` routes;
+   - `GRAPEVINE_HOSTED`;
+   - the Dockerfile;
+   - the acceptance checklist.
+
+   **Confirm with Cole before deploying anything to the VPS.**
+
+5. **Cold read** of the design by a no-stake subagent before the spike code
+   lands.
+6. **Later:** a spike on a spell with editable shared state (check 4), and a
+   bridge for spells that pass local file paths.
 
 ---
 
