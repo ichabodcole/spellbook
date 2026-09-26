@@ -85,7 +85,7 @@ considered]
 
 - `[Related flow](./other-flow.md)`
 - `[Technical architecture](../architecture/feature-architecture.md)`
-- `[Original proposal](../projects/project-name/proposal.md)`
+- `[Original feature](../features/feature-name/feature.md)`
 
 ---
 

@@ -213,8 +213,8 @@ should look at:
 
 ## Relationship to Other Documentation
 
-- **Proposals** capture ideas for future features; interaction design docs
-  describe existing user experiences
+- **Features** propose what to build next; interaction design docs describe
+  existing user experiences
 - **Plans** outline implementation roadmaps; interaction design docs explain the
   resulting user flows
 - **Architecture** docs explain technical systems; interaction design docs

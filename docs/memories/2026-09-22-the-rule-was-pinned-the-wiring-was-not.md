@@ -47,5 +47,5 @@ Branch 3 had the same shape one level down: E64 notes that `anchorCache`'s cell
 `src/scriptorium/backend/daemon.integration.test.ts`
 
 **Docs:**
-[the session](../projects/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md),
-[E65](../projects/scriptorium/decision-log.md#e65--a-note-shows-that-it-is-with-the-agent)
+[the session](../items/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md),
+[E65](../items/scriptorium/decision-log.md#e65--a-note-shows-that-it-is-with-the-agent)

@@ -60,6 +60,12 @@ export interface LintConfig {
    * List the folder in `durable` or `workbench` too, to pick its tier.
    */
   types: Record<string, string>;
+  /**
+   * The names a work item's `scope:` may take — one value per item, and only a
+   * declared one. A second vocabulary beside `types`, read by the same parser.
+   * Empty by default: a project names its own areas.
+   */
+  scopes: string[];
 }
 
 export interface ProjectDocsConfig {
@@ -76,17 +82,13 @@ export const DEFAULT_CONFIG: ProjectDocsConfig = {
   lint: {
     adopting: false,
     exclude: [],
-    durable: [
-      "architecture",
-      "specifications",
-      "interaction-design",
-      "playbooks",
-      "lessons-learned",
-      "memories",
-    ],
-    workbench: ["backlog", "briefs", "investigations", "projects", "reports", "fragments", "cycles"],
+    durable: ["architecture", "specifications", "interaction-design", "playbooks"],
+    workbench: ["features", "items", "cycles"],
     types: {},
-    skip: ["_archive", "superpowers"],
+    scopes: [],
+    // `_archive` is linted, not skipped: the terminal-state rule (only done
+    // or dropped work sits there) has to see it.
+    skip: ["superpowers"],
   },
 };
 
@@ -144,6 +146,7 @@ export function loadConfig(repoRoot: string): ProjectDocsConfig {
       workbench: strings(lint.workbench, DEFAULT_CONFIG.lint.workbench),
       skip: strings(lint.skip, DEFAULT_CONFIG.lint.skip),
       types: typeMap(lint.types),
+      scopes: strings(lint.scopes, DEFAULT_CONFIG.lint.scopes),
     },
   };
 }

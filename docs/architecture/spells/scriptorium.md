@@ -28,7 +28,7 @@ tags: [scriptorium, architecture, editor, daemon, invariants]
 > versions, editing. §6–§8 are reference.
 >
 > **This document says WHAT IS TRUE, never why.** The why lives in
-> [`docs/projects/scriptorium/decision-log.md`](../../projects/scriptorium/decision-log.md),
+> [`docs/projects/scriptorium/decision-log.md`](../../items/scriptorium/decision-log.md),
 > entry by entry, and every `(E<n>)` here is a link into it. One fact, one home:
 > when they disagree, the code and the cells decide, and both documents are
 > wrong until someone fixes them.
@@ -341,8 +341,8 @@ Named so their absence is a decision rather than an oversight:
 
 ## Related
 
-- [`decision-log.md`](../../projects/scriptorium/decision-log.md) — why, entry
-  by entry (E1–E62)
+- [`decision-log.md`](../../items/scriptorium/decision-log.md) — why, entry by
+  entry (E1–E62)
 - [`spell-backend-architecture.md`](../spell-backend-architecture.md) — how any
   spell is built, shipped and spawned
 - [`dependency-and-package-boundaries.md`](../dependency-and-package-boundaries.md)

@@ -43,7 +43,7 @@
 ## Contracts
 
 _First contracts accreted during the Spell Surface Pipeline plan-ratify (session `prospero`,
-2026-07-07). See `docs/projects/spell-surface-pipeline/`._
+2026-07-07). See `docs/features/spell-surface-pipeline/`._
 
 ## Contract 1 — Surface serve + mode resolution
 
@@ -544,7 +544,7 @@ Two operational corollaries:
 
 **Why it bites:** any daemon-side "helpfulness" (auto-extraction, prose composition in the ratify path) silently violates map-as-view and the co-presence intent bus; a wholesale-array event resurrects the spike's infinite-render-loop class.
 
-**Proof:** pending — pin to the P1 gate tests (restart-loses-nothing-ratified) and the plan ratify record (`docs/projects/mind-mapper/plan.md`, Ratified decisions).
+**Proof:** pending — pin to the P1 gate tests (restart-loses-nothing-ratified) and the plan ratify record (`docs/features/mind-mapper/plan.md`, Ratified decisions).
 
 
 ## Contract 9 — Mind-mapper V1 wire (successor detail to Contracts 7/8)
@@ -1264,7 +1264,7 @@ freshly-built dists is what made them report stale.
 toolchain that cannot be pinned. At that point the basis must be **re-derived, not patched**.
 
 **Proof:** `fae8830` (the stamp's removal, and the rebuild-is-a-git-no-op measurement) ·
-[the 2026-08-31 spike](../../docs/investigations/2026-08-31-releasing-a-non-stale-build.md),
+[the 2026-08-31 spike](../../docs/items/releasing-a-non-stale-build/write-up.md),
 which carries the touch-point pricing and what no layer catches.
 
 ## Contract 19 — a ward's population must follow its subject, and "loosen the predicate" is the moment to check that it has

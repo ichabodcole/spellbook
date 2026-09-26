@@ -13,7 +13,7 @@
 // `Should not already be working`.
 //
 // ⚠ IT WAS FOUND BY A CONSUMER, AND THE EVIDENCE WAS ALREADY IN THE REPO.
-// `docs/projects/_archive/backend-convergence/phase-1b-journal.md:194` and
+// `docs/features/_archive/backend-convergence/phase-1b-journal.md:194` and
 // `phase-2-journal.md:340` both recorded "the unminified DEV React graph" in
 // September 2026. The dev build was observed TWICE and written down as a SIZE
 // fact; no instrument read it as a correctness defect, because no instrument

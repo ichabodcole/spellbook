@@ -1,7 +1,7 @@
 ---
 type: playbook # REQUIRED (OKF §3). Do not change it — the folder decides it.
-title: "[Topic] Playbook"
-description: "[One sentence: what this gets done, and when to reach for it.]"
+title: "[Kind of Work] Playbook"
+description: "[The kind of work this covers, and what it gets done.]"
 tags: [process, area] # 2-4 kebab-case keywords
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
 generated: { by: your-name-or-model, at: YYYY-MM-DD }
@@ -13,164 +13,28 @@ yours to edit. The scaffold records its hash, so a migration updates it only
 while you have not touched it. Frontmatter is the contract the lint enforces;
 below it is yours. See docs/SCHEMA.md → "Who owns which file".
 
-IMPORTANT: If you haven't read the README.md in this directory, please read it first for context on when to
-create playbooks and when NOT to create them.
+USAGE: `bun scripts/pdocs/cli.ts new playbook <kind-of-work>` copies this to
+docs/playbooks/<kind-of-work>-playbook.md and writes its line in index.md.
 
-USING THIS TEMPLATE:
-
-Playbooks are reusable dev plans for augmenting existing systems or executing recurring tasks.
-They should be generic enough to apply to multiple situations but specific enough to be actionable.
-
-Focus on: When to use this, what the approach is, key steps/phases, common pitfalls, and validation.
-Adapt sections as needed - some playbooks might need 2 phases, others might need 5.
+`description` is how an agent finds this playbook: write the kind of work it
+covers. Every line below is an instruction, not a story — see
+docs/playbooks/README.md and docs/STYLE.md.
 -->
 
-# [Topic] Playbook
+# [Kind of Work] Playbook
 
----
+## Goal
 
-## Context
+[What doing this kind of work correctly produces, in one or two sentences. When
+this playbook applies, and when it does not.]
 
-What is this playbook for?
+## Steps
 
-[1-2 paragraph description of what problem this playbook solves or what pattern
-it codifies. If this is for augmenting an existing system, describe the system
-and why additions follow a consistent pattern.]
+1. [An imperative step. If it applies only in some cases, name the case first:
+   "If the entity is synced, add it to the sync rules."]
+2. [The next step, in the order the work happens.]
 
-## Applicability
+## Verification
 
-When should you use this playbook?
-
-**Use this playbook when:**
-
-- [Scenario 1]
-- [Scenario 2]
-- [Scenario 3]
-
-**Don't use this playbook when:**
-
-- [Anti-pattern 1]
-- [Anti-pattern 2]
-- [Anti-pattern 3]
-
-## Prerequisites
-
-What needs to be in place before starting?
-
-- [Prerequisite 1]
-- [Prerequisite 2]
-- [Prerequisite 3]
-
-## Approach Summary
-
-The general strategy and guiding principles
-
-**Key Principles:**
-
-- [Principle 1]
-- [Principle 2]
-- [Principle 3]
-
-**Overall Strategy:**
-
-[Brief description of the approach]
-
-## Steps / Phases
-
-Coarse sequence of actions (adapt as needed - add or remove phases based on your
-playbook)
-
-### Phase 1: [Phase Name]
-
-**Goal:** [What this phase achieves]
-
-**Actions:**
-
-1. [Action 1]
-2. [Action 2]
-3. [Action 3]
-
-**Validation:**
-
-- [ ] [How to verify this phase is complete]
-
-### Phase 2: [Phase Name]
-
-**Goal:** [What this phase achieves]
-
-**Actions:**
-
-1. [Action 1]
-2. [Action 2]
-3. [Action 3]
-
-**Validation:**
-
-- [ ] [How to verify this phase is complete]
-
-[Add more phases as needed for your specific playbook]
-
-## Risks & Gotchas
-
-Common pitfalls to avoid (add as many as relevant for your playbook)
-
-### Gotcha 1: [Description]
-
-- **Symptom:** [What it looks like when you hit this]
-- **Root cause:** [Why it happens]
-- **Mitigation:** [How to avoid or fix it]
-
-### Gotcha 2: [Description]
-
-- **Symptom:** [What it looks like when you hit this]
-- **Root cause:** [Why it happens]
-- **Mitigation:** [How to avoid or fix it]
-
-[Add more gotchas based on experience - these are valuable lessons for future
-users]
-
-## Validation & Acceptance
-
-How to confirm the playbook was successfully applied
-
-**Acceptance Criteria:**
-
-- [ ] [Criterion 1]
-- [ ] [Criterion 2]
-- [ ] [Criterion 3]
-
-**Testing:**
-
-- [What to test]
-- [How to verify it works]
-
-## Examples
-
-Concrete examples of this playbook in use (add examples as they occur)
-
-### Example 1: [Scenario]
-
-**Context:** [What was the situation] **Outcome:** [What happened] **Lessons:**
-[What was learned or refined from this use] **Reference:** [Link to
-plan/session/PR]
-
-[Add more examples as this playbook gets used - they validate and refine the
-approach]
-
-## Related Patterns
-
-Links to related playbooks, architecture docs, or best practices
-
-- `[Related playbook 1](./other-playbook.md)`
-- `[Architecture doc](../architecture/doc-name.md)`
-- `[External resource](URL)`
-
----
-
-## Version History
-
-Track updates to this playbook
-
-- **YYYY-MM-DD** - Initial version
-- **YYYY-MM-DD** - [Update description]
-- **YYYY-MM-DD** - [Update description]
+- [ ] [A check that fails when a step was skipped or done wrong: a command and
+      what it should print, or something a reviewer can see.]

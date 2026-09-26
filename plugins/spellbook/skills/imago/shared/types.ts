@@ -125,7 +125,7 @@ export type Pin = { key: string; value: string };
 // or when committed to the conversation. Tools: pin (labeled point), arrow ("move
 // this → there"), line, rect, ellipse. The mask tool drops onto the same union later.
 // `zOrder` is server-assigned on mark.add (higher = on top); the surface omits
-// it. See docs/projects/imago/annotation-architecture.md.
+// it. See docs/items/_archive/imago/annotation-architecture.md.
 // color = stroke/accent color (a theme token name or CSS color); width = stroke
 // width in px; fontSize = label text size in px (pins use it; other marks ignore
 // it). All optional — the surface picks sensible defaults.

@@ -1,0 +1,337 @@
+---
+type: report # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Report Type]: [Brief Topic Description]"
+description: "[One sentence: what was assessed and what it found.]"
+tags: [area, assessment] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
+<!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
+USAGE: `bun scripts/pdocs/cli.ts new report <topic> --owner item/<slug>` (or
+`feature/<slug>`) writes this as reports/YYYY-MM-DD-<topic>-report.md in the
+owner's folder and links the owner. A report is evidence: it belongs to the
+research item or feature that needed it. See docs/items/README.md.
+
+USING THIS TEMPLATE:
+
+This template helps you create structured assessments of current state - whether that's code quality,
+documentation status, security posture, or system performance.
+
+A report is evidence gathered for the work that owns it. It assesses "what is" rather than "what
+should we do" (that is the research item's write-up). It is not a record of what an agent did — that
+is a session — and a skill does not write one about its own run: a documentation review files its
+findings as items, and a project summary updates PROJECT-SUMMARY.md.
+
+Adapt sections based on report type. Security audits emphasize severity; surveys emphasize the options
+compared; code reviews emphasize patterns and complexity.
+
+Core questions to answer: What did we assess? What did we find? What should we do about it?
+-->
+
+# [Report Type]: [Brief Topic Description]
+
+## Metadata
+
+Date, status and who produced this are in the frontmatter above. What is left is
+what the frontmatter has no field for.
+
+- **Report Type:** [Survey / Code Review / Security Audit / Performance Analysis
+  / Dependency Audit / Architecture Assessment / Other]
+- **Scope:** [Branch / Module / Full Project / Specific Feature]
+
+---
+
+## Executive Summary
+
+<!-- High-level overview of key findings and recommendations. Busy readers should get the essential information here. -->
+
+**Key Findings:**
+
+- [Finding 1 - Brief description]
+- [Finding 2 - Brief description]
+- [Finding 3 - Brief description]
+
+**Top Recommendations:**
+
+1. [Priority 1 recommendation]
+2. [Priority 2 recommendation]
+3. [Priority 3 recommendation]
+
+**Overall Assessment:** [One sentence summary - e.g., "System is healthy with
+minor improvements needed" or "Critical security issues require immediate
+attention"]
+
+---
+
+## Scope
+
+<!-- What was assessed and what was explicitly excluded -->
+
+**Included:**
+
+- [Area 1 that was assessed]
+- [Area 2 that was assessed]
+- [Specific files, modules, or components]
+
+**Excluded:**
+
+- [Area 1 that was not assessed]
+- [Area 2 that was not assessed]
+- [Rationale for exclusions if relevant]
+
+**Assessment Period:** [If relevant - e.g., "Changes from 2025-10-01 to
+2025-11-12"]
+
+---
+
+## Findings
+
+<!-- Detailed findings organized by category, severity, or area. Use structure appropriate for your report type. -->
+
+### [Category 1 / High Priority / Critical Issues]
+
+#### Finding: [Specific finding title]
+
+**Description:** [What was found]
+
+**Impact:** [Why this matters - severity, risk, consequences]
+
+**Evidence:**
+
+- File: `path/to/file.ts:42-67`
+- [Code snippet, metric, or observation]
+
+**Recommendation:** [Specific action to address this finding]
+
+---
+
+#### Finding: [Another finding]
+
+**Description:** [What was found]
+
+**Impact:** [Why this matters]
+
+**Evidence:**
+
+- [Supporting information]
+
+**Recommendation:** [Specific action]
+
+---
+
+### [Category 2 / Medium Priority / Warnings]
+
+<!-- Repeat finding structure as needed -->
+
+---
+
+### [Category 3 / Low Priority / Observations]
+
+<!-- Repeat finding structure as needed -->
+
+---
+
+## Summary Statistics
+
+<!-- Quantitative overview - adapt to report type -->
+
+| Metric     | Value   | Status       |
+| ---------- | ------- | ------------ |
+| [Metric 1] | [Value] | ✅ / ⚠️ / ❌ |
+| [Metric 2] | [Value] | ✅ / ⚠️ / ❌ |
+| [Metric 3] | [Value] | ✅ / ⚠️ / ❌ |
+
+**Examples:**
+
+- Documentation Status: Files reviewed: 42, Stale: 8, Missing: 3
+- Code Review: Files reviewed: 23, Issues found: 15 (5 high, 7 medium, 3 low)
+- Security: Vulnerabilities: 7 (2 critical, 3 high, 2 medium)
+
+---
+
+## Recommendations
+
+<!-- Actionable next steps prioritized by impact -->
+
+### High Priority
+
+1. **[Recommendation 1]**
+   - Action: [Specific steps]
+   - Rationale: [Why this is important]
+   - Estimated Effort: [Quick win / Days / Weeks]
+   - Follow-up: [Work item / Feature / Direct action]
+
+1. **[Recommendation 2]**
+   - Action: [Specific steps]
+   - Rationale: [Why this is important]
+   - Estimated Effort: [Quick win / Days / Weeks]
+   - Follow-up: [Work item / Feature / Direct action]
+
+### Medium Priority
+
+1. **[Recommendation 3]**
+   - Action: [Specific steps]
+   - Rationale: [Why this is important]
+   - Estimated Effort: [Quick win / Days / Weeks]
+   - Follow-up: [Work item / Feature / Direct action]
+
+### Low Priority / Monitor
+
+1. **[Recommendation 4]**
+   - Action: [What to watch or consider]
+   - Rationale: [Why this might matter later]
+
+---
+
+## Follow-up Actions
+
+<!-- Work items and features this report spawns. File each with
+     `pdocs new item <slug> --kind <kind> --from <this report's path>`. -->
+
+**Immediate Actions:**
+
+- [ ] [Task 1 - with owner if applicable]
+- [ ] [Task 2 - with owner if applicable]
+
+**Research Items to File:**
+
+- [ ] [Question - link to the item when filed]
+- [ ] [Question - link to the item when filed]
+
+**Features to Propose:**
+
+- [ ] [Feature - link to it when created]
+- [ ] [Feature - link to it when created]
+
+**Monitor/Review:**
+
+- [ ] [Future check - "Review X in 3 months"]
+- [ ] [Metric to track - "Monitor Y metric weekly"]
+
+---
+
+## Methodology
+
+<!-- Optional: How this assessment was conducted -->
+
+**Tools Used:**
+
+- [Tool 1 - version if relevant]
+- [Tool 2 - version if relevant]
+
+**Process:**
+
+1. [Step 1 of assessment process]
+2. [Step 2 of assessment process]
+3. [Step 3 of assessment process]
+
+**Limitations:**
+
+- [Limitation 1 - e.g., "Automated scan only, manual review not performed"]
+- [Limitation 2 - e.g., "Only covers files changed in last 30 days"]
+
+---
+
+## Related Documentation
+
+<!-- Links to relevant docs, issues, or previous reports -->
+
+- **Previous Reports:** [Link to prior report of same type for comparison]
+- **Related Research:** [Link to relevant research items and their write-ups]
+- **Related Features:** [Link to relevant features]
+- **External References:** [Links to docs, issues, standards]
+
+---
+
+## Notes
+
+<!-- Optional: Additional context, observations, or commentary -->
+
+[Any additional notes that don't fit the structured sections above]
+
+---
+
+## Appendix
+
+<!-- Optional: Detailed data, full lists, code samples, or reference material -->
+
+### [Appendix A: Full File List]
+
+<!-- Example: Complete list of files reviewed -->
+
+### [Appendix B: Detailed Metrics]
+
+<!-- Example: Extended metrics or raw data -->
+
+### [Appendix C: Code Examples]
+
+<!-- Example: Longer code snippets demonstrating patterns -->
+
+---
+
+## Template Adaptation Guide
+
+### For Documentation Status Reports
+
+Focus on:
+
+- Completeness (missing READMEs, gaps in coverage)
+- Currency (stale features, outdated architecture docs)
+- Organization (naming, linking, structure)
+- Quality (clarity, actionability)
+
+### For Code Review Reports
+
+Focus on:
+
+- Code patterns and anti-patterns
+- Duplication and refactoring opportunities
+- Complexity metrics (cyclomatic complexity, nesting depth)
+- Test coverage gaps
+- Documentation completeness
+
+### For Security Audit Reports
+
+Focus on:
+
+- Vulnerability severity (Critical / High / Medium / Low)
+- Attack vectors and exploitation difficulty
+- Affected components and data exposure
+- Remediation steps and timelines
+- Compliance implications if relevant
+
+### For Performance Analysis Reports
+
+Focus on:
+
+- Bottleneck identification (time, memory, I/O)
+- Performance metrics (latency, throughput, resource usage)
+- Optimization opportunities ranked by impact
+- Baseline measurements for comparison
+- Scalability implications
+
+### For Dependency Audit Reports
+
+Focus on:
+
+- Outdated packages (categorize by semver)
+- Known vulnerabilities with CVE references
+- License compatibility issues
+- Breaking change risks
+- Unused dependencies
+
+### For Architecture Assessment Reports
+
+Focus on:
+
+- Alignment with documented patterns
+- Consistency across modules
+- Technical debt accumulation
+- Integration patterns and coupling
+- Evolution and scalability opportunities

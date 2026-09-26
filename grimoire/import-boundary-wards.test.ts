@@ -609,7 +609,7 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
     // launcher under scripts/". Nothing asserts that weaker guarantee, so a
     // future spell shipping a pure `dist/` with no `scripts/*.ts` would drop out
     // of this roster silently. Filed rather than fixed here — see
-    // docs/backlog/2026-09-04-the-membership-guard-rests-on-an-unasserted-launcher.md
+    // docs/items/the-membership-guard-rests-on-an-unasserted-launcher.md
     const spellOf = (f: string) => /skills\/([^/]+)\//.exec(f)?.[1];
 
     // The roster, DERIVED from the same tree — never a hand-written list, which

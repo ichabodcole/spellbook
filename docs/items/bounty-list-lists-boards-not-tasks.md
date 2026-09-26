@@ -1,0 +1,47 @@
+---
+type: item
+title:
+  "Bounty: `list` enumerates boards, not tasks — the empty result reads as
+  missing cards"
+status: stable
+description:
+  Fix bounty list command to surface boards and lists as primary, not individual
+  tasks
+lifecycle: backlog
+id: 019fd324-3bb9-733f-9b77-e50c6c084a52
+kind: task
+generated: { by: unknown, at: 2026-08-05 }
+---
+
+# Bounty: `list` enumerates boards, not tasks — the empty result reads as missing cards
+
+`bounty list` lists **boards**, not tasks. `list` is the verb a caller reaches
+for when they want to see what's on the board — the verb is right, the noun is a
+different one than the caller has in mind.
+
+The failure mode is a **plausible zero**. After seeding six cards, a caller ran
+`bounty list`, got zero hits, concluded the cards had not been created, and was
+one message away from **filing a false defect against a tool that was working
+perfectly.** The cards were fine; the board had gone 46 → 52.
+
+Nothing errors, nothing warns, and **the zero is indistinguishable from a real
+zero** — so it confirms the wrong hypothesis instead of raising a question.
+
+## Acceptance Criteria
+
+Either (pick one, don't do both):
+
+- [ ] **Rename to say what it enumerates** — `bounty boards` — leaving `list`
+      free to mean tasks (or unclaimed).
+- [ ] **Have the output name its own noun** — _"2 boards"_ rather than a bare
+      empty set — so a caller expecting tasks can tell the question they asked
+      wasn't the question that was answered.
+
+Fold whichever lands into the `SKILL.md` accuracy pass tracked in
+[`2026-07-09-bounty-grapevine-skill-review.md`](./bounty-grapevine-skill-review.md).
+
+## References
+
+- `src/bounty/backend/cli.ts` — `cmdList`
+- Context: anthill team session 9; same session filed the `state --full` pipe
+  truncation ([#78](https://github.com/ichabodcole/spellbook/issues/78))

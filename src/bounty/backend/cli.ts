@@ -285,7 +285,7 @@ function resolveSession(
  *  contract cell failed once under the full gate with the not_found exit where
  *  the contract said usage, and passed alone and on re-run. Fixed there
  *  2026-09-07; found still standing here 2026-09-08 by the backend duplication
- *  recon (docs/investigations/2026-09-08-backend-duplication-recon.md).
+ *  recon (docs/items/backend-duplication-recon/write-up.md).
  *
  *  ENOENT is the only honest absence. Everything else says what it was.
  *
@@ -487,7 +487,7 @@ async function api(
 //   a "boolean" that should be string breaks `--owner alice` (alice becomes a
 //   positional)
 // Both are silent enough to ship. This set is thoth's audited artifact
-// (`docs/projects/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
+// (`docs/features/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
 // 22 flags, 15 string / 7 boolean, each settled by unambiguous evidence at
 // EVERY consumption site. `expect` and `size` are string because they type off
 // parseExpect/parseSize, not off the bare truthiness at the call site.

@@ -1,65 +1,76 @@
 # Cycles
 
-A **cycle** is the answer to "what are we doing right now" — a thin index over
-the work in play, and the only document type here that is neither a record of
-thinking nor a record of work.
-
-Everything else in `docs/` answers a different question. A brief captures an
-idea. An investigation answers a question. A proposal argues for a change, a
-plan routes it, and a project folder is the topical home of one feature for as
-long as that feature exists. None of them says which of those things is being
-worked on now, and the tree had no way to say it — which is how twenty-three
-proposals came to sit at `Approved` with no way to tell the three that were live
-from the twenty that were parked.
+A **cycle** answers "what are we doing right now": the work in play, with an
+appetite for how much of it is worth doing and, at the end, an outcome. Every
+other folder says what the work is; a cycle says which of it is live.
 
 ## What a cycle is
 
-- **An index, never a container.** `scope:` links the projects and backlog items
-  in play. Their proposals, plans, sessions and artifacts stay in the project
-  folder. A cycle that owned documents would fragment a feature's record across
-  every cycle that ever touched it, and the feature outlives all of them.
-- **Scope-bound, not time-boxed.** A cycle closes when its scope ships or is
-  cut, not on a date. Its `appetite` is a sentence saying when it would be right
-  to stop — the thing a deadline is usually a proxy for.
-- **At most one is `active`.** `pdocs check` enforces it. Two active cycles mean
-  the answer to "what are we doing" is a list, which is the state a cycle exists
-  to prevent. Others may sit `planned`.
+- **Membership lives on the items.** An item joins a cycle by naming it:
+  `cycle: 2026-09-auth`. The cycle file lists nothing in its frontmatter, and
+  `bun scripts/pdocs/cli.ts view cycle 2026-09-auth` derives what is in it. Do
+  not write a `scope:` list on a cycle: the key is retired, and `scope` now
+  names the part of the project a feature or item touches.
+- **An index, never a container.** Plans, sessions and artifacts stay with the
+  feature or item that owns them. A feature outlives every cycle that touches
+  it; if cycles owned documents, its record would be scattered across all of
+  them.
+- **Scope-bound, not time-boxed.** A cycle closes when its work ships or is cut,
+  not on a date. Its `appetite` is a sentence saying when it would be right to
+  stop.
+- **At most one is `active`.** `pdocs check` enforces it, and `pdocs new` and
+  `pdocs set` refuse a second. Others may sit `planned`.
 
 ## When to open one
 
-When you are about to start a body of work that spans more than one branch. A
-single branch does not need a cycle; `finalize-branch` writes its session and
-the project folder holds the rest.
+Open a cycle when a body of work will span more than one branch. A single branch
+needs none: `finalize-branch` writes its session into the owner's folder.
 
-Open it before the first branch, so `init-branch` can attach that branch to it.
+Open it before the first branch, so `init-branch` can attach the work to it:
+
+```bash
+bun scripts/pdocs/cli.ts new cycle auth
+bun scripts/pdocs/cli.ts set cycle/2026-09-auth --lifecycle active
+```
+
+`new cycle auth` writes `cycles/2026-09-auth.md`: the month it opened, then the
+slug. That file name without `.md` is the cycle's slug everywhere else. The
+month is when work started, not a deadline; a cycle that runs into the next
+month keeps its name.
+
+## Adding work to it
+
+- `init-branch` sets `cycle:` on the item a branch starts, when a cycle is
+  active.
+- By hand: `bun scripts/pdocs/cli.ts set item/<slug> --cycle 2026-09-auth`.
+
+A feature has no `cycle` field. Its items join cycles, one by one.
 
 ## When to close one
 
-When every entry in `scope:` has reached a terminal `lifecycle` — or when you
-decide the rest is not worth doing, which closes the cycle just as validly.
-Write the **Outcome** section at that point, while you still remember what was
-cut and why, and set `lifecycle: closed`.
+`pdocs view cycle <slug>` reports `closable: yes` when the cycle has at least
+one item and every item is `done` or `dropped`. Then write the **Outcome**
+section — what shipped, what was cut and why, what was learned — while you still
+remember, and close it:
 
-A cycle that is abandoned rather than finished gets `lifecycle: abandoned` and
-an Outcome that says so. That is a real result and worth the two sentences.
+```bash
+bun scripts/pdocs/cli.ts set cycle/2026-09-auth --lifecycle closed --closed 2026-09-30
+```
+
+You may also close a cycle whose remaining work you decide is not worth doing:
+drop those items, or take their `cycle:` off, first. A cycle abandoned rather
+than finished gets `lifecycle: abandoned` and an Outcome that says so; that is a
+real result and worth the two sentences. A closed cycle stays in `cycles/`; it
+is never moved to an archive.
 
 ## Shape
 
-```
-docs/cycles/
-  README.md
-  TEMPLATE.md
-  YYYY-MM-<slug>.md
-```
+Frontmatter: `lifecycle` (`planned` · `active` · `closed` · `abandoned`),
+`appetite`, `started`, `closed` at close, and `after` — cycles or features this
+one waits on. The body is four sections: **Why now**, **Scope** (what the cycle
+sets out to ship; the live list is `pdocs view cycle`), **Outcome**, and
+**Sessions** — the branches worked under it, each marked `(open)` while in
+flight and `(landed <date>)` after.
 
-The filename is the month it opened plus a short slug. The month is when work
-started, not a deadline — a cycle that runs into the next month keeps its name.
-
-Frontmatter carries `scope` (what is in play), `after` (cycles or projects this
-one waits on), `appetite`, `started` and, at close, `closed`. The body is four
-sections: **Why now**, **Scope**, **Outcome**, and **Sessions** — the branches
-worked under it, each marked `(open)` while in flight and `(landed <date>)`
-after.
-
-See [SCHEMA.md](../SCHEMA.md) for the frontmatter contract and the `lifecycle`
-vocabulary.
+The template is [TEMPLATE.md](./TEMPLATE.md), and
+[SCHEMA.md](../SCHEMA.md#the-cycle) has the contract.

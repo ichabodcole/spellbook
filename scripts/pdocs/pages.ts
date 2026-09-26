@@ -4,15 +4,14 @@
 // `backlinks` — and it deliberately covers BOTH TIERS.
 //
 // The obvious alternative was to build them on `graphTier`, which already
-// returns a knowledge graph. It walks the library only: `.project-docs.json`
-// puts `projects`, `cycles`, `backlog`, `briefs`, `investigations`, `reports`
-// and `fragments` in `nonPageDirs`, because the graph obligations — catalog
-// reachability, `related` resolution — are library obligations. But the
-// questions this cycle exists to answer are "what is in the active cycle" and
-// "which proposals claim `implemented` and are lying", and both of those live
-// in the workbench. A `find` built on `graphTier` would answer
-// `--type proposal` with silence, which is a worse failure than not shipping
-// the command: an empty result reads as an answer.
+// returns a knowledge graph. It walks the library only: the workbench folders
+// (`features`, `items`, `cycles`) are `nonPageDirs`, because the graph
+// obligations — catalog reachability, `related` resolution — are library
+// obligations. But the questions these commands answer — "what is in the
+// active cycle", "which features claim `done`" — live in the workbench. A
+// `find` built on `graphTier` would answer `--type feature` with silence,
+// which is a worse failure than not shipping the command: an empty result
+// reads as an answer.
 //
 // So the tier is a FIELD here, not a filter. `orphans` is the one read command
 // that stays on `graphTier`, because orphan-ness is defined against a catalog
@@ -27,7 +26,7 @@
 // a caller ends up fixing it in the wrong place.
 
 import { readFileSync } from "node:fs";
-import { basename, dirname, relative } from "node:path";
+import { basename, dirname, relative, sep } from "node:path";
 import {
   checkLinks,
   parseFrontmatter,
@@ -41,15 +40,23 @@ import {
   libraryFiles,
   workbenchFiles,
 } from "./lint/rules.ts";
-import { PROJECTS_FOLDER, TYPE_ALIAS } from "./lint/registry.ts";
+import { ENTITY_FILE, FEATURES_FOLDER, ITEMS_FOLDER } from "./lint/registry.ts";
+
+/** A frontmatter value with its surrounding quotes removed; `null` when absent. */
+const unquoted = (v: string | undefined): string | null =>
+  v === undefined || v === "" ? null : v.replace(/^(["'])(.*)\1$/, "$2");
 
 /** One document, flattened. Every field is either frontmatter as written or
  *  something derived from the file's position — nothing here is a judgement. */
 export interface Page {
-  /** Repo-relative, e.g. `docs/projects/foo/proposal.md`. The only path
+  /** Repo-relative, e.g. `docs/features/foo/feature.md`. The only path
    *  vocabulary any read command speaks, so a `find` result can be handed
    *  straight back to `backlinks`. */
   path: string;
+  /** The same path relative to the docs root, `/`-separated. Positions are
+   *  read from this, so a folder that happens to share a name with an owner
+   *  (`items/items/`) cannot be mistaken for one. */
+  docsPath: string;
   tier: "library" | "workbench";
   /** The type the document's POSITION says it carries; `""` when its folder
    *  declares none. Not the `type:` field — a document whose frontmatter
@@ -60,6 +67,14 @@ export interface Page {
   description: string | null;
   status: string | null;
   lifecycle: string | null;
+  /** A work item's `id`, as written (quotes removed); `null` elsewhere. */
+  id: string | null;
+  /** A work item's `kind`; `null` elsewhere. */
+  kind: string | null;
+  /** The work fields a `find` filters on, as written (quotes removed). */
+  parent: string | null;
+  cycle: string | null;
+  scope: string | null;
   tags: string[];
   /** Raw `type/slug` entries, as written. Unresolved on purpose: whether an
    *  edge points at a real page is the lint's question. */
@@ -124,12 +139,18 @@ export function collectPages(ctx: Ctx): Page[] {
 
     pages.push({
       path: file.rel,
+      docsPath: relative(ctx.docsRoot, file.path).split(sep).join("/"),
       tier: file.tier,
       type: file.type,
       title: fields.get("title") ?? null,
       description: fields.get("description") ?? null,
       status: fields.get("status") ?? null,
       lifecycle: fields.get("lifecycle") ?? null,
+      id: unquoted(fields.get("id")),
+      kind: unquoted(fields.get("kind")),
+      parent: unquoted(fields.get("parent")),
+      cycle: unquoted(fields.get("cycle")),
+      scope: unquoted(fields.get("scope")),
       tags: yamlList(fields.get("tags")),
       related: yamlList(fields.get("related")),
       date: parseGenerated(fields.get("generated"))?.at ?? null,
@@ -153,45 +174,63 @@ export function pageKey(page: Page): string | null {
 }
 
 /**
- * `project/<folder>` — how a PROJECT is addressed, which `type/slug` cannot do.
- *
- * `type/slug` is a library-tier scheme and SCHEMA.md says so: `related:` edges
- * "are resolved against library pages only". It works there because a library
- * page's basename is its own name. Extending it to the workbench broke on the
- * project folder, where every type has a FIXED filename — so `pageKey` answers
- * `proposal/proposal` for every project in the tree. That key names all of them
- * and identifies none, and it is the only string `pdocs new cycle --scope`
- * would accept: the documented `--scope project/oauth-upgrade` matched nothing.
- *
- * A project's name is its FOLDER, so that is what this keys on. The vocabulary
- * is not invented here — `TYPE_ALIAS` already spells it `project` for
- * `pdocs new project <name>`, `docs/cycles/TEMPLATE.md` writes `scope:` entries
- * as `project/[project-name]`, and the migration guide says the same. This
- * makes the tool agree with all three.
+ * The addresses an entity answers to beyond `type/slug`: a feature or an item
+ * by its slug — the folder, or a single-file item's own name — and an item by
+ * its `id` (plan D6). A work entity's files have FIXED names (`feature.md`,
+ * `item.md`), so `pageKey` alone would key every feature `feature/feature`.
  *
  * It is NOT a `related:` key and must not become one: `related:` still resolves
- * against library pages only, and the thin tier does not resolve it at all.
- * This is an ADDRESS a caller may type — for `--scope` and for `backlinks` —
- * which is why it lives beside `pageKey` rather than inside it.
+ * against library pages only. This is an ADDRESS a caller may type — for
+ * `--owner`, `--parent`, `set` and `backlinks` — which is why it lives beside
+ * `pageKey` rather than inside it.
  */
 export function pageAliasKeys(page: Page): string[] {
   const keys: string[] = [];
-  for (const [name, alias] of Object.entries(TYPE_ALIAS)) {
-    if (!alias.namesScope || page.type !== alias.type) continue;
-    // `<docsRoot>/projects/<folder>/<fixed name>.md` — the folder is the
-    // parent, and the grandparent proves this really is the project tree
-    // rather than a same-named type somewhere else.
-    const folder = basename(dirname(page.path));
-    if (folder && basename(dirname(dirname(page.path))) === PROJECTS_FOLDER)
-      keys.push(`${name}/${folder}`);
+  // The work taxonomy's entities are named by their slug — the folder, or a
+  // single-file item's own name — wherever they sit, `_archive/` included, and
+  // an item by its `id` as well (plan D6). The owner is the folder DIRECTLY
+  // under the docs root, never a same-named folder further down.
+  if (page.type === "feature" || page.type === "item") {
+    const slug = entitySlug(page);
+    if (slug) keys.push(`${page.type}/${slug}`);
+    if (page.type === "item" && page.id) keys.push(`item/${page.id}`);
   }
   return keys;
 }
 
+/**
+ * An entity's slug from its docs-root position: `items/<slug>.md`,
+ * `items/<slug>/item.md` or `features/<slug>/feature.md`, with an optional
+ * `_archive/` after the owner. `null` for anything else.
+ */
+function entitySlug(page: Page): string | null {
+  const owner = page.type === "feature" ? FEATURES_FOLDER : ITEMS_FOLDER;
+  const segs = page.docsPath.split("/");
+  if (segs[0] !== owner) return null;
+  let rest = segs.slice(1);
+  if (rest[0] === "_archive" && rest.length > 1) rest = rest.slice(1);
+  if (rest.length === 1 && page.type === "item")
+    return basename(rest[0] as string, ".md");
+  if (rest.length === 2 && rest[1] === ENTITY_FILE[owner]!.name)
+    return rest[0] as string;
+  return null;
+}
+
+/** True for a folder entity's entry file, whose `type/slug` key would be
+ *  `item/item` or `feature/feature` — a key every such entity shares. */
+function isEntityEntryFile(page: Page): boolean {
+  return (
+    (page.type === "feature" || page.type === "item") &&
+    basename(page.path) === ENTITY_FILE[page.type === "feature" ? FEATURES_FOLDER : ITEMS_FOLDER]!.name
+  );
+}
+
 /** Every address a page answers to: its `type/slug` key, plus any alias. */
 export function pageKeys(page: Page): string[] {
-  const key = pageKey(page);
-  return [...(key === null ? [] : [key]), ...pageAliasKeys(page)];
+  // A folder entity's basename key names every folder entity and identifies
+  // none (the `feature/feature` trap); its slug key is in the aliases.
+  const key = isEntityEntryFile(page) ? null : pageKey(page);
+  return [...new Set([...(key === null ? [] : [key]), ...pageAliasKeys(page)])];
 }
 
 /** `linksOut` inverted across the collection: path -> the paths that link to

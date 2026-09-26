@@ -71,9 +71,9 @@ Create specification documents when:
 - Implementation details or technology choices (use an Implementation Blueprint
   for that)
 - Architecture of the current codebase (use architecture docs)
-- One-off tasks or processes (use playbooks)
-- Ideas that haven't been validated (use investigations first, then create a
-  project)
+- Recurring tasks or processes (use playbooks)
+- Ideas that haven't been validated (file a research item first, then create a
+  feature)
 
 ## File Naming and Organization
 
@@ -185,7 +185,7 @@ Specifications are living documents. They should evolve with the project:
 
 ## Relationship to Other Documentation
 
-- **Proposals** define what to build next; specifications describe what already
+- **Features** define what to build next; specifications describe what already
   exists (or what should exist)
 - **Architecture docs** describe how the current codebase implements things;
   specifications describe what things do independent of implementation

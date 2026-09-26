@@ -142,8 +142,8 @@ Adapt the structure to fit your system - not all sections may be relevant.
 
 ## Relationship to Other Documentation
 
-- **Proposals** capture ideas for future features; architecture docs describe
-  what exists
+- **Features** propose what to build next; architecture docs describe what
+  exists
 - **Plans** outline implementation roadmaps; architecture docs explain the
   result
 - **Playbooks** describe how to execute recurring tasks; architecture docs

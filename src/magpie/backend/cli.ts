@@ -168,7 +168,7 @@ function sessionFilePath(session?: string): string {
  *  contract cell failed once under the full gate with the not_found exit where
  *  the contract said usage, and passed alone and on re-run. Fixed there
  *  2026-09-07; found still standing here 2026-09-08 by the backend duplication
- *  recon (docs/investigations/2026-09-08-backend-duplication-recon.md).
+ *  recon (docs/items/backend-duplication-recon/write-up.md).
  *
  *  ENOENT is the only honest absence. Everything else says what it was.
  *

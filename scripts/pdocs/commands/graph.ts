@@ -17,7 +17,7 @@
 // `contractExempt`, `tagNeighbors` — fields that exist because a gate needed
 // them — and it covers the library tier only, because that is the only tier
 // with graph obligations. A graph surface built on it inherits the lint's churn
-// and answers `projects/` with silence. `pages.ts` says why the read commands
+// and answers `features/` and `items/` with silence. `pages.ts` says why the read commands
 // span both tiers.
 //
 // `pdocs orphans` is where the library-only view still lives, and it is still

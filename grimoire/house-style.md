@@ -93,7 +93,7 @@ that failed re-measurement: an accuracy bar from a probe that flattered it, a
 headline population that disagreed with its own detail figures, and a count
 nobody could verify. Every blocking item from the reviewer was a claim like
 these, not code.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
+([Session](../docs/items/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
 
 ### Start minimal; subtract before you test.
 
@@ -128,8 +128,8 @@ be precise about what the name _is_ and _isn't_:
   name, the registry key, and what every invocation phrasing resolves to.
   Precision matters because an identifier can't be fuzzy. (It will also be the
   exact argument the planned **wand** CLI takes — a mage-facing tool, see
-  `docs/fragments/2026-05-29-the-wand-mage-cli.md` — which is _why_ a clash with
-  a common word matters, but the identifier role is the primary reason.)
+  `docs/items/the-wand-mage-cli.md` — which is _why_ a clash with a common word
+  matters, but the identifier role is the primary reason.)
 - **Invocation** — how the skill is actually triggered in conversation — is
   deliberately _plural_: many phrasings ("cast / start / join a grapevine") and
   distinct lenses (creating vs. joining are different intents routing to the
@@ -228,12 +228,12 @@ dismissal, every later selection stayed hidden, and the daemon, whose held
 selection `say` attaches, was never told the passage had gone. Fixed on
 `fix/scriptorium-selection-context`: clearing the chip clears the selection, in
 both panes and in the daemon. The rule stands.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
+([Session](../docs/items/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
 [memory](../docs/memories/2026-09-22-scriptorium-selection-and-the-chip.md);
 applied on purpose in
-[branch 3](../docs/projects/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
+[branch 3](../docs/items/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
 and
-[the chip-across-documents fix](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
+[the chip-across-documents fix](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
 
 ### Keep the client thin — MCP at the auth layer.
 
@@ -441,10 +441,10 @@ that `say` attaches. The kit's tail bookmark `--since N` was a cursor with no
 log, so after a daemon restart it skipped the new log's start. Both are fixed
 (E66, and `--since N@<epoch>` on `feat/tail-quiet-handoff`). The rule stands,
 and the spells whose daemon stamps no epoch still carry the gap.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
+([Session](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
 [memory](../docs/memories/2026-09-22-a-place-in-a-document-names-its-document.md);
 the tail:
-[session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
+[session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
 
 ---
 
@@ -477,10 +477,10 @@ build; the open question is order, not whether.**
 > 2026-09-05: Spellbook scope is enough for now. The rule this page states is
 > spell-scoped; do not promote the quote into a house-wide standard on the
 > strength of appearing here. See
-> `docs/backlog/2026-09-05-a-ratified-manifesto-correction-never-reached-the-manifesto.md`.
-> A new spell may start without one while it is genuinely small, and Contract
-> 3's criterion ends that exemption automatically — it is a staging concession,
-> not a category.
+> `docs/items/a-ratified-manifesto-correction-never-reached-the-manifesto.md`. A
+> new spell may start without one while it is genuinely small, and Contract 3's
+> criterion ends that exemption automatically — it is a staging concession, not
+> a category.
 
 **Direction is still not permission**, though — the queue below governed _when_
 a spell ported. **The queue is now EMPTY, and this section is a record rather
@@ -491,8 +491,8 @@ than a schedule.**
 | _(none)_ | —             | —        |
 
 **Every spell in the roster builds.** digestify left the queue on 2026-09-07
-(`docs/projects/digestify-conversion/`), the third and last rewrite: 1,505 lines
-of hand-written HTML with three CDN runtime dependencies became a React surface
+(`docs/items/digestify-conversion/`), the third and last rewrite: 1,505 lines of
+hand-written HTML with three CDN runtime dependencies became a React surface
 with its primitives from the shadcn registry, taken INSIDE the rewrite rather
 than vendored first. bounty went on 2026-09-06 and grapevine — the pathfinder —
 on 2026-09-05. **A spell with no `surface/` is not yet a port subject**; the
@@ -654,7 +654,7 @@ _Scar: the kit's `tail --once` hung three ways before it shipped: an open stream
 after its event, a dead daemon retried forever, and a session closed in the gap.
 None printed anything wrong. All three are fixed on `feat/tail-quiet-handoff`,
 and the rule stands for every other wait.
-([Session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
+([Session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
 [memory](../docs/memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md))_
 
 ### Enumerate the roster by behaviour, never by a fixed path or a name.

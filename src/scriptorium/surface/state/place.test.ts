@@ -282,7 +282,7 @@ describe("createPlace", () => {
 
   /**
    * ⚠ A KNOWN HOLE, PINNED RATHER THAN FIXED — see
-   * `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
+   * `docs/items/scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
    *
    * The cell above is CodeMirror's ordering. The RENDERED pane has the other
    * one: its `to` sets `scrollTop` synchronously, so its scroll event can be
@@ -333,7 +333,7 @@ describe("createPlace", () => {
    *
    * ⛔ ASSERTS WHAT THE CODE DOES TODAY, like its neighbour, and for the same
    * reason: see
-   * `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
+   * `docs/items/scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
    * The "yanked back to where it started" cell above is the special case of
    * this one where the yank lands exactly on `before`, which is why the
    * one-frame disarm rescues that one and not this.

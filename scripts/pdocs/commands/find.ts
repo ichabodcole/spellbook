@@ -1,7 +1,7 @@
 // `pdocs find` — query the tree.
 //
-// The command the proposal's motivating questions actually need: "what is in
-// the active cycle", "which proposals claim `implemented`". Both are workbench
+// The command the work questions actually need: "what is in the active
+// cycle", "which features claim `done`". Both are workbench
 // questions, which is why this stands on `collectPages` and not on the lint's
 // library-tier graph — see `pages.ts`.
 //
@@ -18,7 +18,8 @@
 import type { Command, Invocation } from "../cli.ts";
 import { ExitCode, UsageError, printEnvelope } from "../envelope.ts";
 import { type Page, collectPages } from "../pages.ts";
-import { buildRegistry } from "../lint/registry.ts";
+import { KINDS, buildRegistry, retiredWordReason } from "../lint/registry.ts";
+import { DEFAULT_CONFIG } from "../docs-lint/config.ts";
 
 /** A match, minus the edges. Whoever wants those asks `pdocs graph` or
  *  `pdocs backlinks` — `find` answers "which documents", not "what cites
@@ -33,6 +34,11 @@ export interface FindMatch {
   lifecycle: string | null;
   tags: string[];
   date: string | null;
+  id: string | null;
+  kind: string | null;
+  parent: string | null;
+  cycle: string | null;
+  scope: string | null;
 }
 
 export interface FindData {
@@ -49,6 +55,12 @@ export interface FindFilters {
   status?: string;
   tag?: string;
   since?: string;
+  kind?: string;
+  parent?: string;
+  cycle?: string;
+  scope?: string;
+  /** Lowercased: an id prefix matches in any case. */
+  id?: string;
 }
 
 export function parseFilters(
@@ -70,11 +82,37 @@ export function parseFilters(
   const type = value("--type");
   if (type !== undefined && !knownTypes.includes(type)) {
     const choices = [...new Set(knownTypes)].sort();
+    // A type retired in 9.0.0 is named as such, with its replacement — the
+    // same refusal `pdocs new` gives, not "unknown type".
+    const retired = retiredWordReason(type, DEFAULT_CONFIG);
+    if (retired !== null) throw new UsageError(`--type: ${retired}.`, { token: type, choices });
     throw new UsageError(
       `--type: \`${type}\` is not a type in this project. Known: ${choices.join(", ")}.`,
       { token: type, choices }
     );
   }
+
+  const kind = value("--kind");
+  if (kind !== undefined && !KINDS.includes(kind))
+    throw new UsageError(`--kind: \`${kind}\` is not a kind — ${KINDS.join(" | ")}.`, {
+      token: kind,
+      choices: KINDS,
+    });
+
+  // A parent is written `feature/<slug>` (D6), and a filter in any other shape
+  // could only ever match nothing.
+  const parent = value("--parent");
+  if (parent !== undefined && !/^feature\/[^/]+$/.test(parent))
+    throw new UsageError(
+      `--parent: \`${parent}\` is not \`feature/<slug>\`, the one form a parent is written in.`,
+      { token: parent }
+    );
+
+  const id = value("--id");
+  if (id !== undefined && !/^[0-9a-f-]+$/i.test(id))
+    throw new UsageError(`--id: \`${id}\` is not an id or an id prefix — hex digits and hyphens.`, {
+      token: id,
+    });
 
   return {
     type,
@@ -82,6 +120,11 @@ export function parseFilters(
     status: value("--status"),
     tag: value("--tag"),
     since,
+    kind,
+    parent,
+    cycle: value("--cycle"),
+    scope: value("--scope"),
+    id: id?.toLowerCase(),
   };
 }
 
@@ -101,6 +144,11 @@ export function matches(page: Page, f: FindFilters): boolean {
   if (f.tag !== undefined && !page.tags.includes(f.tag)) return false;
   if (f.since !== undefined && (page.date === null || page.date < f.since))
     return false;
+  if (f.kind !== undefined && page.kind !== f.kind) return false;
+  if (f.parent !== undefined && page.parent !== f.parent) return false;
+  if (f.cycle !== undefined && page.cycle !== f.cycle) return false;
+  if (f.scope !== undefined && page.scope !== f.scope) return false;
+  if (f.id !== undefined && !(page.id ?? "").toLowerCase().startsWith(f.id)) return false;
   return true;
 }
 
@@ -118,6 +166,11 @@ export function findData(pages: Page[], f: FindFilters): FindData {
         lifecycle: page.lifecycle,
         tags: page.tags,
         date: page.date,
+        id: page.id,
+        kind: page.kind,
+        parent: page.parent,
+        cycle: page.cycle,
+        scope: page.scope,
       })
     );
   return { matches: found, count: found.length };
@@ -140,9 +193,10 @@ function renderText(data: FindData): void {
 
 export const find: Command = {
   name: "find",
-  summary: "Query the tree by type, lifecycle, status, tag or date.",
+  summary: "Query the tree by type, lifecycle, status, tag, date, or work field.",
   usage:
-    "pdocs find [--type <t>] [--lifecycle <l>] [--status <s>] [--tag <t>] [--since <YYYY-MM-DD>]",
+    "pdocs find [--type <t>] [--lifecycle <l>] [--status <s>] [--tag <t>] [--since <YYYY-MM-DD>] " +
+    "[--kind <k>] [--parent feature/<slug>] [--cycle <slug>] [--scope <name>] [--id <prefix>]",
   options: [
     { flag: "--type", metavar: "<type>", summary: "Documents of this type." },
     {
@@ -165,6 +219,11 @@ export const find: Command = {
       metavar: "<YYYY-MM-DD>",
       summary: "Documents whose `generated.at` is on or after this date.",
     },
+    { flag: "--kind", metavar: "<kind>", summary: "Work items of this kind: task | bug | chore | research." },
+    { flag: "--parent", metavar: "feature/<slug>", summary: "Work items whose parent is this feature." },
+    { flag: "--cycle", metavar: "<slug>", summary: "Work items in this cycle." },
+    { flag: "--scope", metavar: "<name>", summary: "Features and items in this scope." },
+    { flag: "--id", metavar: "<id-or-prefix>", summary: "The work item whose id starts with this." },
   ],
 
   run({ ctx, format, flags }: Invocation): number {

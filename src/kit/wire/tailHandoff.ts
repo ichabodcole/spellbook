@@ -7,9 +7,9 @@
  *
  * Built on `feat/tail-quiet-handoff` to Cole's ruling of 2026-09-23 (the
  * "Ruling" section of
- * `docs/backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
+ * `docs/items/scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
  * and the four adjustments of its feasibility spike
- * (`docs/investigations/2026-09-22-monitor-expiry-and-the-tail.md`).
+ * (`docs/items/monitor-expiry-and-the-tail/write-up.md`).
  *
  * ── THE PROBLEM, ONE PARAGRAPH ──────────────────────────────────────────────
  *
@@ -193,7 +193,7 @@
  * to be runnable as printed, headed by `bun <argv[1]>` — and for an installed
  * plugin `argv[1]` is inside a VERSIONED cache directory. An upgrade marks the
  * old directory orphaned and deletes it later (measured in
- * `docs/backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md`),
+ * `docs/items/tail-rearm-command-names-a-versioned-plugin-path.md`),
  * so a line printed before an upgrade first ran STALE code against a newer
  * daemon, then failed with "module not found" once the directory was gone. No
  * stable path exists to print instead: the cache, `$CLAUDE_PLUGIN_ROOT` and the

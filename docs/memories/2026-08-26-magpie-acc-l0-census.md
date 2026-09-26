@@ -41,6 +41,6 @@ had no test.
 `grimoire/flag-invariant.test.ts`, `grimoire/exit-site-inventory.test.ts`
 
 **Docs:**
-[Session](../projects/spell-hardening/sessions/2026-08-26-magpie-acc-l0-and-the-census.md)
+[Session](../features/spell-hardening/sessions/2026-08-26-magpie-acc-l0-and-the-census.md)
 ·
-[the grapevine session before it](../projects/spell-hardening/sessions/2026-08-24-standard-grapevine-acc-session.md)
+[the grapevine session before it](../features/spell-hardening/sessions/2026-08-24-standard-grapevine-acc-session.md)

@@ -5,8 +5,8 @@
 //
 // Orphan-ness is not a property a document has on its own — it is "unreachable
 // from `docs/index.md` by following links". Only the library has a catalog. A
-// session note, a proposal, a backlog item are reached by their date and their
-// folder README; calling all of them orphans would report a hundred findings
+// session, a feature, an item are reached by their state, their owner and
+// `pdocs view`; calling all of them orphans would report a hundred findings
 // about a rule that was never meant to apply to them, and the honest count
 // would drown in it.
 //

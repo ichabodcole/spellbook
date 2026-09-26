@@ -126,7 +126,7 @@ then neither is wrong.
 - **The spell's daemon starts offline.** `bun --no-install scripts/server.ts`
   must not die on a missing package. If it does, that is a live defect and it
   blocks the port's only real proof — see
-  [imago's case](../backlog/2026-08-30-imago-daemon-cannot-start-offline.md).
+  [imago's case](../items/imago-daemon-cannot-start-offline.md).
 - **A measured pre-move baseline**, captured as _error lines_, not counts, and
   **name the tsconfig** — the root `-p .` and a spell's own (only some spells
   carry one; glamour's is `plugins/spellbook/skills/glamour/tsconfig.json`) are
@@ -3546,11 +3546,11 @@ cells about import specifiers, because a pinned inventory records specifier
   it, and the floor rises by one on a paragraph you just wrote (three ports did
   this; glamour deleted the import instead and its floor stayed 0).
 - **Mitigation:** there is no shared sweep
-  ([filed](../backlog/2026-09-03-five-seats-each-wrote-their-own-resolve-sweep.md));
-  **write yours, calibrate it red on one planted break, measure its floor before
-  you move anything, and re-measure after each phase.** Never inherit a floor
-  from a document or a peer — five seats measured five floors on one tree, and
-  every difference was the instrument.
+  ([filed](../items/five-seats-each-wrote-their-own-resolve-sweep.md)); **write
+  yours, calibrate it red on one planted break, measure its floor before you
+  move anything, and re-measure after each phase.** Never inherit a floor from a
+  document or a peer — five seats measured five floors on one tree, and every
+  difference was the instrument.
 
 ### Gotcha 8: A hash-only navigation is not a reload (rewrite drives)
 
@@ -3674,10 +3674,10 @@ primitives, a tested `state/` module and a 74-line stylesheet; the daemon serves
 the built `dist/` at `/watch`. A brief-driven implementing agent and a separate
 verify agent; the verifier found one severe regression the author's `fill()`
 drive could not see, and drove five of seven "not driven" rows. Full method in
-[the rewrite journal](../projects/grapevine-conversion/rewrite-journal.md) and
-[the verify journal](../projects/grapevine-conversion/verify-journal.md);
+[the rewrite journal](../features/grapevine-conversion/rewrite-journal.md) and
+[the verify journal](../features/grapevine-conversion/verify-journal.md);
 inventory at
-[behaviour-inventory.md](../projects/grapevine-conversion/behaviour-inventory.md).
+[behaviour-inventory.md](../features/grapevine-conversion/behaviour-inventory.md).
 
 ### Example 6: grapevine — Phase S, the registry, as its own branch
 
@@ -3687,10 +3687,10 @@ spell made a Bun workspace member so the CLI would run at all. Same two-agent
 shape; the verifier found two visible differences the author's twelve-row table
 omitted, two call sites breaking the branch's own new house-style rule, and put
 a number on the dead stylesheet that turned into a ruling. Full method in
-[the shadcn journal](../projects/grapevine-shadcn/shadcn-journal.md) and
-[its verify journal](../projects/grapevine-shadcn/verify-journal.md); the
-options not taken for where the config lives are in
-[the decision log](../projects/grapevine-shadcn/decision-log.md).
+[the shadcn journal](../items/grapevine-shadcn/shadcn-journal.md) and
+[its verify journal](../items/grapevine-shadcn/verify-journal.md); the options
+not taken for where the config lives are in
+[the decision log](../items/grapevine-shadcn/decision-log.md).
 
 ### Example 8: bounty — three entries, and a guarantee that did not reach
 
@@ -3745,11 +3745,11 @@ one whose daemon has no spawner** — so it is the run that exercised the kit's 
 mode override (documented since the kit was written, never used until now) and
 the run that found where Contract 5 lands when nothing spawns the daemon. Full
 record in
-[the rewrite journal](../projects/digestify-conversion/rewrite-journal.md);
+[the rewrite journal](../items/digestify-conversion/rewrite-journal.md);
 inventory at
-[behaviour-inventory.md](../projects/digestify-conversion/behaviour-inventory.md)
-— 138 rows, 128 driven in a browser, five `not:` — and the options not taken in
-[the decision log](../projects/digestify-conversion/decision-log.md).
+[behaviour-inventory.md](../items/digestify-conversion/behaviour-inventory.md) —
+138 rows, 128 driven in a browser, five `not:` — and the options not taken in
+[the decision log](../items/digestify-conversion/decision-log.md).
 
 ### Example 10: mind-mapper — the last port, and the one where the kit was the SOURCE
 
@@ -3789,7 +3789,7 @@ for the component you are changing is part of the blast radius of changing it.**
 - [`seams.md`](../../.anthill/dev/seams.md) — Contracts 1–5 (serve, `dist/`
   layout, backend-as-source, the `src/` split, cwd pinning), 16 (relocation
   fallout), 17 (the `src/<spell>/` ward gap), 18 (reproduction).
-- [spell-kit project ledger](../projects/_archive/spell-kit/README.md) —
+- [spell-kit project ledger](../features/_archive/spell-kit/README.md) —
   vocabulary; note that `shared/`, `ward`, `pinned` and _the gate_ each mean
   something narrower there, and several numbering schemes reuse the same digits.
 - [`grimoire/house-style.md`](../../grimoire/house-style.md) — the
@@ -4013,7 +4013,7 @@ port **taught**, not what it confirmed.
   fatal handler will eat the dev import's error; an `url()` in the sheet is a
   build input; and a test file under `surface/` changes the shipped stylesheet.
   Full record in
-  [the rewrite journal](../projects/bounty-conversion/rewrite-journal.md).
+  [the rewrite journal](../items/bounty-conversion/rewrite-journal.md).
 - **2026-09-07** — **digestify, the third rewrite, and the LAST — the population
   is closed.** Taught, mostly by being the first subject with no reactive shell:
   R2 and R3 have a second shape for an imperative page (sort the INVENTORY, not

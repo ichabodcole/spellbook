@@ -7,7 +7,7 @@
  * assertion, and what makes this module safe to bundle into any spell's artifact.
  *
  * Extracted 2026-09-08 (Phase 1b chapter 2) from the eight `Bun.serve` backends
- * censused in `docs/investigations/2026-09-08-daemon-spine-census.md`, which
+ * censused in `docs/items/daemon-spine-census/write-up.md`, which
  * measured `resolveMode` as byte-identical in all eight (the only md5 difference
  * being the `export` keyword), the content-type map as differing in exactly
  * one cell, and the file half of `serveDist` as identical in five.

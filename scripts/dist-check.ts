@@ -100,7 +100,7 @@ export function trackedFiles(pathspecs: string[], root: string = REPO_ROOT): str
  * build-input source — no path under `surface/` and no `bunfig.toml`. Source-free
  * by the FILE LIST (Contract 20), asserted over the tracked subtree, because a
  * successor present at `src/<spell>/` is only HALF a check: a copy-not-move
- * passes both halves (`docs/backlog/2026-09-02-nothing-can-tell-a-move-from-a-copy.md`).
+ * passes both halves (`docs/items/nothing-can-tell-a-move-from-a-copy.md`).
  * Returns the offending tracked paths, named, so the remedy is per-path.
  *
  * ⛔ THE CONTROL FOR THIS FUNCTION MUST GO THROUGH THIS FUNCTION. A control that
