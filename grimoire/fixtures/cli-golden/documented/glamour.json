@@ -1,0 +1,122 @@
+[
+  {
+    "line": 183,
+    "argv": ["open"]
+  },
+  {
+    "line": 184,
+    "argv": ["tail"]
+  },
+  {
+    "line": 185,
+    "argv": ["state"]
+  },
+  {
+    "line": 186,
+    "argv": ["intent", "hello"]
+  },
+  {
+    "line": 187,
+    "argv": ["annotate", "item1", "hello"]
+  },
+  {
+    "line": 188,
+    "argv": ["say", "hello"]
+  },
+  {
+    "line": 189,
+    "argv": ["section", "golden"]
+  },
+  {
+    "line": 189,
+    "argv": ["section", "golden", "--colors", "#ffffff:golden"]
+  },
+  {
+    "line": 190,
+    "argv": ["status", "on", "hello"]
+  },
+  {
+    "line": 190,
+    "argv": ["status", "off"]
+  },
+  {
+    "line": 191,
+    "argv": [
+      "gen",
+      "--url",
+      "http://127.0.0.1:9/a.png",
+      "--prompt",
+      "hello",
+      "--model",
+      "golden",
+      "--round",
+      "5"
+    ]
+  },
+  {
+    "line": 191,
+    "argv": [
+      "gen",
+      "--file",
+      "golden.png",
+      "--prompt",
+      "hello",
+      "--model",
+      "golden",
+      "--round",
+      "5"
+    ]
+  },
+  {
+    "line": 191,
+    "argv": ["gen", "--src", "golden.png", "--prompt", "hello", "--model", "golden", "--round", "5"]
+  },
+  {
+    "line": 192,
+    "argv": ["gen-cost", "item1", "--cost", "5"]
+  },
+  {
+    "line": 193,
+    "argv": ["gen-meta", "item1", "--prompt", "hello"]
+  },
+  {
+    "line": 194,
+    "argv": ["focus", "item1", "--note", "hello"]
+  },
+  {
+    "line": 195,
+    "argv": ["style-save", "golden"]
+  },
+  {
+    "line": 196,
+    "argv": ["style-archive", "item1"]
+  },
+  {
+    "line": 197,
+    "argv": ["tray"]
+  },
+  {
+    "line": 198,
+    "argv": ["close"]
+  },
+  {
+    "line": 199,
+    "argv": ["info"]
+  },
+  {
+    "line": 200,
+    "argv": ["schema"]
+  },
+  {
+    "line": 201,
+    "argv": ["help"]
+  },
+  {
+    "line": 202,
+    "argv": ["--version"]
+  },
+  {
+    "line": 235,
+    "argv": ["tail", "--since", "12"]
+  }
+]

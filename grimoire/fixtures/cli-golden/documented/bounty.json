@@ -1,0 +1,188 @@
+[
+  {
+    "line": 138,
+    "argv": ["open", "--title", "hello", "--timeout", "5"]
+  },
+  {
+    "line": 139,
+    "argv": ["add", "hello", "--status", "doing"]
+  },
+  {
+    "line": 140,
+    "argv": ["state"]
+  },
+  {
+    "line": 141,
+    "argv": ["close"]
+  },
+  {
+    "line": 156,
+    "argv": ["open", "--pin"]
+  },
+  {
+    "line": 170,
+    "argv": ["open", "--session-key", "k", "--fresh"]
+  },
+  {
+    "line": 178,
+    "argv": ["open", "--pin", "--session-key", "k"]
+  },
+  {
+    "line": 197,
+    "argv": ["open", "--session-key", "k"]
+  },
+  {
+    "line": 219,
+    "argv": ["add", "--session-key", "k", "--", "hello"]
+  },
+  {
+    "line": 220,
+    "argv": ["add", "--", "--session-key", "k", "hello"]
+  },
+  {
+    "line": 224,
+    "argv": ["open", "--title", "hello", "--timeout", "5", "--no-open"]
+  },
+  {
+    "line": 225,
+    "argv": ["state", "--owner", "golden-agent"]
+  },
+  {
+    "line": 225,
+    "argv": ["state", "--mine", "--as", "golden-agent"]
+  },
+  {
+    "line": 226,
+    "argv": ["tail", "--since", "5", "--once", "--owner", "golden-agent", "--as", "golden-agent"]
+  },
+  {
+    "line": 226,
+    "argv": ["tail", "--since", "5", "--once", "--mine", "--as", "golden-agent"]
+  },
+  {
+    "line": 227,
+    "argv": [
+      "add",
+      "hello",
+      "--status",
+      "todo",
+      "--notes",
+      "hello",
+      "--owner",
+      "golden-agent",
+      "--tag",
+      "a,b",
+      "--size",
+      "S",
+      "--expect",
+      "5",
+      "--id",
+      "t1"
+    ]
+  },
+  {
+    "line": 228,
+    "argv": [
+      "update",
+      "t1",
+      "--status",
+      "doing",
+      "--title",
+      "hello",
+      "--notes",
+      "hello",
+      "--owner",
+      "golden-agent",
+      "--tag",
+      "a,b",
+      "--size",
+      "S",
+      "--expect",
+      "5"
+    ]
+  },
+  {
+    "line": 229,
+    "argv": ["claim", "t1", "--as", "golden-agent"]
+  },
+  {
+    "line": 230,
+    "argv": ["block", "t1", "--on", "t2"]
+  },
+  {
+    "line": 230,
+    "argv": ["unblock", "t1", "--on", "t2"]
+  },
+  {
+    "line": 231,
+    "argv": ["remove", "t1"]
+  },
+  {
+    "line": 232,
+    "argv": ["message", "hello"]
+  },
+  {
+    "line": 232,
+    "argv": ["message", "--stdin"],
+    "stdin": "hello"
+  },
+  {
+    "line": 233,
+    "argv": ["init", "--title", "hello"]
+  },
+  {
+    "line": 234,
+    "argv": ["list"]
+  },
+  {
+    "line": 235,
+    "argv": ["info"]
+  },
+  {
+    "line": 235,
+    "argv": ["sessions"]
+  },
+  {
+    "line": 235,
+    "argv": ["help"]
+  },
+  {
+    "line": 242,
+    "argv": ["add", "--stdin", "--status", "doing"],
+    "stdin": "hello"
+  },
+  {
+    "line": 254,
+    "argv": ["update", "t1", "--stdin"],
+    "stdin": "hello"
+  },
+  {
+    "line": 255,
+    "argv": ["update", "t1", "--notes", "hello"]
+  },
+  {
+    "line": 278,
+    "argv": ["init", "--title", "hello", "--stdin-tasks"],
+    "stdin": "[{\"id\":\"t1\",\"title\":\"hello\",\"status\":\"todo\"}]"
+  },
+  {
+    "line": 343,
+    "argv": ["tail", "--session", "s1"]
+  },
+  {
+    "line": 364,
+    "argv": ["tail", "--since", "12"]
+  },
+  {
+    "line": 466,
+    "argv": ["open", "--port", "5", "--host", "127.0.0.1", "--id", "s1"]
+  },
+  {
+    "line": 488,
+    "argv": ["open", "--restore", "s1"]
+  },
+  {
+    "line": 515,
+    "argv": ["open", "--restore", "s1.pre-123.bak"]
+  }
+]

@@ -1,0 +1,108 @@
+[
+  {
+    "line": 78,
+    "argv": ["open"]
+  },
+  {
+    "line": 79,
+    "argv": ["sessions"]
+  },
+  {
+    "line": 80,
+    "argv": ["tail"]
+  },
+  {
+    "line": 81,
+    "argv": ["state"]
+  },
+  {
+    "line": 82,
+    "argv": ["say", "hello"]
+  },
+  {
+    "line": 83,
+    "argv": ["propose", "hello"]
+  },
+  {
+    "line": 84,
+    "argv": ["ask", "hello"]
+  },
+  {
+    "line": 85,
+    "argv": ["batch", "golden.png"]
+  },
+  {
+    "line": 85,
+    "argv": ["batch", "--kind", "generate", "golden.png"]
+  },
+  {
+    "line": 85,
+    "argv": ["batch", "--kind", "edit", "--edited-from", "v1", "golden.png"]
+  },
+  {
+    "line": 86,
+    "argv": ["focus", "b1", "v1"]
+  },
+  {
+    "line": 87,
+    "argv": ["context", "style", "golden"]
+  },
+  {
+    "line": 88,
+    "argv": ["status", "on", "hello"]
+  },
+  {
+    "line": 88,
+    "argv": ["status", "off"]
+  },
+  {
+    "line": 89,
+    "argv": ["cost", "hello"]
+  },
+  {
+    "line": 90,
+    "argv": ["handoff", "hello"]
+  },
+  {
+    "line": 90,
+    "argv": ["handoff", "--clear"]
+  },
+  {
+    "line": 91,
+    "argv": ["close"]
+  },
+  {
+    "line": 91,
+    "argv": ["info"]
+  },
+  {
+    "line": 91,
+    "argv": ["help"]
+  },
+  {
+    "line": 98,
+    "argv": ["context", "prompt", "golden", "--content", "hello", "--link", "quickPrompts"]
+  },
+  {
+    "line": 115,
+    "argv": ["tail", "--session", "s1"]
+  },
+  {
+    "line": 128,
+    "argv": ["tail", "--since", "12"]
+  },
+  {
+    "line": 196,
+    "argv": [
+      "context",
+      "style",
+      "golden",
+      "--content",
+      "hello",
+      "--image",
+      "golden.png",
+      "--link",
+      "active"
+    ]
+  }
+]

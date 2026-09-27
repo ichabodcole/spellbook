@@ -5,14 +5,27 @@
 
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { parseArgs as nodeParseArgs } from "node:util";
 import {
-  parseArgs,
+  CLI_OPTIONS,
+  cli,
   RECOGNIZED_FLAGS,
   VALID_CONTEXT_KINDS,
   VALID_CONTEXT_LINKS,
-  VERB_ALIASES,
   VERBS,
 } from "./cli";
+
+/** The split the CLI's parser makes (the kit registry parses strict against
+ *  imago's one options table), for exercising the flag forms directly. */
+function parseArgs(args: string[]): { pos: string[]; flags: Record<string, string | boolean> } {
+  const { values, positionals } = nodeParseArgs({
+    args,
+    options: CLI_OPTIONS,
+    strict: true,
+    allowPositionals: true,
+  });
+  return { pos: positionals, flags: values as Record<string, string | boolean> };
+}
 
 test("space form: --key value", () => {
   const { pos, flags } = parseArgs(["--kind", "edit", "src1", "src2"]);
@@ -114,33 +127,68 @@ test("context verb: tags flag splits into array candidates", () => {
 
 // ── register A1 · the declaration is bound to the behaviour ──────────────────
 //
-// ⛔ `VERBS` IS WHAT `choices` ON AN UNKNOWN VERB IS BUILT FROM, and it is a
-// DECLARATION while the `switch (verb)` is the BEHAVIOUR. Nothing in the type
-// system ties them, so a verb added to one and not the other makes imago either
-// advertise a verb it cannot run or run one it will not name — and `choices` is
-// only worth emitting because a caller can trust it.
-//
-// magpie's cell, ported (`src/magpie/backend/cli.test.ts`, "VERB_SPEC is the
-// dispatch switch"). The SOURCE is parsed rather than the module inspected,
-// because a case label is not a value. Calibrated both directions.
-test("VERBS is the dispatch switch — neither may grow a verb alone (A1)", () => {
-  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
-  const dispatch = src.slice(src.indexOf("switch (verb) {"));
-  const cases = new Set(
-    [...dispatch.matchAll(/^\s{4}case "(-{0,2}[a-z-]+)":/gm)].map((m) => m[1] as string),
+// The dispatcher, help, `choices` and `schema` are all the kit registry's walk
+// of ONE table, so the old "VERBS is the dispatch switch" source-parse has
+// nothing left to bind. What remains worth pinning: the roster is the table,
+// `schema` declares every verb, and the CLI never grows a verb unnoticed.
+test("VERBS is the registry's roster, and schema declares every verb (A1)", () => {
+  expect([...VERBS].sort()).toEqual(
+    [
+      "analyze",
+      "ask",
+      "batch",
+      "close",
+      "context",
+      "cost",
+      "focus",
+      "handoff",
+      "help",
+      "info",
+      "open",
+      "propose",
+      "say",
+      "schema",
+      "select",
+      "sessions",
+      "state",
+      "status",
+      "tail",
+      "version",
+    ].sort(),
   );
-  expect([...cases].sort()).toEqual([...VERBS, ...VERB_ALIASES].sort());
+  const declared = cli
+    .declaration()
+    .commands.map((c) => c.path.join(" "))
+    .filter((p) => p !== "");
+  expect(declared.sort()).toEqual([...VERBS].sort());
 });
 
-// `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS`, so the only way it can lie
-// is if the parser stops reading that object.
-test("the parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
-  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
-  expect(src).toContain("options: CLI_OPTIONS,");
-  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
+test("RECOGNIZED_FLAGS is the options table the registry parses against (A1)", () => {
+  expect([...RECOGNIZED_FLAGS]).toEqual(Object.keys(CLI_OPTIONS).map((k) => `--${k}`));
 });
 
-// The two ENUMERATED types are now single arrays, checked and published. These
+// Per-verb sets: a verb accepts only its own flags. `--session` rides every
+// verb that talks to a session, and none that does not.
+test("each verb's accepted flags are its own row's (per-verb sets)", () => {
+  expect(cli.flagsFor("sessions")).toEqual(["--human"]);
+  expect(cli.flagsFor("open")).toEqual(["--no-open", "--restore", "--timeout", "--title"]);
+  expect(cli.flagsFor("handoff")).toEqual(["--clear", "--session"]);
+  expect(cli.flagsFor("say")).toEqual(["--session"]);
+});
+
+// ⚠ FLAG-DEPENDENT ARITY. The declaration can only mark handoff's <text>
+// optional; the row's `check` refuses the two combinations it cannot express
+// Both refusals throw before the row runs, so no session is ever looked up.
+test("handoff: <text> is declared optional (the check carries the rest)", async () => {
+  const row = cli.declaration().commands.find((c) => c.path.join(" ") === "handoff");
+  expect(row?.positionals).toEqual([{ name: "text", required: false, variadic: true }]);
+  await expect(cli.dispatch(["handoff"])).rejects.toMatchObject({ kind: "usage" });
+  await expect(cli.dispatch(["handoff", "--clear", "hi"])).rejects.toMatchObject({
+    kind: "usage",
+  });
+});
+
+// The two ENUMERATED types are single arrays, checked and published. These
 // cells are what stops a member being added to the check and not the set.
 test("context's enumerated sets are the ones the checks read (A1)", () => {
   const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");

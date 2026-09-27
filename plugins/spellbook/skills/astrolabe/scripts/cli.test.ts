@@ -112,7 +112,7 @@ describe("cli ↔ daemon", () => {
   test("an unknown verb fails with exit 2", async () => {
     const r = await runCli(home, ["bogus"]);
     expect(r.code).toBe(2);
-    expect(r.err).toMatch(/unknown verb/);
+    expect(r.err).toMatch(/unknown command/);
   });
 
   // The acc L0 contract (2026-08-26 session): failures leave stdout empty and

@@ -1,0 +1,1570 @@
+{
+  "spell": "glamour",
+  "launcher": "scripts/cli.ts",
+  "verbCount": 20,
+  "verbs": [
+    "open",
+    "tail",
+    "state",
+    "intent",
+    "annotate",
+    "say",
+    "section",
+    "status",
+    "gen",
+    "gen-cost",
+    "gen-meta",
+    "focus",
+    "style-save",
+    "style-archive",
+    "tray",
+    "close",
+    "info",
+    "version",
+    "schema",
+    "help"
+  ],
+  "excluded": {
+    "open": "starts a daemon (and may open a browser)",
+    "tail": "a long-running stream (tail); never ends on its own within the run"
+  },
+  "excludedInvocations": [
+    {
+      "argv": ["open"],
+      "doc": "SKILL.md:183",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["tail"],
+      "doc": "SKILL.md:184",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--since", "12"],
+      "doc": "SKILL.md:235",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    }
+  ],
+  "invocationCount": 93,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "tail",
+        "state",
+        "intent",
+        "annotate",
+        "say",
+        "section",
+        "status",
+        "gen",
+        "gen-cost",
+        "gen-meta",
+        "focus",
+        "style-save",
+        "style-archive",
+        "tray",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "glamour — a grounded visual conversation surface.",
+        "",
+        "  open [--title ..] [--intent ..] [--no-open] [--timeout ..] [--start-timeout ..] [--restore ..]",
+        "                                                spawn a session (opens the browser); prints {url, port, session_id}",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw incl. base64)",
+        "  intent <text...>                              update the session intent",
+        "  annotate <id> <text...>                       write agent annotation onto a library item",
+        "  say <text...> [--kind ..]                     post agent dialogue into the conversation (--kind info|working|result|error)",
+        "  section <key> [--status ..] [--content ..] [--prompts ..] [--colors ..]",
+        "                                                shape a style-guide section (--prompts a||b; --colors \"#hex:Name||#hex:Name\")",
+        "  status <on|off> [text...]                     show/hide the working spinner",
+        "  gen [--url ..] [--file ..] [--src ..] [--prompt ..] [--model ..] [--round ..] [--seed ..] [--cost ..] [--label ..] [--custom ..]",
+        "                                                post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
+        "  gen-cost <id> [--cost ..]                     backfill a generated image's cost (--cost <n> required)",
+        "  gen-meta <id> [--prompt ..] [--custom ..]     backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
+        "  focus <id...> [--note ..]                     scope the focus lens to these items (+ --note to ask)",
+        "  style-save <label...>                         codify the current style → project tray",
+        "  style-archive <id> [--unarchive]              archive (or --unarchive) a saved style",
+        "  tray                                          list the project's saved styles",
+        "  close                                         shut down the session",
+        "  info                                          print the resolved discovery JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row; a recognized flag on the wrong",
+        "  verb is refused, and the rejection lists the verb's own flags.",
+        "",
+        "  Output: every verb prints JSON on stdout by default, one document per answer —",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict) — except tail, which waits for a",
+        "  session instead of failing and writes its retry/keepalive notes to stderr as",
+        "  '#'-prefixed prose."
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "glamour — a grounded visual conversation surface.",
+        "",
+        "  open [--title ..] [--intent ..] [--no-open] [--timeout ..] [--start-timeout ..] [--restore ..]",
+        "                                                spawn a session (opens the browser); prints {url, port, session_id}",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw incl. base64)",
+        "  intent <text...>                              update the session intent",
+        "  annotate <id> <text...>                       write agent annotation onto a library item",
+        "  say <text...> [--kind ..]                     post agent dialogue into the conversation (--kind info|working|result|error)",
+        "  section <key> [--status ..] [--content ..] [--prompts ..] [--colors ..]",
+        "                                                shape a style-guide section (--prompts a||b; --colors \"#hex:Name||#hex:Name\")",
+        "  status <on|off> [text...]                     show/hide the working spinner",
+        "  gen [--url ..] [--file ..] [--src ..] [--prompt ..] [--model ..] [--round ..] [--seed ..] [--cost ..] [--label ..] [--custom ..]",
+        "                                                post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
+        "  gen-cost <id> [--cost ..]                     backfill a generated image's cost (--cost <n> required)",
+        "  gen-meta <id> [--prompt ..] [--custom ..]     backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
+        "  focus <id...> [--note ..]                     scope the focus lens to these items (+ --note to ask)",
+        "  style-save <label...>                         codify the current style → project tray",
+        "  style-archive <id> [--unarchive]              archive (or --unarchive) a saved style",
+        "  tray                                          list the project's saved styles",
+        "  close                                         shut down the session",
+        "  info                                          print the resolved discovery JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row; a recognized flag on the wrong",
+        "  verb is refused, and the rejection lists the verb's own flags.",
+        "",
+        "  Output: every verb prints JSON on stdout by default, one document per answer —",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict) — except tail, which waits for a",
+        "  session instead of failing and writes its retry/keepalive notes to stderr as",
+        "  '#'-prefixed prose."
+      ]
+    },
+    {
+      "argv": ["help"],
+      "doc": "SKILL.md:201",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "glamour — a grounded visual conversation surface.",
+        "",
+        "  open [--title ..] [--intent ..] [--no-open] [--timeout ..] [--start-timeout ..] [--restore ..]",
+        "                                                spawn a session (opens the browser); prints {url, port, session_id}",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw incl. base64)",
+        "  intent <text...>                              update the session intent",
+        "  annotate <id> <text...>                       write agent annotation onto a library item",
+        "  say <text...> [--kind ..]                     post agent dialogue into the conversation (--kind info|working|result|error)",
+        "  section <key> [--status ..] [--content ..] [--prompts ..] [--colors ..]",
+        "                                                shape a style-guide section (--prompts a||b; --colors \"#hex:Name||#hex:Name\")",
+        "  status <on|off> [text...]                     show/hide the working spinner",
+        "  gen [--url ..] [--file ..] [--src ..] [--prompt ..] [--model ..] [--round ..] [--seed ..] [--cost ..] [--label ..] [--custom ..]",
+        "                                                post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
+        "  gen-cost <id> [--cost ..]                     backfill a generated image's cost (--cost <n> required)",
+        "  gen-meta <id> [--prompt ..] [--custom ..]     backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
+        "  focus <id...> [--note ..]                     scope the focus lens to these items (+ --note to ask)",
+        "  style-save <label...>                         codify the current style → project tray",
+        "  style-archive <id> [--unarchive]              archive (or --unarchive) a saved style",
+        "  tray                                          list the project's saved styles",
+        "  close                                         shut down the session",
+        "  info                                          print the resolved discovery JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row; a recognized flag on the wrong",
+        "  verb is refused, and the rejection lists the verb's own flags.",
+        "",
+        "  Output: every verb prints JSON on stdout by default, one document per answer —",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict) — except tail, which waits for a",
+        "  session instead of failing and writes its retry/keepalive notes to stderr as",
+        "  '#'-prefixed prose."
+      ]
+    },
+    {
+      "argv": ["--version"],
+      "doc": "SKILL.md:202",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "glamour",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["-V"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "glamour",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "glamour",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["schema"],
+      "doc": "SKILL.md:200",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "verb",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--intent",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--restore",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--start-timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["intent"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["annotate"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["say"],
+            "args": [
+              {
+                "name": "--kind",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["section"],
+            "args": [
+              {
+                "name": "--colors",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--content",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--prompts",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "key",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["status"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "on|off",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["gen"],
+            "args": [
+              {
+                "name": "--cost",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--custom",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--label",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--model",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--prompt",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--round",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--seed",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--src",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--url",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["gen-cost"],
+            "args": [
+              {
+                "name": "--cost",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["gen-meta"],
+            "args": [
+              {
+                "name": "--custom",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--prompt",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["focus"],
+            "args": [
+              {
+                "name": "--note",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["style-save"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "label",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["style-archive"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--unarchive",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["tray"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "tail",
+        "state",
+        "intent",
+        "annotate",
+        "say",
+        "section",
+        "status",
+        "gen",
+        "gen-cost",
+        "gen-meta",
+        "focus",
+        "style-save",
+        "style-archive",
+        "tray",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "tail",
+        "state",
+        "intent",
+        "annotate",
+        "say",
+        "section",
+        "status",
+        "gen",
+        "gen-cost",
+        "gen-meta",
+        "focus",
+        "style-save",
+        "style-archive",
+        "tray",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["open", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--intent", "--no-open", "--restore", "--start-timeout", "--timeout", "--title"]
+    },
+    {
+      "argv": ["open", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--intent", "--no-open", "--restore", "--start-timeout", "--timeout", "--title"]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--once", "--session", "--since"]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--once", "--session", "--since"]
+    },
+    {
+      "argv": ["state", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--full", "--session"]
+    },
+    {
+      "argv": ["state", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--full", "--session"]
+    },
+    {
+      "argv": ["intent", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["intent", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["annotate", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["annotate", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["say", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--kind", "--session"]
+    },
+    {
+      "argv": ["say", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--kind", "--session"]
+    },
+    {
+      "argv": ["section", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--colors", "--content", "--prompts", "--session", "--status"]
+    },
+    {
+      "argv": ["section", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--colors", "--content", "--prompts", "--session", "--status"]
+    },
+    {
+      "argv": ["status", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["status", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["gen", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--cost",
+        "--custom",
+        "--file",
+        "--label",
+        "--model",
+        "--prompt",
+        "--round",
+        "--seed",
+        "--session",
+        "--src",
+        "--url"
+      ]
+    },
+    {
+      "argv": ["gen", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--cost",
+        "--custom",
+        "--file",
+        "--label",
+        "--model",
+        "--prompt",
+        "--round",
+        "--seed",
+        "--session",
+        "--src",
+        "--url"
+      ]
+    },
+    {
+      "argv": ["gen-cost", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--cost", "--session"]
+    },
+    {
+      "argv": ["gen-cost", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--cost", "--session"]
+    },
+    {
+      "argv": ["gen-meta", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--custom", "--prompt", "--session"]
+    },
+    {
+      "argv": ["gen-meta", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--custom", "--prompt", "--session"]
+    },
+    {
+      "argv": ["focus", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--note", "--session"]
+    },
+    {
+      "argv": ["focus", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--note", "--session"]
+    },
+    {
+      "argv": ["style-save", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["style-save", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["style-archive", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session", "--unarchive"]
+    },
+    {
+      "argv": ["style-archive", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session", "--unarchive"]
+    },
+    {
+      "argv": ["tray", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["tray", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["close", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["close", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["state"],
+      "doc": "SKILL.md:185",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state", "--full"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["intent", "hello", "world"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["annotate", "item1", "hello"],
+      "doc": "SKILL.md:187",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "hello", "--kind", "info"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "hello", "--kind=working"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "hello", "--kind", "info", "--kind", "result"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "section",
+        "palette",
+        "--status",
+        "draft",
+        "--content",
+        "hello",
+        "--prompts",
+        "a||b",
+        "--colors",
+        "#fff:White||#000:Black"
+      ],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["section", "palette", "--status", "draft", "--status", "final"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["status", "on", "working"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["status", "off"],
+      "doc": "SKILL.md:190",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "gen",
+        "--url",
+        "http://127.0.0.1:9/a.png",
+        "--prompt",
+        "p",
+        "--model",
+        "m",
+        "--round",
+        "1",
+        "--seed",
+        "1",
+        "--cost",
+        "0.1",
+        "--label",
+        "l",
+        "--custom",
+        "c"
+      ],
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": ["gen", "--file", "golden.png", "--prompt", "p", "--model", "m", "--round", "1"],
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": ["gen", "--src", "data:x", "--prompt", "p", "--model", "m", "--round", "1"],
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": ["gen-cost", "item1", "--cost", "0.1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["gen-meta", "item1", "--prompt", "p", "--custom", "c"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["focus", "item1", "item2", "--note", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["style-save", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["style-archive", "item1", "--unarchive"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["tray"],
+      "doc": "SKILL.md:197",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["close"],
+      "doc": "SKILL.md:198",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["info"],
+      "doc": "SKILL.md:199",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--session", "s1", "say", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--session", "s1", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--session=s1", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["tray", "--kind", "info"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["say", "--", "--x"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--", "text", "--session", "s1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["intent", "hello"],
+      "doc": "SKILL.md:186",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "hello"],
+      "doc": "SKILL.md:188",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["section", "golden"],
+      "doc": "SKILL.md:189",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["section", "golden", "--colors", "#ffffff:golden"],
+      "doc": "SKILL.md:189",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["status", "on", "hello"],
+      "doc": "SKILL.md:190",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "gen",
+        "--url",
+        "http://127.0.0.1:9/a.png",
+        "--prompt",
+        "hello",
+        "--model",
+        "golden",
+        "--round",
+        "5"
+      ],
+      "doc": "SKILL.md:191",
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": [
+        "gen",
+        "--file",
+        "golden.png",
+        "--prompt",
+        "hello",
+        "--model",
+        "golden",
+        "--round",
+        "5"
+      ],
+      "doc": "SKILL.md:191",
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": [
+        "gen",
+        "--src",
+        "golden.png",
+        "--prompt",
+        "hello",
+        "--model",
+        "golden",
+        "--round",
+        "5"
+      ],
+      "doc": "SKILL.md:191",
+      "exit": 1,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "internal"
+    },
+    {
+      "argv": ["gen-cost", "item1", "--cost", "5"],
+      "doc": "SKILL.md:192",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["gen-meta", "item1", "--prompt", "hello"],
+      "doc": "SKILL.md:193",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["focus", "item1", "--note", "hello"],
+      "doc": "SKILL.md:194",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["style-save", "golden"],
+      "doc": "SKILL.md:195",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["style-archive", "item1"],
+      "doc": "SKILL.md:196",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    }
+  ]
+}

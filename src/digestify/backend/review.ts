@@ -45,7 +45,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs } from "node:util";
+import { defineCli, type Invocation } from "../../kit/cli/registry.ts";
 import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors.ts";
 import { shouldIdleClose } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
@@ -454,20 +454,16 @@ function guessMime(name: string): string {
 }
 
 /**
- * The review itself. Every failure below RAISES through `die` rather than
- * returning a number — see `main`, which is the one place a `CliError` becomes
- * an exit code.
- */
-/**
- * The one flag map — lifted out of the `parseArgs` call so a REJECTION can
- * name the same set the parser accepts (register A1). Inline, the accepted set
- * existed only inside the invocation that consumed it, and the rejection could
- * do no better than repeat node's sentence about the flag that was wrong.
+ * The one flag map. It is the options table of the kit registry's ROOT row
+ * (`cli`, below), so the parser, the unknown-flag rejection's `choices`, the
+ * rendered help and the `schema` declaration all read it (register A1, acc
+ * step 6).
  *
- * ⚠ digestify has no verbs, so there is no verb roster to declare: its one
- * entry takes flags only (`allowPositionals: false`). That is why this file's
- * qualifying set is TWO sites — the flag rejection and `--theme` — and not the
- * four astrolabe has.
+ * ⚠ digestify has no verbs: its one entry is a verbless `root` that takes
+ * flags only (`allowPositionals: false`) and reads the document on stdin. The
+ * registry adds `help`, `version` and `schema`, which as `argv[0]` select their
+ * own rows; the root takes no positionals, so none of them can collide with a
+ * real invocation.
  */
 const CLI_OPTIONS = {
   file: { type: "string" },
@@ -481,45 +477,17 @@ const CLI_OPTIONS = {
   id: { type: "string" },
 } as const;
 
-/** Every flag the entry recognises, as the caller would type it. */
-export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
-  .map((k) => `--${k}`)
-  .sort();
+type Flag = keyof typeof CLI_OPTIONS;
 
-async function runReview(argv: string[]): Promise<number> {
-  let parsed: ReturnType<typeof parseArgs>;
-  try {
-    parsed = parseArgs({
-      args: argv,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: false,
-    });
-  } catch (e) {
-    // A bad flag is the most ordinary failure this entry has, and it is the
-    // caller's to fix by changing the command — `usage`, which the taxonomy
-    // already exits 2 for, so this site changes its ENVELOPE and not its code.
-    //
-    // ⛔ AND IT NOW NAMES THE SET (A1), but only for an UNKNOWN OPTION: node's
-    // other parse rejections mean a recognised flag was given a value from an
-    // open set, and answering that with the flag roster points the caller at
-    // the half that was right. Routed on node's error CODE, not its prose.
-    const code =
-      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
-    die(
-      e instanceof Error ? e.message : String(e),
-      "usage",
-      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
-        ? // ⚠ NO `hint`, AND THAT IS A DECISION (A1's second half). digestify
-          // answers no `help` verb and no `--help` flag — there is nothing to
-          // tell the caller to RUN — so the only true next act is "pass one of
-          // these", which `choices` already says. A hint here would be the
-          // ~146 "run help" strings the rule exists to keep out.
-          { choices: [...RECOGNIZED_FLAGS] }
-        : undefined,
-    );
-  }
-  const v = parsed.values;
+/**
+ * The review itself, handed the root row's parsed flags (defaults applied) by
+ * the kit registry. A bad flag never gets here: the registry refuses an unknown
+ * one as `usage` at 2 with the root's flag set as `choices`, and a missing
+ * value as `usage` at 2 with the usage line as `hint`. Every failure below
+ * RAISES through `die` rather than returning a number — see `main`, which is
+ * the one place a `CliError` becomes an exit code.
+ */
+async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
   const theme = v.theme as string;
   if (!VALID_THEMES.includes(theme as (typeof VALID_THEMES)[number])) {
     // `choices` is what the envelope adds that the prose could only imply: the
@@ -987,6 +955,65 @@ async function runReview(argv: string[]): Promise<number> {
   return code;
 }
 
+// The plugin manifest is the one version source (glamour's pattern). From the
+// artifact's address, `SKILL_ROOT` is `<plugin>/skills/digestify`. Absence
+// degrades to "unknown" instead of inventing a number.
+function versionInfo(): { name: string; version: string } {
+  try {
+    const raw = readFileSync(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const pkg = JSON.parse(raw) as { version?: unknown };
+    if (typeof pkg.version === "string") return { name: "digestify", version: pkg.version };
+  } catch {
+    /* fall through to unknown */
+  }
+  return { name: "digestify", version: "unknown" };
+}
+
+// ── THE COMMAND TABLE, ON THE KIT REGISTRY ───────────────────────────
+//
+// One verbless `root` row. The registry adds `help`, `version` and `schema`
+// (and the `--help`/`-h`/`--version`/`-V` interceptors), which as `argv[0]`
+// select their own rows; every other argv, the empty one included, belongs to
+// the root. `cat doc | review.ts` with no arguments is still the review.
+//
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS. A ward can import this module and
+// read `cli.recognizedFlags`, `cli.flagsFor("")` and `cli.declaration()`
+// without serving anything.
+export const cli = defineCli({
+  name: "digestify",
+  summary: "a one-shot browser review; prints the human's answers as JSON.",
+  options: CLI_OPTIONS,
+  root: {
+    flags: Object.keys(CLI_OPTIONS) as Flag[],
+    positionals: [],
+    allowPositionals: false,
+    describe: "review the markdown on stdin (or --file / --reference) in the browser",
+    run: (inv) => {
+      // Digestify's review has no verb name; the envelope's `meta.command` is
+      // the entry, which is what an agent reading a failure has in hand.
+      setCurrentCommand("review");
+      return runReview(inv.flags);
+    },
+  },
+  version: versionInfo,
+  helpFooter: `  Reads the document on stdin unless --file is given; --reference prepends a
+  file's body. Serves a local page, waits for the human to submit, then prints
+  ONE JSON document on stdout: {answers, comments, submitted_at}.
+
+  Flags: --file PATH, --reference PATH, --title TEXT (default "Document Review"),
+  --theme <digestify|cthulhu|classic>, --timeout SECONDS (idle; default 1800,
+  0 = never), --no-open, --port N (default: a free port), --host HOST
+  (default: loopback), --id SLUG (a session id to recover).
+
+  Exit codes: 0 submitted, 124 idle timeout, 130 tab closed after typing
+  (session outcomes, one JSON line on stdout). Failures are one JSON envelope on
+  stderr: 2 usage, 5 not found, 6 the server could not start. 1 is an
+  unclassified throw, with its stack and no envelope.`,
+});
+
+/** Every flag the entry recognises, as the caller would type it. */
+export const RECOGNIZED_FLAGS: readonly string[] = cli.flagsFor("");
+
 /**
  * The ONE place a failure becomes an exit code.
  *
@@ -1020,11 +1047,11 @@ async function runReview(argv: string[]): Promise<number> {
  * throw ends the process at 1 with its stack, which is what it did before.
  */
 async function main(argv: string[]): Promise<number> {
-  // Digestify has one verb and it has no name — the envelope's `meta.command`
-  // is the entry, which is what an agent reading the failure has in hand.
-  setCurrentCommand("review");
+  // `dispatch`, not the registry's `main`: the registry's `main` would report
+  // an unclassified throw as an `internal` envelope, and the rethrow below is
+  // the contract (exit 1 with its stack).
   try {
-    return await runReview(argv);
+    return await cli.dispatch(argv);
   } catch (e) {
     const code = reportCliError(e);
     if (code === null) throw e;

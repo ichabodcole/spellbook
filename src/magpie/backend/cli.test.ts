@@ -9,8 +9,10 @@
 // answered at `CLI` below.
 
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { cutoutFilename, parseArgs, VERB_SPEC } from "./cli";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { cli, cutoutFilename, VERBS } from "./cli";
 
 test("cutoutFilename: the raw crop keeps the bare name; each model gets its own file", () => {
   // crop = the bare name (back-compat with existing slice-phase files)
@@ -31,35 +33,55 @@ test("cutoutFilename: the raw crop keeps the bare name; each model gets its own 
 // not act on: one global registry meant every verb took every other verb's
 // flags at exit 0. These guard the scoping that replaced it.
 
-test("parseArgs: a verb refuses another verb's flag", () => {
+test("flagsFor: a verb does not take another verb's flag", () => {
   // --bbox belongs to element-add. `say` used to accept it silently.
-  expect(() => parseArgs(["--bbox", "1,2,3,4"], "say")).toThrow();
+  expect(cli.flagsFor("say")).not.toContain("--bbox");
   // --pad belongs to extract.
-  expect(() => parseArgs(["--pad", "4"], "close")).toThrow();
+  expect(cli.flagsFor("close")).not.toContain("--pad");
   // ...and the flag is still good where it belongs.
-  expect(parseArgs(["--pad", "4"], "extract").flags.pad).toBe("4");
-  expect(parseArgs(["--bbox", "1,2,3,4"], "element-add").flags.bbox).toBe("1,2,3,4");
+  expect(cli.flagsFor("extract")).toContain("--pad");
+  expect(cli.flagsFor("element-add")).toContain("--bbox");
 });
 
-test("parseArgs: --session is accepted only where there is a session to target", () => {
-  expect(parseArgs(["--session", "abc"], "state").flags.session).toBe("abc");
+test("flagsFor: --session is accepted only where there is a session to target", () => {
+  expect(cli.flagsFor("state")).toContain("--session");
   // open CREATES a session, so it has none to target.
-  expect(() => parseArgs(["--session", "abc"], "open")).toThrow();
-  expect(() => parseArgs(["--session", "abc"], "sessions")).toThrow();
+  expect(cli.flagsFor("open")).not.toContain("--session");
+  expect(cli.flagsFor("sessions")).not.toContain("--session");
 });
 
-test("VERB_SPEC is the dispatch switch — neither may grow a verb alone", () => {
-  // THE BINDING THIS TABLE EXISTS TO BE. VERB_SPEC drives the verb set, the
-  // rejection's `choices` and each verb's parser; the switch drives what runs.
-  // Nothing in the type system ties them together, so a verb added to one and
-  // not the other is exactly the drift the census was built to find — magpie
-  // would advertise a verb it cannot run, or run one it will not name.
-  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
-  const dispatch = src.slice(src.indexOf("switch (verb) {"));
-  const cases = new Set(
-    [...dispatch.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1] as string),
+test("the table is the roster: every verb dispatches and schema declares it", () => {
+  // ONE TABLE, so the old binding test (VERB_SPEC vs the switch) has nothing
+  // left to bind: the registry derives the dispatcher, help, `choices` and the
+  // declaration from the same rows. What is left to pin is the roster itself.
+  expect([...VERBS].sort()).toEqual(
+    [
+      "ask",
+      "close",
+      "cmd",
+      "discover",
+      "element-add",
+      "element-remove",
+      "export",
+      "extract",
+      "help",
+      "info",
+      "open",
+      "say",
+      "schema",
+      "sessions",
+      "source",
+      "state",
+      "status",
+      "tail",
+      "version",
+    ].sort(),
   );
-  expect([...cases].sort()).toEqual(Object.keys(VERB_SPEC).sort());
+  const declared = cli
+    .declaration()
+    .commands.map((c) => c.path.join(" "))
+    .filter(Boolean);
+  expect(declared.sort()).toEqual([...VERBS].sort());
 });
 
 // ── the failure contract, end to end (#acc-B5/B1/C2) ────────────────
@@ -79,8 +101,17 @@ test("VERB_SPEC is the dispatch switch — neither may grow a verb alone", () =>
 const CLI = new URL("../../../plugins/spellbook/skills/magpie/scripts/cli.ts", import.meta.url)
   .pathname;
 
+// A private TMPDIR and MAGPIE_HOME, so a live session on this machine (its
+// pointer is `$TMPDIR/magpie-latest.json`) is never the one a cell reaches:
+// `extract --pad 4` against a real session would cut real slices.
+const HOME = mkdtempSync(join(tmpdir(), "magpie-cli-test-"));
+
 function run(args: string[]): { code: number; stdout: string; stderr: string } {
-  const p = Bun.spawnSync(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe" });
+  const p = Bun.spawnSync(["bun", CLI, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...process.env, TMPDIR: HOME, MAGPIE_HOME: HOME },
+  });
   return {
     code: p.exitCode,
     stdout: new TextDecoder().decode(p.stdout),
@@ -94,6 +125,8 @@ test.each([
   ["unknown flag", ["state", "--acc-not-a-flag"], 2, "usage"],
   ["another verb's flag", ["say", "--bbox", "1,2,3,4"], 2, "usage"],
   ["no session to act on", ["extract", "--pad", "4"], 5, "not_found"],
+  ["a flag before the verb", ["--session", "s1", "state"], 2, "usage"],
+  ["cmd with no body", ["cmd"], 2, "usage"],
 ])("failure contract: %s", (_label, args, expectedCode, expectedKind) => {
   const r = run(args);
   // stdout carries DATA. A failure has none — a caller parsing stdout must see
@@ -110,8 +143,12 @@ test.each([
   expect(doc.error.retryable).toBe(false);
 });
 
-test("failure contract: --version is a data path, not a failure", () => {
-  const r = run(["--version"]);
+test.each([
+  ["--version"],
+  ["-V"],
+  ["version"],
+])("failure contract: %s is a data path, not a failure", (token) => {
+  const r = run([token]);
   expect(r.code).toBe(0);
   expect(r.stderr).toBe("");
   expect(JSON.parse(r.stdout)).toEqual({ name: "magpie", version: expect.any(String) });

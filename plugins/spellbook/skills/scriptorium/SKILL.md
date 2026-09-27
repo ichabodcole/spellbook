@@ -76,7 +76,7 @@ Your work exists as versions until they accept it.
 
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
-before the CLI sees them. Same for `note` and `task`.
+before the CLI sees them. Same for `task`, and `note --quote '<exact text>'`.
 
 ## The loop
 

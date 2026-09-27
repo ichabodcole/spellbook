@@ -1,0 +1,213 @@
+{
+  "formatVersion": "0",
+  "records": [
+    {
+      "path": ["open"],
+      "argv": ["open", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"open: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--fresh\",\"--no-open\",\"--pin\",\"--restore\",\"--session-key\",\"--timeout\",\"--title\"]},\"meta\":{\"command\":\"open\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["state"],
+      "argv": ["state", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"state: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--full\",\"--mine\",\"--owner\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"state\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["tail"],
+      "argv": ["tail", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tail: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--mine\",\"--once\",\"--owner\",\"--session\",\"--session-key\",\"--since\"]},\"meta\":{\"command\":\"tail\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["add"],
+      "argv": ["add", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"add: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--expect\",\"--id\",\"--notes\",\"--owner\",\"--session\",\"--session-key\",\"--size\",\"--status\",\"--stdin\",\"--tag\"]},\"meta\":{\"command\":\"add\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["update"],
+      "argv": ["update", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"update: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--expect\",\"--notes\",\"--owner\",\"--session\",\"--session-key\",\"--size\",\"--status\",\"--stdin\",\"--tag\",\"--title\"]},\"meta\":{\"command\":\"update\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["claim"],
+      "argv": ["claim", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"claim: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"claim\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["block"],
+      "argv": ["block", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"block: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--on\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"block\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["unblock"],
+      "argv": ["unblock", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"unblock: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--on\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"unblock\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["remove"],
+      "argv": ["remove", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"remove\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["message"],
+      "argv": ["message", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"message: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--session\",\"--session-key\",\"--stdin\"]},\"meta\":{\"command\":\"message\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["init"],
+      "argv": ["init", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"init: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--session\",\"--session-key\",\"--stdin-tasks\",\"--title\"]},\"meta\":{\"command\":\"init\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["close"],
+      "argv": ["close", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"close: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--as\",\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"close\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["info"],
+      "argv": ["info", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"info: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --\",\"choices\":[\"--session\",\"--session-key\"]},\"meta\":{\"command\":\"info\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["list"],
+      "argv": ["list", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"list: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --; list takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"list\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["sessions"],
+      "argv": ["sessions", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"sessions: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, use --stdin, or put it after a bare --; sessions takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"sessions\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["version"],
+      "argv": ["version", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"version takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"version\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["schema"],
+      "argv": ["schema", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"schema: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"schema takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"schema\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    },
+    {
+      "path": ["help"],
+      "argv": ["help", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"help: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"help takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"help\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:48:20Z"
+    }
+  ],
+  "identity": {
+    "argv": ["--version"],
+    "exitCode": 0,
+    "streams": "separated",
+    "stdout": "{\"name\":\"bounty\",\"version\":\"3.1.0\"}\n",
+    "stderr": "",
+    "completeness": "complete",
+    "recordedBy": "colereed via acc probe-plan harness, build 4e3b0054, paths derived from the declaration",
+    "recordedAt": "2026-09-27T01:48:20Z"
+  }
+}

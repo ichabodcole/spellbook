@@ -1,0 +1,2463 @@
+{
+  "spell": "grapevine",
+  "launcher": "scripts/cli.ts",
+  "verbCount": 32,
+  "verbs": [
+    "open",
+    "topic",
+    "list",
+    "send",
+    "announce",
+    "pull",
+    "triage",
+    "read",
+    "wait",
+    "who",
+    "alias",
+    "tail",
+    "grep",
+    "close",
+    "reset",
+    "mark",
+    "reopen",
+    "archive",
+    "unarchive",
+    "start",
+    "up",
+    "restart",
+    "roll",
+    "stop",
+    "watch",
+    "reap",
+    "prune",
+    "info",
+    "doctor",
+    "version",
+    "schema",
+    "help"
+  ],
+  "excluded": {
+    "open": "starts a daemon (and may open a browser)",
+    "start": "starts a daemon (and may open a browser)",
+    "up": "starts a daemon (and may open a browser)",
+    "restart": "starts a daemon (and may open a browser); kills a running daemon",
+    "roll": "starts a daemon (and may open a browser); kills a running daemon",
+    "stop": "kills a daemon / writes a respawn hold",
+    "watch": "opens a browser",
+    "reap": "kills daemons found in the machine's process table",
+    "prune": "alias of reap: kills daemons found in the machine's process table",
+    "doctor": "reads the machine's process table (output depends on what else is running)",
+    "tail": "a long-running stream (tail); never ends on its own within the run",
+    "wait": "blocks until a message or its timeout"
+  },
+  "excludedInvocations": [
+    {
+      "argv": ["open", "golden-ch", "--topic", "hello", "--fresh"],
+      "doc": "SKILL.md:215",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "golden-ch"],
+      "doc": "SKILL.md:215",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": [
+        "tail",
+        "golden-ch",
+        "--as",
+        "golden-agent",
+        "--since",
+        "1",
+        "--from-start",
+        "--last",
+        "5",
+        "--human",
+        "--lurk",
+        "--max",
+        "5"
+      ],
+      "doc": "SKILL.md:218",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["wait", "golden-ch", "--as", "golden-agent", "--since", "1", "--timeout", "5"],
+      "doc": "SKILL.md:219",
+      "reason": "blocks until a message or its timeout"
+    },
+    {
+      "argv": ["watch"],
+      "doc": "SKILL.md:229",
+      "reason": "opens a browser"
+    },
+    {
+      "argv": ["watch", "golden-ch"],
+      "doc": "SKILL.md:229",
+      "reason": "opens a browser"
+    },
+    {
+      "argv": ["start"],
+      "doc": "SKILL.md:234",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["up"],
+      "doc": "SKILL.md:234",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["restart", "--force"],
+      "doc": "SKILL.md:235",
+      "reason": "starts a daemon (and may open a browser); kills a running daemon"
+    },
+    {
+      "argv": ["restart", "--yes"],
+      "doc": "SKILL.md:235",
+      "reason": "starts a daemon (and may open a browser); kills a running daemon"
+    },
+    {
+      "argv": ["stop", "--hold", "5"],
+      "doc": "SKILL.md:236",
+      "reason": "kills a daemon / writes a respawn hold"
+    },
+    {
+      "argv": ["stop"],
+      "doc": "SKILL.md:236",
+      "reason": "kills a daemon / writes a respawn hold"
+    },
+    {
+      "argv": ["doctor"],
+      "doc": "SKILL.md:238",
+      "reason": "reads the machine's process table (output depends on what else is running)"
+    },
+    {
+      "argv": ["open", "golden-ch", "--fresh"],
+      "doc": "SKILL.md:383",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["reap", "--force", "--dry-run"],
+      "doc": "SKILL.md:494",
+      "reason": "kills daemons found in the machine's process table"
+    },
+    {
+      "argv": ["prune"],
+      "doc": "SKILL.md:494",
+      "reason": "alias of reap: kills daemons found in the machine's process table"
+    },
+    {
+      "argv": ["roll", "--force"],
+      "doc": "SKILL.md:508",
+      "reason": "starts a daemon (and may open a browser); kills a running daemon"
+    },
+    {
+      "argv": ["roll"],
+      "doc": "SKILL.md:508",
+      "reason": "starts a daemon (and may open a browser); kills a running daemon"
+    },
+    {
+      "argv": ["tail", "golden-ch", "--as", "golden-agent"],
+      "doc": "SKILL.md:616",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["open", "golden-ch", "--as", "golden-agent", "--topic", "hello"],
+      "doc": "SKILL.md:677",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["tail", "golden-ch", "--as", "golden-agent"],
+      "doc": "SKILL.md:678",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "golden-ch", "--from-start"],
+      "doc": "SKILL.md:699",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    }
+  ],
+  "invocationCount": 123,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "topic",
+        "list",
+        "send",
+        "announce",
+        "pull",
+        "triage",
+        "read",
+        "wait",
+        "who",
+        "alias",
+        "tail",
+        "grep",
+        "close",
+        "reset",
+        "mark",
+        "reopen",
+        "archive",
+        "unarchive",
+        "start",
+        "up",
+        "restart",
+        "roll",
+        "stop",
+        "watch",
+        "reap",
+        "prune",
+        "info",
+        "doctor",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "grapevine — agent-to-agent walkie-talkie",
+        "",
+        "Usage:",
+        "  grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)",
+        "  grapevine list",
+        "  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]",
+        "                                    # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)",
+        "  grapevine announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] [<text...>]",
+        "                                    # broadcast one message to every active channel (or --channels)",
+        "  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]",
+        "                                    # ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0 (--human never ends by itself)",
+        "       # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)",
+        "  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)",
+        "  grapevine triage <name>             # full-scan: open messages on top + grouped by_status",
+        "  grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)",
+        "  grapevine reopen <name> <id>        # bounce a message back to open",
+        "  grapevine read <name> <id> [--text]   # one full message by id (--text = prose)",
+        "  grapevine wait <name> [--since <id>] [--timeout <s>]",
+        "  grapevine grep <name> <pattern> [--literal] [--from <alias>]",
+        "  grapevine topic <name> [<text>]   # no text → read current; with text → update",
+        "  grapevine who <name>              # roster; the humans field lists humans",
+        "  grapevine alias [<name>]          # set/show your persisted alias (config.json)",
+        "  grapevine watch [<name>]          # open browser tab; live chat-bubble view",
+        "  grapevine reset <name> [--force]           snapshot the log → ~/.grapevine/archive, then clear it",
+        "  grapevine archive <name>          # read-only: keep history, reject sends",
+        "  grapevine unarchive <name>        # bring an archived channel back",
+        "  grapevine close <name>            # destructive: delete the message log",
+        "  grapevine start                   # ensure the daemon is running (alias: up); no channel",
+        "  grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard",
+        "  grapevine roll [--force]          # safe restart (stop+hold+respawn) + version verify — the recommended deploy step",
+        "  grapevine stop [--hold <seconds>] # kill the daemon; --hold suppresses auto-respawn for <s> seconds (upgrade window)",
+        "  grapevine info",
+        "  grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown",
+        "  grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune",
+        "",
+        "  grapevine schema                  # this CLI's machine-readable interface description (acc declaration v0)",
+        "  grapevine --version               # this CLI's version (alias: -V, version)",
+        "  grapevine help                    # this usage (alias: --help, -h)",
+        "",
+        "Output:",
+        "  Data commands emit JSON on stdout by DEFAULT; pass --human for prose where a",
+        "  command offers it. Diagnostics and warnings go to stderr, never stdout.",
+        "  Usage errors exit 2. Each command accepts its OWN flags (plus --as/--from,",
+        "  which are global) — an unknown flag for a verb enumerates that verb's set.",
+        "",
+        "Env:",
+        "  GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).",
+        "  GRAPEVINE_HOME   Data dir (default ~/.grapevine)."
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "grapevine — agent-to-agent walkie-talkie",
+        "",
+        "Usage:",
+        "  grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)",
+        "  grapevine list",
+        "  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]",
+        "                                    # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)",
+        "  grapevine announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] [<text...>]",
+        "                                    # broadcast one message to every active channel (or --channels)",
+        "  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]",
+        "                                    # ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0 (--human never ends by itself)",
+        "       # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)",
+        "  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)",
+        "  grapevine triage <name>             # full-scan: open messages on top + grouped by_status",
+        "  grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)",
+        "  grapevine reopen <name> <id>        # bounce a message back to open",
+        "  grapevine read <name> <id> [--text]   # one full message by id (--text = prose)",
+        "  grapevine wait <name> [--since <id>] [--timeout <s>]",
+        "  grapevine grep <name> <pattern> [--literal] [--from <alias>]",
+        "  grapevine topic <name> [<text>]   # no text → read current; with text → update",
+        "  grapevine who <name>              # roster; the humans field lists humans",
+        "  grapevine alias [<name>]          # set/show your persisted alias (config.json)",
+        "  grapevine watch [<name>]          # open browser tab; live chat-bubble view",
+        "  grapevine reset <name> [--force]           snapshot the log → ~/.grapevine/archive, then clear it",
+        "  grapevine archive <name>          # read-only: keep history, reject sends",
+        "  grapevine unarchive <name>        # bring an archived channel back",
+        "  grapevine close <name>            # destructive: delete the message log",
+        "  grapevine start                   # ensure the daemon is running (alias: up); no channel",
+        "  grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard",
+        "  grapevine roll [--force]          # safe restart (stop+hold+respawn) + version verify — the recommended deploy step",
+        "  grapevine stop [--hold <seconds>] # kill the daemon; --hold suppresses auto-respawn for <s> seconds (upgrade window)",
+        "  grapevine info",
+        "  grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown",
+        "  grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune",
+        "",
+        "  grapevine schema                  # this CLI's machine-readable interface description (acc declaration v0)",
+        "  grapevine --version               # this CLI's version (alias: -V, version)",
+        "  grapevine help                    # this usage (alias: --help, -h)",
+        "",
+        "Output:",
+        "  Data commands emit JSON on stdout by DEFAULT; pass --human for prose where a",
+        "  command offers it. Diagnostics and warnings go to stderr, never stdout.",
+        "  Usage errors exit 2. Each command accepts its OWN flags (plus --as/--from,",
+        "  which are global) — an unknown flag for a verb enumerates that verb's set.",
+        "",
+        "Env:",
+        "  GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).",
+        "  GRAPEVINE_HOME   Data dir (default ~/.grapevine)."
+      ]
+    },
+    {
+      "argv": ["help"],
+      "doc": "SKILL.md:237",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "grapevine — agent-to-agent walkie-talkie",
+        "",
+        "Usage:",
+        "  grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)",
+        "  grapevine list",
+        "  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]",
+        "                                    # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)",
+        "  grapevine announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] [<text...>]",
+        "                                    # broadcast one message to every active channel (or --channels)",
+        "  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]",
+        "                                    # ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0 (--human never ends by itself)",
+        "       # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)",
+        "  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)",
+        "  grapevine triage <name>             # full-scan: open messages on top + grouped by_status",
+        "  grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)",
+        "  grapevine reopen <name> <id>        # bounce a message back to open",
+        "  grapevine read <name> <id> [--text]   # one full message by id (--text = prose)",
+        "  grapevine wait <name> [--since <id>] [--timeout <s>]",
+        "  grapevine grep <name> <pattern> [--literal] [--from <alias>]",
+        "  grapevine topic <name> [<text>]   # no text → read current; with text → update",
+        "  grapevine who <name>              # roster; the humans field lists humans",
+        "  grapevine alias [<name>]          # set/show your persisted alias (config.json)",
+        "  grapevine watch [<name>]          # open browser tab; live chat-bubble view",
+        "  grapevine reset <name> [--force]           snapshot the log → ~/.grapevine/archive, then clear it",
+        "  grapevine archive <name>          # read-only: keep history, reject sends",
+        "  grapevine unarchive <name>        # bring an archived channel back",
+        "  grapevine close <name>            # destructive: delete the message log",
+        "  grapevine start                   # ensure the daemon is running (alias: up); no channel",
+        "  grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard",
+        "  grapevine roll [--force]          # safe restart (stop+hold+respawn) + version verify — the recommended deploy step",
+        "  grapevine stop [--hold <seconds>] # kill the daemon; --hold suppresses auto-respawn for <s> seconds (upgrade window)",
+        "  grapevine info",
+        "  grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown",
+        "  grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune",
+        "",
+        "  grapevine schema                  # this CLI's machine-readable interface description (acc declaration v0)",
+        "  grapevine --version               # this CLI's version (alias: -V, version)",
+        "  grapevine help                    # this usage (alias: --help, -h)",
+        "",
+        "Output:",
+        "  Data commands emit JSON on stdout by DEFAULT; pass --human for prose where a",
+        "  command offers it. Diagnostics and warnings go to stderr, never stdout.",
+        "  Usage errors exit 2. Each command accepts its OWN flags (plus --as/--from,",
+        "  which are global) — an unknown flag for a verb enumerates that verb's set.",
+        "",
+        "Env:",
+        "  GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).",
+        "  GRAPEVINE_HOME   Data dir (default ~/.grapevine)."
+      ]
+    },
+    {
+      "argv": ["--version"],
+      "doc": "SKILL.md:239",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "grapevine",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["-V"],
+      "doc": "SKILL.md:239",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "grapevine",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["version"],
+      "doc": "SKILL.md:239",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "grapevine",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["schema"],
+      "doc": "SKILL.md:240",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--topic",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--fresh",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["topic"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["list"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["send"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--in-reply-to",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--quiet",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--verbose",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["announce"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--channels",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--quiet",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["pull"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["triage"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--human",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["read"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--text",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["wait"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["who"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--all",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["alias"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--last",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--max",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from-start",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--human",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--lurk",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["grep"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--literal",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "pattern",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["reset"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["mark"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--note",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "disposition",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["reopen"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--note",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              },
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["archive"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["unarchive"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["start"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["up"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["restart"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--yes",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["roll"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--yes",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["stop"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--hold",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["watch"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["reap"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--dry-run",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["prune"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--dry-run",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["doctor"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--human",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          }
+        ]
+      }
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "topic",
+        "list",
+        "send",
+        "announce",
+        "pull",
+        "triage",
+        "read",
+        "wait",
+        "who",
+        "alias",
+        "tail",
+        "grep",
+        "close",
+        "reset",
+        "mark",
+        "reopen",
+        "archive",
+        "unarchive",
+        "start",
+        "up",
+        "restart",
+        "roll",
+        "stop",
+        "watch",
+        "reap",
+        "prune",
+        "info",
+        "doctor",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "topic",
+        "list",
+        "send",
+        "announce",
+        "pull",
+        "triage",
+        "read",
+        "wait",
+        "who",
+        "alias",
+        "tail",
+        "grep",
+        "close",
+        "reset",
+        "mark",
+        "reopen",
+        "archive",
+        "unarchive",
+        "start",
+        "up",
+        "restart",
+        "roll",
+        "stop",
+        "watch",
+        "reap",
+        "prune",
+        "info",
+        "doctor",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--human"]
+    },
+    {
+      "argv": ["open", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--fresh", "--from", "--topic"]
+    },
+    {
+      "argv": ["open", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--fresh", "--from", "--topic"]
+    },
+    {
+      "argv": ["topic", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["topic", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["list", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["list", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["send", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--body-file",
+        "--force",
+        "--from",
+        "--in-reply-to",
+        "--quiet",
+        "--stdin",
+        "--verbose"
+      ]
+    },
+    {
+      "argv": ["send", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--body-file",
+        "--force",
+        "--from",
+        "--in-reply-to",
+        "--quiet",
+        "--stdin",
+        "--verbose"
+      ]
+    },
+    {
+      "argv": ["announce", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--body-file", "--channels", "--force", "--from", "--quiet", "--stdin"]
+    },
+    {
+      "argv": ["announce", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--body-file", "--channels", "--force", "--from", "--quiet", "--stdin"]
+    },
+    {
+      "argv": ["pull", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--since", "--status"]
+    },
+    {
+      "argv": ["pull", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--since", "--status"]
+    },
+    {
+      "argv": ["triage", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--human"]
+    },
+    {
+      "argv": ["triage", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--human"]
+    },
+    {
+      "argv": ["read", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--text"]
+    },
+    {
+      "argv": ["read", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--text"]
+    },
+    {
+      "argv": ["wait", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--since", "--timeout"]
+    },
+    {
+      "argv": ["wait", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--since", "--timeout"]
+    },
+    {
+      "argv": ["who", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--all", "--as", "--from"]
+    },
+    {
+      "argv": ["who", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--all", "--as", "--from"]
+    },
+    {
+      "argv": ["alias", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["alias", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--from",
+        "--from-start",
+        "--human",
+        "--last",
+        "--lurk",
+        "--max",
+        "--since"
+      ]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--from",
+        "--from-start",
+        "--human",
+        "--last",
+        "--lurk",
+        "--max",
+        "--since"
+      ]
+    },
+    {
+      "argv": ["grep", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--literal"]
+    },
+    {
+      "argv": ["grep", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--literal"]
+    },
+    {
+      "argv": ["close", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["close", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["reset", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from"]
+    },
+    {
+      "argv": ["reset", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from"]
+    },
+    {
+      "argv": ["mark", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--note"]
+    },
+    {
+      "argv": ["mark", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--note"]
+    },
+    {
+      "argv": ["reopen", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--note"]
+    },
+    {
+      "argv": ["reopen", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--note"]
+    },
+    {
+      "argv": ["archive", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["archive", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["unarchive", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["unarchive", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["start", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["start", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["up", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["up", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["restart", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from", "--yes"]
+    },
+    {
+      "argv": ["restart", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from", "--yes"]
+    },
+    {
+      "argv": ["roll", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from", "--yes"]
+    },
+    {
+      "argv": ["roll", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--force", "--from", "--yes"]
+    },
+    {
+      "argv": ["stop", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--hold"]
+    },
+    {
+      "argv": ["stop", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--hold"]
+    },
+    {
+      "argv": ["watch", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["watch", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["reap", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--dry-run", "--force", "--from"]
+    },
+    {
+      "argv": ["reap", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--dry-run", "--force", "--from"]
+    },
+    {
+      "argv": ["prune", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--dry-run", "--force", "--from"]
+    },
+    {
+      "argv": ["prune", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--dry-run", "--force", "--from"]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["doctor", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["doctor", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--human"]
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--human"]
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["help", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["help", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["list"],
+      "doc": "SKILL.md:216",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["send", "golden-ch", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["send", "golden-ch", "--as", "golden-agent", "hello"],
+      "doc": "SKILL.md:622",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--as=golden-agent", "hello"],
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--as", "a", "--as", "b", "hello"],
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--in-reply-to", "1", "--force", "--quiet", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["--as", "golden-agent", "send", "golden-ch", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["--from", "golden-agent", "list"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["announce", "--channels", "a,b", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["pull", "golden-ch", "--status", "open"],
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["pull", "golden-ch", "--status=open"],
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["triage", "golden-ch"],
+      "doc": "SKILL.md:428",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["mark", "golden-ch", "1", "wontfix", "--note", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["reopen", "golden-ch", "1"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["read", "golden-ch", "1", "--text"],
+      "doc": "SKILL.md:224",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["who", "golden-ch"],
+      "doc": "SKILL.md:225",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["alias"],
+      "doc": "SKILL.md:226",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["alias", "golden-agent"],
+      "doc": "SKILL.md:226",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["grep", "golden-ch", "hello", "--literal"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["topic", "golden-ch"],
+      "doc": "SKILL.md:228",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["topic", "golden-ch", "hello", "world"],
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["reset", "golden-ch", "--force"],
+      "doc": "SKILL.md:230",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["archive", "golden-ch"],
+      "doc": "SKILL.md:231",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["unarchive", "golden-ch"],
+      "doc": "SKILL.md:231",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["close", "golden-ch"],
+      "doc": "SKILL.md:232",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["info"],
+      "doc": "SKILL.md:237",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["version", "--human"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout"
+    },
+    {
+      "argv": ["--version", "--human"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout"
+    },
+    {
+      "argv": ["send", "golden-ch", "--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["send", "golden-ch", "--", "text", "--as", "k"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": [
+        "send",
+        "golden-ch",
+        "--as",
+        "golden-agent",
+        "--quiet",
+        "--verbose",
+        "--body-file",
+        "golden.md",
+        "--force",
+        "--in-reply-to",
+        "1",
+        "hello"
+      ],
+      "doc": "SKILL.md:217",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["pull", "golden-ch", "--since", "1", "--status", "open"],
+      "doc": "SKILL.md:220",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["mark", "golden-ch", "1", "incorporated", "--as", "golden-agent", "--note", "hello"],
+      "doc": "SKILL.md:222",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["reopen", "golden-ch", "1", "--as", "golden-agent"],
+      "doc": "SKILL.md:223",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["read", "golden-ch", "1"],
+      "doc": "SKILL.md:224",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["who", "--all"],
+      "doc": "SKILL.md:225",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["grep", "golden-ch", "hello"],
+      "doc": "SKILL.md:227",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["grep", "golden-ch", "hello", "--literal", "--from", "golden-agent"],
+      "doc": "SKILL.md:227",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "ok": true
+    },
+    {
+      "argv": ["topic", "golden-ch", "hello"],
+      "doc": "SKILL.md:228",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": [
+        "announce",
+        "--from",
+        "golden-agent",
+        "--channels",
+        "golden-ch",
+        "--body-file",
+        "golden.md",
+        "--quiet",
+        "hello"
+      ],
+      "doc": "SKILL.md:233",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": [
+        "announce",
+        "--from",
+        "golden-agent",
+        "--channels",
+        "golden-ch",
+        "--stdin",
+        "--quiet"
+      ],
+      "stdin": "hello",
+      "doc": "SKILL.md:233",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["reset", "golden-ch"],
+      "doc": "SKILL.md:373",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["triage", "golden-ch", "--human"],
+      "doc": "SKILL.md:429",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--from", "golden-agent"],
+      "stdin": "hello",
+      "doc": "SKILL.md:729",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--from", "golden-agent", "--stdin"],
+      "stdin": "hello",
+      "doc": "SKILL.md:732",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["send", "golden-ch", "--from", "golden-agent", "--body-file", "golden.md"],
+      "doc": "SKILL.md:735",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    },
+    {
+      "argv": ["pull", "golden-ch", "--since", "1"],
+      "doc": "SKILL.md:757",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
+    }
+  ]
+}

@@ -24,6 +24,11 @@
  *     `allowPositionals:` beside `options:`), never on a name. Matching
  *     `options:` hit a flag literally named `options`; matching `/parseArgs\s*\(/`
  *     hit the function DECLARATION and produced 46 plausible findings.
+ *     3b. A spell on the kit CLI registry (`src/kit/cli/registry.ts`) has no
+ *     parseArgs call of its own: its map is the `options` of a `defineCli({`
+ *     argument object, and the kit's one call parses it strict. That object is
+ *     the structural sibling there. Without 3b the move of glamour, scriptorium
+ *     and grapevine onto the registry read as three UNRESOLVED entry points.
  *  4. Resolve `options: <identifier>` to its declaration — bounty and glamour
  *     use named consts, and a literal-only scan reports all their flags as drift.
  *  5. Read EVERY options map, not the first: mind-mapper/backend/cli.ts has 27.
@@ -233,6 +238,16 @@ function braceBlock(src: string, open: number): string {
   return "";
 }
 
+/** The `[start, end]` offsets of each `defineCli({…})` argument object. */
+function defineCliSpans(src: string): [number, number][] {
+  const spans: [number, number][] = [];
+  for (const m of src.matchAll(/\bdefineCli\s*\(\s*\{/g)) {
+    const open = m.index + m[0].length - 1;
+    spans.push([open, open + braceBlock(src, open).length]);
+  }
+  return spans;
+}
+
 /**
  * The flag names one source recognises.
  *
@@ -244,12 +259,22 @@ function braceBlock(src: string, open: number): string {
 export function recognizedFlags(src: string): string[] | null {
   const names = new Set<string>();
   let sawMap = false;
+  const registrySpecs = defineCliSpans(src);
   // `options: {…}`, `options: IDENT`, or the SHORTHAND `options,` inside the
   // argument object (grapevine's acc registry refactor spells it that way —
   // the invocation receives a per-command SUBSET local named `options`).
   for (const m of src.matchAll(/options\s*(?::\s*(\{|([A-Za-z_$][\w$]*))|(,))/g)) {
-    // Requirement 3: a real parseArgs argument object carries these siblings.
-    if (!/\bstrict\s*:|\ballowPositionals\s*:/.test(src.slice(m.index, m.index + 1200))) continue;
+    // Requirement 3: a real parseArgs argument object carries these siblings —
+    // or (3b) the map is the `options` of a kit-registry spec, which the kit's
+    // ONE parseArgs call parses strict (`src/kit/cli/registry.ts`). Anchored on
+    // the structure again, never on a name: the key must sit inside the
+    // brace-matched argument object of a `defineCli({` call.
+    const inRegistrySpec = registrySpecs.some(([from, to]) => m.index > from && m.index < to);
+    if (
+      !inRegistrySpec &&
+      !/\bstrict\s*:|\ballowPositionals\s*:/.test(src.slice(m.index, m.index + 1200))
+    )
+      continue;
     sawMap = true;
     let block: string;
     if (m[1] === "{") {
@@ -334,14 +359,34 @@ export function parseArgsInvocations(src: string): string[] {
   return out;
 }
 
+/**
+ * The kit's SHARED parsers, keyed like `readEntryPoint` keys (`kit/...`,
+ * resolved against `src/`).
+ *
+ * ⛔ A PARSER THAT IS NO SPELL'S, AND THE WARDS THAT COUNT PARSERS MUST COUNT
+ * IT. A spell on the kit CLI registry hands its options table to `defineCli`
+ * and has no `parseArgs` call left: the call runs in `src/kit/cli/registry.ts`
+ * on its behalf. `strict-parse-invariant` (every invocation strict) and
+ * `terminator-invariant` (where the `--` demotion hazard applies) read these
+ * beside the spells' entry points, so the population moves with the parser
+ * instead of shrinking. They are deliberately NOT in `argParsingEntryPoints`:
+ * `flag-invariant` and `spellsOf` attribute by the first path segment, and
+ * `kit` is not a spell with a SKILL.md.
+ */
+export const SHARED_PARSERS: readonly string[] = ["kit/cli/registry.ts"];
+
+/** The spell entry points whose parsing runs in the kit registry. */
+export const onKitRegistry = (entryPoints: string[]) =>
+  entryPoints.filter((p) => /\bdefineCli\s*\(\s*\{/.test(readEntryPoint(p)));
+
 /** Read an entry point's source by its SKILLS_DIR-relative path. */
 export const readEntryPoint = (rel: string) =>
   readFileSync(
-    // `<spell>/backend/...` resolves against `src/`, everything else against the
-    // shipped skills tree. Keyed on the SECOND segment because the first is the
-    // spell name in both shapes.
-    rel.split("/")[1] === "backend"
-      ? join(BACKEND_SRC_DIR, rel.replace("/backend/", "/backend/"))
+    // `<spell>/backend/...` and the kit's `kit/...` resolve against `src/`,
+    // everything else against the shipped skills tree. Keyed on the SECOND
+    // segment because the first is the spell name in both spell shapes.
+    rel.split("/")[1] === "backend" || rel.startsWith("kit/")
+      ? join(BACKEND_SRC_DIR, rel)
       : join(SKILLS_DIR, rel),
     "utf8",
   );

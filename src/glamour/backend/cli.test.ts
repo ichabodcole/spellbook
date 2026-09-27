@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
+import { parseArgs as nodeParseArgs } from "node:util";
 // ⛔ THE PATH CELLS IMPORT THE ARTIFACT, NOT THE SOURCE, AND THAT IS THE WHOLE
 // POINT OF THE RELOCATION. `daemonCwd()` and `SKILL_ROOT_FOR_TEST` are computed
 // from `import.meta.url`, so their value depends on WHERE THE MODULE IS. Read
@@ -25,10 +26,22 @@ import {
   buildSectionCmd,
   buildStyleArchiveCmd,
   buildStyleSaveCmd,
-  parseArgs,
+  CLI_OPTIONS,
   parseCustom,
   UsageError,
 } from "./cli";
+
+/** The split the CLI's parser makes (the kit registry parses strict against
+ *  glamour's one options table), for feeding the builders a real argv. */
+function parseArgs(args: string[]): { pos: string[]; flags: Record<string, string | boolean> } {
+  const { values, positionals } = nodeParseArgs({
+    args,
+    options: CLI_OPTIONS,
+    strict: true,
+    allowPositionals: true,
+  });
+  return { pos: positionals, flags: values as Record<string, string | boolean> };
+}
 
 describe("cli command construction", () => {
   test("section: key + flags → typed command, prompts split on ||", () => {

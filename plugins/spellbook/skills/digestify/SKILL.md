@@ -291,7 +291,7 @@ are stack, not envelope.
 | 0    | outcome    | Submitted                                                                                                                                                                                                        | Parse stdout JSON, continue conversation                                                                                                                                                                                                                                                            |
 | 124  | outcome    | Timeout                                                                                                                                                                                                          | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.)                                                                                                                                           |
 | 130  | outcome    | User closed the tab _after typing something_                                                                                                                                                                     | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                                                                                                                                                              |
-| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review                                                                                                                    | stderr's envelope explains; fix the command or the markdown and retry. An invalid `--theme` also lists `choices`.                                                                                                                                                                                   |
+| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review                                                                                                                    | stderr's envelope explains; fix the command or the markdown and retry. An unknown flag lists the valid flags, and an invalid `--theme` the valid themes, as `choices`.                                                                                                                              |
 | 5    | failure    | `not_found` — the named thing does not exist. TWO sites: `--file`/`--reference` names a path that is not there, **and** a forced dev boot (`SPELLBOOK_SURFACE_MODE=dev`) that cannot find the surface source     | Check the path. Do not retry unchanged.                                                                                                                                                                                                                                                             |
 | 6    | failure    | `conflict` — the review server could not start. **Not only a busy port:** a malformed `--port` (`--port notanumber` → `port=NaN`) and an unresolvable `--host` reach the bind and come back as this same refusal | Usually a relaunch onto the port in a session id while the old daemon still holds it (see **Session Recovery**) — retry without `--id`, or wait. **Read the envelope's `hint`**: it carries `host=… port=…` and the bind's own words, which is what separates a busy port from a flag you mistyped. |
 | 1    | failure    | `internal` — the spell broke. **No envelope** — an unclassified throw, ending with its stack                                                                                                                     | Not the invocation's fault _in the usual sense_ (an unreadable `--file` lands here too). Report it; the stack is on stderr, and it is a stack, not JSON.                                                                                                                                            |
@@ -311,6 +311,11 @@ never on prose:
   "meta": { "command": "review" }
 }
 ```
+
+`meta.command` is `"review"` once the flags have parsed. A rejection of the
+command line itself (an unknown flag, a flag missing its value, a stray
+argument) comes from the shared CLI parser before the review starts, and carries
+`"command": null`.
 
 ⚠ **`5` and `6` are new as of 2026-09-09** (backend convergence Phase 5, D58).
 They were both `2` before, alongside bare `error: <prose>` on stderr. `2` still
@@ -358,6 +363,12 @@ earlier session of this review closed" is a true and useful fact.
   a relaunch with the same id reuses that port and the browser's prior draft
   survives via localStorage). Pass back verbatim to recover an interrupted
   session — see **Session Recovery** below.
+
+Three tokens answer on their own and never open a review: `--help` / `-h` /
+`help` print usage on stdout, `--version` / `-V` / `version` print
+`{"name":"digestify","version":"…"}`, and `schema` prints the machine-readable
+interface (acc declaration v0). Each exits `0`. Everything else is a review;
+`review.ts` takes no positional arguments.
 
 The script prints `{"url": "...", "port": N, "session_id": "..."}` to stderr as
 soon as it's listening, before opening the browser. **Capture the `session_id`**

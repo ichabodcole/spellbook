@@ -100,8 +100,14 @@ auto-spawns it (detached, it outlives the CLI) and finds it via
 | `cli.ts close` / `info` / `help`                                                    | Dismiss the observatory · daemon status · usage.                                                                                                                                                                                                                                             |
 
 Identity (`--as` / `--from`, or `$ASTROLABE_AS`) stamps the actor on events and
-suppresses self-echo. `--stdin` reads a description/summary from stdin so
-shell-special characters land verbatim. `cli.ts help` prints the full list.
+suppresses self-echo; it rides the verbs that write an event or hold a watch
+(`add`, `remove`, `status`, `attention`, `poke`, `close`, `join`, `tail`).
+`--stdin` reads a description/summary from stdin so shell-special characters
+land verbatim. Flags go after the verb, and each verb accepts only its own: a
+flag from another verb is refused (exit 2) with the verb's own set in the
+envelope's `choices`. Text that starts with dashes goes after a bare `--`.
+`cli.ts help` prints the full list; `cli.ts schema` prints the machine-readable
+interface (acc declaration v0).
 
 ### Read back, don't infer
 
