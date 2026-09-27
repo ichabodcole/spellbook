@@ -45,5 +45,5 @@ parser (the registry) with 9 adopters.
 - [x] Anything a calibration finds uncalibrated or vacuous is fixed or filed.
 
 Done on `test/terminator-ward-over-the-registry`: the ward rewrite is
-`24f3e33b`; the calibration record is
+`0adb8fe5`; the calibration record is
 [d6-calibration.md](../features/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md).

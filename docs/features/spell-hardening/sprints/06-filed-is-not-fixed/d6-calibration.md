@@ -14,7 +14,7 @@ generated: { by: claude-opus-5-5, at: 2026-09-27 }
 
 Part of
 [terminator-ward-over-the-registry](../../../../items/terminator-ward-over-the-registry.md).
-Run on 2026-09-27 against `24f3e33b` (the terminator-invariant rewrite on top of
+Run on 2026-09-27 against `0adb8fe5` (the terminator-invariant rewrite on top of
 `41065365`) by a seat that wrote none of roster-drift, gate-honesty or
 strict-parse-invariant. It did write terminator-invariant, so that ward's
 calibration is the author's, not a no-stake reader's.
@@ -109,7 +109,7 @@ the permissive shape), not by a plant.
 
 **Verdict: calibrated.**
 
-## terminator-invariant (rewritten, `24f3e33b`): 7 cells
+## terminator-invariant (rewritten, `0adb8fe5`): 7 cells
 
 **Reconciled:** zero-denominator guards, one-`Cli`-per-adopter, rebuild equals
 declaration, the warning drive (311 cases), the pin (9 adopters / 114 rows with
