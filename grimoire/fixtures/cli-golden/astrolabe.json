@@ -1,22 +1,23 @@
 {
   "spell": "astrolabe",
   "launcher": "scripts/cli.ts",
-  "verbCount": 14,
+  "verbCount": 15,
   "verbs": [
     "open",
     "add",
     "remove",
+    "join",
     "status",
     "attention",
     "poke",
     "state",
+    "tail",
     "list",
     "close",
     "info",
-    "join",
-    "tail",
-    "help",
-    "version"
+    "version",
+    "schema",
+    "help"
   ],
   "excluded": {
     "open": "starts a daemon (and may open a browser)",
@@ -45,7 +46,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run; also spawns the daemon"
     }
   ],
-  "invocationCount": 62,
+  "invocationCount": 64,
   "invocations": [
     {
       "argv": [],
@@ -58,17 +59,18 @@
         "open",
         "add",
         "remove",
+        "join",
         "status",
         "attention",
         "poke",
         "state",
+        "tail",
         "list",
         "close",
         "info",
-        "join",
-        "tail",
-        "help",
-        "version"
+        "version",
+        "schema",
+        "help"
       ]
     },
     {
@@ -79,33 +81,37 @@
       "text": [
         "astrolabe — a standing observatory board for projects in flight.",
         "",
-        "  open [--no-open]",
-        "      ensure the daemon is up + open the board in the browser",
-        "  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]",
-        "      register a project (dedupe-guarded; id + avatar derived from the name when omitted).",
-        "      the response echoes the derived id — you need it for join/status/attention/remove.",
-        "  remove <id>",
-        "      unregister a project",
-        "  join <id> [--as <name>] [--since N]",
-        "      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.",
-        "  status <id> <summary...> [--phase ..] [--stdin]",
-        "      replace a project's current status",
-        "  attention <id> [--clear] [--question ...]",
-        "      raise / clear the needs-you gate (--question attaches the prompt)",
-        "  poke <id>",
-        "      request a fresh status from the project's agent",
-        "  state",
-        "      read-back: project cards (each carries a derived zone: attention | active | quiet)",
-        "  tail [--since N] [--as <name>]",
-        "      unscoped event tail as JSONL (no presence)",
-        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  list | close | info | help | --version",
+        "  open [--no-open]                              ensure the daemon is up + open the board in the browser",
+        "  add <name...> [--path ..] [--description ..] [--avatar ..] [--id ..] [--stdin] [--as ..] [--from ..]",
+        "                                                register a project (--path required; dedupe-guarded; id + avatar derived from the name). echoes the derived id for join/status/attention/remove",
+        "  remove <id> [--as ..] [--from ..]             unregister a project",
+        "  join <id> [--since ..] [--as ..] [--from ..]  activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card",
+        "  status <id> [summary...] [--phase ..] [--stdin] [--as ..] [--from ..]",
+        "                                                replace a project's current status (the summary is positional, or --stdin)",
+        "  attention <id> [question...] [--clear] [--question ..] [--as ..] [--from ..]",
+        "                                                raise / clear (--clear) the needs-you gate (--question attaches the prompt)",
+        "  poke <id> [--as ..] [--from ..]               request a fresh status from the project's agent",
+        "  state                                         read-back: project cards (each carries a derived zone: attention | active | quiet)",
+        "  tail [--since ..] [--as ..] [--from ..]       unscoped event tail as JSONL (no presence)",
+        "  list                                          the registered projects, compact",
+        "  close [--as ..] [--from ..]                   dismiss the observatory",
+        "  info                                          daemon status: running, url, port",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.",
-        "  --stdin reads a description/summary from stdin (shell-quoting-safe).",
+        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "",
+        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses",
+        "  self-echo, on the verbs that list it. --stdin reads a description/summary from",
+        "  stdin (shell-quoting-safe). Each verb accepts only the flags on its row; a",
+        "  recognized flag on the wrong verb is refused, and the rejection lists the",
+        "  verb's own flags.",
+        "",
         "  Output: every command prints JSON on stdout by default, one line per answer;",
-        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).",
-        "  There is no prose mode to switch out of."
+        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal). There is no prose mode to switch out of."
       ]
     },
     {
@@ -116,33 +122,37 @@
       "text": [
         "astrolabe — a standing observatory board for projects in flight.",
         "",
-        "  open [--no-open]",
-        "      ensure the daemon is up + open the board in the browser",
-        "  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]",
-        "      register a project (dedupe-guarded; id + avatar derived from the name when omitted).",
-        "      the response echoes the derived id — you need it for join/status/attention/remove.",
-        "  remove <id>",
-        "      unregister a project",
-        "  join <id> [--as <name>] [--since N]",
-        "      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.",
-        "  status <id> <summary...> [--phase ..] [--stdin]",
-        "      replace a project's current status",
-        "  attention <id> [--clear] [--question ...]",
-        "      raise / clear the needs-you gate (--question attaches the prompt)",
-        "  poke <id>",
-        "      request a fresh status from the project's agent",
-        "  state",
-        "      read-back: project cards (each carries a derived zone: attention | active | quiet)",
-        "  tail [--since N] [--as <name>]",
-        "      unscoped event tail as JSONL (no presence)",
-        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  list | close | info | help | --version",
+        "  open [--no-open]                              ensure the daemon is up + open the board in the browser",
+        "  add <name...> [--path ..] [--description ..] [--avatar ..] [--id ..] [--stdin] [--as ..] [--from ..]",
+        "                                                register a project (--path required; dedupe-guarded; id + avatar derived from the name). echoes the derived id for join/status/attention/remove",
+        "  remove <id> [--as ..] [--from ..]             unregister a project",
+        "  join <id> [--since ..] [--as ..] [--from ..]  activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card",
+        "  status <id> [summary...] [--phase ..] [--stdin] [--as ..] [--from ..]",
+        "                                                replace a project's current status (the summary is positional, or --stdin)",
+        "  attention <id> [question...] [--clear] [--question ..] [--as ..] [--from ..]",
+        "                                                raise / clear (--clear) the needs-you gate (--question attaches the prompt)",
+        "  poke <id> [--as ..] [--from ..]               request a fresh status from the project's agent",
+        "  state                                         read-back: project cards (each carries a derived zone: attention | active | quiet)",
+        "  tail [--since ..] [--as ..] [--from ..]       unscoped event tail as JSONL (no presence)",
+        "  list                                          the registered projects, compact",
+        "  close [--as ..] [--from ..]                   dismiss the observatory",
+        "  info                                          daemon status: running, url, port",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.",
-        "  --stdin reads a description/summary from stdin (shell-quoting-safe).",
+        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "",
+        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses",
+        "  self-echo, on the verbs that list it. --stdin reads a description/summary from",
+        "  stdin (shell-quoting-safe). Each verb accepts only the flags on its row; a",
+        "  recognized flag on the wrong verb is refused, and the rejection lists the",
+        "  verb's own flags.",
+        "",
         "  Output: every command prints JSON on stdout by default, one line per answer;",
-        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).",
-        "  There is no prose mode to switch out of."
+        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal). There is no prose mode to switch out of."
       ]
     },
     {
@@ -154,33 +164,37 @@
       "text": [
         "astrolabe — a standing observatory board for projects in flight.",
         "",
-        "  open [--no-open]",
-        "      ensure the daemon is up + open the board in the browser",
-        "  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]",
-        "      register a project (dedupe-guarded; id + avatar derived from the name when omitted).",
-        "      the response echoes the derived id — you need it for join/status/attention/remove.",
-        "  remove <id>",
-        "      unregister a project",
-        "  join <id> [--as <name>] [--since N]",
-        "      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.",
-        "  status <id> <summary...> [--phase ..] [--stdin]",
-        "      replace a project's current status",
-        "  attention <id> [--clear] [--question ...]",
-        "      raise / clear the needs-you gate (--question attaches the prompt)",
-        "  poke <id>",
-        "      request a fresh status from the project's agent",
-        "  state",
-        "      read-back: project cards (each carries a derived zone: attention | active | quiet)",
-        "  tail [--since N] [--as <name>]",
-        "      unscoped event tail as JSONL (no presence)",
-        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  list | close | info | help | --version",
+        "  open [--no-open]                              ensure the daemon is up + open the board in the browser",
+        "  add <name...> [--path ..] [--description ..] [--avatar ..] [--id ..] [--stdin] [--as ..] [--from ..]",
+        "                                                register a project (--path required; dedupe-guarded; id + avatar derived from the name). echoes the derived id for join/status/attention/remove",
+        "  remove <id> [--as ..] [--from ..]             unregister a project",
+        "  join <id> [--since ..] [--as ..] [--from ..]  activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card",
+        "  status <id> [summary...] [--phase ..] [--stdin] [--as ..] [--from ..]",
+        "                                                replace a project's current status (the summary is positional, or --stdin)",
+        "  attention <id> [question...] [--clear] [--question ..] [--as ..] [--from ..]",
+        "                                                raise / clear (--clear) the needs-you gate (--question attaches the prompt)",
+        "  poke <id> [--as ..] [--from ..]               request a fresh status from the project's agent",
+        "  state                                         read-back: project cards (each carries a derived zone: attention | active | quiet)",
+        "  tail [--since ..] [--as ..] [--from ..]       unscoped event tail as JSONL (no presence)",
+        "  list                                          the registered projects, compact",
+        "  close [--as ..] [--from ..]                   dismiss the observatory",
+        "  info                                          daemon status: running, url, port",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.",
-        "  --stdin reads a description/summary from stdin (shell-quoting-safe).",
+        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "",
+        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses",
+        "  self-echo, on the verbs that list it. --stdin reads a description/summary from",
+        "  stdin (shell-quoting-safe). Each verb accepts only the flags on its row; a",
+        "  recognized flag on the wrong verb is refused, and the rejection lists the",
+        "  verb's own flags.",
+        "",
         "  Output: every command prints JSON on stdout by default, one line per answer;",
-        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).",
-        "  There is no prose mode to switch out of."
+        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal). There is no prose mode to switch out of."
       ]
     },
     {
@@ -215,27 +229,319 @@
     },
     {
       "argv": ["schema"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "remove",
-        "status",
-        "attention",
-        "poke",
-        "state",
-        "list",
-        "close",
-        "info",
-        "join",
-        "tail",
-        "help",
-        "version"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["add"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--path",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--description",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--avatar",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--id",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["remove"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["join"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["status"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--phase",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "summary",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["attention"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--question",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "question",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["poke"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["state"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["list"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
     },
     {
       "argv": ["--acc-bogus-flag"],
@@ -244,22 +550,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "remove",
-        "status",
-        "attention",
-        "poke",
-        "state",
-        "list",
-        "close",
-        "info",
-        "join",
-        "tail",
-        "help",
-        "version"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -272,17 +563,18 @@
         "open",
         "add",
         "remove",
+        "join",
         "status",
         "attention",
         "poke",
         "state",
+        "tail",
         "list",
         "close",
         "info",
-        "join",
-        "tail",
-        "help",
-        "version"
+        "version",
+        "schema",
+        "help"
       ]
     },
     {
@@ -292,28 +584,16 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "remove",
-        "status",
-        "attention",
-        "poke",
-        "state",
-        "list",
-        "close",
-        "info",
-        "join",
-        "tail",
-        "help",
-        "version"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -322,21 +602,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--no-open", "--timeout"]
     },
     {
       "argv": ["open", "--help"],
@@ -345,21 +611,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--no-open", "--timeout"]
     },
     {
       "argv": ["add", "--acc-bogus-flag"],
@@ -368,21 +620,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--avatar", "--description", "--from", "--id", "--path", "--stdin"]
     },
     {
       "argv": ["add", "--help"],
@@ -391,21 +629,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--avatar", "--description", "--from", "--id", "--path", "--stdin"]
     },
     {
       "argv": ["remove", "--acc-bogus-flag"],
@@ -414,21 +638,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from"]
     },
     {
       "argv": ["remove", "--help"],
@@ -437,343 +647,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["status", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["attention", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["attention", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["poke", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["poke", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["state", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["list", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["list", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["close", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["info", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
-    },
-    {
-      "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from"]
     },
     {
       "argv": ["join", "--acc-bogus-flag"],
@@ -782,21 +656,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from", "--since"]
     },
     {
       "argv": ["join", "--help"],
@@ -805,21 +665,79 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from", "--since"]
+    },
+    {
+      "argv": ["status", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--phase", "--stdin"]
+    },
+    {
+      "argv": ["status", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from", "--phase", "--stdin"]
+    },
+    {
+      "argv": ["attention", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--clear", "--from", "--question"]
+    },
+    {
+      "argv": ["attention", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--clear", "--from", "--question"]
+    },
+    {
+      "argv": ["poke", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["poke", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["state", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["state", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -828,21 +746,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from", "--since"]
     },
     {
       "argv": ["tail", "--help"],
@@ -851,80 +755,115 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--avatar",
-        "--clear",
-        "--description",
-        "--from",
-        "--id",
-        "--no-open",
-        "--path",
-        "--phase",
-        "--question",
-        "--since",
-        "--stdin",
-        "--timeout"
-      ]
+      "choices": ["--as", "--from", "--since"]
     },
     {
-      "argv": ["help", "--acc-bogus-flag"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "argv": ["list", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
-      "argv": ["help", "--help"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout",
-      "text": [
-        "astrolabe — a standing observatory board for projects in flight.",
-        "",
-        "  open [--no-open]",
-        "      ensure the daemon is up + open the board in the browser",
-        "  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]",
-        "      register a project (dedupe-guarded; id + avatar derived from the name when omitted).",
-        "      the response echoes the derived id — you need it for join/status/attention/remove.",
-        "  remove <id>",
-        "      unregister a project",
-        "  join <id> [--as <name>] [--since N]",
-        "      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.",
-        "  status <id> <summary...> [--phase ..] [--stdin]",
-        "      replace a project's current status",
-        "  attention <id> [--clear] [--question ...]",
-        "      raise / clear the needs-you gate (--question attaches the prompt)",
-        "  poke <id>",
-        "      request a fresh status from the project's agent",
-        "  state",
-        "      read-back: project cards (each carries a derived zone: attention | active | quiet)",
-        "  tail [--since N] [--as <name>]",
-        "      unscoped event tail as JSONL (no presence)",
-        "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  list | close | info | help | --version",
-        "",
-        "  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.",
-        "  --stdin reads a description/summary from stdin (shell-quoting-safe).",
-        "  Output: every command prints JSON on stdout by default, one line per answer;",
-        "  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).",
-        "  There is no prose mode to switch out of."
-      ]
+      "argv": ["list", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["close", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["close", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["version", "--help"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout",
-      "json": {
-        "name": "astrolabe",
-        "version": "<VERSION>"
-      }
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": [
@@ -1048,22 +987,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "remove",
-        "status",
-        "attention",
-        "poke",
-        "state",
-        "list",
-        "close",
-        "info",
-        "join",
-        "tail",
-        "help",
-        "version"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["--from", "golden-agent", "poke", "p1"],
@@ -1072,22 +996,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "remove",
-        "status",
-        "attention",
-        "poke",
-        "state",
-        "list",
-        "close",
-        "info",
-        "join",
-        "tail",
-        "help",
-        "version"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["status", "p1", "--", "--phase", "x"],
@@ -1106,10 +1015,11 @@
     },
     {
       "argv": ["state", "--", "--x"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout",
-      "ok": true
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
     },
     {
       "argv": ["add", "golden", "--path", "golden.md"],

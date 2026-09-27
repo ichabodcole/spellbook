@@ -17,11 +17,14 @@
 //   bun cli.ts poke <id>                         # request a fresh status from the project's agent
 //   bun cli.ts state                             # read-back: project cards
 //   bun cli.ts tail [--since N] [--as <name>]    # unscoped event tail → JSONL (no presence)
-//   bun cli.ts list | close | info | help
+//   bun cli.ts list | close | info | help | version | schema
 //
 // `join` is the listening loop a project's agent runs: holding the scoped
 // `/events?project=<id>` tail open is what marks the card active (per the daemon
 // contract — presence IS the live connection), and the same tail delivers pokes.
+//
+// The verbs, their flags and positionals are ONE table at the foot of this file,
+// run by the house's CLI registry (`src/kit/cli/registry.ts`).
 //
 // Identity: --as / --from (or $ASTROLABE_AS) stamps the event `by` and drives
 // self-echo suppression. --stdin reads free text (description/summary) from
@@ -37,9 +40,14 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs } from "node:util";
+import {
+  type CommandSpec,
+  defineCli,
+  type Invocation,
+  type PositionalSpec,
+} from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { die } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -417,22 +425,21 @@ async function cmdInfo() {
 }
 
 /**
- * ── THE THREE ACCEPTED SETS, DECLARED ONCE (register A1) ────────────────────
+ * ── ONE TABLE: the parser, the dispatcher, help, `choices` and `schema` ─────
  *
- * `choices` is the machine-routable half of the house error contract
- * (`src/kit/wire/errors.ts`) — *what WOULD have been accepted* — and its whole
- * value is that it is the ACTUAL set. So each set below is the one the parser
- * and the dispatcher themselves read; a rejection cannot name a roster the CLI
- * does not run, because there is no second copy to drift.
+ * astrolabe runs on the house's CLI registry (`src/kit/cli/registry.ts`). The
+ * rows below are the only declaration of what each verb accepts; the kit
+ * parses every argv against them, refuses a flag that belongs to another verb
+ * (with this verb's own set as `choices`), enforces arity from `positionals`,
+ * answers `help`, `version` and `schema`, and publishes the acc declaration.
  *
- * ⛔ `CLI_OPTIONS` IS LIFTED OUT OF THE `parseArgs` CALL FOR EXACTLY THIS
- * REASON. Inline, the recognized-flag set existed only inside the invocation
- * that consumed it, so a rejection could only re-type it as prose — which is
- * how bounty and imago both ended up with a hand-kept flag list inside a
- * message string.
+ * ⛔ The hand-kept `VERBS` / `ROOT_TOKENS` / `RECOGNIZED_FLAGS` lists, the
+ * source-parsing cell that bound `VERBS` to a `switch`, and the one flag map
+ * shared by every verb are gone: there is no second copy left to drift.
  *
- * ⚠ `VERBS` IS THE ONE DECLARATION HERE, and it is bound to the switch by a
- * cell in `cli.test.ts` rather than by the type system — see its own comment.
+ * ⚠ `clear`, `stdin` and `no-open` carry `default: false`. The kit strips
+ * defaults before the per-row check and applies them only to the rows that
+ * list the flag, so `remove p1` is never refused over `--clear`.
  */
 const CLI_OPTIONS = {
   as: { type: "string" },
@@ -450,84 +457,174 @@ const CLI_OPTIONS = {
   "no-open": { type: "boolean", default: false },
 } as const;
 
-/** Every flag the root parser recognises, as the caller would type it. */
-export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
-  .map((k) => `--${k}`)
-  .sort();
+type Flag = keyof typeof CLI_OPTIONS;
+type Flags = Record<string, string | boolean>;
+
+/** Keep the handlers' `(pos, flags)` shape; adapt it to the row's `run(inv)`. */
+const on =
+  (h: (pos: string[], flags: Flags) => unknown) =>
+  (inv: Invocation<Flag>): unknown =>
+    h(inv.pos, inv.flags as Flags);
+
+/** The actor flags: every verb that writes an event or holds a watch. */
+const IDENTITY = ["as", "from"] as const satisfies readonly Flag[];
+const NONE: PositionalSpec[] = [];
+const ID: PositionalSpec[] = [{ name: "id", required: true }];
 
 /**
- * The dispatched verbs, in the switch's own order.
- *
- * ⚠ A DECLARATION, NOT A DERIVATION — the `switch (verb)` is the behaviour and
- * nothing in the type system ties them together. `cli.test.ts` does: it parses
- * this file's case labels and asserts set equality, magpie's binding cell
- * ported rather than re-derived. Without that cell this is a hand-kept list
- * wearing a derivation's clothes.
- *
- * ⛔ AND IT IS A BARE ARRAY ON PURPOSE, not magpie's `VERB_SPEC` verb->flags
- * table. astrolabe parses ONE flag map at the root and does not scope flags per
- * verb, so a per-verb flag list here would be documentary — a second, unchecked
- * copy of the help text. It also tripped a real instrument: a string literal
- * `"from"` inside an EXPORTED object literal is read as a re-export by
- * `grimoire/lib/import-graph.ts`'s `STATIC_RE` (`export ... from "…"`, with no
- * `;` or paren in between to stop it), and `import-boundary-wards` failed with
- * a phantom `src/astrolabe/backend/cli.ts -> ", "` row. The pin caught it
- * loudly, which is that ward working; the finding is recorded in the register.
+ * `--since` is a bookmark, `N` or `N@<epoch>` as the handoff line prints it
+ * (`kit/wire/tailHandoff.ts`, D2): the epoch lets the tail notice a restarted
+ * daemon whose new log is already past the id. A form it does not accept is
+ * refused with the accepted forms named, never misparsed (`readSince`).
  */
-export const VERBS: readonly string[] = [
-  "open",
-  "add",
-  "remove",
-  "status",
-  "attention",
-  "poke",
-  "state",
-  "list",
-  "close",
-  "info",
-  "join",
-  "tail",
+function sinceOf(flags: Flags): { since: number; sinceEpoch?: string } {
+  const read = typeof flags.since === "string" ? readSince(flags.since, { epoch: true }) : null;
+  if (read !== null && !read.ok) die(read.message, "usage");
+  return read?.ok ? { since: read.since, sinceEpoch: read.epoch } : { since: -1 };
+}
+
+async function cmdJoin(pos: string[], flags: Flags): Promise<number> {
+  const id = pos[0] as string;
+  const { since, sinceEpoch } = sinceOf(flags);
+  const { base } = await ensureDaemon();
+  // Confirm the project exists before holding the watch (a typo'd id would
+  // otherwise bind no presence and silently stream nothing useful).
+  const { state } = (await (await fetch(`${base}/state`)).json()) as {
+    state: { projects: Array<{ id: string }> };
+  };
+  if (!state.projects.some((p) => p.id === id))
+    // ⭐ THE SET IS ALREADY IN HAND, WHICH IS WHY THIS SITE QUALIFIES AND
+    // the same rejection relayed from the daemon (`cmd()`) does not: the
+    // snapshot was fetched one line above to make this very check, so
+    // naming the registered ids costs nothing and needs no second call.
+    // An EMPTY board answers `choices: []` — "nothing would have been
+    // accepted" — which is a true answer and not the same as no field.
+    die(`unknown project '${id}'`, "usage", {
+      hint: "run: cli.ts add <name> --path <p> to register it",
+      choices: state.projects.map((p) => p.id),
+    });
+  const self = resolveAs(flags);
+  return await streamEvents({
+    since,
+    sinceEpoch,
+    project: id,
+    scopeId: id,
+    self,
+    again: ["join", id, ...(self !== undefined ? ["--as", self] : [])],
+  });
+}
+
+async function cmdTail(flags: Flags): Promise<number> {
+  const { since, sinceEpoch } = sinceOf(flags);
+  // ensureDaemon for the START of the watch only; the tail re-resolves the
+  // daemon on every reconnect (see streamEvents), so `base` is not carried.
+  await ensureDaemon();
+  const self = resolveAs(flags);
+  return await streamEvents({
+    since,
+    sinceEpoch,
+    self,
+    again: ["tail", ...(self !== undefined ? ["--as", self] : [])],
+  });
+}
+
+const ROWS: CommandSpec<Flag>[] = [
+  {
+    name: "open",
+    // ⚠ `--timeout` is accepted and not read: the daemon is spawned standing.
+    // Kept because it was accepted before the move; `usageHides` keeps it out
+    // of help, as the hand-written help did (`schema` still declares it).
+    flags: ["no-open", "timeout"],
+    positionals: NONE,
+    describe: "ensure the daemon is up + open the board in the browser",
+    run: on((_pos, flags) => cmdOpen(flags)),
+  },
+  {
+    name: "add",
+    flags: ["path", "description", "avatar", "id", "stdin", ...IDENTITY],
+    positionals: [{ name: "name", required: true, variadic: true }],
+    describe:
+      "register a project (--path required; dedupe-guarded; id + avatar derived from the name). echoes the derived id for join/status/attention/remove",
+    run: on(cmdAdd),
+  },
+  {
+    name: "remove",
+    flags: [...IDENTITY],
+    positionals: ID,
+    describe: "unregister a project",
+    run: on(cmdRemove),
+  },
+  {
+    name: "join",
+    flags: ["since", ...IDENTITY],
+    positionals: ID,
+    describe:
+      "activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card",
+    run: on(cmdJoin),
+  },
+  {
+    name: "status",
+    flags: ["phase", "stdin", ...IDENTITY],
+    // ⚠ FLAG-DEPENDENT ARITY: the summary is positional OR `--stdin`. The
+    // declaration can only mark it optional; `check` refuses a call with neither.
+    positionals: [...ID, { name: "summary", required: false, variadic: true }],
+    describe: "replace a project's current status (the summary is positional, or --stdin)",
+    check: (inv) =>
+      inv.flags.stdin !== true && inv.pos.length < 2
+        ? "missing required <summary> (or pass --stdin)"
+        : undefined,
+    run: on(cmdStatus),
+  },
+  {
+    name: "attention",
+    flags: ["clear", "question", ...IDENTITY],
+    positionals: [...ID, { name: "question", required: false, variadic: true }],
+    describe: "raise / clear (--clear) the needs-you gate (--question attaches the prompt)",
+    run: on(cmdAttention),
+  },
+  {
+    name: "poke",
+    flags: [...IDENTITY],
+    positionals: ID,
+    describe: "request a fresh status from the project's agent",
+    run: on(cmdPoke),
+  },
+  {
+    name: "state",
+    flags: [],
+    positionals: NONE,
+    describe: "read-back: project cards (each carries a derived zone: attention | active | quiet)",
+    run: () => cmdState(),
+  },
+  {
+    name: "tail",
+    flags: ["since", ...IDENTITY],
+    positionals: NONE,
+    describe: "unscoped event tail as JSONL (no presence)",
+    run: on((_pos, flags) => cmdTail(flags)),
+  },
+  {
+    name: "list",
+    flags: [],
+    positionals: NONE,
+    describe: "the registered projects, compact",
+    run: () => cmdList(),
+  },
+  {
+    name: "close",
+    flags: [...IDENTITY],
+    positionals: NONE,
+    describe: "dismiss the observatory",
+    run: on((_pos, flags) => cmdClose(flags)),
+  },
+  {
+    name: "info",
+    flags: [],
+    positionals: NONE,
+    describe: "daemon status: running, url, port",
+    run: () => cmdInfo(),
+  },
 ];
-
-/**
- * Tokens the root answers BEFORE the switch — `help` and `version` are not
- * dispatched verbs, so a `choices` built from the switch alone would understate the
- * accepted set by exactly these (mind-mapper's alias finding, same shape).
- */
-export const ROOT_TOKENS: readonly string[] = ["help", "version"];
-
-/** What the root actually accepts as a first token. */
-export const VERB_CHOICES: readonly string[] = [...VERBS, ...ROOT_TOKENS];
-
-const HELP = `astrolabe — a standing observatory board for projects in flight.
-
-  open [--no-open]
-      ensure the daemon is up + open the board in the browser
-  add <name> --path <p> [--description ..] [--avatar ..] [--id ..] [--stdin]
-      register a project (dedupe-guarded; id + avatar derived from the name when omitted).
-      the response echoes the derived id — you need it for join/status/attention/remove.
-  remove <id>
-      unregister a project
-  join <id> [--as <name>] [--since N]
-      activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card.
-  status <id> <summary...> [--phase ..] [--stdin]
-      replace a project's current status
-  attention <id> [--clear] [--question ...]
-      raise / clear the needs-you gate (--question attaches the prompt)
-  poke <id>
-      request a fresh status from the project's agent
-  state
-      read-back: project cards (each carries a derived zone: attention | active | quiet)
-  tail [--since N] [--as <name>]
-      unscoped event tail as JSONL (no presence)
-  join and tail ${WINDOW_HELP}
-  list | close | info | help | --version
-
-  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.
-  --stdin reads a description/summary from stdin (shell-quoting-safe).
-  Output: every command prints JSON on stdout by default, one line per answer;
-  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).
-  There is no prose mode to switch out of.`;
 
 // The plugin manifest is the one version source; the CLI reads it rather than
 // mirroring the number. Layout-dependent, so absence degrades to "unknown".
@@ -539,161 +636,43 @@ async function versionInfo(): Promise<{ name: string; version: string }> {
   return { name: "astrolabe", version: "unknown" };
 }
 
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS. `defineCli` only validates and
+// indexes; nothing is parsed, printed or read until `main` runs, so a ward or
+// a test can import this module and read `cli.flagsFor` / `cli.declaration()`.
+export const cli = defineCli({
+  name: "astrolabe",
+  summary: "a standing observatory board for projects in flight.",
+  options: CLI_OPTIONS,
+  commands: ROWS,
+  // The verb is the first argument: `astrolabe --as x state` is refused as an
+  // unknown root flag. A bare `--` makes the next token the verb (acc A6).
+  grammar: "verb-first",
+  usageHides: ["timeout"],
+  version: versionInfo,
+  helpFooter: `  join and tail ${WINDOW_HELP}
+
+  Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses
+  self-echo, on the verbs that list it. --stdin reads a description/summary from
+  stdin (shell-quoting-safe). Each verb accepts only the flags on its row; a
+  recognized flag on the wrong verb is refused, and the rejection lists the
+  verb's own flags.
+
+  Output: every command prints JSON on stdout by default, one line per answer;
+  failures put one JSON error envelope on stderr and exit non-zero (2 = usage,
+  1 = internal). There is no prose mode to switch out of.`,
+});
+
 /**
- * The failure funnel. `die` THROWS a CliError now (the house's one error
- * contract, `src/kit/wire/errors.ts`) instead of exiting from wherever it was
- * called, so this is the ONE place a failure becomes an exit code — and the
- * process still ends the one way the house sanctions, `process.exitCode` plus a
- * natural return, which is what drains stdout on a pipe.
- *
- * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
- * a tidy taxonomy failure would lose the stack that says what actually broke.
+ * The failure funnel is the registry's `main`: `die` THROWS a CliError (the
+ * house's one error contract, `src/kit/wire/errors.ts`), `main` turns it into
+ * ONE JSON envelope on stderr and a taxonomy exit code, and an unexpected
+ * throw becomes an `internal` envelope (exit 1) rather than a stack trace —
+ * the process contract is JSON on stderr for EVERY failure. The process still
+ * ends the one way the house sanctions, `process.exitCode` plus a natural
+ * return, which is what drains stdout on a pipe.
  */
 async function main(argv: string[]): Promise<number> {
-  try {
-    return await dispatch(argv);
-  } catch (e) {
-    const code = reportCliError(e);
-    if (code === null) throw e;
-    return code;
-  }
-}
-
-async function dispatch(argv: string[]): Promise<number> {
-  const verb = argv[0];
-  setCurrentCommand(verb ?? null);
-  // A bare invocation requested nothing — that is a usage error, not a help
-  // request. help stays reachable by name (and --help/-h) on stdout at exit 0.
-  if (verb === undefined)
-    die("no verb given", "usage", { hint: "run: cli.ts help", choices: [...VERB_CHOICES] });
-  if (verb === "help" || verb === "--help" || verb === "-h") {
-    process.stdout.write(`${HELP}\n`);
-    return 0;
-  }
-  // Root token, deliberately NOT a flag: dispatched alongside help in the verb
-  // switch, so no per-verb parser is expected to accept it below the root.
-  if (verb === "--version" || verb === "-V" || verb === "version") {
-    printJson(await versionInfo());
-    return 0;
-  }
-  let parsed: ReturnType<typeof parseArgs>;
-  try {
-    parsed = parseArgs({
-      args: argv.slice(1),
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
-  } catch (e) {
-    // ⛔ `choices` ONLY WHEN THE REJECTED TOKEN CAME FROM A CLOSED SET. An
-    // unknown option is that case and the set is `CLI_OPTIONS`; node's other
-    // parse rejections are not — `ERR_PARSE_ARGS_INVALID_OPTION_VALUE` means a
-    // recognised flag was given a value from an open set, and answering it with
-    // the flag roster would tell the caller to fix the thing that was right.
-    // Routed on node's own error CODE rather than on its prose, which is the
-    // same cut the taxonomy makes: `kind` is contract, `message` is
-    // presentation.
-    const code =
-      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
-    die(
-      e instanceof Error ? e.message : String(e),
-      "usage",
-      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
-        ? { hint: "run: cli.ts help", choices: [...RECOGNIZED_FLAGS] }
-        : undefined,
-    );
-  }
-  const flags = parsed.values as Record<string, string | boolean>;
-  const pos = parsed.positionals as string[];
-  // `--since` is a bookmark, `N` or `N@<epoch>` as the handoff line prints it
-  // (`kit/wire/tailHandoff.ts`, D2): the epoch lets the tail notice a restarted
-  // daemon whose new log is already past the id.
-  // A form it does not accept is refused with the accepted forms named, never
-  // misparsed (`readSince`).
-  const read = typeof flags.since === "string" ? readSince(flags.since, { epoch: true }) : null;
-  if (read !== null && !read.ok) die(read.message, "usage");
-  const since = read?.ok ? read.since : -1;
-  const sinceEpoch = read?.ok ? read.epoch : undefined;
-
-  switch (verb) {
-    case "open":
-      await cmdOpen(flags);
-      return 0;
-    case "add":
-      await cmdAdd(pos, flags);
-      return 0;
-    case "remove":
-      await cmdRemove(pos, flags);
-      return 0;
-    case "status":
-      await cmdStatus(pos, flags);
-      return 0;
-    case "attention":
-      await cmdAttention(pos, flags);
-      return 0;
-    case "poke":
-      await cmdPoke(pos, flags);
-      return 0;
-    case "state":
-      await cmdState();
-      return 0;
-    case "list":
-      await cmdList();
-      return 0;
-    case "close":
-      await cmdClose(flags);
-      return 0;
-    case "info":
-      await cmdInfo();
-      return 0;
-    case "join": {
-      const id = pos[0];
-      if (!id) die("usage: join <id> [--as <name>] [--since N]");
-      const { base } = await ensureDaemon();
-      // Confirm the project exists before holding the watch (a typo'd id would
-      // otherwise bind no presence and silently stream nothing useful).
-      const { state } = (await (await fetch(`${base}/state`)).json()) as {
-        state: { projects: Array<{ id: string }> };
-      };
-      if (!state.projects.some((p) => p.id === id))
-        // ⭐ THE SET IS ALREADY IN HAND, WHICH IS WHY THIS SITE QUALIFIES AND
-        // the same rejection relayed from the daemon (`cmd()`) does not: the
-        // snapshot was fetched one line above to make this very check, so
-        // naming the registered ids costs nothing and needs no second call.
-        // An EMPTY board answers `choices: []` — "nothing would have been
-        // accepted" — which is a true answer and not the same as no field.
-        die(`unknown project '${id}'`, "usage", {
-          hint: "run: cli.ts add <name> --path <p> to register it",
-          choices: state.projects.map((p) => p.id),
-        });
-      const self = resolveAs(flags);
-      return await streamEvents({
-        since,
-        sinceEpoch,
-        project: id,
-        scopeId: id,
-        self,
-        again: ["join", id, ...(self !== undefined ? ["--as", self] : [])],
-      });
-    }
-    case "tail": {
-      // ensureDaemon for the START of the watch only; the tail re-resolves the
-      // daemon on every reconnect (see streamEvents), so `base` is not carried.
-      await ensureDaemon();
-      const self = resolveAs(flags);
-      return await streamEvents({
-        since,
-        sinceEpoch,
-        self,
-        again: ["tail", ...(self !== undefined ? ["--as", self] : [])],
-      });
-    }
-    default:
-      die(`unknown verb '${verb}'`, "usage", {
-        hint: "run: cli.ts help",
-        choices: [...VERB_CHOICES],
-      });
-  }
+  return await cli.main(argv);
 }
 
 if (import.meta.main) {

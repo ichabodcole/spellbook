@@ -104,9 +104,10 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // 17 → 16: imago moved onto the kit registry (2026-09-26), taking its one
     // invocation out of its CLI.
     // 16 → 15: bounty moved onto the registry (2026-09-26), taking its one.
+    // 15 → 14: astrolabe moved onto the registry (2026-09-26), taking its one.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 15,
+      invocationsChecked: 14,
     });
   });
 

@@ -115,7 +115,10 @@ const EXPECTED: Record<
   // `tail --since` refuses a form it does not accept with the forms named
   // (`kit/wire/tailHandoff.ts`, `readSince`), where it used to misparse it. No
   // `choices`: an id is not a closed set; the message names the shapes.
-  astrolabe: { sites: 16, choices: 4, verbRoster: true, flagMap: true },
+  // 16/4 -> 12/1 (2026-09-26): astrolabe moved onto the kit registry, as
+  // glamour did — its bare-invocation, parse, unknown-verb and root-flag raises
+  // left for the kit. `join`'s unknown-project rejection (the board's ids) stays.
+  astrolabe: { sites: 12, choices: 1, verbRoster: true, flagMap: true },
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
   bounty: { sites: 27, choices: 1, verbRoster: true, flagMap: true },
@@ -364,25 +367,12 @@ test.each(withFlags)("arm 2 · %s answers an unknown flag with the flag set", (s
  * type, and one added to the type does not compile.
  */
 const PER_VERB_DRIVES: Array<[spell: string, argv: string[], choices: string[]]> = [
-  // astrolabe — the flag roster, off `CLI_OPTIONS`, only for an UNKNOWN OPTION.
+  // astrolabe — a verb's own flag set, from the kit registry's row (2026-09-26:
+  // per-verb sets; `state` takes no flags, so the drive moved to a verb that does).
   [
     "astrolabe",
-    ["state", "--acc-not-a-flag"],
-    [
-      "--as",
-      "--avatar",
-      "--clear",
-      "--description",
-      "--from",
-      "--id",
-      "--no-open",
-      "--path",
-      "--phase",
-      "--question",
-      "--since",
-      "--stdin",
-      "--timeout",
-    ],
+    ["attention", "p1", "--acc-not-a-flag"],
+    ["--as", "--clear", "--from", "--question"],
   ],
   // bounty — the patch-contributing flags, the set whose emptiness IS the refusal.
   [
