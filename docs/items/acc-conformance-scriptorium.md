@@ -70,7 +70,8 @@ Source is `src/scriptorium/backend/`; the checked target is the launcher, never
       (`unknown command`, `missing required <x>`, `unexpected argument "x"`);
       `schema` lists each row's flags in options-table order; `help --x` states
       `choices: []`.
-- [ ] **Step 7:** anything in the kit that bit is filed upstream in the acc
-      repo, or noted "nothing" in the session.
-- [ ] Behaviour changes a user can see (exit codes, help on stdout) are named in
+- [x] **Step 7:** what bit is collected in the feature's
+      [upstream feedback draft](../features/spell-cli-acc-conformance/acc-upstream-feedback.md)
+      (filing waits for Cole, decision log #23).
+- [x] Behaviour changes a user can see (exit codes, help on stdout) are named in
       the commit, for the release note.

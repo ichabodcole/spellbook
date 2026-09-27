@@ -49,6 +49,9 @@ Source is `src/bounty/backend/`; the checked target is the launcher, never
       exception is a `knownFailures` entry with its reason (debt, not a waiver).
 - [ ] **Step 4a:** `acc.config.json` in the skill folder declares
       `"defaultOutput": "json"`, and B5 reads checked, not `unverified`.
+      **Carried** to
+      [item/bounty-json-output-in-lockstep-with-anthill](bounty-json-output-in-lockstep-with-anthill.md)
+      (decision log #20).
 - [x] **Step 4b:** an unknown flag is refused with the valid flag set in
       `choices` at the root and at every verb (the root reading says
       `enumerated`).
@@ -58,8 +61,9 @@ Source is `src/bounty/backend/`; the checked target is the launcher, never
 - [x] **Step 6:** one table drives the parser, help, rejections and a `schema`
       verb (`how-to-derive-your-surface-from-one-registry.md`; take the
       shared-registry research's answer into account).
-- [ ] **Step 7:** anything in the kit that bit is filed upstream in the acc
-      repo, or noted "nothing" in the session.
+- [x] **Step 7:** what bit is collected in the feature's
+      [upstream feedback draft](../features/spell-cli-acc-conformance/acc-upstream-feedback.md)
+      (filing waits for Cole, decision log #23).
 - [x] Behaviour changes a user can see (exit codes, help on stdout) are named in
       the commit, for the release note.
 
