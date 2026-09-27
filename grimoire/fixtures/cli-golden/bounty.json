@@ -93,7 +93,7 @@
       "reason": "starts a daemon (and may open a browser)"
     }
   ],
-  "invocationCount": 89,
+  "invocationCount": 92,
   "invocations": [
     {
       "argv": [],
@@ -1510,6 +1510,7 @@
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
+      "warned": true,
       "ok": false,
       "kind": "not_found"
     },
@@ -1523,6 +1524,32 @@
     },
     {
       "argv": ["message", "--", "--x"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "text", "--session-key=k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["message", "--", "hi", "--session-key", "k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "text", "--nope"],
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -1553,6 +1580,7 @@
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
+      "warned": true,
       "ok": false,
       "kind": "not_found"
     },

@@ -6,7 +6,7 @@ description:
   A real flag after -- is swallowed as a positional (row 2's demotion half), so
   a bounty write lands on the ambient board at exit 0.
 status: draft
-lifecycle: active
+lifecycle: review
 id: 01a0dea2-8c12-7351-b60a-057892e894b3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
@@ -49,6 +49,46 @@ and what it cannot:
 - **Proposal** (decision log #21 in the acc feature): keep A6, and add a
   `warning` to the envelope when a post-`--` positional spells a flag the verb
   accepts. That is product behaviour, for the spell-hardening pass.
+
+## Fixed (2026-09-27)
+
+Per the sprint 06 ruling (plan decision log, 2026-09-27, `c1` demotion): the kit
+registry (`src/kit/cli/registry.ts`, `warnDemoted`) now **warns** where it used
+to be silent. When a token after `--` spells a flag that row accepts — `--flag`,
+`--flag=value`, a short alias, or a global flag the row takes — the row still
+runs with it as text, and stderr carries ONE line:
+
+```
+$ bounty add -- hello --session-key K1
+{"ok":true,"added":"t-5a2862ca","valuesIgnored":null}                     (stdout, exit 0: unchanged)
+# warning: bounty add: --session-key after `--` was read as text, not as a flag; to use it as a flag, move it before `--`
+```
+
+- **Not refused**, on purpose: writing text that contains a flag name is what
+  `--` is for. Stdout and the exit code are unchanged. A token the row does not
+  accept (`--nope`, another verb's flag) is just text and says nothing.
+- **One fix, every spell**: all nine CLIs run on the registry, so the 43
+  variadic rows and the 6 one-optional-positional rows
+  (`grapevine who -- --all`) are covered by the same check over post-`--`
+  tokens.
+- **Format**: the house's success-path stderr form, a `# `-prefixed line
+  (`# warning:` as mind-mapper already mirrors its daemon warnings). An envelope
+  reader looks for a `{` line and skips it. Emitted only after every registry
+  refusal passes, so a registry-refused call's stderr is still exactly one
+  envelope; a verb that warns and then fails in its own `run`
+  (`grapevine send ch -- hi --as k` with no identity) prints the warning line
+  above its envelope — there the warning is the recovery.
+- **Pinned by**: `src/kit/cli/registry.test.ts` ("a flag demoted by `--` is
+  warned about"), the bounty c1 test in `src/bounty/backend/server.test.ts`, and
+  the CLI golden, whose records now carry `warned: true` (bounty, grapevine and
+  one case in each other spell with a variadic verb).
+- **SKILL.md**: the "`--` ends flag parsing" blocks that said "consumed silently
+  … with no warning" (astrolabe, bounty, glamour, grapevine, imago, magpie) now
+  describe the warning.
+
+Not addressed here: the root-level `--` (Bun strips it before the registry sees
+it), and the ward over the enumerated entry points in the definition of done
+below.
 
 ## Definition of done
 

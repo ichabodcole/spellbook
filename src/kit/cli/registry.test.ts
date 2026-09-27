@@ -444,6 +444,122 @@ describe("A6: the -- terminator", () => {
   });
 });
 
+describe("a flag demoted by `--` is warned about, never refused (c1)", () => {
+  // `bounty add -- hello --session-key K1` wrote the title "hello --session-key
+  // K1" to the ambient board at exit 0, with nothing on stderr. `--` must keep
+  // meaning "text from here" (writing a flag name in text is legitimate), so the
+  // registry WARNS once — naming the token and the move that recovers it — and
+  // leaves stdout and the exit code exactly as they were.
+  const DEMOTE_OPTIONS = {
+    as: { type: "string" },
+    force: { type: "boolean", short: "f" },
+    tag: { type: "string", short: "t" },
+    other: { type: "boolean" },
+  } as const;
+  const demoteCli = () =>
+    defineCli({
+      name: "demo",
+      options: DEMOTE_OPTIONS,
+      globalFlags: ["as"],
+      version: () => ({ name: "demo", version: "0.0.0" }),
+      commands: [
+        {
+          name: "say",
+          flags: ["force", "tag"],
+          positionals: [{ name: "text", required: true, variadic: true }],
+          describe: "say text",
+          run: ({ pos, flags }) => {
+            process.stdout.write(`${JSON.stringify({ pos, flags })}\n`);
+            return 3;
+          },
+        },
+        {
+          name: "who",
+          flags: ["force"],
+          positionals: [{ name: "name", required: false }],
+          describe: "one optional positional",
+          run: ({ pos }) => {
+            process.stdout.write(`${JSON.stringify(pos)}\n`);
+          },
+        },
+      ],
+    });
+  const WARN = /^# warning: /;
+
+  /** Exactly one `# warning:` line on stderr, and nothing else there. */
+  const oneWarning = (r: Outcome): string => {
+    const lines = r.err.split("\n").filter((l) => l !== "");
+    expect(lines.length).toBe(1);
+    expect(lines[0]).toMatch(WARN);
+    return lines[0] as string;
+  };
+
+  test("an exact match warns; stdout and exit are what they were", async () => {
+    const r = await capture(() => demoteCli().main(["say", "--", "hello", "--tag", "K1"]));
+    expect(r.code).toBe(3);
+    expect(r.out).toBe(`${JSON.stringify({ pos: ["hello", "--tag", "K1"], flags: {} })}\n`);
+    const w = oneWarning(r);
+    expect(w).toContain("demo say");
+    expect(w).toContain("--tag");
+    expect(w).toContain("before `--`");
+  });
+
+  test("the `--flag=value` form warns, naming the token as written", async () => {
+    const r = await capture(() => demoteCli().main(["say", "--", "hello", "--tag=K1"]));
+    expect(r.code).toBe(3);
+    expect(oneWarning(r)).toContain("--tag=K1");
+  });
+
+  test("a short alias warns", async () => {
+    const r = await capture(() => demoteCli().main(["say", "--", "hi", "-t", "K1"]));
+    expect(oneWarning(r)).toContain("-t");
+  });
+
+  test("a global flag the row accepts warns", async () => {
+    const r = await capture(() => demoteCli().main(["say", "--", "hi", "--as", "mallory"]));
+    expect(oneWarning(r)).toContain("--as");
+  });
+
+  test("several matches are ONE warning naming each", async () => {
+    const r = await capture(() => demoteCli().main(["say", "--", "--force", "hi", "--as=x"]));
+    const w = oneWarning(r);
+    expect(w).toContain("--force");
+    expect(w).toContain("--as=x");
+  });
+
+  test("a leading root `--` is the same terminator, and warns the same", async () => {
+    const r = await capture(() => demoteCli().main(["--", "say", "hi", "--tag", "K"]));
+    expect(r.code).toBe(3);
+    expect(oneWarning(r)).toContain("--tag");
+  });
+
+  test("a row with one optional positional warns the same way", async () => {
+    const r = await capture(() => demoteCli().main(["who", "--", "--force"]));
+    expect(r).toMatchObject({ code: 0, out: '["--force"]\n' });
+    expect(oneWarning(r)).toContain("--force");
+  });
+
+  test("text that is not a flag this row accepts is just text: no warning", async () => {
+    for (const argv of [
+      ["say", "--", "hello", "-x", "--", "-", "---tag"], // not flags at all
+      ["say", "--", "fix", "--other"], // a spell flag this row does NOT take
+      ["say", "--", "fix", "--nope"], // a flag the spell does not know
+      ["say", "--", "see", "-h", "--help"], // the interceptors are not row flags
+      ["say", "--tag", "K", "--", "hi"], // the flag sits before `--`: honoured
+    ]) {
+      const r = await capture(() => demoteCli().main(argv));
+      expect(r.code).toBe(3);
+      expect(r.err).toBe("");
+    }
+  });
+
+  test("a refused invocation carries only its envelope, not the warning", async () => {
+    const r = await capture(() => demoteCli().main(["who", "--", "--force", "extra"]));
+    expect(r.code).toBe(2);
+    expect(envelope(r).error.message).toBe('who: unexpected argument "extra"');
+  });
+});
+
 describe("A1/A3: rejections name the token and the set AT THAT VERB", () => {
   test("an unknown flag: choices are this verb's set, message names the flag", async () => {
     const { cli } = fakeCli();

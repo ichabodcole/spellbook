@@ -105,6 +105,11 @@ export const SPECS: SpellSpec[] = [
       c("add", "--", "text", "--session-key", "k"),
       c("update", "t1", "--status", "doing", "--", "--session-key", "k"),
       c("message", "--", "--x"),
+      // c1: a post-`--` token spelling an accepted flag is text AND a stderr
+      // warning (stream "both"); one the verb does not take is just text.
+      c("add", "--", "text", "--session-key=k"),
+      c("message", "--", "hi", "--session-key", "k"),
+      c("add", "--", "text", "--nope"),
     ],
   },
   {
@@ -272,6 +277,8 @@ export const SPECS: SpellSpec[] = [
       c("--version", "--human"),
       c("send", "golden-ch", "--", "--x"),
       c("send", "golden-ch", "--", "text", "--as", "k"),
+      c("send", "golden-ch", "--", "text", "--as=k"),
+      c("who", "--", "--all"),
     ],
   },
   {

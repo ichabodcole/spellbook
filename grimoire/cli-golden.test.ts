@@ -8,7 +8,8 @@
 // WHAT A RECORD HOLDS: argv (+ stdin), exit code, the parse-level verdict (exit
 // 2 = rejected; ANY other exit, including 5 "no session", = accepted), which
 // stream carried output, the JSON envelope's `ok` / `error.kind` /
-// `error.choices`, and for help / version / schema the normalized output itself.
+// `error.choices`, whether stderr carried a `# warning:` line (`warned`), and
+// for help / version / schema the normalized output itself.
 // Messages are deliberately NOT recorded: the move rewords them, and the
 // contract is the kind, the choices and the exit.
 //

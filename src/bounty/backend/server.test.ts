@@ -1813,6 +1813,11 @@ describe("cli.ts ↔ daemon parity", () => {
         { env },
       );
       expect(add.code).toBe(0);
+      // Still text, still exit 0 — but no longer silent: one stderr warning
+      // naming the token and the move that recovers it.
+      expect(add.stderr).toContain(
+        "# warning: bounty add: --session-key after `--` was read as text, not as a flag; to use it as a flag, move it before `--`",
+      );
       const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
         state: BoardState;
       };

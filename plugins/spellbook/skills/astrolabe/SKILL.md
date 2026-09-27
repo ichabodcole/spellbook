@@ -82,8 +82,10 @@ auto-spawns it (detached, it outlives the CLI) and finds it via
 
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+> positional, including something that looks like a flag** — it is taken as
+> text, not refused. If it spells a flag that verb accepts, stderr carries one
+> `# warning:` line naming it and the fix; stdout and the exit code do not
+> change. Put every flag to the LEFT of `--`.
 
 | Verb                                                                                | What it does                                                                                                                                                                                                                                                                                 |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

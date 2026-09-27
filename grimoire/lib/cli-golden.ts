@@ -33,6 +33,9 @@ export type Rec = {
   ok?: boolean;
   kind?: string;
   choices?: string[];
+  /** stderr carried a `# warning:` line (c1: a flag demoted by `--`). Set only
+   *  when true, and independent of the exit: a verb may warn, then fail. */
+  warned?: true;
   text?: string[];
   json?: unknown;
 };
@@ -169,6 +172,7 @@ export async function runCase(spec: SpellSpec, c: Case, ctx: RunCtx): Promise<Re
     verdict: timedOut ? "timeout" : exit === 2 ? "rejected" : "accepted",
     stream: hasOut && hasErr ? "both" : hasOut ? "stdout" : hasErr ? "stderr" : "none",
   };
+  if (/^# warning: /m.test(stderr)) rec.warned = true;
   // The envelope rides stderr on failure, stdout on success.
   const carrier = exit === 0 ? stdout : hasErr ? stderr : stdout;
   const env0 = firstJsonObject(carrier);

@@ -1018,7 +1018,8 @@
       "argv": ["status", "p1", "--", "--phase", "x"],
       "exit": 0,
       "verdict": "accepted",
-      "stream": "stdout",
+      "stream": "both",
+      "warned": true,
       "ok": true
     },
     {
@@ -1026,6 +1027,7 @@
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
+      "warned": true,
       "ok": false,
       "kind": "usage"
     },

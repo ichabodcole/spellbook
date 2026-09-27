@@ -211,14 +211,17 @@ session by default; pass `--session <id>` to target a specific one.
 > free text would otherwise be read as a flag:
 > `add -- "fix the --stdin handler later"`. **Anything after `--` is a
 > positional, including something that looks like a flag.** On `add` and
-> `message` it becomes part of the text, silently, at exit 0; on a verb whose
-> positionals are already full (`update t1 -- --session-key K`) it is refused,
-> exit 2, naming the token.
+> `message` it becomes part of the text, at exit 0, and when it spells a flag
+> that verb accepts stderr carries one `# warning:` line naming it and the fix
+> (stdout and the exit code do not change); on a verb whose positionals are
+> already full (`update t1 -- --session-key K`) it is refused, exit 2, naming
+> the token.
 >
 > **⚠ For this spell that matters: a `--session-key` placed after `--` on `add`
 > is TEXT — it lands in the card's title, and the write lands on whatever board
-> the ambient environment resolves to.** The invocation looks isolated and is
-> not. **Correct: `bounty add --session-key K -- "text"`. Never
+> the ambient environment resolves to.** The only sign is the `# warning:` line
+> on stderr. The invocation looks isolated and is not. **Correct:
+> `bounty add --session-key K -- "text"`. Never
 > `bounty add -- --session-key K "text"`.**
 >
 > **Each verb accepts only the flags in its row below** (plus `--session <id>`

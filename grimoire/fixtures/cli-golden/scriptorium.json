@@ -2664,6 +2664,7 @@
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
+      "warned": true,
       "ok": false,
       "kind": "not_found"
     },
