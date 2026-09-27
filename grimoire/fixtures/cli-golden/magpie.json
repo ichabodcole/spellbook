@@ -1,7 +1,7 @@
 {
   "spell": "magpie",
   "launcher": "scripts/cli.ts",
-  "verbCount": 17,
+  "verbCount": 19,
   "verbs": [
     "open",
     "sessions",
@@ -19,6 +19,8 @@
     "cmd",
     "close",
     "info",
+    "version",
+    "schema",
     "help"
   ],
   "excluded": {
@@ -37,7 +39,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     }
   ],
-  "invocationCount": 81,
+  "invocationCount": 85,
   "invocations": [
     {
       "argv": [],
@@ -63,6 +65,8 @@
         "cmd",
         "close",
         "info",
+        "version",
+        "schema",
         "help"
       ]
     },
@@ -74,39 +78,48 @@
       "text": [
         "magpie — a standing review surface for extracting assets from a composite image.",
         "",
-        "  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]",
-        "  sessions                            list saved (resumable) sessions",
-        "  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)",
-        "                                     ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  state  [--full]                     lean state snapshot (add --full for raw)",
-        "  say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)",
-        "  ask    <text...> [--options \"a|b|c\"]   ask the user a question (in-thread)",
-        "  status on [text...] | status off    show/hide the \"magpie working\" spinner",
-        "  source <imagePath>                  register the composite under review (computes sha + size)",
-        "  discover                            run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
-        "  extract [--ids a,b] [--remove] [--alpha auto|all|none] [--pad N] [--model <m>] [--label <name>]",
-        "          cut slices (crop-only; --remove adds rembg). --model = a rembg model name (isnet-general-use,",
-        "          birefnet-general, …) OR a media-forge bg-remove model id (a provider path like",
-        "          fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never hardcode);",
-        "          --label sets the version's friendly strip label (defaults sensibly)",
-        "  export [--ids a,b]                  build magpie-bundle.zip — assets/ (chosen finals) + crops/ (raw crops) + manifest.json + gallery.html (backdrop toggle + type filters)",
-        "  element-add --bbox \"x1,y1,x2,y2\" [--name ..] [--type ..]   box a region (source px)",
-        "  element-remove <id>                 retract a boxed region",
-        "  cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin",
-        "  close | info | help",
-        "  --version                           print magpie's version as JSON",
+        "  open [--title ..] [--intent ..] [--timeout ..] [--restore ..] [--no-open]",
+        "                                                spawn a session (opens the browser; --restore <id|path> resumes one, --timeout S); prints {port, session_id, files_dir}",
+        "  sessions                                      list saved (resumable) sessions",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw)",
+        "  say [text...] [--stdin]                       post agent dialogue (text args OR piped stdin with --stdin)",
+        "  ask <text...> [--options ..]                  ask the user a question in-thread (--options \"a|b|c\")",
+        "  status [on|off] [text...]                     show/hide the \"magpie working\" spinner: status on [text...] | status off",
+        "  source <imagePath>                            register the composite under review (computes sha + size)",
+        "  discover                                      run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
+        "  extract [--ids ..] [--remove] [--alpha ..] [--pad ..] [--model ..] [--label ..]",
+        "                                                cut slices (crop-only; --remove adds rembg; --alpha auto|all|none; --pad N)",
+        "  export [--ids ..]                             build magpie-bundle.zip (assets/, crops/, manifest.json, gallery.html)",
+        "  element-add [--bbox ..] [--name ..] [--type ..]",
+        "                                                box a region in source px: --bbox \"x1,y1,x2,y2\"",
+        "  element-remove <id>                           retract a boxed region",
+        "  cmd [json...] [--stdin]                       POST a raw AgentCommand JSON body (pipe it with --stdin)",
+        "  close                                         shut the session (writes its snapshot)",
+        "  info                                          the session pointer as JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Add --session <id> to target a specific session (default: most recent). It is",
-        "  accepted by every verb that acts on a session — not by open, sessions or help,",
-        "  which do not have one to target.",
+        "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
+        "  OR a media-forge bg-remove model id (a provider path like",
+        "  fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never",
+        "  hardcode); --label sets the version's friendly strip label.",
+        "",
+        "  Add --session <id> after the verb to target a specific session (default: most",
+        "  recent). It is accepted by every verb that acts on a session — not by open,",
+        "  sessions, help, version or schema, which do not have one to target.",
         "",
         "  Flags are scoped to their verb: extract's --pad is not accepted by say. A",
         "  rejection lists what the verb it names does accept.",
         "",
         "  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON",
         "  document there — except `tail`, which is a stream and writes one per line",
-        "  (JSONL). Prose, liveness and diagnostics go to stderr. `--full`",
-        "  widens the state payload; it does not switch formats."
+        "  (JSONL), and help, which is prose. Liveness and diagnostics go to stderr.",
+        "  Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict). `--full` widens the state",
+        "  payload; it does not switch formats."
       ]
     },
     {
@@ -117,39 +130,48 @@
       "text": [
         "magpie — a standing review surface for extracting assets from a composite image.",
         "",
-        "  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]",
-        "  sessions                            list saved (resumable) sessions",
-        "  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)",
-        "                                     ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  state  [--full]                     lean state snapshot (add --full for raw)",
-        "  say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)",
-        "  ask    <text...> [--options \"a|b|c\"]   ask the user a question (in-thread)",
-        "  status on [text...] | status off    show/hide the \"magpie working\" spinner",
-        "  source <imagePath>                  register the composite under review (computes sha + size)",
-        "  discover                            run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
-        "  extract [--ids a,b] [--remove] [--alpha auto|all|none] [--pad N] [--model <m>] [--label <name>]",
-        "          cut slices (crop-only; --remove adds rembg). --model = a rembg model name (isnet-general-use,",
-        "          birefnet-general, …) OR a media-forge bg-remove model id (a provider path like",
-        "          fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never hardcode);",
-        "          --label sets the version's friendly strip label (defaults sensibly)",
-        "  export [--ids a,b]                  build magpie-bundle.zip — assets/ (chosen finals) + crops/ (raw crops) + manifest.json + gallery.html (backdrop toggle + type filters)",
-        "  element-add --bbox \"x1,y1,x2,y2\" [--name ..] [--type ..]   box a region (source px)",
-        "  element-remove <id>                 retract a boxed region",
-        "  cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin",
-        "  close | info | help",
-        "  --version                           print magpie's version as JSON",
+        "  open [--title ..] [--intent ..] [--timeout ..] [--restore ..] [--no-open]",
+        "                                                spawn a session (opens the browser; --restore <id|path> resumes one, --timeout S); prints {port, session_id, files_dir}",
+        "  sessions                                      list saved (resumable) sessions",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw)",
+        "  say [text...] [--stdin]                       post agent dialogue (text args OR piped stdin with --stdin)",
+        "  ask <text...> [--options ..]                  ask the user a question in-thread (--options \"a|b|c\")",
+        "  status [on|off] [text...]                     show/hide the \"magpie working\" spinner: status on [text...] | status off",
+        "  source <imagePath>                            register the composite under review (computes sha + size)",
+        "  discover                                      run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
+        "  extract [--ids ..] [--remove] [--alpha ..] [--pad ..] [--model ..] [--label ..]",
+        "                                                cut slices (crop-only; --remove adds rembg; --alpha auto|all|none; --pad N)",
+        "  export [--ids ..]                             build magpie-bundle.zip (assets/, crops/, manifest.json, gallery.html)",
+        "  element-add [--bbox ..] [--name ..] [--type ..]",
+        "                                                box a region in source px: --bbox \"x1,y1,x2,y2\"",
+        "  element-remove <id>                           retract a boxed region",
+        "  cmd [json...] [--stdin]                       POST a raw AgentCommand JSON body (pipe it with --stdin)",
+        "  close                                         shut the session (writes its snapshot)",
+        "  info                                          the session pointer as JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Add --session <id> to target a specific session (default: most recent). It is",
-        "  accepted by every verb that acts on a session — not by open, sessions or help,",
-        "  which do not have one to target.",
+        "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
+        "  OR a media-forge bg-remove model id (a provider path like",
+        "  fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never",
+        "  hardcode); --label sets the version's friendly strip label.",
+        "",
+        "  Add --session <id> after the verb to target a specific session (default: most",
+        "  recent). It is accepted by every verb that acts on a session — not by open,",
+        "  sessions, help, version or schema, which do not have one to target.",
         "",
         "  Flags are scoped to their verb: extract's --pad is not accepted by say. A",
         "  rejection lists what the verb it names does accept.",
         "",
         "  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON",
         "  document there — except `tail`, which is a stream and writes one per line",
-        "  (JSONL). Prose, liveness and diagnostics go to stderr. `--full`",
-        "  widens the state payload; it does not switch formats."
+        "  (JSONL), and help, which is prose. Liveness and diagnostics go to stderr.",
+        "  Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict). `--full` widens the state",
+        "  payload; it does not switch formats."
       ]
     },
     {
@@ -161,39 +183,48 @@
       "text": [
         "magpie — a standing review surface for extracting assets from a composite image.",
         "",
-        "  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]",
-        "  sessions                            list saved (resumable) sessions",
-        "  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)",
-        "                                     ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  state  [--full]                     lean state snapshot (add --full for raw)",
-        "  say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)",
-        "  ask    <text...> [--options \"a|b|c\"]   ask the user a question (in-thread)",
-        "  status on [text...] | status off    show/hide the \"magpie working\" spinner",
-        "  source <imagePath>                  register the composite under review (computes sha + size)",
-        "  discover                            run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
-        "  extract [--ids a,b] [--remove] [--alpha auto|all|none] [--pad N] [--model <m>] [--label <name>]",
-        "          cut slices (crop-only; --remove adds rembg). --model = a rembg model name (isnet-general-use,",
-        "          birefnet-general, …) OR a media-forge bg-remove model id (a provider path like",
-        "          fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never hardcode);",
-        "          --label sets the version's friendly strip label (defaults sensibly)",
-        "  export [--ids a,b]                  build magpie-bundle.zip — assets/ (chosen finals) + crops/ (raw crops) + manifest.json + gallery.html (backdrop toggle + type filters)",
-        "  element-add --bbox \"x1,y1,x2,y2\" [--name ..] [--type ..]   box a region (source px)",
-        "  element-remove <id>                 retract a boxed region",
-        "  cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin",
-        "  close | info | help",
-        "  --version                           print magpie's version as JSON",
+        "  open [--title ..] [--intent ..] [--timeout ..] [--restore ..] [--no-open]",
+        "                                                spawn a session (opens the browser; --restore <id|path> resumes one, --timeout S); prints {port, session_id, files_dir}",
+        "  sessions                                      list saved (resumable) sessions",
+        "  tail [--since ..] [--once]                    SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  state [--full]                                lean state snapshot (--full for raw)",
+        "  say [text...] [--stdin]                       post agent dialogue (text args OR piped stdin with --stdin)",
+        "  ask <text...> [--options ..]                  ask the user a question in-thread (--options \"a|b|c\")",
+        "  status [on|off] [text...]                     show/hide the \"magpie working\" spinner: status on [text...] | status off",
+        "  source <imagePath>                            register the composite under review (computes sha + size)",
+        "  discover                                      run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
+        "  extract [--ids ..] [--remove] [--alpha ..] [--pad ..] [--model ..] [--label ..]",
+        "                                                cut slices (crop-only; --remove adds rembg; --alpha auto|all|none; --pad N)",
+        "  export [--ids ..]                             build magpie-bundle.zip (assets/, crops/, manifest.json, gallery.html)",
+        "  element-add [--bbox ..] [--name ..] [--type ..]",
+        "                                                box a region in source px: --bbox \"x1,y1,x2,y2\"",
+        "  element-remove <id>                           retract a boxed region",
+        "  cmd [json...] [--stdin]                       POST a raw AgentCommand JSON body (pipe it with --stdin)",
+        "  close                                         shut the session (writes its snapshot)",
+        "  info                                          the session pointer as JSON",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
-        "  Add --session <id> to target a specific session (default: most recent). It is",
-        "  accepted by every verb that acts on a session — not by open, sessions or help,",
-        "  which do not have one to target.",
+        "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
+        "  OR a media-forge bg-remove model id (a provider path like",
+        "  fal-ai/bria/background/remove — DISCOVER via `media-forge models list`, never",
+        "  hardcode); --label sets the version's friendly strip label.",
+        "",
+        "  Add --session <id> after the verb to target a specific session (default: most",
+        "  recent). It is accepted by every verb that acts on a session — not by open,",
+        "  sessions, help, version or schema, which do not have one to target.",
         "",
         "  Flags are scoped to their verb: extract's --pad is not accepted by say. A",
         "  rejection lists what the verb it names does accept.",
         "",
         "  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON",
         "  document there — except `tail`, which is a stream and writes one per line",
-        "  (JSONL). Prose, liveness and diagnostics go to stderr. `--full`",
-        "  widens the state payload; it does not switch formats."
+        "  (JSONL), and help, which is prose. Liveness and diagnostics go to stderr.",
+        "  Failures are one JSON envelope on stderr and exit non-zero (2 = usage,",
+        "  1 = internal, 5 = not found, 6 = conflict). `--full` widens the state",
+        "  payload; it does not switch formats."
       ]
     },
     {
@@ -218,57 +249,382 @@
     },
     {
       "argv": ["version"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "magpie",
+        "version": "<VERSION>"
+      }
     },
     {
       "argv": ["schema"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--intent",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--restore",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["sessions"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["say"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["ask"],
+            "args": [
+              {
+                "name": "--options",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["status"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "on|off",
+                "required": false
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["source"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "imagePath",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["discover"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["extract"],
+            "args": [
+              {
+                "name": "--alpha",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--ids",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--label",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--model",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--pad",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--remove",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["export"],
+            "args": [
+              {
+                "name": "--ids",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["element-add"],
+            "args": [
+              {
+                "name": "--bbox",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--name",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--type",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["element-remove"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["cmd"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "json",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
     },
     {
       "argv": ["--acc-bogus-flag"],
@@ -277,25 +633,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -321,6 +659,8 @@
         "cmd",
         "close",
         "info",
+        "version",
+        "schema",
         "help"
       ]
     },
@@ -331,25 +671,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
@@ -358,25 +680,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -667,6 +971,42 @@
       "choices": ["--session"]
     },
     {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
       "argv": ["help", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
@@ -863,25 +1203,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "sessions",
-        "tail",
-        "state",
-        "say",
-        "ask",
-        "status",
-        "source",
-        "discover",
-        "extract",
-        "export",
-        "element-add",
-        "element-remove",
-        "cmd",
-        "close",
-        "info",
-        "help"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["say", "--session=s1", "hello"],
