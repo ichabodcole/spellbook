@@ -116,7 +116,9 @@ const EXPECTED: Record<
   // (`kit/wire/tailHandoff.ts`, `readSince`), where it used to misparse it. No
   // `choices`: an id is not a closed set; the message names the shapes.
   astrolabe: { sites: 16, choices: 4, verbRoster: true, flagMap: true },
-  bounty: { sites: 33, choices: 2, verbRoster: true, flagMap: true },
+  // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
+  // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
+  bounty: { sites: 27, choices: 1, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
@@ -167,12 +169,13 @@ const EXPECTED: Record<
 };
 
 /**
- * ⚠ TWO SPELLS' ROOT FLAG REJECTION IS BELOW THEIR `choices` COUNT ON PURPOSE.
- * bounty and imago attach the flag roster to a private `UsageError`'s `extra`
- * and hand it to `die` one frame later, so the literal `choices:` sits at the
- * PARSER and the site arm 3 counts is `die(e.message, "usage", e.extra)` —
- * which has no literal. Arm 2 is what proves those two work, and this note is
- * why arm 3's number is not the whole story for them.
+ * ⚠ ONE SPELL'S ROOT FLAG REJECTION IS BELOW ITS `choices` COUNT ON PURPOSE.
+ * imago attaches the flag roster to a private `UsageError`'s `extra` and hands
+ * it to `die` one frame later, so the literal `choices:` sits at the PARSER and
+ * the site arm 3 counts is `die(e.message, "usage", e.extra)` — which has no
+ * literal. Arm 2 is what proves it works, and this note is why arm 3's number
+ * is not the whole story for it. (bounty had the same shape until it moved
+ * onto the kit registry, 2026-09-26.)
  */
 
 /** How the shipped launcher is addressed, and the env that keeps its state in a temp home. */

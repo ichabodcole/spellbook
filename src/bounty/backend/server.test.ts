@@ -1797,6 +1797,46 @@ describe("cli.ts ↔ daemon parity", () => {
     }
   }, 20000);
 
+  // c1 (docs/items/terminator-eats-session-key.md) and acc A6, on the kit
+  // registry: after a bare `--` every token is a positional, never a flag. So a
+  // `--session-key` there is TEXT — it becomes part of a variadic title, and a
+  // verb whose positionals are full refuses it by name instead of dropping it.
+  // Neither retargets the write: the board is the one `--session` named.
+  test("a flag after `--` is a positional: add titles with it, update refuses it (c1, A6)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const add = await runCli(
+        ["add", "--session", session, "--id", "t1", "--", "text", "--session-key", "K"],
+        { env },
+      );
+      expect(add.code).toBe(0);
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(at(s.state.tasks, 0, "s.state.tasks").title).toBe("text --session-key K");
+
+      const up = await runCli(
+        ["update", "t1", "--status", "doing", "--session", session, "--", "--session-key", "K"],
+        { env },
+      );
+      expect(up.code).toBe(2);
+      expect(up.stdout).toBe("");
+      const err = JSON.parse(up.stderr) as { error: { kind: string; message: string } };
+      expect(err.error.kind).toBe("usage");
+      expect(err.error.message).toContain('"--session-key"');
+      // Refused before any write: the task is still `todo`.
+      const s2 = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(at(s2.state.tasks, 0, "s2.state.tasks").status).toBe("todo");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
   test("daemon.log records ready + exit lifecycle lines (#64 diagnostics)", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };

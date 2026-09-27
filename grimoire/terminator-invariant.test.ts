@@ -79,7 +79,9 @@ const HAZARD_APPLIES: Record<string, string> = {
   // launcher took its old address. The hazard travels with the PARSER, not
   // with the filename a consumer invokes.
   "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
-  "bounty/backend/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
+  // bounty's entry ("the c1 scar itself") and imago's moved into the
+  // kit-registry entry with their migrations (2026-09-26): task titles, toast
+  // text and prompt text are positionals.
   // MOVED, NOT CLEARED (2026-09-26): glamour, grapevine and scriptorium parse
   // through the kit CLI registry now, so their three entries became this one.
   // The hazard did not go anywhere — prompt text, message bodies and say text
@@ -87,7 +89,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   // adopters are listed, and a cell below binds the list to the spells whose
   // source calls `defineCli`, so each of the six that adopts next edits it.
   [KIT_REGISTRY]:
-    "caller-facing through every adopter (digestify, glamour, grapevine, imago, scriptorium); prompt text, message bodies and say text are positionals",
+    "caller-facing through every adopter (bounty, digestify, glamour, grapevine, imago, scriptorium); prompt text, message bodies, say text and task titles are positionals",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/backend/cli.ts": "caller-facing; send bodies are prose positionals",
@@ -192,16 +194,16 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
       // grapevine and scriptorium (one file and one site each) now parse
       // through the kit registry, one file with two sites. Exposure did not
       // shrink; it moved to one parser.
-      // 7/6 → 6/5 files and 9/8 → 8/7 call sites (2026-09-26): imago (one
-      // file, one site; prompt text is a positional) joined the kit registry.
-      filesAll: 6,
-      filesCallerFacing: 5,
+      // 7/6 → 5/4 files and 9/8 → 7/6 call sites (2026-09-26): imago and
+      // bounty (one file, one site each) joined the kit registry.
+      filesAll: 5,
+      filesCallerFacing: 4,
       // 23/22 → 9/8: mind-mapper's acc L0 lane C consolidated its ~15
       // positional-accepting inline parses into the one registry-driven
       // invocation (plus the doc-path probe) — call sites shrank, files did
       // not. The unit line below still names what is counted.
-      callSitesAll: 8,
-      callSitesCallerFacing: 7,
+      callSitesAll: 7,
+      callSitesCallerFacing: 6,
       // Driven A/B on bounty: `add -- --session-key` is byte-identical to
       // `add -- ordinaryword`, exit 0, valuesIgnored:null, and the flag becomes
       // the card's TITLE. No guard. The other six are not driven and this number

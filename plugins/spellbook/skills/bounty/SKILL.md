@@ -210,14 +210,22 @@ session by default; pass `--session <id>` to target a specific one.
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag:
 > `add -- "fix the --stdin handler later"`. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning.
+> positional, including something that looks like a flag.** On `add` and
+> `message` it becomes part of the text, silently, at exit 0; on a verb whose
+> positionals are already full (`update t1 -- --session-key K`) it is refused,
+> exit 2, naming the token.
 >
-> **⚠ For this spell that is worse than silent: a `--session-key` placed after
-> `--` is eaten, and the write lands on whatever board the ambient environment
-> resolves to.** The invocation looks isolated and is not. **Correct:
-> `bounty add --session-key K -- "text"`. Never
+> **⚠ For this spell that matters: a `--session-key` placed after `--` on `add`
+> is TEXT — it lands in the card's title, and the write lands on whatever board
+> the ambient environment resolves to.** The invocation looks isolated and is
+> not. **Correct: `bounty add --session-key K -- "text"`. Never
 > `bounty add -- --session-key K "text"`.**
+>
+> **Each verb accepts only the flags in its row below** (plus `--session <id>`
+> and `--session-key <key>` on every verb that talks to a board, and
+> `--as <name>` on those that act on it). A flag from another verb is refused,
+> exit 2, with the verb's accepted set in `error.choices`. A flag before the
+> verb is refused too: the verb comes first.
 
 | Verb                                                                                                                   | Does                                                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -233,6 +241,11 @@ session by default; pass `--session <id>` to target a specific one.
 | `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                                                                                                   |
 | `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                      |
 | `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                                                                                                            |
+| `version` / `schema`                                                                                                   | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                       |
+
+A bare `bounty` with no verb is a usage error — one JSON envelope on stderr,
+exit 2, the verbs in `error.choices` — not help. `list` and `sessions` print
+prose lines; every other verb prints one JSON document (`tail`: one per event).
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` instead of putting it on the

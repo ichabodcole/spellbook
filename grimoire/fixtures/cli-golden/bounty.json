@@ -1,11 +1,11 @@
 {
   "spell": "bounty",
   "launcher": "scripts/cli.ts",
-  "verbCount": 16,
+  "verbCount": 18,
   "verbs": [
     "open",
-    "tail",
     "state",
+    "tail",
     "add",
     "update",
     "claim",
@@ -16,8 +16,10 @@
     "init",
     "close",
     "info",
-    "sessions",
     "list",
+    "sessions",
+    "version",
+    "schema",
     "help"
   ],
   "excluded": {
@@ -91,13 +93,35 @@
       "reason": "starts a daemon (and may open a browser)"
     }
   ],
-  "invocationCount": 85,
+  "invocationCount": 89,
   "invocations": [
     {
       "argv": [],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "state",
+        "tail",
+        "add",
+        "update",
+        "claim",
+        "block",
+        "unblock",
+        "remove",
+        "message",
+        "init",
+        "close",
+        "info",
+        "list",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["--help"],
@@ -107,25 +131,33 @@
       "text": [
         "bounty — an agent-driven task board.",
         "",
-        "  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)",
-        "  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }",
-        "           (--full is accepted but redundant: the read is full by default — b6)",
-        "  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)",
-        "         ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag \"\" clears)",
-        "  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.",
-        "  claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)",
-        "  block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)",
-        "  unblock <id> --on <id>[,<id>...]   remove blocker edge(s)",
-        "  remove <id>                        delete a task",
-        "  message <text...> [--stdin]        show a toast on the board",
-        "  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each",
-        "           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any",
-        "           dropped task is reported per-entry in tasksDropped)",
-        "  list                               list currently-RUNNING boards (id/tasks/url/title)",
-        "  sessions                           list saved SNAPSHOTS (incl. closed boards)",
-        "  close | info | help",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task (--tag \"\" clears the tags)",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
         "",
         "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
         "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
@@ -137,7 +169,12 @@
         "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
         "  forces a clean one), and every verb re-derives the same id — deterministic",
         "  board binding with no stored/latest pointer. Or use open --pin to write",
-        "  cwd/.bounty-session and bind a board to this directory."
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
       ]
     },
     {
@@ -148,25 +185,33 @@
       "text": [
         "bounty — an agent-driven task board.",
         "",
-        "  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)",
-        "  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }",
-        "           (--full is accepted but redundant: the read is full by default — b6)",
-        "  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)",
-        "         ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag \"\" clears)",
-        "  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.",
-        "  claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)",
-        "  block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)",
-        "  unblock <id> --on <id>[,<id>...]   remove blocker edge(s)",
-        "  remove <id>                        delete a task",
-        "  message <text...> [--stdin]        show a toast on the board",
-        "  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each",
-        "           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any",
-        "           dropped task is reported per-entry in tasksDropped)",
-        "  list                               list currently-RUNNING boards (id/tasks/url/title)",
-        "  sessions                           list saved SNAPSHOTS (incl. closed boards)",
-        "  close | info | help",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task (--tag \"\" clears the tags)",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
         "",
         "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
         "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
@@ -178,7 +223,12 @@
         "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
         "  forces a clean one), and every verb re-derives the same id — deterministic",
         "  board binding with no stored/latest pointer. Or use open --pin to write",
-        "  cwd/.bounty-session and bind a board to this directory."
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
       ]
     },
     {
@@ -190,25 +240,33 @@
       "text": [
         "bounty — an agent-driven task board.",
         "",
-        "  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)",
-        "  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }",
-        "           (--full is accepted but redundant: the read is full by default — b6)",
-        "  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)",
-        "         ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
-        "  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag \"\" clears)",
-        "  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.",
-        "  claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)",
-        "  block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)",
-        "  unblock <id> --on <id>[,<id>...]   remove blocker edge(s)",
-        "  remove <id>                        delete a task",
-        "  message <text...> [--stdin]        show a toast on the board",
-        "  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each",
-        "           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any",
-        "           dropped task is reported per-entry in tasksDropped)",
-        "  list                               list currently-RUNNING boards (id/tasks/url/title)",
-        "  sessions                           list saved SNAPSHOTS (incl. closed boards)",
-        "  close | info | help",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task (--tag \"\" clears the tags)",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
         "",
         "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
         "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
@@ -220,120 +278,579 @@
         "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
         "  forces a clean one), and every verb re-derives the same id — deterministic",
         "  board binding with no stored/latest pointer. Or use open --pin to write",
-        "  cwd/.bounty-session and bind a board to this directory."
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
       ]
     },
     {
       "argv": ["--version"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
     },
     {
       "argv": ["-V"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
     },
     {
       "argv": ["version"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
     },
     {
       "argv": ["schema"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--restore",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--fresh",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--pin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--mine",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--mine",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["add"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--expect",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--id",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--notes",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--size",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "title",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["update"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--expect",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--notes",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--size",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["claim"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["block"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--on",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["unblock"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--on",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["remove"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["message"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["init"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin-tasks",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["list"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["sessions"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
     },
     {
       "argv": ["--acc-bogus-flag"],
@@ -342,26 +859,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -372,8 +870,8 @@
       "kind": "usage",
       "choices": [
         "open",
-        "tail",
         "state",
+        "tail",
         "add",
         "update",
         "claim",
@@ -384,11 +882,11 @@
         "init",
         "close",
         "info",
-        "sessions",
         "list",
-        "help",
-        "--help",
-        "-h"
+        "sessions",
+        "version",
+        "schema",
+        "help"
       ]
     },
     {
@@ -398,26 +896,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
@@ -426,31 +905,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -460,27 +915,11 @@
       "ok": false,
       "kind": "usage",
       "choices": [
-        "--as",
-        "--expect",
         "--fresh",
-        "--full",
-        "--id",
-        "--mine",
         "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
         "--pin",
         "--restore",
-        "--session",
         "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
         "--timeout",
         "--title"
       ]
@@ -493,93 +932,11 @@
       "ok": false,
       "kind": "usage",
       "choices": [
-        "--as",
-        "--expect",
         "--fresh",
-        "--full",
-        "--id",
-        "--mine",
         "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
         "--pin",
         "--restore",
-        "--session",
         "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
-    },
-    {
-      "argv": ["tail", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
-    },
-    {
-      "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
         "--timeout",
         "--title"
       ]
@@ -591,31 +948,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--full", "--mine", "--owner", "--session", "--session-key"]
     },
     {
       "argv": ["state", "--help"],
@@ -624,31 +957,25 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--full", "--mine", "--owner", "--session", "--session-key"]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--mine", "--once", "--owner", "--session", "--session-key", "--since"]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--mine", "--once", "--owner", "--session", "--session-key", "--since"]
     },
     {
       "argv": ["add", "--acc-bogus-flag"],
@@ -660,27 +987,15 @@
       "choices": [
         "--as",
         "--expect",
-        "--fresh",
-        "--full",
         "--id",
-        "--mine",
-        "--no-open",
         "--notes",
-        "--on",
-        "--once",
         "--owner",
-        "--pin",
-        "--restore",
         "--session",
         "--session-key",
-        "--since",
         "--size",
         "--status",
         "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
+        "--tag"
       ]
     },
     {
@@ -693,27 +1008,15 @@
       "choices": [
         "--as",
         "--expect",
-        "--fresh",
-        "--full",
         "--id",
-        "--mine",
-        "--no-open",
         "--notes",
-        "--on",
-        "--once",
         "--owner",
-        "--pin",
-        "--restore",
         "--session",
         "--session-key",
-        "--since",
         "--size",
         "--status",
         "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
+        "--tag"
       ]
     },
     {
@@ -726,26 +1029,14 @@
       "choices": [
         "--as",
         "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
         "--notes",
-        "--on",
-        "--once",
         "--owner",
-        "--pin",
-        "--restore",
         "--session",
         "--session-key",
-        "--since",
         "--size",
         "--status",
         "--stdin",
-        "--stdin-tasks",
         "--tag",
-        "--timeout",
         "--title"
       ]
     },
@@ -759,26 +1050,14 @@
       "choices": [
         "--as",
         "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
         "--notes",
-        "--on",
-        "--once",
         "--owner",
-        "--pin",
-        "--restore",
         "--session",
         "--session-key",
-        "--since",
         "--size",
         "--status",
         "--stdin",
-        "--stdin-tasks",
         "--tag",
-        "--timeout",
         "--title"
       ]
     },
@@ -789,31 +1068,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["claim", "--help"],
@@ -822,31 +1077,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["block", "--acc-bogus-flag"],
@@ -855,31 +1086,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--on", "--session", "--session-key"]
     },
     {
       "argv": ["block", "--help"],
@@ -888,31 +1095,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--on", "--session", "--session-key"]
     },
     {
       "argv": ["unblock", "--acc-bogus-flag"],
@@ -921,31 +1104,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--on", "--session", "--session-key"]
     },
     {
       "argv": ["unblock", "--help"],
@@ -954,31 +1113,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--on", "--session", "--session-key"]
     },
     {
       "argv": ["remove", "--acc-bogus-flag"],
@@ -987,31 +1122,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["remove", "--help"],
@@ -1020,31 +1131,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["message", "--acc-bogus-flag"],
@@ -1053,31 +1140,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key", "--stdin"]
     },
     {
       "argv": ["message", "--help"],
@@ -1086,31 +1149,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key", "--stdin"]
     },
     {
       "argv": ["init", "--acc-bogus-flag"],
@@ -1119,31 +1158,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
     },
     {
       "argv": ["init", "--help"],
@@ -1152,31 +1167,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -1185,31 +1176,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["close", "--help"],
@@ -1218,31 +1185,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--as", "--session", "--session-key"]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -1251,31 +1194,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--session", "--session-key"]
     },
     {
       "argv": ["info", "--help"],
@@ -1284,97 +1203,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
-    },
-    {
-      "argv": ["sessions", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
-    },
-    {
-      "argv": ["sessions", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": ["--session", "--session-key"]
     },
     {
       "argv": ["list", "--acc-bogus-flag"],
@@ -1383,31 +1212,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": []
     },
     {
       "argv": ["list", "--help"],
@@ -1416,31 +1221,61 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": []
+    },
+    {
+      "argv": ["sessions", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["sessions", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -1449,31 +1284,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": []
     },
     {
       "argv": ["help", "--help"],
@@ -1482,31 +1293,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "--as",
-        "--expect",
-        "--fresh",
-        "--full",
-        "--id",
-        "--mine",
-        "--no-open",
-        "--notes",
-        "--on",
-        "--once",
-        "--owner",
-        "--pin",
-        "--restore",
-        "--session",
-        "--session-key",
-        "--since",
-        "--size",
-        "--status",
-        "--stdin",
-        "--stdin-tasks",
-        "--tag",
-        "--timeout",
-        "--title"
-      ]
+      "choices": []
     },
     {
       "argv": ["state"],
@@ -1672,26 +1459,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["--as", "golden-agent", "claim", "t1"],
@@ -1700,26 +1468,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "tail",
-        "state",
-        "add",
-        "update",
-        "claim",
-        "block",
-        "unblock",
-        "remove",
-        "message",
-        "init",
-        "close",
-        "info",
-        "sessions",
-        "list",
-        "help",
-        "--help",
-        "-h"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["add", "--session", "s1", "hello"],
@@ -1747,11 +1496,11 @@
     },
     {
       "argv": ["update", "t1", "--status", "doing", "--", "--session-key", "k"],
-      "exit": 5,
-      "verdict": "accepted",
+      "exit": 2,
+      "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "usage"
     },
     {
       "argv": ["message", "--", "--x"],
