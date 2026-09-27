@@ -5,7 +5,7 @@ status: stable
 description:
   canon-ledger-ward checks that house-style rules pair with decay-ledger rows,
   but is excluded from tests and CI with no owner to run it manually
-lifecycle: backlog
+lifecycle: done
 id: 01a06324-db78-7655-b432-78bce268aa02
 kind: task
 generated: { by: unknown, at: 2026-09-02 }
@@ -42,3 +42,10 @@ decide whether pairing is the property worth checking.
 - or add it to `ci.yml` as a step beside `dist-check`
 - or accept hand-running it, and name **who** and **when** in the `ward` skill —
   the same repair Contract 3's pending marker just needed
+
+## Resolved (2026-09-27)
+
+Moved to `grimoire/canon-ledger-ward.test.ts` and run by `bun test` (so by the
+gate), keyed on the decay ledger's `Rule id` column instead of title matching,
+by [house-style-rule-check-link](house-style-rule-check-link.md) in sprint 06
+phase 2 (`30c7c871`).
