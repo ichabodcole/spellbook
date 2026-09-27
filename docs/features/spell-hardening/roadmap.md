@@ -305,10 +305,12 @@ the other seven**, and reads identically.
 
 ---
 
-## Now — Sprint 06, "Filed is not fixed"
+## Sprint 06, "Filed is not fixed"
 
-🟡 **SCAFFOLD** · [plan.md](./sprints/06-filed-is-not-fixed/plan.md) · **not
-ratified, no branch cut**
+✅ **CLOSED 2026-09-27** · [plan.md](./sprints/06-filed-is-not-fixed/plan.md) ·
+[cycle and Outcome](../../cycles/2026-09-filed-is-not-fixed.md) · phase 1 landed
+as `b12c07bc`, phase 2 as `1e983238`. The paragraphs below are the forecast as
+scaffolded on 2026-08-11; what actually happened is the Outcome.
 
 **Two phases, ruled by Cole 2026-08-11: drain the fix queue, then close clause
 (ii).** Phase 1 is the six defects held out of sprint 05 by explicit ruling —

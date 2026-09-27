@@ -16,6 +16,10 @@ generated: { by: claude-opus-5-5, at: 2026-09-26 }
 
 # Spell hardening 06: filed is not fixed
 
+> **⚠ ERRATUM 2026-09-27:** the paragraph below was written when the cycle was
+> converted from the sprint scaffold. The cycle was convened on 2026-09-27 and
+> closed the same day; see [Outcome](#outcome).
+
 The sixth sprint of [spell-hardening](../features/spell-hardening/feature.md),
 scaffolded 2026-08-11 and never convened. Its plan, **unratified**, is
 [sprints/06-filed-is-not-fixed/plan.md](../features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md):
