@@ -47,7 +47,17 @@ Source is `src/scriptorium/backend/`; the checked target is the launcher, never
       each reads `enumerated` or `stated an empty set` in the census.
 - [x] **Step 6:** one table drives the parser, help, rejections and a `schema`
       verb (`how-to-derive-your-surface-from-one-registry.md`; take the
-      shared-registry research's answer into account).
+      shared-registry research's answer into account). **Since 2026-09-26 the
+      table is the kit's** (`src/kit/cli/registry.ts`,
+      [item/build-kit-cli-registry](build-kit-cli-registry.md)): scriptorium's
+      copy of glamour's dispatcher, help renderer and declaration emitter is
+      gone. The golden snapshot showed only deliberate changes: `version` is now
+      a declared, strict row (so `version --bogus` and `--version --junk` exit
+      2, and `version` joins the verb roster, help and `schema`); the root's
+      `choices` put long spellings first; the rejection wording is the kit's
+      (`unknown command`, `missing required <x>`, `unexpected argument "x"`);
+      `schema` lists each row's flags in options-table order; `help --x` states
+      `choices: []`.
 - [ ] **Step 7:** anything in the kit that bit is filed upstream in the acc
       repo, or noted "nothing" in the session.
 - [ ] Behaviour changes a user can see (exit codes, help on stdout) are named in

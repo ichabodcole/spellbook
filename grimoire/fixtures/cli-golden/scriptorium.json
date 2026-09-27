@@ -1,7 +1,7 @@
 {
   "spell": "scriptorium",
   "launcher": "scripts/cli.ts",
-  "verbCount": 44,
+  "verbCount": 45,
   "verbs": [
     "open",
     "add",
@@ -45,6 +45,7 @@
     "meta-set",
     "info",
     "close",
+    "version",
     "schema",
     "help"
   ],
@@ -69,7 +70,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     }
   ],
-  "invocationCount": 163,
+  "invocationCount": 165,
   "invocations": [
     {
       "argv": [],
@@ -121,6 +122,7 @@
         "meta-set",
         "info",
         "close",
+        "version",
         "schema",
         "help"
       ]
@@ -181,8 +183,9 @@
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
         "  info                                          print the resolved session pointer",
         "  close                                         shut the session down (the manifest stays, for open --restore)",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -251,8 +254,9 @@
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
         "  info                                          print the resolved session pointer",
         "  close                                         shut the session down (the manifest stays, for open --restore)",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -322,8 +326,9 @@
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
         "  info                                          print the resolved session pointer",
         "  close                                         shut the session down (the manifest stays, for open --restore)",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -424,12 +429,12 @@
                 "status": "valid"
               },
               {
-                "name": "--timeout",
+                "name": "--start-timeout",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--start-timeout",
+                "name": "--timeout",
                 "type": "string",
                 "status": "valid"
               }
@@ -463,13 +468,13 @@
             "path": ["state"],
             "args": [
               {
-                "name": "--session",
-                "type": "string",
+                "name": "--full",
+                "type": "boolean",
                 "status": "valid"
               },
               {
-                "name": "--full",
-                "type": "boolean",
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               }
             ],
@@ -479,6 +484,11 @@
             "path": ["tail"],
             "args": [
               {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
@@ -487,11 +497,6 @@
                 "name": "--since",
                 "type": "string",
                 "status": "valid"
-              },
-              {
-                "name": "--once",
-                "type": "boolean",
-                "status": "valid"
               }
             ],
             "positionals": []
@@ -499,11 +504,6 @@
           {
             "path": ["version-new"],
             "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
               {
                 "name": "--doc",
                 "type": "string",
@@ -518,6 +518,11 @@
                 "name": "--label",
                 "type": "string",
                 "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
               }
             ],
             "positionals": []
@@ -526,6 +531,11 @@
             "path": ["say"],
             "args": [
               {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
@@ -533,11 +543,6 @@
               {
                 "name": "--stdin",
                 "type": "boolean",
-                "status": "valid"
-              },
-              {
-                "name": "--body-file",
-                "type": "string",
                 "status": "valid"
               }
             ],
@@ -553,12 +558,12 @@
             "path": ["version-delete"],
             "args": [
               {
-                "name": "--session",
+                "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--doc",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -574,6 +579,11 @@
             "path": ["task"],
             "args": [
               {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
@@ -581,11 +591,6 @@
               {
                 "name": "--stdin",
                 "type": "boolean",
-                "status": "valid"
-              },
-              {
-                "name": "--body-file",
-                "type": "string",
                 "status": "valid"
               }
             ],
@@ -670,12 +675,12 @@
             "path": ["working"],
             "args": [
               {
-                "name": "--session",
+                "name": "--for",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--for",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -686,7 +691,7 @@
             "path": ["note"],
             "args": [
               {
-                "name": "--session",
+                "name": "--body-file",
                 "type": "string",
                 "status": "valid"
               },
@@ -701,13 +706,13 @@
                 "status": "valid"
               },
               {
-                "name": "--stdin",
-                "type": "boolean",
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--body-file",
-                "type": "string",
+                "name": "--stdin",
+                "type": "boolean",
                 "status": "valid"
               }
             ],
@@ -723,11 +728,6 @@
             "path": ["notes"],
             "args": [
               {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
                 "name": "--doc",
                 "type": "string",
                 "status": "valid"
@@ -735,6 +735,11 @@
               {
                 "name": "--full",
                 "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               }
             ],
@@ -744,7 +749,7 @@
             "path": ["note-edit"],
             "args": [
               {
-                "name": "--session",
+                "name": "--body-file",
                 "type": "string",
                 "status": "valid"
               },
@@ -754,13 +759,13 @@
                 "status": "valid"
               },
               {
-                "name": "--stdin",
-                "type": "boolean",
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--body-file",
-                "type": "string",
+                "name": "--stdin",
+                "type": "boolean",
                 "status": "valid"
               }
             ],
@@ -780,11 +785,6 @@
             "path": ["note-resolve"],
             "args": [
               {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
                 "name": "--doc",
                 "type": "string",
                 "status": "valid"
@@ -792,6 +792,11 @@
               {
                 "name": "--reopen",
                 "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               }
             ],
@@ -806,12 +811,12 @@
             "path": ["note-remove"],
             "args": [
               {
-                "name": "--session",
+                "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--doc",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -827,7 +832,7 @@
             "path": ["diff"],
             "args": [
               {
-                "name": "--session",
+                "name": "--context",
                 "type": "string",
                 "status": "valid"
               },
@@ -837,13 +842,13 @@
                 "status": "valid"
               },
               {
-                "name": "--context",
-                "type": "string",
+                "name": "--patch",
+                "type": "boolean",
                 "status": "valid"
               },
               {
-                "name": "--patch",
-                "type": "boolean",
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               }
             ],
@@ -858,17 +863,17 @@
             "path": ["merge"],
             "args": [
               {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
                 "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
               {
                 "name": "--hunks",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -884,12 +889,12 @@
             "path": ["activate"],
             "args": [
               {
-                "name": "--session",
+                "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--doc",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1025,12 +1030,12 @@
             "path": ["import"],
             "args": [
               {
-                "name": "--session",
+                "name": "--into",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--into",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1078,12 +1083,17 @@
             "path": ["find"],
             "args": [
               {
+                "name": "--lifecycle",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--type",
+                "name": "--since",
                 "type": "string",
                 "status": "valid"
               },
@@ -1093,17 +1103,12 @@
                 "status": "valid"
               },
               {
-                "name": "--lifecycle",
-                "type": "string",
-                "status": "valid"
-              },
-              {
                 "name": "--tag",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--since",
+                "name": "--type",
                 "type": "string",
                 "status": "valid"
               }
@@ -1114,12 +1119,12 @@
             "path": ["search"],
             "args": [
               {
-                "name": "--session",
+                "name": "--limit",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--limit",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1147,12 +1152,12 @@
             "path": ["forget"],
             "args": [
               {
-                "name": "--session",
+                "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--doc",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1163,12 +1168,12 @@
             "path": ["dangling"],
             "args": [
               {
-                "name": "--session",
+                "name": "--entry",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--entry",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1179,12 +1184,12 @@
             "path": ["graph"],
             "args": [
               {
-                "name": "--session",
+                "name": "--entry",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--entry",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -1211,17 +1216,17 @@
             "path": ["meta-init"],
             "args": [
               {
+                "name": "--by",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
               },
               {
                 "name": "--type",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--by",
                 "type": "string",
                 "status": "valid"
               }
@@ -1277,6 +1282,11 @@
             "positionals": []
           },
           {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
             "path": ["schema"],
             "args": [],
             "positionals": []
@@ -1296,7 +1306,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "-h", "--version", "-V"]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -1348,6 +1358,7 @@
         "meta-set",
         "info",
         "close",
+        "version",
         "schema",
         "help"
       ]
@@ -1359,13 +1370,16 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "-h", "--version", "-V"]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -2122,6 +2136,24 @@
       "ok": false,
       "kind": "usage",
       "choices": ["--session"]
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],

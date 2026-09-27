@@ -21,7 +21,6 @@ import {
   RECOGNIZED_FLAGS,
   VERB_SPEC,
   VERBS,
-  verbToken,
 } from "./cli";
 import { DOC_EXTENSIONS } from "./tree";
 
@@ -154,6 +153,9 @@ test("the brief's verb roster is exactly the table's", () => {
       "backlinks",
       "meta-init",
       "meta-set",
+      // A declared row since the move onto the kit registry (it was answered
+      // before the table, undeclared and loose).
+      "version",
     ].sort(),
   );
 });
@@ -209,7 +211,8 @@ test("the unknown-flag rejection names the set AT THAT PATH", () => {
   expect(atSay.error.choices).toEqual(flagsFor("say"));
   expect(atSay.meta.command).toBe("say");
   const atRoot = JSON.parse(run(["--acc-not-a-flag"]).stderr) as Envelope;
-  expect(atRoot.error.choices).toEqual(["--help", "-h", "--version", "-V"]);
+  // Long spellings first (the kit registry's order, decision log #12).
+  expect(atRoot.error.choices).toEqual(["--help", "--version", "-h", "-V"]);
   expect(atRoot.meta.command).toBeNull();
 });
 
@@ -230,14 +233,15 @@ test("a recognized flag at the wrong verb is MISPLACED, and lists the verb's own
   expect(doc.error.choices).toEqual(flagsFor("state"));
   const help = JSON.parse(run(["help", "--session", "abc"]).stderr) as Envelope;
   expect(help.error.hint).toBe("help takes no flags");
-  expect(help.error.choices).toBeUndefined();
+  // The kit registry states the empty set rather than omitting it.
+  expect(help.error.choices).toEqual([]);
 });
 
 test("`--` at the root ends flag parsing", () => {
   const r = run(["--", "--", "--acc-probe-value"]);
   expect(r.code).toBe(2);
   expect((JSON.parse(r.stderr) as Envelope).error.message).toContain(
-    'unknown verb "--acc-probe-value"',
+    'unknown command "--acc-probe-value"',
   );
 });
 
@@ -256,11 +260,11 @@ test("VERB_SPEC and VERBS agree, and every registry flag belongs to some verb", 
   expect(RECOGNIZED_FLAGS.filter((f) => !owned.has(f.slice(2)))).toEqual([]);
 });
 
-test("verbToken finds the verb the way the parser consumes tokens", () => {
-  expect(verbToken(["--session", "abc", "say", "--bogus"])).toBe("say");
-  expect(verbToken(["--session=abc", "say"])).toBe("say");
-  expect(verbToken(["--full", "state"])).toBe("state");
-  expect(verbToken(["--", "--x"])).toBe("--x");
+test("the verb is found the way the parser consumes tokens (a string flag eats its value)", () => {
+  // The kit registry's flags-anywhere scan; its unit tests pin the token walk.
+  const doc = JSON.parse(run(["--session", "abc", "say", "hi", "--bogus"]).stderr) as Envelope;
+  expect(doc.meta.command).toBe("say");
+  expect(doc.error.choices).toEqual(flagsFor("say"));
 });
 
 test("parseVersion accepts v2 and 2, and nothing else", () => {

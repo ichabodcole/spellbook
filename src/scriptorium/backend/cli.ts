@@ -41,7 +41,7 @@
  * file the caller gave) into usage and everything else into internal.
  *
  * D8 reachability, audited by call graph: every `die` here is reached from a
- * verb handler or `dispatch`, none from inside a swallowing `catch`. The
+ * verb handler (the kit registry dispatches), none from inside a swallowing `catch`. The
  * swallowing catches (`api`'s non-JSON body, `versionInfo`, `postCmd`'s close
  * ECONNRESET) contain no die-reachable call.
  */
@@ -59,15 +59,9 @@ import {
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
-import { parseArgs as nodeParseArgs } from "node:util";
+import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import {
-  CliError,
-  die,
-  type ErrKind,
-  reportCliError,
-  setCurrentCommand,
-} from "../../kit/wire/errors";
+import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -229,9 +223,12 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
   return data as Record<string, unknown>;
 }
 
-// ── the parser ─────────────────────────────────────────────────────────
+// ── the flag registry ──────────────────────────────────────────────────
+//
+// The options table the kit's parser reads (`src/kit/cli/registry.ts`, through
+// `defineCli` below). Exported so a test can build the same parse the CLI does.
 
-const CLI_OPTIONS = {
+export const CLI_OPTIONS = {
   "body-file": { type: "string" },
   by: { type: "string" },
   context: { type: "string" },
@@ -261,36 +258,9 @@ const CLI_OPTIONS = {
   type: { type: "string" },
 } as const;
 
-export const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS).map((k) => `--${k}`);
-
 export class UsageError extends CliError {
   constructor(message: string, extra?: { hint?: string; choices?: string[] }) {
     super("usage", message, extra);
-  }
-}
-
-export function parseArgs(args: string[]): {
-  pos: string[];
-  flags: Record<string, string | boolean>;
-} {
-  try {
-    const { values, positionals } = nodeParseArgs({
-      args,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
-    return { pos: positionals, flags: values as Record<string, string | boolean> };
-  } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    const code = (e as { code?: string }).code;
-    // Only an UNKNOWN option names the flag roster; the other parse failures
-    // mean a recognised flag was misused, and the roster would name the half
-    // that was right.
-    throw new UsageError(detail, {
-      hint: "for free text containing dashes, put it after a bare --",
-      ...(code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" ? { choices: RECOGNIZED_FLAGS } : {}),
-    });
   }
 }
 
@@ -747,25 +717,38 @@ async function cmdWorkspace(dir: string | undefined, session: string | undefined
 }
 
 // ── THE COMMAND TABLE — dispatch, help, `schema` and every `choices` walk it ──
+//
+// Through the house's one registry (`src/kit/cli/registry.ts`). scriptorium's
+// own dispatcher, help renderer and declaration emitter — a copy of glamour's —
+// were deleted when it moved onto the module. `help`, `version` and `schema`
+// are the module's rows: declared and strict, so `version --bogus` is refused
+// (it exited 0 while `version` was answered before the table).
 
 type Flag = keyof typeof CLI_OPTIONS;
 type Flags = Record<string, string | boolean>;
-type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
-type CommandSpec = {
-  name: string;
-  flags: readonly Flag[];
-  positionals: PositionalSpec[];
-  describe: string;
-  run: (
-    pos: string[],
-    flags: Flags,
-    session: string | undefined,
-  ) => Promise<number> | Promise<void> | void;
+/** A row as scriptorium writes it: the handler takes `(pos, flags, session)`,
+ *  and `on` adapts it to the kit's `run(inv)`. A number returned is the exit
+ *  code (`tail`); anything else is 0. */
+type Row = Omit<CommandSpec<Flag>, "run" | "rejectHint"> & {
+  run: (pos: string[], flags: Flags, session: string | undefined) => unknown;
 };
+
+/** scriptorium declares no `multiple` flag, so every value is a string or a
+ *  boolean — the `Flags` the handlers take. */
+const on =
+  (h: Row["run"]) =>
+  (inv: Invocation<Flag>): unknown => {
+    const flags = inv.flags as Flags;
+    return h(inv.pos, flags, typeof flags.session === "string" ? flags.session : undefined);
+  };
+
+/** Every flag rejection's hint: the one repair for prose in which a word
+ *  happens to start with `--`. */
+const DASH_HINT = "for free text containing dashes, put it after a bare --";
 
 const SESSION = ["session"] as const satisfies readonly Flag[];
 
-const COMMANDS: CommandSpec[] = [
+const ROWS: Row[] = [
   {
     name: "open",
     flags: ["no-open", "restore", "timeout", "start-timeout"],
@@ -1339,194 +1322,53 @@ const COMMANDS: CommandSpec[] = [
       printJson({ ok: true, sent: "close" });
     },
   },
-  {
-    name: "schema",
-    flags: [],
-    positionals: [],
-    describe: "emit this CLI's acc declaration (walked from the command table)",
-    run: () => {
-      process.stdout.write(`${JSON.stringify(buildDeclaration(), null, 2)}\n`);
-    },
-  },
-  {
-    name: "help",
-    flags: [],
-    positionals: [],
-    describe: "show this message",
-    run: () => {
-      process.stdout.write(`${renderHelp()}\n`);
-    },
-  },
 ];
 
-const ROOT_INTERCEPTORS = [
-  { name: "--help", runs: "help" },
-  { name: "-h", runs: "help" },
-  { name: "--version", runs: "version" },
-  { name: "-V", runs: "version" },
-] as const;
-
-const findCommand = (token: string): CommandSpec | undefined =>
-  COMMANDS.find((c) => c.name === token);
-
-/** The verb in a raw argv, found the way the parser will (a string flag consumes its value). */
-export function verbToken(argv: string[]): string | null {
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i] as string;
-    if (a === "--") return argv[i + 1] ?? null;
-    if (a.startsWith("--")) {
-      if (a.includes("=")) continue;
-      const key = a.slice(2) as Flag;
-      if (key in CLI_OPTIONS && CLI_OPTIONS[key].type === "string") i++;
-      continue;
-    }
-    if (a.startsWith("-")) continue;
-    return a;
-  }
-  return null;
-}
-
-export const VERBS: readonly string[] = COMMANDS.map((c) => c.name);
-export const VERB_SPEC: Record<string, readonly Flag[]> = Object.fromEntries(
-  COMMANDS.map((c) => [c.name, c.flags]),
-);
-export const flagsFor = (verb: string): string[] =>
-  [...(findCommand(verb)?.flags ?? [])].map((k) => `--${k}`).sort();
-
-const renderFlag = (k: Flag): string =>
-  CLI_OPTIONS[k].type === "boolean" ? `[--${k}]` : `[--${k} ..]`;
-const renderPositional = (p: PositionalSpec): string => {
-  const inner = p.variadic ? `${p.name}...` : p.name;
-  return p.required ? `<${inner}>` : `[${inner}]`;
-};
-
-export function usageOf(spec: CommandSpec): string {
-  return [
-    spec.name,
-    ...spec.positionals.map(renderPositional),
-    ...spec.flags.filter((k) => k !== "session").map(renderFlag),
-  ].join(" ");
-}
-
-export function renderHelp(): string {
-  const rows = COMMANDS.map((c) => [usageOf(c), c.describe] as const);
-  const width = Math.min(Math.max(...rows.map(([u]) => u.length)), 44);
-  const body = rows
-    .map(([u, d]) =>
-      u.length <= width ? `  ${u.padEnd(width)}  ${d}` : `  ${u}\n  ${"".padEnd(width)}  ${d}`,
-    )
-    .join("\n");
-  return `scriptorium — a co-present markdown editor: the human edits, you write new versions.
-
-${body}
-  ${ROOT_INTERCEPTORS.map((i) => i.name).join(" | ")}  root tokens: help, or {name, version} as JSON
-
-  Add --session <id> to any verb that talks to a session (default: most recent).
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS: `defineCli` only validates and
+// indexes, so a ward or a test can import this module and read the table.
+export const cli = defineCli({
+  name: "scriptorium",
+  summary: "a co-present markdown editor: the human edits, you write new versions.",
+  options: CLI_OPTIONS,
+  commands: ROWS.map((r) => ({ ...r, run: on(r.run), rejectHint: DASH_HINT })),
+  // `scriptorium --session x state` runs `state`; a bare `--` makes the next
+  // token the verb (acc A6).
+  grammar: "flags-anywhere",
+  verbPositional: "verb",
+  usageHides: ["session"],
+  version: versionInfo,
+  helpFooter: `  Add --session <id> to any verb that talks to a session (default: most recent).
   Each verb accepts only the flags on its row.
 
   Output: JSON on stdout, one document per answer — except tail (one JSON line
   per event) and help (prose). Failures: one JSON envelope on stderr, exit
   2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
   session rather than failing, and ends 0 when its session closes. tail
-  ${WINDOW_HELP}.`;
-}
+  ${WINDOW_HELP}.`,
+});
 
-export function buildDeclaration() {
-  const arg = (k: Flag) => ({ name: `--${k}`, type: CLI_OPTIONS[k].type, status: "valid" });
-  return {
-    formatVersion: "0",
-    provenance: "emitted",
-    selfDescription: { args: ["schema"] },
-    commands: [
-      {
-        path: [] as string[],
-        args: ROOT_INTERCEPTORS.map((i) => ({
-          name: i.name,
-          type: "boolean" as const,
-          status: "valid",
-        })),
-        positionals: [{ name: "verb", required: true }],
-      },
-      ...COMMANDS.map((c) => ({
-        path: [c.name],
-        args: [...c.flags].map(arg),
-        positionals: c.positionals,
-      })),
-    ],
-  };
-}
+export const VERBS: readonly string[] = cli.verbs;
+export const VERB_SPEC: Record<string, readonly string[]> = Object.fromEntries(
+  cli.rows.map((r) => [r.name, r.accepted]),
+);
+export const flagsFor = (verb: string): string[] => cli.flagsFor(verb);
+export const RECOGNIZED_FLAGS: readonly string[] = cli.recognizedFlags;
 
+// `dispatch`, not the registry's `main`: the kit does not triage a non-CliError;
+// this does. A named file that is not there (--body-file) is the caller's;
+// everything else is ours.
 async function main(argv: string[]): Promise<number> {
   try {
-    return await dispatch(argv);
+    return await cli.dispatch(argv);
   } catch (e) {
     const reported = reportCliError(e);
     if (reported !== null) return reported;
-    // The kit does not triage; this does. A named file that is not there
-    // (--body-file) is the caller's; everything else is ours.
     const code =
       e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
     const msg = e instanceof Error ? e.message : String(e);
     if (code === "ENOENT") return reportCliError(new UsageError(msg)) ?? 2;
     return reportCliError(new CliError("internal", msg)) ?? 1;
   }
-}
-
-async function dispatch(argv: string[]): Promise<number> {
-  const interceptor = ROOT_INTERCEPTORS.find((i) => i.name === argv[0]);
-  if (interceptor !== undefined || argv[0] === "version") {
-    if ((interceptor?.runs ?? "version") === "help") process.stdout.write(`${renderHelp()}\n`);
-    else printJson(versionInfo());
-    return 0;
-  }
-
-  let currentCommand = verbToken(argv);
-  setCurrentCommand(currentCommand);
-  let parsed: ReturnType<typeof parseArgs>;
-  try {
-    parsed = parseArgs(argv);
-  } catch (e) {
-    if (!(e instanceof UsageError) || e.extra?.choices === undefined) throw e;
-    const spec = currentCommand === null ? undefined : findCommand(currentCommand);
-    if (spec !== undefined)
-      throw new UsageError(e.message, { hint: e.extra?.hint, choices: flagsFor(spec.name) });
-    throw new UsageError(e.message, {
-      hint: `no verb given — verbs: ${VERBS.join(" ")} (run: cli.ts help)`,
-      choices: ROOT_INTERCEPTORS.map((i) => i.name),
-    });
-  }
-  const [verb, ...pos] = parsed.pos;
-  const flags = parsed.flags;
-  currentCommand = verb ?? null;
-  setCurrentCommand(currentCommand);
-
-  if (verb === undefined)
-    throw new UsageError("no verb given", { hint: "run: cli.ts help", choices: [...VERBS] });
-  const spec = findCommand(verb);
-  if (spec === undefined)
-    throw new UsageError(`unknown verb "${verb}"`, {
-      hint: "run: cli.ts help",
-      choices: [...VERBS],
-    });
-
-  const allowed = new Set<string>(spec.flags);
-  const stray = Object.keys(flags).find((k) => !allowed.has(k));
-  if (stray !== undefined) {
-    const accepted = flagsFor(spec.name);
-    throw new UsageError(
-      `--${stray} is not accepted by \`${spec.name}\` (it is a recognized scriptorium flag, just not this verb's)`,
-      accepted.length > 0 ? { choices: accepted } : { hint: `${spec.name} takes no flags` },
-    );
-  }
-
-  const required = spec.positionals.filter((p) => p.required).length;
-  const variadic = spec.positionals.some((p) => p.variadic);
-  if (pos.length < required || (!variadic && pos.length > spec.positionals.length))
-    throw new UsageError(`usage: ${usageOf(spec)}`, { hint: spec.describe });
-
-  const session = typeof flags.session === "string" ? flags.session : undefined;
-  const code = await spec.run(pos, flags, session);
-  return typeof code === "number" ? code : 0;
 }
 
 /**
