@@ -216,6 +216,18 @@ function entitySlug(page: Page): string | null {
   return null;
 }
 
+/**
+ * The document's slug: the half after `type/` in the reference a caller types.
+ * A feature's or an item's is its entity slug — the folder, or a single-file
+ * item's own name — and everything else's is its basename without `.md`.
+ */
+export function pageSlug(page: Page): string {
+  return (
+    ((page.type === "feature" || page.type === "item") && entitySlug(page)) ||
+    basename(page.path, ".md")
+  );
+}
+
 /** True for a folder entity's entry file, whose `type/slug` key would be
  *  `item/item` or `feature/feature` — a key every such entity shares. */
 function isEntityEntryFile(page: Page): boolean {

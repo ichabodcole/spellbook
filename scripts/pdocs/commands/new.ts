@@ -14,8 +14,11 @@
 // verbatim (`hookChecks`), so writing only the document leaves an
 // immediately-dirty tree. `new` writes both, and reports both.
 //
-// It does NOT own content. It fills frontmatter and it changes nothing below
-// it; instructional comments are copied intact.
+// It does NOT own content. It fills frontmatter and, below it, only the H1 —
+// the heading that states the title; the body's instructional comments are
+// copied intact. The frontmatter's inline guidance comments (`status: draft #
+// OKF §5.4…`) are not: they described the template's blanks, and a document
+// is not a template (retired at triage, 2026-09-26).
 //
 // That boundary cost something to hold. The templates used to carry 26 example
 // links to filenames that never existed — `[Related playbook 1](./other-playbook.md)`,
@@ -52,7 +55,7 @@ import {
   UsageError,
   printEnvelope,
 } from "../envelope.ts";
-import { OKF_STATUS, type Ctx } from "../lint/rules.ts";
+import { OKF_STATUS, type Ctx, firstHeading } from "../lint/rules.ts";
 import {
   ENTITY_FILE,
   type ExistingDocument,
@@ -510,6 +513,95 @@ export function splitDocument(raw: string): { block: string; body: string } {
 // ---------------------------------------------------------------------------------------
 
 /**
+ * The template's frontmatter without its inline guidance comments.
+ *
+ * `status: draft # OKF §5.4: draft | stable | deprecated` teaches whoever
+ * copies the template by hand, and it is noise in every document written from
+ * it — worse, a comment beside a value reads as part of the record. Stripped at
+ * write time rather than deleted from the templates: a template is the
+ * project's to edit (a migration only updates an untouched one), so the
+ * comments stay where a person copying by hand reads them, and a project's own
+ * edited template is stripped the same way. Whole-line `#` comments go too.
+ */
+export function stripFrontmatterComments(block: string): string {
+  const out: string[] = [];
+  // Inside a multi-line quoted scalar: which quote closes it.
+  let quote: '"' | "'" | null = null;
+  // Inside a `|` or `>` block scalar: every indented or blank line is content.
+  let block_ = false;
+  for (const line of block.split("\n")) {
+    if (quote !== null) {
+      const close = closingQuote(line, quote);
+      if (close === -1) {
+        out.push(line);
+        continue;
+      }
+      quote = null;
+      out.push(line.slice(0, close + 1) + stripInlineComment(line.slice(close + 1)).trimEnd());
+      continue;
+    }
+    if (block_) {
+      if (line.trim() === "" || /^\s/.test(line)) {
+        out.push(line);
+        continue;
+      }
+      block_ = false;
+    }
+    // A whole-line comment, at the top level only.
+    if (/^#/.test(line)) continue;
+
+    const kv = /^([A-Za-z_][\w-]*:)(\s*)(.*)$/.exec(line);
+    const item = kv ? null : /^(\s*-\s+)(.*)$/.exec(line);
+    const cont = kv || item ? null : /^(\s+)(.*)$/.exec(line);
+    const [lead, value] = kv
+      ? [`${kv[1]}${kv[2]}`, kv[3] as string]
+      : item
+        ? [item[1] as string, item[2] as string]
+        : cont
+          ? [cont[1] as string, cont[2] as string]
+          : ["", line];
+    const opener = value.charAt(0);
+    if (opener === '"' || opener === "'") {
+      const close = closingQuote(value.slice(1), opener);
+      if (close === -1) {
+        quote = opener;
+        out.push(line);
+        continue;
+      }
+    }
+    // A continuation of a plain scalar is left as written: whether its `#`
+    // is a comment is a question a real YAML parser answers differently.
+    if (cont) {
+      out.push(line);
+      continue;
+    }
+    const stripped = stripInlineComment(value).trimEnd();
+    if (/^[|>][-+0-9]*$/.test(stripped)) block_ = true;
+    out.push(stripped ? `${lead}${stripped}` : lead.trimEnd());
+  }
+  return out.join("\n");
+}
+
+/** Where `quote` closes a scalar on this line, or -1: `\"` escapes a double
+ *  quote, `''` a single one. */
+function closingQuote(text: string, quote: '"' | "'"): number {
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quote === '"' && c === "\\") i++;
+    else if (quote === "'" && c === "'" && text[i + 1] === "'") i++;
+    else if (c === quote) return i;
+  }
+  return -1;
+}
+
+/** Keys whose value is a list whatever the template says — a type whose
+ *  template carries no `tags:` still takes `--tags a,b` as `[a, b]`. */
+export const LIST_FIELDS: ReadonlySet<string> = new Set(["tags", "related", "blocked_by", "after"]);
+
+/** The template's own date placeholder, filled with today where it is left. */
+const DATE_PLACEHOLDER = "YYYY-MM-DD";
+
+/**
  * Which of the template's keys hold a SEQUENCE — flow (`[a, b]`) or block
  * (`- a`) — so a `--flag a,b` is written back in the shape the key already had.
  *
@@ -557,12 +649,12 @@ export function frontmatterLines(key: string, value: string): string[] {
 }
 
 /**
- * The template's frontmatter with the resolved values substituted in.
+ * The frontmatter with the resolved values substituted in.
  *
  * Line-oriented rather than parse-and-re-emit: every key the caller did not
- * touch keeps its template text exactly, inline instructional comment
- * included. A key that is filled loses its comment, because the comment
- * described the blank.
+ * touch keeps its text exactly — `set` depends on that. A key that is filled
+ * loses any comment it had. (`new` strips the template's comments before it
+ * gets here: `stripFrontmatterComments`.)
  */
 export function rewriteFrontmatter(
   block: string,
@@ -638,16 +730,19 @@ export function appendRelated(body: string, bullet: string): string {
 // The catalog
 // ---------------------------------------------------------------------------------------
 
-/** A catalog entry, wrapped the way Prettier wraps one: the link is a single
- *  unbreakable token, the description flows after it. */
+/** A catalog entry, wrapped the way Prettier (`proseWrap: always`, width 80)
+ *  wraps one: the link is a single unbreakable token, and the dash and the
+ *  description flow after it. */
 export function catalogEntry(
   title: string,
   target: string,
   description: string
 ): string[] {
   const lines: string[] = [];
-  let line = `- [${title}](${target}) —`;
-  for (const word of description.split(/\s+/).filter(Boolean)) {
+  // The dash is a word of its own, as it is to Prettier: when it does not fit
+  // after the link it opens the next line rather than overrunning this one.
+  let line = `- [${title}](${target})`;
+  for (const word of ["—", ...description.split(/\s+/).filter(Boolean)]) {
     if (line.length + 1 + word.length <= PRINT_WIDTH) line += ` ${word}`;
     else {
       lines.push(line);
@@ -905,10 +1000,12 @@ export const newCommand: Command = {
       throw new NotFoundError(
         `the \`${row.type}\` template is declared at ${relative(ctx.repoRoot, templatePath)} and is not there.`
       );
-    const { block, body } = splitDocument(readFileSync(templatePath, "utf8"));
+    const template = splitDocument(readFileSync(templatePath, "utf8"));
+    const block = stripFrontmatterComments(template.block);
+    const { body } = template;
     const shapes = frontmatterShapes(block);
     const asWritten = (key: string, value: string): string =>
-      shapes.get(key) === "list"
+      shapes.get(key) === "list" || LIST_FIELDS.has(key)
         ? `[${value
             .split(",")
             .map((s) => s.trim())
@@ -1010,6 +1107,10 @@ export const newCommand: Command = {
         )
       );
     fills.set("generated", `{ by: ${flagValue(flags, "--by") ?? "pdocs"}, at: ${date} }`);
+    // A date the template leaves as `YYYY-MM-DD` — a cycle's `started` — is
+    // today unless its flag said otherwise: the placeholder is never a value.
+    for (const [key, value] of templateFields)
+      if (!fills.has(key) && value === DATE_PLACEHOLDER) fills.set(key, date);
 
     // ---- --from: the source document, and on a type that declares it, `from:` ----------
     const from = flagValue(flags, "--from");
@@ -1040,6 +1141,16 @@ export const newCommand: Command = {
 
     // ---- the body ----------------------------------------------------------------------
     let out = body;
+    // `--title` fills the H1 too: the template's is a placeholder (`# [Title]`)
+    // like the `title:` it mirrors. Only an explicit title — a default derived
+    // from the owner's slug would turn `# [Feature Name] Implementation Plan`
+    // into `# Auth Refactor`. Left alone, the gate reports it (PLACEHOLDER).
+    const h1 = flagValue(flags, "--title") === undefined ? -1 : firstHeading(out);
+    if (h1 !== -1) {
+      const lines = out.split("\n");
+      lines[h1] = `# ${resolved.get("title") ?? ""}`;
+      out = lines.join("\n");
+    }
     // The owner's entry file, linked from the document it owns (D17). The
     // templates cannot carry it: a feature's is `feature.md` and an item's is
     // `item.md`, and one template serves both.
@@ -1124,6 +1235,11 @@ export const newCommand: Command = {
         for (const p of promotion.rewritten)
           if (p !== promotion.to) console.log(`  rewrote links in ${p}`);
       }
+      // A consumer's `prettier --check` hook fails the commit on what this
+      // wrote, a rewritten link line included; name every file it touched.
+      console.log(
+        `  next: fill its placeholders, then run the project's formatter before committing, e.g. npx prettier --write ${created.join(" ")}`
+      );
     }
     return ExitCode.Success;
   },
