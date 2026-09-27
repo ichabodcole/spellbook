@@ -896,7 +896,26 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "--version", "-h", "-V"]
+      "choices": [
+        "open",
+        "state",
+        "tail",
+        "add",
+        "update",
+        "claim",
+        "block",
+        "unblock",
+        "remove",
+        "message",
+        "init",
+        "close",
+        "info",
+        "list",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["version", "--bogus"],

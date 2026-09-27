@@ -44,7 +44,9 @@ const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
 const EMPTY_TMP = mkdtempSync(join(tmpdir(), "glamour-contract-"));
 
 function run(args: string[]): { code: number; stdout: string; stderr: string } {
-  const p = Bun.spawnSync(["bun", CLI, ...args], {
+  // Bun strips a bare `--` placed right after the script path; the added `--`
+  // is the one it consumes, so the CLI receives exactly `args`.
+  const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0), // never inherit the runner's never-EOF stdin
@@ -171,10 +173,7 @@ test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, o
 });
 
 test("`--` at the root ends flag parsing: what follows is a verb, not an option", () => {
-  // bun strips one bare `--` placed right after the script path (measured on
-  // bun 1.4), so TWO are sent for the script to receive one — the same
-  // compensation acc's runner applies for A6.
-  const r = run(["--", "--", "--acc-probe-value"]);
+  const r = run(["--", "--acc-probe-value"]);
   expect(r.code).toBe(2);
   const doc = JSON.parse(r.stderr) as Envelope;
   expect(doc.error.message).toContain('unknown command "--acc-probe-value"');

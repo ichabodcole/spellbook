@@ -55,7 +55,9 @@ const EMPTY_TMP = mkdtempSync(join(tmpdir(), "scriptorium-contract-"));
 const EMPTY_HOME = mkdtempSync(join(tmpdir(), "scriptorium-contract-home-"));
 
 function run(args: string[], tmp = EMPTY_TMP): { code: number; stdout: string; stderr: string } {
-  const p = Bun.spawnSync(["bun", CLI, ...args], {
+  // Bun strips a bare `--` placed right after the script path; the added `--`
+  // is the one it consumes, so the CLI receives exactly `args`.
+  const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0),
@@ -238,7 +240,7 @@ test("a recognized flag at the wrong verb is MISPLACED, and lists the verb's own
 });
 
 test("`--` at the root ends flag parsing", () => {
-  const r = run(["--", "--", "--acc-probe-value"]);
+  const r = run(["--", "--acc-probe-value"]);
   expect(r.code).toBe(2);
   expect((JSON.parse(r.stderr) as Envelope).error.message).toContain(
     'unknown command "--acc-probe-value"',

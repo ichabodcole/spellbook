@@ -135,7 +135,10 @@ export async function runCase(spec: SpellSpec, c: Case, ctx: RunCtx): Promise<Re
     writeFileSync(join(dir, "daemon.port"), `${ctx.stubPort}\n`);
   }
   const launcher = join(ctx.repo, "plugins/spellbook/skills", spec.spell, spec.launcher);
-  const proc = Bun.spawn(["bun", launcher, ...c.argv], {
+  // Bun strips a bare `--` placed right after the script path, so a record
+  // whose argv starts with `--` would reach the CLI without it (decision #18).
+  // The added `--` is the one Bun consumes; the CLI gets exactly `c.argv`.
+  const proc = Bun.spawn(["bun", launcher, "--", ...c.argv], {
     cwd: join(home, "work"),
     env,
     stdin: c.stdin === undefined ? "ignore" : new Blob([c.stdin]),

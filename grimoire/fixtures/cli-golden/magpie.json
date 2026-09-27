@@ -673,7 +673,27 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "--version", "-h", "-V"]
+      "choices": [
+        "open",
+        "sessions",
+        "tail",
+        "state",
+        "say",
+        "ask",
+        "status",
+        "source",
+        "discover",
+        "extract",
+        "export",
+        "element-add",
+        "element-remove",
+        "cmd",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["version", "--bogus"],

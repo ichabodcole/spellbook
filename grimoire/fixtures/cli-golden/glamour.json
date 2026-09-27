@@ -743,7 +743,28 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "--version", "-h", "-V"]
+      "choices": [
+        "open",
+        "tail",
+        "state",
+        "intent",
+        "annotate",
+        "say",
+        "section",
+        "status",
+        "gen",
+        "gen-cost",
+        "gen-meta",
+        "focus",
+        "style-save",
+        "style-archive",
+        "tray",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["version", "--bogus"],

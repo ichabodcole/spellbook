@@ -715,7 +715,28 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "--version", "-h", "-V"]
+      "choices": [
+        "open",
+        "tail",
+        "state",
+        "say",
+        "propose",
+        "ask",
+        "batch",
+        "focus",
+        "select",
+        "analyze",
+        "context",
+        "status",
+        "cost",
+        "handoff",
+        "close",
+        "info",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["version", "--bogus"],

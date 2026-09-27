@@ -584,7 +584,23 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "--version", "-h", "-V"]
+      "choices": [
+        "open",
+        "add",
+        "remove",
+        "join",
+        "status",
+        "attention",
+        "poke",
+        "state",
+        "tail",
+        "list",
+        "close",
+        "info",
+        "version",
+        "schema",
+        "help"
+      ]
     },
     {
       "argv": ["version", "--bogus"],

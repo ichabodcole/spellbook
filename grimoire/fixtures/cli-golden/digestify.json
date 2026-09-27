@@ -293,22 +293,7 @@
       "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--file",
-        "--help",
-        "--host",
-        "--id",
-        "--no-open",
-        "--port",
-        "--reference",
-        "--theme",
-        "--timeout",
-        "--title",
-        "--version",
-        "-h",
-        "-V"
-      ]
+      "kind": "usage"
     },
     {
       "argv": ["version", "--bogus"],
@@ -410,11 +395,11 @@
     },
     {
       "argv": ["--", "--file", "missing.md"],
-      "exit": 5,
-      "verdict": "accepted",
+      "exit": 2,
+      "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "usage"
     },
     {
       "argv": ["--file", "missing.md", "--", "--x"],
