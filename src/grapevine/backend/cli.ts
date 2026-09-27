@@ -27,13 +27,12 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs as nodeParseArgs } from "node:util";
+import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry.ts";
 import {
   type ErrExtra,
   type ErrKind,
   die as raise,
   reportCliError,
-  setCurrentCommand,
 } from "../../kit/wire/errors.ts";
 import {
   commandLine,
@@ -1934,24 +1933,6 @@ const CLI_OPTIONS = {
   yes: { type: "boolean" },
 } as const;
 
-/**
- * A parse-stage rejection, carrying the enumeration it wants to publish.
- *
- * ⛔ THE `extra` IS WHY THIS CLASS SURVIVED THE `errors.ts` ADOPTION. The
- * rejection has to NAME its valid set — that is the whole reason grapevine's
- * parser errors were shaped the way they were — and the throw happens two frames
- * below the place that knows the set. `choices` is where the house envelope
- * carries an enumeration, so the class holds it until `runCommand` raises.
- */
-class UsageError extends Error {
-  readonly extra?: ErrExtra;
-  constructor(message: string, extra?: ErrExtra) {
-    super(message);
-    this.name = "UsageError";
-    this.extra = extra;
-  }
-}
-
 type FlagName = keyof typeof CLI_OPTIONS;
 type Flags = Record<string, string | boolean>;
 
@@ -1963,8 +1944,6 @@ type Flags = Record<string, string | boolean>;
 // semantics, same acceptance.
 const GLOBAL_FLAGS: FlagName[] = ["as", "from"];
 
-type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
-
 // THE COMMAND TABLE, AS A STRUCTURE — the parser, the dispatcher, the schema
 // emitter and the root rejection all walk THIS. It replaced a bare `switch`,
 // which only the dispatcher could walk: a schema emitted from anything other
@@ -1972,29 +1951,27 @@ type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
 // as anyone edits the other side (acc STANDARD.md Part 1 §2; our own #81/D4
 // lane learned the same lesson one altitude down with BOOLEAN_FLAGS).
 //
-// `flags` is the verb's OWN accepted set (GLOBAL_FLAGS are merged in by
-// `acceptedFlags`). A flag not listed here is REJECTED for this verb with the
+// `flags` is the verb's OWN accepted set (GLOBAL_FLAGS are merged in by the
+// kit registry, `globalFlags`). A flag not listed here is REJECTED for this verb with the
 // verb's own set enumerated — accepted-and-ignored is the disease this table
 // exists to cure (acc DT-1: anthill accepting a root `--format` it silently
 // discards; grapevine accepting `send --dry-run` and doing nothing was the
 // same event with a different spelling).
-type CommandSpec = {
-  name: string;
-  aliases?: string[];
-  flags: FlagName[];
-  positionals: PositionalSpec[];
-  /**
-   * ⚠ MAY RETURN AN EXIT CODE, AND EXACTLY ONE VERB DOES. `tail` runs the shared
-   * client (`src/kit/wire/tailEvents.ts`), which RETURNS a code rather than
-   * ending the process from inside three nested loops — so the code has to reach
-   * `main`, and this is the seam it crosses. Anything that is not a number means
-   * 0, which is what the other twenty-odd verbs return.
-   *
-   * ⚠ Typed `unknown` rather than a union with `void`: a union is what a reader
-   * would write first, and every `async` verb that ends without a `return` is
-   * `Promise<void>`, which is NOT assignable to `Promise<number | undefined>`.
-   * The widening happens at the one place that reads the value, below.
-   */
+/**
+ * A row as grapevine writes it: the kit's `CommandSpec` with the handler taking
+ * `(positional, flags)`, adapted to the kit's `run(inv)` by `on` below. No
+ * `describe`: grapevine's help is hand-written (`helpText`), so the rendered
+ * help that reads it is never shown.
+ *
+ * ⚠ THE HANDLER MAY RETURN AN EXIT CODE, AND EXACTLY ONE VERB DOES. `tail` runs
+ * the shared client (`src/kit/wire/tailEvents.ts`), which RETURNS a code rather
+ * than ending the process from inside three nested loops — so the code has to
+ * reach `main`, and this is the seam it crosses. Anything that is not a number
+ * means 0, which is what the other twenty-odd verbs return. Typed `unknown`
+ * rather than a union with `void`: every `async` verb that ends without a
+ * `return` is `Promise<void>`.
+ */
+type Row = Omit<CommandSpec<FlagName>, "run" | "describe" | "rejectHint"> & {
   run: (positional: string[], flags: Flags) => unknown;
 };
 
@@ -2086,7 +2063,7 @@ const identityRequired = (verb: string): never =>
 // `string | undefined` so its signature says what that line does (type-debt
 // T35). Arity dispatch refuses a missing required positional before any of
 // them runs, so the guards are the second line of defence, not the first.
-const COMMANDS: CommandSpec[] = [
+const ROWS: Row[] = [
   {
     name: "open",
     flags: ["topic", "fresh"],
@@ -2406,155 +2383,64 @@ const COMMANDS: CommandSpec[] = [
       else printJson({ name: "grapevine", version: PLUGIN_VERSION });
     },
   },
-  {
-    name: "schema",
-    flags: [],
-    positionals: [],
-    run: () => {
-      // Emit this CLI's machine-readable interface description — generated by
-      // WALKING COMMANDS and CLI_OPTIONS, the same structures the parser and
-      // dispatcher consume, at answer time. No daemon, no config, no
-      // credentials; stdout, exit 0. The shape is acc declaration format v0
-      // exactly, so the output pipes straight into
-      // `acc check <cli> --declaration <(grapevine schema)` with no adapter.
-      process.stdout.write(`${JSON.stringify(buildDeclaration(), null, 2)}\n`);
-    },
-  },
-  {
-    name: "help",
-    flags: [],
-    positionals: [],
-    run: () => {
-      printHelp();
-    },
-  },
 ];
 
-function findCommand(token: string): CommandSpec | undefined {
-  return COMMANDS.find((c) => c.name === token || c.aliases?.includes(token));
-}
+/** The rejection hint `send` and `announce` add to every flag refusal: a
+ *  message body is prose, and prose with a dash in it has three safe routes. */
+const BODY_HINT =
+  "for a message body containing dashes, use --stdin or --body-file, or put it after a bare --";
 
-// The verb's full accepted set: its own flags plus the contractually-global
-// identity pair, in registry order.
-function acceptedFlags(spec: CommandSpec): FlagName[] {
-  const own = new Set<FlagName>([...GLOBAL_FLAGS, ...spec.flags]);
-  return (Object.keys(CLI_OPTIONS) as FlagName[]).filter((k) => own.has(k));
-}
+/** grapevine declares no `multiple` flag, so every value is a string or a
+ *  boolean — the `Flags` the handlers take. */
+const on =
+  (h: Row["run"]) =>
+  (inv: Invocation<FlagName>): unknown =>
+    h(inv.pos, inv.flags as Flags);
 
-// Root interceptors — flags the ROOT answers itself, before any verb. These are
-// not commands, which is exactly why a generator walking "the commands" walks
-// past them (acc DT-6); they are declared explicitly at `path: []`.
-const ROOT_INTERCEPTORS = [
-  { name: "--help", runs: "help" },
-  { name: "-h", runs: "help" },
-  { name: "--version", runs: "version" },
-  { name: "-V", runs: "version" },
-] as const;
+// THE REGISTRY — the house's one (`src/kit/cli/registry.ts`). grapevine's own
+// dispatcher, per-verb parser, root router and declaration emitter were the
+// verb-first half of what that module was generalised from, and were deleted
+// when grapevine moved onto it. What the module now does here, and grapevine
+// used to do itself:
+//
+//   - The verb is `argv[0]`. A dash-led `argv[0]` that is not an interceptor is
+//     an unknown ROOT flag, rejected with the interceptors (long first) as
+//     `choices` and the commands in the hint, so `grapevine --as x list` is
+//     refused rather than parsed.
+//   - `--help`/`-h`/`--version`/`-V` as `argv[0]` run the `help` or `version`
+//     row and PASS THE REST ON: `grapevine --version --human` and
+//     `-V --as me` keep working, because `version` accepts them.
+//   - A bare invocation is a usage error naming every command and alias
+//     (acc D2), never help at exit 0: grapevine's callers are agents, and a
+//     bare call is an unset shell variable expanding to nothing.
+//   - A flag another verb takes is MISPLACED (`--x is not accepted by
+//     \`send\``), an unknown one UNKNOWN; both carry this verb's accepted set
+//     (its own flags plus `--as`/`--from`) as `choices`.
+//   - Arity is enforced from each row's positionals, naming the missing
+//     `<positional>` or the extra token (acc A4).
+//   - `schema` and `help` are the module's rows; `version` is grapevine's own,
+//     for `--human`.
+//
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS: `defineCli` only validates and
+// indexes, so a ward or a test can import it and read the table.
+export const cli = defineCli({
+  name: "grapevine",
+  options: CLI_OPTIONS,
+  commands: ROWS.map((r) => ({
+    ...r,
+    describe: "",
+    run: on(r.run),
+    ...(r.name === "send" || r.name === "announce" ? { rejectHint: BODY_HINT } : {}),
+  })),
+  // Identity is contractually global — see GLOBAL_FLAGS.
+  globalFlags: GLOBAL_FLAGS,
+  // Only the auto `version` row reads this, and grapevine defines its own row.
+  version: () => ({ name: "grapevine", version: PLUGIN_VERSION ?? "unknown" }),
+  help: helpText,
+});
 
-// acc declaration format v0 (see agent-cli-conformance src/acc/kit/declaration.ts):
-// { formatVersion, provenance, selfDescription, commands: [{ path, args, positionals }] }.
-// v0 refuses unknown keys, so nothing richer (effects, summaries, versions)
-// rides along — those wait for a v1 with slots for them.
-function buildDeclaration() {
-  // Every registry flag is accepted today; a refusal list would add
-  // status: "refused" entries here the day a verb recognises-and-declines one.
-  const arg = (k: FlagName) => ({
-    name: `--${k}`,
-    type: CLI_OPTIONS[k].type,
-    status: "valid",
-  });
-  const commands: {
-    path: string[];
-    args: { name: string; type: "string" | "boolean"; status: string }[];
-    positionals: PositionalSpec[];
-  }[] = [
-    {
-      // `path: []` IS the root. Its grammar: one required token selecting a
-      // command, or an interceptor flag the root answers itself.
-      path: [],
-      args: ROOT_INTERCEPTORS.map((i) => ({
-        name: i.name,
-        type: "boolean" as const,
-        status: "valid",
-      })),
-      positionals: [{ name: "command", required: true }],
-    },
-  ];
-  for (const spec of COMMANDS) {
-    for (const name of [spec.name, ...(spec.aliases ?? [])]) {
-      commands.push({
-        path: [name],
-        args: acceptedFlags(spec).map((k) => arg(k)),
-        positionals: spec.positionals,
-      });
-    }
-  }
-  return {
-    formatVersion: "0",
-    provenance: "emitted",
-    selfDescription: { args: ["schema"] },
-    commands,
-  };
-}
-
-function parseFlags(
-  argv: string[],
-  spec: CommandSpec,
-): {
-  positional: string[];
-  flags: Flags;
-} {
-  const accepted = acceptedFlags(spec);
-  const options = Object.fromEntries(accepted.map((k) => [k, CLI_OPTIONS[k]]));
-  try {
-    const { values, positionals } = nodeParseArgs({
-      args: argv,
-      options,
-      strict: true,
-      allowPositionals: true,
-    });
-    return {
-      positional: positionals,
-      flags: values as Flags,
-    };
-  } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    const bodyHint =
-      spec.name === "send" || spec.name === "announce"
-        ? "for a message body containing dashes, use --stdin or --body-file, " +
-          "or put it after a bare --"
-        : "";
-    throw new UsageError(`${spec.name}: ${detail}`, {
-      // ⛔ THE SET IS `choices` NOW, NOT A PROSE MARKER. It used to be a second
-      // line reading `recognized flags: --a --b`, spelled with the colon
-      // straight after the noun because that is the marker shape a flag-set
-      // extractor matches.
-      //
-      // ⚠ AND NOT BECAUSE THE MARKER WOULD HAVE STOPPED WORKING — that reason
-      // was written here and in D71, and it is FALSE. acc parses the whole
-      // envelope, then walks `stringValuesOf(document)` and runs the SAME prose
-      // MARKER regex over every string inside it, for exactly this case
-      // (`agent-cli-conformance/src/acc/kit/surface.ts:653-656`, whose doc
-      // comment names anthill's `"Valid flags: --format"` inside an `error`
-      // string). A marker embedded in the envelope would still have been read.
-      //
-      // The move is right for reasons that survive that correction: `choices` is
-      // the envelope's own field for the accepted set, it is what glamour
-      // publishes at CONFORMANT L0, an ARRAY cannot be truncated by a reader
-      // that stops at the first token which is not a `--long` flag, and one
-      // spelling of one set cannot drift from the other.
-      choices: accepted.map((k) => `--${k}`),
-      ...(bodyHint ? { hint: bodyHint } : {}),
-    });
-  }
-}
-
-function commandTokens(): string[] {
-  return COMMANDS.flatMap((c) => [c.name, ...(c.aliases ?? [])]);
-}
-
-function printHelp() {
-  process.stdout.write(`grapevine — agent-to-agent walkie-talkie
+function helpText(): string {
+  return `grapevine — agent-to-agent walkie-talkie
 
 Usage:
   grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)
@@ -2602,109 +2488,7 @@ Output:
 Env:
   GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).
   GRAPEVINE_HOME   Data dir (default ~/.grapevine).
-`);
-}
-
-/**
- * The verb router. Every rejection here RAISES; nothing writes its own prose.
- *
- * ⛔ THIS FUNCTION USED TO BE `main`, AND ITS FOUR REJECTIONS USED TO BE
- * `process.stderr.write(...); return 2` — a SECOND error contract beside `die`,
- * with its own wording, its own markers and no `kind` on the wire. A grep for
- * `die(` would have reported "the error contract is 46 sites"; it was 46 plus
- * these, and these are the ones an agent meets first (playbook B8: look for the
- * RAISE, not for the helper). They now raise the same envelope as the rest.
- */
-async function dispatch(argv: string[]): Promise<number> {
-  const [cmd, ...rest] = argv;
-
-  // BARE INVOCATION IS A USAGE ERROR — exit 2, usage pointer on stderr — not a
-  // help request at exit 0. grapevine's callers are agents: a bare call is an
-  // unset shell variable expanding to nothing, or a mistake, and answering it
-  // with 2.9KB of help at exit 0 reports success for a command that asked for
-  // nothing. `help` / `--help` remain one token away at exit 0 (acc D2 —
-  // conformed for that reason, not because the rule said so).
-  if (cmd === undefined) {
-    die("expected a command", "usage", {
-      choices: commandTokens(),
-      hint: "run `grapevine help` (or --help) for usage",
-    });
-  }
-
-  // ROOT FLAG ROUTING. A leading --token used to be consumed as the COMMAND
-  // token and rejected as `unknown command: --nope` — a flag reaching the verb
-  // parser's error path, where the rejection could not enumerate the flag set
-  // (found via acc's root-only surface capture). The root's accepted flags are
-  // the interceptors; anything else dashed is rejected AS A FLAG, enumerating
-  // the root's own set.
-  if (cmd.startsWith("-")) {
-    const interceptor = ROOT_INTERCEPTORS.find((i) => i.name === cmd);
-    if (!interceptor) {
-      // ⚠ THE SORT SURVIVES THE MOVE INTO `choices`, AND IT IS NOT DECORATION.
-      // Long flags first, because a flag-set extractor reads the list
-      // left-to-right and stops at the first token that is not a `--long` flag,
-      // so a short alias mid-list truncates what it sees. An array is not
-      // vulnerable to that — but the order is free and the property is real for
-      // any consumer that flattens it back to a line.
-      die(`unknown flag at the root: ${cmd}`, "usage", {
-        choices: [...ROOT_INTERCEPTORS.map((i) => i.name)].sort(
-          (a, b) => Number(b.startsWith("--")) - Number(a.startsWith("--")),
-        ),
-        hint: `commands (each takes its own flags): ${commandTokens().join(" ")}`,
-      });
-    }
-    return await runCommand(findCommand(interceptor.runs) as CommandSpec, rest);
-  }
-
-  const spec = findCommand(cmd);
-  if (!spec) {
-    // The unknown-verb rejection enumerates the valid set, exactly as the
-    // unknown-flag rejection does — the parser's own account of what it
-    // accepts, produced by the parser (acc STANDARD.md, "the cheapest version
-    // of checked").
-    die(`unknown command: ${cmd}`, "usage", { choices: commandTokens() });
-  }
-  return await runCommand(spec, rest);
-}
-
-async function runCommand(spec: CommandSpec, rest: string[]): Promise<number> {
-  let positional: string[];
-  let flags: Flags;
-  try {
-    ({ positional, flags } = parseFlags(rest, spec));
-  } catch (e) {
-    if (!(e instanceof UsageError)) throw e;
-    die(e.message, "usage", e.extra);
-  }
-  // Arity, enforced FROM THE DECLARED SHAPE — the registry's positional spec is
-  // what `schema` publishes, so enforcing it here is what keeps the declaration
-  // true by construction: a missing required positional errors before the verb
-  // runs, and an EXCESS positional is rejected rather than silently swallowed
-  // (acc A4's shape — the defect no external check can see).
-  const required = spec.positionals.filter((p) => p.required).length;
-  const variadic = spec.positionals.some((p) => p.variadic);
-  if (positional.length < required) {
-    const missing = spec.positionals[positional.length];
-    die(`${spec.name}: missing required <${missing?.name ?? "argument"}>`, "usage", {
-      hint: `expects: ${spec.name} ${spec.positionals
-        .map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`))
-        .join(" ")}`,
-    });
-  }
-  if (!variadic && positional.length > spec.positionals.length) {
-    die(
-      `${spec.name}: unexpected argument ${JSON.stringify(positional[spec.positionals.length])}`,
-      "usage",
-      {
-        hint: `expects: ${spec.name} ${
-          spec.positionals.map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`)).join(" ") ||
-          "(no arguments)"
-        }`,
-      },
-    );
-  }
-  const outcome = await spec.run(positional, flags);
-  return typeof outcome === "number" ? outcome : 0;
+`;
 }
 
 /**
@@ -2717,15 +2501,14 @@ async function runCommand(spec: CommandSpec, rest: string[]): Promise<number> {
  * here would report an internal fault as a tidy taxonomy failure and lose the
  * stack that says what actually broke.
  *
- * ⚠ AND `setCurrentCommand` IS NOT DECORATION — it is the `meta.command` field
- * of every envelope this CLI emits, which is how a caller routing on `kind`
- * knows WHICH verb produced it. Set from the raw token so an unknown verb still
- * names itself in its own rejection.
+ * ⚠ `dispatch`, NOT THE REGISTRY'S `main`, FOR EXACTLY THAT RE-THROW: the
+ * registry's `main` turns an unknown throw into an internal envelope.
+ * `meta.command` — which verb produced an envelope — is set by the registry from
+ * the raw first token, so an unknown verb still names itself in its rejection.
  */
 async function main(argv: string[]): Promise<number> {
-  setCurrentCommand(argv[0] ?? null);
   try {
-    return await dispatch(argv);
+    return await cli.dispatch(argv);
   } catch (e) {
     const code = reportCliError(e);
     if (code !== null) return code;

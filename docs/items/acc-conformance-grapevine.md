@@ -51,7 +51,21 @@ Source is `src/grapevine/backend/`; the checked target is the launcher, never
       each reads `enumerated` or `stated an empty set` in the census.
 - [x] **Step 6:** one table drives the parser, help, rejections and a `schema`
       verb (`how-to-derive-your-surface-from-one-registry.md`; take the
-      shared-registry research's answer into account).
+      shared-registry research's answer into account). **Since 2026-09-26 the
+      table is the kit's** (`src/kit/cli/registry.ts`,
+      [item/build-kit-cli-registry](build-kit-cli-registry.md)), verb-first with
+      `globalFlags: ["as", "from"]`, grapevine's own `version` row (`--human`),
+      its hand-written help, and the body hint as `send`'s and `announce`'s
+      `rejectHint`. The golden snapshot's only diff is sorted `choices` on the
+      per-verb rejections (20 records). Not recorded there, and deliberate: a
+      flag another verb takes is refused as misplaced (`send c --timeout 5`
+      answers "--timeout is not accepted by send", where node said "Unknown
+      option"); an unknown verb reads `unknown command "x"` (was
+      `unknown command: x`); a flag given without its value no longer carries
+      `choices`; and `grapevine -- -- --zz` is now `unknown command "--zz"`, the
+      terminator honoured, where it was refused as the root flag `--`. The
+      census, re-recorded with `acc probe-plan` against the new build: **33 of
+      33 declared paths compared, 0 disagreements**; L0 still conformant.
 - [ ] **Step 7:** anything in the kit that bit is filed upstream in the acc
       repo, or noted "nothing" in the session.
 - [ ] Behaviour changes a user can see (exit codes, help on stdout) are named in

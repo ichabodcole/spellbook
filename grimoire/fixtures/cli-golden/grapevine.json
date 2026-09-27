@@ -1385,7 +1385,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--topic", "--fresh"]
+      "choices": ["--as", "--fresh", "--from", "--topic"]
     },
     {
       "argv": ["open", "--help"],
@@ -1394,7 +1394,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--topic", "--fresh"]
+      "choices": ["--as", "--fresh", "--from", "--topic"]
     },
     {
       "argv": ["topic", "--acc-bogus-flag"],
@@ -1442,9 +1442,9 @@
       "choices": [
         "--as",
         "--body-file",
+        "--force",
         "--from",
         "--in-reply-to",
-        "--force",
         "--quiet",
         "--stdin",
         "--verbose"
@@ -1460,9 +1460,9 @@
       "choices": [
         "--as",
         "--body-file",
+        "--force",
         "--from",
         "--in-reply-to",
-        "--force",
         "--quiet",
         "--stdin",
         "--verbose"
@@ -1475,7 +1475,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--body-file", "--channels", "--from", "--force", "--quiet", "--stdin"]
+      "choices": ["--as", "--body-file", "--channels", "--force", "--from", "--quiet", "--stdin"]
     },
     {
       "argv": ["announce", "--help"],
@@ -1484,7 +1484,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--body-file", "--channels", "--from", "--force", "--quiet", "--stdin"]
+      "choices": ["--as", "--body-file", "--channels", "--force", "--from", "--quiet", "--stdin"]
     },
     {
       "argv": ["pull", "--acc-bogus-flag"],
@@ -1565,7 +1565,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--all"]
+      "choices": ["--all", "--as", "--from"]
     },
     {
       "argv": ["who", "--help"],
@@ -1574,7 +1574,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--all"]
+      "choices": ["--all", "--as", "--from"]
     },
     {
       "argv": ["alias", "--acc-bogus-flag"],
@@ -1604,12 +1604,12 @@
       "choices": [
         "--as",
         "--from",
-        "--last",
-        "--max",
-        "--since",
         "--from-start",
         "--human",
-        "--lurk"
+        "--last",
+        "--lurk",
+        "--max",
+        "--since"
       ]
     },
     {
@@ -1622,12 +1622,12 @@
       "choices": [
         "--as",
         "--from",
-        "--last",
-        "--max",
-        "--since",
         "--from-start",
         "--human",
-        "--lurk"
+        "--last",
+        "--lurk",
+        "--max",
+        "--since"
       ]
     },
     {
@@ -1673,7 +1673,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force"]
+      "choices": ["--as", "--force", "--from"]
     },
     {
       "argv": ["reset", "--help"],
@@ -1682,7 +1682,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force"]
+      "choices": ["--as", "--force", "--from"]
     },
     {
       "argv": ["mark", "--acc-bogus-flag"],
@@ -1799,7 +1799,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force", "--yes"]
+      "choices": ["--as", "--force", "--from", "--yes"]
     },
     {
       "argv": ["restart", "--help"],
@@ -1808,7 +1808,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force", "--yes"]
+      "choices": ["--as", "--force", "--from", "--yes"]
     },
     {
       "argv": ["roll", "--acc-bogus-flag"],
@@ -1817,7 +1817,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force", "--yes"]
+      "choices": ["--as", "--force", "--from", "--yes"]
     },
     {
       "argv": ["roll", "--help"],
@@ -1826,7 +1826,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--force", "--yes"]
+      "choices": ["--as", "--force", "--from", "--yes"]
     },
     {
       "argv": ["stop", "--acc-bogus-flag"],
@@ -1871,7 +1871,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--dry-run", "--force"]
+      "choices": ["--as", "--dry-run", "--force", "--from"]
     },
     {
       "argv": ["reap", "--help"],
@@ -1880,7 +1880,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--dry-run", "--force"]
+      "choices": ["--as", "--dry-run", "--force", "--from"]
     },
     {
       "argv": ["prune", "--acc-bogus-flag"],
@@ -1889,7 +1889,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--dry-run", "--force"]
+      "choices": ["--as", "--dry-run", "--force", "--from"]
     },
     {
       "argv": ["prune", "--help"],
@@ -1898,7 +1898,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--from", "--dry-run", "--force"]
+      "choices": ["--as", "--dry-run", "--force", "--from"]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
