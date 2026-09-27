@@ -6,7 +6,7 @@ description:
   rejections, --version and the acc schema), behind a golden snapshot of all
   nine CLIs, and move glamour, scriptorium and grapevine onto it.
 status: draft
-lifecycle: ready
+lifecycle: review
 id: 01a0e04b-f53e-722b-85c5-2be0123c9035
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
@@ -43,19 +43,19 @@ which are dispatch bugs) builds on this module, so it lands first.
 
 ## Definition of done
 
-- [ ] **Golden snapshot, before any move:** a fixture and a test recording, for
+- [x] **Golden snapshot, before any move:** a fixture and a test recording, for
       each of the nine CLIs from the current launchers, `schema` (where it
       exists), `help`, and a corpus of accepted and rejected invocations with
       exit code, stream and `choices`. Include every invocation the spell's
       `SKILL.md` documents. Later diffs to it are deliberate and named in the
       commit.
-- [ ] `src/kit/cli/registry.ts` implements the write-up's `defineCli` API with
+- [x] `src/kit/cli/registry.ts` implements the write-up's `defineCli` API with
       the cold read's changes: defaulted values ignored by the per-verb check
       and `default` modelled in the options table; interceptors pass remaining
       arguments on; flags before a sub-verb specified (or a recorded exception
       hook); the verbless empty-argv case specified; the unknown-root-flag rule
       scoped to `verb-first`.
-- [ ] Unit tests for the module itself, including A6 (`--` terminator), C2/D2
+- [x] Unit tests for the module itself, including A6 (`--` terminator), C2/D2
       (bare invocation: usage on stderr, exit 2), D1 (`--version`), A3
       (rejections carry `choices` and name the offending token) and defaults.
 - [x] glamour, scriptorium and grapevine run on it. Their golden snapshots are
@@ -66,5 +66,25 @@ which are dispatch bugs) builds on this module, so it lands first.
       (`grimoire/lib/entry-points.ts` and flag-invariant, strict-parse,
       terminator) read a spell on the registry correctly.
 - [x] The write-up is corrected per the cold read's change 6.
-- [ ] `bun run gate` is green, unpiped, and the acc ward still passes for all
+- [x] `bun run gate` is green, unpiped, and the acc ward still passes for all
       nine.
+
+## Adopter notes (from the migration of glamour, scriptorium, grapevine)
+
+For the six spells adopting the registry next:
+
+- Keep your handlers; adapt them with a small `on(h)` wrapper to the `run(inv)`
+  signature. Drop your own `schema` and `help` rows; keep a `version` row only
+  if it takes flags.
+- `describe` is required even with a custom `help` (grapevine passes `""`).
+- Expect in your golden diff: sorted `choices`, the kit's wording
+  (`unknown command "x"`, arity messages naming the token), and `version`
+  joining the verb list if it was answered before the table. Anything else is a
+  regression: fix it, don't re-snapshot it.
+- A flag that belongs to another verb, given without a value (`send c --since`),
+  fails as "argument missing" rather than "not accepted", and carries no
+  `choices`.
+- In `grimoire/terminator-invariant.test.ts`, add your spell to the kit-registry
+  entry; in the error-choices census, lower your spell's pin.
+- The golden ward needs `bun run build` first; a census harness needs the
+  spell's home variable pointed at a temp dir.
