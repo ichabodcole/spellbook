@@ -1,0 +1,30 @@
+[
+  {
+    "line": 179,
+    "argv": ["--title", "Proposal Review", "--timeout", "1800"],
+    "stdin": "# Foo proposal\n\n::: question id=scope\nShould we include the migration in this PR?\n:::\n",
+    "exclude": "reads markdown from stdin and so serves a page and opens a browser"
+  },
+  {
+    "line": 199,
+    "argv": [
+      "--file",
+      "golden.md",
+      "--title",
+      "Proposal Review",
+      "--theme",
+      "digestify",
+      "--timeout",
+      "1800"
+    ]
+  },
+  {
+    "line": 216,
+    "argv": ["--reference", "golden.md", "--title", "Read this proposal"]
+  },
+  {
+    "line": 224,
+    "argv": ["--reference", "golden.md", "--title", "Proposal review"],
+    "stdin": "## My Questions\n\n::: question id=concerns\nAny concerns about Section 3?\n:::\n"
+  }
+]

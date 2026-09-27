@@ -1,0 +1,339 @@
+{
+  "spell": "digestify",
+  "launcher": "scripts/review.ts",
+  "verbCount": 9,
+  "verbs": [
+    "--file",
+    "--host",
+    "--id",
+    "--no-open",
+    "--port",
+    "--reference",
+    "--theme",
+    "--timeout",
+    "--title"
+  ],
+  "excluded": {},
+  "excludedInvocations": [
+    {
+      "argv": ["--title", "Proposal Review", "--timeout", "1800"],
+      "doc": "SKILL.md:179",
+      "reason": "reads markdown from stdin and so serves a page and opens a browser"
+    }
+  ],
+  "invocationCount": 27,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--version"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["-V"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["version"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["schema"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file=missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file", "a-missing.md", "--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "--file",
+        "missing.md",
+        "--title",
+        "hello",
+        "--theme",
+        "classic",
+        "--id",
+        "d1",
+        "--no-open",
+        "--timeout",
+        "5",
+        "--port",
+        "0",
+        "--host",
+        "127.0.0.1"
+      ],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file", "missing.md", "--theme", "dark"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["digestify", "cthulhu", "classic"]
+    },
+    {
+      "argv": ["--title", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--no-open"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--timeout", "5", "--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--", "--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file", "missing.md", "--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--file"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": [
+        "--file",
+        "golden.md",
+        "--title",
+        "Proposal Review",
+        "--theme",
+        "digestify",
+        "--timeout",
+        "1800"
+      ],
+      "doc": "SKILL.md:199",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "golden.md", "--title", "Read this proposal"],
+      "doc": "SKILL.md:216",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "golden.md", "--title", "Proposal review"],
+      "stdin": "## My Questions\n\n::: question id=concerns\nAny concerns about Section 3?\n:::\n",
+      "doc": "SKILL.md:224",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    }
+  ]
+}

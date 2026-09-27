@@ -1,0 +1,86 @@
+[
+  {
+    "line": 37,
+    "argv": ["task", "hello"]
+  },
+  {
+    "line": 40,
+    "argv": ["task-done", "item1", "hello"]
+  },
+  {
+    "line": 77,
+    "argv": ["note", "--body-file", "golden.md"]
+  },
+  {
+    "line": 85,
+    "argv": ["open", "golden.md", "golden.md"]
+  },
+  {
+    "line": 86,
+    "argv": ["tail"]
+  },
+  {
+    "line": 95,
+    "argv": ["tail", "--since", "12"]
+  },
+  {
+    "line": 125,
+    "argv": ["version-new", "--doc", "golden.md", "--label", "golden"]
+  },
+  {
+    "line": 127,
+    "argv": ["say", "--body-file", "golden.md"]
+  },
+  {
+    "line": 141,
+    "argv": ["version-new", "--doc", "golden.md"]
+  },
+  {
+    "line": 166,
+    "argv": ["notes", "--doc", "golden.md"]
+  },
+  {
+    "line": 168,
+    "argv": ["note-resolve", "item1"]
+  },
+  {
+    "line": 174,
+    "argv": ["doctor"]
+  },
+  {
+    "line": 189,
+    "argv": ["working"]
+  },
+  {
+    "line": 189,
+    "argv": ["working", "--for", "5"]
+  },
+  {
+    "line": 215,
+    "argv": ["workspace"]
+  },
+  {
+    "line": 216,
+    "argv": ["workspace", "golden.md"]
+  },
+  {
+    "line": 239,
+    "argv": ["search", "hello"]
+  },
+  {
+    "line": 251,
+    "argv": ["help"]
+  },
+  {
+    "line": 251,
+    "argv": ["schema"]
+  },
+  {
+    "line": 259,
+    "argv": ["find", "--status", "hello"]
+  },
+  {
+    "line": 259,
+    "argv": ["task-status", "item1"]
+  }
+]

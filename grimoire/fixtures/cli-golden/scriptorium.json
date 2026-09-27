@@ -1,0 +1,2696 @@
+{
+  "spell": "scriptorium",
+  "launcher": "scripts/cli.ts",
+  "verbCount": 44,
+  "verbs": [
+    "open",
+    "add",
+    "state",
+    "tail",
+    "version-new",
+    "say",
+    "version-delete",
+    "task",
+    "task-status",
+    "task-done",
+    "task-remove",
+    "tasks-clear",
+    "working",
+    "note",
+    "notes",
+    "note-edit",
+    "note-resolve",
+    "note-remove",
+    "diff",
+    "merge",
+    "activate",
+    "new-doc",
+    "new-folder",
+    "move",
+    "rename",
+    "hide",
+    "unhide",
+    "make-set",
+    "import",
+    "workspace",
+    "meta",
+    "find",
+    "search",
+    "doctor",
+    "forget",
+    "dangling",
+    "graph",
+    "backlinks",
+    "meta-init",
+    "meta-set",
+    "info",
+    "close",
+    "schema",
+    "help"
+  ],
+  "excluded": {
+    "open": "starts a daemon (and may open a browser)",
+    "tail": "a long-running stream (tail); never ends on its own within the run"
+  },
+  "excludedInvocations": [
+    {
+      "argv": ["open", "golden.md", "golden.md"],
+      "doc": "SKILL.md:85",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["tail"],
+      "doc": "SKILL.md:86",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--since", "12"],
+      "doc": "SKILL.md:95",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    }
+  ],
+  "invocationCount": 163,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "add",
+        "state",
+        "tail",
+        "version-new",
+        "say",
+        "version-delete",
+        "task",
+        "task-status",
+        "task-done",
+        "task-remove",
+        "tasks-clear",
+        "working",
+        "note",
+        "notes",
+        "note-edit",
+        "note-resolve",
+        "note-remove",
+        "diff",
+        "merge",
+        "activate",
+        "new-doc",
+        "new-folder",
+        "move",
+        "rename",
+        "hide",
+        "unhide",
+        "make-set",
+        "import",
+        "workspace",
+        "meta",
+        "find",
+        "search",
+        "doctor",
+        "forget",
+        "dangling",
+        "graph",
+        "backlinks",
+        "meta-init",
+        "meta-set",
+        "info",
+        "close",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
+        "",
+        "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
+        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list",
+        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
+        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
+        "  version-new [--doc ..] [--from ..] [--label ..]",
+        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
+        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
+        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
+        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
+        "  task-remove <id>                              forget a task entirely — for one started by mistake",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
+        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite what a note says (its passage is unchanged)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  diff <against> [--doc ..] [--context ..] [--patch]",
+        "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+        "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
+        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
+        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
+        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
+        "  rename <path> <name>                          rename a document or folder in place",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
+        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
+        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
+        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
+        "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
+        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
+        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
+        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
+        "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
+        "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  info                                          print the resolved session pointer",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
+        "  help                                          show this message",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
+        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
+        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
+        "",
+        "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
+        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list",
+        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
+        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
+        "  version-new [--doc ..] [--from ..] [--label ..]",
+        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
+        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
+        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
+        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
+        "  task-remove <id>                              forget a task entirely — for one started by mistake",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
+        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite what a note says (its passage is unchanged)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  diff <against> [--doc ..] [--context ..] [--patch]",
+        "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+        "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
+        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
+        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
+        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
+        "  rename <path> <name>                          rename a document or folder in place",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
+        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
+        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
+        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
+        "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
+        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
+        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
+        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
+        "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
+        "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  info                                          print the resolved session pointer",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
+        "  help                                          show this message",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
+        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
+        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+      ]
+    },
+    {
+      "argv": ["help"],
+      "doc": "SKILL.md:251",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
+        "",
+        "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
+        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list",
+        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
+        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
+        "  version-new [--doc ..] [--from ..] [--label ..]",
+        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
+        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
+        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
+        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
+        "  task-remove <id>                              forget a task entirely — for one started by mistake",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
+        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite what a note says (its passage is unchanged)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  diff <against> [--doc ..] [--context ..] [--patch]",
+        "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+        "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
+        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
+        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
+        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
+        "  rename <path> <name>                          rename a document or folder in place",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
+        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
+        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
+        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
+        "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
+        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
+        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
+        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
+        "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
+        "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  info                                          print the resolved session pointer",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
+        "  help                                          show this message",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Add --session <id> to any verb that talks to a session (default: most recent).",
+        "  Each verb accepts only the flags on its row.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
+        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
+        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+      ]
+    },
+    {
+      "argv": ["--version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "scriptorium",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["-V"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "scriptorium",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "scriptorium",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["schema"],
+      "doc": "SKILL.md:251",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "verb",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--restore",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--start-timeout",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["add"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["version-new"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--from",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--label",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["say"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["version-delete"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "vN",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["task"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["task-status"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "status",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["task-done"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "outcome",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["task-remove"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["tasks-clear"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["working"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--for",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["note"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--quote",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["notes"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["note-edit"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["note-resolve"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--reopen",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["note-remove"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["diff"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--context",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--patch",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "against",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["merge"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--hunks",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "against",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["activate"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "vN",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["new-doc"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["new-folder"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["move"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "into",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["rename"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["hide"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["unhide"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "entry",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["make-set"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["import"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--into",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "file",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["workspace"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "dir",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["meta"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["find"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--type",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--lifecycle",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["search"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--limit",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "query",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["doctor"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["forget"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["dangling"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--entry",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["graph"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--entry",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["backlinks"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["meta-init"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--type",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--by",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["meta-set"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "key=value",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "-h", "--version", "-V"]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "add",
+        "state",
+        "tail",
+        "version-new",
+        "say",
+        "version-delete",
+        "task",
+        "task-status",
+        "task-done",
+        "task-remove",
+        "tasks-clear",
+        "working",
+        "note",
+        "notes",
+        "note-edit",
+        "note-resolve",
+        "note-remove",
+        "diff",
+        "merge",
+        "activate",
+        "new-doc",
+        "new-folder",
+        "move",
+        "rename",
+        "hide",
+        "unhide",
+        "make-set",
+        "import",
+        "workspace",
+        "meta",
+        "find",
+        "search",
+        "doctor",
+        "forget",
+        "dangling",
+        "graph",
+        "backlinks",
+        "meta-init",
+        "meta-set",
+        "info",
+        "close",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "-h", "--version", "-V"]
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout"
+    },
+    {
+      "argv": ["open", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--no-open", "--restore", "--start-timeout", "--timeout"]
+    },
+    {
+      "argv": ["open", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--no-open", "--restore", "--start-timeout", "--timeout"]
+    },
+    {
+      "argv": ["add", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["add", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["state", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--full", "--session"]
+    },
+    {
+      "argv": ["state", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--full", "--session"]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--once", "--session", "--since"]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--once", "--session", "--since"]
+    },
+    {
+      "argv": ["version-new", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--from", "--label", "--session"]
+    },
+    {
+      "argv": ["version-new", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--from", "--label", "--session"]
+    },
+    {
+      "argv": ["say", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--session", "--stdin"]
+    },
+    {
+      "argv": ["say", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--session", "--stdin"]
+    },
+    {
+      "argv": ["version-delete", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["version-delete", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["task", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--session", "--stdin"]
+    },
+    {
+      "argv": ["task", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--session", "--stdin"]
+    },
+    {
+      "argv": ["task-status", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-status", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-done", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-done", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-remove", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-remove", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["tasks-clear", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["tasks-clear", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["working", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--for", "--session"]
+    },
+    {
+      "argv": ["working", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--for", "--session"]
+    },
+    {
+      "argv": ["note", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
+    },
+    {
+      "argv": ["notes", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--full", "--session"]
+    },
+    {
+      "argv": ["notes", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--full", "--session"]
+    },
+    {
+      "argv": ["note-edit", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note-edit", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note-resolve", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--reopen", "--session"]
+    },
+    {
+      "argv": ["note-resolve", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--reopen", "--session"]
+    },
+    {
+      "argv": ["note-remove", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["note-remove", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["diff", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--context", "--doc", "--patch", "--session"]
+    },
+    {
+      "argv": ["diff", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--context", "--doc", "--patch", "--session"]
+    },
+    {
+      "argv": ["merge", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--hunks", "--session"]
+    },
+    {
+      "argv": ["merge", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--hunks", "--session"]
+    },
+    {
+      "argv": ["activate", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["activate", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["new-doc", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["new-doc", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["new-folder", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["new-folder", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["move", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["move", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["rename", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["rename", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["hide", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["hide", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["unhide", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["unhide", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["make-set", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["make-set", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["import", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--into", "--session"]
+    },
+    {
+      "argv": ["import", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--into", "--session"]
+    },
+    {
+      "argv": ["workspace", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["workspace", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["find", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+    },
+    {
+      "argv": ["find", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+    },
+    {
+      "argv": ["search", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--limit", "--session"]
+    },
+    {
+      "argv": ["search", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--limit", "--session"]
+    },
+    {
+      "argv": ["doctor", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["doctor", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["forget", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["forget", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["dangling", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--entry", "--session"]
+    },
+    {
+      "argv": ["dangling", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--entry", "--session"]
+    },
+    {
+      "argv": ["graph", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--entry", "--session"]
+    },
+    {
+      "argv": ["graph", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--entry", "--session"]
+    },
+    {
+      "argv": ["backlinks", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["backlinks", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta-init", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--by", "--session", "--type"]
+    },
+    {
+      "argv": ["meta-init", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--by", "--session", "--type"]
+    },
+    {
+      "argv": ["meta-set", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta-set", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["close", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["close", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["add", "golden.md", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state", "--full"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["version-new", "--doc", "golden.md", "--from", "v1", "--label", "l"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--stdin"],
+      "stdin": "hello",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--body-file", "golden.md"],
+      "doc": "SKILL.md:127",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["version-delete", "v2", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task", "hello"],
+      "doc": "SKILL.md:37",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-status", "t1", "step", "two"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-done", "t1", "shipped"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-remove", "t1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["tasks-clear"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["working", "--for", "5m"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["note", "hello", "--doc", "golden.md", "--quote", "exact text"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["notes", "--doc", "golden.md", "--full"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-edit", "n1", "hello", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-resolve", "n1", "--reopen"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-remove", "n1", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["diff", "v1", "--doc", "golden.md", "--context", "3", "--patch"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["diff", "saved"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["merge", "v1", "--hunks", "1,3"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["activate", "v1", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-doc", "a.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-folder", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["move", "a.md", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["rename", "a.md", "b.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["hide", "a.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["unhide", "e1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["make-set", "a.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["import", "golden.md", "--into", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["workspace"],
+      "doc": "SKILL.md:215",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["meta"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["meta", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "find",
+        "--type",
+        "item",
+        "--status",
+        "draft",
+        "--lifecycle",
+        "ready",
+        "--tag",
+        "t",
+        "--since",
+        "2026-01-01"
+      ],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["find", "--type=item"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["find", "--tag", "a", "--tag", "b"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["search", "hello", "world", "--limit", "5"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["doctor"],
+      "doc": "SKILL.md:174",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["forget", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["dangling", "--entry", "e1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["graph", "--entry", "e1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["backlinks", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["meta-init", "golden.md", "--type", "item", "--by", "golden"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["meta-set", "golden.md", "status=draft", "type=item"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["info"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["close"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--session", "s1", "say", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--session=s1", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--", "--x"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["say", "--", "text", "--session", "s1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-done", "item1", "hello"],
+      "doc": "SKILL.md:40",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note", "--body-file", "golden.md"],
+      "doc": "SKILL.md:77",
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["version-new", "--doc", "golden.md", "--label", "golden"],
+      "doc": "SKILL.md:125",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["version-new", "--doc", "golden.md"],
+      "doc": "SKILL.md:141",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["notes", "--doc", "golden.md"],
+      "doc": "SKILL.md:166",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-resolve", "item1"],
+      "doc": "SKILL.md:168",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["working"],
+      "doc": "SKILL.md:189",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["working", "--for", "5"],
+      "doc": "SKILL.md:189",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["workspace", "golden.md"],
+      "doc": "SKILL.md:216",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["search", "hello"],
+      "doc": "SKILL.md:239",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["find", "--status", "hello"],
+      "doc": "SKILL.md:259",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-status", "item1"],
+      "doc": "SKILL.md:259",
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    }
+  ]
+}

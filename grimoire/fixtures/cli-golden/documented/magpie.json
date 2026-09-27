@@ -1,0 +1,94 @@
+[
+  {
+    "line": 122,
+    "argv": ["open"]
+  },
+  {
+    "line": 123,
+    "argv": ["sessions"]
+  },
+  {
+    "line": 124,
+    "argv": ["tail"]
+  },
+  {
+    "line": 125,
+    "argv": ["state"]
+  },
+  {
+    "line": 126,
+    "argv": ["say", "hello"]
+  },
+  {
+    "line": 127,
+    "argv": ["ask", "hello"]
+  },
+  {
+    "line": 128,
+    "argv": ["status", "on", "hello"]
+  },
+  {
+    "line": 128,
+    "argv": ["status", "off"]
+  },
+  {
+    "line": 129,
+    "argv": ["source", "golden.png"]
+  },
+  {
+    "line": 130,
+    "argv": ["discover"]
+  },
+  {
+    "line": 131,
+    "argv": ["extract"]
+  },
+  {
+    "line": 132,
+    "argv": ["export"]
+  },
+  {
+    "line": 133,
+    "argv": ["element-add", "--bbox", "0,0,5,5"]
+  },
+  {
+    "line": 133,
+    "argv": ["element-remove", "item1"]
+  },
+  {
+    "line": 134,
+    "argv": ["cmd"]
+  },
+  {
+    "line": 135,
+    "argv": ["close"]
+  },
+  {
+    "line": 135,
+    "argv": ["info"]
+  },
+  {
+    "line": 135,
+    "argv": ["help"]
+  },
+  {
+    "line": 190,
+    "argv": ["extract", "--ids", "item1"]
+  },
+  {
+    "line": 191,
+    "argv": ["extract", "--remove", "--ids", "item1"]
+  },
+  {
+    "line": 194,
+    "argv": ["export", "--ids", "item1"]
+  },
+  {
+    "line": 209,
+    "argv": ["extract", "--remove", "--model", "golden"]
+  },
+  {
+    "line": 214,
+    "argv": ["extract", "--remove", "--model", "golden", "--label", "golden"]
+  }
+]
