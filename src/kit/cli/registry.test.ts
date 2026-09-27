@@ -665,11 +665,16 @@ describe("a verbless root (digestify)", () => {
     expect(calls[0]?.pos).toEqual(["help"]);
   });
 
-  test("an unknown flag is refused with the root's set", async () => {
+  test("an unknown flag is refused with the root's set: its flags and the interceptors", async () => {
     const { cli } = make(false);
     const env = envelope(await capture(() => cli.main(["--nope"])));
     expect(env.error.message).toContain("--nope");
-    expect(env.error.choices).toEqual(["--no-open", "--title"]);
+    // Long spellings sorted, then the shorts — the same set the declaration
+    // publishes at `path: []` (see the next cell), so acc's census of the root
+    // reads no declared-not-accepted interceptor.
+    expect(env.error.choices).toEqual(["--help", "--no-open", "--title", "--version", "-h", "-V"]);
+    const declared = (cli.declaration().commands[0]?.args ?? []).map((a) => a.name).sort();
+    expect([...(env.error.choices ?? [])].sort()).toEqual(declared);
   });
 
   test("the declaration's root row carries the root's flags and positionals", () => {

@@ -44,7 +44,8 @@
  *    `default`s stripped), so a flag the spell knows but this row does not take
  *    is refused as MISPLACED (`--x is not accepted by \`verb\``), and one the
  *    spell does not know as UNKNOWN. Both carry `choices` = this row's accepted
- *    set (its own flags plus `globalFlags`). After a `--` everything is a
+ *    set (its own flags plus `globalFlags`; a verbless root's adds the
+ *    interceptors, as its declared row does). After a `--` everything is a
  *    positional (node's parser honours it).
  * 6. Defaults are applied AFTER the per-row check, and only for flags the row
  *    accepts — so a defaulted flag never trips the misplaced-flag check, and a
@@ -378,6 +379,21 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     [...(rowFor(path)?.accepted ?? [])].map((k) => `--${k}`).sort();
   const label = (r: Row): string => r.name || cliName;
 
+  /**
+   * A verbless root's rejection `choices`: its own flags PLUS the interceptors,
+   * because the declaration publishes both at `path: []` and the root answers
+   * both (the interceptors as `argv[0]`). Leaving the interceptors out made
+   * one process say two things about its root — acc's census read `--help`,
+   * `-h`, `--version` and `-V` as declared-not-accepted. Long spellings first
+   * (sorted), then the shorts: a flag-set extractor reading left to right
+   * stops at the first token that is not a `--long` flag.
+   */
+  const rootChoices: string[] = (() => {
+    const all = [...flagsFor(""), ...INTERCEPTOR_CHOICES];
+    const long = all.filter((f) => f.startsWith("--")).sort();
+    return [...long, ...all.filter((f) => !f.startsWith("--"))];
+  })();
+
   // ── help ──
 
   const renderPositional = (p: PositionalSpec): string => {
@@ -526,7 +542,7 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     setCurrentCommand(row.name === "" ? null : row.name);
     const name = label(row);
     const accepted = new Set(row.accepted);
-    const choices = flagsFor(row.name);
+    const choices = row.name === "" ? rootChoices : flagsFor(row.name);
     const flagHint = (): string | undefined =>
       [row.rejectHint, choices.length === 0 ? `${name} takes no flags` : undefined]
         .filter((s): s is string => s !== undefined)

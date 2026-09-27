@@ -1,9 +1,10 @@
 {
   "spell": "digestify",
   "launcher": "scripts/review.ts",
-  "verbCount": 9,
+  "verbCount": 13,
   "verbs": [
     "--file",
+    "--help",
     "--host",
     "--id",
     "--no-open",
@@ -11,7 +12,10 @@
     "--reference",
     "--theme",
     "--timeout",
-    "--title"
+    "--title",
+    "--version",
+    "-h",
+    "-V"
   ],
   "excluded": {},
   "excludedInvocations": [
@@ -261,6 +265,7 @@
       "kind": "usage",
       "choices": [
         "--file",
+        "--help",
         "--host",
         "--id",
         "--no-open",
@@ -268,7 +273,10 @@
         "--reference",
         "--theme",
         "--timeout",
-        "--title"
+        "--title",
+        "--version",
+        "-h",
+        "-V"
       ]
     },
     {
@@ -288,6 +296,7 @@
       "kind": "usage",
       "choices": [
         "--file",
+        "--help",
         "--host",
         "--id",
         "--no-open",
@@ -295,7 +304,10 @@
         "--reference",
         "--theme",
         "--timeout",
-        "--title"
+        "--title",
+        "--version",
+        "-h",
+        "-V"
       ]
     },
     {
