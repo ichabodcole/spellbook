@@ -6,7 +6,7 @@ description:
   9.1.0 (plugin 4.1.0); no structural migration applies to a v3.0 tree, but the
   new placeholder lint may report findings.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: ready
+lifecycle: done
 id: 01a0e4e1-e70f-7198-8059-692fed0c06d8
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-09-27 }
@@ -33,19 +33,54 @@ the scaffold owns, not a structural migration.
 
 ## Definition of done
 
-- [ ] The refresh path is established from the 4.1.0 skill, not guessed: how a
+- [x] The refresh path is established from the 4.1.0 skill, not guessed: how a
       v3.0 tree takes a newer scaffold's owned `scripts/pdocs/` layer and
       templates (the skill notes a layer refresh is `v2.8-to-v2.9`'s job;
       confirm whether that still holds, or whether 4.1.0 names another path).
       Dry-run first.
-- [ ] `scripts/pdocs/` and `docs/TEMPLATES` match scaffold 9.1.0; nothing of
+- [x] `scripts/pdocs/` and `docs/TEMPLATES` match scaffold 9.1.0; nothing of
       ours inside them is lost (diff before and after).
-- [ ] Both version markers read `9.1.0` and agree (the skill's Step 5).
-- [ ] The skill's Step 6 (root-level conventions) and Step 7 (verify) are run
+- [x] Both version markers read `9.1.0` and agree (the skill's Step 5).
+- [x] The skill's Step 6 (root-level conventions) and Step 7 (verify) are run
       and their output read.
-- [ ] Whatever the new placeholder lint reports is fixed or, if it is the
+- [x] Whatever the new placeholder lint reports is fixed or, if it is the
       scaffold's own text, reported upstream; `pdocs check` is clean.
-- [ ] `bun run gate` is green (the golden and acc wards do not read docs, but
+- [x] `bun run gate` is green (the golden and acc wards do not read docs, but
       the gate includes `pdocs check`).
 - [ ] Friction with the migration is reported to the scaffold repo (issues are
       how that team hears; 9.0.1 already fixed what we hit last time).
+
+## Done (2026-09-27)
+
+Landed in `67198fd4`.
+
+- **The refresh path:** re-running `migrate-v2.10-to-v3.0.ts` from plugin 4.1.0
+  on our v3.0 tree. Its preflight accepts the tree; with nothing left to move it
+  only refreshes what the scaffold owns (it now fetches scaffold 9.0.1). Dry run
+  first: 0 moves, 0 links, 1 owned file flagged.
+- **Written:** 6 files under `scripts/pdocs/`, `docs/SCHEMA.md`,
+  `docs/features/README.md`, `docs/cycles/TEMPLATE.md` (seeded, updated), and
+  `docs/.pdocs-seed.json` (two stale records for our PROJECT-LEDGER and
+  SPRINT-OUTCOME templates dropped: the scaffold never shipped them). Nothing of
+  ours was lost.
+- **9.1.0, not 9.0.1:** the script sets the markers to the scaffold it
+  installed, 9.0.1. Scaffold 9.1.0 differs from 9.0.1 only in three version
+  strings (both markers and the CLI's `VERSION`), checked with
+  `gh api …/compare`, so those three were set to 9.1.0 by hand and the tree
+  matches 9.1.0 byte for byte.
+- **Placeholder lint:** one real finding, fixed: the acc cycle's session record
+  still carried the template's `tags: [area, feature]`.
+- **Step 6:** docs pointer and Branch Landing Policy present. **The
+  Documentation CLI pointer is missing** from root `AGENTS.md` (it never
+  mentions `pdocs`); recommended to Cole rather than applied, per the skill.
+- **Step 7:** CLI answers `9.1.0`, `pdocs check` clean, no shipped tests, no
+  tsconfig reach, biome and prettier leave `scripts/pdocs/` alone. Gate: 2993
+  pass, 0 fail.
+
+**Friction to report upstream** (not yet filed; outward-facing, waiting on
+Cole): the Plan phase said `docs/SCHEMA.md` "differs from every release of the
+scaffold, so it holds edits of yours", but ours is byte-identical to scaffold
+9.0.0's (raw, and after prettier). The script does not appear to recognise the
+9.0.0 release it itself installed, so a clean tree is told its owned file holds
+the user's edits. And there is no row for "refresh a v3.0 tree to a newer
+patch": the path works, but the skill's table does not say so.
