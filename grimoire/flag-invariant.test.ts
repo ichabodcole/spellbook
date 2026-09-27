@@ -100,9 +100,9 @@ const FOREIGN: Record<string, string> = {
     "the kit registry's ROOT TOKEN, as glamour's — `--version`/`-V` map onto the `version` row " +
     "before any parse runs, deliberately not a registry flag, so `bounty state --version` stays refused",
   "magpie:version":
-    "a ROOT TOKEN dispatched beside `help` (resolved before parseArgs runs), not a parser flag — " +
-    "`magpie --version` works and `magpie state --version` is correctly refused, which is the " +
-    "behaviour a registry entry would destroy",
+    "the kit registry's ROOT TOKEN, as glamour's — `--version`/`-V` map onto the `version` row " +
+    "before any parse runs, not a parser flag — `magpie --version` works and " +
+    "`magpie state --version` is correctly refused, which is the behaviour a registry entry would destroy",
   "astrolabe:version":
     "the same ROOT TOKEN as magpie's, landed with astrolabe's acc L0 pass (fcdd3d5 documented it " +
     "in SKILL.md) — dispatched by literal comparison before parseArgs runs, deliberately not a " +

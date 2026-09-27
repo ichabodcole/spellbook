@@ -142,7 +142,11 @@ const EXPECTED: Record<
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
   // kit. The enumerated `context <kind>` and `--link` rejections stay here.
   imago: { sites: 14, choices: 2, verbRoster: true, flagMap: true },
-  magpie: { sites: 33, choices: 4, verbRoster: true, flagMap: true },
+  // magpie 33/4 -> 26/1 (2026-09-26): the move onto the kit registry, as
+  // imago's — its bare-invocation, unknown-verb and flag-scope raises (and the
+  // arity `die`s the table now declares) left for the kit. The enumerated
+  // `--alpha` rejection is the one `choices` left here.
+  magpie: { sites: 26, choices: 1, verbRoster: true, flagMap: true },
   "mind-mapper": { sites: 67, choices: 14, verbRoster: true, flagMap: true },
   // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
   // row is a design, not an archaeology: every enumerable usage rejection
