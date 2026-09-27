@@ -83,9 +83,10 @@ import {
 //
 // ── IMPORTING AN ADOPTER RUNS ITS MODULE (A5) ───────────────────────────────
 // Each adopter's top level runs at import. Guarded cheaply: while the adopters
-// are imported, `Bun.spawn`, `Bun.spawnSync`, `Bun.write`, `Bun.serve` and
-// `process.exit` are replaced by recorders, and a cell asserts none was called.
-// The recorders do not call through, so a violation cannot do its damage here.
+// are imported, `Bun.spawn`, `Bun.spawnSync`, `Bun.write`, `Bun.serve`,
+// `Bun.$` and `process.exit` are replaced by recorders, and a cell asserts
+// none was called. The recorders do not call through, so a violation cannot do
+// its damage here.
 //
 // ⛔ WHAT THIS WARD CANNOT SEE (say so before trusting a green):
 //  - Import-time side effects the recorders do not cover: `node:fs` writes,
@@ -192,13 +193,17 @@ const adopters: Adopter[] = [];
 const importEffects: string[] = [];
 {
   const bun = Bun as unknown as Record<string, unknown>;
-  const guarded = ["spawn", "spawnSync", "write", "serve"] as const;
+  const guarded = ["spawn", "spawnSync", "write", "serve", "$"] as const;
   const saved = guarded.map((k) => bun[k]);
   const savedExit = process.exit;
   let importing = "";
   for (const k of guarded)
     bun[k] = () => {
       importEffects.push(`${importing}: Bun.${k}`);
+      return {
+        quiet: () => ({ text: () => undefined }),
+        text: () => undefined,
+      };
     };
   (process as unknown as { exit: unknown }).exit = () => {
     importEffects.push(`${importing}: process.exit`);

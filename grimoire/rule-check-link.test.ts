@@ -108,7 +108,7 @@ function parseRules(): Rule[] {
 function collected(dir: string, rel = ""): string[] {
   const out: string[] = [];
   for (const e of readdirSync(dir)) {
-    if (e === "node_modules") continue;
+    if (e === "node_modules" || e.startsWith(".")) continue;
     const abs = join(dir, e);
     const r = rel === "" ? e : `${rel}/${e}`;
     if (statSync(abs).isDirectory()) out.push(...collected(abs, r));
