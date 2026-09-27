@@ -41,6 +41,19 @@ enumeration and `grimoire/lib/entry-points.ts`. Do not re-derive the population.
 - [ ] A ward asserts the demotion half over the enumerated entry points, with a
       zero-denominator guard.
 
+Per spell, as each moves onto the kit CLI registry (the lead closes this item
+after all spells move):
+
+- [x] **bounty** (2026-09-26). At the root, `bounty -- --x` is
+      `unknown command "--x"`, never an option (acc A6 passes). Inside a verb, a
+      flag after `--` is a positional by design. `update t1 -- --session-key K`
+      is now **refused** by the arity check with the token named (exit 2), where
+      it used to be dropped silently. `add -- text --session-key K` still takes
+      the flag as **title text** at exit 0, on the ambient board. That meets A6,
+      but not this item's "never silently taken as a positional" for variadic
+      verbs (`add`, `message`). Pinned by the golden fixture and by a test in
+      `src/bounty/backend/server.test.ts`.
+
 ## Related Documents
 
 - [Sprint 05 → 06 carries: the `c1` card and its denominator](../features/spell-hardening/sprints/05-the-gate/carries.md)
