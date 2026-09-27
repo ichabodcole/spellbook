@@ -1,3 +1,5 @@
+// enforces: none in house-style — P0f, the exit-site inventory (sprint 03, card t-a0c6c34a)
+//
 // P0f — the exit-site inventory ward.
 //
 // WHAT THIS PINS, AND WHAT IT CANNOT SEE (read this before trusting a green):

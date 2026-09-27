@@ -1,3 +1,5 @@
+// enforces: none in house-style — R6 ward 1c (spell-kit), scoped by Cole on the finalization branch
+//
 // R6 ward 1c — A SHIPPED SKILL.md POINTS AT NOTHING THAT DOES NOT SHIP.
 //
 // ⛔ WHY PROSE NEEDS ITS OWN WARD. Ward 1a already holds that the published

@@ -1,3 +1,5 @@
+// enforces: none in house-style — seams Amendment to Contract 21, finding 3 (kit prose launders classes)
+//
 // ⛔ THE WARD FOR A LEAK THAT TRAVELS THROUGH COMMENTS.
 //
 // Tailwind scans source as LITERAL TEXT and never parses it, so it cannot tell

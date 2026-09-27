@@ -1,3 +1,5 @@
+// enforces: none in house-style — the kit token-resolution hazard measured 2026-08-31 (4808ff0a); seams Contract 19 for its population
+//
 // ⛔ THE WARD FOR A LAYER NO OTHER CHECK READS.
 //
 // `src/kit/` ships styled components into more than one spell. `bun run check`

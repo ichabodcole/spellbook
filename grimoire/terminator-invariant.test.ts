@@ -19,6 +19,8 @@ import {
   SHARED_PARSERS,
 } from "./lib/entry-points";
 
+// enforces: none in house-style — sprint-05 conformance table, row 2
+//
 // ROW 2 of the sprint-05 conformance table: "free text never promoted to a flag
 // name", and its inverse. It is a SIBLING ward of `flag-invariant.test.ts`
 // because that ward is keyed on flag NAMES and a bare `--` is never an options

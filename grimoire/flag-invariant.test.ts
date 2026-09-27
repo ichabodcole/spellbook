@@ -13,6 +13,8 @@ import {
 } from "./lib/entry-points";
 import { must } from "./lib/must.ts";
 
+// enforces: none in house-style — the SKILL.md flag invariant this header states (bbc61c2b, 2026-08-06)
+//
 // The SKILL.md flag invariant — a roster-wide ward, owned by the grimoire seat.
 //
 // INVARIANT, two halves with DIFFERENT denominators (they cannot share one):

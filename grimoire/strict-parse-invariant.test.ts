@@ -7,6 +7,8 @@ import {
   SHARED_PARSERS,
 } from "./lib/entry-points";
 
+// enforces: none in house-style — sprint-05 conformance table, row 1
+//
 // ROW 1 of the sprint-05 conformance table — "`--flag=value` parses; unknown
 // flags refuse." NOTE: node:util already refuses by DEFAULT (measured in the
 // mechanism cell). This ward pins the explicit convention and guards the one

@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { must } from "./lib/must.ts";
 
+// enforces: none in house-style — spell-hardening card a4 (the stable key clause (ii) needs)
+//
 // Card a4 — the stable key. Every rule in house-style.md carries a machine-
 // readable id, so canon can be ADDRESSED rather than matched by title.
 //

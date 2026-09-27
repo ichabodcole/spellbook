@@ -1,3 +1,5 @@
+// enforces: none in house-style — D15 (ruled by Cole; brief-1b A2)
+//
 // ── THE SPAWN-PATH WARD (D15, ruled by Cole; brief-1b A2) ───────────────────
 //
 // ⛔ WHAT THIS EXISTS FOR, IN ONE SENTENCE: **bundling changes what a module

@@ -1,3 +1,5 @@
+// enforces: none in house-style — conformance register D7's React development-build defect (fixed 2026-09-16)
+//
 // SURFACE BUILD MODE WARD — a shipped surface must be React's PRODUCTION build.
 //
 // Why this exists: v3.0.0 shipped all nine surfaces built against React's

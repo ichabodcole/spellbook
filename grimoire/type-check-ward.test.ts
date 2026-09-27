@@ -1,3 +1,5 @@
+// enforces: none in house-style — type-debt T37 (Cole, 2026-09-10)
+//
 // TYPE CHECK WARD — every `tsc --noEmit` error in every area of this repo reds
 // the gate. Ruled by Cole, 2026-09-10 (type-debt T37), once the type-debt
 // project took the repo from 584 errors to 0.

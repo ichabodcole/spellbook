@@ -1,3 +1,5 @@
+// enforces: none in house-style — the kit-registry move's regression net (acc-conformance cycle, e5fddb26, 2026-09-26); it records today's behaviour, bugs included
+//
 // CLI GOLDEN SNAPSHOT — what each of the nine spell CLIs does TODAY, recorded
 // from its launcher, so the move onto the kit registry (`src/kit/cli/registry.ts`)
 // has a regression net. Every later diff to a fixture is either a deliberate,

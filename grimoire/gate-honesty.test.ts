@@ -1,3 +1,5 @@
+// enforces: none in house-style — s5-P (spell-hardening sprint 05): the gate states what it cannot see
+//
 // GATE HONESTY WARD — s5-P. `bun run check` prints "Checked N files" and says
 // NOTHING about the shipped, hand-authored files it structurally cannot read.
 // That is not coverage; it is a gate that cannot state what it cannot see. A hard

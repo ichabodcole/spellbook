@@ -1,3 +1,5 @@
+// enforces: spells-are-porting-to-the-build
+//
 // ⛔ THE WARD FOR A LEAK WITH NO IMPORT TO FOLLOW.
 //
 // Tailwind does not emit by reachability — it emits by TEXT MATCH over a

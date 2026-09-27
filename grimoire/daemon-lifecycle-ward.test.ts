@@ -4,6 +4,8 @@ import { basename, join } from "node:path";
 import { Glob } from "bun";
 import { must } from "./lib/must.ts";
 
+// enforces: drive-conjuration-through-daemon
+//
 // ── THE SIXTH EDIT WARD ──────────────────────────────────────────────────────
 //
 // The spells' daemon spine is ONE DESIGN IMPLEMENTED SIX TIMES. Nobody chose

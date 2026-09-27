@@ -1,3 +1,5 @@
+// enforces: none in house-style — the acc conformance standard (pinned `acc check`, L0 core rules, each spell's acc.config.json)
+//
 // ACC CONFORMANCE WARD — runs the pinned `acc check` over every spell CLI, so a
 // conformance regression fails `bun test` (and so `bun run gate`) instead of
 // waiting for someone to run the kit by hand.
