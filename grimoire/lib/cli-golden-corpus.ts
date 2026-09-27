@@ -87,6 +87,13 @@ export const SPECS: SpellSpec[] = [
       c("add", "hello", "--tag", "a", "--tag", "b"),
       c("add", "hello", "world", "--expect", "5", "--id", "t1"),
       c("update", "t1", "--status", "doing", "--tag", ""),
+      // s5-9 / s5-5: the refusals are the row's `check`, so they answer before
+      // any board is resolved; `--clear-notes` alone parses (then: no board).
+      c("update", "t1", "--notes", ""),
+      c("update", "t1", "--title", ""),
+      c("update", "t1", "--clear-notes"),
+      c("update", "t1", "--clear-notes", "--notes", "x"),
+      stdin("from stdin\n", "update", "t1", "--stdin", "--title", "x"),
       c("claim", "t1"),
       c("block", "t1", "--on", "t2,t3"),
       c("unblock", "t1", "--on", "t2"),

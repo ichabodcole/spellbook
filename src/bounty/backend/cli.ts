@@ -509,6 +509,11 @@ const CLI_OPTIONS = {
   pin: { type: "boolean" },
   stdin: { type: "boolean" },
   "stdin-tasks": { type: "boolean" },
+  // s5-5: `update`'s explicit clear. An empty `--notes` is refused, because a
+  // deliberate `--notes ""` and a command substitution that produced nothing
+  // are the same string by the time they arrive; this flag is the one way to
+  // say "clear" on purpose.
+  "clear-notes": { type: "boolean" },
 } as const;
 
 /**
@@ -526,6 +531,7 @@ export const UPDATE_PATCH_FLAGS: readonly string[] = [
   "--size",
   "--expect",
   "--stdin",
+  "--clear-notes",
 ];
 
 type CmdResult = {
@@ -1340,10 +1346,22 @@ async function cmdUpdate(
 ) {
   const id = pos[0] as string; // arity: the row declares <id> required
   const patch: Record<string, unknown> = {};
-  if (flags.stdin === true) patch.title = await readStdin();
-  else if (typeof flags.title === "string") patch.title = flags.title;
+  // The combinations (`--stdin` with `--title`, `--clear-notes` with `--notes`)
+  // and the empty flag values are refused by the row's `check`, before this
+  // runs. An empty STDIN can only be seen here, after the read, and it is
+  // refused the way `add` refuses an empty title (s5-9): an empty pipe is far
+  // more often a failed producer than a wish to blank the title.
+  if (flags.stdin === true) {
+    const title = await readStdin();
+    if (!title)
+      die(
+        "update: --stdin read an empty title, and a title is never cleared; pipe the new title, or use --notes <text> / --clear-notes for the notes",
+      );
+    patch.title = title;
+  } else if (typeof flags.title === "string") patch.title = flags.title;
   if (typeof flags.status === "string") patch.status = flags.status;
   if (typeof flags.notes === "string") patch.notes = flags.notes;
+  else if (flags["clear-notes"] === true) patch.notes = "";
   if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
   if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
   const upSize = parseSize(flags.size);
@@ -1387,8 +1405,18 @@ async function cmdUpdate(
   // already held this value, e.g. doing→doing) → benign success, since the
   // task exists and the board is right.
   const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
+  // `fields` names what this call wrote (s5-9): the patch's keys, as task
+  // fields (`--tag` writes `tags`; `--stdin` writes `title`; `--clear-notes`
+  // writes `notes`). A caller can check it against what it meant to change —
+  // the check that would have caught `--stdin` landing in the title.
+  const fields = Object.keys(patch);
   if (res.applied) {
-    printJson({ ok: true, updated: id, valuesIgnored: upIgnored.length ? upIgnored : null });
+    printJson({
+      ok: true,
+      updated: id,
+      fields,
+      valuesIgnored: upIgnored.length ? upIgnored : null,
+    });
   } else if (res.error) {
     // A not-found / mis-routed update — `not_found` (5) from the daemon.
     refuseFromDaemon(res, `no such task ${id}`);
@@ -1398,10 +1426,12 @@ async function cmdUpdate(
     // anything — so a caller could not tell "no ignored flags" from "this
     // build does not report them", which is the exact absence the
     // present-and-null rule exists to prevent.
+    // Nothing changed, so nothing was written: `fields` is empty, not absent.
     printJson({
       ok: true,
       updated: id,
       noop: true,
+      fields: [],
       valuesIgnored: upIgnored.length ? upIgnored : null,
     });
   }
@@ -1573,6 +1603,25 @@ function scopeOf(flags: Flags, as: string | undefined) {
   return { owner: typeof flags.owner === "string" ? flags.owner : undefined, mine, as };
 }
 
+/**
+ * `update`'s combination and empty-value rules (s5-9, s5-5), refused as usage
+ * before anything is sent. Each message names the recovery. An empty value is
+ * refused because it cannot be told apart from a command substitution that
+ * produced nothing, and it would destroy the field at `ok:true`.
+ */
+function checkUpdate(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.stdin === true && typeof f.title === "string")
+    return "--stdin and --title both set the title; pass one of them (for the notes, use --notes <text>)";
+  if (f["clear-notes"] === true && typeof f.notes === "string")
+    return "--clear-notes and --notes both set the notes; pass --notes <text> to replace them, or --clear-notes alone to clear them";
+  if (f.title === "")
+    return "--title is empty, and a title is never cleared (add refuses one too); pass the new title text";
+  if (f.notes === "")
+    return "--notes is empty, which would erase the notes; to clear notes on purpose, pass --clear-notes";
+  return undefined;
+}
+
 const ROWS: Row[] = [
   {
     name: "open",
@@ -1629,9 +1678,22 @@ const ROWS: Row[] = [
   },
   {
     name: "update",
-    flags: [...WRITE, "status", "title", "notes", "owner", "tag", "size", "expect", "stdin"],
+    flags: [
+      ...WRITE,
+      "status",
+      "title",
+      "notes",
+      "clear-notes",
+      "owner",
+      "tag",
+      "size",
+      "expect",
+      "stdin",
+    ],
     positionals: [{ name: "id", required: true }],
-    describe: 'patch a task (--tag "" clears the tags)',
+    describe:
+      'patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag "" clears the tags',
+    check: checkUpdate,
     run: cmdUpdate,
   },
   {

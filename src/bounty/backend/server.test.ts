@@ -2237,6 +2237,86 @@ describe("ownership scoping (Phase C E2E)", () => {
       await runCli(["close", "--session", session], { env });
     }
   }, 25000);
+
+  // s5-9 + s5-5 (docs/items/bounty-update-stdin-misroutes-to-title.md,
+  // bounty-notes-clear-vs-empty-substitution.md): every way `update` used to
+  // blank or overwrite a field at `ok:true` without the caller naming it is
+  // refused at exit 2 with the recovery in the message, and the task reads back
+  // UNCHANGED. The success envelope names the fields it wrote.
+  test("update refuses empty values and --stdin with --title; --clear-notes clears; fields named (s5-9, s5-5)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const readT1 = async () => {
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      return at(s.state.tasks, 0, "s.state.tasks");
+    };
+    const refused = (r: CliResult, needle: string) => {
+      expect(r.code).toBe(2);
+      expect(r.stdout).toBe("");
+      const err = JSON.parse(r.stderr) as { error: { kind: string; message: string } };
+      expect(err.error.kind).toBe("usage");
+      expect(err.error.message).toContain(needle);
+    };
+    try {
+      await runCli(
+        ["add", "Original title", "--notes", "original notes", "--id", "t1", "--session", session],
+        { env },
+      );
+      const s = ["--session", session];
+
+      refused(await runCli(["update", "t1", "--notes", "", ...s], { env }), "--clear-notes");
+      // The dead-substitution case is the same empty string at the CLI.
+      refused(await runCli(["update", "t1", "--notes=", ...s], { env }), "--clear-notes");
+      refused(await runCli(["update", "t1", "--title", "", ...s], { env }), "--title is empty");
+      refused(
+        await runCli(["update", "t1", "--stdin", "--title", "explicit", ...s], {
+          env,
+          stdin: "from stdin\n",
+        }),
+        "--stdin and --title",
+      );
+      refused(await runCli(["update", "t1", "--stdin", ...s], { env, stdin: "" }), "empty title");
+      refused(await runCli(["update", "t1", "--stdin", ...s], { env, stdin: "\n" }), "empty title");
+      refused(
+        await runCli(["update", "t1", "--clear-notes", "--notes", "x", ...s], { env }),
+        "--clear-notes alone",
+      );
+      expect(await readT1()).toMatchObject({ title: "Original title", notes: "original notes" });
+
+      // --stdin still means the TITLE (as on `add`), and the envelope says so.
+      const viaStdin = await runCli(["update", "t1", "--stdin", ...s], {
+        env,
+        stdin: "piped title\n",
+      });
+      expect(viaStdin.code).toBe(0);
+      expect(JSON.parse(viaStdin.stdout)).toEqual({
+        ok: true,
+        updated: "t1",
+        fields: ["title"],
+        valuesIgnored: null,
+      });
+
+      const clear = await runCli(["update", "t1", "--clear-notes", "--status", "doing", ...s], {
+        env,
+      });
+      expect(clear.code).toBe(0);
+      expect((JSON.parse(clear.stdout) as { fields: string[] }).fields.sort()).toEqual([
+        "notes",
+        "status",
+      ]);
+      expect(await readT1()).toMatchObject({ title: "piped title", notes: "", status: "doing" });
+
+      // A no-op wrote nothing, and says so.
+      const noop = await runCli(["update", "t1", "--status", "doing", ...s], { env });
+      expect(JSON.parse(noop.stdout)).toMatchObject({ noop: true, fields: [] });
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 30000);
 });
 
 // ── Dependencies (Phase D) — blockedBy, cycle guard, unblocked ───────────

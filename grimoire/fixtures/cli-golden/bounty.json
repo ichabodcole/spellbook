@@ -93,7 +93,7 @@
       "reason": "starts a daemon (and may open a browser)"
     }
   ],
-  "invocationCount": 92,
+  "invocationCount": 97,
   "invocations": [
     {
       "argv": [],
@@ -138,8 +138,8 @@
         "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
         "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
-        "                                                patch a task (--tag \"\" clears the tags)",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
         "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
         "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
@@ -192,8 +192,8 @@
         "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
         "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
-        "                                                patch a task (--tag \"\" clears the tags)",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
         "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
         "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
@@ -247,8 +247,8 @@
         "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
         "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
-        "  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
-        "                                                patch a task (--tag \"\" clears the tags)",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
         "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
         "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
@@ -599,6 +599,11 @@
               },
               {
                 "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--clear-notes",
                 "type": "boolean",
                 "status": "valid"
               }
@@ -1047,6 +1052,7 @@
       "kind": "usage",
       "choices": [
         "--as",
+        "--clear-notes",
         "--expect",
         "--notes",
         "--owner",
@@ -1068,6 +1074,7 @@
       "kind": "usage",
       "choices": [
         "--as",
+        "--clear-notes",
         "--expect",
         "--notes",
         "--owner",
@@ -1379,6 +1386,47 @@
       "stream": "stderr",
       "ok": false,
       "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--notes", ""],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--title", ""],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--clear-notes"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--clear-notes", "--notes", "x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--stdin", "--title", "x"],
+      "stdin": "from stdin\n",
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
     },
     {
       "argv": ["claim", "t1"],

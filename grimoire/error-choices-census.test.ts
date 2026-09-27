@@ -124,7 +124,8 @@ const EXPECTED: Record<
   astrolabe: { sites: 14, choices: 1, verbRoster: true, flagMap: true },
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
-  bounty: { sites: 27, choices: 1, verbRoster: true, flagMap: true },
+  // 27 -> 28 (2026-09-27): `update --stdin` refuses an empty stdin (s5-9).
+  bounty: { sites: 28, choices: 1, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
@@ -390,7 +391,17 @@ const PER_VERB_DRIVES: Array<[spell: string, argv: string[], choices: string[]]>
   [
     "bounty",
     ["update", "acc-no-such-task"],
-    ["--status", "--title", "--notes", "--owner", "--tag", "--size", "--expect", "--stdin"],
+    [
+      "--status",
+      "--title",
+      "--notes",
+      "--owner",
+      "--tag",
+      "--size",
+      "--expect",
+      "--stdin",
+      "--clear-notes",
+    ],
   ],
   // glamour — a CONJUNCTION, filtered: `choices` names what is actually missing.
   ["glamour", ["gen", "--url", "http://example.invalid"], ["--prompt", "--model", "--round"]],
