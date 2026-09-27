@@ -10,7 +10,7 @@ lifecycle: backlog
 id: 01a0dea2-8c12-7351-b60a-057892e894b3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
-cycle: 2026-09-filed-is-not-fixed
+cycle: 2026-09-acc-conformance
 parent: feature/spell-hardening
 from: features/spell-hardening/sprints/05-the-gate/carries.md
 ---

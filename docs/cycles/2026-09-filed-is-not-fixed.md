@@ -49,8 +49,9 @@ measurement. Phase 2 does not start until phase 1 lands.
 - **[item/astrolabe-close-exits-zero-with-error-envelope](../items/astrolabe-close-exits-zero-with-error-envelope.md)**
   (`s5-8`): `astrolabe close` exit code and envelope agree.
 - **[item/terminator-eats-session-key](../items/terminator-eats-session-key.md)**
-  (`c1`): the `--` terminator no longer swallows `--session-key`: row 2's
-  demotion half.
+  (moved to [2026-09-acc-conformance](./2026-09-acc-conformance.md) on
+  2026-09-26: acc's A6 is the same defect) (`c1`): the `--` terminator no longer
+  swallows `--session-key`: row 2's demotion half.
 
 **Phase 2: clause (ii)**, cut rather than compressed if phase 1 eats the cycle.
 Items get filed at the convene, once the ratify round has had its shot: the
