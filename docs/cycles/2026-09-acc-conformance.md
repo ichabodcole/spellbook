@@ -34,7 +34,7 @@ A6 check catches on its own.
 
 ## Scope
 
-- **[item/shared-cli-registry-in-the-kit](../items/shared-cli-registry-in-the-kit.md)**
+- **[item/shared-cli-registry-in-the-kit](../items/shared-cli-registry-in-the-kit/item.md)**
   first: its answer decides how every spell does step 6.
 - **[item/acc-conformance-gate](../items/acc-conformance-gate.md)** early, with
   current failures as recorded debt, so later items burn the debt down.

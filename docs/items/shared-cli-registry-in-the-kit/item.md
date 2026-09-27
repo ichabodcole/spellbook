@@ -17,7 +17,7 @@ cycle: 2026-09-acc-conformance
 # Should the kit own a shared CLI registry?
 
 Part of
-[Spell CLI acc conformance](../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../features/spell-cli-acc-conformance/feature.md).
 
 Step 6 of the acc guidance is one table driving parser, help, rejections and the
 published interface. glamour, grapevine and scriptorium each built that
@@ -41,7 +41,7 @@ on a kit module or copies the grapevine pattern.
 
 ## Definition of done
 
-- [ ] A write-up in this item's folder answers the four points above, with
+- [x] A write-up in this item's folder answers the four points above, with
       file:line evidence from the three registries.
 - [ ] Its recommendation is recorded on the feature, and the per-spell items'
       step 6 points at it.
