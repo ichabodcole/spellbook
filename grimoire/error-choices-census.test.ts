@@ -125,7 +125,10 @@ const EXPECTED: Record<
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
   // 27 -> 28 (2026-09-27): `update --stdin` refuses an empty stdin (s5-9).
-  bounty: { sites: 28, choices: 1, verbRoster: true, flagMap: true },
+  // 28 -> 29 (2026-09-27, #98): `tail` on a NAMED target (`--session`,
+  // `--session-key`) that never resolves exits `not_found` after a grace. No
+  // `choices`: a session id is not a closed set; the hint names the fix.
+  bounty: { sites: 29, choices: 1, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

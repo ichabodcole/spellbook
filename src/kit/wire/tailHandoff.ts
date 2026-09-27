@@ -182,8 +182,10 @@
  *   re-arm pinned to the derived id with an empty bookmark
  *   (`--session k-… --since=-1 --once`). That re-arm is a re-arm by D1's rule,
  *   so if the board is still not up — the lead more than one window (29 min)
- *   late — the seat gets `tail.closed` instead of waiting. Minor: the
- *   come-back it names (`open --session-key K`) is the right next step anyway.
+ *   late — the seat does not wait. Minor: the next step it names
+ *   (`open --session-key K`) is the right one anyway. Since #98 (2026-09-27)
+ *   it no longer says `tail.closed` about a board that never opened: a named
+ *   `--session` with no snapshot on disk exits `not_found` after a grace.
  *
  * ── THE COMMAND NAMES NO PATH (Cole's ruling, 2026-09-24) ──────────────────
  *

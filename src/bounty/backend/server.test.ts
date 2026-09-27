@@ -48,6 +48,7 @@ import {
   parseTags,
   pickTailSession,
   resolveSession,
+  resolveSessionSource,
   type Session,
   sessionKeyToId,
   slugifyKey,
@@ -3286,6 +3287,46 @@ describe("session keys (caller-owned board binding — #69)", () => {
 
   test("resolveSession: a raw --session still wins when no key is given", () => {
     expect(resolveSession({ session: "raw-id" }, {}, "/w", () => null, gitAt([]))).toBe("raw-id");
+  });
+
+  // #98: a tail that cannot find its board names what it looked for, and only
+  // an id TYPED on the command line is a named target (B1: env/file ids are a
+  // seat's first arm, which must wait).
+  test("resolveSessionSource: names the key, cwd and scope root a derived id came from", () => {
+    const present = gitAt(["/repo/.git"]);
+    expect(
+      resolveSessionSource({ "session-key": "team" }, {}, "/repo/x", () => null, present),
+    ).toEqual({
+      id: sessionKeyToId("team", "/repo/x", present),
+      from: "derived from --session-key 'team' + cwd /repo/x, scope root /repo",
+      named: true,
+      key: "team",
+    });
+    expect(
+      resolveSessionSource({}, { BOUNTY_SESSION_KEY: "team" }, "/w", () => null, gitAt([])),
+    ).toMatchObject({ from: "derived from $BOUNTY_SESSION_KEY 'team' + cwd /w", named: false });
+  });
+
+  test("resolveSessionSource: only --session / --session-key are named targets", () => {
+    const none = gitAt([]);
+    expect(resolveSessionSource({ session: "s1" }, {}, "/w", () => null, none)).toEqual({
+      id: "s1",
+      from: "from --session",
+      named: true,
+    });
+    expect(
+      resolveSessionSource({}, { BOUNTY_SESSION: "s2" }, "/w", () => null, none),
+    ).toMatchObject({ id: "s2", named: false });
+    const file = (p: string) => (p === "/a/.bounty-session" ? "s3\n" : null);
+    expect(resolveSessionSource({}, {}, "/a/b", file, none)).toEqual({
+      id: "s3",
+      from: "from /a/.bounty-session",
+      named: false,
+    });
+    const bare = resolveSessionSource({}, {}, "/a/b", () => null, none);
+    expect(bare.id).toBeUndefined();
+    expect(bare.named).toBe(false);
+    expect(bare.from).toMatch(/^looked for the latest-board pointer .*bounty-latest\.json$/);
   });
 });
 

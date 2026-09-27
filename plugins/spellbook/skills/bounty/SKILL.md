@@ -405,6 +405,25 @@ this guard, an unpinned long-lived tail re-resolved `latest` on every reconnect
 and could hop to another project's board mid-session.) Pinning explicitly is
 still clearer, and it also survives the no-board-yet startup window.
 
+**While the board is not up, the tail says what it is looking for.** Each retry
+line on stderr names the session id and where that id came from, for example
+`# no session yet for k-team-1a2b3c4d (derived from --session-key 'team' + cwd /path/to/repo) — retrying…`.
+A key's id is derived from the repo you run in, so the same key from another
+directory looks for another board; that line is how you spot it. What happens
+next depends on whether you named the board:
+
+- **Unnamed** (no `--session` or `--session-key` on the command line, including
+  a key from `$BOUNTY_SESSION_KEY` or a `.bounty-session` file): the tail keeps
+  waiting for the board to come up.
+- **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
+  (about 8) the tail gives up with exit **5** (`not_found`) and an error
+  envelope on stderr. The envelope repeats what it looked for, and its `hint`
+  names the fix: check the key and the directory you ran from, or the id, or
+  bring back a board that closed. Nothing is printed on stdout. Start the tail
+  once the board is up, or check its id with `list`.
+- **Named, and the board existed here and has closed** (its snapshot is on
+  disk): a `--session` tail ends at once with `tail.closed` (exit 0), as above.
+
 ### Event frames
 
 Each `tail` frame is `{ id, type, …, by }`:
@@ -713,13 +732,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                    |
-| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                        |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                     |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                  |
+| ---- | ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                      |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                               |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle                                                               |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                   |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then

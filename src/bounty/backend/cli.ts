@@ -249,21 +249,70 @@ function resolveSession(
   },
   exists: (path: string) => boolean = existsSync,
 ): string | undefined {
-  if (typeof flags["session-key"] === "string")
-    return sessionKeyToId(flags["session-key"], startDir, exists);
-  if (typeof flags.session === "string") return flags.session;
-  if (env.BOUNTY_SESSION_KEY) return sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists);
-  if (env.BOUNTY_SESSION) return env.BOUNTY_SESSION;
+  return resolveSessionSource(flags, env, startDir, readFile, exists).id;
+}
+
+/** Where a resolved session id came from, and whether the caller NAMED it (#98).
+ *
+ *  `from` is prose for the one place a reader needs it: a tail that cannot find
+ *  its board must say WHICH id it looked for and WHY that id — above all that a
+ *  key's id is DERIVED from the cwd, so the same key from another directory is
+ *  another board (the 40-minute puzzle in #98). `named` is true only for an id
+ *  typed on the command line (`--session-key`, `--session`): an id from the
+ *  environment or a `.bounty-session` file is every anthill seat's FIRST arm,
+ *  which must wait for its board (B1), so it is not a named target. */
+export type SessionSource = { id?: string; from: string; named: boolean; key?: string };
+
+function derivedFrom(label: string, key: string, startDir: string, exists: (p: string) => boolean) {
+  const root = findScopeRoot(startDir, exists);
+  const scope = root === startDir ? "" : `, scope root ${root}`;
+  return `derived from ${label} '${key}' + cwd ${startDir}${scope}`;
+}
+
+/** `resolveSession`'s precedence, ONCE, with its provenance. `resolveSession`
+ *  is this function's `.id`, so the two cannot disagree. */
+export function resolveSessionSource(
+  flags: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+  startDir: string = process.cwd(),
+  readFile: (path: string) => string | null = (p) => {
+    try {
+      return readFileSync(p, "utf8");
+    } catch {
+      return null;
+    }
+  },
+  exists: (path: string) => boolean = existsSync,
+): SessionSource {
+  const flagKey = flags["session-key"];
+  if (typeof flagKey === "string")
+    return {
+      id: sessionKeyToId(flagKey, startDir, exists),
+      from: derivedFrom("--session-key", flagKey, startDir, exists),
+      named: true,
+      key: flagKey,
+    };
+  if (typeof flags.session === "string")
+    return { id: flags.session, from: "from --session", named: true };
+  if (env.BOUNTY_SESSION_KEY)
+    return {
+      id: sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists),
+      from: derivedFrom("$BOUNTY_SESSION_KEY", env.BOUNTY_SESSION_KEY, startDir, exists),
+      named: false,
+      key: env.BOUNTY_SESSION_KEY,
+    };
+  if (env.BOUNTY_SESSION)
+    return { id: env.BOUNTY_SESSION, from: "from $BOUNTY_SESSION", named: false };
   let dir = startDir;
   while (true) {
-    const contents = readFile(join(dir, ".bounty-session"));
-    const id = contents?.trim();
-    if (id) return id;
+    const marker = join(dir, ".bounty-session");
+    const id = readFile(marker)?.trim();
+    if (id) return { id, from: `from ${marker}`, named: false };
     const parent = dirname(dir);
     if (parent === dir) break; // reached the filesystem root
     dir = parent;
   }
-  return undefined;
+  return { from: `looked for the latest-board pointer ${sessionFilePath()}`, named: false };
 }
 
 /** ⛔ NULL MEANS "NO SESSION", AND NOTHING ELSE.
@@ -936,6 +985,28 @@ async function cmdState(
   printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
+/** How long a tail keeps retrying a NAMED target (`--session`, `--session-key`)
+ *  that does not resolve before it exits `not_found` (#98). "A few seconds",
+ *  the reporter's ask: long enough for a board `open`ed alongside the tail to
+ *  write its pointer, short enough that a supervisor sees a dead end. The check
+ *  runs at each retry, so with the kit's backoff (250 ms doubling to 5 s) the
+ *  exit lands at the first retry past the grace — about 7.75 s. Deliberately
+ *  NOT a flag (ruled 2026-09-27: no caller asked for one). */
+const NAMED_TARGET_GRACE_MS = 5000;
+
+/** ⚠ INTERNAL, UNDOCUMENTED: `BOUNTY_TAIL_GRACE_MS` overrides the grace so the
+ *  test suite does not sleep 5 s a cell. Not an agent's act, not in any help. */
+function namedTargetGraceMs(raw = process.env.BOUNTY_TAIL_GRACE_MS): number {
+  const n = raw === undefined ? Number.NaN : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : NAMED_TARGET_GRACE_MS;
+}
+
+/** A board that existed here and closed leaves its snapshot: the daemon writes
+ *  `$BOUNTY_HOME/snapshots/<id>.json` on close and keeps it (server.ts). */
+function hasSnapshot(id: string): boolean {
+  return existsSync(join(SNAPSHOTS_DIR, `${id}.json`));
+}
+
 /** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
  *  `readSince`): a form this tail does not accept — an epoch bookmark from
  *  another spell's or version's handoff line — is refused with the accepted
@@ -990,6 +1061,8 @@ async function cmdTail(
     sessionFlag?: boolean;
     /** The session key in play (`--session-key` or `$BOUNTY_SESSION_KEY`). */
     key?: string;
+    /** Where `session` came from, and whether the caller named it (#98). */
+    source?: SessionSource;
   } = {},
 ): Promise<number> {
   const owner = scope.owner;
@@ -1012,6 +1085,38 @@ async function cmdTail(
   // has — and a seat's FIRST arm must still wait for its board to appear.
   const reArm = arm.sessionFlag === true || arm.sinceGiven === true;
   let announcedPin = false;
+
+  // #98: what this tail looks for, and whether the caller NAMED it. A named
+  // target that never resolves is a dead end, not a wait — the same wrong id
+  // is re-read on every iteration — so it gets a grace and then `not_found`.
+  const source: SessionSource = arm.source ?? {
+    ...(session !== undefined ? { id: session } : {}),
+    from:
+      session !== undefined
+        ? "resolved"
+        : `looked for the latest-board pointer ${sessionFilePath()}`,
+    named: false,
+  };
+  const named = source.named && source.id !== undefined;
+  const graceMs = namedTargetGraceMs();
+  const startedAt = Date.now();
+  const lookedFor = () =>
+    source.id !== undefined
+      ? `for ${source.id} (${source.from})`
+      : pinned !== undefined
+        ? `for ${pinned} (pinned off the latest-board pointer)`
+        : `(${source.from})`;
+  // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
+  // as printed spawns an UNKEYED stray board; `open --session-key K`
+  // derives the same id and restores it by default (#69).
+  const keyedComeBack = () =>
+    arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned;
+  const comeBackCmd = () =>
+    commandLine(
+      keyedComeBack() && arm.key !== undefined
+        ? ["open", "--session-key", arm.key, "--no-open"]
+        : ["open", "--restore", pinned ?? "<id>", "--no-open"],
+    );
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
   const again = () => [
@@ -1044,12 +1149,39 @@ async function cmdTail(
         }
         return `http://127.0.0.1:${resolved.session.port}`;
       },
-      onUnresolved: () => {
+      onUnresolved: ({ everResolved }) => {
+        const existed = everResolved || (pinned !== undefined && hasSnapshot(pinned));
         // D1: a tail given --session or a bookmark is re-arming an EXISTING
         // board, so not finding it means it closed — `tail.closed`, never a
         // silent retry-forever. Only a bare first arm waits for a board.
-        if (reArm) return "stop";
-        process.stderr.write("# no session yet, retrying…\n");
+        // ⛔ #98: "existing" is now CHECKED for a named target, not assumed.
+        // A `--session` naming a board this host never had used to end here
+        // too, saying "the session closed" and offering `open --restore <id>`,
+        // which spawns an unrelated fresh board. The evidence is the snapshot:
+        // the daemon writes `$BOUNTY_HOME/snapshots/<id>.json` on every close
+        // and keeps it, and a daemon killed before that write leaves its
+        // pointer behind (so the tail resolves it and ends `tail.lost`, not
+        // here). No pointer and no snapshot therefore means never opened here
+        // — or its snapshot was deleted, which is why the words below say
+        // "not found" rather than "never existed".
+        if (reArm && (!named || existed)) return "stop";
+        // A named target the tail once reached, whose pointer is now gone:
+        // it closed (a `closed` frame normally ends the tail before this).
+        if (named && everResolved) return "stop";
+        if (named && Date.now() - startedAt >= graceMs) {
+          const hint =
+            pinned !== undefined && hasSnapshot(pinned)
+              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
+              : keyedComeBack()
+                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          die(
+            `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
+            "not_found",
+            { hint },
+          );
+        }
+        process.stderr.write(`# no session yet ${lookedFor()} — retrying…\n`);
         return "retry";
       },
       path: "/events",
@@ -1082,12 +1214,7 @@ async function cmdTail(
         // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
         // as printed spawns an UNKEYED stray board; `open --session-key K`
         // derives the same id and restores it by default (#69).
-        comeBack: () =>
-          commandLine(
-            arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned
-              ? ["open", "--session-key", arm.key, "--no-open"]
-              : ["open", "--restore", pinned ?? "<id>", "--no-open"],
-          ),
+        comeBack: comeBackCmd,
       },
     },
   );
@@ -1657,6 +1784,8 @@ const ROWS: Row[] = [
         {
           sinceGiven: typeof flags.since === "string",
           sessionFlag: typeof flags.session === "string",
+          // #98: the same precedence `session` came from, with its provenance.
+          source: resolveSessionSource(flags),
           // The key in play, if any; `cmdTail` checks it derives THIS board's
           // id before naming it (a re-arm carries `--session <k-id>`, which
           // outranks the key in `resolveSession` but is the same board).

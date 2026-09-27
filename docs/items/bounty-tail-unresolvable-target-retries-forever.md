@@ -6,7 +6,7 @@ status: stable
 description:
   Fix bounty tail infinite retry loop when target board or list becomes
   unresolvable
-lifecycle: active
+lifecycle: review
 id: 019feeaa-e8f2-7b85-9125-2ff933299875
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
@@ -73,3 +73,33 @@ Their line, worth keeping verbatim:
 Their ask names two changes and says the first is sufficient alone. **They are
 not reproduced here.** They live in #98, they are the reporter's to state, and
 copying them into a second document is how the two versions start disagreeing.
+
+## Fixed (2026-09-27)
+
+On branch `fix/bounty-tail-named-target`, per the sprint 06 ruling (`#98` row of
+`docs/features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md`) and the
+re-measure. What `tail` does now when its board does not resolve:
+
+- **Every retry line names what it looked for.** The session id and where it
+  came from: `--session`, a key plus the cwd (and scope root) it was derived
+  from, `$BOUNTY_SESSION`, a `.bounty-session` file, or the latest-board
+  pointer's path for an unpinned tail.
+- **A named target gives up.** `--session <id>` or `--session-key <key>` that
+  has not resolved after `NAMED_TARGET_GRACE_MS` (5 s, checked at each retry, so
+  about 7.75 s with the kit's backoff) exits **5** with bounty's `not_found`
+  envelope. Its message carries the same "looked for" text, and its `hint` names
+  the fix. There is no `--grace` flag. `BOUNTY_TAIL_GRACE_MS` overrides the
+  grace for the test suite only and is deliberately undocumented.
+- **"Never existed" is no longer called "closed".** A `--session` whose board is
+  not running is told apart by its snapshot: the daemon writes
+  `$BOUNTY_HOME/snapshots/<id>.json` on every close and keeps it. With a
+  snapshot the tail ends `tail.closed` at exit 0 as before (`b0174d9f`'s re-arm
+  stop). Without one it takes the named-target path above, never prints
+  `tail.closed` and never offers `open --restore <id>`. A deleted snapshot looks
+  the same as a board that never existed, so the wording says "no session <id>
+  found" and does not claim which.
+- **An unpinned tail keeps waiting**, including one whose key or id comes from
+  the environment or a `.bounty-session` file (an anthill seat's first arm).
+
+Tests: `src/bounty/backend/tail-handoff.integration.test.ts` (the `#98` cells
+and B1) and `src/bounty/backend/server.test.ts` (`resolveSessionSource`).
