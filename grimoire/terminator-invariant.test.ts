@@ -4,7 +4,11 @@ import {
   allowsPositionals,
   argParsingEntryPoints,
   isCallerFacing,
+  onKitRegistry,
+  parseArgsInvocations,
   readEntryPoint,
+  SHARED_PARSERS,
+  spellsOf,
 } from "./lib/entry-points";
 
 // ROW 2 of the sprint-05 conformance table — "free text never promoted to a flag
@@ -49,7 +53,13 @@ import {
 // died at task lookup. One seed away, and not run.
 
 const entryPoints = argParsingEntryPoints();
-const positional = entryPoints.filter((p) => allowsPositionals(readEntryPoint(p)));
+// The kit's shared parser is read beside the spells' entry points: a spell on
+// the kit CLI registry has no parseArgs call of its own, so its hazard lives
+// where its parse runs (entry-points `SHARED_PARSERS`).
+const positional = [...entryPoints, ...SHARED_PARSERS]
+  .filter((p) => allowsPositionals(readEntryPoint(p)))
+  .sort();
+const KIT_REGISTRY = "kit/cli/registry.ts";
 
 /**
  * Entry points where free text and flags coexist, so a `--` in caller-supplied
@@ -70,19 +80,20 @@ const HAZARD_APPLIES: Record<string, string> = {
   // with the filename a consumer invokes.
   "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
   "bounty/backend/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
-  "glamour/backend/cli.ts": "caller-facing; prompt text is a positional",
-  // Re-addressed by Phase 6 chapter 1: the CLI builds now, the launcher parses
-  // nothing, and the exclusion follows the file that has the interface.
-  "grapevine/backend/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/backend/cli.ts": "caller-facing; prompt text is a positional",
+  // MOVED, NOT CLEARED (2026-09-26): glamour, grapevine and scriptorium parse
+  // through the kit CLI registry now, so their three entries became this one.
+  // The hazard did not go anywhere — prompt text, message bodies and say text
+  // are still positionals — it has ONE place to be fixed instead of three. The
+  // adopters are listed, and a cell below binds the list to the spells whose
+  // source calls `defineCli`, so each of the six that adopts next edits it.
+  [KIT_REGISTRY]:
+    "caller-facing through every adopter (glamour, grapevine, scriptorium); prompt text, message bodies and say text are positionals",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/backend/cli.ts": "caller-facing; send bodies are prose positionals",
-  // An ADDITION, and loud as promised (2026-09-11): scriptorium's `say` takes
-  // its text as positionals, and `open`/`add` take paths. Prose goes through
-  // --body-file by SKILL.md's rule, which sidesteps the hazard; the parser
-  // still has it.
-  "scriptorium/backend/cli.ts": "caller-facing; say text and open/add paths are positionals",
+  // scriptorium's entry (an ADDITION, 2026-09-11: `say` text and `open`/`add`
+  // paths are positionals) moved into the kit registry's above.
 };
 
 describe("ward — the `--` terminator silently demotes flags to free text", () => {
@@ -132,6 +143,15 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
     });
   });
 
+  test("the kit registry's pin names exactly the spells that parse through it", () => {
+    // One entry per PARSER, and the registry is one parser for many spells —
+    // so the entry names its adopters, and this binds that prose to the source.
+    // An adopter the entry omits (or one that left) fails here, not silently.
+    const adopters = spellsOf(onKitRegistry(entryPoints));
+    const named = (HAZARD_APPLIES[KIT_REGISTRY] ?? "").match(/\(([^)]*)\)/)?.[1]?.split(", ");
+    expect({ adopters, named }).toEqual({ adopters, named: adopters });
+  });
+
   test("the pin PRINTS its unit — a bare count cannot say which question it answered", () => {
     // ⛔ THE UNIT IS THE FINDING (cassandra, #1006), and it is this module's own
     // requirement 5 arriving at the DENOMINATOR instead of the parser: "read
@@ -150,8 +170,14 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
     // produced a unit mismatch inside a message ABOUT a unit mismatch is the
     // reason this cell now prints the unit rather than the number alone.
     const callerFacing = positional.filter(isCallerFacing);
+    // ⚠ The kit registry is counted by its parseArgs INVOCATIONS: its per-row
+    // parse computes `allowPositionals` (default true) rather than spelling the
+    // literal, so the literal count would read 1 where both of its calls take
+    // positionals.
     const callSites = (rel: string) =>
-      [...readEntryPoint(rel).matchAll(/allowPositionals\s*:\s*true/g)].length;
+      rel === KIT_REGISTRY
+        ? parseArgsInvocations(readEntryPoint(rel)).length
+        : [...readEntryPoint(rel).matchAll(/allowPositionals\s*:\s*true/g)].length;
     const sitesAll = positional.reduce((n, p) => n + callSites(p), 0);
     const sitesCallerFacing = callerFacing.reduce((n, p) => n + callSites(p), 0);
 
@@ -163,14 +189,18 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
       guardsVerified: 1, // bounty only — cassandra drove it, #1006 §4. 6 of 7 UNVERIFIED.
     }).toEqual({
       // +1 file / +1 call site each: scriptorium (2026-09-11), caller-facing.
-      filesAll: 9,
-      filesCallerFacing: 8,
+      // 9/8 → 7/6 files and 10/9 → 9/8 call sites (2026-09-26): glamour,
+      // grapevine and scriptorium (one file and one site each) now parse
+      // through the kit registry, one file with two sites. Exposure did not
+      // shrink; it moved to one parser.
+      filesAll: 7,
+      filesCallerFacing: 6,
       // 23/22 → 9/8: mind-mapper's acc L0 lane C consolidated its ~15
       // positional-accepting inline parses into the one registry-driven
       // invocation (plus the doc-path probe) — call sites shrank, files did
       // not. The unit line below still names what is counted.
-      callSitesAll: 10,
-      callSitesCallerFacing: 9,
+      callSitesAll: 9,
+      callSitesCallerFacing: 8,
       // Driven A/B on bounty: `add -- --session-key` is byte-identical to
       // `add -- ordinaryword`, exit 0, valuesIgnored:null, and the flag becomes
       // the card's TITLE. No guard. The other six are not driven and this number

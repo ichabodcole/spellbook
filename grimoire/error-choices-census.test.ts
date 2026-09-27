@@ -122,8 +122,15 @@ const EXPECTED: Record<
   // named usage throw for a builder called without the positional arity
   // dispatch guarantees. No `choices` by A1's ruling — an id positional is not
   // an enumerated set — so `choices` stays 9. Impossible through the CLI.
-  glamour: { sites: 27, choices: 9, verbRoster: true, flagMap: true },
-  grapevine: { sites: 59, choices: 5, verbRoster: true, flagMap: true },
+  // ⚠ MOVED, NOT LOST (2026-09-26, the kit CLI registry): glamour, grapevine
+  // and scriptorium dispatch through `src/kit/cli/registry.ts` now, so their
+  // parse, root, unknown-verb, misplaced-flag and arity raises (7 sites each;
+  // 6, 4 and 6 of them with `choices`) left their CLIs for the kit, which this
+  // census does not walk. The rejections still carry `choices`: arm 2 drives
+  // them through each spell's process, and the registry's own tests pin them.
+  // glamour 27/9 -> 20/3, grapevine 59/5 -> 52/1: that move.
+  glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
+  grapevine: { sites: 52, choices: 1, verbRoster: true, flagMap: true },
   imago: { sites: 25, choices: 3, verbRoster: true, flagMap: true },
   magpie: { sites: 33, choices: 4, verbRoster: true, flagMap: true },
   "mind-mapper": { sites: 67, choices: 14, verbRoster: true, flagMap: true },
@@ -150,7 +157,8 @@ const EXPECTED: Record<
   // text, so there is no closed set to name. (The daemon's own refusals —
   // a quote the active version does not contain, an empty body, a range
   // outside the text — are SessionErrors, which this census does not count.)
-  scriptorium: { sites: 34, choices: 10, verbRoster: true, flagMap: true },
+  // 34/10 -> 27/4 (2026-09-26): the move onto the kit registry, as glamour's.
+  scriptorium: { sites: 27, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**

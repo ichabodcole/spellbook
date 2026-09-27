@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import {
   argParsingEntryPoints,
+  BACKEND_SRC_DIR,
   globEntryPointsForComparison,
   isCallerFacing,
+  onKitRegistry,
   readEntryPoint,
   recognizedFlags as recognizedSet,
   SKILLS_DIR as SKILLS,
@@ -88,12 +90,12 @@ const FOREIGN: Record<string, string> = {
     "acc's flag, quoted in the schema row — `acc check <cli.ts> --declaration <(cli.ts schema)` " +
     "(grapevine's row, same reason)",
   "glamour:help":
-    'a positional verb (`case "help"`) AND a root token (`--help`/`-h` resolve before parseArgs ' +
-    "runs), never a registry flag",
+    "a verb (`help`) AND a root token: the kit registry's interceptors map `--help`/`-h` onto " +
+    "the `help` row before any parse runs — never a registry flag",
   "glamour:version":
-    "the same ROOT TOKEN as magpie's and astrolabe's, landed with glamour's acc L0 pass — " +
-    "dispatched by literal comparison before parseArgs runs, deliberately not a registry flag, " +
-    "so `glamour state --version` stays refused",
+    "the same ROOT TOKEN as magpie's and astrolabe's — the kit registry's interceptors map " +
+    "`--version`/`-V` onto the `version` row before any parse runs, deliberately not a registry " +
+    "flag, so `glamour state --version` stays refused",
   "magpie:version":
     "a ROOT TOKEN dispatched beside `help` (resolved before parseArgs runs), not a parser flag — " +
     "`magpie --version` works and `magpie state --version` is correctly refused, which is the " +
@@ -115,6 +117,26 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
     // A sweep that fails to run reports the same thing as a sweep that found
     // nothing wrong. Assert the denominator before trusting any verdict below.
     expect(parsing.length).toBeGreaterThan(10);
+  });
+
+  test("a spell on the kit registry: the source scan reads the table the CLI runs", async () => {
+    // Requirement 3b reads a `defineCli({ options: IDENT` from source. The
+    // registry is importable without side effects (`defineCli` only indexes),
+    // so the scan can be checked against the table itself: an import of the
+    // spell's CLI and its `cli.recognizedFlags`. A scan that drifted from the
+    // table would otherwise judge SKILL.md against the wrong set, silently.
+    const adopters = onKitRegistry(parsing);
+    expect(adopters.length).toBeGreaterThan(0);
+    for (const rel of adopters) {
+      const mod = (await import(join(BACKEND_SRC_DIR, rel))) as {
+        cli?: { recognizedFlags: readonly string[] };
+      };
+      const scanned = (recognizedSet(readEntryPoint(rel)) ?? []).map((f) => `--${f}`).sort();
+      expect({ rel, scanned }).toEqual({
+        rel,
+        scanned: [...(mod.cli?.recognizedFlags ?? [])].sort(),
+      });
+    }
   });
 
   test("the walk and the old glob still enumerate the SAME entry points", () => {

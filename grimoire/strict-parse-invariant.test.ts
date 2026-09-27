@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { parseArgs } from "node:util";
-import { argParsingEntryPoints, parseArgsInvocations, readEntryPoint } from "./lib/entry-points";
+import {
+  argParsingEntryPoints,
+  parseArgsInvocations,
+  readEntryPoint,
+  SHARED_PARSERS,
+} from "./lib/entry-points";
 
 // ROW 1 of the sprint-05 conformance table — "`--flag=value` parses; unknown
 // flags refuse." NOTE: node:util already refuses by DEFAULT (measured in the
@@ -36,7 +41,9 @@ import { argParsingEntryPoints, parseArgsInvocations, readEntryPoint } from "./l
 // this cell as claiming coverage it does not have.
 
 const entryPoints = argParsingEntryPoints();
-const invocations = entryPoints.flatMap((p) =>
+// The kit's shared parsers run parseArgs on behalf of every spell on the kit
+// CLI registry, which has none of its own left (entry-points `SHARED_PARSERS`).
+const invocations = [...entryPoints, ...SHARED_PARSERS].flatMap((p) =>
   parseArgsInvocations(readEntryPoint(p)).map((argObject) => ({ file: p, argObject })),
 );
 
@@ -88,9 +95,13 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // The pin moves WITH the population — both directions are the ward working.
     // 17 → 19: scriptorium (2026-09-11) arrives with two, both strict — the
     // CLI's registry parse and the daemon's private-argv parse.
+    // 19 → 18: glamour, scriptorium and grapevine moved onto the kit CLI
+    // registry (2026-09-26), taking one invocation each out of their CLIs, and
+    // the registry arrives with two (the per-row parse and the flags-anywhere
+    // root parse), counted once for every spell that adopts it.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 19,
+      invocationsChecked: 18,
     });
   });
 
