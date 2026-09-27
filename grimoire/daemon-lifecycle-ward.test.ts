@@ -6,6 +6,12 @@ import { must } from "./lib/must.ts";
 
 // enforces: drive-conjuration-through-daemon
 //
+// PARTIAL: event-stream liveness (idleTimeout on a daemon holding an SSE or
+// WebSocket connection) and the discovery pointer
+// (atomic write, readSession ENOENT) only. It does not check POST /cmd,
+// GET /state, the SSE tail's resume cursor, `--stdin`, or the stdout/stderr
+// split — those halves of the rule are unwarded.
+//
 // ── THE SIXTH EDIT WARD ──────────────────────────────────────────────────────
 //
 // The spells' daemon spine is ONE DESIGN IMPLEMENTED SIX TIMES. Nobody chose

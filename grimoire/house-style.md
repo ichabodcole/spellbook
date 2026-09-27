@@ -346,7 +346,7 @@ none of these follows from the others.
 #### A response states the conditions it was produced under.
 
 <!-- rule-id: carry-frame-just-value.response-states-conditions-was -->
-<!-- enforced-by: none — intent: which conditions a caller could plausibly have asked differently is ruled per response; no ward asserts a reply echoes its window -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert a windowed or filtered reply echoes the window/filter/mode it answered; which conditions count is ruled per response, and no ward reads replies for them -->
 
 An answer that cannot say what question it answered can be misread as the answer
 to a different question — and no amount of validating the response fixes it,
@@ -694,7 +694,7 @@ and the rule stands for every other wait.
 ### Enumerate the roster by behaviour, never by a fixed path or a name.
 
 <!-- rule-id: enumerate-roster-behaviour-never -->
-<!-- enforced-by: none — intent: whether an enumeration names its question and is derived by behaviour is judged in each check's own design; no ward can check another's predicate -->
+<!-- enforced-by: grimoire/flag-invariant.test.ts -->
 
 Spells do not agree on where things live, and a glob written from the spell in
 front of you is a silent filter: it returns a confident, well-formed answer
