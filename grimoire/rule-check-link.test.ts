@@ -10,17 +10,26 @@
 //               (beside its `rule-id` marker).
 //   WARD side   `// enforces: <rule-id>[, …]`
 //               or `// enforces: none in house-style — <authority>`, as the first
-//               line of the ward's header comment.
+//               line of the file's FIRST comment block (which may sit after
+//               the imports).
 //
 // POPULATIONS, both taken from the files, never from a list here:
 //   · rules = rule-id's own predicate (every `###`/`####` heading, id in the next
 //     few lines), clauses included, because rule-id treats them as rules. It is
 //     cross-checked against the count of `rule-id` markers, so a parse that
 //     drifts from rule-id's reds here instead of shrinking quietly.
-//   · wards = every `grimoire/*.test.ts` (the team's call, 2026-09-27: grimoire
-//     is the ward set by convention; spell-local tests are out). A header cannot
-//     define its own denominator, which is why the population is the glob and
-//     not "files carrying an `enforces:` line".
+//   · wards = every file under `grimoire/`, at any depth, that `bun test` would
+//     collect (the team's call, 2026-09-27: grimoire is the ward set by
+//     convention; spell-local tests are out). Bun's own rule, not a glob of ours
+//     — house-style's `enumerate-roster-behaviour-never`: a `*.test.ts` glob was
+//     blind to `x.spec.ts`, `x.test.tsx` and `sub/x.test.ts`, all of which the
+//     runner collects. The predicate is `BUN_COLLECTS` below, measured by
+//     planting files and reading `bun test grimoire/<plant>`'s junit report
+//     (Bun 1.4.0, 2026-09-27): `[._](test|spec)` then `.js/.jsx/.ts/.tsx/.mjs/
+//     .cjs/.mts/.cts`, case-insensitive — wider than Bun's docs, which list the
+//     first four extensions only. A header cannot define its own denominator,
+//     which is why the population is the runner's and not "files carrying an
+//     `enforces:` line".
 //
 // ⛔ WHAT THIS WARD CANNOT SEE — read this before trusting a green:
 //   · THAT A WARD ACTUALLY ENFORCES WHAT IT CITES. It checks that the two sides
@@ -39,17 +48,17 @@
 //     by Cole's scope ruling of 2026-09-27.
 
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { Glob } from "bun";
 import { must } from "./lib/must.ts";
 
 const GRIMOIRE = import.meta.dir;
 const HOUSE_STYLE = join(GRIMOIRE, "house-style.md");
-const WARD_GLOB = "*.test.ts";
+// What `bun test` collects, by basename (see the header for how it was measured).
+const BUN_COLLECTS = /[._](?:test|spec)\.(?:[jt]sx?|[cm][jt]s)$/i;
 const NONE_RULE = /^none — (.*)$/;
 const NONE_WARD = /^none in house-style — (.*)$/;
-const WARD_PATH = /^grimoire\/[a-z0-9.-]+\.test\.ts$/;
+const WARD_PATH = /^grimoire\/[A-Za-z0-9._/-]+[._](?:test|spec)\.(?:[jt]sx?|[cm][jt]s)$/i;
 
 type Link = { none: string } | { names: string[] };
 type Rule = { line: number; id: string; markers: string[] };
@@ -95,8 +104,21 @@ function parseRules(): Rule[] {
   return out;
 }
 
+/** Every file under `dir`, recursively, that the runner would collect. */
+function collected(dir: string, rel = ""): string[] {
+  const out: string[] = [];
+  for (const e of readdirSync(dir)) {
+    if (e === "node_modules") continue;
+    const abs = join(dir, e);
+    const r = rel === "" ? e : `${rel}/${e}`;
+    if (statSync(abs).isDirectory()) out.push(...collected(abs, r));
+    else if (BUN_COLLECTS.test(e)) out.push(r);
+  }
+  return out;
+}
+
 function parseWards(): Ward[] {
-  const files = [...new Glob(WARD_GLOB).scanSync({ cwd: GRIMOIRE })].sort();
+  const files = collected(GRIMOIRE).sort();
   return files.map((f) => {
     const lines = readFileSync(join(GRIMOIRE, f), "utf8").split("\n");
     const markers = lines
@@ -137,6 +159,28 @@ describe("rule ↔ check link", () => {
     expect(wardByPath.has("grimoire/rule-check-link.test.ts")).toBe(true);
   });
 
+  test("the population predicate matches what `bun test` was measured to collect", () => {
+    // Planted under grimoire/ and run, Bun 1.4.0, 2026-09-27. If Bun widens or
+    // narrows its patterns, re-plant and update both lists and BUN_COLLECTS.
+    const collectedByBun = [
+      "a.spec.ts",
+      "b.test.tsx",
+      "c_test.ts",
+      "d_spec.js",
+      "e.test.mts",
+      "f.test.cjs",
+      "g.test.mjs",
+      "h.spec.jsx",
+      "i.test.cts",
+      "m.TEST.ts",
+    ];
+    const ignoredByBun = ["j.test.json", "k-test.ts", "l.tests.ts"];
+    expect(collectedByBun.filter((f) => !BUN_COLLECTS.test(f))).toEqual([]);
+    expect(ignoredByBun.filter((f) => BUN_COLLECTS.test(f))).toEqual([]);
+    // Depth: a nested `sub/x.test.ts` was collected too, so the walk recurses.
+    expect(collected(GRIMOIRE).every((f) => WARD_PATH.test(`grimoire/${f}`))).toBe(true);
+  });
+
   // B — SHAPE, RULE SIDE: exactly one marker, a non-empty reason or a list of
   // ward paths.
   test("every rule carries exactly one well-formed enforced-by marker", () => {
@@ -160,9 +204,9 @@ describe("rule ↔ check link", () => {
     expect(problems).toEqual([]);
   });
 
-  // C — SHAPE, WARD SIDE: exactly one header, at the top of the header comment,
+  // C — SHAPE, WARD SIDE: exactly one header, the first line of the first comment block,
   // a non-empty authority or a list of rule ids.
-  test("every ward carries exactly one well-formed enforces header, first in its header comment", () => {
+  test("every ward carries exactly one well-formed enforces header, first in its first comment block", () => {
     const problems: string[] = [];
     for (const w of wards) {
       if (w.markers.length !== 1) {
@@ -171,7 +215,9 @@ describe("rule ↔ check link", () => {
       }
       const raw = must(w.markers[0], "one marker");
       if (w.firstComment !== `// enforces: ${raw}`)
-        problems.push(`${w.path}: the enforces line is not the first line of the header comment`);
+        problems.push(
+          `${w.path}: the enforces line is not the first line of the first comment block`,
+        );
       if (raw.startsWith("none") && !NONE_WARD.test(raw))
         problems.push(`${w.path}: "none" must read "none in house-style — <authority>"`);
       const link = parseValue(raw, NONE_WARD);
