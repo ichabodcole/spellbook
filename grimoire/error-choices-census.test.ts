@@ -128,7 +128,10 @@ const EXPECTED: Record<
   // 28 -> 29 (2026-09-27, #98): `tail` on a NAMED target (`--session`,
   // `--session-key`) that never resolves exits `not_found` after a grace. No
   // `choices`: a session id is not a closed set; the hint names the fix.
-  bounty: { sites: 29, choices: 1, verbRoster: true, flagMap: true },
+  // 29/1 -> 30/2 (2026-09-27, verifier on s5-9): `add`/`update` refuse a
+  // `--status` outside the set with `choices` (one shared raise, `checkStatus`)
+  // where the daemon used to drop it silently under `fields:["status"]`.
+  bounty: { sites: 30, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

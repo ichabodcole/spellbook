@@ -7,13 +7,20 @@
 // surface reaches it across the artifact boundary the import-boundary wards
 // permit.
 //
-// ⛔ NOTHING IMPERATIVE BELONGS HERE. Types and the size table only; the
-// predicates that read them are in ./predicates.ts, and the daemon's mutators
-// stay in scripts/server.ts. A module can be two-sided by file and disjoint by
-// symbol — shipping the daemon's mutators to the board is the failure this
-// split exists to avoid.
+// ⛔ NOTHING IMPERATIVE BELONGS HERE. Types, the status list and the size
+// table only; the predicates that read them are in ./predicates.ts, and the
+// daemon's mutators stay in scripts/server.ts. A module can be two-sided by
+// file and disjoint by symbol — shipping the daemon's mutators to the board is
+// the failure this split exists to avoid.
 
 export type TaskStatus = "todo" | "doing" | "review" | "done";
+
+/**
+ * The closed set of statuses, in board order — the ONE list. The daemon guards
+ * a patch with it and the CLI refuses a `--status` outside it (with this as
+ * `choices`), so the two cannot disagree about what a status is.
+ */
+export const VALID_STATUS: readonly TaskStatus[] = ["todo", "doing", "review", "done"];
 
 /** A single status transition (unix ms). */
 export type StatusVisit = { status: TaskStatus; at: number };

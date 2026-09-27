@@ -55,6 +55,10 @@ import {
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  type TaskStatus,
+  VALID_STATUS,
+} from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry.ts";
 import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors.ts";
 import {
@@ -99,9 +103,6 @@ function daemonCwd(): string {
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
-
-type TaskStatus = "todo" | "doing" | "review" | "done";
-const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 type Session = {
   url: string;
@@ -1428,10 +1429,9 @@ async function cmdAdd(
 ) {
   const title = flags.stdin === true ? await readStdin() : pos.join(" ");
   if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");
-  const status =
-    typeof flags.status === "string" && VALID_STATUS.includes(flags.status as TaskStatus)
-      ? (flags.status as TaskStatus)
-      : "todo";
+  // A `--status` outside the set was refused by the row's `check`; it used to
+  // fall back to "todo" here without a word.
+  const status = typeof flags.status === "string" ? (flags.status as TaskStatus) : "todo";
   const task: Record<string, unknown> = {
     id: typeof flags.id === "string" ? flags.id : newTaskId(),
     title,
@@ -1536,6 +1536,10 @@ async function cmdUpdate(
   // fields (`--tag` writes `tags`; `--stdin` writes `title`; `--clear-notes`
   // writes `notes`). A caller can check it against what it meant to change —
   // the check that would have caught `--stdin` landing in the title.
+  // ⚠ It is only true because nothing in this patch can be dropped by the
+  // daemon's guards: `--status` outside the set is refused in `check`, and
+  // `--size`/`--expect` enter the patch only when valid. A new patch key the
+  // daemon may drop needs the same treatment, or `fields` names a lost write.
   const fields = Object.keys(patch);
   if (res.applied) {
     printJson({
@@ -1731,6 +1735,27 @@ function scopeOf(flags: Flags, as: string | undefined) {
 }
 
 /**
+ * `--status` ranges over a closed set, so a value outside it is refused as
+ * usage with the set as `choices` (acc A3). The daemon DROPS an invalid status
+ * from a patch without saying so, which is how `update --status bogus --title z`
+ * printed `fields:["title","status"]` at exit 0 over a status it never wrote,
+ * and how `add --status bogus` became a "todo" card. Raised here rather than
+ * returned, because a returned string reaches the caller without `choices`.
+ */
+function checkStatus(verb: "add" | "update", f: Flags): void {
+  if (typeof f.status === "string" && !VALID_STATUS.includes(f.status as TaskStatus))
+    die(`${verb}: --status ${JSON.stringify(f.status)} is not a status`, "usage", {
+      choices: [...VALID_STATUS],
+    });
+}
+
+/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+function checkAdd(inv: Invocation<Flag>): string | undefined {
+  checkStatus("add", inv.flags as Flags);
+  return undefined;
+}
+
+/**
  * `update`'s combination and empty-value rules (s5-9, s5-5), refused as usage
  * before anything is sent. Each message names the recovery. An empty value is
  * refused because it cannot be told apart from a command substitution that
@@ -1738,6 +1763,7 @@ function scopeOf(flags: Flags, as: string | undefined) {
  */
 function checkUpdate(inv: Invocation<Flag>): string | undefined {
   const f = inv.flags as Flags;
+  checkStatus("update", f);
   if (f.stdin === true && typeof f.title === "string")
     return "--stdin and --title both set the title; pass one of them (for the notes, use --notes <text>)";
   if (f["clear-notes"] === true && typeof f.notes === "string")
@@ -1803,6 +1829,7 @@ const ROWS: Row[] = [
     positionals: [{ name: "title", required: false, variadic: true }],
     describe:
       "add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+    check: checkAdd,
     run: cmdAdd,
   },
   {

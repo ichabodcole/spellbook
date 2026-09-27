@@ -171,3 +171,12 @@ flag values (`--size bogus`), so it is not always null, but it never covered a
 misroute; the misroute is now refused rather than reported, and `fields` is the
 field that answers "what did this write". The house-wide statement of
 `--stdin`-replaces-positional (comms, grapevine) is still unwritten.
+
+**2026-09-27, verifier finding:** `fields` could still lie.
+`update t1 --status bogus --title z` printed `fields:["title","status"]` at exit
+0 while the daemon silently dropped the status (and `--status bogus` alone was a
+`noop` at exit 0). Fixed in
+`fix(bounty): update refuses a status outside the set, so fields cannot name a dropped write`:
+`add` and `update` refuse a `--status` outside the set at exit 2 with the
+statuses in `choices`, from the one list now in `shared/types.ts`
+(`VALID_STATUS`).

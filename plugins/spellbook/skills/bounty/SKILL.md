@@ -250,6 +250,12 @@ A bare `bounty` with no verb is a usage error — one JSON envelope on stderr,
 exit 2, the verbs in `error.choices` — not help. `list` and `sessions` print
 prose lines; every other verb prints one JSON document (`tail`: one per event).
 
+`--status` on `add` and `update` takes only `todo`, `doing`, `review` or `done`.
+Any other value is refused before anything is written — exit 2, the valid
+statuses in `error.choices` — so `update`'s `fields` never names a status it did
+not write. (A bad `--size`/`--expect` is different: it is ignored and reported
+in `valuesIgnored`.)
+
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` instead of putting it on the
 command line — the shell will otherwise mangle it:

@@ -2318,6 +2318,66 @@ describe("ownership scoping (Phase C E2E)", () => {
       await runCli(["close", "--session", session], { env });
     }
   }, 30000);
+
+  // Verifier finding on s5-9's `fields`: the daemon drops an invalid status from
+  // a patch silently, so `update t1 --status bogus --title z` printed
+  // `fields:["title","status"]` at exit 0 over a status it never wrote, and
+  // `add --status bogus` became a "todo" card. `--status` ranges over a closed
+  // set: a value outside it is refused at exit 2 with the set as `choices`, and
+  // nothing is written.
+  test("add/update refuse a --status outside the set, with choices; fields never names a dropped write", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const s = ["--session", session];
+    const readTasks = async () =>
+      (
+        JSON.parse((await runCli(["state", ...s], { env })).stdout) as {
+          state: BoardState;
+        }
+      ).state.tasks;
+    const refusedWithChoices = (r: CliResult) => {
+      expect(r.code).toBe(2);
+      expect(r.stdout).toBe("");
+      const err = JSON.parse(r.stderr) as {
+        error: { kind: string; message: string; choices?: string[] };
+      };
+      expect(err.error.kind).toBe("usage");
+      expect(err.error.message).toContain('--status "bogus"');
+      expect(err.error.choices).toEqual(["todo", "doing", "review", "done"]);
+    };
+    try {
+      await runCli(["add", "Original", "--id", "t1", ...s], { env });
+
+      refusedWithChoices(
+        await runCli(["update", "t1", "--status", "bogus", "--title", "z", ...s], { env }),
+      );
+      // Alone it used to be `noop:true, fields:[]` at exit 0 — dropped, unreported.
+      refusedWithChoices(await runCli(["update", "t1", "--status", "bogus", ...s], { env }));
+      refusedWithChoices(
+        await runCli(["add", "Never", "--status", "bogus", "--id", "t2", ...s], { env }),
+      );
+      const after = await readTasks();
+      expect(after).toHaveLength(1);
+      expect(after[0]).toMatchObject({ id: "t1", title: "Original", status: "todo" });
+
+      // A valid status alongside a title: both named, both written.
+      const ok = await runCli(["update", "t1", "--status", "done", "--title", "z", ...s], {
+        env,
+      });
+      expect(ok.code).toBe(0);
+      expect(JSON.parse(ok.stdout)).toEqual({
+        ok: true,
+        updated: "t1",
+        fields: ["title", "status"],
+        valuesIgnored: null,
+      });
+      expect((await readTasks())[0]).toMatchObject({ title: "z", status: "done" });
+    } finally {
+      await runCli(["close", ...s], { env });
+    }
+  }, 30000);
 });
 
 // ── Dependencies (Phase D) — blockedBy, cycle guard, unblocked ───────────
