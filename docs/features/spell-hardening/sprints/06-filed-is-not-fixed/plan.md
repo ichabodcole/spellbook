@@ -198,10 +198,13 @@ a scaffold nobody can kill, which is the state sprint 03's predicate was in.**
 
 ## Decision log
 
-| date       | decision                                                                                              | by   | option not taken                                                                         |
-| ---------- | ----------------------------------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------- |
-| 2026-08-11 | Sprint 06 is **fixes first, then the gate**, one sprint, phase-ordered                                | Cole | a pure gate sprint (smaller, continuous with 05); or a pure fix sprint deferring (ii)    |
-| 2026-08-11 | `s5-9`'s **doc warning ships ahead of the sprint** on its own branch; the code repair goes to phase 1 | Cole | folding the warning into the sprint (leaves the destructive path undocumented for weeks) |
+| date       | decision                                                                                                                                                                                                          | by   | option not taken                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------- |
+| 2026-08-11 | Sprint 06 is **fixes first, then the gate**, one sprint, phase-ordered                                                                                                                                            | Cole | a pure gate sprint (smaller, continuous with 05); or a pure fix sprint deferring (ii)                            |
+| 2026-08-11 | `s5-9`'s **doc warning ships ahead of the sprint** on its own branch; the code repair goes to phase 1                                                                                                             | Cole | folding the warning into the sprint (leaves the destructive path undocumented for weeks)                         |
+| 2026-09-27 | Convened as cycle `2026-09-filed-is-not-fixed`, after the acc cycle (Cole: "acc work first, then back to spell hardening")                                                                                        | Cole | convening before acc (would have fixed bounty's parser twice)                                                    |
+| 2026-09-27 | The ratify round is a **re-measure**: a no-stake subagent runs every phase-1 defect on `develop` before any fix is briefed, because the acc cycle rewrote bounty's and astrolabe's parsers since these were filed | lead | ratifying from the August measurements (falsifier 2: a stale repro is a discovery round wearing a fix's clothes) |
+| 2026-09-27 | `feature/spell-hardening` goes `done` → `active` while this cycle runs                                                                                                                                            | lead | leave it `done` with an active cycle under it (the board would show no work in play)                             |
 
 ---
 
