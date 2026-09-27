@@ -79,6 +79,9 @@ Repeatable procedures for work that recurs. — see
 - [Scaffolding a new spell on the build](./playbooks/scaffolding-a-spell-playbook.md)
   — Step-by-step playbook for scaffolding a brand-new spell directly onto the
   shared build layout, replacing guidance that pre-dated the backend convergence
+- [Running a Multi-Cycle Feature — Playbook](./playbooks/running-a-multi-cycle-feature-playbook.md)
+  — Running a feature that spans more than one cycle: opening each cycle,
+  closing it with an honest Outcome, and keeping closed records trustworthy.
 
 ## Lessons learned
 
