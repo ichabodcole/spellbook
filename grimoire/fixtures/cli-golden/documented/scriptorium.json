@@ -9,7 +9,7 @@
   },
   {
     "line": 77,
-    "argv": ["note", "--body-file", "golden.md"]
+    "argv": ["note", "--quote", "hello", "--body-file", "golden.md"]
   },
   {
     "line": 85,
@@ -81,6 +81,7 @@
   },
   {
     "line": 259,
-    "argv": ["task-status", "item1"]
+    "argv": ["task-status", "item1"],
+    "exclude": "prose, not an invocation: the line says task-status takes a positional (its status is required too)"
   }
 ]
