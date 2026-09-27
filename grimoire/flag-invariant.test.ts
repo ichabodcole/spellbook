@@ -96,6 +96,9 @@ const FOREIGN: Record<string, string> = {
     "the same ROOT TOKEN as magpie's and astrolabe's — the kit registry's interceptors map " +
     "`--version`/`-V` onto the `version` row before any parse runs, deliberately not a registry " +
     "flag, so `glamour state --version` stays refused",
+  "bounty:version":
+    "the kit registry's ROOT TOKEN, as glamour's — `--version`/`-V` map onto the `version` row " +
+    "before any parse runs, deliberately not a registry flag, so `bounty state --version` stays refused",
   "magpie:version":
     "a ROOT TOKEN dispatched beside `help` (resolved before parseArgs runs), not a parser flag — " +
     "`magpie --version` works and `magpie state --version` is correctly refused, which is the " +
