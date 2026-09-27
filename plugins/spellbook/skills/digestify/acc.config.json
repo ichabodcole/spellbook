@@ -1,0 +1,7 @@
+{
+  "defaultOutput": "json",
+  "knownFailures": {
+    "C1": "debt: --help and -h are rejected as unknown options, so there is no help path; see docs/items/acc-conformance-digestify.md",
+    "D1": "debt: --version is rejected as an unknown option; see docs/items/acc-conformance-digestify.md"
+  }
+}

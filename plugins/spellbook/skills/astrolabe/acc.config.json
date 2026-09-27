@@ -1,3 +1,6 @@
 {
-  "defaultOutput": "json"
+  "defaultOutput": "json",
+  "knownFailures": {
+    "A6": "debt (diagnostic, does not gate): a value after `--` is still parsed as an option; see docs/items/acc-conformance-astrolabe.md"
+  }
 }

@@ -29,14 +29,24 @@ at the end.
 
 ## Definition of done
 
-- [ ] A ward (`grimoire/acc-conformance.test.ts` or a `gate` step) runs
+- [x] A ward (`grimoire/acc-conformance.test.ts` or a `gate` step) runs
       `acc check` from each spell's skill folder against its launcher, for all
       nine, and fails when any exits non-zero.
-- [ ] It enumerates the spells from the roster, not a hand-kept list, with a
+- [x] It enumerates the spells from the roster, not a hand-kept list, with a
       zero-denominator guard (nine found, not zero).
-- [ ] It reads recorded surfaces where a spell has them, so the census runs in
+- [x] It reads recorded surfaces where a spell has them, so the census runs in
       the gate, not only the root probes.
-- [ ] It runs the pinned kit and fails loudly if `acc version` differs from the
+- [x] It runs the pinned kit and fails loudly if `acc version` differs from the
       pin.
-- [ ] A deliberately broken CLI (a planted unknown-flag path that exits 0) makes
+- [x] A deliberately broken CLI (a planted unknown-flag path that exits 0) makes
       it fail. Show the red run in the session.
+
+## Notes
+
+- Recorded surfaces live in `<skill>/acc.recorded-surfaces.json`: acc's config
+  has no key for a batch, so the ward passes that sidecar as
+  `--recorded-surfaces` when it exists. No spell has one yet; each spell's item
+  adds its own.
+- Today's failures are `knownFailures` debt, each reason pointing at the spell's
+  item. The ward also fails on a stale or inert entry, so a fix must delete its
+  line.

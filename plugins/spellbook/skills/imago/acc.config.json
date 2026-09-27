@@ -1,0 +1,9 @@
+{
+  "knownFailures": {
+    "A6": "debt: a value after `--` is still parsed as an option; see docs/items/acc-conformance-imago.md",
+    "C2": "debt: a bare invocation exits 0 instead of 2; see docs/items/acc-conformance-imago.md",
+    "D1": "debt: --version is rejected as an unknown verb; see docs/items/acc-conformance-imago.md",
+    "D2": "debt: a bare invocation prints help to stdout and exits 0; see docs/items/acc-conformance-imago.md",
+    "D3": "debt: help names no machine-mode flag and no schema command; see docs/items/acc-conformance-imago.md"
+  }
+}
