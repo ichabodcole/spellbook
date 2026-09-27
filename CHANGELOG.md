@@ -1,5 +1,39 @@
 # Changelog
 
+## [4.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.1.0...spellbook-v4.0.0) (2026-09-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **release:** Exit codes, accepted invocations, output shapes and one tail's timing changed on eight spells. Exit codes: bounty `tail --session <id>` for a board that never existed now exits 5 `not_found` on stderr after about 8s, where it printed `tail.closed` and exited 0 at once; astrolabe `close` on a daemon still answering after 3s now exits 1 `internal` instead of 0. Refused invocations (now exit 2 `usage`, nothing written): a bare `bounty` or `imago` (was help at exit 0); a flag belonging to another verb on bounty, astrolabe and imago; an extra positional on astrolabe, bounty `update`, magpie, imago `select` and mind-mapper; `version`/`help` given a flag on glamour, scriptorium, astrolabe and mind-mapper; imago `handoff` without exactly one of `<text…>` or `--clear`; bounty `update` with `--title ""`, `--notes ""`, empty `--stdin`, or `--stdin` with `--title`; an unknown `--status` on bounty `add`/`update`; and mind-mapper's missing name or contradictory `--clear`, now refused before the daemon check (was 5). Output shape: imago `sessions` prints `{"sessions":[…]}` JSON (`--human` for the old prose); astrolabe `close` with nothing to close reports `outcome:"already-closed"` with no `error` key; digestify's command-line rejections carry `meta.command: null`; and a rejection's `choices` is now the verb's own flag set (root flags for a flag before the verb, none for a flag missing its value on grapevine). Timing: bounty `tail --session-key <key>` that never resolves exits 5 after about 8s instead of retrying forever. The full list, with before and after for each and how failures look now, is `docs/releases/4.0.0-breaking-changes.md`.
+
+### Features
+
+* **astrolabe:** the CLI runs on the kit registry ([df5b354](https://github.com/ichabodcole/spellbook/commit/df5b35412693085869c048ed0b4fc9e94a7df694))
+* **bounty:** dispatch through the kit CLI registry (acc L0) ([76e2b14](https://github.com/ichabodcole/spellbook/commit/76e2b14d9fe679c4bbcc029291b7f642c666c567))
+* **digestify:** parse through the kit CLI registry; answer --help, --version and schema ([f31e50f](https://github.com/ichabodcole/spellbook/commit/f31e50f54de3ce02775ea2ee46e10a5cdeccfe04))
+* **glamour:** the CLI runs on the kit registry ([2a02211](https://github.com/ichabodcole/spellbook/commit/2a02211f32d319e77ab4e9cf5ea126656aced82d))
+* **grapevine:** the CLI runs on the kit registry ([194250f](https://github.com/ichabodcole/spellbook/commit/194250f81fadeabf01950b38f881a4a56025b951))
+* **imago:** the CLI runs on the kit registry ([14404e2](https://github.com/ichabodcole/spellbook/commit/14404e2f220927a1ea119c40bfff08711fa6c7cb))
+* **kit:** a shared CLI registry that drives parse, dispatch, help and schema ([cc47ee0](https://github.com/ichabodcole/spellbook/commit/cc47ee0039cae35f1071ab67f87eff60a094b98a))
+* **magpie:** dispatch through the kit CLI registry (acc step 6) ([2de52cd](https://github.com/ichabodcole/spellbook/commit/2de52cdc553336742502286261e6e36cbdda5238))
+* **mind-mapper:** move the CLI onto the kit registry ([638c2fa](https://github.com/ichabodcole/spellbook/commit/638c2faa47d70b2fb90a48e20207700e20ae7df2))
+* **scriptorium:** the CLI runs on the kit registry ([c0b30a0](https://github.com/ichabodcole/spellbook/commit/c0b30a0084afcbd9a65590dbaab46ca58e6dcad7))
+
+
+### Bug Fixes
+
+* **astrolabe:** close with nothing to close is a no-op, and waits until down ([2de3d09](https://github.com/ichabodcole/spellbook/commit/2de3d09740d46a83465c164b7bdf412ea4c17e3d))
+* **bounty:** a tail on a named target that never resolves says what it looked for and exits not_found ([fa38c37](https://github.com/ichabodcole/spellbook/commit/fa38c37eb3004ce99225d1c2d26d0b91ee6e8fbf)), closes [#98](https://github.com/ichabodcole/spellbook/issues/98)
+* **bounty:** update refuses a status outside the set, so fields cannot name a dropped write ([d8ba057](https://github.com/ichabodcole/spellbook/commit/d8ba0578f4d3255d0a120d252e01fa9004bf87a2))
+* **bounty:** update refuses empty values and --stdin with --title ([4a459fd](https://github.com/ichabodcole/spellbook/commit/4a459fd65f92398bdc4bbc6e9475c92f8ff6f18c))
+* **kit:** a verbless flags-anywhere argv names no command ([c65d704](https://github.com/ichabodcole/spellbook/commit/c65d704c6a1fce708d09670a07533df95b04b8d7))
+* **kit:** a verbless root's flag rejection names the interceptors too ([92f4a6b](https://github.com/ichabodcole/spellbook/commit/92f4a6b812aaffeca1b60a280338abab32aae58e))
+* **kit:** keep src/kit/cli out of the Tailwind scan ([fe3eb72](https://github.com/ichabodcole/spellbook/commit/fe3eb72157a63d639160451aad955dd1aeccc479))
+* **kit:** the `--` demotion warning agrees in number with several tokens ([d0f22fa](https://github.com/ichabodcole/spellbook/commit/d0f22faf0d6099850e25cec7f92271629f84ce5b))
+* **kit:** warn when `--` turns an accepted flag into text ([dccd2cb](https://github.com/ichabodcole/spellbook/commit/dccd2cb73953869bb07f86172e6d7849d4017d55))
+* **release:** declare the breaking changes, so 4.0.0 says what 3.2.0 would not ([74dcf72](https://github.com/ichabodcole/spellbook/commit/74dcf7284eefecfc5ffb5a9f6f1a8a8d48897976))
+
 ## [3.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.0.1...spellbook-v3.1.0) (2026-09-24)
 
 
