@@ -1,3 +1,5 @@
+// enforces: spells-are-porting-to-the-build
+//
 // ⛔ THE WARD FOR A SPELL THAT SHIPS WITHOUT ITS BUILT ARTIFACT.
 //
 // `dist/` is gitignored by a bare `dist` rule with a HAND-KEPT un-ignore list

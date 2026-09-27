@@ -1,3 +1,5 @@
+// enforces: none in house-style — R6 (spell-kit), wards 1a, 1b and 2
+//
 // THE IMPORT-BOUNDARY WARDS — R6 (spell-kit). THREE checks, two directions.
 //
 //   1a  OUTWARD, structural   no tracked file under `plugins/spellbook/` STATICALLY

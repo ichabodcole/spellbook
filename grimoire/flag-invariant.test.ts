@@ -13,6 +13,16 @@ import {
 } from "./lib/entry-points";
 import { must } from "./lib/must.ts";
 
+// enforces: enumerate-roster-behaviour-never
+//
+// PARTIAL, and for ONE population: the walk-vs-glob cell below holds this
+// ward's own entry-point enumeration to the rule (the behaviour walk is the
+// population; a fixed `<spell>/scripts` + `<spell>/backend` glob that stops matching it is
+// red). Whether any OTHER check names its question and derives its set by
+// behaviour is still judged in that check's own design. The ward's primary
+// authority is outside house-style: the SKILL.md flag invariant this header
+// states (bbc61c2b, 2026-08-06).
+//
 // The SKILL.md flag invariant — a roster-wide ward, owned by the grimoire seat.
 //
 // INVARIANT, two halves with DIFFERENT denominators (they cannot share one):

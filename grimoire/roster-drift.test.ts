@@ -1,3 +1,5 @@
+// enforces: name-canonical-handle-name
+//
 // ROSTER DRIFT WARD — mechanises `ward`'s "quick drift check", which existed only
 // as a human-invoked checklist and therefore never ran. A spell shipped in v2.2.0
 // declared in NONE of the four listings; the check that would have caught it was

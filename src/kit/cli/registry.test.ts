@@ -465,6 +465,7 @@ describe("a flag demoted by `--` is warned about, never refused (c1)", () => {
       commands: [
         {
           name: "say",
+          aliases: ["speak"],
           flags: ["force", "tag"],
           positionals: [{ name: "text", required: true, variadic: true }],
           describe: "say text",
@@ -510,6 +511,16 @@ describe("a flag demoted by `--` is warned about, never refused (c1)", () => {
     const r = await capture(() => demoteCli().main(["say", "--", "hello", "--tag=K1"]));
     expect(r.code).toBe(3);
     expect(oneWarning(r)).toContain("--tag=K1");
+  });
+
+  test("a verb called through its ALIAS warns the same, naming the row", async () => {
+    // The alias resolves to the same row, so the same accepted set applies.
+    const r = await capture(() => demoteCli().main(["speak", "--", "hello", "--tag", "K1"]));
+    expect(r.code).toBe(3);
+    expect(r.out).toBe(`${JSON.stringify({ pos: ["hello", "--tag", "K1"], flags: {} })}\n`);
+    const w = oneWarning(r);
+    expect(w).toContain("demo say");
+    expect(w).toContain("--tag after `--`");
   });
 
   test("a short alias warns", async () => {

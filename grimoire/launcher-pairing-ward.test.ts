@@ -1,3 +1,5 @@
+// enforces: none in house-style — D43 (backend entries derived from launchers)
+//
 // ── THE LAUNCHER-PAIRING WARD (D43) ────────────────────────────────────────
 //
 // ⛔ WHAT THIS EXISTS FOR, IN ONE SENTENCE: **since D43 the set of backend

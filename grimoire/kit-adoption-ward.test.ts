@@ -1,3 +1,5 @@
+// enforces: spells-are-porting-to-the-build
+//
 // ⛔ THE WARD FOR A RULE THAT WAS PROSE.
 //
 // seams Contract 21 says a spell adopts `src/kit/` by importing the kit's

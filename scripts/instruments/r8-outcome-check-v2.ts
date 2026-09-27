@@ -25,7 +25,7 @@ import { join, resolve } from "node:path";
 // The default is DERIVED from this file's own location, so the instrument runs
 // wherever the checkout is; `R8_ROOT` is the house override idiom
 // (`gate-blind-set.ts` takes `ROOT_DIR`, `type-debt-census.ts`
-// `TYPE_DEBT_ROOT`, `canon-ledger-ward.ts` `CANON_DIR`) and is what points it
+// `TYPE_DEBT_ROOT`, `grimoire/canon-ledger-ward.test.ts` `CANON_DIR`) and is what points it
 // at the OLD tree, or at a fixture, without editing a specimen.
 //
 // ⚠ AND THE REPORT IS BYTE-IDENTICAL TO THE PRE-CHANGE FILE RUN AGAINST THE

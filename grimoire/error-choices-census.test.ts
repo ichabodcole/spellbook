@@ -1,3 +1,4 @@
+// enforces: honor-exit-code-contract
 /**
  * THE `choices` CENSUS — register A1's instrument.
  *
