@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Fix bounty update command to correctly route stdin to body not title field
-lifecycle: backlog
+lifecycle: done
 id: 019fef02-3880-7ca3-b563-d1e9ed17f5ed
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
@@ -145,3 +145,38 @@ finding without a durable home.
 the original framing; it sat unopposed and would have been adopted, because
 _"bounty's `--stdin` violates the house convention"_ is exactly the sentence
 that survives into a card and then into a repair.
+
+## Fixed (2026-09-27)
+
+Commit `97909819` on `fix/bounty-update-empty-and-stdin`, fixed together with
+`s5-5` (same four lines, one envelope), per the cycle's ruling:
+
+- `update --stdin` **keeps meaning the title**, as on `add`. It is **refused
+  together with `--title`** (exit 2, `usage`), where stdin used to win silently.
+- **An empty stdin is refused** (exit 2), as `add` refuses an empty title. As on
+  `add`, only the one trailing newline is stripped: whitespace-only stdin is not
+  empty, on either verb.
+- The success envelope gains **`fields`**, the task fields it wrote
+  (`{"ok":true,"updated":"t1","fields":["title"],"valuesIgnored":null}`); a
+  no-op answers `fields: []`. A caller can now see that `--stdin` wrote the
+  title.
+- `bounty/SKILL.md`'s warning block is replaced by the contract.
+
+**Pinned by** `src/bounty/backend/server.test.ts`, "update refuses empty values
+and --stdin with --title; --clear-notes clears; fields named (s5-9, s5-5)", and
+by five new `update` cases in the CLI golden.
+
+**What's left:** `valuesIgnored` is kept and unchanged. Its domain is still bad
+flag values (`--size bogus`), so it is not always null, but it never covered a
+misroute; the misroute is now refused rather than reported, and `fields` is the
+field that answers "what did this write". The house-wide statement of
+`--stdin`-replaces-positional (comms, grapevine) is still unwritten.
+
+**2026-09-27, verifier finding:** `fields` could still lie.
+`update t1 --status bogus --title z` printed `fields:["title","status"]` at exit
+0 while the daemon silently dropped the status (and `--status bogus` alone was a
+`noop` at exit 0). Fixed in
+`fix(bounty): update refuses a status outside the set, so fields cannot name a dropped write`:
+`add` and `update` refuse a `--status` outside the set at exit 2 with the
+statuses in `choices`, from the one list now in `shared/types.ts`
+(`VALID_STATUS`).

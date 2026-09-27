@@ -55,6 +55,10 @@ import {
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  type TaskStatus,
+  VALID_STATUS,
+} from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry.ts";
 import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors.ts";
 import {
@@ -99,9 +103,6 @@ function daemonCwd(): string {
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
-
-type TaskStatus = "todo" | "doing" | "review" | "done";
-const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 type Session = {
   url: string;
@@ -249,21 +250,70 @@ function resolveSession(
   },
   exists: (path: string) => boolean = existsSync,
 ): string | undefined {
-  if (typeof flags["session-key"] === "string")
-    return sessionKeyToId(flags["session-key"], startDir, exists);
-  if (typeof flags.session === "string") return flags.session;
-  if (env.BOUNTY_SESSION_KEY) return sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists);
-  if (env.BOUNTY_SESSION) return env.BOUNTY_SESSION;
+  return resolveSessionSource(flags, env, startDir, readFile, exists).id;
+}
+
+/** Where a resolved session id came from, and whether the caller NAMED it (#98).
+ *
+ *  `from` is prose for the one place a reader needs it: a tail that cannot find
+ *  its board must say WHICH id it looked for and WHY that id — above all that a
+ *  key's id is DERIVED from the cwd, so the same key from another directory is
+ *  another board (the 40-minute puzzle in #98). `named` is true only for an id
+ *  typed on the command line (`--session-key`, `--session`): an id from the
+ *  environment or a `.bounty-session` file is every anthill seat's FIRST arm,
+ *  which must wait for its board (B1), so it is not a named target. */
+export type SessionSource = { id?: string; from: string; named: boolean; key?: string };
+
+function derivedFrom(label: string, key: string, startDir: string, exists: (p: string) => boolean) {
+  const root = findScopeRoot(startDir, exists);
+  const scope = root === startDir ? "" : `, scope root ${root}`;
+  return `derived from ${label} '${key}' + cwd ${startDir}${scope}`;
+}
+
+/** `resolveSession`'s precedence, ONCE, with its provenance. `resolveSession`
+ *  is this function's `.id`, so the two cannot disagree. */
+export function resolveSessionSource(
+  flags: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+  startDir: string = process.cwd(),
+  readFile: (path: string) => string | null = (p) => {
+    try {
+      return readFileSync(p, "utf8");
+    } catch {
+      return null;
+    }
+  },
+  exists: (path: string) => boolean = existsSync,
+): SessionSource {
+  const flagKey = flags["session-key"];
+  if (typeof flagKey === "string")
+    return {
+      id: sessionKeyToId(flagKey, startDir, exists),
+      from: derivedFrom("--session-key", flagKey, startDir, exists),
+      named: true,
+      key: flagKey,
+    };
+  if (typeof flags.session === "string")
+    return { id: flags.session, from: "from --session", named: true };
+  if (env.BOUNTY_SESSION_KEY)
+    return {
+      id: sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists),
+      from: derivedFrom("$BOUNTY_SESSION_KEY", env.BOUNTY_SESSION_KEY, startDir, exists),
+      named: false,
+      key: env.BOUNTY_SESSION_KEY,
+    };
+  if (env.BOUNTY_SESSION)
+    return { id: env.BOUNTY_SESSION, from: "from $BOUNTY_SESSION", named: false };
   let dir = startDir;
   while (true) {
-    const contents = readFile(join(dir, ".bounty-session"));
-    const id = contents?.trim();
-    if (id) return id;
+    const marker = join(dir, ".bounty-session");
+    const id = readFile(marker)?.trim();
+    if (id) return { id, from: `from ${marker}`, named: false };
     const parent = dirname(dir);
     if (parent === dir) break; // reached the filesystem root
     dir = parent;
   }
-  return undefined;
+  return { from: `looked for the latest-board pointer ${sessionFilePath()}`, named: false };
 }
 
 /** ⛔ NULL MEANS "NO SESSION", AND NOTHING ELSE.
@@ -509,6 +559,11 @@ const CLI_OPTIONS = {
   pin: { type: "boolean" },
   stdin: { type: "boolean" },
   "stdin-tasks": { type: "boolean" },
+  // s5-5: `update`'s explicit clear. An empty `--notes` is refused, because a
+  // deliberate `--notes ""` and a command substitution that produced nothing
+  // are the same string by the time they arrive; this flag is the one way to
+  // say "clear" on purpose.
+  "clear-notes": { type: "boolean" },
 } as const;
 
 /**
@@ -526,6 +581,7 @@ export const UPDATE_PATCH_FLAGS: readonly string[] = [
   "--size",
   "--expect",
   "--stdin",
+  "--clear-notes",
 ];
 
 type CmdResult = {
@@ -930,6 +986,28 @@ async function cmdState(
   printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
+/** How long a tail keeps retrying a NAMED target (`--session`, `--session-key`)
+ *  that does not resolve before it exits `not_found` (#98). "A few seconds",
+ *  the reporter's ask: long enough for a board `open`ed alongside the tail to
+ *  write its pointer, short enough that a supervisor sees a dead end. The check
+ *  runs at each retry, so with the kit's backoff (250 ms doubling to 5 s) the
+ *  exit lands at the first retry past the grace — about 7.75 s. Deliberately
+ *  NOT a flag (ruled 2026-09-27: no caller asked for one). */
+const NAMED_TARGET_GRACE_MS = 5000;
+
+/** ⚠ INTERNAL, UNDOCUMENTED: `BOUNTY_TAIL_GRACE_MS` overrides the grace so the
+ *  test suite does not sleep 5 s a cell. Not an agent's act, not in any help. */
+function namedTargetGraceMs(raw = process.env.BOUNTY_TAIL_GRACE_MS): number {
+  const n = raw === undefined ? Number.NaN : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : NAMED_TARGET_GRACE_MS;
+}
+
+/** A board that existed here and closed leaves its snapshot: the daemon writes
+ *  `$BOUNTY_HOME/snapshots/<id>.json` on close and keeps it (server.ts). */
+function hasSnapshot(id: string): boolean {
+  return existsSync(join(SNAPSHOTS_DIR, `${id}.json`));
+}
+
 /** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
  *  `readSince`): a form this tail does not accept — an epoch bookmark from
  *  another spell's or version's handoff line — is refused with the accepted
@@ -984,6 +1062,8 @@ async function cmdTail(
     sessionFlag?: boolean;
     /** The session key in play (`--session-key` or `$BOUNTY_SESSION_KEY`). */
     key?: string;
+    /** Where `session` came from, and whether the caller named it (#98). */
+    source?: SessionSource;
   } = {},
 ): Promise<number> {
   const owner = scope.owner;
@@ -1006,6 +1086,38 @@ async function cmdTail(
   // has — and a seat's FIRST arm must still wait for its board to appear.
   const reArm = arm.sessionFlag === true || arm.sinceGiven === true;
   let announcedPin = false;
+
+  // #98: what this tail looks for, and whether the caller NAMED it. A named
+  // target that never resolves is a dead end, not a wait — the same wrong id
+  // is re-read on every iteration — so it gets a grace and then `not_found`.
+  const source: SessionSource = arm.source ?? {
+    ...(session !== undefined ? { id: session } : {}),
+    from:
+      session !== undefined
+        ? "resolved"
+        : `looked for the latest-board pointer ${sessionFilePath()}`,
+    named: false,
+  };
+  const named = source.named && source.id !== undefined;
+  const graceMs = namedTargetGraceMs();
+  const startedAt = Date.now();
+  const lookedFor = () =>
+    source.id !== undefined
+      ? `for ${source.id} (${source.from})`
+      : pinned !== undefined
+        ? `for ${pinned} (pinned off the latest-board pointer)`
+        : `(${source.from})`;
+  // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
+  // as printed spawns an UNKEYED stray board; `open --session-key K`
+  // derives the same id and restores it by default (#69).
+  const keyedComeBack = () =>
+    arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned;
+  const comeBackCmd = () =>
+    commandLine(
+      keyedComeBack() && arm.key !== undefined
+        ? ["open", "--session-key", arm.key, "--no-open"]
+        : ["open", "--restore", pinned ?? "<id>", "--no-open"],
+    );
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
   const again = () => [
@@ -1038,12 +1150,39 @@ async function cmdTail(
         }
         return `http://127.0.0.1:${resolved.session.port}`;
       },
-      onUnresolved: () => {
+      onUnresolved: ({ everResolved }) => {
+        const existed = everResolved || (pinned !== undefined && hasSnapshot(pinned));
         // D1: a tail given --session or a bookmark is re-arming an EXISTING
         // board, so not finding it means it closed — `tail.closed`, never a
         // silent retry-forever. Only a bare first arm waits for a board.
-        if (reArm) return "stop";
-        process.stderr.write("# no session yet, retrying…\n");
+        // ⛔ #98: "existing" is now CHECKED for a named target, not assumed.
+        // A `--session` naming a board this host never had used to end here
+        // too, saying "the session closed" and offering `open --restore <id>`,
+        // which spawns an unrelated fresh board. The evidence is the snapshot:
+        // the daemon writes `$BOUNTY_HOME/snapshots/<id>.json` on every close
+        // and keeps it, and a daemon killed before that write leaves its
+        // pointer behind (so the tail resolves it and ends `tail.lost`, not
+        // here). No pointer and no snapshot therefore means never opened here
+        // — or its snapshot was deleted, which is why the words below say
+        // "not found" rather than "never existed".
+        if (reArm && (!named || existed)) return "stop";
+        // A named target the tail once reached, whose pointer is now gone:
+        // it closed (a `closed` frame normally ends the tail before this).
+        if (named && everResolved) return "stop";
+        if (named && Date.now() - startedAt >= graceMs) {
+          const hint =
+            pinned !== undefined && hasSnapshot(pinned)
+              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
+              : keyedComeBack()
+                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          die(
+            `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
+            "not_found",
+            { hint },
+          );
+        }
+        process.stderr.write(`# no session yet ${lookedFor()} — retrying…\n`);
         return "retry";
       },
       path: "/events",
@@ -1076,12 +1215,7 @@ async function cmdTail(
         // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
         // as printed spawns an UNKEYED stray board; `open --session-key K`
         // derives the same id and restores it by default (#69).
-        comeBack: () =>
-          commandLine(
-            arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned
-              ? ["open", "--session-key", arm.key, "--no-open"]
-              : ["open", "--restore", pinned ?? "<id>", "--no-open"],
-          ),
+        comeBack: comeBackCmd,
       },
     },
   );
@@ -1295,10 +1429,9 @@ async function cmdAdd(
 ) {
   const title = flags.stdin === true ? await readStdin() : pos.join(" ");
   if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");
-  const status =
-    typeof flags.status === "string" && VALID_STATUS.includes(flags.status as TaskStatus)
-      ? (flags.status as TaskStatus)
-      : "todo";
+  // A `--status` outside the set was refused by the row's `check`; it used to
+  // fall back to "todo" here without a word.
+  const status = typeof flags.status === "string" ? (flags.status as TaskStatus) : "todo";
   const task: Record<string, unknown> = {
     id: typeof flags.id === "string" ? flags.id : newTaskId(),
     title,
@@ -1340,10 +1473,22 @@ async function cmdUpdate(
 ) {
   const id = pos[0] as string; // arity: the row declares <id> required
   const patch: Record<string, unknown> = {};
-  if (flags.stdin === true) patch.title = await readStdin();
-  else if (typeof flags.title === "string") patch.title = flags.title;
+  // The combinations (`--stdin` with `--title`, `--clear-notes` with `--notes`)
+  // and the empty flag values are refused by the row's `check`, before this
+  // runs. An empty STDIN can only be seen here, after the read, and it is
+  // refused the way `add` refuses an empty title (s5-9): an empty pipe is far
+  // more often a failed producer than a wish to blank the title.
+  if (flags.stdin === true) {
+    const title = await readStdin();
+    if (!title)
+      die(
+        "update: --stdin read an empty title, and a title is never cleared; pipe the new title, or use --notes <text> / --clear-notes for the notes",
+      );
+    patch.title = title;
+  } else if (typeof flags.title === "string") patch.title = flags.title;
   if (typeof flags.status === "string") patch.status = flags.status;
   if (typeof flags.notes === "string") patch.notes = flags.notes;
+  else if (flags["clear-notes"] === true) patch.notes = "";
   if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
   if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
   const upSize = parseSize(flags.size);
@@ -1387,8 +1532,22 @@ async function cmdUpdate(
   // already held this value, e.g. doing→doing) → benign success, since the
   // task exists and the board is right.
   const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
+  // `fields` names what this call wrote (s5-9): the patch's keys, as task
+  // fields (`--tag` writes `tags`; `--stdin` writes `title`; `--clear-notes`
+  // writes `notes`). A caller can check it against what it meant to change —
+  // the check that would have caught `--stdin` landing in the title.
+  // ⚠ It is only true because nothing in this patch can be dropped by the
+  // daemon's guards: `--status` outside the set is refused in `check`, and
+  // `--size`/`--expect` enter the patch only when valid. A new patch key the
+  // daemon may drop needs the same treatment, or `fields` names a lost write.
+  const fields = Object.keys(patch);
   if (res.applied) {
-    printJson({ ok: true, updated: id, valuesIgnored: upIgnored.length ? upIgnored : null });
+    printJson({
+      ok: true,
+      updated: id,
+      fields,
+      valuesIgnored: upIgnored.length ? upIgnored : null,
+    });
   } else if (res.error) {
     // A not-found / mis-routed update — `not_found` (5) from the daemon.
     refuseFromDaemon(res, `no such task ${id}`);
@@ -1398,10 +1557,12 @@ async function cmdUpdate(
     // anything — so a caller could not tell "no ignored flags" from "this
     // build does not report them", which is the exact absence the
     // present-and-null rule exists to prevent.
+    // Nothing changed, so nothing was written: `fields` is empty, not absent.
     printJson({
       ok: true,
       updated: id,
       noop: true,
+      fields: [],
       valuesIgnored: upIgnored.length ? upIgnored : null,
     });
   }
@@ -1573,6 +1734,47 @@ function scopeOf(flags: Flags, as: string | undefined) {
   return { owner: typeof flags.owner === "string" ? flags.owner : undefined, mine, as };
 }
 
+/**
+ * `--status` ranges over a closed set, so a value outside it is refused as
+ * usage with the set as `choices` (acc A3). The daemon DROPS an invalid status
+ * from a patch without saying so, which is how `update --status bogus --title z`
+ * printed `fields:["title","status"]` at exit 0 over a status it never wrote,
+ * and how `add --status bogus` became a "todo" card. Raised here rather than
+ * returned, because a returned string reaches the caller without `choices`.
+ */
+function checkStatus(verb: "add" | "update", f: Flags): void {
+  if (typeof f.status === "string" && !VALID_STATUS.includes(f.status as TaskStatus))
+    die(`${verb}: --status ${JSON.stringify(f.status)} is not a status`, "usage", {
+      choices: [...VALID_STATUS],
+    });
+}
+
+/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+function checkAdd(inv: Invocation<Flag>): string | undefined {
+  checkStatus("add", inv.flags as Flags);
+  return undefined;
+}
+
+/**
+ * `update`'s combination and empty-value rules (s5-9, s5-5), refused as usage
+ * before anything is sent. Each message names the recovery. An empty value is
+ * refused because it cannot be told apart from a command substitution that
+ * produced nothing, and it would destroy the field at `ok:true`.
+ */
+function checkUpdate(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  checkStatus("update", f);
+  if (f.stdin === true && typeof f.title === "string")
+    return "--stdin and --title both set the title; pass one of them (for the notes, use --notes <text>)";
+  if (f["clear-notes"] === true && typeof f.notes === "string")
+    return "--clear-notes and --notes both set the notes; pass --notes <text> to replace them, or --clear-notes alone to clear them";
+  if (f.title === "")
+    return "--title is empty, and a title is never cleared (add refuses one too); pass the new title text";
+  if (f.notes === "")
+    return "--notes is empty, which would erase the notes; to clear notes on purpose, pass --clear-notes";
+  return undefined;
+}
+
 const ROWS: Row[] = [
   {
     name: "open",
@@ -1608,6 +1810,8 @@ const ROWS: Row[] = [
         {
           sinceGiven: typeof flags.since === "string",
           sessionFlag: typeof flags.session === "string",
+          // #98: the same precedence `session` came from, with its provenance.
+          source: resolveSessionSource(flags),
           // The key in play, if any; `cmdTail` checks it derives THIS board's
           // id before naming it (a re-arm carries `--session <k-id>`, which
           // outranks the key in `resolveSession` but is the same board).
@@ -1625,13 +1829,27 @@ const ROWS: Row[] = [
     positionals: [{ name: "title", required: false, variadic: true }],
     describe:
       "add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+    check: checkAdd,
     run: cmdAdd,
   },
   {
     name: "update",
-    flags: [...WRITE, "status", "title", "notes", "owner", "tag", "size", "expect", "stdin"],
+    flags: [
+      ...WRITE,
+      "status",
+      "title",
+      "notes",
+      "clear-notes",
+      "owner",
+      "tag",
+      "size",
+      "expect",
+      "stdin",
+    ],
     positionals: [{ name: "id", required: true }],
-    describe: 'patch a task (--tag "" clears the tags)',
+    describe:
+      'patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag "" clears the tags',
+    check: checkUpdate,
     run: cmdUpdate,
   },
   {

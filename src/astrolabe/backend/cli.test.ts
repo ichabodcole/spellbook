@@ -318,3 +318,118 @@ test("a token after -- is a positional, never an option (A6)", async () => {
     message: expect.stringContaining("unexpected argument"),
   });
 });
+
+// ── s5-8 · `close` with nothing to close is a benign no-op ───────────────────
+//
+// It printed `{ok:true, applied:false, error:"no daemon running"}` at exit 0 —
+// a rejection's shape at a success's exit, the two faults cancelling. And a
+// live close returned on the ACK, before the daemon was down, so `close; close`
+// answered applied:true twice: a check written that way passed vacuously (the
+// item's fixture trap). The daemon-down precondition is therefore ASSERTED
+// below as its own step, not assumed.
+
+async function runClose(home: string) {
+  const proc = Bun.spawn(["bun", "run", CLI, "close"], {
+    env: { ...process.env, ASTROLABE_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { out: out.trim(), err: err.trim(), code };
+}
+
+/** A fake daemon that acks `close` and then goes down `downAfterMs` later
+ *  (removing its port file, as the real one does) — or never, when null. */
+function closingDaemon(home: string, downAfterMs: number | null) {
+  const portFile = join(home, "daemon.port");
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    async fetch(req) {
+      const url = new URL(req.url);
+      if (url.pathname === "/state") return Response.json({ state: { projects: [] } });
+      if (url.pathname === "/cmd" && req.method === "POST") {
+        const body = (await req.json()) as { type?: string };
+        if (body.type === "close" && downAfterMs !== null)
+          setTimeout(() => {
+            server.stop(true);
+            rmSync(portFile, { force: true });
+          }, downAfterMs);
+        return Response.json({ ok: true, applied: true });
+      }
+      return new Response("nope", { status: 404 });
+    },
+  });
+  cleanup.push(() => server.stop(true));
+  writeFileSync(portFile, String(server.port));
+  return server;
+}
+
+async function answers(port: number | undefined): Promise<boolean> {
+  try {
+    return (await fetch(`http://127.0.0.1:${port}/state`)).ok;
+  } catch {
+    return false;
+  }
+}
+
+function expectAlreadyClosed(r: { out: string; err: string; code: number }) {
+  expect(r.code).toBe(0);
+  expect(r.err).toBe("");
+  const env = JSON.parse(r.out) as Record<string, unknown>;
+  expect(env).toEqual({ ok: true, applied: false, outcome: "already-closed" });
+  // Presence, not value: a no-op carries NO `error` key at all.
+  expect("error" in env).toBe(false);
+}
+
+test("close with no daemon is a no-op: exit 0, a noun, no error (s5-8)", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-none-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  expectAlreadyClosed(await runClose(home));
+});
+
+test("close with a stale port file (daemon killed, file left) is the same no-op", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-stale-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  // Bind, record, and kill — the port file now names a port nothing answers on.
+  const dead = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("x") });
+  writeFileSync(join(home, "daemon.port"), String(dead.port));
+  dead.stop(true);
+  expect(await answers(dead.port)).toBe(false); // precondition: nothing answers
+  expectAlreadyClosed(await runClose(home));
+});
+
+test("close waits until the daemon is down, so close; close is applied then the no-op", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-twice-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  // Teardown takes 500 ms after the ack — longer than the old CLI waited (0).
+  const d = closingDaemon(home, 500);
+  expect(await answers(d.port)).toBe(true);
+
+  const first = await runClose(home);
+  expect(first.code).toBe(0);
+  expect(JSON.parse(first.out)).toEqual({ ok: true, applied: true });
+
+  // ⛔ THE PRECONDITION, ASSERTED: the first close returned only once the
+  // daemon was down. Against the old CLI this fails — it returned on the ack.
+  expect(await answers(d.port)).toBe(false);
+
+  expectAlreadyClosed(await runClose(home));
+}, 15000);
+
+test("close reports a daemon still answering at the bound as a failure, not success", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-wedged-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  closingDaemon(home, null); // acks close, never goes down
+  const r = await runClose(home);
+  expect(r.code).toBe(1);
+  expect(r.out).toBe("");
+  const env = JSON.parse(r.err) as { ok: boolean; error: { kind: string; message: string } };
+  expect(env.ok).toBe(false);
+  expect(env.error.kind).toBe("internal");
+  expect(env.error.message).toContain("still answering");
+}, 15000);

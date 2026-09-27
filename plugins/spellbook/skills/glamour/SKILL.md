@@ -150,10 +150,12 @@ references an image or you inspect an item closely.
 
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`. (A
-> `--` as the very first argument is honoured too, but `bun` itself eats one
-> bare `--` placed right after the script path — pass two if you mean it.)
+> positional, including something that looks like a flag** — it is taken as
+> text, not refused. If it spells a flag that verb accepts, stderr carries one
+> `# warning:` line naming it and the fix; stdout and the exit code do not
+> change. Put every flag to the LEFT of `--`. (A `--` as the very first argument
+> is honoured too, but `bun` itself eats one bare `--` placed right after the
+> script path — pass two if you mean it.)
 >
 > **⚠ If the eaten flag is `--session`, glamour does not fail — it retargets.**
 > It falls back to the machine-global `glamour-latest.json` pointer, so the

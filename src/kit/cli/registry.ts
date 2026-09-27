@@ -46,7 +46,10 @@
  *    spell does not know as UNKNOWN. Both carry `choices` = this row's accepted
  *    set (its own flags plus `globalFlags`; a verbless root's adds the
  *    interceptors, as its declared row does). After a `--` everything is a
- *    positional (node's parser honours it).
+ *    positional (node's parser honours it). A post-`--` token that spells a
+ *    flag this row accepts is still a positional, but it earns one
+ *    `# warning:` line on stderr naming the recovery (`warnDemoted`); stdout
+ *    and the exit code are unchanged.
  * 6. Defaults are applied AFTER the per-row check, and only for flags the row
  *    accepts — so a defaulted flag never trips the misplaced-flag check, and a
  *    row never sees another row's default.
@@ -538,6 +541,47 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     return { row, token: cand, args: rest };
   };
 
+  /**
+   * Contract 5's `--` made the caller's flag TEXT; say so (c1,
+   * `docs/items/terminator-eats-session-key.md`). A post-`--` token that spells
+   * a flag this row accepts — `--k`, `--k=v`, or the short `-s` of an accepted
+   * `k`, globals included — is named in ONE `# warning:` line on stderr, with
+   * the move that recovers it. Stdout and the exit code do not change, and the
+   * row still runs: text containing a flag name is legitimate, which is what
+   * `--` is for. A token the row does not accept is just text, and says nothing.
+   *
+   * ⚠ Called only once every refusal has passed, so a refused invocation's
+   * stderr is still exactly one envelope. The `# ` prefix is the house's
+   * success-path stderr form (`# warning:` in mind-mapper, `# pinned board`,
+   * `# → channel`): an envelope reader looks for a `{` line and skips it.
+   */
+  const warnDemoted = (
+    row: Row,
+    accepted: ReadonlySet<string>,
+    tokens: ReturnType<typeof parseArgs>["tokens"],
+  ): void => {
+    const end = tokens?.findIndex((t) => t.kind === "option-terminator") ?? -1;
+    if (tokens === undefined || end < 0) return;
+    const demoted: string[] = [];
+    for (const t of tokens.slice(end + 1)) {
+      if (t.kind !== "positional") continue;
+      const v = t.value;
+      let key: string | undefined;
+      if (v.startsWith("--")) key = v.slice(2).split("=")[0];
+      else if (v.length === 2 && v.startsWith("-")) key = shortToKey.get(v.slice(1));
+      if (key !== undefined && key !== "" && accepted.has(key)) demoted.push(v);
+    }
+    if (demoted.length === 0) return;
+    const which = demoted.join(", ");
+    const one = demoted.length === 1;
+    const it = one ? "it" : "them";
+    const was = one ? "was" : "were";
+    const asFlag = one ? "as a flag" : "as flags";
+    process.stderr.write(
+      `# warning: ${cliName}${row.name === "" ? "" : ` ${row.name}`}: ${which} after \`--\` ${was} read as text, not ${asFlag}; to use ${it} ${asFlag}, move ${it} before \`--\`\n`,
+    );
+  };
+
   const runRow = async (row: Row, token: string, args: string[]): Promise<number> => {
     setCurrentCommand(row.name === "" ? null : row.name);
     const name = label(row);
@@ -550,12 +594,14 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
 
     let values: Record<string, unknown>;
     let positionals: string[];
+    let tokens: ReturnType<typeof parseArgs>["tokens"];
     try {
-      ({ values, positionals } = parseArgs({
+      ({ values, positionals, tokens } = parseArgs({
         args,
         options: parseOptions,
         strict: true,
         allowPositionals: row.allowPositionals,
+        tokens: true,
       }));
     } catch (e) {
       if (errCode(e) === "ERR_PARSE_ARGS_UNKNOWN_OPTION") {
@@ -606,6 +652,7 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     const refused = row.check?.(inv);
     if (refused !== undefined) die(`${name}: ${refused}`, "usage", { hint: expects(row) });
 
+    warnDemoted(row, accepted, tokens);
     const out = await row.run(inv);
     return typeof out === "number" ? out : 0;
   };

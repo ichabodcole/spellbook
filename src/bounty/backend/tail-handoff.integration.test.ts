@@ -7,9 +7,14 @@
 //     `tail.closed` at once, and B1 — a FIRST arm whose board comes from
 //     `$BOUNTY_SESSION_KEY` (every anthill seat) still waits for the board;
 //   · `--once` sleeps until a board event and exits on it;
-//   · a keyed board's come-back is `open --session-key K`, not a restore by id.
+//   · a keyed board's come-back is `open --session-key K`, not a restore by id;
+//   · #98 — every retry line names the id it looked for and where that id came
+//     from; a NAMED target (`--session`, `--session-key`) that never resolves
+//     exits `not_found` (5) after a grace, and a `--session` this host never
+//     had is never called "closed" nor offered `open --restore`.
 //
-// The window is injected (`SPELLBOOK_TAIL_WINDOW_MS`), so no cell waits minutes.
+// The window is injected (`SPELLBOOK_TAIL_WINDOW_MS`), so no cell waits minutes,
+// and so is the named-target grace (`BOUNTY_TAIL_GRACE_MS`, internal).
 // Build first.
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -62,14 +67,23 @@ function spawnTail(env: Record<string, string | undefined>, args: string[], wind
     env: { ...env, SPELLBOOK_TAIL_WINDOW_MS: String(windowMs) },
   });
   let raw = "";
-  const drained = (async () => {
-    const reader = (p.stdout as ReadableStream<Uint8Array>).getReader();
+  let rawErr = "";
+  const drain = async (s: ReadableStream<Uint8Array>, add: (t: string) => void) => {
+    const reader = s.getReader();
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
-      raw += new TextDecoder().decode(value);
+      add(new TextDecoder().decode(value));
     }
-  })();
+  };
+  const drained = Promise.all([
+    drain(p.stdout as ReadableStream<Uint8Array>, (t) => {
+      raw += t;
+    }),
+    drain(p.stderr as ReadableStream<Uint8Array>, (t) => {
+      rawErr += t;
+    }),
+  ]);
   const lines = () =>
     raw
       .split("\n")
@@ -81,7 +95,8 @@ function spawnTail(env: Record<string, string | undefined>, args: string[], wind
     await drained;
     return r;
   };
-  return { lines, exit };
+  const stderr = () => rawErr;
+  return { lines, stderr, exit };
 }
 
 async function openBoard(env: Record<string, string | undefined>, ...extra: string[]) {
@@ -99,11 +114,64 @@ const cmd = (...args: string[]) => args.join(" ");
 
 describe("bounty's tail handoff", () => {
   test("B1: a keyed FIRST arm (an anthill seat's shape) waits for its board instead of closing", async () => {
-    const env = { ...baseEnv, BOUNTY_SESSION_KEY: "seat-team" };
+    // The named-target grace is zeroed: a key from the ENVIRONMENT is not a
+    // named target (#98), so the grace must not reach it.
+    const env = { ...baseEnv, BOUNTY_SESSION_KEY: "seat-team", BOUNTY_TAIL_GRACE_MS: "0" };
     const t = spawnTail(env, ["--mine", "--as", "seat1"], 60_000);
     // No board is up. Before B1's fix this printed tail.closed at once.
     expect(await t.exit(1500)).toBe("hung");
     expect(t.lines()).toEqual([]);
+    // #98 ask 1: the retry names the id, and the key and cwd it was derived from.
+    expect(t.stderr()).toMatch(
+      /# no session yet for k-seat-team-[0-9a-f]{8} \(derived from \$BOUNTY_SESSION_KEY 'seat-team' \+ cwd \S*proj\) — retrying…/,
+    );
+  }, 30_000);
+
+  test("#98: an unpinned tail keeps waiting, and its retry names the pointer it read", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "0" };
+    const t = spawnTail(env, [], 60_000);
+    expect(await t.exit(1500)).toBe("hung");
+    expect(t.lines()).toEqual([]);
+    expect(t.stderr()).toMatch(
+      /# no session yet \(looked for the latest-board pointer \S*bounty-latest\.json\) — retrying…/,
+    );
+  }, 30_000);
+
+  test("#98: a --session-key that never resolves exits not_found after the grace, naming what it looked for", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "300" };
+    const t = spawnTail(env, ["--session-key", "NOPE"], 60_000);
+    // Before: `# no session yet, retrying…` forever, exit pending.
+    expect(await t.exit(10_000)).toBe(5);
+    expect(t.lines()).toEqual([]);
+    const id = "k-nope-[0-9a-f]{8}";
+    const from = String.raw`\(derived from --session-key 'NOPE' \+ cwd \S*proj\)`;
+    const err = t.stderr();
+    expect(err).toMatch(new RegExp(`# no session yet for ${id} ${from} — retrying…`));
+    const envelope = JSON.parse(err.trim().split("\n").at(-1) ?? "") as {
+      error: { kind: string; exit_code: number; message: string; hint: string };
+    };
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.exit_code).toBe(5);
+    expect(envelope.error.message).toMatch(new RegExp(`^no session ${id} found ${from}`));
+    expect(envelope.error.hint).toContain("open --session-key NOPE --no-open");
+  }, 30_000);
+
+  test("#98: a --session that never existed is not_found, never tail.closed or open --restore", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "300" };
+    const t = spawnTail(env, ["--session", "k-nope-123"], 60_000);
+    // Before: exit 0 at once with tail.closed and `open --restore k-nope-123`,
+    // which spawns an unrelated fresh board.
+    expect(await t.exit(10_000)).toBe(5);
+    expect(t.lines()).toEqual([]);
+    const err = t.stderr();
+    expect(err).toContain("# no session yet for k-nope-123 (from --session) — retrying…");
+    expect(err).not.toContain("closed");
+    expect(err).not.toContain("--restore");
+    const envelope = JSON.parse(err.trim().split("\n").at(-1) ?? "") as {
+      error: { kind: string; message: string };
+    };
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.message).toStartWith("no session k-nope-123 found (from --session)");
   }, 30_000);
 
   test("D1: a re-arm at a board that closed in the gap ends tail.closed at once", async () => {

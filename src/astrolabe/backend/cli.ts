@@ -406,13 +406,68 @@ async function cmdList() {
   });
 }
 
+// How long `close` waits for the daemon to actually be down, and how often it
+// looks. The same bound and interval as bounty's `close` (b14), which borrowed
+// them from its own `open --fresh` — not invented here.
+const CLOSE_WAIT_MS = 3000;
+const CLOSE_POLL_MS = 80;
+
+// s5-8 — close with nothing to close is a BENIGN NO-OP, not a rejection. It
+// used to print `{ok:true, applied:false, error:"no daemon running"}` at exit 0:
+// shaped as a rejection (an `error`) and exited as a success, so the two faults
+// cancelled and nothing caught it. The state that made the work unnecessary is
+// named by a noun, in astrolabe's own `already-<state>` family
+// (already-connected/-disconnected, already-raised/-cleared), and there is no
+// `error` key — outcome-contract: a zero exit never carries a failure
+// explanation.
+const CLOSED = { ok: true, applied: false, outcome: "already-closed" } as const;
+
 async function cmdClose(flags: Record<string, string | boolean>) {
-  const base = await runningBase();
-  if (!base) {
-    printJson({ ok: true, applied: false, error: "no daemon running" });
+  const port = await readPort();
+  // No port file, OR a stale one (daemon killed, file left behind): nothing is
+  // answering, so there is nothing to close. `isUp` is false on a refused
+  // connection, which is what used to surface as an internal "Unable to connect".
+  if (!port || !(await isUp(port))) {
+    printJson(CLOSED);
     return;
   }
-  printJson(await postCmd(base, { type: "close", as: resolveAs(flags) }));
+  let r: Awaited<ReturnType<typeof postCmd>>;
+  try {
+    r = await postCmd(`http://127.0.0.1:${port}`, { type: "close", as: resolveAs(flags) });
+  } catch (e) {
+    // It went down between the probe and the POST — the same no-op, honestly.
+    if (!(await isUp(port))) {
+      printJson(CLOSED);
+      return;
+    }
+    throw e;
+  }
+  // `cmd()`'s discipline: applied:false WITH an error is a rejection.
+  if (!r.applied && r.error) die(r.error);
+  if (!r.applied) {
+    printJson(r);
+    return;
+  }
+  // WAIT FOR IT TO ACTUALLY BE DOWN. The daemon acks `close` before it has torn
+  // down, so returning on the ack reported an ACT, not its COMPLETION: `close;
+  // close` answered applied:true twice, and a check written that way passed
+  // vacuously (the item's fixture trap). Now applied:true means it is down.
+  const deadline = Date.now() + CLOSE_WAIT_MS;
+  while (Date.now() < deadline) {
+    if (!(await isUp(port))) {
+      printJson(r);
+      return;
+    }
+    await sleep(CLOSE_POLL_MS);
+  }
+  // Still answering at the bound: the close was acked but did not complete, so
+  // reporting ok:true applied:true would be a lie. A wedged teardown is the
+  // spell's fault, not the caller's — `internal`, exit 1.
+  die(
+    `close was acknowledged but the daemon was still answering after ${CLOSE_WAIT_MS / 1000}s`,
+    "internal",
+    { hint: "check with `info`; re-run `close` once it settles" },
+  );
 }
 
 async function cmdInfo() {

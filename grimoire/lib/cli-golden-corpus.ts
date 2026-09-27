@@ -87,6 +87,13 @@ export const SPECS: SpellSpec[] = [
       c("add", "hello", "--tag", "a", "--tag", "b"),
       c("add", "hello", "world", "--expect", "5", "--id", "t1"),
       c("update", "t1", "--status", "doing", "--tag", ""),
+      // s5-9 / s5-5: the refusals are the row's `check`, so they answer before
+      // any board is resolved; `--clear-notes` alone parses (then: no board).
+      c("update", "t1", "--notes", ""),
+      c("update", "t1", "--title", ""),
+      c("update", "t1", "--clear-notes"),
+      c("update", "t1", "--clear-notes", "--notes", "x"),
+      stdin("from stdin\n", "update", "t1", "--stdin", "--title", "x"),
       c("claim", "t1"),
       c("block", "t1", "--on", "t2,t3"),
       c("unblock", "t1", "--on", "t2"),
@@ -105,6 +112,11 @@ export const SPECS: SpellSpec[] = [
       c("add", "--", "text", "--session-key", "k"),
       c("update", "t1", "--status", "doing", "--", "--session-key", "k"),
       c("message", "--", "--x"),
+      // c1: a post-`--` token spelling an accepted flag is text AND a stderr
+      // warning (stream "both"); one the verb does not take is just text.
+      c("add", "--", "text", "--session-key=k"),
+      c("message", "--", "hi", "--session-key", "k"),
+      c("add", "--", "text", "--nope"),
     ],
   },
   {
@@ -272,6 +284,8 @@ export const SPECS: SpellSpec[] = [
       c("--version", "--human"),
       c("send", "golden-ch", "--", "--x"),
       c("send", "golden-ch", "--", "text", "--as", "k"),
+      c("send", "golden-ch", "--", "text", "--as=k"),
+      c("who", "--", "--all"),
     ],
   },
   {

@@ -176,7 +176,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     }
   ],
-  "invocationCount": 123,
+  "invocationCount": 125,
   "invocations": [
     {
       "argv": [],
@@ -2271,9 +2271,28 @@
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
+      "warned": true,
       "ok": false,
       "kind": "usage",
       "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["send", "golden-ch", "--", "text", "--as=k"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--from"]
+    },
+    {
+      "argv": ["who", "--", "--all"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "both",
+      "warned": true,
+      "ok": true
     },
     {
       "argv": [

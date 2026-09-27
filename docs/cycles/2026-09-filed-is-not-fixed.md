@@ -6,7 +6,7 @@ description:
   gate the rule-to-check link (clause ii)."
 tags: [spell-hardening, conformance]
 status: draft
-lifecycle: planned
+lifecycle: active
 appetite:
   Stop when the phase-1 fix queue lands; phase 2 (clause ii) runs only if phase
   1 left room, and is cut, not compressed, if it did not.
