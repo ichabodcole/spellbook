@@ -104,6 +104,12 @@ const FOREIGN: Record<string, string> = {
     "the same ROOT TOKEN as magpie's, landed with astrolabe's acc L0 pass (fcdd3d5 documented it " +
     "in SKILL.md) — dispatched by literal comparison before parseArgs runs, deliberately not a " +
     "registry flag, so `astrolabe state --version` stays refused",
+  "digestify:help":
+    "a ROOT TOKEN, as glamour's: the kit registry's interceptors map `--help`/`-h` onto the " +
+    "`help` row before the root's parse runs — never a registry flag",
+  "digestify:version":
+    "a ROOT TOKEN, as glamour's: the kit registry's interceptors map `--version`/`-V` onto the " +
+    "`version` row before the root's parse runs, so `review.ts --file x --version` stays refused",
   "glamour:ref": "media-forge's — `mf generate image … [--ref <path|url>]`",
   "glamour:n": "media-forge's — the SKILL.md says so in as many words",
   "imago:ref": "media-forge's — `--ref <path>` on an mf call",
