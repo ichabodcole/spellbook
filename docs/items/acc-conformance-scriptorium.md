@@ -42,9 +42,21 @@ Source is `src/scriptorium/backend/`; the checked target is the launcher, never
 - [x] **Step 4b:** an unknown flag is refused with the valid flag set in
       `choices` at the root and at every verb (the root reading says
       `enumerated`).
-- [ ] **Step 5:** every verb path is recorded (`acc probe-plan`, per
+- [x] **Step 5:** every verb path is recorded (`acc probe-plan`, per
       `how-to-record-surfaces-below-the-root.md`), wired into the config, and
-      each reads `enumerated` or `stated an empty set` in the census.
+      each reads `enumerated` or `stated an empty set` in the census. The batch
+      is `plugins/spellbook/skills/scriptorium/acc.recorded-surfaces.json`
+      (generated with `probe-plan --declaration` from the spell's own `schema`,
+      homes pointed at empty temp dirs), which the acc ward passes as
+      `--recorded-surfaces` (decision #8). Census (acc 0.1.15, 2026-09-26): 45
+      records; 42 enumerated, 3 stated an empty set (`version`, `schema`,
+      `help`); **46 of 46 declared command paths compared, 0 disagreements**.
+      Rejections name their set at every recorded verb (step 4b). Re-record when
+      the surface changes: the ward reads a stale batch without complaint.
+- [x] **Documented invocations (decision #14):** `note --body-file` (:77) now
+      reads `note --quote '<exact text>'`, since `--quote` is what places a note
+      (doc fixed, not the verb); `task-status item1` (:259) was prose, not an
+      invocation, and the documented fixture now excludes it with that reason.
 - [x] **Step 6:** one table drives the parser, help, rejections and a `schema`
       verb (`how-to-derive-your-surface-from-one-registry.md`; take the
       shared-registry research's answer into account). **Since 2026-09-26 the
