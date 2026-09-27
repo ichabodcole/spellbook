@@ -161,12 +161,12 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
-      "argv": ["open", "golden-ch", "--topic", "hello"],
+      "argv": ["open", "golden-ch", "--as", "golden-agent", "--topic", "hello"],
       "doc": "SKILL.md:677",
       "reason": "starts a daemon (and may open a browser)"
     },
     {
-      "argv": ["tail", "golden-ch"],
+      "argv": ["tail", "golden-ch", "--as", "golden-agent"],
       "doc": "SKILL.md:678",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
@@ -176,7 +176,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     }
   ],
-  "invocationCount": 122,
+  "invocationCount": 123,
   "invocations": [
     {
       "argv": [],
@@ -2000,7 +2000,6 @@
     },
     {
       "argv": ["send", "golden-ch", "hello"],
-      "doc": "SKILL.md:679",
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -2105,7 +2104,6 @@
     },
     {
       "argv": ["reopen", "golden-ch", "1"],
-      "doc": "SKILL.md:223",
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -2276,14 +2274,22 @@
       "kind": "conflict"
     },
     {
-      "argv": ["mark", "golden-ch", "1", "incorporated", "--note", "hello"],
+      "argv": ["mark", "golden-ch", "1", "incorporated", "--as", "golden-agent", "--note", "hello"],
       "doc": "SKILL.md:222",
-      "exit": 2,
-      "verdict": "rejected",
+      "exit": 6,
+      "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "kind": "conflict"
+    },
+    {
+      "argv": ["reopen", "golden-ch", "1", "--as", "golden-agent"],
+      "doc": "SKILL.md:223",
+      "exit": 6,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "conflict"
     },
     {
       "argv": ["read", "golden-ch", "1"],

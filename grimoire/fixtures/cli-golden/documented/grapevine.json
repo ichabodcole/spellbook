@@ -56,11 +56,11 @@
   },
   {
     "line": 222,
-    "argv": ["mark", "golden-ch", "1", "incorporated", "--note", "hello"]
+    "argv": ["mark", "golden-ch", "1", "incorporated", "--as", "golden-agent", "--note", "hello"]
   },
   {
     "line": 223,
-    "argv": ["reopen", "golden-ch", "1"]
+    "argv": ["reopen", "golden-ch", "1", "--as", "golden-agent"]
   },
   {
     "line": 224,
@@ -239,15 +239,15 @@
   },
   {
     "line": 677,
-    "argv": ["open", "golden-ch", "--topic", "hello"]
+    "argv": ["open", "golden-ch", "--as", "golden-agent", "--topic", "hello"]
   },
   {
     "line": 678,
-    "argv": ["tail", "golden-ch"]
+    "argv": ["tail", "golden-ch", "--as", "golden-agent"]
   },
   {
     "line": 679,
-    "argv": ["send", "golden-ch", "hello"]
+    "argv": ["send", "golden-ch", "--as", "golden-agent", "hello"]
   },
   {
     "line": 699,
