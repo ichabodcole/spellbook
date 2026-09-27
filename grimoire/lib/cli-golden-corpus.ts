@@ -284,6 +284,7 @@ export const SPECS: SpellSpec[] = [
       c("state"),
       c("state", "--full"),
       c("sessions"),
+      c("sessions", "--human"),
       c("say", "hello", "world"),
       c("propose", "a", "prompt", "--n", "2"),
       c("propose", "a", "prompt", "--n=2"),
@@ -327,6 +328,9 @@ export const SPECS: SpellSpec[] = [
       c("cost", "$0.38 · 8 imgs"),
       c("handoff", "hello"),
       c("handoff", "--clear"),
+      // flag-dependent arity: exactly one of <text...> or --clear
+      c("handoff"),
+      c("handoff", "--clear", "hello"),
       c("close"),
       c("info"),
       c("--session", "s1", "say", "hello"),
