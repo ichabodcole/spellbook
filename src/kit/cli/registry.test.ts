@@ -327,11 +327,14 @@ describe("flags-anywhere", () => {
     const env = envelope(await capture(() => cli.main(["--session", "x", "--bogus"])));
     expect(env.error.message).toContain("--bogus");
     expect(env.error.choices).toEqual(["--help", "--version", "-h", "-V"]);
+    // No verb ran, so the envelope names none — not the first flag's spelling.
+    expect(env.meta.command).toBeNull();
   });
 
   test("no verb and a clean parse: a bare invocation", async () => {
     const { cli } = make();
     const env = envelope(await capture(() => cli.main(["--session", "x"])));
+    expect(env.meta.command).toBeNull();
     expect(env.error.message).toBe("expected a command");
     expect(env.error.choices).toEqual(["info", "version", "schema", "help"]);
   });

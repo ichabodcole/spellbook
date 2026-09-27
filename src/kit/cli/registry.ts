@@ -637,7 +637,10 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
       const i = scanPositional(argv, false);
       if (i < 0) {
         // No verb anywhere: an unknown flag is refused with the root's set,
-        // and a clean parse is a bare invocation.
+        // and a clean parse is a bare invocation. Neither ran a command, so
+        // the envelope's `meta.command` is null, not the first flag's
+        // spelling (`glamour --bogus` names no verb).
+        setCurrentCommand(null);
         try {
           parseArgs({ args: argv, options: parseOptions, strict: true, allowPositionals: true });
         } catch (e) {
