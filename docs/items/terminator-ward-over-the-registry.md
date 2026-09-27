@@ -9,7 +9,7 @@ description:
   Rewrite it over the registry's adopters, then second-seat calibrate
   roster-drift, gate-honesty, terminator-invariant and strict-parse-invariant.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: ready
+lifecycle: review
 id: 01a0e213-3b28-7512-8ca2-9f119e11aad1
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-27 }
@@ -32,14 +32,18 @@ parser (the registry) with 9 adopters.
 
 ## Definition of done
 
-- [ ] terminator-invariant asserts, over every registry adopter taken from the
+- [x] terminator-invariant asserts, over every registry adopter taken from the
       files (not a hand list), that a row-accepted flag after `--` warns and
       leaves stdout and exit unchanged; zero-denominator guard on rows with
       positionals > 0. Its header and pins say what is true now.
-- [ ] D6: each of roster-drift (17 cells), gate-honesty (6),
+- [x] D6: each of roster-drift (17 cells), gate-honesty (6),
       terminator-invariant (rewritten) and strict-parse-invariant (3) is
       calibrated by a second seat in a **detached git worktree**
       (`git worktree add --detach`, never a copy): a planted defect per cell
       family turns it red; the calibrator prints `pass / fail / CELLS` and
       reconciles the cell count against the real tree.
-- [ ] Anything a calibration finds uncalibrated or vacuous is fixed or filed.
+- [x] Anything a calibration finds uncalibrated or vacuous is fixed or filed.
+
+Done on `test/terminator-ward-over-the-registry`: the ward rewrite is
+`24f3e33b`; the calibration record is
+[d6-calibration.md](../features/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md).
