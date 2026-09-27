@@ -1,0 +1,235 @@
+{
+  "formatVersion": "0",
+  "records": [
+    {
+      "path": ["open"],
+      "argv": ["open", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"open: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--intent\",\"--no-open\",\"--restore\",\"--start-timeout\",\"--timeout\",\"--title\"]},\"meta\":{\"command\":\"open\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["tail"],
+      "argv": ["tail", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tail: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--once\",\"--session\",\"--since\"]},\"meta\":{\"command\":\"tail\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["state"],
+      "argv": ["state", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"state: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--full\",\"--session\"]},\"meta\":{\"command\":\"state\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["intent"],
+      "argv": ["intent", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"intent: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"intent\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["annotate"],
+      "argv": ["annotate", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"annotate: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"annotate\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["say"],
+      "argv": ["say", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"say: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--kind\",\"--session\"]},\"meta\":{\"command\":\"say\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:13Z"
+    },
+    {
+      "path": ["section"],
+      "argv": ["section", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"section: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--colors\",\"--content\",\"--prompts\",\"--session\",\"--status\"]},\"meta\":{\"command\":\"section\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["status"],
+      "argv": ["status", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"status: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"status\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["gen"],
+      "argv": ["gen", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"gen: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--cost\",\"--custom\",\"--file\",\"--label\",\"--model\",\"--prompt\",\"--round\",\"--seed\",\"--session\",\"--src\",\"--url\"]},\"meta\":{\"command\":\"gen\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["gen-cost"],
+      "argv": ["gen-cost", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"gen-cost: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--cost\",\"--session\"]},\"meta\":{\"command\":\"gen-cost\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["gen-meta"],
+      "argv": ["gen-meta", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"gen-meta: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--custom\",\"--prompt\",\"--session\"]},\"meta\":{\"command\":\"gen-meta\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["focus"],
+      "argv": ["focus", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"focus: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--note\",\"--session\"]},\"meta\":{\"command\":\"focus\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["style-save"],
+      "argv": ["style-save", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"style-save: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"style-save\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["style-archive"],
+      "argv": ["style-archive", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"style-archive: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\",\"--unarchive\"]},\"meta\":{\"command\":\"style-archive\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["tray"],
+      "argv": ["tray", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tray: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"tray\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["close"],
+      "argv": ["close", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"close: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"close\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["info"],
+      "argv": ["info", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"info: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"info\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["version"],
+      "argv": ["version", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"version takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"version\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["schema"],
+      "argv": ["schema", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"schema: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"schema takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"schema\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    },
+    {
+      "path": ["help"],
+      "argv": ["help", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"help: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"help takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"help\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:38:14Z"
+    }
+  ],
+  "identity": {
+    "argv": ["--version"],
+    "exitCode": 0,
+    "streams": "separated",
+    "stdout": "{\"name\":\"glamour\",\"version\":\"3.1.0\"}\n",
+    "stderr": "",
+    "completeness": "complete",
+    "recordedBy": "acc-conformance adopter (claude-opus-5-5), build 8eca227f, paths derived from the declaration",
+    "recordedAt": "2026-09-27T01:38:14Z"
+  }
+}
