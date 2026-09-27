@@ -367,8 +367,15 @@ registry owns argv but not the envelopes, and one warning there covers every
 verb the registry parses, where an envelope entry would be nine wire changes. So
 the envelope's `valuesIgnored` still reads `null` for
 `add -- hello --session-key K1` (measured in the phase-2 scope read); **the
-report for a flag demoted by `--` is the stderr line**, and Boundary 3 is met
-because the line is derived from the received argv.
+report for a flag demoted by `--` is the stderr line**.
+
+⚠ **Boundary 3 is only half met, and deliberately.** The line reads the argv
+actually received, so it sees the tokens the terminator ate; but it reports only
+those that match a flag **that verb accepts**, which is the known-flag table
+this section warns against. A post-`--` token that is flag-shaped but not a flag
+of that verb (`--nope`) is reported by nothing, on purpose: after `--` it is
+text, and warning on all flag-shaped text would fire on legitimate prose. What
+is covered is the case with a cost, a real flag silently lost.
 
 ---
 
