@@ -101,9 +101,11 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // root parse), counted once for every spell that adopts it.
     // 18 → 17: digestify moved onto the kit CLI registry (2026-09-26), taking
     // its one invocation out of `review.ts`.
+    // 17 → 16: imago moved onto the kit registry (2026-09-26), taking its one
+    // invocation out of its CLI.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 17,
+      invocationsChecked: 16,
     });
   });
 
