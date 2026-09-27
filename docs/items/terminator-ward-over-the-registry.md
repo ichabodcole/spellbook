@@ -47,3 +47,16 @@ parser (the registry) with 9 adopters.
 Done on `test/terminator-ward-over-the-registry`: the ward rewrite is
 `0adb8fe5`; the calibration record is
 [d6-calibration.md](../features/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md).
+
+**2026-09-27, no-stake verifier findings fixed** (`f5fbe2e3`, `a2ae88ff`). R1:
+every case put the demoted flag straight after `--`, so a registry reading only
+that token survived; an after-text form now puts text first. R2: a
+`--flag=value` form. R3: a flag-shaped token no row accepts must not warn. R4:
+every row is driven through each alias too; the real registry already warned via
+an alias (run first), so `f5fbe2e3` pins it in `registry.test.ts` and no
+registry fix or dist rebuild was needed. R1–R4 were each planted in the registry
+and each reds the ward. A3/A4: adopters are found by an import of the registry
+module (any local name, all of `src/`). A6: every caller-facing `parseArgs(`
+must be provably positional-free; no exceptions today. A5: import side effects
+are recorded and asserted empty, with the unobserved kinds named in the header.
+Cases 311 → 761, plus 115 no-warning cases.

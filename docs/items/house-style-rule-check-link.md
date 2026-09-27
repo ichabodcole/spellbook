@@ -137,3 +137,18 @@ unknown ward path (a rule names grimoire/no-such-ward.test.ts)                 e
 
 The plants were calibrated by their author, which is the gap D6 names. They
 still need a no-stake re-calibration.
+
+**2026-09-27, no-stake verifier findings fixed** (`4c577a3d`, `41876232`). L1:
+the ward population was the non-recursive `grimoire/*.test.ts`, blind to
+`.spec.ts`, `.test.tsx` and subfolders; it is now what `bun test` collects under
+`grimoire/`, measured by planting files (Bun 1.4.0 also collects
+`.mts/.cts/.mjs/.cjs`). No file newly entered the population. L2: header wording
+now says "the first comment block". Links: `enumerate-roster-behaviour-never` ↔
+`flag-invariant` is now linked (its walk-vs-glob cell, partial, one population);
+`response-states-conditions-was` moves from `none — intent` to
+`none — checkable, unchecked`; the thin `drive-conjuration-through-daemon` ↔
+`daemon-lifecycle-ward` link is kept as partial, its scope stated in the ward
+header since the marker grammar has no note slot; `exit-site-inventory`'s header
+now separates P0f (named sprint 01) from card t-a0c6c34a (sprint 03's
+classification). Counts now: rules 6 name a ward, 11 `none — intent`, 8
+`none — checkable, unchecked`; wards 8 cite rules, 20 an outside authority.
