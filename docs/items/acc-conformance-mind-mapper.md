@@ -31,6 +31,11 @@ Part of
 - It is WIP and intentionally undeclared in the roster by Cole's ruling;
   conformance work does not change that.
 
+- **Golden snapshot finding (2026-09-26):** mind-mapper ships no SKILL.md (WIP
+  by ruling), so its golden corpus comes from its help text. Its `doc` group
+  takes flags before its sub-verb (`doc --project P delete D1 --force`); declare
+  it with the registry's `groups: { doc: { subVerbAt: "first-positional" } }`.
+
 Follow the `acc` skill (`.claude/skills/acc/SKILL.md`) and read the guides from
 the pinned install, `node_modules/agent-cli-conformance/docs/wiki/guides/`.
 Source is `src/mind-mapper/backend/`; the checked target is the launcher, never

@@ -28,6 +28,10 @@ Part of
   lists verbs, not flags).
 - `schema` verb from one registry: **no**.
 
+- **Golden snapshot finding (2026-09-26):** SKILL.md:134 documents `cmd` without
+  `--stdin`, which is rejected today (exit 2). Fix the doc or the verb,
+  deliberately.
+
 Follow the `acc` skill (`.claude/skills/acc/SKILL.md`) and read the guides from
 the pinned install, `node_modules/agent-cli-conformance/docs/wiki/guides/`.
 Source is `src/magpie/backend/`; the checked target is the launcher, never
