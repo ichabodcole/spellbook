@@ -1,7 +1,7 @@
 {
   "spell": "glamour",
   "launcher": "scripts/cli.ts",
-  "verbCount": 19,
+  "verbCount": 20,
   "verbs": [
     "open",
     "tail",
@@ -20,6 +20,7 @@
     "tray",
     "close",
     "info",
+    "version",
     "schema",
     "help"
   ],
@@ -44,7 +45,7 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     }
   ],
-  "invocationCount": 91,
+  "invocationCount": 93,
   "invocations": [
     {
       "argv": [],
@@ -71,6 +72,7 @@
         "tray",
         "close",
         "info",
+        "version",
         "schema",
         "help"
       ]
@@ -103,8 +105,9 @@
         "  tray                                          list the project's saved styles",
         "  close                                         shut down the session",
         "  info                                          print the resolved discovery JSON",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -147,8 +150,9 @@
         "  tray                                          list the project's saved styles",
         "  close                                         shut down the session",
         "  info                                          print the resolved discovery JSON",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -192,8 +196,9 @@
         "  tray                                          list the project's saved styles",
         "  close                                         shut down the session",
         "  info                                          print the resolved discovery JSON",
-        "  schema                                        emit this CLI's acc declaration (walked from the command table)",
-        "  help                                          show this message",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -287,22 +292,12 @@
             "path": ["open"],
             "args": [
               {
-                "name": "--title",
-                "type": "string",
-                "status": "valid"
-              },
-              {
                 "name": "--intent",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--no-open",
-                "type": "boolean",
-                "status": "valid"
-              },
-              {
-                "name": "--timeout",
+                "name": "--restore",
                 "type": "string",
                 "status": "valid"
               },
@@ -312,8 +307,18 @@
                 "status": "valid"
               },
               {
-                "name": "--restore",
+                "name": "--timeout",
                 "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
                 "status": "valid"
               }
             ],
@@ -398,12 +403,12 @@
             "path": ["say"],
             "args": [
               {
-                "name": "--session",
+                "name": "--kind",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--kind",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -420,12 +425,7 @@
             "path": ["section"],
             "args": [
               {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--status",
+                "name": "--colors",
                 "type": "string",
                 "status": "valid"
               },
@@ -440,7 +440,12 @@
                 "status": "valid"
               },
               {
-                "name": "--colors",
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
                 "type": "string",
                 "status": "valid"
               }
@@ -477,12 +482,12 @@
             "path": ["gen"],
             "args": [
               {
-                "name": "--session",
+                "name": "--cost",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--url",
+                "name": "--custom",
                 "type": "string",
                 "status": "valid"
               },
@@ -492,17 +497,17 @@
                 "status": "valid"
               },
               {
-                "name": "--src",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--prompt",
+                "name": "--label",
                 "type": "string",
                 "status": "valid"
               },
               {
                 "name": "--model",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--prompt",
                 "type": "string",
                 "status": "valid"
               },
@@ -517,17 +522,17 @@
                 "status": "valid"
               },
               {
-                "name": "--cost",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--label",
+                "name": "--src",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--custom",
+                "name": "--url",
                 "type": "string",
                 "status": "valid"
               }
@@ -538,12 +543,12 @@
             "path": ["gen-cost"],
             "args": [
               {
-                "name": "--session",
+                "name": "--cost",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--cost",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -559,7 +564,7 @@
             "path": ["gen-meta"],
             "args": [
               {
-                "name": "--session",
+                "name": "--custom",
                 "type": "string",
                 "status": "valid"
               },
@@ -569,7 +574,7 @@
                 "status": "valid"
               },
               {
-                "name": "--custom",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -585,12 +590,12 @@
             "path": ["focus"],
             "args": [
               {
-                "name": "--session",
+                "name": "--note",
                 "type": "string",
                 "status": "valid"
               },
               {
-                "name": "--note",
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -675,6 +680,11 @@
             "positionals": []
           },
           {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
             "path": ["schema"],
             "args": [],
             "positionals": []
@@ -694,7 +704,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "-h", "--version", "-V"]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -721,6 +731,7 @@
         "tray",
         "close",
         "info",
+        "version",
         "schema",
         "help"
       ]
@@ -732,13 +743,16 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--help", "-h", "--version", "-V"]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -1069,6 +1083,24 @@
       "ok": false,
       "kind": "usage",
       "choices": ["--session"]
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
