@@ -19,8 +19,8 @@
  * take, and deliberately NOT otherwise** — 260 raises against 47 hints is why:
  * a hint on every failure would add ~200 strings of the form "run help", which
  * is noise wearing conformance's clothes. An absent `hint` is a DECISION here
- * (digestify's flag rejection carries none, on purpose: digestify answers no
- * `help` at all, so there is nothing to tell the caller to run).
+ * (the kit registry's unknown-flag rejection carries none where `choices` is
+ * non-empty, on purpose: "pass one of these" is the whole next act).
  *
  * ⛔ **AND `choices` MUST BE THE ACTUAL SET.** A hand-typed list that drifts
  * from the dispatch table is worse than no list, because a caller can check
@@ -117,7 +117,9 @@ const EXPECTED: Record<
   // `choices`: an id is not a closed set; the message names the shapes.
   astrolabe: { sites: 16, choices: 4, verbRoster: true, flagMap: true },
   bounty: { sites: 33, choices: 2, verbRoster: true, flagMap: true },
-  digestify: { sites: 8, choices: 2, verbRoster: false, flagMap: true },
+  // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
+  // registry, as glamour's did. `--theme`'s `choices` is the one left here.
+  digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
   // 25 -> 26 on 2026-09-10, type-debt Phase 3c: `positional()` in cli.ts, a
   // named usage throw for a builder called without the positional arity
   // dispatch guarantees. No `choices` by A1's ruling — an id positional is not

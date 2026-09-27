@@ -99,9 +99,11 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // registry (2026-09-26), taking one invocation each out of their CLIs, and
     // the registry arrives with two (the per-row parse and the flags-anywhere
     // root parse), counted once for every spell that adopts it.
+    // 18 → 17: digestify moved onto the kit CLI registry (2026-09-26), taking
+    // its one invocation out of `review.ts`.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 18,
+      invocationsChecked: 17,
     });
   });
 

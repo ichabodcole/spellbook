@@ -88,7 +88,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   // adopters are listed, and a cell below binds the list to the spells whose
   // source calls `defineCli`, so each of the six that adopts next edits it.
   [KIT_REGISTRY]:
-    "caller-facing through every adopter (glamour, grapevine, scriptorium); prompt text, message bodies and say text are positionals",
+    "caller-facing through every adopter (digestify, glamour, grapevine, scriptorium); prompt text, message bodies and say text are positionals",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/backend/cli.ts": "caller-facing; send bodies are prose positionals",
